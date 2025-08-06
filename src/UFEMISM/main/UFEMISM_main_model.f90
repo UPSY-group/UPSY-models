@@ -1224,7 +1224,7 @@ CONTAINS
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )
-    CALL remap_GIA_model(             region%mesh, mesh_new,             region%GIA    , region%refgeo_GIAeq, region%ELRA)
+    CALL remap_GIA_model(             region%mesh, mesh_new,             region%GIA    , region%refgeo_GIAeq, region%ELRA, region%name)
 
     call remap_tracer_tracking_model( region%mesh, mesh_new, region%tracer_tracking, region%time)
 

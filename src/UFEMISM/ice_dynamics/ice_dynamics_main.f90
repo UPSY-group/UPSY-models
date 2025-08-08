@@ -435,7 +435,7 @@ contains
 
   end subroutine create_restart_files_ice_model
 
-  subroutine remap_ice_dynamics_model( mesh_old, mesh_new, ice, bed_roughness, refgeo_PD, SMB, BMB, LMB, AMB, GIA, time, region_name)
+  subroutine remap_ice_dynamics_model( mesh_old, mesh_new, ice, bed_roughness, refgeo_PD, SMB, BMB, LMB, AMB, GIA, time, region_name, forcing)
     !< Remap/reallocate all the data of the ice dynamics model
 
     ! In/output variables:
@@ -451,6 +451,7 @@ contains
     type(type_GIA_model),           intent(in   ) :: GIA
     real(dp),                       intent(in   ) :: time
     character(len=3),               intent(in   ) :: region_name
+    type(type_global_forcing),      intent(in   ) :: forcing
 
     ! Local variables:
     character(len=1024), parameter                 :: routine_name = 'remap_ice_dynamics_model'
@@ -471,7 +472,7 @@ contains
     ! ==========================
 
     ! Remap basic ice geometry Hi,Hb,Hs,SL
-    call remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice)
+    call remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice, forcing, time)
 
     ! Remap dHi/dt to improve stability of the P/C scheme after mesh updates
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, ice%dHi_dt, '2nd_order_conservative')
@@ -837,7 +838,7 @@ contains
 
   end subroutine remap_ice_dynamics_model
 
-  subroutine remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice)
+  subroutine remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice, forcing, time)
     !< Remap the basic ice geometry Hi,Hb,Hs,SL.
 
     ! In/output variables:
@@ -846,6 +847,8 @@ contains
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_GIA_model),          intent(in   ) :: GIA
     type(type_ice_model),          intent(inout) :: ice
+    type(type_global_forcing),     intent(in   ) :: forcing
+    real(dp),                      intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter                  :: routine_name = 'remap_basic_ice_geometry'
@@ -885,6 +888,8 @@ contains
       call crash('unknown choice_sealevel_model "' // trim( C%choice_sealevel_model) // '"')
     case ('fixed')
       ice%SL = C%fixed_sealevel
+    case ('prescribed')
+      call update_sealevel_in_model(forcing, mesh_new, ice, time)
     end select
 
     ! Gather global ice thickness and masks

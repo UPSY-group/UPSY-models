@@ -1217,7 +1217,7 @@ CONTAINS
     CALL initialise_reference_geometries_on_model_mesh( region%name, mesh_new, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq)
 
     ! Remap all the model data from the old mesh to the new mesh
-    CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name)
+    CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
     CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%grid_smooth, region%ice, forcing)    
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
     CALL remap_SMB_model(             region%mesh, mesh_new,             region%SMB    , region%name)

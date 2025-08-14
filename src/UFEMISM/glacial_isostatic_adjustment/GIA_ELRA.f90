@@ -269,11 +269,8 @@ contains
 
     ! Add routine to path
     CALL init_routine( routine_name)
-	CALL reallocate_bounds( ELRA%surface_load_GIAeq, mesh_new%vi1, mesh_new%vi2)
-	CALL reallocate_bounds( ELRA%surface_load_mesh, mesh_new%vi1, mesh_new%vi2)
 
-    ! Recalculate the reference load on the GIA grid
-    CALL initialise_ELRA_reference_load( mesh_new, grid, ELRA, refgeo_GIAeq)
+    call initialise_ELRA_model( mesh_new, grid, ELRA, refgeo_GIAeq)
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

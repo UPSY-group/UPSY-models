@@ -39,6 +39,7 @@ contains
     allocate( ice%TAF     ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hi_eff  ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hs_slope( mesh%vi1:mesh%vi2), source = 0._dp)
+    allocate( ice%Ho      ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! Geometry changes
     allocate( ice%dHi ( mesh%vi1:mesh%vi2), source = 0._dp)

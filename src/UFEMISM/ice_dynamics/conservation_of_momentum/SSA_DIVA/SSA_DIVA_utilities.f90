@@ -9,6 +9,8 @@ module SSA_DIVA_utilities
   use ice_model_types, only: type_ice_model
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, ddx_b_a_2D, ddy_b_a_2D
 
+  use netcdf_io_main
+
   implicit none
 
   private
@@ -27,31 +29,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_driving_stress'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    select case (C%BC_ice_front)
-    case default
-      call crash('unknown BC_ice_front "' // trim( C%BC_ice_front) // '"')
-    case ('infinite_slab')
-      call calc_driving_stress_infinite_slab( mesh, ice, tau_dx_b, tau_dy_b)
-    end select
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine calc_driving_stress
-
-  subroutine calc_driving_stress_infinite_slab( mesh, ice, tau_dx_b, tau_dy_b)
-
-    ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: tau_dx_b, tau_dy_b
-
-    ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'calc_driving_stress_infinite_slab'
     real(dp), dimension(:), allocatable :: Hi_b
     real(dp), dimension(:), allocatable :: dHs_dx_b
     real(dp), dimension(:), allocatable :: dHs_dy_b
@@ -79,9 +56,10 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_driving_stress_infinite_slab
+  end subroutine calc_driving_stress
 
-  subroutine calc_horizontal_strain_rates( mesh, u_b, v_b, du_dx_a, du_dy_a, dv_dx_a, dv_dy_a)
+  subroutine calc_horizontal_strain_rates( mesh, u_b, v_b, &
+    du_dx_a, du_dy_a, dv_dx_a, dv_dy_a)
     !< Calculate the vertically averaged horizontal strain rates
 
     ! In/output variables:
@@ -95,34 +73,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    select case (C%BC_ice_front)
-    case default
-      call crash('unknown BC_ice_front "' // trim( C%BC_ice_front) // '"')
-    case ('infinite_slab')
-      call calc_horizontal_strain_rates_infinite_slab( mesh, u_b, v_b, &
-      du_dx_a, du_dy_a, dv_dx_a, dv_dy_a)
-    end select
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine calc_horizontal_strain_rates
-
-  subroutine calc_horizontal_strain_rates_infinite_slab( mesh, u_b, v_b, &
-    du_dx_a, du_dy_a, dv_dx_a, dv_dy_a)
-    !< Calculate the vertically averaged horizontal strain rates
-
-    ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: u_b, v_b
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: du_dx_a, du_dy_a, dv_dx_a, dv_dy_a
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_horizontal_strain_rates_infinite_slab'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
     ! Calculate the strain rates
     call ddx_b_a_2D( mesh, u_b, du_dx_a)
     call ddy_b_a_2D( mesh, u_b, du_dy_a)
@@ -132,7 +82,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_horizontal_strain_rates_infinite_slab
+  end subroutine calc_horizontal_strain_rates
 
   subroutine relax_viscosity_iterations( mesh, u_b, v_b, u_b_prev, v_b_prev, visc_it_relax)
     !< Reduce the change between velocity solutions
@@ -216,11 +166,15 @@ contains
 
     do ti = mesh%ti1, mesh%ti2
 
-      res1 = res1 + (u_b( ti) - u_b_prev( ti))**2
-      res1 = res1 + (v_b( ti) - v_b_prev( ti))**2
+      if (.not. isnan( u_b( ti)) .and. .not. isnan( v_b( ti))) then
 
-      res2 = res2 + (u_b( ti) + u_b_prev( ti))**2
-      res2 = res2 + (v_b( ti) + v_b_prev( ti))**2
+        res1 = res1 + (u_b( ti) - u_b_prev( ti))**2
+        res1 = res1 + (v_b( ti) - v_b_prev( ti))**2
+
+        res2 = res2 + (u_b( ti) + u_b_prev( ti))**2
+        res2 = res2 + (v_b( ti) + v_b_prev( ti))**2
+
+      end if
 
     end do
 

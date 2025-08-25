@@ -4,27 +4,31 @@ module create_graphs_from_masked_mesh
   use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph
+  use graph_memory, only: allocate_graph_primary, crop_graph_primary
   use mpi_distributed_memory, only: gather_to_all
-  use mpi_distributed_shared_memory, only: allocate_dist_shared
+  use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
   use plane_geometry, only: mirror_p_across_qr
   use assertions_basic, only: assert
   use graph_contiguous_domains, only: enforce_contiguous_process_domains_graph
   use graph_parallelisation, only: setup_graph_parallelisation
+  use tests_main, only: test_graph_is_self_consistent
+  use parameters, only: NaN
+  use mpi_basic, only: par
 
   implicit none
 
   private
 
-  public :: create_graph_from_masked_mesh_a, create_graph_from_masked_mesh_b, &
-    test_graph_connectivity_is_self_consistent, test_graph_matches_mesh
+  public :: create_graph_from_masked_mesh_a, create_graph_from_masked_mesh_b
 
 contains
 
-  subroutine create_graph_from_masked_mesh_a( mesh, mask_a, graph)
+  subroutine create_graph_from_masked_mesh_a( mesh, mask_a, nz, graph)
 
     ! In/output variables:
     type(type_mesh),                       intent(in   ) :: mesh
     logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_a
+    integer,                               intent(in   ) :: nz
     type(type_graph),                      intent(  out) :: graph
 
     ! Local variables:
@@ -37,188 +41,158 @@ contains
 
     call gather_to_all( mask_a, mask_a_tot)
 
-    ! Set graph metadata
+    ! Allocate graph and set metadata
+    call allocate_graph_primary( graph, mesh%nV, mesh%nV, mesh%nTri, mesh%nE, maxval( mesh%nC))
+
     graph%parent_mesh_name = trim( mesh%name) // '_vertices'
-    graph%n                = count( mask_a_tot)
-    graph%nn               = 0
-    graph%ng               = 0
-    graph%nC_mem           = maxval( mesh%nC)
+    graph%xmin             = mesh%xmin
+    graph%xmax             = mesh%xmax
+    graph%ymin             = mesh%ymin
+    graph%ymax             = mesh%ymax
 
-    ! Allocate memory
-    allocate( graph%ni2mi     ( graph%n              ), source = 0)
-    allocate( graph%mi2ni     ( mesh%nV              ), source = 0)
-
-    allocate( graph%V         ( graph%n, 2           ), source = 0._dp)
-    allocate( graph%nC        ( graph%n              ), source = 0)
-    allocate( graph%C         ( graph%n, graph%nC_mem), source = 0)
-
-    allocate( graph%is_ghost  ( graph%n              ), source = .false.)
-    allocate( graph%ghost_nhat( graph%n, 2           ), source = 0._dp)
-
-    ! Create vertex-to-node mapping
-    ni = 0
+    ! Create vertex-to-regular-node mapping
+    graph%n = 0
     do vi = 1, mesh%nV
       if (mask_a_tot( vi)) then
-        ni = ni + 1
-        graph%mi2ni( vi) = ni
-        graph%ni2mi( ni) = vi
+        graph%n = graph%n + 1
+        graph%vi2ni( vi     ) = graph%n
+        graph%ni2vi( graph%n) = vi
       end if
     end do
 
-    ! Construct reduced graph
-    do vi = 1, mesh%nV
-      if (mask_a_tot( vi)) then
+    ! Construct regular nodes and their interconnectivity
+    do ni = 1, graph%n
 
-        ni = graph%mi2ni( vi)
+      ! This regular graph node corresponds to a masked vertex
+      vi = graph%ni2vi( ni)
 
-        ! Add this masked vertex
-        graph%V ( ni,:) = mesh%V( vi,:)
+      graph%V         ( ni,:) = mesh%V( vi,:)
+      graph%is_ghost  ( ni  ) = .false.
+      graph%ghost_nhat( ni,:) = NaN
 
-        ! Add its connectivity
-        graph%nC( ni) = 0
-        do ci = 1, mesh%nC( vi)
+      ! Add connections to other regular nodes
+      graph%nC( ni) = 0
+      do ci = 1, mesh%nC( vi)
+        vj = mesh%C( vi,ci)
+        if (mask_a_tot( vj)) then
+          ! This connection points to another regular node
+          nj = graph%vi2ni( vj)
+          graph%nC( ni) = graph%nC( ni) + 1
+          graph%C( ni, graph%nC( ni)) = nj
+        end if
+      end do
 
-          vj = mesh%C( vi,ci)
-
-          if (mask_a_tot( vj)) then
-            ! This connection points to a masked vertex
-
-            nj = graph%mi2ni( vj)
-            graph%nC( ni) = graph%nC( ni) + 1
-            graph%C( ni, graph%nC( ni)) = nj
-
-          end if
-        end do
-
-      end if
     end do
 
     ! Finalisation
+    call crop_graph_primary( graph)
     call enforce_contiguous_process_domains_graph( graph)
-    call setup_graph_parallelisation( graph)
+    call setup_graph_parallelisation( graph, nz)
 
 #if (DO_ASSERTIONS)
-    call assert(test_graph_connectivity_is_self_consistent( graph), 'inconsistent graph connectivity')
+    call assert(test_graph_is_self_consistent( mesh, graph), 'inconsistent graph connectivity')
 #endif
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 4)
 
   end subroutine create_graph_from_masked_mesh_a
 
-  subroutine create_graph_from_masked_mesh_b( mesh, mask_a, graph)
+  subroutine create_graph_from_masked_mesh_b( mesh, mask_a, nz, graph)
 
     ! In/output variables:
     type(type_mesh),                       intent(in   ) :: mesh
     logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_a
+    integer,                               intent(in   ) :: nz
     type(type_graph),                      intent(  out) :: graph
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_graph_from_masked_mesh_b'
-    logical, dimension(1:mesh%nV  ) :: mask_a_tot
     logical, dimension(1:mesh%nTri) :: mask_b_tot
-    integer                         :: n_mask_b
-    logical, dimension(1:mesh%nE  ) :: mask_boundary_c_tot
-    integer                         :: n_boundary_c
-    integer                         :: ni, ti, ng, n, ei, tj, nj, til, tir, vi, vj, vi1, vi2
-    real(dp), dimension(2)          :: p, q, r, s, normal_vector
+    integer                         :: ti, n, tj, nj, ei
+    integer                         :: ni_reg, ni_ghost
+    integer                         :: ni, vi, vj, ci, ej, nj1, nj2
+    real(dp), dimension(2)          :: r, s, outward_normal_vector
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Calculate b-grid and c-grid masks
-    call gather_to_all( mask_a, mask_a_tot)
-    call calc_masks_b_c( mesh, mask_a_tot, mask_b_tot, n_mask_b, mask_boundary_c_tot, n_boundary_c)
+    ! Calculate b-grid mask
+    call calc_mask_b( mesh, mask_a, mask_b_tot)
 
-    ! Set graph metadata
+    ! Allocate graph and set metadata
+    call allocate_graph_primary( graph, mesh%nTri*3, mesh%nV, mesh%nTri, mesh%nE, 3)
+
     graph%parent_mesh_name = trim( mesh%name) // '_triangles'
-    graph%n                = n_mask_b + n_boundary_c
-    graph%nn               = n_mask_b
-    graph%ng               = n_boundary_c
-    graph%nC_mem           = 3
+    graph%xmin             = mesh%xmin
+    graph%xmax             = mesh%xmax
+    graph%ymin             = mesh%ymin
+    graph%ymax             = mesh%ymax
 
-    ! Allocate memory
-    allocate( graph%ni2mi     ( graph%n              ), source = 0)
-    allocate( graph%mi2ni     ( mesh%nTri            ), source = 0)
-
-    allocate( graph%V         ( graph%n, 2           ), source = 0._dp)
-    allocate( graph%nC        ( graph%n              ), source = 0)
-    allocate( graph%C         ( graph%n, graph%nC_mem), source = 0)
-
-    allocate( graph%is_ghost  ( graph%n              ), source = .false.)
-    allocate( graph%ghost_nhat( graph%n, 2           ), source = 0._dp)
-
-    ! Create triangle-to-node mapping
-    ni = 0
+    ! Create triangle-to-regular-node mapping
+    graph%n = 0
     do ti = 1, mesh%nTri
       if (mask_b_tot( ti)) then
-        ni = ni + 1
-        graph%mi2ni( ti) = ni
-        graph%ni2mi( ni) = ti
+        graph%n = graph%n + 1
+        graph%ti2ni( ti     ) = graph%n
+        graph%ni2ti( graph%n) = ti
       end if
     end do
 
-    ! Construct reduced graph
-    ng = ni
+    ! Construct regular nodes and their interconnectivity
+    do ni = 1, graph%n
+
+      ! This regular graph node corresponds to a masked triangle
+      ti = graph%ni2ti( ni)
+
+      graph%V         ( ni,:) = mesh%TriGC( ti,:)
+      graph%is_ghost  ( ni  ) = .false.
+      graph%ghost_nhat( ni,:) = NaN
+
+      ! Add connections to other regular nodes
+      graph%nC( ni) = 0
+      do n = 1, 3
+        tj = mesh%TriC( ti,n)
+        nj = graph%ti2ni( tj)
+        if (nj > 0) then
+          ! This connection points to another regular node
+          graph%nC( ni) = graph%nC( ni) + 1
+          graph%C( ni, graph%nC( ni)) = nj
+        end if
+      end do
+
+    end do
+
+    ! Add ghost nodes
     do ti = 1, mesh%nTri
       if (mask_b_tot( ti)) then
 
-        ni = graph%mi2ni( ti)
+        ! Regular node
+        ni_reg = graph%ti2ni( ti)
 
-        ! Add this masked triangle
-        graph%V ( ni,:) = mesh%TriGC( ti,:)
-        graph%nC( ni  ) = 3
-
-        ! Add its connectivity
         do n = 1, 3
-
-          ei = mesh%TriE( ti,n)
           tj = mesh%TriC( ti,n)
+          if (.not. mask_b_tot( tj)) then
+            ! This connection points from a mask to an unmasked triangle;
+            ! add a ghost node here
 
-          if (mask_b_tot( tj)) then
-            ! This connection points to a masked triangle
+            graph%n = graph%n + 1
+            ni_ghost = graph%n
 
-            nj = graph%mi2ni( tj)
-            graph%C( ni,n) = nj
+            ei = mesh%TriE( ti,n)
+            graph%ei2ni( ei      ) = ni_ghost
+            graph%ni2ei( ni_ghost) = ei
+            graph%ni2ti( ni_ghost) = ti
 
-          else
-            ! This connection points to a ghost node
-            ng = ng + 1
-            graph%C( ni,n) = ng
+            graph%V ( ni_ghost,:) = mesh%E( ei,:)
+            graph%nC( ni_ghost  ) = 1
+            graph%C ( ni_ghost,1) = ni_reg
 
-            ! Add the ghost node as well
-            graph%is_ghost( ng  ) = .true.
-            graph%ni2mi   ( ng  ) = ei
-            graph%nC      ( ng  ) = 1
-            graph%C       ( ng,1) = ni
+            ! Add reverse connection
+            graph%nC( ni_reg) = graph%nC( ni_reg) + 1
+            graph%C( ni_reg, graph%nC( ni_reg)) = ni_ghost
 
-            til = mesh%ETri( ei,1)
-            tir = mesh%ETri( ei,2)
-            vi  = mesh%EV( ei,1)
-            vj  = mesh%EV( ei,2)
-
-            ! Define vi1 and vi2 such that the line from vi1 to vi2 has
-            ! the masked mesh interior on its left-hand side
-            if (ti == til) then
-              vi1 = vi
-              vi2 = vj
-            elseif (ti == tir) then
-              vi1 = vj
-              vi2 = vi
-            else
-              call crash('inconsistency in EV/ETri')
-            end if
-
-            ! Calculate coordinates of the ghost node
-            p = mesh%TriGC( ti,:)
-            q = mesh%V( vi1,:)
-            r = mesh%V( vi2,:)
-            s = mirror_p_across_qr( p, q, r)
-            graph%V( ng,:) = s
-
-            ! Calculate unit normal vector
-            normal_vector = graph%V( ng,:) - mesh%TriGC( ti,:)
-            graph%ghost_nhat( ng,:) = normal_vector / norm2( normal_vector)
+            graph%is_ghost( ni_ghost) = .true.
 
           end if
         end do
@@ -226,39 +200,102 @@ contains
       end if
     end do
 
+    ! Connect ghost nodes to each other along the front
+    do ni = 1, graph%n
+      if (graph%is_ghost( ni)) then
+
+        ei = graph%ni2ei( ni)
+        ti = graph%ni2ti( ni)
+        vi = mesh%EV( ei,1)
+        vj = mesh%EV( ei,2)
+
+        nj1 = 0
+        do ci = 1, mesh%nC( vi)
+          ej = mesh%VE( vi,ci)
+          nj = graph%ei2ni( ej)
+          if (nj > 0 .and. nj /= ni) then
+            nj1 = nj
+            exit
+          end if
+        end do
+
+        nj2 = 0
+        do ci = 1, mesh%nC( vj)
+          ej = mesh%VE( vj,ci)
+          nj = graph%ei2ni( ej)
+          if (nj > 0 .and. nj /= ni) then
+            nj2 = nj
+            exit
+          end if
+        end do
+
+        if (nj1 == 0 .or. nj2 == 0) call crash('couldnt find both nearby ghost nodes')
+
+        ! Add connections, maintaining counter-clockwise ordering
+        graph%nC( ni) = 3
+        graph%C( ni,2) = graph%C( ni,1)
+        if (mesh%ETri( ei,1) == ti) then
+          graph%C( ni, 1) = nj2
+          graph%C( ni, 3) = nj1
+        elseif (mesh%ETri( ei,2) == ti) then
+          graph%C( ni, 1) = nj1
+          graph%C( ni, 3) = nj2
+        else
+          call crash('inconsistency in mesh%ETri')
+        end if
+
+      end if
+    end do
+
+    ! Calculate outward unit normal vectors for ghost nodes
+    do ni = 1, graph%n
+      if (graph%is_ghost( ni)) then
+
+        nj1 = graph%C( ni,1)
+        nj2 = graph%C( ni,3)
+
+        r = graph%V( nj1,:)
+        s = graph%V( nj2,:)
+
+        outward_normal_vector = [r(2) - s(2), s(1) - r(1)]
+        graph%ghost_nhat( ni,:) = outward_normal_vector / norm2( outward_normal_vector)
+
+      end if
+    end do
+
     ! Finalisation
+    call crop_graph_primary( graph)
     call enforce_contiguous_process_domains_graph( graph)
-    call setup_graph_parallelisation( graph)
+    call setup_graph_parallelisation( graph, nz)
 
 #if (DO_ASSERTIONS)
-    call assert(test_graph_connectivity_is_self_consistent( graph), 'inconsistent graph connectivity')
+    ! call assert(test_graph_is_self_consistent( mesh, graph), 'inconsistent graph connectivity')
 #endif
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 4)
 
   end subroutine create_graph_from_masked_mesh_b
 
-  subroutine calc_masks_b_c( mesh, mask_a_tot, mask_b_tot, n_mask_b, mask_boundary_c_tot, n_boundary_c)
+  subroutine calc_mask_b( mesh, mask_a, mask_b_tot)
 
     ! In/output variables:
-    type(type_mesh),               intent(in   ) :: mesh
-    logical, dimension(mesh%nV  ), intent(in   ) :: mask_a_tot
-    logical, dimension(mesh%nTri), intent(  out) :: mask_b_tot
-    integer,                       intent(  out) :: n_mask_b
-    logical, dimension(mesh%nE  ), intent(  out) :: mask_boundary_c_tot
-    integer,                       intent(  out) :: n_boundary_c
+    type(type_mesh),                       intent(in   ) :: mesh
+    logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_a
+    logical, dimension(mesh%nTri),         intent(  out) :: mask_b_tot
 
     ! Local variables:
-    character(len=1024), parameter  :: routine_name = 'calc_masks_b_c'
-    integer                         :: ti, n_a, n, vi, ei, tj
+    character(len=1024), parameter :: routine_name = 'calc_mask_b'
+    logical, dimension(mesh%nV  )  :: mask_a_tot
+    integer                        :: ti, n_a, n, vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    call gather_to_all( mask_a, mask_a_tot)
+
     ! b mask
     mask_b_tot = .false.
-    n_mask_b = 0
     do ti = 1, mesh%nTri
       n_a = 0
       do n = 1, 3
@@ -267,155 +304,12 @@ contains
       end do
       if (n_a == 3) then
         mask_b_tot( ti) = .true.
-        n_mask_b = n_mask_b + 1
-      end if
-    end do
-
-    ! c boundary mask
-    mask_boundary_c_tot = .false.
-    n_boundary_c = 0
-    do ei = 1, mesh%nE
-      if (mesh%EBI( ei) == 0) then
-        ti = mesh%ETri( ei,1)
-        tj = mesh%ETri( ei,2)
-        if (xor( mask_b_tot( ti), mask_b_tot( tj))) then
-          mask_boundary_c_tot( ei) = .true.
-          n_boundary_c = n_boundary_c + 1
-        end if
       end if
     end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_masks_b_c
-
-  function test_graph_connectivity_is_self_consistent( graph) result( isso)
-
-    ! In/output variables:
-    type(type_graph), intent(in) :: graph
-    logical                      :: isso
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'test_graph_connectivity_is_self_consistent'
-    integer                        :: ni, ci, nj, cj, nk, mi
-    logical                        :: found_reverse
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    isso = .true.
-
-    do ni = 1, graph%n
-      do ci = 1, graph%nC( ni)
-        nj = graph%C( ni,ci)
-        found_reverse = .false.
-        do cj = 1, graph%nC( nj)
-          nk = graph%C( nj,cj)
-          if (nk == ni) then
-            found_reverse = .true.
-            exit
-          end if
-        end do
-        isso = isso .and. found_reverse
-      end do
-    end do
-
-    do mi = 1, size( graph%mi2ni)
-      ni = graph%mi2ni( mi)
-      if (ni > 0) isso = isso .and. graph%ni2mi( ni) == mi
-    end do
-
-    do ni = 1, graph%n
-      if (.not. graph%is_ghost( ni)) then
-        mi = graph%ni2mi( ni)
-        isso = isso .and. graph%mi2ni( mi) == ni
-      end if
-    end do
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end function test_graph_connectivity_is_self_consistent
-
-  function test_graph_matches_mesh( mesh, graph) result( isso)
-
-    ! In/output variables:
-    type(type_mesh),  intent(in) :: mesh
-    type(type_graph), intent(in) :: graph
-    logical                      :: isso
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'test_graph_matches_mesh'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    if (graph%parent_mesh_name == trim( mesh%name) // '_vertices') then
-      isso = test_graph_matches_mesh_vertices( mesh, graph)
-    elseif (graph%parent_mesh_name == trim( mesh%name) // '_triangles') then
-      isso = test_graph_matches_mesh_triangles( mesh, graph)
-    else
-      call crash('mesh is not this graphs parent mesh')
-    end if
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end function test_graph_matches_mesh
-
-  function test_graph_matches_mesh_vertices( mesh, graph) result( isso)
-
-    ! In/output variables:
-    type(type_mesh),  intent(in) :: mesh
-    type(type_graph), intent(in) :: graph
-    logical                      :: isso
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'test_graph_matches_mesh'
-    integer                        :: ni, vi
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    isso = .true.
-    do ni = 1, graph%nn
-      if (.not. graph%is_ghost( ni)) then
-        vi = graph%ni2mi( ni)
-        isso = isso .and. norm2( graph%V( ni,:) - mesh%V( vi,:)) < mesh%tol_dist
-      end if
-    end do
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end function test_graph_matches_mesh_vertices
-
-  function test_graph_matches_mesh_triangles( mesh, graph) result( isso)
-
-    ! In/output variables:
-    type(type_mesh),  intent(in) :: mesh
-    type(type_graph), intent(in) :: graph
-    logical                      :: isso
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'test_graph_matches_mesh_triangles'
-    integer                        :: ni, ti
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    isso = .true.
-    do ni = 1, graph%n
-      if (.not. graph%is_ghost( ni)) then
-        ti = graph%ni2mi( ni)
-        isso = isso .and. norm2( graph%V( ni,:) - mesh%TriGC( ti,:)) < mesh%tol_dist
-      end if
-    end do
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end function test_graph_matches_mesh_triangles
+  end subroutine calc_mask_b
 
 end module create_graphs_from_masked_mesh

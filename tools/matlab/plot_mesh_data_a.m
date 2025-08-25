@@ -21,7 +21,9 @@ H.Ax  = axes('parent',H.Fig,'units','pixels','position',[25,25,wa,ha],'fontsize'
   'xtick',[],'ytick',[],'xlim',[mesh.xmin,mesh.xmax],'ylim',[mesh.ymin,mesh.ymax]);
 
 if isfield( mesh, 'VVor')
-  H.Patch = patch('vertices',mesh.Vor,'faces',changem(double(mesh.VVor),NaN),...
+  VVor_NaN = double( mesh.VVor);
+  VVor_NaN( VVor_NaN == 0) = NaN;
+  H.Patch = patch('vertices',mesh.Vor,'faces',VVor_NaN,...
     'facecolor','flat','facevertexcdata',d,'edgecolor',edgecolor);
 else
   H.Patch = patch('vertices',mesh.V( 1:mesh.nV,:),'faces',mesh.Tri( 1:mesh.nTri,:),...

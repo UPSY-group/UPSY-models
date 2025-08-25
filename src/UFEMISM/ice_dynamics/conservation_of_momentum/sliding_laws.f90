@@ -22,26 +22,21 @@ module sliding_laws
 
 contains
 
-  subroutine calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_b, v_b)
+  subroutine calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_a, v_a)
     ! Calculate the effective basal friction coefficient using the specified sliding law
 
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh
     type(type_ice_model),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(in   ) :: bed_roughness
-    real(dp), dimension(:),         intent(in   ) :: u_b
-    real(dp), dimension(:),         intent(in   ) :: v_b
+    real(dp), dimension(:),         intent(in   ) :: u_a
+    real(dp), dimension(:),         intent(in   ) :: v_a
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_basal_friction_coefficient'
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: u_a, v_a
+    character(len=1024), parameter :: routine_name = 'calc_basal_friction_coefficient'
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! Map velocities to the a-grid
-    call map_b_a_2D( mesh, u_b, u_a)
-    call map_b_a_2D( mesh, v_b, v_a)
 
     select case (C%choice_sliding_law)
     case default

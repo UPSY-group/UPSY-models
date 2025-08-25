@@ -16,11 +16,12 @@ module graph_parallelisation
 
 contains
 
-  subroutine setup_graph_parallelisation( graph)
+  subroutine setup_graph_parallelisation( graph, nz)
     !< Setup the parallelisation of memory and halos on them graph
 
     ! In/output variables:
     type(type_graph), intent(inout) :: graph
+    integer,          intent(in   ) :: nz
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_graph_parallelisation'
@@ -48,21 +49,21 @@ contains
     ! Allocate buffer shared memory for e.g. matrix multiplications
     if (associated( graph%buffer1_g_nih )) call deallocate_dist_shared( graph%buffer1_g_nih , graph%wbuffer1_g_nih )
     if (associated( graph%buffer2_g_nih )) call deallocate_dist_shared( graph%buffer2_g_nih , graph%wbuffer2_g_nih )
-    ! if (associated( graph%buffer1_gk_nih)) call deallocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih)
-    ! if (associated( graph%buffer2_gk_nih)) call deallocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih)
-    call allocate_dist_shared( graph%buffer1_g_nih , graph%wbuffer1_g_nih , graph%pai%n_nih)
-    call allocate_dist_shared( graph%buffer2_g_nih , graph%wbuffer2_g_nih , graph%pai%n_nih)
-    ! call allocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih, graph%pai%n_nih,   graph%nz)
-    ! call allocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih, graph%pai%n_nih,   graph%nz)
-    graph%buffer1_g_nih(  graph%pai%i1_nih  :graph%pai%i2_nih             ) => graph%buffer1_g_nih
-    graph%buffer2_g_nih(  graph%pai%i1_nih  :graph%pai%i2_nih             ) => graph%buffer2_g_nih
-    ! graph%buffer1_gk_nih( graph%pai%i1_nih  :graph%pai%i2_nih  , 1:graph%nz) => graph%buffer1_gk_nih
-    ! graph%buffer2_gk_nih( graph%pai%i1_nih  :graph%pai%i2_nih  , 1:graph%nz) => graph%buffer2_gk_nih
+    if (associated( graph%buffer1_gk_nih)) call deallocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih)
+    if (associated( graph%buffer2_gk_nih)) call deallocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih)
+    call allocate_dist_shared( graph%buffer1_g_nih , graph%wbuffer1_g_nih , graph%pai%n_nih    )
+    call allocate_dist_shared( graph%buffer2_g_nih , graph%wbuffer2_g_nih , graph%pai%n_nih    )
+    call allocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih, graph%pai%n_nih, nz)
+    call allocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih, graph%pai%n_nih, nz)
+    graph%buffer1_g_nih(  graph%pai%i1_nih:graph%pai%i2_nih      ) => graph%buffer1_g_nih
+    graph%buffer2_g_nih(  graph%pai%i1_nih:graph%pai%i2_nih      ) => graph%buffer2_g_nih
+    graph%buffer1_gk_nih( graph%pai%i1_nih:graph%pai%i2_nih, 1:nz) => graph%buffer1_gk_nih
+    graph%buffer2_gk_nih( graph%pai%i1_nih:graph%pai%i2_nih, 1:nz) => graph%buffer2_gk_nih
 
     ! call print_parallelisation_info( graph)
 
     ! Finalise routine path
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 12)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 4)
 
   end subroutine setup_graph_parallelisation
 

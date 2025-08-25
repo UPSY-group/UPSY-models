@@ -24,7 +24,7 @@ module ice_dynamics_main
   use conservation_of_mass_main, only: calc_dHi_dt, apply_ice_thickness_BC_explicit, &
     apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, &
-    Hi_from_Hb_Hs_and_SL
+    Hi_from_Hb_Hs_and_SL, height_of_water_column_at_ice_front
   use masks_mod, only: determine_masks, calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use subgrid_ice_margin, only: calc_effective_thickness
   use zeta_gradients, only: calc_zeta_gradients
@@ -129,6 +129,7 @@ contains
       region%ice%Hs ( vi) = ice_surface_elevation( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
       region%ice%Hib( vi) = region%ice%Hs( vi) - region%ice%Hi( vi)
       region%ice%TAF( vi) = thickness_above_floatation( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
+      region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
 
       ! Differences w.r.t. present-day
       region%ice%dHi ( vi)  = region%ice%Hi ( vi) - region%refgeo_PD%Hi ( vi)
@@ -266,6 +267,7 @@ contains
       ice%Hs ( vi) = ice_surface_elevation( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
       ice%Hib( vi) = ice%Hs( vi) - ice%Hi( vi)
       ice%TAF( vi) = thickness_above_floatation( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
+      ice%HO ( vi) = height_of_water_column_at_ice_front( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%Hi ( vi) - refgeo_PD%Hi ( vi)
@@ -516,6 +518,7 @@ contains
     call reallocate_bounds( ice%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
     call reallocate_bounds( ice%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
     call reallocate_bounds( ice%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
+    call reallocate_bounds( ice%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
 
     ! Geometry changes
     call reallocate_bounds( ice%dHi  , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness difference (w.r.t. reference)
@@ -716,6 +719,7 @@ contains
       ice%Hs ( vi) = ice_surface_elevation( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
       ice%Hib( vi) = ice%Hs( vi) - ice%Hi( vi)
       ice%TAF( vi) = thickness_above_floatation( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
+      ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%Hi ( vi) - refgeo_PD%Hi ( vi)
@@ -1268,6 +1272,7 @@ contains
         ice%Hs ( vi) = ice_surface_elevation( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
         ice%Hib( vi) = ice%Hs( vi) - ice%Hi( vi)
         ice%TAF( vi) = thickness_above_floatation( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
+        ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))
       end do
 
     end do pseudo_time ! do while (t_pseudo < dt_relax)
@@ -1409,6 +1414,7 @@ contains
         region%ice%Hs ( vi) = ice_surface_elevation( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
         region%ice%Hib( vi) = region%ice%Hs( vi) - region%ice%Hi( vi)
         region%ice%TAF( vi) = thickness_above_floatation( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
+        region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
 
         if (region%ice%TAF( vi) > 0._dp) then
           ! Grounded ice

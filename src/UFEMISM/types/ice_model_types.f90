@@ -7,6 +7,8 @@ MODULE ice_model_types
 
   USE petscksp                                               , ONLY: tMat
   USE precisions                                             , ONLY: dp
+  use graph_types, only: type_graph_pair
+  use mpi_f08, only: MPI_WIN
 
   IMPLICIT NONE
 
@@ -60,8 +62,85 @@ MODULE ice_model_types
 
   END TYPE type_ice_velocity_solver_SSA
 
+  type type_ice_velocity_solver_DIVA_graphs
+    ! Data fields needed to solve the Depth-Integrated Viscosity Approximation
+
+    ! Graphs
+    type(type_graph_pair) :: graphs
+
+    ! Ice model forcing data
+    real(dp), dimension(:    ), pointer :: Hi_a                         => null()
+    real(dp), dimension(:    ), pointer :: Hs_a                         => null()
+    real(dp), dimension(:    ), pointer :: Ho_a                         => null()
+    real(dp), dimension(:,:  ), pointer :: A_flow_3D_a                  => null()
+    real(dp), dimension(:    ), pointer :: basal_friction_coefficient_a => null()
+    real(dp), dimension(:    ), pointer :: fraction_gr_b                => null()
+    type(MPI_WIN) :: wHi_a, wHs_a, wHo_a
+    type(MPI_WIN) :: wA_flow_3D_a, wbasal_friction_coefficient_a, wfraction_gr_b
+
+    ! Solution
+    real(dp), dimension(:    ), pointer :: u_vav_b  => null()                    ! [m yr^-1] 2-D horizontal ice velocity
+    real(dp), dimension(:    ), pointer :: v_vav_b  => null()
+    real(dp), dimension(:    ), pointer :: u_base_b => null()                    ! [m yr^-1] 2-D horizontal ice velocity at the ice base
+    real(dp), dimension(:    ), pointer :: v_base_b => null()
+    real(dp), dimension(:,:  ), pointer :: u_3D_b   => null()                    ! [m yr^-1] 3-D horizontal ice velocity
+    real(dp), dimension(:,:  ), pointer :: v_3D_b   => null()
+    type(MPI_WIN) :: wu_vav_b, wv_vav_b, wu_base_b, wv_base_b, wu_3D_b, wv_3D_b
+
+    ! Intermediate data fields
+    real(dp), dimension(:    ), pointer :: du_dx_a    => null()                     ! [yr^-1] 2-D horizontal strain rates
+    real(dp), dimension(:    ), pointer :: du_dy_a    => null()
+    real(dp), dimension(:    ), pointer :: dv_dx_a    => null()
+    real(dp), dimension(:    ), pointer :: dv_dy_a    => null()
+    real(dp), dimension(:,:  ), pointer :: du_dz_3D_a => null()                  ! [yr^-1] 3-D vertical shear strain rates
+    real(dp), dimension(:,:  ), pointer :: dv_dz_3D_a => null()
+    type(MPI_WIN) :: wdu_dx_a, wdu_dy_a, wdv_dx_a, wdv_dy_a, wdu_dz_3D_a, wdv_dz_3D_a
+
+    real(dp), dimension(:,:  ), pointer :: eta_3D_a  => null()                    ! Effective viscosity
+    real(dp), dimension(:,:  ), pointer :: eta_3D_b  => null()
+    real(dp), dimension(:    ), pointer :: eta_vav_a => null()
+    real(dp), dimension(:    ), pointer :: N_a       => null()                   ! Product term N = eta * H
+    real(dp), dimension(:    ), pointer :: N_b       => null()
+    real(dp), dimension(:    ), pointer :: dN_dx_b   => null()                   ! Gradients of N
+    real(dp), dimension(:    ), pointer :: dN_dy_b   => null()
+    type(MPI_WIN) :: weta_3D_a, weta_3D_b, weta_vav_a, wN_a, wN_b, wdN_dx_b, wdN_dy_b
+
+    real(dp), dimension(:,:  ), pointer :: F1_3D_a => null()                     ! F-integrals
+    real(dp), dimension(:,:  ), pointer :: F2_3D_a => null()
+    real(dp), dimension(:,:  ), pointer :: F1_3D_b => null()
+    real(dp), dimension(:,:  ), pointer :: F2_3D_b => null()
+    type(MPI_WIN) :: wF1_3D_a, wF2_3D_a, wF1_3D_b, wF2_3D_b
+
+    real(dp), dimension(:    ), pointer :: basal_friction_coefficient_b => null() ! Basal friction coefficient (tau_b = u * beta_b)
+    real(dp), dimension(:    ), pointer :: beta_eff_a                   => null() ! "Effective" friction coefficient (turning the SSA into the DIVA)
+    real(dp), dimension(:    ), pointer :: beta_eff_b                   => null()
+    type(MPI_WIN) :: wbasal_friction_coefficient_b, wbeta_eff_a, wbeta_eff_b
+
+    real(dp), dimension(:    ), pointer :: tau_bx_b => null()                    ! Basal shear stress
+    real(dp), dimension(:    ), pointer :: tau_by_b => null()
+    real(dp), dimension(:    ), pointer :: tau_dx_b => null()                    ! Driving stress
+    real(dp), dimension(:    ), pointer :: tau_dy_b => null()
+    real(dp), dimension(:    ), pointer :: tau_ox_b => null()                    ! Vertically integrated ocean back pressure
+    real(dp), dimension(:    ), pointer :: tau_oy_b => null()
+    type(MPI_WIN) :: wtau_bx_b, wtau_by_b, wtau_dx_b, wtau_dy_b, wtau_ox_b, wtau_oy_b
+
+    real(dp), dimension(:    ), pointer :: u_b_prev => null()                    ! Velocity solution from previous viscosity iteration
+    real(dp), dimension(:    ), pointer :: v_b_prev => null()
+    type(MPI_WIN ) :: wu_b_prev, wv_b_prev
+
+    ! Parameters for the iterative solver used to solve the matrix equation representing the linearised SSA
+    real(dp)                                :: PETSc_rtol
+    real(dp)                                :: PETSc_abstol
+
+    ! Restart file
+    character(len=1024)                     :: restart_filename
+
+  end type type_ice_velocity_solver_DIVA_graphs
+
   TYPE type_ice_velocity_solver_DIVA
     ! Data fields needed to solve the Depth-Integrated Viscosity Approximation
+
+    type(type_ice_velocity_solver_DIVA_graphs) :: DIVA_graphs
 
     ! Solution
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_vav_b                     ! [m yr^-1] 2-D horizontal ice velocity
@@ -221,6 +300,7 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: TAF                         ! [m] Thickness above flotation
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hi_eff                      ! [m] Effective thickness of ice margins
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hs_slope                    ! [-] Absolute surface gradient
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Ho                          ! [m] Depth of ocean column adjacent to the ice front
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)

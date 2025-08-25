@@ -15,12 +15,12 @@ module solve_linearised_SSA_DIVA_infinite_slab
 
   private
 
-  public :: solve_SSA_DIVA_linearised_infinite_slab, calc_SSA_DIVA_stiffness_matrix_row_BC, &
+  public :: solve_SSA_DIVA_linearised, calc_SSA_DIVA_stiffness_matrix_row_BC, &
     calc_SSA_DIVA_stiffness_matrix_row_free, calc_SSA_DIVA_sans_stiffness_matrix_row_free
 
 contains
 
-  subroutine solve_SSA_DIVA_linearised_infinite_slab( mesh, u_b, v_b, N_b, dN_dx_b, dN_dy_b, &
+  subroutine solve_SSA_DIVA_linearised( mesh, u_b, v_b, N_b, dN_dx_b, dN_dy_b, &
     basal_friction_coefficient_b, tau_dx_b, tau_dy_b, u_b_prev, v_b_prev, &
     PETSc_rtol, PETSc_abstol, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Solve the linearised SSA
@@ -39,7 +39,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised_infinite_slab'
+    character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
     type(type_sparse_matrix_CSR_dp)     :: A_CSR
     real(dp), dimension(:), allocatable :: bb
@@ -175,7 +175,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine solve_SSA_DIVA_linearised_infinite_slab
+  end subroutine solve_SSA_DIVA_linearised
 
   subroutine calc_SSA_DIVA_stiffness_matrix_row_free( mesh, N_b, dN_dx_b, dN_dy_b, &
     basal_friction_coefficient_b, tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)

@@ -540,6 +540,7 @@ contains
     character(len=1024), parameter     :: test_name_local = 'graph'
     character(len=1024)                :: test_name
     logical, dimension(:), allocatable :: mask_a
+    integer                            :: nz
     integer                            :: vi
     type(type_graph)                   :: graph_a, graph_b
     character(len=1024)                :: filename_a, filename_b
@@ -558,8 +559,9 @@ contains
     end do
 
     ! Create graphs from the masked vertices and triangles
-    call create_graph_from_masked_mesh_a( mesh, mask_a, graph_a)
-    call create_graph_from_masked_mesh_b( mesh, mask_a, graph_b)
+    nz = 12
+    call create_graph_from_masked_mesh_a( mesh, mask_a, nz, graph_a)
+    call create_graph_from_masked_mesh_b( mesh, mask_a, nz, graph_b)
 
     filename_a = trim(foldername_unit_tests_output) // '/' // trim( strrep( test_name,'/','_')) // '_a.nc'
     filename_b = trim(foldername_unit_tests_output) // '/' // trim( strrep( test_name,'/','_')) // '_b.nc'

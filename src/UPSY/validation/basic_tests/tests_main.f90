@@ -7,6 +7,7 @@ module tests_main
   use tests_grid
   use tests_grid_lonlat
   use tests_mesh
+  use tests_graph
 
   implicit none
 
@@ -15,6 +16,7 @@ module tests_main
   public :: test_eqv, test_neqv, test_eq, test_neq, test_gt, test_lt, test_ge, test_le, test_ge_le, test_tol
   public :: test_eq_permute, test_tol_grid, test_tol_mesh, test_mesh_is_self_consistent, test_mesh_vertices_are_neighbours
   public :: test_mesh_triangles_are_neighbours, test_mesh_triangle_doesnt_have_duplicates
+  public :: test_graph_is_self_consistent
 
 ! Generic interfaces to specific test routines
 ! ============================================

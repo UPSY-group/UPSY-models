@@ -14,7 +14,8 @@ module BPA_main
   use parameters
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_3D, ddy_b_a_3D, calc_3D_gradient_bk_ak, calc_3D_gradient_bk_bks, &
-    map_ak_bks, map_bks_ak, calc_3D_gradient_ak_bk, calc_3D_gradient_bks_bk, map_b_a_3D
+    map_ak_bks, map_bks_ak, calc_3D_gradient_ak_bk, calc_3D_gradient_bks_bk, map_b_a_3D, &
+    map_b_a_2D
   use mesh_disc_calc_matrix_operators_3D, only: calc_3D_matrix_operators_mesh
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
@@ -1943,16 +1944,13 @@ contains
     type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'calc_applied_basal_friction_coefficient'
-    integer                             :: ti
-    real(dp), dimension(:), allocatable :: u_base_b, v_base_b
+    character(len=1024), parameter         :: routine_name = 'calc_applied_basal_friction_coefficient'
+    integer                                :: ti
+    real(dp), dimension(mesh%ti1:mesh%ti2) :: u_base_b, v_base_b
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: u_base_a, v_base_a
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! allocate memory
-    allocate( u_base_b( mesh%ti1:mesh%ti2))
-    allocate( v_base_b( mesh%ti1:mesh%ti2))
 
     ! Copy basal velocities from 3-D fields
     u_base_b = BPA%u_bk( :,mesh%nz)
@@ -1960,7 +1958,11 @@ contains
 
     ! Calculate the basal friction coefficient beta_b for the current velocity solution
     ! This is where the sliding law is called!
-    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_base_b, v_base_b)
+
+    ! Map velocities to the a-grid
+    call map_b_a_2D( mesh, u_base_b, u_base_a)
+    call map_b_a_2D( mesh, v_base_b, v_base_a)
+    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_base_a, v_base_a)
 
     ! Map basal friction coefficient beta_b to the b-grid
     call map_a_b_2D( mesh, ice%basal_friction_coefficient, BPA%basal_friction_coefficient_b)

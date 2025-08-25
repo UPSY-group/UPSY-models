@@ -7,6 +7,14 @@ module ice_geometry_basics
 
   implicit none
 
+  private
+
+  public :: is_floating
+  public :: ice_surface_elevation
+  public :: thickness_above_floatation
+  public :: Hi_from_Hb_Hs_and_SL
+  public :: height_of_water_column_at_ice_front
+
 contains
 
   pure function is_floating( Hi, Hb, SL) result( isso)
@@ -80,5 +88,20 @@ contains
     end if
 
   end function Hi_from_Hb_Hs_and_SL
+
+  function height_of_water_column_at_ice_front( Hi, Hb, SL) result( Ho)
+    ! Calculate height of the water column in contact with the ice front
+
+    ! Input variables:
+    real(dp) , intent(in) :: Hi     ! [m] Ice thickness
+    real(dp) , intent(in) :: Hb     ! [m] Bedrock elevation
+    real(dp) , intent(in) :: SL     ! [m] Water surface elevation
+
+    ! Output variables:
+    real(dp) :: Ho     ! [m] Height of the water column in contact with the ice front
+
+    Ho = min( max( SL - Hb, 0._dp), ice_density / seawater_density * Hi)
+
+  end function height_of_water_column_at_ice_front
 
 end module ice_geometry_basics

@@ -23,7 +23,7 @@ module SSA_main
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
   use SSA_DIVA_utilities, only: calc_driving_stress, calc_horizontal_strain_rates, relax_viscosity_iterations, &
     apply_velocity_limits, calc_L2_norm_uv
-  use solve_linearised_SSA_DIVA, only: solve_SSA_DIVA_linearised
+  use solve_linearised_SSA_DIVA_infinite_slab, only: solve_SSA_DIVA_linearised
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D
   use bed_roughness_model_types, only: type_bed_roughness_model
 
@@ -166,7 +166,8 @@ contains
       viscosity_iteration_i = viscosity_iteration_i + 1
 
       ! Calculate the strain rates for the current velocity solution
-      call calc_horizontal_strain_rates( mesh, SSA%u_b, SSA%v_b, SSA%du_dx_a, SSA%du_dy_a, SSA%dv_dx_a, SSA%dv_dy_a)
+      call calc_horizontal_strain_rates( mesh, SSA%u_b, SSA%v_b, &
+        SSA%du_dx_a, SSA%du_dy_a, SSA%dv_dx_a, SSA%dv_dy_a)
 
       ! Calculate the effective viscosity for the current velocity solution
       call calc_effective_viscosity( mesh, ice, SSA, Glens_flow_law_epsilon_sq_0_applied)
@@ -175,8 +176,9 @@ contains
       call calc_applied_basal_friction_coefficient( mesh, ice, bed_roughness, SSA)
 
       ! Solve the linearised SSA to calculate a new velocity solution
-      call solve_SSA_DIVA_linearised( mesh, SSA%u_b, SSA%v_b, SSA%N_b, SSA%dN_dx_b, SSA%dN_dy_b, &
-      SSA%basal_friction_coefficient_b, SSA%tau_dx_b, SSA%tau_dy_b, SSA%u_b_prev, SSA%v_b_prev, &
+      call solve_SSA_DIVA_linearised( mesh, SSA%u_b, SSA%v_b, SSA%N_b, &
+        SSA%dN_dx_b, SSA%dN_dy_b, &
+        SSA%basal_friction_coefficient_b, SSA%tau_dx_b, SSA%tau_dy_b, SSA%u_b_prev, SSA%v_b_prev, &
         SSA%PETSc_rtol, SSA%PETSc_abstol, n_Axb_its_visc_it, &
         BC_prescr_mask_b_applied, BC_prescr_u_b_applied, BC_prescr_v_b_applied)
 
@@ -404,15 +406,18 @@ contains
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_applied_basal_friction_coefficient'
-    integer                        :: ti
+    character(len=1024), parameter         :: routine_name = 'calc_applied_basal_friction_coefficient'
+    integer                                :: ti
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: u_a, v_a
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Calculate the basal friction coefficient for the current velocity solution
     ! This is where the sliding law is called!
-    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, SSA%u_b, SSA%v_b)
+    call map_b_a_2D( mesh, SSA%u_b, u_a)
+    call map_b_a_2D( mesh, SSA%v_b, v_a)
+    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_a, v_a)
 
     ! Map the basal friction coefficient to the b-grid
     call map_a_b_2D( mesh, ice%basal_friction_coefficient, SSA%basal_friction_coefficient_b)

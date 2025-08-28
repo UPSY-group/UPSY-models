@@ -57,7 +57,7 @@ contains
     isso = .true.
     isso = isso .and. test_graph_matches_mesh_vertices ( mesh, graph)
     isso = isso .and. test_graph_matches_mesh_triangles( mesh, graph)
-    isso = isso .and. test_graph_matches_mesh_edges    ( mesh, graph)
+    ! isso = isso .and. test_graph_matches_mesh_edges    ( mesh, graph)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

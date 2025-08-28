@@ -45,7 +45,7 @@ contains
     ! Focus the mesh
     call delete_vertices_along_polyline( mesh_focused, ll, vi_new2vi_old, vi_old2vi_new)
     call add_polyline_vertices_to_mesh ( mesh_focused, ll, vi_ll2vi, vi2vi_ll)
-    call calc_all_secondary_mesh_data( mesh_focused, 0._dp, -90._dp, 71._dp)
+    call calc_all_secondary_mesh_data( mesh_focused, mesh%lambda_M, mesh%phi_M, mesh%beta_stereo)
 
     ! Update translation table
     vi_new2vi_old_temp = vi_new2vi_old

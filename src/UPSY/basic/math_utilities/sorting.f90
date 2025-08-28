@@ -19,7 +19,8 @@ contains
 
     ! Local variables:
     character(len=256), parameter :: routine_name = 'quick_n_dirty_sort'
-    integer                       :: n,i,j
+    integer                       :: n, i, j, iia, iib
+    real(dp)                      :: a, b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -37,16 +38,15 @@ contains
       do j = i+1, n
         if (f( i) > f( j)) then
 
-          ! Now: f( i) = a, f( j) = b
-          f(  j) = f(  j) + f(  i)
-          ii( j) = ii( j) + ii( i)
-          ! Now: f( i) = a, f( j) = a+b
-          f(  i) = f(  j) - f(  i)
-          ii( i) = ii( j) - ii( i)
-          ! Now: f( i) = b, f( j) = a+b
-          f(  j) = f(  j) - f(  i)
-          ii( j) = ii( j) - ii( i)
-          ! Now: f( i) = b, f( j) = a
+          a   = f(  i)
+          b   = f(  j)
+          iia = ii( i)
+          iib = ii( j)
+
+          f(  i) = b
+          f(  j) = a
+          ii( i) = iib
+          ii( j) = iia
 
         end if
       end do

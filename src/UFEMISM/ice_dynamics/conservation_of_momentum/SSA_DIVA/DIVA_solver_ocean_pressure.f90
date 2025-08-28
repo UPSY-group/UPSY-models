@@ -117,8 +117,7 @@ contains
     call setup_DIVA_solver_on_graphs( mesh, ice, DIVA)
 
     ! DENK DROM
-    call save_graph_as_netcdf( trim( C%output_dir)//'/graph_a.nc', DIVA%DIVA_graphs%graphs%graph_a)
-    call save_graph_as_netcdf( trim( C%output_dir)//'/graph_b.nc', DIVA%DIVA_graphs%graphs%graph_b)
+    call save_graph_pair_as_netcdf( trim( C%output_dir)//'/DIVA_graphs', DIVA%DIVA_graphs%graphs)
 
     ! Calculate the driving stress and ocean back pressure
     call calc_driving_stress( DIVA%DIVA_graphs)
@@ -139,6 +138,11 @@ contains
     has_converged         = .false.
     viscosity_iteration: do while (.not. has_converged)
       viscosity_iteration_i = viscosity_iteration_i + 1
+
+      d_loc => DIVA%DIVA_graphs%u_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
+      call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'u_vav_b0')
+      d_loc => DIVA%DIVA_graphs%v_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
+      call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'v_vav_b0')
 
       ! Calculate the horizontal strain rates for the current velocity solution
       call calc_horizontal_strain_rates( DIVA%DIVA_graphs)
@@ -216,14 +220,14 @@ contains
         exit viscosity_iteration
       end if
 
-      ! DENK DROM
-      if (viscosity_iteration_i == 1) then
-        d_loc => DIVA%DIVA_graphs%u_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
-        call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'u_vav_b')
-        d_loc => DIVA%DIVA_graphs%v_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
-        call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'v_vav_b')
-        call crash('whoopsiedaisy')
-      end if
+      ! ! DENK DROM
+      ! if (viscosity_iteration_i == 50) then
+      !   d_loc => DIVA%DIVA_graphs%u_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
+      !   call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'u_vav_b')
+      !   d_loc => DIVA%DIVA_graphs%v_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
+      !   call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'v_vav_b')
+      !   call crash('whoopsiedaisy')
+      ! end if
 
     end do viscosity_iteration
 
@@ -238,6 +242,7 @@ contains
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'u_vav_b')
     d_loc => DIVA%DIVA_graphs%v_vav_b( DIVA%DIVA_graphs%graphs%graph_b%ni1: DIVA%DIVA_graphs%graphs%graph_b%ni2)
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'v_vav_b')
+    call crash('whoopsiedaisy')
 
     call finalise_DIVA_solver_on_graphs( mesh, DIVA)
 
@@ -270,7 +275,7 @@ contains
     call map_DIVA_from_mesh_to_graphs( mesh, ice, DIVA)
 
     ! Finalise routine path
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 48)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 55)
 
   end subroutine setup_DIVA_solver_on_graphs
 
@@ -328,11 +333,18 @@ contains
     call allocate_dist_shared( DIVA%du_dy_a                     , DIVA%wdu_dy_a                     , DIVA%graphs%graph_a%pai%n_nih)
     call allocate_dist_shared( DIVA%dv_dx_a                     , DIVA%wdv_dx_a                     , DIVA%graphs%graph_a%pai%n_nih)
     call allocate_dist_shared( DIVA%dv_dy_a                     , DIVA%wdv_dy_a                     , DIVA%graphs%graph_a%pai%n_nih)
+    call allocate_dist_shared( DIVA%du_dx_b                     , DIVA%wdu_dx_b                     , DIVA%graphs%graph_b%pai%n_nih)
+    call allocate_dist_shared( DIVA%du_dy_b                     , DIVA%wdu_dy_b                     , DIVA%graphs%graph_b%pai%n_nih)
+    call allocate_dist_shared( DIVA%dv_dx_b                     , DIVA%wdv_dx_b                     , DIVA%graphs%graph_b%pai%n_nih)
+    call allocate_dist_shared( DIVA%dv_dy_b                     , DIVA%wdv_dy_b                     , DIVA%graphs%graph_b%pai%n_nih)
     call allocate_dist_shared( DIVA%du_dz_3D_a                  , DIVA%wdu_dz_3D_a                  , DIVA%graphs%graph_a%pai%n_nih, mesh%nz)
     call allocate_dist_shared( DIVA%dv_dz_3D_a                  , DIVA%wdv_dz_3D_a                  , DIVA%graphs%graph_a%pai%n_nih, mesh%nz)
+    call allocate_dist_shared( DIVA%du_dz_3D_b                  , DIVA%wdu_dz_3D_b                  , DIVA%graphs%graph_b%pai%n_nih, mesh%nz)
+    call allocate_dist_shared( DIVA%dv_dz_3D_b                  , DIVA%wdv_dz_3D_b                  , DIVA%graphs%graph_b%pai%n_nih, mesh%nz)
     call allocate_dist_shared( DIVA%eta_3D_a                    , DIVA%weta_3D_a                    , DIVA%graphs%graph_a%pai%n_nih, mesh%nz)
     call allocate_dist_shared( DIVA%eta_3D_b                    , DIVA%weta_3D_b                    , DIVA%graphs%graph_b%pai%n_nih, mesh%nz)
     call allocate_dist_shared( DIVA%eta_vav_a                   , DIVA%weta_vav_a                   , DIVA%graphs%graph_a%pai%n_nih)
+    call allocate_dist_shared( DIVA%eta_vav_b                   , DIVA%weta_vav_b                   , DIVA%graphs%graph_b%pai%n_nih)
     call allocate_dist_shared( DIVA%N_a                         , DIVA%wN_a                         , DIVA%graphs%graph_a%pai%n_nih)
     call allocate_dist_shared( DIVA%N_b                         , DIVA%wN_b                         , DIVA%graphs%graph_b%pai%n_nih)
     call allocate_dist_shared( DIVA%dN_dx_b                     , DIVA%wdN_dx_b                     , DIVA%graphs%graph_b%pai%n_nih)
@@ -354,7 +366,7 @@ contains
     call allocate_dist_shared( DIVA%v_b_prev                    , DIVA%wv_b_prev                    , DIVA%graphs%graph_b%pai%n_nih)
 
     ! Finalise routine path
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 40)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 47)
 
   end subroutine allocate_DIVA_solver_on_graphs
 
@@ -390,11 +402,18 @@ contains
     call deallocate_dist_shared( DIVA%du_dy_a                     , DIVA%wdu_dy_a                     )
     call deallocate_dist_shared( DIVA%dv_dx_a                     , DIVA%wdv_dx_a                     )
     call deallocate_dist_shared( DIVA%dv_dy_a                     , DIVA%wdv_dy_a                     )
+    call deallocate_dist_shared( DIVA%du_dx_b                     , DIVA%wdu_dx_b                     )
+    call deallocate_dist_shared( DIVA%du_dy_b                     , DIVA%wdu_dy_b                     )
+    call deallocate_dist_shared( DIVA%dv_dx_b                     , DIVA%wdv_dx_b                     )
+    call deallocate_dist_shared( DIVA%dv_dy_b                     , DIVA%wdv_dy_b                     )
     call deallocate_dist_shared( DIVA%du_dz_3D_a                  , DIVA%wdu_dz_3D_a                  )
     call deallocate_dist_shared( DIVA%dv_dz_3D_a                  , DIVA%wdv_dz_3D_a                  )
+    call deallocate_dist_shared( DIVA%du_dz_3D_b                  , DIVA%wdu_dz_3D_b                  )
+    call deallocate_dist_shared( DIVA%dv_dz_3D_b                  , DIVA%wdv_dz_3D_b                  )
     call deallocate_dist_shared( DIVA%eta_3D_a                    , DIVA%weta_3D_a                    )
     call deallocate_dist_shared( DIVA%eta_3D_b                    , DIVA%weta_3D_b                    )
     call deallocate_dist_shared( DIVA%eta_vav_a                   , DIVA%weta_vav_a                   )
+    call deallocate_dist_shared( DIVA%eta_vav_b                   , DIVA%weta_vav_b                   )
     call deallocate_dist_shared( DIVA%N_a                         , DIVA%wN_a                         )
     call deallocate_dist_shared( DIVA%N_b                         , DIVA%wN_b                         )
     call deallocate_dist_shared( DIVA%dN_dx_b                     , DIVA%wdN_dx_b                     )
@@ -632,7 +651,7 @@ contains
       xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = DIVA%graphs%graph_a%buffer1_g_nih, &
       buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
-!
+
     call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_map_a_b, &
       DIVA%graphs%graph_a%pai, DIVA%Ho_a, DIVA%graphs%graph_b%pai, Ho_b, &
       xx_is_hybrid = .true., yy_is_hybrid = .true., &
@@ -705,6 +724,30 @@ contains
       buffer_xx_nih = DIVA%graphs%graph_b%buffer1_g_nih, &
       buffer_yy_nih = DIVA%graphs%graph_a%buffer2_g_nih)
 
+    call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_ddx_b_b, &
+      DIVA%graphs%graph_b%pai, DIVA%u_vav_b, DIVA%graphs%graph_b%pai, DIVA%du_dx_b, &
+      xx_is_hybrid = .true., yy_is_hybrid = .true., &
+      buffer_xx_nih = DIVA%graphs%graph_b%buffer1_g_nih, &
+      buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
+
+    call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_ddy_b_b, &
+      DIVA%graphs%graph_b%pai, DIVA%u_vav_b, DIVA%graphs%graph_b%pai, DIVA%du_dy_b, &
+      xx_is_hybrid = .true., yy_is_hybrid = .true., &
+      buffer_xx_nih = DIVA%graphs%graph_b%buffer1_g_nih, &
+      buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
+
+    call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_ddx_b_b, &
+      DIVA%graphs%graph_b%pai, DIVA%v_vav_b, DIVA%graphs%graph_b%pai, DIVA%dv_dx_b, &
+      xx_is_hybrid = .true., yy_is_hybrid = .true., &
+      buffer_xx_nih = DIVA%graphs%graph_b%buffer1_g_nih, &
+      buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
+
+    call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_ddy_b_b, &
+      DIVA%graphs%graph_b%pai, DIVA%v_vav_b, DIVA%graphs%graph_b%pai, DIVA%dv_dy_b, &
+      xx_is_hybrid = .true., yy_is_hybrid = .true., &
+      buffer_xx_nih = DIVA%graphs%graph_b%buffer1_g_nih, &
+      buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
+
     ! DENK DROM
     d_loc => DIVA%du_dx_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2)
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'du_dx_a')
@@ -714,6 +757,14 @@ contains
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'dv_dx_a')
     d_loc => DIVA%dv_dy_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2)
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'dv_dy_a')
+    d_loc => DIVA%du_dx_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
+    call save_variable_as_netcdf_dp_1d( trim( C%output_dir), d_loc, 'du_dx_b')
+    d_loc => DIVA%du_dy_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
+    call save_variable_as_netcdf_dp_1d( trim( C%output_dir), d_loc, 'du_dy_b')
+    d_loc => DIVA%dv_dx_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
+    call save_variable_as_netcdf_dp_1d( trim( C%output_dir), d_loc, 'dv_dx_b')
+    d_loc => DIVA%dv_dy_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
+    call save_variable_as_netcdf_dp_1d( trim( C%output_dir), d_loc, 'dv_dy_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -730,38 +781,31 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'calc_vertical_shear_strain_rates'
     integer                               :: ni, k
-    real(dp), dimension(:,:), pointer     :: du_dz_3D_b => null()
-    real(dp), dimension(:,:), pointer     :: dv_dz_3D_b => null()
-    type(MPI_WIN)                         :: wdu_dz_3D_b, wdv_dz_3D_b
 
     real(dp), dimension(:,:), pointer :: d_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( du_dz_3D_b, wdu_dz_3D_b, DIVA%graphs%graph_b%pai%n_nih, mesh%nz)
-    call allocate_dist_shared( dv_dz_3D_b, wdv_dz_3D_b, DIVA%graphs%graph_b%pai%n_nih, mesh%nz)
-
     ! Calculate (parameterised) vertical shear strain rates on the b-grid (Lipscomb et al., 2019, Eq. 36)
     do ni = DIVA%graphs%graph_b%ni1, DIVA%graphs%graph_b%ni2
     do k = 1, mesh%nz
-      du_dz_3D_b( ni,k) = DIVA%tau_bx_b( ni) * mesh%zeta( k) / max( C%visc_eff_min, DIVA%eta_3D_b( ni,k))
-      dv_dz_3D_b( ni,k) = DIVA%tau_by_b( ni) * mesh%zeta( k) / max( C%visc_eff_min, DIVA%eta_3D_b( ni,k))
+      DIVA%du_dz_3D_b( ni,k) = DIVA%tau_bx_b( ni) * mesh%zeta( k) / max( C%visc_eff_min, DIVA%eta_3D_b( ni,k))
+      DIVA%dv_dz_3D_b( ni,k) = DIVA%tau_by_b( ni) * mesh%zeta( k) / max( C%visc_eff_min, DIVA%eta_3D_b( ni,k))
     end do
     end do
 
-    call exchange_halos( DIVA%graphs%graph_b, du_dz_3D_b)
-    call exchange_halos( DIVA%graphs%graph_b, dv_dz_3D_b)
+    call exchange_halos( DIVA%graphs%graph_b, DIVA%du_dz_3D_b)
+    call exchange_halos( DIVA%graphs%graph_b, DIVA%dv_dz_3D_b)
 
     call multiply_CSR_matrix_with_vector_2D_wrapper( DIVA%graphs%M_map_b_a, &
-      DIVA%graphs%graph_b%pai, du_dz_3D_b, DIVA%graphs%graph_a%pai, DIVA%du_dz_3D_a, &
+      DIVA%graphs%graph_b%pai, DIVA%du_dz_3D_b, DIVA%graphs%graph_a%pai, DIVA%du_dz_3D_a, &
       xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = DIVA%graphs%graph_b%buffer1_gk_nih, &
       buffer_yy_nih = DIVA%graphs%graph_a%buffer2_gk_nih)
 
     call multiply_CSR_matrix_with_vector_2D_wrapper( DIVA%graphs%M_map_b_a, &
-      DIVA%graphs%graph_b%pai, dv_dz_3D_b, DIVA%graphs%graph_a%pai, DIVA%dv_dz_3D_a, &
+      DIVA%graphs%graph_b%pai, DIVA%dv_dz_3D_b, DIVA%graphs%graph_a%pai, DIVA%dv_dz_3D_a, &
       xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = DIVA%graphs%graph_b%buffer1_gk_nih, &
       buffer_yy_nih = DIVA%graphs%graph_a%buffer2_gk_nih)
@@ -771,10 +815,10 @@ contains
     call save_variable_as_netcdf_dp_2D( trim( C%output_dir), d_loc, 'du_dz_3D_a')
     d_loc => DIVA%dv_dz_3D_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2, 1:mesh%nz)
     call save_variable_as_netcdf_dp_2D( trim( C%output_dir), d_loc, 'dv_dz_3D_a')
-
-    ! Allocate hybrid distributed/shared memory
-    call deallocate_dist_shared( du_dz_3D_b, wdu_dz_3D_b)
-    call deallocate_dist_shared( dv_dz_3D_b, wdv_dz_3D_b)
+    d_loc => DIVA%du_dz_3D_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2, 1:mesh%nz)
+    call save_variable_as_netcdf_dp_2d( trim( C%output_dir), d_loc, 'du_dz_3D_b')
+    d_loc => DIVA%dv_dz_3D_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2, 1:mesh%nz)
+    call save_variable_as_netcdf_dp_2d( trim( C%output_dir), d_loc, 'dv_dz_3D_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -794,6 +838,9 @@ contains
     integer                           :: ni,k
     real(dp)                          :: A_min, eta_max
     real(dp), dimension( mesh%nz)     :: prof
+    real(dp), dimension(:  ), pointer :: Hi_b => null()
+    real(dp), dimension(:,:), pointer :: A_flow_3D_b => null()
+    type(MPI_WIN)                     :: wHi_b, wA_flow_3D_b
 
     real(dp), dimension(:), pointer :: d_loc
     real(dp), dimension(:,:), pointer :: d_lock
@@ -801,9 +848,16 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Allocate hybrid distributed/shared memory
+    call allocate_dist_shared( Hi_b       , wHi_b       , DIVA%graphs%graph_b%pai%n_nih)
+    call allocate_dist_shared( A_flow_3D_b, wA_flow_3D_b, DIVA%graphs%graph_b%pai%n_nih, mesh%nz)
+
     ! Calculate maximum allowed effective viscosity, for stability
     A_min = 1E-18_dp
     eta_max = 0.5_dp * A_min**(-1._dp / C%Glens_flow_law_exponent) * (Glens_flow_law_epsilon_sq_0_applied)**((1._dp - C%Glens_flow_law_exponent)/(2._dp*C%Glens_flow_law_exponent))
+
+    ! == On the a-graph ==
+    ! ====================
 
     ! Calculate the effective viscosity eta
     if (C%choice_flow_law == 'Glen') then
@@ -831,51 +885,84 @@ contains
       call crash('unknown choice_flow_law "' // TRIM( C%choice_flow_law) // '"!')
     end if
 
-    ! DENK DROM
-    d_lock => DIVA%eta_3D_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2, 1:mesh%nz)
-    call save_variable_as_netcdf_dp_2D( trim( C%output_dir), d_lock, 'eta_3D_a')
-
-    call exchange_halos( DIVA%graphs%graph_a, DIVA%eta_3D_a)
-
-    ! Map effective viscosity to the b-grid
-    call multiply_CSR_matrix_with_vector_2D_wrapper( DIVA%graphs%M_map_a_b, &
-      DIVA%graphs%graph_a%pai, DIVA%eta_3D_a, DIVA%graphs%graph_b%pai, DIVA%eta_3D_b, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true., &
-      buffer_xx_nih = DIVA%graphs%graph_a%buffer1_gk_nih, &
-      buffer_yy_nih = DIVA%graphs%graph_b%buffer2_gk_nih)
-
-    ! DENK DROM
-    d_lock => DIVA%eta_3D_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2, 1:mesh%nz)
-    call save_variable_as_netcdf_dp_2D( trim( C%output_dir), d_lock, 'eta_3D_b')
-
-    ! Calculate vertically averaged effective viscosity on the a-grid
+    ! Calculate vertically averaged effective viscosity
     do ni = DIVA%graphs%graph_a%ni1, DIVA%graphs%graph_a%ni2
       prof = DIVA%eta_3D_a( ni,:)
       DIVA%eta_vav_a( ni) = vertical_average( mesh%zeta, prof)
     end do
 
-    ! DENK DROM
-    d_loc => DIVA%eta_vav_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2)
-    call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'eta_vav_a')
-
-    ! Calculate the product term N = eta * H on the a-grid
+    ! Calculate the product term N = eta_vav * H
     do ni = DIVA%graphs%graph_a%ni1, DIVA%graphs%graph_a%ni2
       DIVA%N_a( ni) = DIVA%eta_vav_a( ni) * max( 0.1, DIVA%Hi_a( ni))
     end do
 
     ! DENK DROM
+    d_lock => DIVA%eta_3D_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2, 1:mesh%nz)
+    call save_variable_as_netcdf_dp_2D( trim( C%output_dir), d_lock, 'eta_3D_a')
+    d_loc => DIVA%eta_vav_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2)
+    call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'eta_vav_a')
     d_loc => DIVA%N_a( DIVA%graphs%graph_a%ni1: DIVA%graphs%graph_a%ni2)
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'N_a')
 
-    ! Calculate the product term N and its gradients on the b-grid
+    ! == On the b-graph ==
+    ! ====================
 
-    call exchange_halos( DIVA%graphs%graph_a, DIVA%N_a)
+    ! Calculate the effective viscosity eta
+    if (C%choice_flow_law == 'Glen') then
+      ! Calculate the effective viscosity eta according to Glen's flow law
 
+      ! Map flow factor from the a-graph to the b-graph
+      call multiply_CSR_matrix_with_vector_2D_wrapper( DIVA%graphs%M_map_a_b, &
+        DIVA%graphs%graph_a%pai, DIVA%A_flow_3D_a, DIVA%graphs%graph_b%pai, A_flow_3D_b, &
+        xx_is_hybrid = .true., yy_is_hybrid = .true., &
+        buffer_xx_nih = DIVA%graphs%graph_a%buffer1_gk_nih, &
+        buffer_yy_nih = DIVA%graphs%graph_b%buffer2_gk_nih)
+
+      ! Calculate effective viscosity
+      do ni = DIVA%graphs%graph_b%ni1, DIVA%graphs%graph_b%ni2
+      do k  = 1, mesh%nz
+        DIVA%eta_3D_b( ni,k) = calc_effective_viscosity_Glen_3D_uv_only( &
+          Glens_flow_law_epsilon_sq_0_applied, &
+          DIVA%du_dx_b( ni), DIVA%du_dy_b( ni), DIVA%du_dz_3D_b( ni,k), &
+          DIVA%dv_dx_b( ni), DIVA%dv_dy_b( ni), DIVA%dv_dz_3D_b( ni,k), A_flow_3D_b( ni,k))
+
+        ! Safety
+        DIVA%eta_3D_b( ni,k) = min( max( DIVA%eta_3D_b( ni,k), C%visc_eff_min), eta_max)
+      end do
+      end do
+
+    else
+      call crash('unknown choice_flow_law "' // TRIM( C%choice_flow_law) // '"!')
+    end if
+
+    ! Calculate vertically averaged effective viscosity
+    do ni = DIVA%graphs%graph_b%ni1, DIVA%graphs%graph_b%ni2
+      prof = DIVA%eta_3D_b( ni,:)
+      DIVA%eta_vav_b( ni) = vertical_average( mesh%zeta, prof)
+    end do
+
+    ! Map ice thickness from the a-graph to the b-graph
     call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_map_a_b, &
-      DIVA%graphs%graph_a%pai, DIVA%N_a, DIVA%graphs%graph_b%pai, DIVA%N_b, &
+      DIVA%graphs%graph_a%pai, DIVA%Hi_a, DIVA%graphs%graph_b%pai, Hi_b, &
       xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = DIVA%graphs%graph_a%buffer1_g_nih, &
       buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
+
+    ! Calculate the product term N = eta_vav * H
+    do ni = DIVA%graphs%graph_b%ni1, DIVA%graphs%graph_b%ni2
+      DIVA%N_b( ni) = DIVA%eta_vav_b( ni) * max( 0.1, Hi_b( ni))
+    end do
+
+    ! DENK DROM
+    d_lock => DIVA%eta_3D_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2, 1:mesh%nz)
+    call save_variable_as_netcdf_dp_2d( trim( C%output_dir), d_lock, 'eta_3D_b')
+    d_loc => DIVA%eta_vav_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
+    call save_variable_as_netcdf_dp_1d( trim( C%output_dir), d_loc, 'eta_vav_b')
+    d_loc => DIVA%N_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
+    call save_variable_as_netcdf_dp_1d( trim( C%output_dir), d_loc, 'N_b')
+
+    ! == Calculate gradients of N on the b-graph ==
+    ! =============================================
 
     call multiply_CSR_matrix_with_vector_1D_wrapper( DIVA%graphs%M_ddx_a_b, &
       DIVA%graphs%graph_a%pai, DIVA%N_a, DIVA%graphs%graph_b%pai, DIVA%dN_dx_b, &
@@ -890,12 +977,14 @@ contains
       buffer_yy_nih = DIVA%graphs%graph_b%buffer2_g_nih)
 
     ! DENK DROM
-    d_loc => DIVA%N_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
-    call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'N_b')
     d_loc => DIVA%dN_dx_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'dN_dx_b')
     d_loc => DIVA%dN_dy_b( DIVA%graphs%graph_b%ni1: DIVA%graphs%graph_b%ni2)
     call save_variable_as_netcdf_dp_1D( trim( C%output_dir), d_loc, 'dN_dy_b')
+
+    ! Clean up after yourself
+    call deallocate_dist_shared( Hi_b       , wHi_b       )
+    call deallocate_dist_shared( A_flow_3D_b, wA_flow_3D_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

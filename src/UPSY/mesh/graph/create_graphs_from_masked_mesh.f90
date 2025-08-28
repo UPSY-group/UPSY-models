@@ -7,7 +7,7 @@ module create_graphs_from_masked_mesh
   use graph_memory, only: allocate_graph_primary, crop_graph_primary
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
-  use plane_geometry, only: mirror_p_across_qr
+  use plane_geometry, only: projection_of_p_on_qr
   use assertions_basic, only: assert
   use graph_contiguous_domains, only: enforce_contiguous_process_domains_graph
   use graph_parallelisation, only: setup_graph_parallelisation
@@ -182,7 +182,6 @@ contains
             ei = mesh%TriE( ti,n)
             graph%ei2ni( ei      ) = ni_ghost
             graph%ni2ei( ni_ghost) = ei
-            graph%ni2ti( ni_ghost) = ti
 
             graph%V ( ni_ghost,:) = mesh%E( ei,:)
             graph%nC( ni_ghost  ) = 1
@@ -205,7 +204,13 @@ contains
       if (graph%is_ghost( ni)) then
 
         ei = graph%ni2ei( ni)
-        ti = graph%ni2ti( ni)
+        if (mask_b_tot( mesh%ETri( ei,1))) then
+          ti = mesh%ETri( ei,1)
+        elseif (mask_b_tot( mesh%ETri( ei,2))) then
+          ti = mesh%ETri( ei,2)
+        else
+          call crash('whaa')
+        end if
         vi = mesh%EV( ei,1)
         vj = mesh%EV( ei,2)
 
@@ -269,7 +274,7 @@ contains
     call setup_graph_parallelisation( graph, nz)
 
 #if (DO_ASSERTIONS)
-    ! call assert(test_graph_is_self_consistent( mesh, graph), 'inconsistent graph connectivity')
+    call assert(test_graph_is_self_consistent( mesh, graph), 'inconsistent graph connectivity')
 #endif
 
     ! Finalise routine path

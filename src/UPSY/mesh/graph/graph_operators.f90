@@ -97,12 +97,23 @@ contains
       x = graph%V( ni,1)
       y = graph%V( ni,2)
 
-      ! Initialise local neighbourhood with node ni
-      map    = 0
-      stackN = 1
-      stack( 1) = ni
-      map( ni) = 1
-      listN = 0
+      if (.not. graph%is_ghost( ni)) then
+        ! Initialise local neighbourhood with node ni
+        map    = 0
+        stackN = 1
+        stack( 1) = ni
+        map( ni) = 1
+        listN = 0
+      else
+        ! Initialise local neighbourhood with node ni and its regular neighbour
+        map    = 0
+        stackN = 2
+        stack( 1) = ni
+        stack( 2) = graph%C( ni,2)
+        map( ni) = 1
+        map( graph%C( ni,2)) = 1
+        listN = 0
+      end if
 
       ! Calculate shape functions; if this fails, add more neighbours until it succeeds
       succeeded = .false.
@@ -358,7 +369,9 @@ contains
       else
         ! For ghost nodes, use the local neighbourhood of the adjacent regular node
         ! (i.e. the three vertices spanning that triangle)
-        ni_reg = graph_b%C( ni,1)
+        ni_reg = graph_b%C( ni,2)
+        ! Safety
+        if (graph_b%is_ghost( ni_reg)) call crash('inconsistent graph connectivity')
       end if
 
       ! Calculate shape functions at this graph node

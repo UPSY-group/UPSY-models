@@ -21,7 +21,7 @@ contains
     type(type_graph), intent(inout) :: graph
 
     ! Local variables:
-    character(len=256), parameter              :: routine_name = 'enforce_contiguous_process_domains_graph'
+    character(len=1024), parameter             :: routine_name = 'enforce_contiguous_process_domains_graph'
     real(dp), dimension(graph%n)               :: xx
     integer,  dimension(graph%n)               :: ni_new2ni_old, ni_old2ni_new
     integer                                    :: ni_old, ni_new, ci, nj_old, nj_new, ni, vi, ti, ei

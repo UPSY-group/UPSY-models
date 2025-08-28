@@ -32,9 +32,13 @@ contains
     integer, dimension(:), intent(inout) :: d
     integer,               intent(in   ) :: i1, i2
 
-    d( i1) = d( i1) + d( i2)
-    d( i2) = d( i1) - d( i2)
-    d( i1) = d( i1) - d( i2)
+    ! Local variables:
+    integer :: a, b
+
+    a = d( i1)
+    b = d( i2)
+    d( i1) = b
+    d( i2) = a
 
   end subroutine switch_rows_int_1D
 
@@ -45,9 +49,13 @@ contains
     integer, dimension(:,:), intent(inout) :: d
     integer,                 intent(in   ) :: i1, i2
 
-    d( i1,:) = d( i1,:) + d( i2,:)
-    d( i2,:) = d( i1,:) - d( i2,:)
-    d( i1,:) = d( i1,:) - d( i2,:)
+    ! Local variables:
+    integer, dimension(size(d,2)) :: a, b
+
+    a = d( i1,:)
+    b = d( i2,:)
+    d( i1,:) = b
+    d( i2,:) = a
 
   end subroutine switch_rows_int_2D
 
@@ -58,9 +66,13 @@ contains
     real(dp), dimension(:), intent(inout) :: d
     integer,                intent(in   ) :: i1, i2
 
-    d( i1) = d( i1) + d( i2)
-    d( i2) = d( i1) - d( i2)
-    d( i1) = d( i1) - d( i2)
+    ! Local variables:
+    real(dp) :: a, b
+
+    a = d( i1)
+    b = d( i2)
+    d( i1) = b
+    d( i2) = a
 
   end subroutine switch_rows_dp_1D
 
@@ -71,9 +83,13 @@ contains
     real(dp), dimension(:,:), intent(inout) :: d
     integer,                  intent(in   ) :: i1, i2
 
-    d( i1,:) = d( i1,:) + d( i2,:)
-    d( i2,:) = d( i1,:) - d( i2,:)
-    d( i1,:) = d( i1,:) - d( i2,:)
+    ! Local variables:
+    real(dp), dimension(size(d,2)) :: a, b
+
+    a = d( i1,:)
+    b = d( i2,:)
+    d( i1,:) = b
+    d( i2,:) = a
 
   end subroutine switch_rows_dp_2D
 

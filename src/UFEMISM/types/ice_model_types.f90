@@ -92,18 +92,26 @@ MODULE ice_model_types
     real(dp), dimension(:    ), pointer :: du_dy_a    => null()
     real(dp), dimension(:    ), pointer :: dv_dx_a    => null()
     real(dp), dimension(:    ), pointer :: dv_dy_a    => null()
+    real(dp), dimension(:    ), pointer :: du_dx_b    => null()                     ! [yr^-1] 2-D horizontal strain rates
+    real(dp), dimension(:    ), pointer :: du_dy_b    => null()
+    real(dp), dimension(:    ), pointer :: dv_dx_b    => null()
+    real(dp), dimension(:    ), pointer :: dv_dy_b    => null()
     real(dp), dimension(:,:  ), pointer :: du_dz_3D_a => null()                  ! [yr^-1] 3-D vertical shear strain rates
     real(dp), dimension(:,:  ), pointer :: dv_dz_3D_a => null()
+    real(dp), dimension(:,:  ), pointer :: du_dz_3D_b => null()                  ! [yr^-1] 3-D vertical shear strain rates
+    real(dp), dimension(:,:  ), pointer :: dv_dz_3D_b => null()
     type(MPI_WIN) :: wdu_dx_a, wdu_dy_a, wdv_dx_a, wdv_dy_a, wdu_dz_3D_a, wdv_dz_3D_a
+    type(MPI_WIN) :: wdu_dx_b, wdu_dy_b, wdv_dx_b, wdv_dy_b, wdu_dz_3D_b, wdv_dz_3D_b
 
     real(dp), dimension(:,:  ), pointer :: eta_3D_a  => null()                    ! Effective viscosity
     real(dp), dimension(:,:  ), pointer :: eta_3D_b  => null()
     real(dp), dimension(:    ), pointer :: eta_vav_a => null()
+    real(dp), dimension(:    ), pointer :: eta_vav_b => null()
     real(dp), dimension(:    ), pointer :: N_a       => null()                   ! Product term N = eta * H
     real(dp), dimension(:    ), pointer :: N_b       => null()
     real(dp), dimension(:    ), pointer :: dN_dx_b   => null()                   ! Gradients of N
     real(dp), dimension(:    ), pointer :: dN_dy_b   => null()
-    type(MPI_WIN) :: weta_3D_a, weta_3D_b, weta_vav_a, wN_a, wN_b, wdN_dx_b, wdN_dy_b
+    type(MPI_WIN) :: weta_3D_a, weta_3D_b, weta_vav_a, weta_vav_b, wN_a, wN_b, wdN_dx_b, wdN_dy_b
 
     real(dp), dimension(:,:  ), pointer :: F1_3D_a => null()                     ! F-integrals
     real(dp), dimension(:,:  ), pointer :: F2_3D_a => null()

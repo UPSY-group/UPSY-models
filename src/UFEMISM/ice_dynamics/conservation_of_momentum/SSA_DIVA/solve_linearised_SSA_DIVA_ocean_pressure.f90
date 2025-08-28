@@ -352,8 +352,6 @@ contains
     integer                             :: ni, uv
     real(dp)                            :: N, basal_friction_coefficient, tau_dx, tau_dy
     integer,  dimension(:), allocatable :: single_row_ind
-    real(dp), dimension(:), allocatable :: single_row_ddx_val
-    real(dp), dimension(:), allocatable :: single_row_ddy_val
     real(dp), dimension(:), allocatable :: single_row_d2dx2_val
     real(dp), dimension(:), allocatable :: single_row_d2dxdy_val
     real(dp), dimension(:), allocatable :: single_row_d2dy2_val
@@ -373,15 +371,11 @@ contains
 
     ! allocate memory for single matrix rows
     allocate( single_row_ind(        graphs%graph_a%nC_mem*2))
-    allocate( single_row_ddx_val(    graphs%graph_a%nC_mem*2))
-    allocate( single_row_ddy_val(    graphs%graph_a%nC_mem*2))
     allocate( single_row_d2dx2_val(  graphs%graph_a%nC_mem*2))
     allocate( single_row_d2dxdy_val( graphs%graph_a%nC_mem*2))
     allocate( single_row_d2dy2_val(  graphs%graph_a%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call read_single_row_CSR_dist( graphs%M2_ddx_b_b   , ni, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_ddy_b_b   , ni, single_row_ind, single_row_ddy_val   , single_row_nnz)
     call read_single_row_CSR_dist( graphs%M2_d2dx2_b_b , ni, single_row_ind, single_row_d2dx2_val , single_row_nnz)
     call read_single_row_CSR_dist( graphs%M2_d2dxdy_b_b, ni, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
     call read_single_row_CSR_dist( graphs%M2_d2dy2_b_b , ni, single_row_ind, single_row_d2dy2_val , single_row_nnz)

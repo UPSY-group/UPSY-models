@@ -9,14 +9,15 @@ module netcdf_setup_grid_mesh_in_file
   use netcdf_basic
   use netcdf_add_field_mesh
   use netcdf, only: NF90_DOUBLE, NF90_INT, NF90_DEF_GRP
-  use graph_types, only: type_graph
+  use graph_types, only: type_graph, type_graph_pair
 
   implicit none
 
   private
 
   public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, write_matrix_operators_to_netcdf_file
-  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf
+  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf, save_graph_pair_as_netcdf
+  public :: save_matrix_operator_as_netcdf_file
 
 contains
 
@@ -85,6 +86,44 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine save_graph_as_netcdf
+
+  subroutine save_graph_pair_as_netcdf( filename, graphs)
+
+    ! In/output variables:
+    character(len=*),      intent(in   ) :: filename
+    type(type_graph_pair), intent(in   ) :: graphs
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'save_graph_pair_as_netcdf'
+    integer                        :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call save_graph_as_netcdf( trim( filename) // '_graph_a.nc', graphs%graph_a)
+    call save_graph_as_netcdf( trim( filename) // '_graph_b.nc', graphs%graph_b)
+
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddx_b_b.nc'    , graphs%M_ddx_b_b    )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddy_b_b.nc'    , graphs%M_ddy_b_b    )
+
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_ddx_b_b.nc'   , graphs%M2_ddx_b_b   )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_ddy_b_b.nc'   , graphs%M2_ddy_b_b   )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_d2dx2_b_b.nc' , graphs%M2_d2dx2_b_b )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_d2dxdy_b_b.nc', graphs%M2_d2dxdy_b_b)
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_d2dy2_b_b.nc' , graphs%M2_d2dy2_b_b )
+
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_map_a_b.nc'    , graphs%M_map_a_b    )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddx_a_b.nc'    , graphs%M_ddx_a_b    )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddy_a_b.nc'    , graphs%M_ddy_a_b    )
+
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_map_b_a.nc'    , graphs%M_map_b_a    )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddx_b_a.nc'    , graphs%M_ddx_b_a    )
+    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddy_b_a.nc'    , graphs%M_ddy_b_a    )
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_graph_pair_as_netcdf
 
   subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid)
     !< Set up a regular x/y-grid in an existing NetCDF file
@@ -491,6 +530,9 @@ contains
     integer :: id_dim_ci
     integer :: id_dim_two
     integer :: id_dim_three
+    integer :: id_dim_vi_parent_mesh
+    integer :: id_dim_ti_parent_mesh
+    integer :: id_dim_ei_parent_mesh
 
     integer :: id_var_xmin
     integer :: id_var_xmax
@@ -500,6 +542,14 @@ contains
     integer :: id_var_V
     integer :: id_var_nC
     integer :: id_var_C
+
+    integer :: id_var_ni2vi
+    integer :: id_var_ni2ti
+    integer :: id_var_ni2ei
+
+    integer :: id_var_vi2ni
+    integer :: id_var_ti2ni
+    integer :: id_var_ei2ni
 
     integer :: id_var_is_ghost
     integer :: id_var_ghost_nhat
@@ -512,6 +562,9 @@ contains
     call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_dim_nC_mem), graph%nC_mem, id_dim_ci   )
     call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_dim_two   ), 2           , id_dim_two  )
     call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_dim_three ), 3           , id_dim_three)
+    call create_dimension( filename, ncid, 'vi_parent_mesh', size( graph%vi2ni), id_dim_vi_parent_mesh)
+    call create_dimension( filename, ncid, 'ti_parent_mesh', size( graph%ti2ni), id_dim_ti_parent_mesh)
+    call create_dimension( filename, ncid, 'ei_parent_mesh', size( graph%ei2ni), id_dim_ei_parent_mesh)
 
     ! == Create graph variables - metadata
     ! ====================================
@@ -551,6 +604,26 @@ contains
     call add_attribute_char( filename, ncid, id_var_C, 'long_name'  , 'Connections')
     call add_attribute_char( filename, ncid, id_var_C, 'orientation', 'counter-clockwise'          )
 
+    ! ni2vi
+    call create_variable( filename, ncid, 'ni2vi', NF90_INT, [id_dim_vi], id_var_ni2vi)
+    call add_attribute_char( filename, ncid, id_var_ni2vi, 'long_name', 'graph node to mesh vertex translation table')
+    ! ni2ti
+    call create_variable( filename, ncid, 'ni2ti', NF90_INT, [id_dim_vi], id_var_ni2ti)
+    call add_attribute_char( filename, ncid, id_var_ni2ti, 'long_name', 'graph node to mesh triangle translation table')
+    ! ni2ei
+    call create_variable( filename, ncid, 'ni2ei', NF90_INT, [id_dim_vi], id_var_ni2ei)
+    call add_attribute_char( filename, ncid, id_var_ni2ei, 'long_name', 'graph node to mesh edge translation table')
+
+    ! vi2ni
+    call create_variable( filename, ncid, 'vi2ni', NF90_INT, [id_dim_vi_parent_mesh], id_var_vi2ni)
+    call add_attribute_char( filename, ncid, id_var_vi2ni, 'long_name', 'mesh vertex to graph node translation table')
+    ! ti2ni
+    call create_variable( filename, ncid, 'ti2ni', NF90_INT, [id_dim_ti_parent_mesh], id_var_ti2ni)
+    call add_attribute_char( filename, ncid, id_var_ti2ni, 'long_name', 'mesh triangle to graph node translation table')
+    ! ei2ni
+    call create_variable( filename, ncid, 'ei2ni', NF90_INT, [id_dim_ei_parent_mesh], id_var_ei2ni)
+    call add_attribute_char( filename, ncid, id_var_ei2ni, 'long_name', 'mesh edge to graph node translation table')
+
     ! is_ghost
     call create_variable( filename, ncid, 'is_ghost', NF90_INT, (/ id_dim_vi /), id_var_is_ghost)
     call add_attribute_char( filename, ncid, id_var_is_ghost, 'long_name', 'Whether a node is a ghost node')
@@ -572,6 +645,14 @@ contains
     call write_var_primary( filename, ncid, id_var_V , graph%V )
     call write_var_primary( filename, ncid, id_var_nC, graph%nC)
     call write_var_primary( filename, ncid, id_var_C , graph%C )
+
+    call write_var_primary( filename, ncid, id_var_ni2vi, graph%ni2vi)
+    call write_var_primary( filename, ncid, id_var_ni2ti, graph%ni2ti)
+    call write_var_primary( filename, ncid, id_var_ni2ei, graph%ni2ei)
+
+    call write_var_primary( filename, ncid, id_var_vi2ni, graph%vi2ni)
+    call write_var_primary( filename, ncid, id_var_ti2ni, graph%ti2ni)
+    call write_var_primary( filename, ncid, id_var_ei2ni, graph%ei2ni)
 
     where (graph%is_ghost)
       is_ghost_int = 1
@@ -826,10 +907,54 @@ contains
     ! Write to NetCDF
     call write_var_primary( filename, grp_ncid, id_var_ptr, A_tot%ptr              )
     call write_var_primary( filename, grp_ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
-    call write_var_primary(  filename, grp_ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
+    call write_var_primary( filename, grp_ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
 
     call finalise_routine( routine_name)
 
   end subroutine write_matrix_operator_to_netcdf_file
+
+  subroutine save_matrix_operator_as_netcdf_file( filename, A)
+    !< Save a single matrix operator as a netcdf file
+
+    ! In/output variables:
+    character(len=*),                intent(in) :: filename
+    type(type_sparse_matrix_CSR_dp), intent(in) :: A
+
+    ! Local variables:
+    character(len=1024), parameter  :: routine_name = 'save_matrix_operator_as_netcdf_file'
+    integer                         :: ncid
+    type(type_sparse_matrix_CSR_dp) :: A_tot
+    integer                         :: ierr
+    integer                         :: id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
+    integer                         :: id_var_ptr, id_var_ind, id_var_val
+
+    call init_routine( routine_name)
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+
+    ! Gather distributed matrix to the primary
+    call gather_CSR_dist_to_primary( A, A_tot)
+
+    ! Create dimensions
+    call create_dimension( filename, ncid, 'm'     , A_tot%m  , id_dim_m  )
+    call create_dimension( filename, ncid, 'mplus1', A_tot%m+1, id_dim_mp1)
+    call create_dimension( filename, ncid, 'n'     , A_tot%n  , id_dim_n  )
+    call create_dimension( filename, ncid, 'nnz'   , A_tot%nnz, id_dim_nnz)
+
+    ! Create variables
+    call create_variable( filename, ncid, 'ptr', NF90_INT   , [id_dim_mp1], id_var_ptr)
+    call create_variable( filename, ncid, 'ind', NF90_INT   , [id_dim_nnz], id_var_ind)
+    call create_variable( filename, ncid, 'val', NF90_DOUBLE, [id_dim_nnz], id_var_val)
+
+    ! Write to NetCDF
+    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr              )
+    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
+    call write_var_primary( filename, ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
+
+    call close_netcdf_file( ncid)
+
+    call finalise_routine( routine_name)
+
+  end subroutine save_matrix_operator_as_netcdf_file
 
 end module netcdf_setup_grid_mesh_in_file

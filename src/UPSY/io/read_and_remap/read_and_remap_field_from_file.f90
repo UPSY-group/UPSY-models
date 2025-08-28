@@ -781,6 +781,8 @@ contains
 
     end if ! if (present( time_to_read)) then
 
+    call close_netcdf_file( ncid)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

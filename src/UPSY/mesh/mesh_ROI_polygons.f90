@@ -35,6 +35,7 @@ module mesh_ROI_polygons
   public :: calc_polygon_Scott_glacier
   public :: calc_polygon_Mercer_glacier
   public :: calc_polygon_Wilkes_basins
+  public :: calc_polygon_Antarctic_Peninsula
 
 contains
 
@@ -1362,6 +1363,35 @@ subroutine calc_polygon_Wilkes_basins( poly)
 
 end subroutine calc_polygon_Wilkes_basins
 
+subroutine calc_polygon_Antarctic_Peninsula( poly)
+  ! Return a polygon enveloping the Antarctic Peninsula Ice Sheet reconstruction
+  ! for the Last Glacial Maximum based on manual analysis of the RAISED consortium data 
 
+  ! In/output variables:
+  real(dp), dimension(:,:), allocatable, intent(out) :: poly
+
+  ! Local variables:
+  character(len=1024), parameter :: routine_name = 'calc_polygon_Antarctic_Peninsula'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  allocate( poly( 10,2))
+
+  poly(  1,:) = [-2.0142e+06_dp,4.8160e+05_dp]
+  poly(  2,:) = [-2.3121e+06_dp,4.8134e+05_dp]
+  poly(  3,:) = [-2.7104e+06_dp,1.4240e+06_dp]
+  poly(  4,:) = [-2.6432e+06_dp,1.9042e+06_dp]
+  poly(  5,:) = [-2.5756e+06_dp,1.9042e+06_dp]
+  poly(  6,:) = [-2.2979e+06_dp,1.7968e+06_dp]
+  poly(  7,:) = [-1.7787e+06_dp,1.2831e+06_dp]
+  poly(  8,:) = [-1.7310e+06_dp,1.1544e+06_dp]
+  poly(  9,:) = [-1.7085e+06_dp,4.8895e+05_dp]
+  poly( 10,:) = [-2.0142e+06_dp,4.8160e+05_dp]
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine calc_polygon_Antarctic_Peninsula
 
 end module mesh_ROI_polygons

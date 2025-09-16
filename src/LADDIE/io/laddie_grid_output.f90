@@ -195,6 +195,17 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%TAF, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'TAF', d_grid_vec_partial_2D)
 
+      case ('Hs_b')
+        ! Do nothing
+      case ('Hb_b')
+        ! Do nothing
+      case ('Hib_b')
+        ! Do nothing
+      case ('dHs_dx')
+        ! Do nothing
+      case ('dHs_dy')
+        ! Do nothing
+
       ! Ice temperature
       case ('Ti')
         call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%Ti, d_grid_vec_partial_3D, d_mesh_is_hybrid = .true.)
@@ -472,6 +483,17 @@ contains
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. sea level')
       case ('TAF')
         call add_field_grid_dp_2D_notime( filename, ncid, 'TAF', long_name = 'Ice thickness above floatation', units = 'm w.r.t. sea level')
+      case ('Hs_b')
+        ! Do nothing
+      case ('Hb_b')
+        ! Do nothing
+      case ('Hib_b')
+        ! Do nothing
+      case ('dHs_dx')
+        ! Do nothing
+      case ('dHs_dy')
+        ! Do nothing
+
       case ('Ti')
         call add_field_grid_dp_3D_notime( filename, ncid, 'Ti', long_name = 'Englacial temperature', units = 'K')
       case ('T_ocean')

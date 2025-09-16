@@ -14,6 +14,7 @@ module laddie_mesh_output
   use mesh_contour, only: calc_mesh_contour
   use mpi_f08, only: MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
+  use mesh_disc_apply_operators , only: map_a_b_2D, ddx_a_a_2D, ddy_a_a_2D
 
   implicit none
 
@@ -137,6 +138,10 @@ contains
     character(len=1024), parameter     :: routine_name = 'write_to_laddie_output_file_mesh_field'
     integer, dimension(:  ), pointer     :: mask_int => null()
     type(MPI_WIN)                        :: wmask_int
+    real(dp), dimension(:  ), pointer    :: d_partial_a => null()
+    real(dp), dimension(:  ), pointer    :: d_partial_b => null()
+    type(MPI_WIN)                        :: wd_partial_a
+    type(MPI_WIN)                        :: wd_partial_b
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
@@ -150,6 +155,11 @@ contains
     call allocate_dist_shared( mask_int, wmask_int, mesh%pai_V%n_nih)
     mask_int( mesh%pai_V%i1_nih : mesh%pai_V%i2_nih) => mask_int
 
+    call allocate_dist_shared( d_partial_a, wd_partial_a, mesh%pai_V%n_nih)
+    d_partial_a( mesh%pai_V%i1_nih : mesh%pai_V%i2_nih) => d_partial_a
+
+    call allocate_dist_shared( d_partial_b, wd_partial_b, mesh%pai_Tri%n_nih)
+    d_partial_b( mesh%pai_Tri%i1_nih : mesh%pai_Tri%i2_nih) => d_partial_b
 
     ! Add the specified data field to the file
     select case (choice_output_field)
@@ -180,6 +190,25 @@ contains
         call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'TAF', forcing%TAF, d_is_hybrid = .true.)
       case ('grounding_line')
         call write_grounding_line_to_file( laddie%output_mesh_filename, ncid, mesh, forcing)
+
+      ! Ice geometry on triangles
+      case ('Hs_b')
+        call map_a_b_2D( mesh, forcing%Hs, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hs_b', d_partial_b, d_is_hybrid = .true.)
+      case ('Hb_b')
+        call map_a_b_2D( mesh, forcing%Hb, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hb_b', d_partial_b, d_is_hybrid = .true.)
+      case ('Hib_b')
+        call map_a_b_2D( mesh, forcing%Hib, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hib_b', d_partial_b, d_is_hybrid = .true.)
+
+      ! Geometry gradients
+      case ('dHs_dx')
+        call ddx_a_a_2D( mesh, forcing%Hs, d_partial_a, d_a_is_hybrid = .true., ddx_a_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dx', d_partial_a, d_is_hybrid = .true.)
+      case ('dHs_dy')
+        call ddy_a_a_2D( mesh, forcing%Hs, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dy', d_partial_a, d_is_hybrid = .true.)
 
       ! Ice temperature
       case ('Ti')
@@ -272,6 +301,8 @@ contains
 
     ! Deallocate mask_int
     call deallocate_dist_shared( mask_int, wmask_int)
+    call deallocate_dist_shared( d_partial_a, wd_partial_a)
+    call deallocate_dist_shared( d_partial_b, wd_partial_b)
 
 
     ! Finalise routine path
@@ -444,6 +475,19 @@ contains
         call add_attribute_char( filename, ncid, id_var_grounding_line, 'long_name', 'Grounding-line coordinates')
         call add_attribute_char( filename, ncid, id_var_grounding_line, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_grounding_line, 'format', 'Matlab/Python contour format')
+
+      case ('Hs_b')
+        call add_field_mesh_dp_2D_b_notime( filename, ncid, 'Hs_b', long_name = 'Ice surface elevation on triangles', units = 'm')
+      case ('Hb_b')
+        call add_field_mesh_dp_2D_b_notime( filename, ncid, 'Hb_b', long_name = 'Bedrock elevation on triangles', units = 'm')
+      case ('Hib_b')
+        call add_field_mesh_dp_2D_b_notime( filename, ncid, 'Hib_b', long_name = 'Ice base elevation on triangles', units = 'm')
+
+      case ('dHs_dx')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'dHs_dx', long_name = 'Ice surface elevation gradient x-direction', units = 'm')
+      case ('dHs_dy')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'dHs_dy', long_name = 'Ice surface elevation gradient y-direction', units = 'm')
+
 
       ! Ice temperature
       case ('Ti')

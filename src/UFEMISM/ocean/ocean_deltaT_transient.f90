@@ -1,4 +1,4 @@
-module ocean_deltaT
+module ocean_deltaT_transient
 
   ! deltaT ocean model (i.e., T = T0+dT)
 
@@ -24,7 +24,7 @@ contains
 ! ===== Main routines =====
 ! =========================
 
-subroutine initialise_ocean_model_deltaT( mesh, ice, ocean, region_name, start_time_of_run)
+subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_name, start_time_of_run)
     ! Initialise the ocean model
     !
     ! Use an realistic ocean scheme
@@ -37,7 +37,7 @@ subroutine initialise_ocean_model_deltaT( mesh, ice, ocean, region_name, start_t
     real(dp),                               intent(in)    :: start_time_of_run
 
     ! Local variables:
-    character(len=256), parameter                         :: routine_name = 'initialise_ocean_model_deltaT'
+    character(len=256), parameter                         :: routine_name = 'initialise_ocean_model_transient_deltaT'
     character(len=256)                                    :: filename_ocean_snapshot, filename_ocean_dT
 
     ! Add routine to path
@@ -63,37 +63,27 @@ subroutine initialise_ocean_model_deltaT( mesh, ice, ocean, region_name, start_t
                 call crash('unknown region_name "' // region_name // '"')
             end select
 
-            ! Allocating timeframe variables; the series itself is allocated in the read function below
-            allocate(ocean%deltaT%dT_t0)
-            allocate(ocean%deltaT%dT_t1)
-            allocate(ocean%deltaT%dT_at_t0)
-            allocate(ocean%deltaT%dT_at_t1)
-            allocate( ocean%deltaT%T0( mesh%vi1:mesh%vi2,C%nz_ocean))
-            allocate( ocean%deltaT%S0( mesh%vi1:mesh%vi2,C%nz_ocean))
-            ocean%deltaT%T0 = 0._dp
-            ocean%deltaT%S0 = 0._dp
-
             ! Fill in  main variables
-            call read_field_from_file_3D_ocean( filename_ocean_snapshot, field_name_options_T_ocean,  mesh, C%output_dir, C%z_ocean, ocean%deltaT%T0)
-            call read_field_from_file_3D_ocean( filename_ocean_snapshot, field_name_options_S_ocean,  mesh, C%output_dir, C%z_ocean, ocean%deltaT%S0)
+            call read_field_from_file_3D_ocean( filename_ocean_snapshot, field_name_options_T_ocean,  mesh, C%output_dir, C%z_ocean, ocean%deltaT_transient%T0)
+            call read_field_from_file_3D_ocean( filename_ocean_snapshot, field_name_options_S_ocean,  mesh, C%output_dir, C%z_ocean, ocean%deltaT_transient%S0)
 
-            call read_field_from_series_file(   filename_ocean_dT,       field_name_options_dT_ocean, ocean%deltaT%dT_series, ocean%deltaT%dT_series_time)
-            call update_timeframes_from_record(ocean%deltaT%dT_series_time, ocean%deltaT%dT_series, ocean%deltaT%dT_t0, ocean%deltaT%dT_t1, ocean%deltaT%dT_at_t0, ocean%deltaT%dT_at_t1, start_time_of_run)
+            call read_field_from_series_file(   filename_ocean_dT,       field_name_options_dT_ocean, ocean%deltaT_transient%dT_series, ocean%deltaT_transient%dT_series_time)
+            call update_timeframes_from_record(ocean%deltaT_transient%dT_series_time, ocean%deltaT_transient%dT_series, ocean%deltaT_transient%dT_t0, ocean%deltaT_transient%dT_t1, ocean%deltaT_transient%dT_at_t0, ocean%deltaT_transient%dT_at_t1, start_time_of_run)
 
             ! Apply extrapolation method if required
             select case (C%choice_ocean_extrapolation_method)
               case('initialisation')
-                call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT%T0)
-                call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT%S0)
+                call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%T0)
+                call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%S0)
               case default
                 call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
             end select
 
         call finalise_routine(routine_name)
 
-    end subroutine initialise_ocean_model_deltaT
+    end subroutine initialise_ocean_model_transient_deltaT
 
-    subroutine run_ocean_model_deltaT(mesh, ocean, time)
+    subroutine run_ocean_model_transient_deltaT(mesh, ocean, time)
     ! Apply the dT anomalies to the snapshot ocean
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
@@ -101,32 +91,32 @@ subroutine initialise_ocean_model_deltaT( mesh, ice, ocean, region_name, start_t
     real(dp),                               intent(in)    :: time
 
     ! Local variables
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'run_ocean_model_deltaT'
+    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'run_ocean_model_transient_deltaT'
     REAL(dp)                                           :: dT_at_time
     INTEGER                                            :: vi, z
 
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    IF (time < ocean%deltaT%dT_t0 .OR. time > ocean%deltaT%dT_t1) THEN
+    IF (time < ocean%deltaT_transient%dT_t0 .OR. time > ocean%deltaT_transient%dT_t1) THEN
           !IF (par%primary)  WRITE(0,*) '   Model time is out of the current dT timeframes. Updating timeframes...'
-          call update_timeframes_from_record(ocean%deltaT%dT_series_time, ocean%deltaT%dT_series, ocean%deltaT%dT_t0, ocean%deltaT%dT_t1, ocean%deltaT%dT_at_t0, ocean%deltaT%dT_at_t1, time)
+          call update_timeframes_from_record(ocean%deltaT_transient%dT_series_time, ocean%deltaT_transient%dT_series, ocean%deltaT_transient%dT_t0, ocean%deltaT_transient%dT_t1, ocean%deltaT_transient%dT_at_t0, ocean%deltaT_transient%dT_at_t1, time)
         END IF
 
         ! Interpolate the two timeframes - constant dT over the entire region
-        call interpolate_value_from_forcing_record(ocean%deltaT%dT_t0, ocean%deltaT%dT_t1, ocean%deltaT%dT_at_t0, ocean%deltaT%dT_at_t1, time, dT_at_time)
+        call interpolate_value_from_forcing_record(ocean%deltaT_transient%dT_t0, ocean%deltaT_transient%dT_t1, ocean%deltaT_transient%dT_at_t0, ocean%deltaT_transient%dT_at_t1, time, dT_at_time)
 
         do vi = mesh%vi1, mesh%vi2
           do z = 1, C%nz_ocean
-            ocean%T(vi, z) = ocean%deltaT%T0(vi, z) + dT_at_time
+            ocean%T(vi, z) = ocean%deltaT_transient%T0(vi, z) + dT_at_time
           end do
         end do
 
     call finalise_routine(routine_name)
 
-    end subroutine run_ocean_model_deltaT
+    end subroutine run_ocean_model_transient_deltaT
 
 
 
 
-end module ocean_deltaT
+end module ocean_deltaT_transient

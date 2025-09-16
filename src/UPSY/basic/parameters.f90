@@ -9,7 +9,6 @@ module parameters
 
 ! ===== Global variables =====
 ! ============================
-
   real(dp)            :: pi
   real(dp)            :: NaN
 

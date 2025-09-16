@@ -15,7 +15,7 @@ MODULE ocean_main
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base
-  USE ocean_realistic                                        , ONLY: initialise_ocean_model_realistic, run_ocean_model_realistic
+  USE ocean_realistic                                        , ONLY: initialise_ocean_model_realistic, run_ocean_model_realistic, remap_ocean_model_realistic
   USE ocean_idealised                                        , ONLY: initialise_ocean_model_idealised, run_ocean_model_idealised
   use netcdf_io_main
 
@@ -150,6 +150,7 @@ CONTAINS
     ALLOCATE( ocean%T_freezing_point( mesh%vi1:mesh%vi2))
     ocean%T_draft          = 0._dp
     ocean%T_freezing_point = 0._dp
+
 
     ! Set time of next calculation to start time
     ocean%t_next = C%start_time_of_run
@@ -411,19 +412,16 @@ CONTAINS
     CALL reallocate_bounds( ocean%T_freezing_point, mesh_new%vi1, mesh_new%vi2)
 
     ! Determine which ocean model to remap
-    IF     (choice_ocean_model == 'none') THEN
-      ! No need to do anything
-    ELSEIF (choice_ocean_model == 'idealised') THEN
-      CALL initialise_ocean_model_idealised( mesh_new, ocean)
-    ELSEIF (choice_ocean_model == 'realistic') THEN
-        IF     (C%choice_ocean_model_realistic == 'snapshot') THEN
-          CALL initialise_ocean_model_realistic( mesh_new, ice, ocean, region_name, time)
-        ELSE
-          CALL crash('Remapping after mesh update for realistic ocean is only implemented for a snapshot!')
-        END IF
-    ELSE
-      CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
-    END IF
+    select case (choice_ocean_model)
+      case ('none')
+        ! No need to do anything
+      case ('idealised')  
+        call initialise_ocean_model_idealised( mesh_new, ocean)
+      case ('realistic')
+        call remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
+      case default
+        CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
+    end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

@@ -28,6 +28,7 @@ MODULE climate_realistic
   public :: run_climate_model_realistic
   public :: initialise_climate_model_realistic
   public :: initialise_insolation_forcing
+  public :: apply_geometry_downscaling_corrections
   public :: remap_climate_realistic
   public :: remap_snapshot
 
@@ -60,15 +61,16 @@ CONTAINS
 
     ! Update temperature and precipitation fields based on the mismatch between
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
-    CALL apply_lapse_rate_geometry_corrections( mesh, ice, climate)
+    CALL apply_geometry_downscaling_corrections( mesh, ice, climate)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
     IF (climate%snapshot%has_insolation) THEN
       CALL get_insolation_at_time( mesh, time, climate%snapshot)
+      climate%Q_TOA = climate%snapshot%Q_TOA
     
       IF (C%choice_climate_model_realistic == 'climate_matrix') THEN
         ! This is probably where we will update insolation, CO2, etc...
-        CALL crash('choice_climate_model_realistic climate_matrix not implemented yet!"')
+        CALL crash('climate_matrix is no longer a climate model subtype; please set choice_climate_model as matrix!"')
         !CALL get_climate_at_time( mesh, time, forcing, climate)
       !ELSE
       !  CALL crash('unknown choice_climate_model_realistic "' // TRIM( C%choice_climate_model_realistic) // '"')
@@ -154,7 +156,7 @@ CONTAINS
       CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
 
 
-      call apply_lapse_rate_geometry_corrections( mesh, ice, climate)
+      call apply_geometry_downscaling_corrections( mesh, ice, climate)
 
       ! Initialises the insolation (if needed)
       IF (climate%snapshot%has_insolation) THEN
@@ -168,6 +170,7 @@ CONTAINS
             timeframe_init_insolation = 0._dp
           END IF
           CALL get_insolation_at_time( mesh, timeframe_init_insolation, climate%snapshot)
+          climate%Q_TOA = climate%snapshot%Q_TOA
         END IF
       END IF
 
@@ -180,7 +183,7 @@ CONTAINS
 
   END SUBROUTINE initialise_climate_model_realistic
 
-  SUBROUTINE apply_lapse_rate_geometry_corrections( mesh, ice, climate)
+  SUBROUTINE apply_geometry_downscaling_corrections( mesh, ice, climate)
     ! Applies the lapse rate corrections for temperature and precipitation
     ! to correct for the mismatch between T and P at the forcing's ice surface elevation and the model's ice surface elevation
 
@@ -191,7 +194,7 @@ CONTAINS
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
 
     ! Local Variables
-    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'apply_lapse_rate_geometry_corrections'
+    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'apply_geometry_downscaling_corrections'
     INTEGER                                              :: vi, m
     REAL(dp)                                             :: deltaH, deltaT, deltaP
     REAL(dp), DIMENSION(:,:), ALLOCATABLE                :: T_inv, T_inv_ref
@@ -236,7 +239,7 @@ CONTAINS
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
-  END SUBROUTINE apply_lapse_rate_geometry_corrections
+  END SUBROUTINE apply_geometry_downscaling_corrections
 
   ! == Insolation
   SUBROUTINE initialise_insolation_forcing( snapshot, mesh)

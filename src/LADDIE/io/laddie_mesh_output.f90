@@ -209,6 +209,18 @@ contains
       case ('dHs_dy')
         call ddy_a_a_2D( mesh, forcing%Hs, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
         call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dy', d_partial_a, d_is_hybrid = .true.)
+      case ('dHb_dx')
+        call ddx_a_a_2D( mesh, forcing%Hb, d_partial_a, d_a_is_hybrid = .true., ddx_a_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHb_dx', d_partial_a, d_is_hybrid = .true.)
+      case ('dHb_dy')
+        call ddy_a_a_2D( mesh, forcing%Hb, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHb_dy', d_partial_a, d_is_hybrid = .true.)
+      case ('dHib_dx')
+        call ddx_a_a_2D( mesh, forcing%Hib, d_partial_a, d_a_is_hybrid = .true., ddx_a_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHib_dx', d_partial_a, d_is_hybrid = .true.)
+      case ('dHib_dy')
+        call ddy_a_a_2D( mesh, forcing%Hib, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHib_dy', d_partial_a, d_is_hybrid = .true.)
 
       ! Ice temperature
       case ('Ti')
@@ -487,7 +499,14 @@ contains
         call add_field_mesh_dp_2D_notime( filename, ncid, 'dHs_dx', long_name = 'Ice surface elevation gradient x-direction', units = 'm')
       case ('dHs_dy')
         call add_field_mesh_dp_2D_notime( filename, ncid, 'dHs_dy', long_name = 'Ice surface elevation gradient y-direction', units = 'm')
-
+      case ('dHb_dx')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'dHb_dx', long_name = 'Bedrock elevation gradient x-direction', units = 'm')
+      case ('dHb_dy')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'dHb_dy', long_name = 'Bedrock elevation gradient y-direction', units = 'm')
+      case ('dHib_dx')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'dHib_dx', long_name = 'Ice base elevation gradient x-direction', units = 'm')
+      case ('dHib_dy')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'dHib_dy', long_name = 'Ice base elevation gradient y-direction', units = 'm')
 
       ! Ice temperature
       case ('Ti')

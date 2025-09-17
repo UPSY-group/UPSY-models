@@ -205,6 +205,14 @@ contains
         ! Do nothing
       case ('dHs_dy')
         ! Do nothing
+      case ('dHb_dx')
+        ! Do nothing
+      case ('dHb_dy')
+        ! Do nothing
+      case ('dHib_dx')
+        ! Do nothing
+      case ('dHib_dy')
+        ! Do nothing
 
       ! Ice temperature
       case ('Ti')
@@ -492,6 +500,14 @@ contains
       case ('dHs_dx')
         ! Do nothing
       case ('dHs_dy')
+        ! Do nothing
+      case ('dHb_dx')
+        ! Do nothing
+      case ('dHb_dy')
+        ! Do nothing
+      case ('dHib_dx')
+        ! Do nothing
+      case ('dHib_dy')
         ! Do nothing
 
       case ('Ti')

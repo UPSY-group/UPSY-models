@@ -77,7 +77,7 @@ SUBROUTINE update_timeframes_from_record(time_axis, record, time_at_t0, time_at_
     ! if the desired time is after t0, we take one record after for t1
     if (time >= time_at_t0) then
       if (ti0 == size(time_axis)) then
-        IF (par%primary) WRITE(0,*) 'desired timeframe is at or beyond the last record. Using last available value for both timeframes...'
+        ! IF (par%primary) WRITE(0,*) 'desired timeframe is at or beyond the last record. Using last available value for both timeframes...'
         time_at_t1 = time_axis(ti0)
         val_at_t1  = record(ti0)
       else
@@ -87,7 +87,7 @@ SUBROUTINE update_timeframes_from_record(time_axis, record, time_at_t0, time_at_
     else
       ! otherwise we read one record before for t0, and that record is t1
       if (ti0 == 1) then
-        IF (par%primary) WRITE(0,*) 'desired timeframe is at or before the first record. Using first available value for both timeframes...'
+        ! IF (par%primary) WRITE(0,*) 'desired timeframe is at or before the first record. Using first available value for both timeframes...'
         time_at_t1 = time_axis(ti0)
         val_at_t1  = record(ti0)
       else

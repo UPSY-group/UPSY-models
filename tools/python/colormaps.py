@@ -43,10 +43,13 @@ def get_cmap(varname):
         vmin = -10
         linthresh = .3
         linscale = .25
+        cmax = .9
         fracpos = (np.log10(vmax/linthresh)+linscale)/(np.log10(vmax/linthresh)+np.log10(-(vmin/linthresh))+2*linscale)
         nneg = np.int_((1-fracpos)*Ncols) + 1
-        colors1 = plt.get_cmap('cmo.diff')(np.linspace(.15,.5,nneg))
-        colors2 = plt.get_cmap('afmhot_r')(np.linspace(0,.9, Ncols-nneg))
+        relneg = (1-fracpos)/fracpos
+        cmin = .5-cmax*relneg*.5
+        colors1 = plt.get_cmap('cmo.diff')(np.linspace(cmin,.5,nneg))
+        colors2 = plt.get_cmap('afmhot_r')(np.linspace(0,cmax, Ncols-nneg))
         colors = np.vstack((colors1, colors2))
 
         cmap = mpl.colors.LinearSegmentedColormap.from_list('my_colormap', colors, Ncols)

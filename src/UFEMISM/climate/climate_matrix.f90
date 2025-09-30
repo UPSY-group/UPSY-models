@@ -62,6 +62,7 @@ contains
 
     ! Update insolation forcing at model time
     call get_insolation_at_time( mesh, time, climate%snapshot)
+    climate%Q_TOA = climate%snapshot%Q_TOA
 
     ! moved to global_forcings_main
     !CALL update_CO2_at_model_time( time, forcing)
@@ -159,7 +160,7 @@ contains
     do m = 1, 12
       ! Calculate modelled absorbed insolation. Berends et al., 2018 - Eq. 2
       climate%matrix%I_abs( vi) = climate%matrix%I_abs( vi) + & 
-                                  climate%snapshot%Q_TOA( vi,m) * (1._dp - SMB%IMAUITM%Albedo( vi, m))  
+                                  climate%Q_TOA( vi,m) * (1._dp - SMB%IMAUITM%Albedo( vi, m))  
     end do
     end do
     call sync
@@ -767,12 +768,14 @@ contains
     ! Allocate shared memory
     allocate( climate_dummy%T2m(    mesh%vi1:mesh%vi2, 12))
     allocate( climate_dummy%Precip( mesh%vi1:mesh%vi2, 12))
+    allocate( climate_dummy%Q_TOA(  mesh%vi1:mesh%vi2, 12))
     allocate( climate_dummy%snapshot%Q_TOA(  mesh%vi1:mesh%vi2, 12))
 
     ! Copy climate fields
     climate_dummy%T2m(    mesh%vi1:mesh%vi2,:) = snapshot%T2m(    mesh%vi1:mesh%vi2,:)
     climate_dummy%Precip( mesh%vi1:mesh%vi2,:) = snapshot%Precip( mesh%vi1:mesh%vi2,:)
     ! is needed to allocate it as climate%snapshot because is used in that way later on SMB-ITM
+    climate_dummy%Q_TOA(  mesh%vi1:mesh%vi2,:) = snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:)
     climate_dummy%snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:) = snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:)
 
     ! Ice
@@ -876,10 +879,7 @@ contains
     
     ! reallocate main variables of climate%snapshot
     call remap_snapshot( climate%snapshot, mesh_new)
-    ! reallocate main variables of climate%snapshot for insolation
-    !call reallocate_bounds( climate%snapshot%ins_Q_TOA0, mesh_new%vi1, mesh_new%vi2,12)
-    !call reallocate_bounds( climate%snapshot%ins_Q_TOA1, mesh_new%vi1, mesh_new%vi2,12)
-    !call reallocate_bounds( climate%snapshot%Q_TOA, mesh_new%vi1, mesh_new%vi2,12)
+    call reallocate_bounds( climate%Q_TOA, mesh_new%vi1, mesh_new%vi2,12)
   
     call reallocate_bounds(climate%matrix%I_abs, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(climate%matrix%GCM_bias_T2m, mesh_new%vi1, mesh_new%vi2, 12)

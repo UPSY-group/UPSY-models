@@ -26,6 +26,6 @@ A.ind = ncread( filename, 'ind');
 A.val = ncread( filename, 'val');
 
 % Convert to Matlab sparse matrix
-A = CSR_to_sparse( A);
+% A = CSR_to_sparse( A);
 
 end

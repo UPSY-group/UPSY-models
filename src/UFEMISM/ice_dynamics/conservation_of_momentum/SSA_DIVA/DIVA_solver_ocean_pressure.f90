@@ -662,10 +662,10 @@ contains
     do ni = DIVA%graphs%graph_b%ni1, DIVA%graphs%graph_b%ni2
       DIVA%tau_ox_b( ni) = (&
           0.5_dp * ice_density      * grav * Hi_b( ni)**2 &
-        - 0.5_dp * seawater_density * grav * Ho_b( ni)**2) * DIVA%graphs%graph_b%ghost_nhat( ni,1)
+        - 0.5_dp * seawater_density * grav * Ho_b( ni)**2) * DIVA%graphs%graph_b%border_nhat( ni,1)
       DIVA%tau_oy_b( ni) = (&
           0.5_dp * ice_density      * grav * Hi_b( ni)**2 &
-        - 0.5_dp * seawater_density * grav * Ho_b( ni)**2) * DIVA%graphs%graph_b%ghost_nhat( ni,2)
+        - 0.5_dp * seawater_density * grav * Ho_b( ni)**2) * DIVA%graphs%graph_b%border_nhat( ni,2)
     end do
 
     ! DENK DROM

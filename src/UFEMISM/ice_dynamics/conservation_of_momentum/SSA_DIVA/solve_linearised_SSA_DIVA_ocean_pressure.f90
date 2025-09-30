@@ -99,7 +99,7 @@ contains
       !     call crash('uv can only be 1 or 2!')
       !   end if
 
-      if (DIVA%graphs%graph_b%is_ghost( ni)) then
+      if (DIVA%graphs%graph_b%is_border( ni)) then
         ! Ice margin: apply ocean pressure boundary condition
 
         call calc_SSA_DIVA_stiffness_matrix_row_BC_ice_front( DIVA%graphs, &
@@ -492,8 +492,8 @@ contains
     N       = N_b      ( ni)
     tau_ox = tau_ox_b( ni)
     tau_oy = tau_oy_b( ni)
-    n_x     = graphs%graph_b%ghost_nhat( ni,1)
-    n_y     = graphs%graph_b%ghost_nhat( ni,2)
+    n_x     = graphs%graph_b%border_nhat( ni,1)
+    n_y     = graphs%graph_b%border_nhat( ni,2)
 
     ! Allocate memory for single matrix rows
     allocate( single_row_ind(     graphs%graph_a%nC_mem*2))

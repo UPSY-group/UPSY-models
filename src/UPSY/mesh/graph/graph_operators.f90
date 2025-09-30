@@ -97,29 +97,18 @@ contains
       x = graph%V( ni,1)
       y = graph%V( ni,2)
 
-      if (.not. graph%is_ghost( ni)) then
-        ! Initialise local neighbourhood with node ni
-        map    = 0
-        stackN = 1
-        stack( 1) = ni
-        map( ni) = 1
-        listN = 0
-      else
-        ! Initialise local neighbourhood with node ni and its regular neighbour
-        map    = 0
-        stackN = 2
-        stack( 1) = ni
-        stack( 2) = graph%C( ni,2)
-        map( ni) = 1
-        map( graph%C( ni,2)) = 1
-        listN = 0
-      end if
+      ! Initialise local neighbourhood with node ni
+      map    = 0
+      stackN = 1
+      stack( 1) = ni
+      map( ni) = 1
+      listN = 0
 
       ! Calculate shape functions; if this fails, add more neighbours until it succeeds
       succeeded = .false.
       do while (.not. succeeded)
 
-        call extend_group_single_iteration_graph( graph, map, stack, stackN, list, listN, .true.)
+        call extend_group_single_iteration_graph( graph, map, stack, stackN, list, listN)
 
         ! Remove ni from local neighbourhood
         n_c = listN - 1
@@ -253,7 +242,7 @@ contains
       succeeded = .false.
       do while (.not. succeeded)
 
-        call extend_group_single_iteration_graph( graph, map, stack, stackN, list, listN, .true.)
+        call extend_group_single_iteration_graph( graph, map, stack, stackN, list, listN)
 
         ! Remove ni from local neighbourhood
         n_c = listN - 1
@@ -312,7 +301,7 @@ contains
     character(len=1024), parameter      :: routine_name = 'calc_graph_a_to_graph_b_matrix_operators'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc
     integer                             :: nnz_per_row_est, nnz_est_proc
-    integer                             :: ni, ni_reg
+    integer                             :: ni
     integer                             :: ti, via, vib, vic, nja, njb, njc
     real(dp)                            :: x, y
     integer                             :: nj
@@ -363,23 +352,12 @@ contains
 
     do ni = graph_b%ni1, graph_b%ni2
 
-      ! Initialise the local neighbourhood
-      if (.not. graph_b%is_ghost( ni)) then
-        ni_reg = ni
-      else
-        ! For ghost nodes, use the local neighbourhood of the adjacent regular node
-        ! (i.e. the three vertices spanning that triangle)
-        ni_reg = graph_b%C( ni,2)
-        ! Safety
-        if (graph_b%is_ghost( ni_reg)) call crash('inconsistent graph connectivity')
-      end if
-
       ! Calculate shape functions at this graph node
-      x = graph_b%V( ni_reg,1)
-      y = graph_b%V( ni_reg,2)
+      x = graph_b%V( ni,1)
+      y = graph_b%V( ni,2)
 
       ! Set local neighbourhood to the vertices spanning triangle ti
-      ti = graph_b%ni2ti( ni_reg)
+      ti = graph_b%ni2ti( ni)
       via = mesh%Tri( ti,1)
       vib = mesh%Tri( ti,2)
       vic = mesh%Tri( ti,3)
@@ -492,11 +470,6 @@ contains
 
     do ni = graph_a%ni1, graph_a%ni2
 
-      ! Safety
-      if (graph_a%is_ghost( ni)) then
-        call crash('vertex-based graph should not have ghost nodes')
-      end if
-
       ! Calculate shape functions at this graph node
       x = graph_a%V( ni,1)
       y = graph_a%V( ni,2)
@@ -521,7 +494,7 @@ contains
       succeeded = .false.
       do while (.not. succeeded)
 
-        call extend_group_single_iteration_graph( graph_b, map, stack, stackN, list, listN, .false.)
+        call extend_group_single_iteration_graph( graph_b, map, stack, stackN, list, listN)
 
         n_c = listN
         i_c( 1:n_c) = list( 1: listN)
@@ -563,14 +536,12 @@ contains
 
   end subroutine calc_graph_b_to_graph_a_matrix_operators
 
-  subroutine extend_group_single_iteration_graph( graph, map, stack, stackN, list, listN, &
-    include_ghost_nodes)
+  subroutine extend_group_single_iteration_graph( graph, map, stack, stackN, list, listN)
 
     ! In/output variables:
     type(type_graph),      intent(in   ) :: graph
     integer, dimension(:), intent(inout) :: map, stack, list
     integer,               intent(inout) :: stackN, listN
-    logical,               intent(in   ) :: include_ghost_nodes
 
     ! Local variables:
     integer, dimension(size(stack)) :: stack2
@@ -591,7 +562,6 @@ contains
       do ci = 1, graph%nC( ni)
         nj = graph%C( ni,ci)
         if (map( nj) == 0) then
-          if (.not. include_ghost_nodes .and. graph%is_ghost( nj)) cycle
           map( nj) = 1
           stack2N = stack2N + 1
           stack2( stack2N) = nj

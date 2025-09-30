@@ -524,7 +524,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_graph_in_netcdf_file'
-    integer, dimension(graph%n)    :: is_ghost_int
+    integer, dimension(graph%n)    :: is_border_int
 
     integer :: id_dim_vi
     integer :: id_dim_ci
@@ -551,8 +551,8 @@ contains
     integer :: id_var_ti2ni
     integer :: id_var_ei2ni
 
-    integer :: id_var_is_ghost
-    integer :: id_var_ghost_nhat
+    integer :: id_var_is_border
+    integer :: id_var_border_nhat
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -624,13 +624,13 @@ contains
     call create_variable( filename, ncid, 'ei2ni', NF90_INT, [id_dim_ei_parent_mesh], id_var_ei2ni)
     call add_attribute_char( filename, ncid, id_var_ei2ni, 'long_name', 'mesh edge to graph node translation table')
 
-    ! is_ghost
-    call create_variable( filename, ncid, 'is_ghost', NF90_INT, (/ id_dim_vi /), id_var_is_ghost)
-    call add_attribute_char( filename, ncid, id_var_is_ghost, 'long_name', 'Whether a node is a ghost node')
-    call add_attribute_char( filename, ncid, id_var_is_ghost, 'units', '0 = false, 1 = true')
-    ! ghost_nhat
-    call create_variable( filename, ncid, 'ghost_nhat', NF90_DOUBLE, (/ id_dim_vi, id_dim_two /), id_var_ghost_nhat)
-    call add_attribute_char( filename, ncid, id_var_ghost_nhat, 'long_name', 'Ghost-node outward unit normal vector')
+    ! is_border
+    call create_variable( filename, ncid, 'is_border', NF90_INT, (/ id_dim_vi /), id_var_is_border)
+    call add_attribute_char( filename, ncid, id_var_is_border, 'long_name', 'Whether a node is a border node')
+    call add_attribute_char( filename, ncid, id_var_is_border, 'units', '0 = false, 1 = true')
+    ! border_nhat
+    call create_variable( filename, ncid, 'border_nhat', NF90_DOUBLE, (/ id_dim_vi, id_dim_two /), id_var_border_nhat)
+    call add_attribute_char( filename, ncid, id_var_border_nhat, 'long_name', 'border-node outward unit normal vector')
 
     ! == Write graph data to file
     ! ==========================
@@ -654,14 +654,14 @@ contains
     call write_var_primary( filename, ncid, id_var_ti2ni, graph%ti2ni)
     call write_var_primary( filename, ncid, id_var_ei2ni, graph%ei2ni)
 
-    where (graph%is_ghost)
-      is_ghost_int = 1
+    where (graph%is_border)
+      is_border_int = 1
     elsewhere
-      is_ghost_int = 0
+      is_border_int = 0
     end where
 
-    call write_var_primary( filename, ncid, id_var_is_ghost  , is_ghost_int)
-    call write_var_primary( filename, ncid, id_var_ghost_nhat, graph%ghost_nhat)
+    call write_var_primary( filename, ncid, id_var_is_border  , is_border_int)
+    call write_var_primary( filename, ncid, id_var_border_nhat, graph%border_nhat)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

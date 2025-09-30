@@ -32,9 +32,9 @@ module graph_types
     integer,  dimension(:    ), allocatable :: nC                            !<     Number  of other nodes each node is connected to
     integer,  dimension(:,:  ), allocatable :: C                             !<     Indices of other nodes each node is connected to
 
-    ! Ghost nodes
-    logical,  dimension(:    ), allocatable :: is_ghost                      !<     Whether or not a node is a ghost node
-    real(dp), dimension(:,:  ), allocatable :: ghost_nhat                    !<     Unit normal vector at each ghost node
+    ! Border nodes
+    logical,  dimension(:    ), allocatable :: is_border                     !<     Whether or not a node is a border node
+    real(dp), dimension(:,:  ), allocatable :: border_nhat                   !<     Outward unit normal vector at each border node
 
     ! Parallelisation ranges
     integer                                 :: ni1, ni2, n_loc               !< Each process "owns" n_loc nodes ni1 - ni2, so that n_loc = ni2 + 1 - ni1

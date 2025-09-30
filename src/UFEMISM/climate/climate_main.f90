@@ -18,6 +18,7 @@ MODULE climate_main
   USE global_forcing_types                                   , ONLY: type_global_forcing
   USE climate_idealised                                      , ONLY: initialise_climate_model_idealised, run_climate_model_idealised
   USE climate_realistic                                      , ONLY: initialise_climate_model_realistic, run_climate_model_realistic, remap_climate_realistic
+  USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
@@ -88,17 +89,20 @@ CONTAINS
     END IF
 
     ! Run the chosen climate model
-    IF     (choice_climate_model == 'none') THEN
-      ! No need to do anything
-    ELSEIF (choice_climate_model == 'idealised') THEN
-      CALL run_climate_model_idealised( mesh, ice, climate, time)
-    ELSEIF (choice_climate_model == 'realistic') THEN
-      CALL run_climate_model_realistic( mesh, ice, climate, forcing, time)
-    ELSEIF (choice_climate_model == 'matrix') THEN
-      call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
-    ELSE
-      CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
-    END IF
+    SELECT CASE (choice_climate_model)
+      CASE ('none')
+        ! No need to do anything
+      CASE ('idealised')
+        CALL run_climate_model_idealised( mesh, ice, climate, time)
+      CASE ('realistic')
+        CALL run_climate_model_realistic( mesh, ice, climate, forcing, time)
+      CASE ('snapshot_plus_uniform_deltaT')
+        CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, time)  
+      CASE ('matrix')
+        call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
+      CASE DEFAULT
+        CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
+    END SELECT
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -161,12 +165,17 @@ CONTAINS
     climate%t_next = C%start_time_of_run
 
     ! Determine which climate model to initialise
+    ! Print to terminal
+    IF (par%primary)  WRITE(*,"(A)") '     Initialising climate model "' // &
+      colour_string( TRIM( choice_climate_model),'light blue') // '"...'
     select case (choice_climate_model)
       ! No need to do anything
     case ('idealised')
       call initialise_climate_model_idealised( mesh, climate)
     case ('realistic')
       call initialise_climate_model_realistic( mesh, ice, climate, forcing, region_name)
+    case ('snapshot_plus_uniform_deltaT')
+      call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, region_name)
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
       call initialise_climate_matrix( mesh, grid, ice, climate, region_name, forcing)
@@ -216,6 +225,7 @@ CONTAINS
     ELSEIF (choice_climate_model == 'idealised') THEN
       ! No need to do anything
     ELSEIF (choice_climate_model == 'realistic' .OR. &
+            choice_climate_model == 'snapshot_plus_uniform_deltaT' .OR. &
             choice_climate_model == 'matrix') THEN
       CALL write_to_restart_file_climate_model_region( mesh, climate, region_name, time)
     ELSE
@@ -309,6 +319,7 @@ CONTAINS
     ELSEIF (choice_climate_model == 'idealised') THEN
       ! No need to do anything
     ELSEIF (choice_climate_model == 'realistic' .OR. &
+            choice_climate_model == 'snapshot_plus_uniform_deltaT' .OR. &
             choice_climate_model == 'matrix') THEN
       CALL create_restart_file_climate_model_region( mesh, climate, region_name)
     ELSE
@@ -425,6 +436,8 @@ CONTAINS
       ! No need to remap anything here
     ELSEIF (choice_climate_model == 'realistic') THEN
       call remap_climate_realistic(mesh_old, mesh_new, climate, region_name)
+    ELSEIF (choice_climate_model == 'snapshot_plus_uniform_deltaT')  THEN
+      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, climate, region_name)
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     ELSE

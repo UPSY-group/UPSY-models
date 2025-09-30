@@ -49,6 +49,7 @@ automated_testing/test_reports/*.html
 # Ignore automated test figures
 automated_testing/unit_tests/figures/*.png
 automated_testing/component_tests/figures/*.png
+automated_testing/component_tests/figures/*.avi
 
 # Ignore temporary scoreboard files
 automated_testing/component_tests/temporary_scoreboard_files/*.xml

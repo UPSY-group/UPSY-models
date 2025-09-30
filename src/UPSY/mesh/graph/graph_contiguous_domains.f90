@@ -32,8 +32,8 @@ contains
     integer,  dimension(size(graph%vi2ni))     :: vi2ni_old
     integer,  dimension(size(graph%ti2ni))     :: ti2ni_old
     integer,  dimension(size(graph%ei2ni))     :: ei2ni_old
-    logical,  dimension(graph%n)               :: is_ghost_old
-    real(dp), dimension(graph%n,2)             :: ghost_nhat_old
+    logical,  dimension(graph%n)               :: is_border_old
+    real(dp), dimension(graph%n,2)             :: border_nhat_old
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -49,30 +49,30 @@ contains
     end do
 
     ! Save old translation tables
-    ni_old2vi      = graph%ni2vi
-    ni_old2ti      = graph%ni2ti
-    ni_old2ei      = graph%ni2ei
-    vi2ni_old      = graph%vi2ni
-    ti2ni_old      = graph%ti2ni
-    ei2ni_old      = graph%ei2ni
-    V_old          = graph%V
-    nC_old         = graph%nC
-    C_old          = graph%C
-    is_ghost_old   = graph%is_ghost
-    ghost_nhat_old = graph%ghost_nhat
+    ni_old2vi       = graph%ni2vi
+    ni_old2ti       = graph%ni2ti
+    ni_old2ei       = graph%ni2ei
+    vi2ni_old       = graph%vi2ni
+    ti2ni_old       = graph%ti2ni
+    ei2ni_old       = graph%ei2ni
+    V_old           = graph%V
+    nC_old          = graph%nC
+    C_old           = graph%C
+    is_border_old   = graph%is_border
+    border_nhat_old = graph%border_nhat
 
     ! Reset node data
-    graph%ni2vi      = 0
-    graph%ni2ti      = 0
-    graph%ni2ei      = 0
-    graph%vi2ni      = 0
-    graph%ti2ni      = 0
-    graph%ei2ni      = 0
-    graph%V          = 0._dp
-    graph%nC         = 0
-    graph%C          = 0
-    graph%is_ghost   = .false.
-    graph%ghost_nhat = 0._dp
+    graph%ni2vi       = 0
+    graph%ni2ti       = 0
+    graph%ni2ei       = 0
+    graph%vi2ni       = 0
+    graph%ti2ni       = 0
+    graph%ei2ni       = 0
+    graph%V           = 0._dp
+    graph%nC          = 0
+    graph%C           = 0
+    graph%is_border   = .false.
+    graph%border_nhat = 0._dp
 
     ! Fill in new node data
     do ni_new = 1, graph%n
@@ -108,11 +108,11 @@ contains
         graph%C( ni_new,ci) = nj_new
       end do
 
-      ! is_ghost
-      graph%is_ghost( ni_new) = is_ghost_old( ni_old)
+      ! is_border
+      graph%is_border( ni_new) = is_border_old( ni_old)
 
-      ! ghost_nhat
-      graph%ghost_nhat( ni_new,:) = ghost_nhat_old( ni_old,:)
+      ! border_nhat
+      graph%border_nhat( ni_new,:) = border_nhat_old( ni_old,:)
 
     end do
 

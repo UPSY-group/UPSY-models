@@ -277,6 +277,9 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%S, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'S_lad', d_grid_vec_partial_2D)
 
+      case ('H_lad_b')
+        ! Do nothing
+
       ! Useful laddie fields
       case ('drho_amb')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%drho_amb, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
@@ -561,6 +564,9 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'T_lad', long_name = 'Laddie temperature', units = 'deg C')
       case ('S_lad')
         call add_field_grid_dp_2D( filename, ncid, 'S_lad', long_name = 'Laddie salinity', units = 'PSU')
+
+      case ('H_lad_b')
+        ! Do nothing
 
       ! Useful laddie fields
       case ('drho_amb')

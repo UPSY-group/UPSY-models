@@ -191,7 +191,7 @@ contains
       case ('grounding_line')
         call write_grounding_line_to_file( laddie%output_mesh_filename, ncid, mesh, forcing)
 
-      ! Ice geometry on triangles
+      ! Geometry on triangles
       case ('Hs_b')
         call map_a_b_2D( mesh, forcing%Hs, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
         call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hs_b', d_partial_b, d_is_hybrid = .true.)
@@ -262,6 +262,9 @@ contains
         call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'T_lad', laddie%now%T, d_is_hybrid = .true.)
       case ('S_lad')
         call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'S_lad', laddie%now%S, d_is_hybrid = .true.)
+
+      case ('H_lad_b')
+        call write_to_field_multopt_mesh_dp_2D_b( mesh, laddie%output_mesh_filename, ncid, 'H_lad_b', laddie%now%H_b, d_is_hybrid = .true.)
 
       ! Useful laddie fields
       case ('drho_amb')
@@ -540,6 +543,9 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'T_lad', long_name = 'Laddie temperature', units = 'deg C')
       case ('S_lad')
         call add_field_mesh_dp_2D( filename, ncid, 'S_lad', long_name = 'Laddie salinity', units = 'PSU')
+
+      case ('H_lad_b')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'H_lad_b', long_name = 'Laddie layer thickness on triangles', units = 'm')
 
       ! Useful laddie fields
       case ('drho_amb')

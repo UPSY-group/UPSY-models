@@ -255,7 +255,8 @@ contains
           ! No region requested: don't need to do anything
           exit
         case ('PineIsland','Thwaites','Amery','RiiserLarsen','SipleCoast', 'LarsenC', &
-              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &                           ! Antarctica
+              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &
+              'Antarctic_Peninsula', &                                                                                ! Antarctica
               'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                                                    ! Greenland
               'Patagonia', &                                                                                          ! Patagonia
               'CalvMIP_quarter')                                                              ! Idealised
@@ -336,6 +337,8 @@ contains
               call calc_polygon_Dotson_channel( poly_ROI)
             case ('Wilkes')
               call calc_polygon_Wilkes_basins( poly_ROI)  
+            case ('Antarctic_Peninsula')
+              call calc_polygon_Antarctic_Peninsula( poly_ROI)
             case default
               ! Requested area not in this model domain; skip
               cycle

@@ -73,8 +73,13 @@ contains
       case ('none')
         ! Do nothing
       case ('idealised','read_from_file')
-        ! Compute SGD
-        call compute_subglacial_discharge( mesh, laddie, forcing)
+        if (time >= C%start_time_of_applying_SGD) then 
+          ! Compute SGD
+          call compute_subglacial_discharge( mesh, laddie, forcing)
+        else
+          ! Set SGD to zero
+          laddie%SGD = 0._dp
+        end if
     end select
 
     if (C%do_repartition_laddie) then

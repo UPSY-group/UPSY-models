@@ -9,16 +9,19 @@ module basal_hydrology_main
   use parameters, only: grav, ice_density
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
+  use basal_hydrology_new, only: basal_hydrology
 
   implicit none
 
 contains
 
-  subroutine run_basal_hydrology_model( mesh, ice)
+  subroutine run_basal_hydrology_model( mesh, ice, time, dt)
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
     type(type_ice_model), intent(inout) :: ice
+    real(dp),             intent(in   ) :: time
+    real(dp),             intent(in   ) :: dt
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_basal_hydrology_model'
@@ -37,6 +40,8 @@ contains
       call calc_pore_water_pressure_none( mesh, ice)
     case ('Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)
+    case ('Salle2025')
+      call basal_hydrology(mesh, ice, ice%hydro_Salle2025, time, dt)
     end select
 
     ! Calculate overburden and effective pressure

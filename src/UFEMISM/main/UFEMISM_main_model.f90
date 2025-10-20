@@ -548,6 +548,7 @@ CONTAINS
     region%ocean%t_next   = C%start_time_of_run
     region%SMB%t_next     = C%start_time_of_run
     region%BMB%t_next     = C%start_time_of_run
+    region%BMB%t_next_reinit = C%start_time_of_run + C%dt_BMB_reinit
     region%LMB%t_next     = C%start_time_of_run
 
     ! ===== Thermodynamics =====

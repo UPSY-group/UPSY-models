@@ -183,31 +183,53 @@ contains
       laddie%buffer%n_mem = n_mem
       laddie%buffer%n     = 0
 
+      if (allocated( laddie%buffer%time)) deallocate(laddie%buffer%time)
       allocate( laddie%buffer%time             ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%layer_volume)) deallocate(laddie%buffer%layer_volume)
+      if (allocated( laddie%buffer%area_a      )) deallocate(laddie%buffer%area_a)
+      if (allocated( laddie%buffer%area_b      )) deallocate(laddie%buffer%area_b)
       allocate( laddie%buffer%layer_volume     ( n_mem), source = 0._dp)
       allocate( laddie%buffer%area_a           ( n_mem), source = 0._dp)
       allocate( laddie%buffer%area_b           ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%thickness_mean)) deallocate(laddie%buffer%thickness_mean)
+      if (allocated( laddie%buffer%thickness_max )) deallocate(laddie%buffer%thickness_max)
+      if (allocated( laddie%buffer%thickness_min )) deallocate(laddie%buffer%thickness_min)
       allocate( laddie%buffer%thickness_mean   ( n_mem), source = 0._dp)
       allocate( laddie%buffer%thickness_max    ( n_mem), source = 0._dp)
       allocate( laddie%buffer%thickness_min    ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%melt_mean)) deallocate(laddie%buffer%melt_mean)
+      if (allocated( laddie%buffer%melt_max )) deallocate(laddie%buffer%melt_max)
+      if (allocated( laddie%buffer%melt_min )) deallocate(laddie%buffer%melt_min)
+      if (allocated( laddie%buffer%melt_tot )) deallocate(laddie%buffer%melt_tot)
       allocate( laddie%buffer%melt_mean        ( n_mem), source = 0._dp)
       allocate( laddie%buffer%melt_max         ( n_mem), source = 0._dp)
       allocate( laddie%buffer%melt_min         ( n_mem), source = 0._dp)
       allocate( laddie%buffer%melt_tot         ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%uabs_max)) deallocate(laddie%buffer%uabs_max)
       allocate( laddie%buffer%uabs_max         ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%T_mean)) deallocate(laddie%buffer%T_mean)
+      if (allocated( laddie%buffer%T_max )) deallocate(laddie%buffer%T_max)
+      if (allocated( laddie%buffer%T_min )) deallocate(laddie%buffer%T_min)
       allocate( laddie%buffer%T_mean           ( n_mem), source = 0._dp)
       allocate( laddie%buffer%T_max            ( n_mem), source = 0._dp)
       allocate( laddie%buffer%T_min            ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%S_mean)) deallocate(laddie%buffer%S_mean)
+      if (allocated( laddie%buffer%S_max )) deallocate(laddie%buffer%S_max)
+      if (allocated( laddie%buffer%S_min )) deallocate(laddie%buffer%S_min)
       allocate( laddie%buffer%S_mean           ( n_mem), source = 0._dp)
       allocate( laddie%buffer%S_max            ( n_mem), source = 0._dp)
       allocate( laddie%buffer%S_min            ( n_mem), source = 0._dp)
 
+      if (allocated( laddie%buffer%entr_tot     )) deallocate(laddie%buffer%entr_tot)
+      if (allocated( laddie%buffer%entr_dmin_tot)) deallocate(laddie%buffer%entr_dmin_tot)
+      if (allocated( laddie%buffer%detr_tot     )) deallocate(laddie%buffer%detr_tot)
+      if (allocated( laddie%buffer%divQH_sum    )) deallocate(laddie%buffer%divQH_sum)
       allocate( laddie%buffer%entr_tot         ( n_mem), source = 0._dp)
       allocate( laddie%buffer%entr_dmin_tot    ( n_mem), source = 0._dp)
       allocate( laddie%buffer%detr_tot         ( n_mem), source = 0._dp)

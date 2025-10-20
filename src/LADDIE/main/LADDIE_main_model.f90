@@ -66,17 +66,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Only in first time step
-    select case (C%choice_laddie_SGD)
-      case default
-        call crash('unknown choice_laddie_SGD "' // trim( C%choice_laddie_SGD) // '"!')
-      case ('none')
-        ! Do nothing
-      case ('idealised','read_from_file')
-        ! Compute SGD
-        call compute_subglacial_discharge( mesh, laddie, forcing)
-    end select
-
     if (C%do_repartition_laddie) then
       ! Repartition the mesh so each process has (approximately)
       ! the same number of ice shelf vertices/triangles
@@ -141,6 +130,22 @@ contains
 
     ! == Update masks ==
     call update_laddie_masks( mesh, laddie, forcing)
+
+    ! == Compute SGD ==
+    select case (C%choice_laddie_SGD)
+      case default
+        call crash('unknown choice_laddie_SGD "' // trim( C%choice_laddie_SGD) // '"!')
+      case ('none')
+        ! Do nothing
+      case ('idealised','read_from_file')
+        if (time >= C%start_time_of_applying_SGD) then 
+          ! Compute SGD
+          call compute_subglacial_discharge( mesh, laddie, forcing)
+        else
+          ! Set SGD to zero
+          laddie%SGD = 0._dp
+        end if
+    end select
 
     ! Set values to zero if outside laddie mask
     do vi = mesh%vi1, mesh%vi2

@@ -118,6 +118,19 @@ CONTAINS
       BMB%t_next = time + C%dt_BMB
     END IF
 
+    ! Re-initialise BMB model if needed, only for LADDIE
+    if (time > BMB%t_next_reinit) then
+      select case (choice_BMB_model)
+        case default
+          !No need to do anything
+        case ('laddie')
+          call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+          call initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .false.)
+          call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, .true., .false.)
+          BMB%t_next_reinit = BMB%t_next_reinit + C%dt_BMB_reinit
+      end select
+    end if
+
     ! Run the chosen BMB model
     SELECT CASE (choice_BMB_model)
       CASE ('uniform')

@@ -36,7 +36,8 @@ dependencies = [
 where = ["tools/python"]
 include = ["upsy*"]
 
-[tools.scripts]
+[project.scripts]
+upsy-diagnose-run = "upsy.__main__:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "upsy.version.__version__"}

@@ -8,13 +8,18 @@ class Run(object):
     def __init__(self, rundir):
         """ Gather basic info from run """
 
+        if rundir[-1] == '/':
+            rundir = rundir[:-1]
         self.dir = rundir
         self.name = os.path.basename(self.dir)
         self.model = None
+        self.fnames = []
         self.Nmeshes = 0
 
         self._detect_model()
-        self._get_Nmeshes()
+        self._get_meshes()
+        self._get_variables()
+        self._get_times()
 
         print(f"Loaded {self.__repr__()}")
 
@@ -47,11 +52,30 @@ class Run(object):
             else:
                 raise ValueError(f"No valid output files in {self.dir}")
 
-    def _get_Nmeshes(self):
+    def _get_meshes(self):
         """ Extract the number of meshes in this run """
 
-        fnames = sorted(glob.glob(f'{self.dir}/{self.prefix}_0*.nc'))
-        self.Nmeshes = len(fnames)
+        self.fnames = sorted(glob.glob(f'{self.dir}/{self.prefix}_0*.nc'))
+        self.Nmeshes = len(self.fnames)
 
         if self.Nmeshes == 0:
             raise ValueError(f"No valid meshes output files in {self.dir}")
+
+    def _get_variables(self):
+        """ Extract available variables in mesh output files """
+
+        ds = xr.open_dataset(self.fnames[0])
+        self.vars_vi = [var_name for var_name, var in ds.items() if set(var.dims) == {'time', 'vi'}]
+        self.vars_ti = [var_name for var_name, var in ds.items() if set(var.dims) == {'time', 'ti'}]
+        self.contours = [var_name for var_name, var in ds.items() if set(var.dims) == {'time', 'two', 'ei'}]
+        ds.close()
+
+    def _get_times(self):
+        """ Get time values per mesh """
+
+        self.times = {}
+        for f,fname in enumerate(self.fnames):
+            ds = xr.open_dataset(fname)
+            self.times[f+1] = ds.time.values
+            ds.close()
+            

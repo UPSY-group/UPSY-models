@@ -2,11 +2,11 @@ import os
 import glob
 import xarray as xr
 
-from colormaps import *
-from utils import *
-from main_run import *
-from main_mesh import *
-from main_figure import *
+from upsy.colormaps import *
+from upsy.utils import *
+from upsy.main_run import *
+from upsy.main_mesh import *
+from upsy.main_figure import *
 
 class Movie(object):
     """ Movie of subplots of Ufe/Lad output """

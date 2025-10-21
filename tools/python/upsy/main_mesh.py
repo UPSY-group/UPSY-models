@@ -4,8 +4,8 @@ import xarray as xr
 from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 
-from colormaps import *
-from utils import *
+from upsy.colormaps import *
+from upsy.utils import *
 
 class Mesh(object):
     """ Properties and functions of a single mesh """

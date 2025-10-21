@@ -2,10 +2,11 @@ import os
 import glob
 import xarray as xr
 import matplotlib.pyplot as plt
-from main_mesh import Mesh
 
-from utils import *
-from analyse_resources import *
+
+from upsy.main_mesh import Mesh
+from upsy.utils import *
+from upsy.analyse_resources import *
 
 class Run(object):
     """ Properties and functions from a Ufemism run """

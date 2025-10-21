@@ -5,8 +5,8 @@ from matplotlib.patches import Polygon
 from matplotlib.collections import PatchCollection
 import matplotlib.gridspec as gridspec
 
-from colormaps import *
-from utils import *
+from upsy.colormaps import *
+from upsy.utils import *
 
 class Figure(object):
     """ Figure of subplots of Ufe/Lad output """

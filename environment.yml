@@ -1,0 +1,20 @@
+name: upsy
+channels:
+  - conda-forge
+dependencies:
+  - python >=3.12
+  - cartopy
+  - cmocean
+  - dask
+  - geopandas
+  - matplotlib
+  - netcdf4
+  - numpy
+  - pandas
+  - pyproj
+  - pyshp
+  - scipy
+  - shapely
+  - xarray 
+  - pip
+  - setuptools >=61

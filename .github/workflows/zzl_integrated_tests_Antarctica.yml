@@ -1,0 +1,36 @@
+name: LADDIE Test Suite - run and analyse integrated_tests/idealised/Antarctica
+run-name: ${{ github.actor }} - LADDIE Test Suite - run and analyse integrated_tests/idealised/Antarctica
+on:
+  workflow_call:
+
+jobs:
+  Antarctica:
+    runs-on: macos-latest
+    steps:
+
+      - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
+        run: |
+          #brew install gcc                    # Not needed on GitHub server, already installed
+          brew install open-mpi
+          brew install petsc
+          brew unlink hdf5-mpi                 # To fix the following conflict: "hdf5-mpi: because hdf5-mpi is a variant of hdf5, one can only use one or the other"
+          brew install netcdf
+          brew install netcdf-fortran
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update submodules
+        run: |
+          git submodule update --init --remote
+
+      - name: Restore LADDIE program from cache
+        uses: actions/cache/restore@v3
+        id: LADDIE_program_cache_restore
+        with:
+          path: LADDIE_program
+          key: LADDIE_program_perf_macos_${{ github.ref_name }}_${{ github.run_id }}
+
+      - name: Run integrated_tests/idealised/Antarctica
+        run: mpirun  -n 2  LADDIE_program  src/LADDIE/validation/integrated_tests/Antarctica/test_coarse.cfg
+

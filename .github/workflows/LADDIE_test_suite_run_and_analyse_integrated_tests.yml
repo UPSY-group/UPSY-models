@@ -7,3 +7,6 @@ jobs:
 
   integrated_tests_MISMIPplus:
     uses: ./.github/workflows/zzl_integrated_tests_MISMIPplus.yml
+
+  integrated_tests_Antarctica:
+    uses: ./.github/workflows/zzl_integrated_tests_Antarctica.yml

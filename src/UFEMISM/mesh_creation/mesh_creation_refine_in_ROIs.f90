@@ -71,7 +71,7 @@ contains
         case ('')
           ! No region requested: don't need to do anything
           exit
-        case ('PineIsland','Thwaites','Amery','RiiserLarsen','SipleCoast', 'LarsenC', &
+        case ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast', 'LarsenC', &
               'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &                              ! Antarctica
               'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                                                    ! Greenland
               'Patagonia', &                                                                                          ! Patagonia
@@ -135,6 +135,8 @@ contains
               call calc_polygon_Amery_ice_shelf( poly_ROI)
             case ('RiiserLarsen')
               call calc_polygon_Riiser_Larsen_ice_shelf( poly_ROI)
+            case ('RiiL_IQ2300')
+              call calc_polygon_Riiser_Larsen_IQ2300( poly_ROI)
             case ('SipleCoast')
               call calc_polygon_Siple_Coast( poly_ROI)
             case ('LarsenC')

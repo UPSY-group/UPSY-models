@@ -12,11 +12,28 @@ from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 from upsy.main_run import *
 from upsy.main_mesh import *
 
-def make_3dplot(run, azimuth=0, altitude=45, elev=15, azim=190):
+def make_3dplot(
+    rundir: str, 
+    azilight: str | int | float = 0, 
+    elelight: str | int | float = 45, 
+    aziview: str | int | float = 190, 
+    eleview: str | int | float = 15, 
+    vmax: str | int | float = 200
+):
 
-    scalarmap = _get_cmap()
+    try:
+        azilight = float(azilight)
+        elelight = float(elelight)
+        aziview = float(aziview)
+        eleview = float(eleview)
+        vmax = float(vmax)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Must be a floating point number")
+
+    scalarmap = _get_cmap(vmax=vmax)
 
     #Extract timeframe
+    run = Run(rundir)
     run.Nmeshes = 1
     mesh = run.get_mesh(1,file='laddie_output')
     tf = Timeframe(mesh,-1)
@@ -36,8 +53,8 @@ def make_3dplot(run, azimuth=0, altitude=45, elev=15, azim=190):
 
     print('Getting hillshades')
     #Get hillshades
-    hn_oce = hillshade(0*tf.ds.dHs_dx,0*tf.ds.dHs_dy,azimuth=azimuth,altitude=altitude)
-    hn_Hs = hillshade(tf.ds.dHs_dx,tf.ds.dHs_dy,azimuth=azimuth,altitude=altitude)
+    hn_oce = hillshade(0*tf.ds.dHs_dx,0*tf.ds.dHs_dy,azimuth=azilight,altitude=elelight)
+    hn_Hs = hillshade(tf.ds.dHs_dx,tf.ds.dHs_dy,azimuth=azilight,altitude=elelight)
 
     print('Adding colors to verts')
     #Add colors to verts
@@ -74,7 +91,7 @@ def make_3dplot(run, azimuth=0, altitude=45, elev=15, azim=190):
         rgba_bg = scalarmap.to_rgba(tf.ds.melt[vi]*3600*24*365.25)
         dy = curt[2][1] - curt[1][1]
         dx = curt[2][0] - curt[1][0]
-        hn = curtshade(dy,dx,azimuth,altitude)
+        hn = curtshade(dy,dx,azilight,elelight)
         cols_curts_cf_fl[i] = rgba(rgba_bg,hn)
 
     cols_curts_cf_gr = [(0,0,0,0)]*len(curts_cf_gr)
@@ -83,7 +100,7 @@ def make_3dplot(run, azimuth=0, altitude=45, elev=15, azim=190):
         rgba_bg = mpl.colors.to_rgba('lightblue')
         dy = curt[2][1] - curt[1][1]
         dx = curt[2][0] - curt[1][0]
-        hn = curtshade(dy,dx,azimuth,altitude)
+        hn = curtshade(dy,dx,azilight,elelight)
         cols_curts_cf_gr[i] = rgba(rgba_bg,hn,alpha=.4)
 
     print('Making figure')
@@ -99,11 +116,11 @@ def make_3dplot(run, azimuth=0, altitude=45, elev=15, azim=190):
     
     ax.set_aspect('equalxy')
     ax.set_box_aspect((1,1,.1))
-    ax.set_ylim([tf.ds.ymin+5e3,tf.ds.ymax-5e3])
-    ax.set_xlim([tf.ds.xmin+5e3,tf.ds.xmax-5e3])
+    ax.set_ylim([tf.ds.ymin+2e3,tf.ds.ymax-2e3])
+    ax.set_xlim([tf.ds.xmin+2e3,tf.ds.xmax-2e3])
     ax.set_zlim(zmin=-10,zmax=2000)
     
-    ax.view_init(elev=elev, azim=azim)
+    ax.view_init(elev=eleview, azim=aziview)
     ax.set_axis_off()
     
     fig.subplots_adjust(left=-.8,right=1.8,top=1.8,bottom=-.8)
@@ -122,11 +139,56 @@ def main():
         'rundir',
         help='Run directory where output is stored')
 
+    parser.add_argument(
+        '-al',
+        '--azilight',
+        dest='azilight',
+        default=0,
+        help='Azimuth of light source for hillshade, 0 = south'
+    )
+
+    parser.add_argument(
+        '-el',
+        '--elelight',
+        dest='elelight',
+        default=45,
+        help='Elevation of light source for hillshade, between 0 and 90'
+    )
+
+    parser.add_argument(
+        '-av',
+        '--aziview',
+        dest='aziview',
+        default=190,
+        help='Azimuth of viewpoint, 0 = east'
+    )
+
+    parser.add_argument(
+        '-ev',
+        '--eleview',
+        dest='eleview',
+        default=15,
+        help='Elevation of view point, between 0 and 90'
+    )
+
+    parser.add_argument(
+        '-vm',
+        '--vmax',
+        dest='vmax',
+        default=200,
+        help='Maximum value of BMB colormap'
+    )
+
     args = parser.parse_args()
 
-    run = Run(args.rundir)
-
-    make_3dplot(run)
+    make_3dplot(
+        rundir = args.rundir,
+        azilight = args.azilight,
+        elelight = args.elelight,
+        aziview = args.aziview,
+        eleview = args.eleview,
+        vmax = args.vmax
+    )
 
 def _verts_vi(tf, H_b):
     verts = []
@@ -226,11 +288,11 @@ def curtshade(dy,dx,azimuth,altitude,z_fac=1000):
 
     return hn
 
-def _get_cmap():
+def _get_cmap(vmax=200):
     """ BMB colormap """
 
     Ncols = 68
-    vmax = 200 
+    vmax = vmax 
     vmin = -10 
     linthresh = .3
     linscale = .25 

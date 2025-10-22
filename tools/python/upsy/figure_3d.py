@@ -18,7 +18,9 @@ def make_3dplot(
     elelight: str | int | float = 45, 
     aziview: str | int | float = 190, 
     eleview: str | int | float = 15, 
-    vmax: str | int | float = 200
+    vmax: str | int | float = 200,
+    shrink: str | list = [1,1,1,1],
+    dpi: str | int = 1200,
 ):
 
     try:
@@ -27,6 +29,8 @@ def make_3dplot(
         aziview = float(aziview)
         eleview = float(eleview)
         vmax = float(vmax)
+        shrink = list(shrink)
+        dpi = int(dpi)
     except ValueError:
         raise argparse.ArgumentTypeError("Must be a floating point number")
 
@@ -116,17 +120,17 @@ def make_3dplot(
     
     ax.set_aspect('equalxy')
     ax.set_box_aspect((1,1,.1))
-    ax.set_ylim([tf.ds.ymin+2e3,tf.ds.ymax-2e3])
-    ax.set_xlim([tf.ds.xmin+2e3,tf.ds.xmax-2e3])
+    ax.set_xlim([tf.ds.xmin+shrink[0]*1e3, tf.ds.xmax-shrink[1]*1e3])
+    ax.set_ylim([tf.ds.ymin+shrink[2]*1e3, tf.ds.ymax-shrink[3]*1e3])
     ax.set_zlim(zmin=-10,zmax=2000)
     
     ax.view_init(elev=eleview, azim=aziview)
     ax.set_axis_off()
-    
+
     fig.subplots_adjust(left=-.8,right=1.8,top=1.8,bottom=-.8)
 
     filename = os.path.join(dirname,'3Dplot.png')
-    plt.savefig(filename,dpi=1200)#, bbox_inches='tight')
+    plt.savefig(filename,dpi=dpi)#, bbox_inches='tight')
 
     print(f'Finished {filename}')
 
@@ -179,6 +183,25 @@ def main():
         help='Maximum value of BMB colormap'
     )
 
+    parser.add_argument(
+        '-s',
+        '--shrink',
+        dest='shrink',
+        nargs=4,
+        type=float,
+        default=[1.0,1.0,1.0,1.0],
+        help='Shrink domain [xmin, xmax, ymin, ymax] in km'
+    )
+
+    parser.add_argument(
+        '-d',
+        '--dpi',
+        dest='dpi',
+        type=int,
+        default=1200,
+        help='DPI of figure'
+    )
+
     args = parser.parse_args()
 
     make_3dplot(
@@ -187,7 +210,9 @@ def main():
         elelight = args.elelight,
         aziview = args.aziview,
         eleview = args.eleview,
-        vmax = args.vmax
+        vmax = args.vmax,
+        shrink = args.shrink,
+        dpi = args.dpi,
     )
 
 def _verts_vi(tf, H_b):

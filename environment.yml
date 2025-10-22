@@ -18,3 +18,4 @@ dependencies:
   - xarray 
   - pip
   - setuptools >=61
+  - tqdm

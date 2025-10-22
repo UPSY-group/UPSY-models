@@ -29,7 +29,8 @@ dependencies = [
     "pyshp",
     "scipy",
     "shapely",
-    "xarray"
+    "xarray",
+    "tqdm"
 ]
 
 [tool.setuptools.packages.find]
@@ -38,6 +39,7 @@ include = ["upsy*"]
 
 [project.scripts]
 upsy-diagnose-run = "upsy.__main__:main"
+upsy-plot-3dfigure = "upsy.figure_3d:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "upsy.version.__version__"}

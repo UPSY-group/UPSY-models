@@ -108,7 +108,12 @@ class Run(object):
         ds = xr.open_dataset(self.fnames[0])
         self.vars_vi = [var_name for var_name, var in ds.items() if set(var.dims) == {'time', 'vi'}]
         self.vars_ti = [var_name for var_name, var in ds.items() if set(var.dims) == {'time', 'ti'}]
-        self.contours = [var_name for var_name, var in ds.items() if set(var.dims) == {'time', 'two', 'ei'}]
+        self.contours = [
+            var_name for var_name, var in ds.items() if (
+                set(var.dims) in [{'time', 'two', 'ei'}, {'two', 'ei'}]
+                and var_name[0] != 'E'
+            )
+        ]
         ds.close()
 
     def _get_times(self):

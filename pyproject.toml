@@ -40,6 +40,7 @@ include = ["upsy*"]
 [project.scripts]
 upsy-diagnose-run = "upsy.__main__:main"
 upsy-plot-3dfigure = "upsy.figure_3d:main"
+upsy-plot-2dfigure = "upsy.figure:main"
 
 [tool.setuptools.dynamic]
 version = { attr = "upsy.version.__version__"}

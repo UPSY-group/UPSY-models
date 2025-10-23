@@ -11,7 +11,7 @@ module mpi_basic
 
   private
 
-  public :: par, sync, initialise_parallelisation, sync_node
+  public :: par, sync, initialise_parallelisation, initialise_parallelisation_multinode_tests, sync_node
 
   type parallel_info
 
@@ -34,10 +34,7 @@ module mpi_basic
 
 contains
 
-  subroutine initialise_parallelisation( UFEMISM_program_input_argument)
-
-    ! In/output variables:
-    character(len=*), intent(in) :: UFEMISM_program_input_argument
+  subroutine initialise_parallelisation
 
     ! Local variables:
     integer :: ierr, i, n
@@ -50,27 +47,8 @@ contains
     call MPI_COMM_RANK( MPI_COMM_WORLD, par%i, ierr)
     par%primary = (par%i == 0)
 
-    if (UFEMISM_program_input_argument == 'unit_tests_multinode') then
-      ! In this case, we're actually running on 7 processes on the same
-      ! machine; regardless, we'll "pretend" they are on 3 separate nodes,
-      ! and split the global communicator accordingly, so we can test
-      ! the hybrid distributed/shared memory code.
-
-      ! Safety
-      if (.not. par%n == 7) stop 'multi-node unit tests should be run on 4 processes!'
-
-      if (par%i == 0 .or. par%i == 1) then
-        call MPI_COMM_SPLIT( MPI_COMM_WORLD, 0, par%i, par%mpi_comm_node, ierr)
-      elseif (par%i == 2 .or. par%i == 3 .or. par%i == 4) then
-        call MPI_COMM_SPLIT( MPI_COMM_WORLD, 1, par%i, par%mpi_comm_node, ierr)
-      else
-        call MPI_COMM_SPLIT( MPI_COMM_WORLD, 2, par%i, par%mpi_comm_node, ierr)
-      end if
-
-    else
-      ! Split global communicator into communicators per shared-memory node
-      call MPI_COMM_SPLIT_TYPE( MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, par%i, MPI_INFO_NULL, par%mpi_comm_node, ierr)
-    end if
+    ! Split global communicator into communicators per shared-memory node
+    call MPI_COMM_SPLIT_TYPE( MPI_COMM_WORLD, MPI_COMM_TYPE_SHARED, par%i, MPI_INFO_NULL, par%mpi_comm_node, ierr)
 
     ! Get node number and rank of processes
     call MPI_COMM_SIZE( par%mpi_comm_node, par%n_node, ierr)
@@ -96,6 +74,59 @@ contains
     ! if (UFEMISM_program_input_argument == 'unit_tests_multinode') call print_parallelisation_info
 
   end subroutine initialise_parallelisation
+
+  subroutine initialise_parallelisation_multinode_tests
+    ! In this case, we're actually running on 7 processes on the same
+    ! machine; regardless, we'll "pretend" they are on 3 separate nodes,
+    ! and split the global communicator accordingly, so we can test
+    ! the hybrid distributed/shared memory code.
+
+    ! Local variables:
+    integer :: ierr, i, n
+
+    ! Use MPI to create copies of the program on all the processors, so the model can run in parallel.
+    call MPI_INIT( ierr)
+
+    ! Get global number and rank of processes
+    call MPI_COMM_SIZE( MPI_COMM_WORLD, par%n, ierr)
+    call MPI_COMM_RANK( MPI_COMM_WORLD, par%i, ierr)
+    par%primary = (par%i == 0)
+
+    ! Safety
+    if (.not. par%n == 7) stop 'multi-node unit tests should be run on 4 processes!'
+
+    if (par%i == 0 .or. par%i == 1) then
+      call MPI_COMM_SPLIT( MPI_COMM_WORLD, 0, par%i, par%mpi_comm_node, ierr)
+    elseif (par%i == 2 .or. par%i == 3 .or. par%i == 4) then
+      call MPI_COMM_SPLIT( MPI_COMM_WORLD, 1, par%i, par%mpi_comm_node, ierr)
+    else
+      call MPI_COMM_SPLIT( MPI_COMM_WORLD, 2, par%i, par%mpi_comm_node, ierr)
+    end if
+
+    ! Get node number and rank of processes
+    call MPI_COMM_SIZE( par%mpi_comm_node, par%n_node, ierr)
+    call MPI_COMM_RANK( par%mpi_comm_node, par%i_node, ierr)
+    par%node_primary = (par%i_node == 0)
+
+    ! Determine number of nodes
+    call determine_number_of_nodes_and_node_IDs
+
+    ! Create communicator for primaries only
+    if (par%node_primary) then
+      call MPI_COMM_SPLIT( MPI_COMM_WORLD, 0, par%i, par%mpi_comm_node_primaries, ierr)
+
+      ! Safety
+      call MPI_COMM_SIZE( par%mpi_comm_node_primaries, n, ierr)
+      if (n /= par%n_nodes) stop 'number of node primaries should be equal to n_nodes!'
+      call MPI_COMM_RANK( par%mpi_comm_node_primaries, i, ierr)
+      if (i /= par%node_ID) stop 'rank in mpi_comm_node_primaries should be equal to node_ID!'
+    else
+      call MPI_COMM_SPLIT( MPI_COMM_WORLD, 1, par%i, par%mpi_comm_secondaries, ierr)
+    end if
+
+    ! if (UFEMISM_program_input_argument == 'unit_tests_multinode') call print_parallelisation_info
+
+  end subroutine initialise_parallelisation_multinode_tests
 
   subroutine determine_number_of_nodes_and_node_IDs
 

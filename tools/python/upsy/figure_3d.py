@@ -9,8 +9,8 @@ from tqdm import tqdm
 
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
-from upsy.main_run import *
-from upsy.main_mesh import *
+from upsy.run import Run
+from upsy.main_mesh import Mesh, Timeframe
 
 def make_3dplot(
     rundir: str, 
@@ -38,11 +38,10 @@ def make_3dplot(
 
     #Extract timeframe
     run = Run(rundir)
-    run.Nmeshes = 1
-    mesh = run.get_mesh(1,file='laddie_output')
+    mesh = Mesh(run,run.Nmeshes)
     tf = Timeframe(mesh,-1)
 
-    dirname = os.path.join(run.directory,'figures')
+    dirname = os.path.join(run.dir,'figures')
     os.makedirs(dirname,exist_ok=True)
 
     print('Getting verts')

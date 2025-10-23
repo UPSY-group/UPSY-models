@@ -10,13 +10,13 @@ from upsy.utils import *
 class Mesh(object):
     """ Properties and functions of a single mesh """
 
-    def __init__(self, Run, mesh_number, file='main_output_ANT'):
+    def __init__(self, Run, mesh_number):
         """ Gather basic info from run """
 
         self.Run = Run
-        self.directory = self.Run.directory
+        self.dir = self.Run.dir
+        self.prefix = self.Run.prefix
         self.mesh_number = mesh_number
-        self.file = file
 
         self.got_voronois = False
         self.got_triangles = False
@@ -25,13 +25,13 @@ class Mesh(object):
         self.close()
 
     def __repr__(self):
-        return f"Mesh('{self.directory}',{self.mesh_number},'{self.file}')"
+        return f"Mesh('{self.dir}',{self.mesh_number},'{self.prefix}')"
 
     def __str__(self):
-        return f"Mesh number {self.mesh_number} of Run '{self.directory}'"
+        return f"Mesh number {self.mesh_number} of Run '{self.dir}'"
 
     def open(self):
-        self.ds = xr.open_dataset(f'{self.directory}/{self.file}_{self.mesh_number:05d}.nc')
+        self.ds = xr.open_dataset(f'{self.dir}/{self.prefix}_{self.mesh_number:05d}.nc')
         self.Ntimes = len(self.ds.time)
     
     def close(self):
@@ -87,7 +87,7 @@ class Timeframe(object):
         return f"Timeframe({repr(self.Mesh)},{self.t})"
 
     def __str__(self):
-        return f"Timeframe {self.t} of Mesh number {self.mesh_number} of Run '{self.directory}'"
+        return f"Timeframe {self.t} of Mesh number {self.mesh_number} of Run '{self.dir}'"
 
     def get_gl(self):
         """ Extract grounding line """

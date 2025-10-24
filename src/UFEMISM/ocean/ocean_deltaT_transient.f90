@@ -78,6 +78,8 @@ subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_nam
               case default
                 call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
             end select
+            ocean%T = ocean%deltaT_transient%T0
+            ocean%S = ocean%deltaT_transient%S0
 
         call finalise_routine(routine_name)
 

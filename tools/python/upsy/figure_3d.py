@@ -21,6 +21,7 @@ def make_3dplot(
     vmax: str | int | float = 200,
     shrink: str | list = [1,1,1,1],
     dpi: str | int = 1200,
+    vaspect: str | float = 0.1,
 ):
 
     try:
@@ -31,6 +32,7 @@ def make_3dplot(
         vmax = float(vmax)
         shrink = list(shrink)
         dpi = int(dpi)
+        vaspect = float(vaspect)
     except ValueError:
         raise argparse.ArgumentTypeError("Must be a floating point number")
 
@@ -118,10 +120,10 @@ def make_3dplot(
     ax.add_collection3d(poly)
     
     ax.set_aspect('equalxy')
-    ax.set_box_aspect((1,1,.1))
+    ax.set_box_aspect((1,1,vaspect))
     ax.set_xlim([tf.ds.xmin+shrink[0]*1e3, tf.ds.xmax-shrink[1]*1e3])
     ax.set_ylim([tf.ds.ymin+shrink[2]*1e3, tf.ds.ymax-shrink[3]*1e3])
-    ax.set_zlim(zmin=-10,zmax=2000)
+    ax.set_zlim(zmin=min(tf.ds.Hs.values)-10,zmax=max(tf.ds.Hs.values)+10)
     
     ax.view_init(elev=eleview, azim=aziview)
     ax.set_axis_off()
@@ -201,6 +203,15 @@ def main():
         help='DPI of figure'
     )
 
+    parser.add_argument(
+        '-va',
+        '--vaspect',
+        dest='vaspect',
+        type=float,
+        default=0.1,
+        help='Vertical aspect ratio /1000. Value 0.1 equals a 100x vertical exaggeration'
+    )
+
     args = parser.parse_args()
 
     make_3dplot(
@@ -212,6 +223,7 @@ def main():
         vmax = args.vmax,
         shrink = args.shrink,
         dpi = args.dpi,
+        vaspect = args.vaspect,
     )
 
 def _verts_vi(tf, H_b):

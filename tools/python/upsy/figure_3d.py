@@ -22,6 +22,7 @@ def make_3dplot(
     shrink: str | list = [1,1,1,1],
     dpi: str | int = 1200,
     vaspect: str | float = 0.1,
+    linewidth: str | int = 0.0,
 ):
 
     try:
@@ -33,6 +34,7 @@ def make_3dplot(
         shrink = list(shrink)
         dpi = int(dpi)
         vaspect = float(vaspect)
+        linewidth = float(linewidth)
     except ValueError:
         raise argparse.ArgumentTypeError("Must be a floating point number")
 
@@ -116,7 +118,7 @@ def make_3dplot(
     allv = verts_Hs*3 + verts_oce + curts_cf_fl + curts_cf_gr
     allc = cols_ice + cols_bmb + cols_bed + cols_oce + cols_curts_cf_fl + cols_curts_cf_gr
     
-    poly = Poly3DCollection(allv,fc=allc,axlim_clip=True)
+    poly = Poly3DCollection(allv,fc=allc,lw=linewidth,axlim_clip=True)
     ax.add_collection3d(poly)
     
     ax.set_aspect('equalxy')
@@ -212,6 +214,15 @@ def main():
         help='Vertical aspect ratio /1000. Value 0.1 equals a 100x vertical exaggeration'
     )
 
+    parser.add_argument(
+        '-lw',
+        '--linewidth',
+        dest='linewidth',
+        type=float,
+        default=0.0,
+        help='Linewidth of mesh'
+    )
+
     args = parser.parse_args()
 
     make_3dplot(
@@ -224,6 +235,7 @@ def main():
         shrink = args.shrink,
         dpi = args.dpi,
         vaspect = args.vaspect,
+        linewidth = args.linewidth,
     )
 
 def _verts_vi(tf, H_b):

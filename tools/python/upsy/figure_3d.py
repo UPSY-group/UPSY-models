@@ -118,7 +118,7 @@ def make_3dplot(
     allv = verts_Hs*3 + verts_oce + curts_cf_fl + curts_cf_gr
     allc = cols_ice + cols_bmb + cols_bed + cols_oce + cols_curts_cf_fl + cols_curts_cf_gr
     
-    poly = Poly3DCollection(allv,fc=allc,lw=linewidth,axlim_clip=True)
+    poly = Poly3DCollection(allv,fc=allc,lw=linewidth,edgecolor='k',axlim_clip=True)
     ax.add_collection3d(poly)
     
     ax.set_aspect('equalxy')

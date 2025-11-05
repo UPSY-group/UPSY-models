@@ -4,9 +4,9 @@ import xarray as xr
 
 from upsy.colormaps import *
 from upsy.utils import *
-from upsy.main_run import *
-from upsy.main_mesh import *
-from upsy.main_figure import *
+from upsy.run import *
+from upsy.mesh import *
+from upsy.figure import *
 
 class Movie(object):
     """ Movie of subplots of Ufe/Lad output """

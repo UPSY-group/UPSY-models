@@ -10,7 +10,7 @@ from tqdm import tqdm
 from mpl_toolkits.mplot3d.art3d import Poly3DCollection
 
 from upsy.run import Run
-from upsy.main_mesh import Mesh, Timeframe
+from upsy.mesh import Mesh, Timeframe
 
 def make_3dplot(
     rundir: str, 

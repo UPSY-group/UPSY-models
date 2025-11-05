@@ -2,7 +2,7 @@ import os
 import glob
 import xarray as xr
 
-from upsy.main_mesh import Mesh
+from upsy.mesh import Mesh
 
 class Run(object):
     """ Properties and functions from a UFEMISM or LADDIE run """

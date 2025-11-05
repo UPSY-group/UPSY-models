@@ -8,7 +8,7 @@ from matplotlib.collections import PolyCollection
 import matplotlib.gridspec as gridspec
 
 from upsy.run import Run
-from upsy.main_mesh import Mesh, Timeframe
+from upsy.mesh import Mesh, Timeframe
 from upsy.colormaps import *
 from upsy.utils import *
 

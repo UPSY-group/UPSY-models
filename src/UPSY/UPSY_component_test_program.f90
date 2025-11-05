@@ -29,7 +29,7 @@ program UPSY_component_test_program
   program_name = 'UPSY_component_tests'
 
   ! Initialise MPI parallelisation and PETSc
-  call initialise_parallelisation('')
+  call initialise_parallelisation
   call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
   ! Initialise constants (pi, NaN, ...)

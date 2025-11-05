@@ -79,15 +79,11 @@ program LADDIE_program
   end if
 
   ! Initialise MPI parallelisation and PETSc
-  call initialise_parallelisation( input_argument)
+  call initialise_parallelisation
   call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
   ! Initialise constants (pi, NaN, ...)
   call initialise_constants
-
-  ! Only the primary process "sees" the input argument; all the others are
-  ! initialised by MPI without it. Broadcast it so they know what to do.
-  call MPI_BCAST( input_argument, len(input_argument), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
 
   ! Start the clock
   tstart = MPI_WTIME()
@@ -105,7 +101,7 @@ program LADDIE_program
   else ! An actual model simulation
 
     ! Initialise the main model configuration
-    call initialise_model_configuration
+    call initialise_model_configuration( input_argument)
 
     ! Create the resource tracking output file
     call create_resource_tracking_file( C%output_dir)

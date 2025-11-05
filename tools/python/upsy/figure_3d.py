@@ -70,45 +70,49 @@ def make_3dplot(
     cols_bmb = [(0,0,0,0)]*len(verts_Hs)
     cols_bed = [(0,0,0,0)]*len(verts_Hs)
 
-    for vi in tqdm(range(0,len(tf.ds.vi))):
+    mask = tf.ds.mask.values
+    melt_vals = tf.ds.melt.values * 3600*24*365.25
+    hn_Hs = np.array(hn_Hs) #TODO necessary?
+    hn_oce = np.array(hn_oce)
+    
+    rgba_bg_bmb = scalarmap.to_rgba(melt_vals)
+    rgba_bg_oce = mpl.colors.to_rgba('darkslategray')
+    rgba_bg_ice = mpl.colors.to_rgba('lightblue')
+    rgba_bg_bed = mpl.colors.to_rgba('saddlebrown')
+
+    for vi in tqdm(range(len(mask))):
         #BMB
-        if (tf.ds.mask[vi] in [4]):
-            rgba_bg = scalarmap.to_rgba(tf.ds.melt[vi]*3600*24*365.25)
-            cols_bmb[vi] = rgba(rgba_bg,hn_Hs[vi])
+        if mask[vi] in [4]:
+            cols_bmb[vi] = rgba(rgba_bg_bmb[vi],hn_Hs[vi])
     
         #Ocean
-        elif (tf.ds.mask[vi] in [2,8]):
-            rgba_bg = mpl.colors.to_rgba('darkslategray')
-            cols_oce[vi] = rgba(rgba_bg,hn_oce[vi])
+        elif mask[vi] in [2,8]:
+            cols_oce[vi] = rgba(rgba_bg_oce,hn_oce[vi])
     
         # Ice
-        elif (tf.ds.mask[vi] in [3,5,6,7,9,10]):
-            rgba_bg = mpl.colors.to_rgba('lightblue')
-            cols_ice[vi] = rgba(rgba_bg,hn_Hs[vi],alpha=.4)
+        elif mask[vi] in [3,5,6,7,9,10]:
+            cols_ice[vi] = rgba(rgba_bg_ice,hn_Hs[vi],alpha=.4)
         # Bed
-        elif (tf.ds.mask[vi] in [1]):
-            rgba_bg = mpl.colors.to_rgba('saddlebrown')
-            cols_bed[vi] = rgba(rgba_bg,hn_Hs[vi],alpha=.4)
+        elif mask[vi] in [1]:
+            cols_bed[vi] = rgba(rgba_bg_bed,hn_Hs[vi],alpha=.4)
 
     print('Adding colors to curts')
     #Add colors to curts
     cols_curts_cf_fl = [(0,0,0,0)]*len(curts_cf_fl)
     for i,curt in tqdm(enumerate(curts_cf_fl)):
         vi = curts_vi_cf_fl[i]
-        rgba_bg = scalarmap.to_rgba(tf.ds.melt[vi]*3600*24*365.25)
         dy = curt[2][1] - curt[1][1]
         dx = curt[2][0] - curt[1][0]
         hn = curtshade(dy,dx,azilight,elelight)
-        cols_curts_cf_fl[i] = rgba(rgba_bg,hn)
+        cols_curts_cf_fl[i] = rgba(rgba_bg_bmb[vi],hn)
 
     cols_curts_cf_gr = [(0,0,0,0)]*len(curts_cf_gr)
     for i,curt in tqdm(enumerate(curts_cf_gr)):
         vi = curts_vi_cf_gr[i]
-        rgba_bg = mpl.colors.to_rgba('lightblue')
         dy = curt[2][1] - curt[1][1]
         dx = curt[2][0] - curt[1][0]
         hn = curtshade(dy,dx,azilight,elelight)
-        cols_curts_cf_gr[i] = rgba(rgba_bg,hn,alpha=.4)
+        cols_curts_cf_gr[i] = rgba(rgba_bg_ice,hn,alpha=.4)
 
     print('Making figure')
     #Make figure
@@ -133,7 +137,22 @@ def make_3dplot(
     fig.subplots_adjust(left=-.8,right=1.8,top=1.8,bottom=-.8)
 
     filename = os.path.join(dirname,'3Dplot.png')
-    plt.savefig(filename,dpi=dpi)#, bbox_inches='tight')
+
+    metadata = {
+        'azilight': str(azilight),
+        'elelight': str(elelight),
+        'aziview': str(aziview),
+        'eleview': str(eleview),
+        'vmax': str(vmax),
+        'shrink': str(shrink),
+        'dpi': str(dpi),
+        'vaspect': str(vaspect),
+        'linewidth': str(linewidth)
+    }
+
+    print(metadata)
+
+    plt.savefig(filename,dpi=dpi, metadata=metadata)#, bbox_inches='tight')
 
     print(f'Finished {filename}')
 
@@ -240,19 +259,30 @@ def main():
 
 def _verts_vi(tf, H_b):
     verts = []
-    for vi in tqdm(range(0,len(tf.ds.vi))):
-        #Get number of voronoi vertices
-        nVVor = tf.ds.nVVor[vi].values
-        #Get indices of voronoi vertices
-        VVor = tf.ds.VVor[:nVVor,vi].values
-        #Get 3D locations
-        x = tf.ds.Vor[0,VVor-1].values
-        y = tf.ds.Vor[1,VVor-1].values
-        # Get triangle indices
-        ti = tf.ds.vori2ti[VVor-1].values
-        #Add Hs
-        z = H_b[ti-1].values
-        v = np.array([x,y,z]).T.tolist()
+
+    # Extract necessary data from the dataset at once
+    nVVor = tf.ds.nVVor.values
+    VVor = tf.ds.VVor.values
+    Vor = tf.ds.Vor.values
+    vori2ti = tf.ds.vori2ti.values
+
+    for vi in tqdm(range(0,len(nVVor))):
+        # Get number of Voronoi vertices for current index
+        num_vvor = nVVor[vi]
+        
+        # Get indices of Voronoi vertices
+        vvor_indices = VVor[:num_vvor, vi] - 1
+
+        # Get 3D locations
+        x = Vor[0, vvor_indices]
+        y = Vor[1, vvor_indices]
+        
+        # Get triangle indices and corresponding H
+        ti = vori2ti[vvor_indices] -1
+        z = H_b[ti]
+        
+        # Combine x, y, z into a vertex array
+        v = np.column_stack((x, y, z)).tolist()
         verts.append(v)
     
     return verts
@@ -261,37 +291,39 @@ def _curts_vi(tf, H_b0, H_b1, maskvals, neighbs):
 
     curts = []
     curts_vi = []
-    for ei in tqdm(range(0,len(tf.ds.ei))):
-        v0 = tf.ds.EV[0,ei].values-1
-        v1 = tf.ds.EV[1,ei].values-1
 
-        
-        if (tf.ds.mask[v0].values in maskvals and tf.ds.mask[v1].values in neighbs):
+    EV = tf.ds.EV.values
+    ETri = tf.ds.ETri.values
+    Tricc = tf.ds.Tricc.values
+    mask = tf.ds.mask.values
+
+
+    for ei in tqdm(range(0,len(tf.ds.ei))):
+        v0 = EV[0,ei] - 1
+        v1 = EV[1,ei] - 1
+
+        mask_v0 = mask[v0]
+        mask_v1 = mask[v1]
+
+        if mask_v0 in maskvals and mask_v1 in neighbs:
             vi = v0
-            t0 = tf.ds.ETri[1,ei].values-1
-            t1 = tf.ds.ETri[0,ei].values-1
-        elif (tf.ds.mask[v1].values in maskvals and tf.ds.mask[v0].values in neighbs):
+            t0 = ETri[1, ei] -1
+            t1 = ETri[0, ei] -1
+        elif mask_v1 in maskvals and mask_v0 in neighbs:
             vi = v1
-            t0 = tf.ds.ETri[0,ei].values-1
-            t1 = tf.ds.ETri[1,ei].values-1
+            t0 = ETri[0, ei] -1
+            t1 = ETri[1, ei] -1
         else:
             continue
 
-        x0 = tf.ds.Tricc[0,t0].values
-        x1 = tf.ds.Tricc[0,t1].values
-        y0 = tf.ds.Tricc[1,t0].values
-        y1 = tf.ds.Tricc[1,t1].values
+        x0, x1 = Tricc[0, t0], Tricc[0, t1]
+        y0, y1 = Tricc[1, t0], Tricc[1, t1]
 
-        z00 = H_b0[t0].values
-        z01 = H_b1[t0].values
-        z10 = H_b0[t1].values
-        z11 = H_b1[t1].values
+        z00, z01 = H_b0[t0], H_b1[t0]
+        z10, z11 = H_b0[t1], H_b1[t1]
 
-        xx = [x0, x0, x1, x1]
-        yy = [y0, y0, y1, y1]
-        zz = [z00, z01, z11, z10]
+        c = np.array([[x0, x0, x1, x1], [y0, y0, y1, y1], [z00, z01, z11, z10]]).T.tolist()
 
-        c = np.array([xx,yy,zz]).T.tolist()
         curts.append(c)
         curts_vi.append(vi)
 

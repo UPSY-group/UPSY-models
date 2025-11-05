@@ -71,7 +71,11 @@ def make_3dplot(
     cols_bed = [(0,0,0,0)]*len(verts_Hs)
 
     mask = tf.ds.mask.values
-    melt_vals = tf.ds.melt.values * 3600*24*365.25
+    try:
+        melt_vals = tf.ds.melt.values * 3600*24*365.25
+    except:
+        melt_vals = -tf.ds.BMB.values
+
     hn_Hs = np.array(hn_Hs) #TODO necessary?
     hn_oce = np.array(hn_oce)
     

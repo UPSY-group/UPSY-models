@@ -157,4 +157,6 @@ def get_cmap(varname):
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')
         return
 
-    return cmap,norm
+    scalarmap = mpl.cm.ScalarMappable(norm=norm,cmap=cmap)
+
+    return scalarmap

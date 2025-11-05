@@ -3,8 +3,8 @@ import glob
 import argparse
 
 import xarray as xr
-from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
+import matplotlib as mpl
+from matplotlib.collections import PolyCollection
 import matplotlib.gridspec as gridspec
 
 from upsy.run import Run
@@ -347,30 +347,28 @@ class Field(object):
 
     def get_cmap(self):
         """ Get colormap info """
-        cmap,norm = get_cmap(self.varname)
+        scalarmap = get_cmap(self.varname)
 
-        self.cmap = cmap
-        self.norm = norm
+        self.scalarmap = scalarmap
 
         return
 
     def get_pcoll(self):
         """ Get patch collection """
 
+        pcols = self.scalarmap.to_rgba(self.data.values)
+
         #Check type (voronoi / triangle)
         if 'vi' in self.data.dims:
             if not self.Mesh.got_voronois:
                 self.Mesh.get_voronois()
-            self.pcoll = PatchCollection(self.Mesh.voronois,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PolyCollection(self.Mesh.voronois, fc=pcols)
         elif 'ti' in self.data.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            self.pcoll = PatchCollection(self.Mesh.triangles,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PolyCollection(self.Mesh.triangles, fc=pcols)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
-
-        # Fill array
-        self.pcoll.set_array(self.data.values)
 
         return
 
@@ -379,14 +377,13 @@ class Field(object):
 
         mcmap = 'ocean'
         mnorm = mpl.colors.Normalize(vmin=1.7, vmax=3.1, clip=True)
+        scalarmap = mpl.cm.ScalarMappable(norm=mnorm,cmap=mcmap)
 
         if not self.Mesh.got_voronois:
             self.Mesh.get_voronois()
 
-        self.mcoll = PatchCollection(self.Mesh.voronois,cmap=mcmap,norm=mnorm)
-
-        # Fill array
-        self.mcoll.set_array(self.Timeframe.mask)
+        mcols = scalarmap.to_rgba(self.Timeframe.mask)
+        self.mcoll = PolyCollection(self.Mesh.voronois,fc=mcols)
 
         return
 
@@ -492,20 +489,20 @@ class DiffField(object):
     def get_pcoll(self):
         """ Get patch collection """
 
+        # Fill array
+        pcols = self.scalarmap.to_rgba(self.data.values)
+
         #Check type (voronoi / triangle)
         if 'vi' in self.data.dims:
             if not self.Mesh.got_voronois:
                 self.Mesh.get_voronois()
-            self.pcoll = PatchCollection(self.Mesh.voronois,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PolyCollection(self.Mesh.voronois, fc=pcols)
         elif 'ti' in self.data.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            self.pcoll = PatchCollection(self.Mesh.triangles,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PatchCollection(self.Mesh.triangles, fc=pcols)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
-
-        # Fill array
-        self.pcoll.set_array(self.data.values)
 
         return
 
@@ -515,12 +512,12 @@ class DiffField(object):
         mcmap = 'ocean'
         mnorm = mpl.colors.Normalize(vmin=1.7, vmax=3.1, clip=True)
 
+        scalarmap = mpl.cm.ScalarMappable(norm=mnorm,cmap=mcmap)
+        mcols = scalarmap.to_rgba(self.Timeframe.mask)
+
         if not self.Mesh.got_voronois:
             self.Mesh.get_voronois()
 
-        self.mcoll = PatchCollection(self.Mesh.voronois,cmap=mcmap,norm=mnorm)
-
-        # Fill array
-        self.mcoll.set_array(self.Timeframe.mask)
+        self.mcoll = PolyCollection(self.Mesh.voronois, fc=mcols)
 
         return

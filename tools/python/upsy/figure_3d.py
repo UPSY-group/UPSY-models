@@ -55,8 +55,8 @@ def make_3dplot(
 
     print('Getting curts')
     #Get curtains
-    curts_cf_fl, curts_vi_cf_fl = _curts_vi(tf, tf.ds.Hs_b, 0*tf.ds.Hs_b, [4], [2,8])
-    curts_cf_gr, curts_vi_cf_gr = _curts_vi(tf, tf.ds.Hs_b, 0*tf.ds.Hs_b, [3,5,6,7,9,10], [2,8])
+    curts_cf_fl, curts_vi_cf_fl = _curts_vi(tf, tf.ds.Hs_b, 0*tf.ds.Hs_b, [4,6], [2,8])
+    curts_cf_gr, curts_vi_cf_gr = _curts_vi(tf, tf.ds.Hs_b, 0*tf.ds.Hs_b, [3,5,7,9,10], [2,8])
 
     print('Getting hillshades')
     #Get hillshades

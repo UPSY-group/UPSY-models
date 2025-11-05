@@ -19,3 +19,5 @@ dependencies:
   - pip
   - setuptools >=61
   - tqdm
+  - ipython
+  - ipykernel

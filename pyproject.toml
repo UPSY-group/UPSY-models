@@ -30,7 +30,9 @@ dependencies = [
     "scipy",
     "shapely",
     "xarray",
-    "tqdm"
+    "tqdm",
+    "ipython",
+    "ipykernel"
 ]
 
 [tool.setuptools.packages.find]

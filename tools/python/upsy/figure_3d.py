@@ -86,7 +86,7 @@ def make_3dplot(
 
     for vi in tqdm(range(len(mask))):
         #BMB
-        if mask[vi] in [4]:
+        if mask[vi] in [4,6]:
             cols_bmb[vi] = rgba(rgba_bg_bmb[vi],hn_Hs[vi])
     
         #Ocean
@@ -94,7 +94,7 @@ def make_3dplot(
             cols_oce[vi] = rgba(rgba_bg_oce,hn_oce[vi])
     
         # Ice
-        elif mask[vi] in [3,5,6,7,9,10]:
+        elif mask[vi] in [3,5,7,9,10]:
             cols_ice[vi] = rgba(rgba_bg_ice,hn_Hs[vi],alpha=.4)
         # Bed
         elif mask[vi] in [1]:

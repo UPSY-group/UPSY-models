@@ -27,9 +27,11 @@ MODULE basal_hydrology_model_types
     ! Fill here what we need for the basal hydrology model
     ! Part of this might need to go in ice_model_types?
     real(dp), dimension(:), allocatable :: W                   ! Basal water depth
-    real(dp), dimension(:), allocatable :: dW_dx_b              ! Derivative of W on B grid.
+    real(dp), dimension(:), allocatable :: dW_dx_b             ! Derivative of W to x on B grid.
+    real(dp), dimension(:), allocatable :: W_b                 ! Basal water depth on B grid
 
     real(dp), dimension(:), allocatable :: W_til               ! Basal water depth in till
+    real(dp), dimension(:), allocatable :: W_til_next          ! Basal water depth in till at next timestep
 
     real(dp), dimension(:), allocatable :: P                   ! Pressure of the ice on the basal water
     real(dp), dimension(:), allocatable :: P_o                 ! Overburden pressure of the ice on the basal water
@@ -38,25 +40,36 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: m                   ! Total input of water to the basal system
 
     real(dp), dimension(:), allocatable :: D                   ! Diffusivity
+    real(dp), dimension(:), allocatable :: dD_dx_b             ! Derivative of D to x on B grid.
+    real(dp), dimension(:), allocatable :: D_b                 ! Diffusivity on B grid
 
     real(dp), dimension(:), allocatable :: K                   ! Effective conductivity
+    real(dp), dimension(:), allocatable :: dK_dx_b             ! Derivative of K to x on B grid.
+    real(dp), dimension(:), allocatable :: K_b                 ! Effective conductivity on B grid.
 
     real(dp), dimension(:), allocatable :: u                   ! Velocity in x direction
+    real(dp), dimension(:), allocatable :: du_dx_b             ! Derivative of u to x on B grid.
+    real(dp), dimension(:), allocatable :: u_b                 ! Velocity in x direction on B grid.
+    real(dp), dimension(:), allocatable :: u_c                 ! Velocity in x direction on C grid.
     real(dp), dimension(:), allocatable :: v                   ! Velocity in y direction
+    real(dp), dimension(:), allocatable :: dv_dx_b             ! Derivative of v to x on B grid.
+    real(dp), dimension(:), allocatable :: v_b                 ! Velocity in y direction on B grid.
+    real(dp), dimension(:), allocatable :: v_c                 ! Velocity in y direction on C grid.
 
     ! Is this how it goes in UFEMISM as well? Compass indices do not really make sense here?
     real(dp), dimension(:), allocatable :: Q_e                 ! Normal component (east) of the advective flux VW
     real(dp), dimension(:), allocatable :: Q_w                 ! Normal component (west) of the advective flux VW
     real(dp), dimension(:), allocatable :: Q_n                 ! Normal component (north) of the advective flux VW
     real(dp), dimension(:), allocatable :: Q_s                 ! Normal component (south) of the advective flux VW
+    real(dp), dimension(:), allocatable :: divQ                ! Divergence of the advective flux
 
     real(dp), dimension(:), allocatable :: phi_0               ! Englacial porosity
 
     ! How do we handle constants? Are those also types somewhere?
     ! Seems to be in model_configuration.f90 and parameters.f90?
 
-    real(dp), dimension(:), allocatable :: u_b                 ! Ice sliding velocity in x direction
-    real(dp), dimension(:), allocatable :: v_b                 ! Ice sliding velocity in y direction
+    real(dp), dimension(:), allocatable :: u_slide             ! Ice sliding velocity in x direction
+    real(dp), dimension(:), allocatable :: v_slide             ! Ice sliding velocity in y direction
 
     real(dp), dimension(:), allocatable :: A                   ! Softness of the ice
 
@@ -66,10 +79,9 @@ MODULE basal_hydrology_model_types
 
     real(dp), dimension(:), allocatable :: H_i                 ! Ice thickness
 
-    logical, dimension(:), allocatable  :: floating            ! Is the ice floating? (probably an "ice" variable)
-    ! ice%mask_floating_ice
-    logical, dimension(:), allocatable  :: ice_free            ! Is there ice at this location? (probably an "ice" variable)
-    ! ice%mask_icefree_land
+    real(dp), dimension(:), allocatable :: Z                   ! Sum of zeroth-order terms
+    real(dp), dimension(:), allocatable :: C                   ! Closing rates
+    real(dp), dimension(:), allocatable :: O                   ! Opening rates
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

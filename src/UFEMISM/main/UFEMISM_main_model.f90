@@ -21,6 +21,7 @@ MODULE UFEMISM_main_model
   use ice_dynamics_main, only: initialise_ice_dynamics_model, run_ice_dynamics_model, remap_ice_dynamics_model, &
     create_restart_files_ice_model, write_to_restart_files_ice_model, apply_geometry_relaxation
   use basal_hydrology_main, only: run_basal_hydrology_model
+  use basal_hydrology_new, only: allocate_basal_hydro
   use bed_roughness_main, only: initialise_bed_roughness_model
   USE thermodynamics_main                                    , ONLY: initialise_thermodynamics_model, run_thermodynamics_model, &
                                                                      create_restart_file_thermo, write_to_restart_file_thermo
@@ -113,7 +114,7 @@ CONTAINS
       END IF ! IF (C%allow_mesh_updates) THEN
 
       ! Run the subglacial hydrology model
-      CALL run_basal_hydrology_model( region%mesh, region%ice, region%time, 0.0_dp)
+      CALL run_basal_hydrology_model( region%mesh, region%ice, region%time, 1000.0_dp)
 
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN
@@ -495,6 +496,8 @@ CONTAINS
     ! ========================
 
     CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
+
+    call allocate_basal_hydro( region%mesh, region%ice%hydro_Salle2025)
 
     call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
 

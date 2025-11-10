@@ -57,6 +57,8 @@ contains
       call calc_idealised_geometry_MISMIPplus( x, y, Hi, Hb, Hs, SL)
     case ('MISMIPplus_with_ridge')
       call calc_idealised_geometry_MISMIPplus_with_ridge( x, y, Hi, Hb, Hs, SL)
+    case ('MISMIPplus_with_trough')
+      call calc_idealised_geometry_MISMIPplus_with_trough( x, y, Hi, Hb, Hs, SL)
     case ('calvmip_circular')
       call calc_idealised_geometry_CalvMIP_circular( x, y, Hi, Hb, Hs, SL)
     case ('calvmip_Thule')
@@ -444,9 +446,10 @@ contains
     By = (dc / (1 + exp(-2._dp*(y - wc)/fc))) + &
         (dc / (1 + exp( 2._dp*(y + wc)/fc)))
     
-    ridge_height = ridge_height_max * exp(-x / decay_scale)
-    ridge = ridge_height * exp(-((y - y_ridge) / (ridge_width / 2._dp) )**2._dp)
-
+    ! ridge_height = ridge_height_max  * exp(-x / decay_scale)
+    ! ridge = ridge_height * exp(-((y - y_ridge) / (ridge_width / 2._dp) )**2._dp)
+    ridge_height = ridge_height_max
+    ridge = -(ridge_height * exp(-((y - 15000._dp) / 6000._dp)**2._dp) + ridge_height * exp(-((y + 15000._dp) / 6000._dp)**2._dp))
     if (x > 640E3_dp) then
       Hi = 0._dp
     else
@@ -458,6 +461,63 @@ contains
 
   end subroutine calc_idealised_geometry_MISMIPplus_with_ridge
 
+  subroutine calc_idealised_geometry_MISMIPplus_with_trough( x, y, Hi, Hb, Hs, SL)
+    !< Calculate the MISMIP+ geometry
+
+    ! In/output variables:
+    real(dp), intent(in   ) :: x,y             ! [m] Coordinates
+    real(dp), intent(  out) :: Hi              ! [m] Ice thickness
+    real(dp), intent(  out) :: Hb              ! [m] Bedrock elevation
+    real(dp), intent(  out) :: Hs              ! [m] Surface elevation
+    real(dp), intent(  out) :: SL              ! [m] Sea level
+
+    ! Local variables:
+    real(dp)            :: xtilde, Bx, By, ridge_height, ridge
+
+    real(dp), parameter :: B0     = -150._dp
+    real(dp), parameter :: B2     = -728.8_dp
+    real(dp), parameter :: B4     = 343.91_dp
+    real(dp), parameter :: B6     = -50.57_dp
+    real(dp), parameter :: xbar   = 300000._dp
+    real(dp), parameter :: fc     = 4000._dp
+    real(dp), parameter :: dc     = 500._dp
+    real(dp), parameter :: wc     = 24000._dp
+    real(dp), parameter :: zbdeep = -720._dp
+
+    real(dp), parameter :: ridge_height_max = 500._dp
+    real(dp), parameter :: decay_scale = 400000._dp
+    real(dp), parameter :: y_ridge = 7500._dp
+    real(dp), parameter :: ridge_width = 5000._dp
+
+
+#if (DO_ASSERTIONS)
+    ! Safety
+    if ( C%refgeo_idealised_MISMIPplus_Hi_init < 0._dp .OR. &
+        C%refgeo_idealised_MISMIPplus_Hi_init > 10000._dp) then
+      call crash('refgeo_idealised_MISMIPplus_Hi_init has unrealistic value of {dp_01}!', dp_01 = C%refgeo_idealised_MISMIPplus_Hi_init)
+    end if
+#endif
+
+    xtilde = x / xbar
+    Bx = B0 + (B2 * xtilde**2._dp) + (B4 * xtilde**4._dp) + (B6 * xtilde**6._dp)
+    By = (dc / (1 + exp(-2._dp*(y - wc)/fc))) + &
+        (dc / (1 + exp( 2._dp*(y + wc)/fc)))
+    
+    ! ridge_height = ridge_height_max  * exp(-x / decay_scale)
+    ! ridge = ridge_height * exp(-((y - y_ridge) / (ridge_width / 2._dp) )**2._dp)
+    ridge_height = ridge_height_max
+    ridge = -(ridge_height * exp(-((y - 12000._dp) / 4000._dp)**2._dp) + ridge_height * exp(-((y + 12000._dp) / 4000._dp)**2._dp)) + 200._dp * exp(-((y) / 2000._dp)**2._dp)
+    
+    if (x > 640E3_dp) then
+      Hi = 0._dp
+    else
+      Hi = C%refgeo_idealised_MISMIPplus_Hi_init
+    end if
+    Hb = max( Bx + By + ridge, zbdeep)
+    SL = 0._dp
+    Hs = ice_surface_elevation( Hi, Hb, SL)
+
+  end subroutine calc_idealised_geometry_MISMIPplus_with_trough
 
   subroutine calc_idealised_geometry_CalvMIP_circular( x, y, Hi, Hb, Hs, SL)
     ! Calculate the geometry for the CalvingMIP circular domain

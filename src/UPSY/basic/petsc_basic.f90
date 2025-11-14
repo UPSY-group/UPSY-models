@@ -92,17 +92,17 @@ CONTAINS
     call init_routine( routine_name)
 
     ! Optional arguments
-    if (present( PETSc_KSPtype)) then
-      PETSc_KSPtype_ = PETSc_KSPtype
-    else
+!    if (present( PETSc_KSPtype)) then
+!      PETSc_KSPtype_ = PETSc_KSPtype
+!    else
       PETSc_KSPtype_ = 'default'
-    end if
+!    end if
 
-    if (present( PETSc_PCtype)) then
-      PETSc_PCtype_ = PETSc_PCtype
-    else
+!    if (present( PETSc_PCtype)) then
+!      PETSc_PCtype_ = PETSc_PCtype
+!    else
       PETSc_PCtype_ = 'nothing'
-    end if
+!    end if
 
     ! Safety
     call MatGetSize( A, m, n, perr)
@@ -160,13 +160,13 @@ CONTAINS
     end select
 
     ! Make sure PETSc knows we're starting from an initial guess
-    call KSPSetInitialGuessNonzero( KSP_solver, .true., perr)
+!    call KSPSetInitialGuessNonzero( KSP_solver, .true., perr)
 
     ! Iterative solver tolerances
     call KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 2000, perr)
 
     ! Set preconditioner
-    call KSPGetPC( KSP_solver, precond, perr)
+!    call KSPGetPC( KSP_solver, precond, perr)
     select case (PETSc_PCtype_)
     case default
       call crash('unknown PETSc_PCtype "' // trim( PETSc_PCtype_) // '"')

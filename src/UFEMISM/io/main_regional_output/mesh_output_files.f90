@@ -882,58 +882,58 @@ contains
 
       ! Initial ice-sheet geometry
       case ('Hi_init')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi_init', long_name = 'Initial ice thickness', units = 'm')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi_init', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Initial ice thickness', units = 'm')
       case ('Hb_init')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb_init', long_name = 'Initial bedrock elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb_init', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Initial bedrock elevation', units = 'm w.r.t. PD sea level')
       case ('Hs_init')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs_init', long_name = 'Initial surface elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs_init', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Initial surface elevation', units = 'm w.r.t. PD sea level')
       case ('SL_init')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'SL_init', long_name = 'Initial geoid elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'SL_init', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Initial geoid elevation', units = 'm w.r.t. PD sea level')
 
       ! Present-day ice-sheet geometry
       case ('Hi_PD')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi_PD', long_name = 'Present-day ice thickness', units = 'm')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi_PD', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Present-day ice thickness', units = 'm')
       case ('Hb_PD')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb_PD', long_name = 'Present-day bedrock elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb_PD', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Present-day bedrock elevation', units = 'm w.r.t. PD sea level')
       case ('Hs_PD')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs_PD', long_name = 'Present-day surface elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs_PD', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Present-day surface elevation', units = 'm w.r.t. PD sea level')
       case ('SL_PD')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'SL_PD', long_name = 'Present-day geoid elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'SL_PD', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Present-day geoid elevation', units = 'm w.r.t. PD sea level')
 
       ! GIA equilibrium ice-sheet geometry
       case ('Hi_GIAeq')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi_GIAeq', long_name = 'GIA equilibrium ice thickness', units = 'm')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi_GIAeq', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'GIA equilibrium ice thickness', units = 'm')
       case ('Hb_GIAeq')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb_GIAeq', long_name = 'GIA equilibrium bedrock elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb_GIAeq', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'GIA equilibrium bedrock elevation', units = 'm w.r.t. PD sea level')
       case ('Hs_GIAeq')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs_GIAeq', long_name = 'GIA equilibrium surface elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs_GIAeq', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'GIA equilibrium surface elevation', units = 'm w.r.t. PD sea level')
       case ('SL_GIAeq')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'SL_GIAeq', long_name = 'GIA equilibrium geoid elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'SL_GIAeq', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'GIA equilibrium geoid elevation', units = 'm w.r.t. PD sea level')
 
     ! ===== Basic ice-sheet geometry =====
     ! ====================================
 
       case ('Hi')
-        call add_field_mesh_dp_2D( filename, ncid, 'Hi', long_name = 'Ice thickness', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'Hi', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice thickness', units = 'm')
       case ('Hb')
-        call add_field_mesh_dp_2D( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D( filename, ncid, 'Hb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Bedrock elevation', units = 'm w.r.t. PD sea level')
       case ('Hs')
-        call add_field_mesh_dp_2D( filename, ncid, 'Hs', long_name = 'Surface elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D( filename, ncid, 'Hs', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation', units = 'm w.r.t. PD sea level')
       case ('Hib')
-        call add_field_mesh_dp_2D( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D( filename, ncid, 'Hib', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice base elevation', units = 'm w.r.t. PD sea level')
       case ('SL')
-        call add_field_mesh_dp_2D( filename, ncid, 'SL', long_name = 'Geoid elevation', units = 'm w.r.t. PD sea level')
+        call add_field_mesh_dp_2D( filename, ncid, 'SL', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Geoid elevation', units = 'm w.r.t. PD sea level')
       case ('TAF')
-        call add_field_mesh_dp_2D( filename, ncid, 'TAF', long_name = 'Thickness above floatation', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'TAF', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Thickness above floatation', units = 'm')
       case ('Hi_eff')
-        call add_field_mesh_dp_2D( filename, ncid, 'Hi_eff', long_name = 'Effective ice thickness', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'Hi_eff', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Effective ice thickness', units = 'm')
       case ('Hs_slope')
-        call add_field_mesh_dp_2D( filename, ncid, 'Hs_slope', long_name = 'Absolute surface gradient', units = '-')
+        call add_field_mesh_dp_2D( filename, ncid, 'Hs_slope', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Absolute surface gradient', units = '-')
       case ('grounding_line')
         call inquire_dim( filename, ncid, 'ei', int_dummy, id_dim_ei)
         call inquire_dim( filename, ncid, 'two', int_dummy, id_dim_two)
         call inquire_dim( filename, ncid, 'time', int_dummy, id_dim_time)
-        call create_variable( filename, ncid, 'grounding_line', NF90_DOUBLE, (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_grounding_line)
+        call create_variable( filename, ncid, 'grounding_line', parse_netcdf_precision( C%output_precision), (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_grounding_line)
         call add_attribute_char( filename, ncid, id_var_grounding_line, 'long_name', 'Grounding-line coordinates')
         call add_attribute_char( filename, ncid, id_var_grounding_line, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_grounding_line, 'format', 'Matlab contour format')
@@ -941,7 +941,7 @@ contains
         call inquire_dim( filename, ncid, 'ei', int_dummy, id_dim_ei)
         call inquire_dim( filename, ncid, 'two', int_dummy, id_dim_two)
         call inquire_dim( filename, ncid, 'time', int_dummy, id_dim_time)
-        call create_variable( filename, ncid, 'ice_margin', NF90_DOUBLE, (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_ice_margin)
+        call create_variable( filename, ncid, 'ice_margin', parse_netcdf_precision( C%output_precision), (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_ice_margin)
         call add_attribute_char( filename, ncid, id_var_ice_margin, 'long_name', 'Ice margin coordinates')
         call add_attribute_char( filename, ncid, id_var_ice_margin, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_ice_margin, 'format', 'Matlab contour format')
@@ -949,7 +949,7 @@ contains
         call inquire_dim( filename, ncid, 'ei', int_dummy, id_dim_ei)
         call inquire_dim( filename, ncid, 'two', int_dummy, id_dim_two)
         call inquire_dim( filename, ncid, 'time', int_dummy, id_dim_time)
-        call create_variable( filename, ncid, 'calving_front', NF90_DOUBLE, (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_calving_front)
+        call create_variable( filename, ncid, 'calving_front', parse_netcdf_precision( C%output_precision), (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_calving_front)
         call add_attribute_char( filename, ncid, id_var_calving_front, 'long_name', 'Calving-front coordinates')
         call add_attribute_char( filename, ncid, id_var_calving_front, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_calving_front, 'format', 'Matlab contour format')
@@ -957,7 +957,7 @@ contains
         call inquire_dim( filename, ncid, 'ei', int_dummy, id_dim_ei)
         call inquire_dim( filename, ncid, 'two', int_dummy, id_dim_two)
         call inquire_dim( filename, ncid, 'time', int_dummy, id_dim_time)
-        call create_variable( filename, ncid, 'coastline', NF90_DOUBLE, (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_coastline)
+        call create_variable( filename, ncid, 'coastline', parse_netcdf_precision( C%output_precision), (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_coastline)
         call add_attribute_char( filename, ncid, id_var_coastline, 'long_name', 'Coastline coordinates')
         call add_attribute_char( filename, ncid, id_var_coastline, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_coastline, 'format', 'Matlab contour format')
@@ -965,7 +965,7 @@ contains
         call inquire_dim( filename, ncid, 'ei', int_dummy, id_dim_ei)
         call inquire_dim( filename, ncid, 'two', int_dummy, id_dim_two)
         call inquire_dim( filename, ncid, 'time', int_dummy, id_dim_time)
-        call create_variable( filename, ncid, 'grounded_ice_contour', NF90_DOUBLE, (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_grounded_ice_contour)
+        call create_variable( filename, ncid, 'grounded_ice_contour', parse_netcdf_precision( C%output_precision), (/ id_dim_ei, id_dim_two, id_dim_time /), id_var_grounded_ice_contour)
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'long_name', 'Grounded ice contour coordinates')
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'format', 'Matlab contour format')
@@ -974,37 +974,37 @@ contains
     ! =============================================
 
       case ('dHi')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHi', long_name = 'Ice thickness difference w.r.t. reference', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHi', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice thickness difference w.r.t. reference', units = 'm')
       case ('dHb')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHb', long_name = 'Bedrock elevation difference w.r.t. reference', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Bedrock elevation difference w.r.t. reference', units = 'm')
       case ('dHs')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHs', long_name = 'Surface elevation difference w.r.t. reference', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHs', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation difference w.r.t. reference', units = 'm')
       case ('dHib')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHib', long_name = 'Ice base elevation difference w.r.t. reference', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHib', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice base elevation difference w.r.t. reference', units = 'm')
 
     ! ===== Geometry rates of change =====
     ! ====================================
 
       case ('dHi_dt')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt', long_name = 'Ice thickness rate of change', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice thickness rate of change', units = 'm yr^-1')
       case ('dHb_dt')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHb_dt', long_name = 'Bedrock elevation rate of change', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHb_dt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Bedrock elevation rate of change', units = 'm yr^-1')
       case ('dHs_dt')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHs_dt', long_name = 'Surface elevation rate of change', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHs_dt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation rate of change', units = 'm yr^-1')
       case ('dHib_dt')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHib_dt', long_name = 'Ice base elevation rate of change', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHib_dt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice base elevation rate of change', units = 'm yr^-1')
       case ('dHi_dt_raw')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt_raw', long_name = 'Ice thickness rate of change before any modifications', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt_raw', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice thickness rate of change before any modifications', units = 'm yr^-1')
       case ('dHi_dt_residual')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt_residual', long_name = 'Residual ice thickness rate of change during model calibration', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt_residual', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Residual ice thickness rate of change during model calibration', units = 'm yr^-1')
 
     ! ===== Target quantities =====
     ! =============================
 
       case ('dHi_dt_target')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt_target', long_name = 'Target ice thickness rate of change during model calibration', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHi_dt_target', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Target ice thickness rate of change during model calibration', units = 'm yr^-1')
       case ('uabs_surf_target')
-        call add_field_mesh_dp_2D( filename, ncid, 'uabs_surf_target', long_name = 'Target ice surface speed during model calibration', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'uabs_surf_target', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Target ice surface speed during model calibration', units = 'm yr^-1')
 
     ! ===== Masks =====
     ! =================
@@ -1014,122 +1014,122 @@ contains
       !       them yourself in post-processing
 
       case ('mask_icefree_land')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_icefree_land', long_name = 'Mask indicating ice-free land')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_icefree_land', do_compress = C%do_compress_output, long_name = 'Mask indicating ice-free land')
       case ('mask_icefree_ocean')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_icefree_ocean', long_name = 'Mask indicating ice-free ocean')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_icefree_ocean', do_compress = C%do_compress_output, long_name = 'Mask indicating ice-free ocean')
       case ('mask_grounded_ice')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_grounded_ice', long_name = 'Mask indicating grounded ice')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_grounded_ice', do_compress = C%do_compress_output, long_name = 'Mask indicating grounded ice')
       case ('mask_floating_ice')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_floating_ice', long_name = 'Mask indicating floating ice')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_floating_ice', do_compress = C%do_compress_output, long_name = 'Mask indicating floating ice')
       case ('mask_margin')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_margin', long_name = 'Mask indicating ice next to ice-free')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_margin', do_compress = C%do_compress_output, long_name = 'Mask indicating ice next to ice-free')
       case ('mask_gl_gr')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_gl_gr', long_name = 'Mask indicating grounded side of grounding line')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_gl_gr', do_compress = C%do_compress_output, long_name = 'Mask indicating grounded side of grounding line')
       case ('mask_gl_fl')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_gl_fl', long_name = 'Mask indicating floating side of grounding line')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_gl_fl', do_compress = C%do_compress_output, long_name = 'Mask indicating floating side of grounding line')
       case ('mask_cf_gr')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_cf_gr', long_name = 'Mask indicating grounded calving front')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_cf_gr', do_compress = C%do_compress_output, long_name = 'Mask indicating grounded calving front')
       case ('mask_cf_fl')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_cf_fl', long_name = 'Mask indicating floating calving front')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_cf_fl', do_compress = C%do_compress_output, long_name = 'Mask indicating floating calving front')
       case ('mask_coastline')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_coastline', long_name = 'Mask indicating ice-free land next to ice-free ocean')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_coastline', do_compress = C%do_compress_output, long_name = 'Mask indicating ice-free land next to ice-free ocean')
       case ('mask_ROI')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_ROI', long_name = 'Mask indicating ROI')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_ROI', do_compress = C%do_compress_output, long_name = 'Mask indicating ROI')
       case ('mask_SGD')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_SGD', long_name = 'Mask indicating potential subglacial discharge cells')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_SGD', do_compress = C%do_compress_output, long_name = 'Mask indicating potential subglacial discharge cells')
       case ('mask')
-        call add_field_mesh_int_2D( filename, ncid, 'mask', long_name = 'General mask')
+        call add_field_mesh_int_2D( filename, ncid, 'mask', do_compress = C%do_compress_output, long_name = 'General mask')
       case ('basin_ID')
-        call add_field_mesh_int_2D( filename, ncid, 'basin_ID', long_name = 'Drainage basin ID', units = 'ID code')
+        call add_field_mesh_int_2D( filename, ncid, 'basin_ID', do_compress = C%do_compress_output, long_name = 'Drainage basin ID', units = 'ID code')
 
     ! ===== Area fractions =====
     ! ==========================
 
       case ('fraction_gr')
-        call add_field_mesh_dp_2D( filename, ncid, 'fraction_gr', long_name = 'Grounded area fractions of vertices', units = '0-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'fraction_gr', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Grounded area fractions of vertices', units = '0-1')
       case ('fraction_gr_b')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'fraction_gr_b', long_name = 'Grounded area fractions of triangles', units = '0-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'fraction_gr_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Grounded area fractions of triangles', units = '0-1')
       case ('fraction_margin')
-        call add_field_mesh_dp_2D( filename, ncid, 'fraction_margin', long_name = 'Ice-covered area fractions of ice margins', units = '0-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'fraction_margin', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice-covered area fractions of ice margins', units = '0-1')
 
     ! === Thermodynamics and rheology ===
     ! ===================================
 
       case ('Ti')
-        call add_field_mesh_dp_3D( filename, ncid, 'Ti', long_name = 'Englacial temperature', units = 'K')
+        call add_field_mesh_dp_3D( filename, ncid, 'Ti', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Englacial temperature', units = 'K')
       case ('Ti_pmp')
-        call add_field_mesh_dp_3D( filename, ncid, 'Ti_pmp', long_name = 'Pressure melting point temperature', units = 'K')
+        call add_field_mesh_dp_3D( filename, ncid, 'Ti_pmp', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Pressure melting point temperature', units = 'K')
       case ('Ti_hom')
-        call add_field_mesh_dp_2D( filename, ncid, 'Ti_hom', long_name = 'Temperature at base w.r.t. pressure melting point', units = 'K')
+        call add_field_mesh_dp_2D( filename, ncid, 'Ti_hom', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Temperature at base w.r.t. pressure melting point', units = 'K')
       case ('Cpi')
-        call add_field_mesh_dp_3D( filename, ncid, 'Cpi', long_name = 'Specific heat capacity', units = 'J kg^-1 K^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'Cpi', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Specific heat capacity', units = 'J kg^-1 K^-1')
       case ('Ki')
-        call add_field_mesh_dp_3D( filename, ncid, 'Ki', long_name = 'Thermal conductivity', units = 'J m^-1 K^-1 yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'Ki', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Thermal conductivity', units = 'J m^-1 K^-1 yr^-1')
       case ('internal_heating')
-        call add_field_mesh_dp_3D( filename, ncid, 'internal_heating', long_name = 'Internal heating', units = '?')
+        call add_field_mesh_dp_3D( filename, ncid, 'internal_heating', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Internal heating', units = '?')
       case ('frictional_heating')
-        call add_field_mesh_dp_2D( filename, ncid, 'frictional_heating', long_name = 'Frictional heating', units = '?')
+        call add_field_mesh_dp_2D( filename, ncid, 'frictional_heating', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Frictional heating', units = '?')
       case ('A_flow')
-        call add_field_mesh_dp_3D( filename, ncid, 'A_flow', long_name = 'Glens flow law factor', units = 'Pa^-3 y^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'A_flow', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Glens flow law factor', units = 'Pa^-3 y^-1')
 
     ! === Ice velocities ===
     ! ======================
 
       ! 3-D
       case ('u_3D')
-        call add_field_mesh_dp_3D_b( filename, ncid, 'u_3D', long_name = '3-D ice velocity in the x-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_3D_b( filename, ncid, 'u_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D ice velocity in the x-direction', units = 'm yr^-1')
       case ('v_3D')
-        call add_field_mesh_dp_3D_b( filename, ncid, 'v_3D', long_name = '3-D ice velocity in the y-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_3D_b( filename, ncid, 'v_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D ice velocity in the y-direction', units = 'm yr^-1')
       case ('u_3D_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_3D_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('w_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'w_3D', long_name = '3-D ice velocity in the z-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'w_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D ice velocity in the z-direction', units = 'm yr^-1')
 
       ! Vertically integrated
       case ('u_vav')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'u_vav', long_name = 'Vertically averaged ice velocity in the x-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'u_vav', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Vertically averaged ice velocity in the x-direction', units = 'm yr^-1')
       case ('v_vav')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'v_vav', long_name = 'Vertically averaged ice velocity in the y-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'v_vav', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Vertically averaged ice velocity in the y-direction', units = 'm yr^-1')
       case ('u_vav_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_vav_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('uabs_vav')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'uabs_vav', long_name = 'Vertically averaged absolute ice velocity', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'uabs_vav', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Vertically averaged absolute ice velocity', units = 'm yr^-1')
       case ('uabs_vav_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
 
       ! Surface
       case ('u_surf')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'u_surf', long_name = 'Surface ice velocity in the x-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'u_surf', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface ice velocity in the x-direction', units = 'm yr^-1')
       case ('v_surf')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'v_surf', long_name = 'Surface ice velocity in the y-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'v_surf', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface ice velocity in the y-direction', units = 'm yr^-1')
       case ('u_surf_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_surf_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('w_surf')
-        call add_field_mesh_dp_2D( filename, ncid, 'w_surf', long_name = 'Surface ice velocity in the z-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'w_surf', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface ice velocity in the z-direction', units = 'm yr^-1')
       case ('uabs_surf')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'uabs_surf', long_name = 'Absolute surface ice velocity', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'uabs_surf', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Absolute surface ice velocity', units = 'm yr^-1')
       case ('uabs_surf_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
 
       ! Base
       case ('u_base')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'u_base', long_name = 'Basal ice velocity in the x-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'u_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal ice velocity in the x-direction', units = 'm yr^-1')
       case ('v_base')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'v_base', long_name = 'Basal ice velocity in the y-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'v_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal ice velocity in the y-direction', units = 'm yr^-1')
       case ('u_base_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_base_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('w_base')
-        call add_field_mesh_dp_2D( filename, ncid, 'w_base', long_name = 'Basal ice velocity in the z-direction', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'w_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal ice velocity in the z-direction', units = 'm yr^-1')
       case ('uabs_base')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'uabs_base', long_name = 'Absolute basal ice velocity', units = 'm yr^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'uabs_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Absolute basal ice velocity', units = 'm yr^-1')
       case ('uabs_base_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
 
@@ -1137,278 +1137,278 @@ contains
     ! ====================
 
       case ('du_dx_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'du_dx_3D', long_name = '3-D xx strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'du_dx_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D xx strain rate', units = 'yr^-1')
       case ('du_dy_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'du_dy_3D', long_name = '3-D xy strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'du_dy_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D xy strain rate', units = 'yr^-1')
       case ('du_dz_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'du_dz_3D', long_name = '3-D xz strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'du_dz_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D xz strain rate', units = 'yr^-1')
       case ('dv_dx_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'dv_dx_3D', long_name = '3-D yx strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'dv_dx_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D yx strain rate', units = 'yr^-1')
       case ('dv_dy_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'dv_dy_3D', long_name = '3-D yy strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'dv_dy_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D yy strain rate', units = 'yr^-1')
       case ('dv_dz_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'dv_dz_3D', long_name = '3-D yz strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'dv_dz_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D yz strain rate', units = 'yr^-1')
       case ('dw_dx_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'dw_dx_3D', long_name = '3-D zx strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'dw_dx_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D zx strain rate', units = 'yr^-1')
       case ('dw_dy_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'dw_dy_3D', long_name = '3-D zy strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'dw_dy_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D zy strain rate', units = 'yr^-1')
       case ('dw_dz_3D')
-        call add_field_mesh_dp_3D( filename, ncid, 'dw_dz_3D', long_name = '3-D zz strain rate', units = 'yr^-1')
+        call add_field_mesh_dp_3D( filename, ncid, 'dw_dz_3D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = '3-D zz strain rate', units = 'yr^-1')
 
     ! == Ice flow regime ==
     ! =====================
 
       case ('divQ')
-        call add_field_mesh_dp_2D( filename, ncid, 'divQ', long_name = 'Horizontal ice flux divergence', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal ice flux divergence', units = 'm yr^-1')
       case ('R_shear')
-        call add_field_mesh_dp_2D( filename, ncid, 'R_shear', long_name = 'Slide/shear ratio', units = '0-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'R_shear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Slide/shear ratio', units = '0-1')
 
     ! == Ice P/C time stepping ==
     ! ===========================
 
       case ('pc_truncation_error')
-        call add_field_mesh_dp_2D( filename, ncid, 'pc_truncation_error', long_name = 'Ice P/C truncation error tau', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'pc_truncation_error', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice P/C truncation error tau', units = 'm')
       case ('pc_untolerated_events')
-        call add_field_mesh_int_2D( filename, ncid, 'pc_untolerated_events', long_name = 'Ice P/C number of events above error tolerance', units = '-')
+        call add_field_mesh_int_2D( filename, ncid, 'pc_untolerated_events', do_compress = C%do_compress_output, long_name = 'Ice P/C number of events above error tolerance', units = '-')
 
     ! == Basal hydrology ==
     ! =====================
 
       case ('pore_water_pressure')
-        call add_field_mesh_dp_2D( filename, ncid, 'pore_water_pressure', long_name = 'Till pore water pressure', units = 'Pa')
+        call add_field_mesh_dp_2D( filename, ncid, 'pore_water_pressure', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till pore water pressure', units = 'Pa')
       case ('overburden_pressure')
-        call add_field_mesh_dp_2D( filename, ncid, 'overburden_pressure', long_name = 'Ice overburden pressure', units = 'Pa')
+        call add_field_mesh_dp_2D( filename, ncid, 'overburden_pressure', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice overburden pressure', units = 'Pa')
       case ('effective_pressure')
-        call add_field_mesh_dp_2D( filename, ncid, 'effective_pressure', long_name = 'Effective basal pressure', units = 'Pa')
+        call add_field_mesh_dp_2D( filename, ncid, 'effective_pressure', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Effective basal pressure', units = 'Pa')
       case ('pore_water_likelihood')
-        call add_field_mesh_dp_2D( filename, ncid, 'pore_water_likelihood', long_name = 'Till pore water likelihood', units = '0-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'pore_water_likelihood', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till pore water likelihood', units = '0-1')
       case ('pore_water_fraction')
-        call add_field_mesh_dp_2D( filename, ncid, 'pore_water_fraction', long_name = 'Fraction of overburden pressure reduced by pore water ', units = '0-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'pore_water_fraction', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Fraction of overburden pressure reduced by pore water ', units = '0-1')
 
     ! == Basal sliding ==
     ! ===================
 
       ! Sliding law coefficients
       case ('till_friction_angle')
-        call add_field_mesh_dp_2D( filename, ncid, 'till_friction_angle', long_name = 'Till friction angle', units = 'degrees')
+        call add_field_mesh_dp_2D( filename, ncid, 'till_friction_angle', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till friction angle', units = 'degrees')
       case ('alpha_sq')
-        call add_field_mesh_dp_2D( filename, ncid, 'alpha_sq', long_name = 'Coulomb-law friction coefficientn', units = 'dimensionless')
+        call add_field_mesh_dp_2D( filename, ncid, 'alpha_sq', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Coulomb-law friction coefficientn', units = 'dimensionless')
       case ('beta_sq')
-        call add_field_mesh_dp_2D( filename, ncid, 'beta_sq', long_name = 'Power-law friction coefficient', units = 'Pa m^−1/m yr^1/m')
+        call add_field_mesh_dp_2D( filename, ncid, 'beta_sq', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Power-law friction coefficient', units = 'Pa m^−1/m yr^1/m')
 
         ! Basal friction and shear stress
       case ('till_yield_stress')
-        call add_field_mesh_dp_2D( filename, ncid, 'till_yield_stress', long_name = 'Till yield stress', units = 'Pa')
+        call add_field_mesh_dp_2D( filename, ncid, 'till_yield_stress', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till yield stress', units = 'Pa')
       case ('basal_friction_coefficient')
-        call add_field_mesh_dp_2D( filename, ncid, 'basal_friction_coefficient', long_name = 'Basal friction coefficient', units = 'Pa yr m^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_friction_coefficient', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal friction coefficient', units = 'Pa yr m^-1')
       case ('basal_shear_stress')
-        call add_field_mesh_dp_2D( filename, ncid, 'basal_shear_stress', long_name = 'Basal shear stress', units = 'Pa')
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_shear_stress', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal shear stress', units = 'Pa')
 
       ! Bed roughness nudging - H, dH/dt, flowline
       case ('bed_roughness_nudge_H_dHdt_flowline_deltaHs_av_up')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_deltaHs_av_up', &
-          long_name = 'Upstream flowline-averaged thickness error', units = 'm')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Upstream flowline-averaged thickness error', units = 'm')
       case ('bed_roughness_nudge_H_dHdt_flowline_deltaHs_av_down')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_deltaHs_av_down', &
-          long_name = 'Downstream flowline-averaged thickness error', units = 'm')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Downstream flowline-averaged thickness error', units = 'm')
       case ('bed_roughness_nudge_H_dHdt_flowline_dHs_dt_av_up')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_dHs_dt_av_up', &
-          long_name = 'Upstream flowline-averaged thinning rate', units = 'm yr^-1')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Upstream flowline-averaged thinning rate', units = 'm yr^-1')
       case ('bed_roughness_nudge_H_dHdt_flowline_dHs_dt_av_down')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_dHs_dt_av_down', &
-          long_name = 'Downstream flowline-averaged thinning rate', units = 'm yr^-1')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Downstream flowline-averaged thinning rate', units = 'm yr^-1')
       case ('bed_roughness_nudge_H_dHdt_flowline_R')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_R', &
-          long_name = 'Ice flux-based scaling factor')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice flux-based scaling factor')
       case ('bed_roughness_nudge_H_dHdt_flowline_I_tot')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_I_tot', &
-          long_name = 'Weighted average of flowline-averaged terms')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Weighted average of flowline-averaged terms')
       case ('bed_roughness_nudge_H_dHdt_flowline_dC_dt')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_dHdt_flowline_dC_dt', &
-          long_name = 'Bed roughness rate of change')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Bed roughness rate of change')
 
       ! Bed roughness nudging - H, u, flowline
       case ('bed_roughness_nudge_H_u_flowline_deltaHs_av_up')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_deltaHs_av_up', &
-          long_name = 'Upstream flowline-averaged thickness error', units = 'm')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Upstream flowline-averaged thickness error', units = 'm')
       case ('bed_roughness_nudge_H_u_flowline_deltaHs_av_down')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_deltaHs_av_down', &
-          long_name = 'Downstream flowline-averaged thickness error', units = 'm')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Downstream flowline-averaged thickness error', units = 'm')
       case ('bed_roughness_nudge_H_u_flowline_deltau_av_up')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_deltau_av_up', &
-          long_name = 'Upstream flowline-averaged velocity error', units = 'm yr^-1')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Upstream flowline-averaged velocity error', units = 'm yr^-1')
       case ('bed_roughness_nudge_H_u_flowline_deltau_av_down')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_deltau_av_down', &
-          long_name = 'Downstream flowline-averaged velocity error', units = 'm yr^-1')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Downstream flowline-averaged velocity error', units = 'm yr^-1')
       case ('bed_roughness_nudge_H_u_flowline_R')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_R', &
-          long_name = 'Ice flux-based scaling factor')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ice flux-based scaling factor')
       case ('bed_roughness_nudge_H_u_flowline_I_tot')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_I_tot', &
-          long_name = 'Weighted average of flowline-averaged terms')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Weighted average of flowline-averaged terms')
       case ('bed_roughness_nudge_H_u_flowline_dC_dt')
         call add_field_mesh_dp_2D( filename, ncid, &
           'bed_roughness_nudge_H_u_flowline_dC_dt', &
-          long_name = 'Bed roughness rate of change')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Bed roughness rate of change')
       case ('bed_roughness_nudge_H_u_target_velocity')
         call add_field_mesh_dp_2D_b( filename, ncid, &
           'bed_roughness_nudge_H_u_target_velocity', &
-          long_name = 'Target velocity', units = 'm yr^-1')
+          precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Target velocity', units = 'm yr^-1')
 
     ! == Geothermal heat ==
     ! =====================
 
       case ('geothermal_heat_flux')
-        call add_field_mesh_dp_2D( filename, ncid, 'geothermal_heat_flux', long_name = 'Geothermal heat flux', units = 'J m^-2 yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'geothermal_heat_flux', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Geothermal heat flux', units = 'J m^-2 yr^-1')
 
     ! == Climate ==
     ! =============
 
       ! Main climate variables
       case ('T2m')
-        call add_field_mesh_dp_2D_monthly( filename, ncid, 'T2m', long_name = 'Monthly mean 2-m air temperature', units = 'K')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'T2m', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly mean 2-m air temperature', units = 'K')
       case ('Precip')
-        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Precip', long_name = 'Monthly total precipitation', units = 'm.w.e.')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Precip', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly total precipitation', units = 'm.w.e.')
       case ('Q_TOA')
-        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'Q_TOA', long_name = 'Monthly insolation at the top of the atmosphere', units = 'W m^-2')
+        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'Q_TOA', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly insolation at the top of the atmosphere', units = 'W m^-2')
 
     ! == Ocean ==
     ! ===========
 
       ! Main ocean variables
       case ('T_ocean')
-        call add_field_mesh_dp_3D_ocean( filename, ncid, 'T_ocean', long_name = 'Ocean temperature', units = 'deg C')
+        call add_field_mesh_dp_3D_ocean( filename, ncid, 'T_ocean', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ocean temperature', units = 'deg C')
       case ('S_ocean')
-        call add_field_mesh_dp_3D_ocean( filename, ncid, 'S_ocean', long_name = 'Ocean salinity', units = 'PSU')
+        call add_field_mesh_dp_3D_ocean( filename, ncid, 'S_ocean', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ocean salinity', units = 'PSU')
       case ('T_draft')
-        call add_field_mesh_dp_2D( filename, ncid, 'T_draft', long_name = 'Ocean temperature at ice draft', units = 'deg C')
+        call add_field_mesh_dp_2D( filename, ncid, 'T_draft', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ocean temperature at ice draft', units = 'deg C')
       case ('T_freezing_point')
-        call add_field_mesh_dp_2D( filename, ncid, 'T_freezing_point', long_name = 'Ocean freezing temperature at ice draft', units = 'deg C')
+        call add_field_mesh_dp_2D( filename, ncid, 'T_freezing_point', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Ocean freezing temperature at ice draft', units = 'deg C')
 
     ! == Surface mass balance ==
     ! ==========================
 
       ! Main SMB variables
       case ('SMB')
-        call add_field_mesh_dp_2D( filename, ncid, 'SMB', long_name = 'Surface mass balance', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'SMB', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface mass balance', units = 'm yr^-1')
       CASE ('Albedo')
-        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'Albedo', long_name = 'Surface albedo', units = '0-1')
+        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'Albedo', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface albedo', units = '0-1')
       CASE ('FirnDepth')
-        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'FirnDepth', long_name = 'Monthly firn layer depth', units = 'm')
+        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'FirnDepth', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn layer depth', units = 'm')
       CASE ('MeltPreviousYear')
-        CALL add_field_mesh_dp_2D( filename, ncid, 'MeltPreviousYear', long_name = 'Total ice melt from previous year', units = 'm')
+        CALL add_field_mesh_dp_2D( filename, ncid, 'MeltPreviousYear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Total ice melt from previous year', units = 'm')
 
     ! == Basal mass balance ==
     ! ========================
 
       ! Main BMB variables
       case ('BMB')
-        call add_field_mesh_dp_2D( filename, ncid, 'BMB', long_name = 'Basal mass balance', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance', units = 'm yr^-1')
       case ('BMB_inv')
-        call add_field_mesh_dp_2D( filename, ncid, 'BMB_inv', long_name = 'Basal mass balance - inverted', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB_inv', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance - inverted', units = 'm yr^-1')
       case ('BMB_transition_phase')
-        call add_field_mesh_dp_2D( filename, ncid, 'BMB_transition_phase', long_name = 'Basal mass balance - transition phase', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB_transition_phase', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance - transition phase', units = 'm yr^-1')
       case ('BMB_modelled')
-        call add_field_mesh_dp_2D( filename, ncid, 'BMB_modelled', long_name = 'Basal mass balance - modelled', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB_modelled', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance - modelled', units = 'm yr^-1')
 
     ! == LADDIE ==
     ! ============
 
       ! Main laddie variables
       case ('H_lad')
-        call add_field_mesh_dp_2D( filename, ncid, 'H_lad', long_name = 'Laddie layer thickness', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'H_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie layer thickness', units = 'm')
       case ('U_lad')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'U_lad', long_name = 'Laddie U velocity', units = 'm s^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'U_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie U velocity', units = 'm s^-1')
       case ('V_lad')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'V_lad', long_name = 'Laddie V velocity', units = 'm s^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'V_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie V velocity', units = 'm s^-1')
       case ('T_lad')
-        call add_field_mesh_dp_2D( filename, ncid, 'T_lad', long_name = 'Laddie temperature', units = 'deg C')
+        call add_field_mesh_dp_2D( filename, ncid, 'T_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie temperature', units = 'deg C')
       case ('S_lad')
-        call add_field_mesh_dp_2D( filename, ncid, 'S_lad', long_name = 'Laddie salinity', units = 'PSU')
+        call add_field_mesh_dp_2D( filename, ncid, 'S_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie salinity', units = 'PSU')
 
       ! Useful laddie fields
       case ('drho_amb')
-        call add_field_mesh_dp_2D( filename, ncid, 'drho_amb', long_name = 'Depth integrated buoyancy', units = 'kg m^-2')
+        call add_field_mesh_dp_2D( filename, ncid, 'drho_amb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Depth integrated buoyancy', units = 'kg m^-2')
       case ('drho_base')
-        call add_field_mesh_dp_2D( filename, ncid, 'drho_base', long_name = 'Depth integrated buoyancy', units = 'kg m^-2')
+        call add_field_mesh_dp_2D( filename, ncid, 'drho_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Depth integrated buoyancy', units = 'kg m^-2')
       case ('entr')
-        call add_field_mesh_dp_2D( filename, ncid, 'entr', long_name = 'Entrainment rate', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'entr', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Entrainment rate', units = 'm s^-1')
       case ('entr_dmin')
-        call add_field_mesh_dp_2D( filename, ncid, 'entr_dmin', long_name = 'Entrainment rate for Dmin', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'entr_dmin', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Entrainment rate for Dmin', units = 'm s^-1')
       case ('SGD')
-        call add_field_mesh_dp_2D( filename, ncid, 'SGD', long_name = 'Subglacial discharge rate', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'SGD', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial discharge rate', units = 'm s^-1')
       case ('melt')
-        call add_field_mesh_dp_2D( filename, ncid, 'melt', long_name = 'Melt rate', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'melt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Melt rate', units = 'm s^-1')
       case ('divQH')
-        call add_field_mesh_dp_2D( filename, ncid, 'divQH', long_name = 'Thickness divergence', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'divQH', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Thickness divergence', units = 'm s^-1')
       case ('divQT')
-        call add_field_mesh_dp_2D( filename, ncid, 'divQT', long_name = 'Heat divergence', units = 'degC m s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'divQT', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Heat divergence', units = 'degC m s^-1')
       case ('divQS')
-        call add_field_mesh_dp_2D( filename, ncid, 'divQS', long_name = 'Salt divergence', units = 'PSU m s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'divQS', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salt divergence', units = 'PSU m s^-1')
       case ('diffT')
-        call add_field_mesh_dp_2D( filename, ncid, 'diffT', long_name = 'Heat diffusion', units = 'degC m s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'diffT', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Heat diffusion', units = 'degC m s^-1')
       case ('diffS')
-        call add_field_mesh_dp_2D( filename, ncid, 'diffS', long_name = 'Salt diffusion', units = 'PSU m s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'diffS', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salt diffusion', units = 'PSU m s^-1')
       case ('viscU')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'viscU', long_name = 'Laddie U viscosity', units = 'm^2 s^-2')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'viscU', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie U viscosity', units = 'm^2 s^-2')
       case ('viscV')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'viscV', long_name = 'Laddie V viscosity', units = 'm^2 s^-2')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'viscV', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie V viscosity', units = 'm^2 s^-2')
       case ('T_base')
-        call add_field_mesh_dp_2D( filename, ncid, 'T_base', long_name = 'Temperature at ice/ocean interface', units = 'deg C')
+        call add_field_mesh_dp_2D( filename, ncid, 'T_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Temperature at ice/ocean interface', units = 'deg C')
       case ('T_amb')
-        call add_field_mesh_dp_2D( filename, ncid, 'T_amb', long_name = 'Temperature at interface with ambient ocean', units = 'deg C')
+        call add_field_mesh_dp_2D( filename, ncid, 'T_amb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Temperature at interface with ambient ocean', units = 'deg C')
       case ('u_star')
-        call add_field_mesh_dp_2D( filename, ncid, 'u_star', long_name = 'Friction velocity', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'u_star', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Friction velocity', units = 'm s^-1')
       case ('gamma_T')
-        call add_field_mesh_dp_2D( filename, ncid, 'gamma_T', long_name = 'Heat exchange coefficient', units = 'm s^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'gamma_T', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Heat exchange coefficient', units = 'm s^-1')
       case ('divQU')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'divQU', long_name = 'Laddie U divergence', units = 'm^2 s^-2')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'divQU', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie U divergence', units = 'm^2 s^-2')
       case ('divQV')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'divQV', long_name = 'Laddie V divergence', units = 'm^2 s^-2')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'divQV', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie V divergence', units = 'm^2 s^-2')
       case ('HU_lad')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'HU_lad', long_name = 'Laddie HU ', units = 'm^2 s^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'HU_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie HU ', units = 'm^2 s^-1')
       case ('HV_lad')
-        call add_field_mesh_dp_2D_b( filename, ncid, 'HV_lad', long_name = 'Laddie HV ', units = 'm^2 s^-1')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'HV_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie HV ', units = 'm^2 s^-1')
 
     ! == Lateral mass balance ==
     ! ==========================
 
       ! Main LMB variables
       case ('LMB')
-        call add_field_mesh_dp_2D( filename, ncid, 'LMB', long_name = 'Lateral mass balance', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'LMB', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Lateral mass balance', units = 'm yr^-1')
 
     ! == Artificial mass balance ==
     ! =============================
 
       ! Main AMB variables
       case ('AMB')
-        call add_field_mesh_dp_2D( filename, ncid, 'AMB', long_name = 'Artificial mass balance', units = 'm yr^-1')
+        call add_field_mesh_dp_2D( filename, ncid, 'AMB', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Artificial mass balance', units = 'm yr^-1')
 
     ! == Glacial isostatic adjustment ==
     ! ==================================
 
       ! Main GIA variables
       case ('dHb_next')
-        call add_field_mesh_dp_2D( filename, ncid, 'dHb_next', long_name = 'Bedrock elevation difference from ELRA', units = 'm')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHb_next', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Bedrock elevation difference from ELRA', units = 'm')
 
     ! == Tracer tracking ==
     ! =====================
 
       case ('age')
-        call add_field_mesh_dp_3D( filename, ncid, 'age', long_name = 'Age of ice', units = 'yr')
+        call add_field_mesh_dp_3D( filename, ncid, 'age', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Age of ice', units = 'yr')
 
     end select
 

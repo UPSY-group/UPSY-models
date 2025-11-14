@@ -10,7 +10,7 @@ module netcdf_basic_wrappers
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
     NF90_MAX_VAR_DIMS, NF90_PUT_ATT, NF90_OPEN, NF90_NOWRITE, NF90_WRITE, NF90_SHARE, &
-    NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER
+    NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_FLOAT, NF90_DOUBLE
 
   implicit none
 
@@ -20,7 +20,7 @@ module netcdf_basic_wrappers
     create_new_netcdf_file_for_writing, create_dimension, create_variable, &
     create_scalar_variable, add_attribute_int, add_attribute_dp, add_attribute_char, &
     open_existing_netcdf_file_for_reading, open_existing_netcdf_file_for_writing, &
-    close_netcdf_file, handle_netcdf_error
+    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision
 
 contains
 
@@ -250,7 +250,7 @@ contains
 
   end subroutine create_dimension
 
-  subroutine create_variable( filename, ncid, var_name, var_type, dim_ids, id_var)
+  subroutine create_variable( filename, ncid, var_name, var_type, dim_ids, id_var, do_compress)
     !< Create a new variable in a NetCDF file.
 
     ! In/output variables:
@@ -260,13 +260,21 @@ contains
     integer,               intent(in   ) :: var_type
     integer, dimension(:), intent(in   ) :: dim_ids
     integer,               intent(  out) :: id_var
+    logical, optional,     intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_variable'
     integer                        :: ierr
+    logical                        :: do_compress_
 
     ! Add routine to path
     call init_routine( routine_name, do_track_resource_use = .false.)
+
+    if (present( do_compress)) then
+      do_compress_ = do_compress
+    else
+      do_compress_ = .false.
+    end if
 
     ! Safety: check if a variable by this name is already present in this file
     call inquire_var( filename, ncid, var_name, id_var)
@@ -278,8 +286,14 @@ contains
 
     ! Add the variable
     if (par%primary) then
-      call handle_netcdf_error( NF90_DEF_VAR( ncid, name = var_name, xtype = var_type, &
-        dimids = dim_ids, varid = id_var), filename = filename, dimvarname = var_name)
+      if (.not. do_compress_) then
+        call handle_netcdf_error( NF90_DEF_VAR( ncid, name = var_name, xtype = var_type, &
+          dimids = dim_ids, varid = id_var), filename = filename, dimvarname = var_name)
+      else
+        call handle_netcdf_error( NF90_DEF_VAR( ncid, name = var_name, xtype = var_type, &
+          dimids = dim_ids, varid = id_var, shuffle = .true., deflate_level = 2), &
+          filename = filename, dimvarname = var_name)
+      end if
     end if
 
     call MPI_BCAST( id_var, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
@@ -515,5 +529,27 @@ contains
     end if
 
   end subroutine handle_netcdf_error
+
+  function parse_netcdf_precision( precision) result( nc_prec)
+    character(len=*), optional, intent(in   ) :: precision
+    integer                                   :: nc_prec
+    character(len=1024)                       :: precision_
+
+    if (present( precision)) then
+      precision_ = precision
+    else
+      precision_ = 'double'
+    end if
+
+    select case (precision_)
+    case default
+      call crash('invalid precision "' // trim( precision_) // '"')
+    case ('single')
+      nc_prec = NF90_FLOAT
+    case ('double')
+      nc_prec = NF90_DOUBLE
+    end select
+
+  end function parse_netcdf_precision
 
 end module netcdf_basic_wrappers

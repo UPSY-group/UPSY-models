@@ -46,6 +46,7 @@ MODULE BMB_model_types
 
     ! Timestepping
     REAL(dp)                                :: t_next
+    REAL(dp)                                :: t_next_reinit               ! [yr] Time when BMB should be reinitialised
 
     ! LADDIE
     type(type_laddie_model)                       :: laddie

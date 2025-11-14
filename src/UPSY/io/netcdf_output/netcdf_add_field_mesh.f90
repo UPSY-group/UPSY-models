@@ -4,7 +4,7 @@ module netcdf_add_field_mesh
   use precisions, only: dp
   use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
   use netcdf_basic
-  use netcdf, only: NF90_INT, NF90_DOUBLE
+  use netcdf, only: NF90_INT
 
   implicit none
 
@@ -19,7 +19,7 @@ module netcdf_add_field_mesh
 
 contains
 
-  subroutine add_field_mesh_int_2D( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_int_2D( filename, ncid, var_name, long_name, units, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -28,6 +28,7 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_int_2D'
@@ -50,7 +51,7 @@ contains
     if (id_dim_time == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_vi, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_vi, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -66,7 +67,7 @@ contains
 
   end subroutine add_field_mesh_int_2D
 
-  subroutine add_field_mesh_dp_2D( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -75,6 +76,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D'
@@ -97,7 +100,7 @@ contains
     if (id_dim_time == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -113,7 +116,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D
 
-  subroutine add_field_mesh_dp_2D_b( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D_b( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -122,6 +125,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D_b'
@@ -144,7 +149,7 @@ contains
     if (id_dim_time == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_ti, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_ti, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -160,7 +165,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D_b
 
-  subroutine add_field_mesh_dp_2D_monthly( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D_monthly( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D monthly variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -169,6 +174,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D_monthly'
@@ -194,7 +201,7 @@ contains
     if (id_dim_time  == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_month, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_month, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -210,7 +217,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D_monthly
 
-  subroutine add_field_mesh_dp_3D( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_3D( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 3-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -219,6 +226,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_3D'
@@ -244,7 +253,7 @@ contains
     if (id_dim_time == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_zeta, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_zeta, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -260,7 +269,7 @@ contains
 
   end subroutine add_field_mesh_dp_3D
 
-  subroutine add_field_mesh_dp_3D_b( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_3D_b( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 3-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -269,6 +278,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_3D_b'
@@ -294,7 +305,7 @@ contains
     if (id_dim_time == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_ti, id_dim_zeta, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_ti, id_dim_zeta, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -310,7 +321,7 @@ contains
 
   end subroutine add_field_mesh_dp_3D_b
 
-  subroutine add_field_mesh_dp_3D_ocean( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_3D_ocean( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 3-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -319,6 +330,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_3D_ocean'
@@ -344,7 +357,7 @@ contains
     if (id_dim_time  == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_depth, id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_depth, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -360,7 +373,7 @@ contains
 
   end subroutine add_field_mesh_dp_3D_ocean
 
-  subroutine add_field_mesh_int_2D_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_int_2D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -369,6 +382,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_int_2D_notime'
@@ -389,7 +404,7 @@ contains
     if (id_dim_vi   == -1) call crash('no vi dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_vi /), id_var)
+    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_vi /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -405,7 +420,7 @@ contains
 
   end subroutine add_field_mesh_int_2D_notime
 
-  subroutine add_field_mesh_int_2D_b_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_int_2D_b_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -414,6 +429,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_int_2D_b_notime'
@@ -434,7 +451,7 @@ contains
     if (id_dim_ti   == -1) call crash('no ti dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_ti /), id_var)
+    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_ti /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -450,7 +467,7 @@ contains
 
   end subroutine add_field_mesh_int_2D_b_notime
 
-  subroutine add_field_mesh_int_2D_c_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_int_2D_c_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -459,6 +476,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_int_2D_c_notime'
@@ -479,7 +498,7 @@ contains
     if (id_dim_ei   == -1) call crash('no ei dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_ei /), id_var)
+    call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_ei /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -495,7 +514,7 @@ contains
 
   end subroutine add_field_mesh_int_2D_c_notime
 
-  subroutine add_field_mesh_dp_2D_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -504,6 +523,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D_notime'
@@ -524,7 +545,7 @@ contains
     if (id_dim_vi   == -1) call crash('no vi dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -540,7 +561,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D_notime
 
-  subroutine add_field_mesh_dp_2D_b_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D_b_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -549,6 +570,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D_b_notime'
@@ -569,7 +592,7 @@ contains
     if (id_dim_ti   == -1) call crash('no ti dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_ti /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_ti /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -585,7 +608,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D_b_notime
 
-  subroutine add_field_mesh_dp_2D_c_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D_c_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -594,6 +617,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D_c_notime'
@@ -614,7 +639,7 @@ contains
     if (id_dim_ei   == -1) call crash('no ei dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_ei /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_ei /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -630,7 +655,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D_c_notime
 
-  subroutine add_field_mesh_dp_2D_monthly_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_2D_monthly_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 2-D monthly variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -639,6 +664,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_2D_monthly_notime'
@@ -662,7 +689,7 @@ contains
     if (id_dim_month == -1) call crash('no month dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_month /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_month /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -678,7 +705,7 @@ contains
 
   end subroutine add_field_mesh_dp_2D_monthly_notime
 
-  subroutine add_field_mesh_dp_3D_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_3D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 3-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -687,6 +714,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_3D_notime'
@@ -710,7 +739,7 @@ contains
     if (id_dim_zeta == -1) call crash('no zeta dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_zeta /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_zeta /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -726,7 +755,7 @@ contains
 
   end subroutine add_field_mesh_dp_3D_notime
 
-  subroutine add_field_mesh_dp_3D_b_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_3D_b_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 3-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -735,6 +764,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_3D_b_notime'
@@ -758,7 +789,7 @@ contains
     if (id_dim_zeta == -1) call crash('no zeta dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_ti, id_dim_zeta /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_ti, id_dim_zeta /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
@@ -774,7 +805,7 @@ contains
 
   end subroutine add_field_mesh_dp_3D_b_notime
 
-  subroutine add_field_mesh_dp_3D_ocean_notime( filename, ncid, var_name, long_name, units)
+  subroutine add_field_mesh_dp_3D_ocean_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
     !< Add a 3-D variable to an existing NetCDF file with a mesh
 
     ! In/output variables:
@@ -783,6 +814,8 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_mesh_dp_3D_ocean_notime'
@@ -806,7 +839,7 @@ contains
     if (id_dim_depth == -1) call crash('no depth dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_vi, id_dim_depth /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_vi, id_dim_depth /), id_var, do_compress = do_compress)
 
     ! Add attributes
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)

@@ -157,7 +157,6 @@ CONTAINS
     CHARACTER(LEN=256), PARAMETER                       :: routine_name = 'initialise_ocean_model_idealised_TANH'
     INTEGER                                             :: vi
     INTEGER                                             :: k
-    REAL(dp), PARAMETER                                 :: z1 = 100.0_dp   ! [m] Depth scale for thermocline sharpness
     REAL(dp), PARAMETER                                 :: drho0 = 0.01_dp ! [kg m^-5] Density scale factor to set quadratic stratification
     REAL(dp), PARAMETER                                 :: S0 = 34.0_dp    ! [PSU]  Surface salinity
     REAL(dp)                                            :: Tsurf           ! [deg C]  Surface freezing temperature
@@ -171,7 +170,7 @@ CONTAINS
 
       DO k = 1, C%nz_ocean
         ! Get temperature value
-        ocean%T( vi, k) = Tsurf + (C%ocean_tanh_deep_temperature-Tsurf) * (1+tanh((C%z_ocean( k)-C%ocean_tanh_thermocline_depth)/z1))/2
+        ocean%T( vi, k) = Tsurf + (C%ocean_tanh_deep_temperature-Tsurf) * (1+tanh((C%z_ocean( k)-C%ocean_tanh_thermocline_depth)/C%ocean_tanh_thermocline_scale_depth))/2
 
         ! Get salinity value at this depth based on quadratic density profile and linear equation of state
         ocean%S( vi, k) = S0 + C%uniform_laddie_eos_linear_alpha * (ocean%T( vi, k)-Tsurf)/C%uniform_laddie_eos_linear_beta &

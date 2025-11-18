@@ -10,6 +10,7 @@ MODULE basal_hydrology_model_types
   use laddie_forcing_types, only: type_laddie_forcing
   use reference_geometry_types, only: type_reference_geometry
   USE mesh_types                                             , ONLY: type_mesh
+  USE CSR_sparse_matrix_type                                 , ONLY: type_sparse_matrix_CSR_dp
 
   IMPLICIT NONE
 
@@ -82,6 +83,10 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: Z                   ! Sum of zeroth-order terms
     real(dp), dimension(:), allocatable :: C                   ! Closing rates
     real(dp), dimension(:), allocatable :: O                   ! Opening rates
+
+    real(dp), allocatable               :: old_time            ! Time at previous timestep
+
+    TYPE(type_sparse_matrix_CSR_dp)     :: M_b_c               ! Matrix for going from grid a to grid c
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

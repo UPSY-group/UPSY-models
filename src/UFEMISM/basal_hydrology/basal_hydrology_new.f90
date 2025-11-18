@@ -26,18 +26,18 @@ MODULE basal_hydrology_new
   use laddie_utilities                                       , ONLY: map_H_a_c
   use mpi_distributed_memory                                 , only: gather_to_all
   use mesh_halo_exchange                                     , only: exchange_halos
+  use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D
 
   IMPLICIT NONE
 
 CONTAINS
 
-  subroutine basal_hydrology(mesh, ice, basal_hydro, time, dt)
+  subroutine basal_hydrology(mesh, ice, basal_hydro, time)
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
     type(type_ice_model),             intent(inout) :: ice
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
     real(dp),                         intent(in)    :: time
-    real(dp),                         intent(in)    :: dt
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'basal_hydrology'
@@ -59,7 +59,7 @@ CONTAINS
     ! real(dp), parameter            :: alpha               ! Exponent used in effective conductivity
     ! real(dp), parameter            :: beta                ! Exponent used in effective conductivity
 
-    real(dp), parameter            :: Cd = 0.001_dp/sec_per_year ! Gradual drain of water in till (m a^-1)
+    real(dp), parameter            :: Cd = 0.001_dp        ! Gradual drain of water in till (m a^-1)
 
     real(dp), parameter            :: g = 9.81_dp         ! Gravitational acceleration
 
@@ -84,13 +84,14 @@ CONTAINS
     real(dp), dimension(mesh%nE)   :: u_c_tot, v_c_tot
     real(dp), dimension(mesh%nV)   :: W_tot
 
+    real(dp)                       :: dt
+
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Here we actually do some stuff
+    ! Get the general timestep
+    call calc_general_dt(time, basal_hydro, dt)
 
-    write(*,*) "Mesh vi1: ", mesh%vi1
-    write(*,*) "Mesh vi2: ", mesh%vi2
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
 
     ! All kinds of variables are allocated down below. This is called in UFEMISM_main_model around line 500.
@@ -98,36 +99,17 @@ CONTAINS
     ! Loop over all vertices and set them within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
 
-    !Save the W variable in a netcdf file.
-    call save_variable_as_netcdf_dp_1D(C%output_dir, basal_hydro%W, "W")
-    call save_variable_as_netcdf_dp_1D(C%output_dir, basal_hydro%W_til, "W_til")
-
-    write(*,*) "Overburden pressure for first few vertices: ", basal_hydro%P_o(mesh%vi1:mesh%vi1+5)
-    write(*,*) "Water thickness for first few vertices: ", basal_hydro%W(mesh%vi1:mesh%vi1+5)
-    write(*,*) "Till water thickness for first few vertices: ", basal_hydro%W_til(mesh%vi1:mesh%vi1+5)
-    write(*,*) "Pressure for first few vertices: ", basal_hydro%P(mesh%vi1:mesh%vi1+5)
-
-
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
 
     call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
-    write(*,*) "Till water thickness for first few vertices after timestep: ", basal_hydro%W_til_next(mesh%vi1:mesh%vi1+5)
-
-    call save_variable_as_netcdf_dp_1D(C%output_dir, basal_hydro%W_til_next, "W_til_t1")
-
     ! 4) Get W values on staggered grid 
     call map_all_a_b(mesh, basal_hydro)
-    !call map_H_a_c(mesh, basal_hydro%u, basal_hydro%u_c) ! Is there a map function for this not in LADDIE?
-    !call map_H_a_c(mesh, basal_hydro%v, basal_hydro%v_c)
-    write(*,*) "u_b: ", basal_hydro%u_b(mesh%ti1:mesh%ti1+5)
-    write(*,*) "dD_dx_a_b_2D: ", basal_hydro%dW_dx_b(mesh%ti1:mesh%ti1+5)
-
 
     ! 8) Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
 
-    call get_basal_hydro_timestep(mesh, basal_hydro, dt_hydro)
+    call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
 
     write(*,*) "dt_hydro = ", dt_hydro
 
@@ -135,26 +117,21 @@ CONTAINS
     
     call calc_divQ(mesh, ice, basal_hydro)
 
-    write(*,*) "divQ for first few vertices: ", basal_hydro%divQ(mesh%vi1:mesh%vi1+5)
-
     ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
     ! 11) If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
     ! 11) Otherwise, compute next timestep of P using the equation in the paper
     call calc_P_next(mesh, ice, basal_hydro, P_min, dt_hydro)
 
-    write(*,*) "Pressure after timestep for first few vertices: ", basal_hydro%P(mesh%vi1:mesh%vi1+5)
-
     ! 13) If icefree or float, then set next timestep of W to 0.
     ! 13) Otherwise, compute next timestep of W using the equation in the paper
     call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
 
-    write(*,*) "Water thickness after timestep for first few vertices: ", basal_hydro%W(mesh%vi1:mesh%vi1+5)
     ! 15) Update time and repeat (not how it is done here?)
     ! time = time + dt_hydro
 
     write(*,*) "Time after basal hydrology step: ", time
 
-    call crash('Hello world!')
+    !call crash('Hello world!')
   
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -201,6 +178,7 @@ CONTAINS
     allocate(basal_hydro%C(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%O(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%divQ( mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%old_time, source = 0.0_dp)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -315,12 +293,13 @@ CONTAINS
 
   
 
-  subroutine get_basal_hydro_timestep( mesh, basal_hydro, dt_hydro)
+  subroutine get_basal_hydro_timestep( mesh, basal_hydro, dt, dt_hydro)
     !< Get basal hydrology timestep >!
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
     type(type_basal_hydrology_model),   intent(in   ) :: basal_hydro
+    real(dp),                           intent(in   ) :: dt
     real(dp),                           intent(  out) :: dt_hydro
 
     ! Local variables:
@@ -374,7 +353,7 @@ CONTAINS
     end do
 
     ! Timestep we will use here
-    dt_hydro = correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P)
+    dt_hydro = min(correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P), dt)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -394,7 +373,7 @@ CONTAINS
     ! Local variables:
     character(len=1024) :: routine_name = 'calc_divQ'
     integer             :: vi, ci, vj, ei
-    logical,  dimension(mesh%nV)   :: mask_floating_ice_tot, mask_icefree_land_tot, mask_icefree_ocean_tot
+    logical,  dimension(mesh%nV)   :: mask_grounded_ice_tot
     real(dp), dimension(mesh%nE)   :: u_c_tot, v_c_tot
     real(dp), dimension(mesh%nV)   :: W_tot
     real(dp)                       :: u_perp
@@ -404,9 +383,7 @@ CONTAINS
 
     ! This is very similar to what is done in laddie_thickness.90 in the compute_divQH subroutine
 
-    call gather_to_all(ice%mask_icefree_land, mask_icefree_land_tot)
-    call gather_to_all(ice%mask_floating_ice, mask_floating_ice_tot)
-    call gather_to_all(ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all(ice%mask_grounded_ice, mask_grounded_ice_tot)
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)
@@ -424,10 +401,6 @@ CONTAINS
         ! Connection ci from vertex vi leads through edge ei to vertex vj
         vj = mesh%C(  vi,ci)
 
-        ! Skip connection if neighbour is not grounded or there is no ice. No flux across grounding line
-        ! Can be made more flexible when accounting for partial cells (PMP instead of FCMP)
-        IF (mask_icefree_land_tot( vj) .or. mask_floating_ice_tot( vj) .or. mask_icefree_ocean_tot( vj)) CYCLE
-
         ! Get edge
         ei = mesh%VE( vi,ci)
 
@@ -442,7 +415,11 @@ CONTAINS
           basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vi) / mesh%A( vi)
         ! u_perp < 0: flow is entering this vertex from vertex vj
         ELSE 
-          basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vj) / mesh%A( vi)
+          ! Skip connection if neighbour is not grounded or there is no ice. No flux across grounding line
+          ! Can be made more flexible when accounting for partial cells (PMP instead of FCMP)
+          IF (mask_grounded_ice_tot( vj)) then
+            basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vj) / mesh%A( vi)
+          END IF
         END IF
 
       END DO ! DO ci = 1, mesh%nC( vi)
@@ -534,6 +511,8 @@ CONTAINS
       end if
       ! 14) Make sure W is within its bounds (>= 0)
       basal_hydro%W( vi) = min( max( basal_hydro%W( vi), W_min), W_max)
+      ! Set W_til to W_til_next for next timestep
+      basal_hydro%W_til( vi) = basal_hydro%W_til_next( vi)
     end do
 
     ! Finalise routine path
@@ -541,5 +520,62 @@ CONTAINS
 
   end subroutine calc_W_next
 
+
+
+  subroutine calc_general_dt( time, basal_hydro, dt)
+    !< Calculating the general dt since last timestep >!
+
+    ! In/output variables:
+    real(dp),                           intent(in   ) :: time
+    type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
+    real(dp),                           intent(  out) :: dt
+
+    ! Local variables:
+    character(len=1024) :: routine_name = 'calc_general_dt'
+
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (time == 0.0_dp) then
+      dt = C%dt_ice_max
+    else
+      dt = time - basal_hydro%old_time
+    end if
+    basal_hydro%old_time = time
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_general_dt
+  
+
+
+
+! Comes from Laddie_velocity
+subroutine map_UV_b_c( mesh, basal_hydro)
+  ! Calculate velocities on the c-grid
+  !
+  ! Uses a different scheme then the standard mapping operator, as that one is too diffusive
+
+  ! In/output variables:
+  type(type_mesh),                        intent(in   )    :: mesh
+  type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+  ! Local variables:
+  character(len=256), parameter                         :: routine_name = 'map_UV_b_c'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
+    mesh%pai_Tri, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
+  call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_b_c, &
+    mesh%pai_Tri, basal_hydro%v, mesh%pai_E, basal_hydro%v_c)
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine map_UV_b_c
 
 END MODULE basal_hydrology_new

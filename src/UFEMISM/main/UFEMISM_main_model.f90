@@ -114,7 +114,7 @@ CONTAINS
       END IF ! IF (C%allow_mesh_updates) THEN
 
       ! Run the subglacial hydrology model
-      CALL run_basal_hydrology_model( region%mesh, region%ice, region%time, 1000.0_dp)
+      CALL run_basal_hydrology_model( region%mesh, region%ice, region%time)
 
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN

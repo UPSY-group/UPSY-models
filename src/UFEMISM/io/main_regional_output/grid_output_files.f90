@@ -585,6 +585,12 @@ contains
       case ('pore_water_fraction')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%pore_water_fraction, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'pore_water_fraction', d_grid_vec_partial_2D)
+      case("W")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%W, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "W", d_grid_vec_partial_2D)
+      case("W_til")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%W_til, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "W_til", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================
@@ -1364,6 +1370,10 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'pore_water_likelihood', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till pore water likelihood', units = '0-1')
       case ('pore_water_fraction')
         call add_field_grid_dp_2D( filename, ncid, 'pore_water_fraction', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Fraction of overburden pressure reduced by pore water', units = '0-1')
+      case ("W")
+        call add_field_grid_dp_2D( filename, ncid, 'W', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer thickness', units = 'm')
+      case("W_til")
+        call add_field_grid_dp_2D( filename, ncid, 'W_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial till water layer thickness', units = 'm')
 
     ! == Basal sliding ==
     ! ===================

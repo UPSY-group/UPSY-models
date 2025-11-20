@@ -77,6 +77,26 @@ contains
 
     region%ice%pc%dt_np1 = MIN( region%ice%pc%dt_np1, dt_crit_adv)
 
+    ! == Ice masks for domain or for calving thresholds ==
+    ! ====================================================
+
+    ! Apply no ice mask and assure ice thinning rate is zero where Hi_prev = 0
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (region%ice%mask_noice( vi)) then
+        region%ice%Hi_prev( vi) = 0._dp
+        region%ice%dHi_dt(vi)  = 0._dp
+      end if
+    end do
+
+    ! Update masks
+    call determine_masks( region%mesh, region%ice)
+
+      ! Update sub-grid grounded fractions
+    call calc_grounded_fractions( region%mesh, region%ice)
+
+      ! Update effective ice thickness
+    call calc_effective_thickness( region%mesh, region%ice, region%ice%Hi, region%ice%Hi_eff, region%ice%fraction_margin)
+
     ! == Time step iteration: if, at the end of the PC timestep, the truncation error
     !    turns out to be too large, run it again with a smaller dt, until the truncation
     !    decreases to below the specified tolerance
@@ -102,7 +122,14 @@ contains
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
-
+      
+      ! Making sure verticies in no ice mask have zero thinning rates
+      do vi = region%mesh%vi1, region%mesh%vi2
+        if (region%ice%mask_noice( vi)) then
+          region%ice%pc%dHi_dt_Hi_n_u_n(vi)  = 0._dp
+        end if
+      end do
+      
       ! Calculate predicted ice thickness (Robinson et al., 2020, Eq. 30)
       region%ice%pc%Hi_star_np1 = region%ice%Hi_prev + region%ice%pc%dt_np1 * ((1._dp + region%ice%pc%zeta_t / 2._dp) * &
         region%ice%pc%dHi_dt_Hi_n_u_n - (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
@@ -177,6 +204,14 @@ contains
       ! Calculate thinning rates for the current ice thickness and predicted velocity
       call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
+
+      ! Making sure verticies in no ice mask have zero thinning rates
+      do vi = region%mesh%vi1, region%mesh%vi2
+        if (region%ice%mask_noice( vi)) then
+          region%ice%pc%dHi_dt_Hi_star_np1_u_np1(vi)  = 0._dp
+        end if
+      end do
+
 
       ! Calculate corrected ice thickness (Robinson et al. (2020), Eq. 31)
       region%ice%pc%Hi_np1 = region%ice%Hi_prev + (region%ice%pc%dt_np1 / 2._dp) * (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
@@ -263,6 +298,16 @@ contains
     region%ice%t_Hi_next = region%ice%t_Hi_prev + region%ice%pc%dt_np1
     region%ice%Hi_next   = region%ice%pc%Hi_np1
 
+#if (DO_ASSERTIONS)
+    ! Safety
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (region%ice%Hi_next(vi) < 0._dp) then
+        call crash('Hi became negative in the PC scheme with a value of {dp_01} at vertex {int_01}!', &
+          dp_01 = region%ice%Hi_next(vi), int_01 = vi)
+      end if
+    end do
+#endif
+    
     ! Finalise routine path
     call finalise_routine( routine_name)
 

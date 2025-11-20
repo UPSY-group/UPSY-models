@@ -27,6 +27,7 @@ MODULE basal_hydrology_new
   use mpi_distributed_memory                                 , only: gather_to_all
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D
+  use mesh_utilities                                         , only: find_containing_vertex
 
   IMPLICIT NONE
 
@@ -59,7 +60,7 @@ CONTAINS
     ! real(dp), parameter            :: alpha               ! Exponent used in effective conductivity
     ! real(dp), parameter            :: beta                ! Exponent used in effective conductivity
 
-    real(dp), parameter            :: Cd = 0.001_dp        ! Gradual drain of water in till (m a^-1)
+    real(dp), parameter            :: Cd = 0.0_dp        ! Gradual drain of water in till (m a^-1)
 
     real(dp), parameter            :: g = 9.81_dp         ! Gravitational acceleration
 
@@ -86,11 +87,24 @@ CONTAINS
 
     real(dp)                       :: dt
 
+    real(dp), dimension(2)         :: point
+    integer                        :: vi_point
+
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Get the general timestep
     call calc_general_dt(time, basal_hydro, dt)
+
+    ! Initialise for 1 point test
+    !point = [100000.0_dp, 0.0_dp]
+    !vi_point = 1
+
+    !call find_containing_vertex(mesh, point, vi_point)
+
+    !if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
+    !  basal_hydro%W( vi_point) = 0.1_dp
+    !end if
 
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
 
@@ -157,10 +171,10 @@ CONTAINS
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  1.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.01_dp) ! For now just make this a value
+    allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0_dp) ! For now just make this a value
     allocate(basal_hydro%dW_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
-    allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.001_dp)
     allocate(basal_hydro%D(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 2.0_dp)
     allocate(basal_hydro%v(mesh%vi1:mesh%vi2), source = 1.0_dp)
@@ -231,7 +245,7 @@ CONTAINS
     ! Local variables:
     character(len=1024) :: routine_name = 'calc_W_til_next'
     integer             :: vi
-    real(dp), parameter :: Cd = 0.001_dp/sec_per_year
+    real(dp), parameter :: Cd = 0.0_dp
     real(dp), parameter :: rho_w = 1000.0_dp
 
 
@@ -279,10 +293,9 @@ CONTAINS
     call ddx_a_b_2D(mesh, basal_hydro%v, basal_hydro%dv_dx_b)
     call map_a_b_2D(mesh, basal_hydro%u, basal_hydro%u_b)
     call map_a_b_2D(mesh, basal_hydro%v, basal_hydro%v_b)
-    !call map_H_a_c(mesh, basal_hydro%u, basal_hydro%u_c) ! Is there a map function for this not in LADDIE?
-    !call map_H_a_c(mesh, basal_hydro%v, basal_hydro%v_c)
 
     ! 7) And lastly for the diffusivity D
+    call calc_D(mesh, basal_hydro)  ! Calculate D from W and K
     call ddx_a_b_2D(mesh, basal_hydro%D, basal_hydro%dD_dx_b)
     call map_a_b_2D(mesh, basal_hydro%D, basal_hydro%D_b)
 
@@ -342,8 +355,9 @@ CONTAINS
 
       dt_crit_CFL = min(dt_crit_CFL, d_min/(2*(u_t + v_t)))
 
-      ! Diffusivity on the triangle
-      D_t = basal_hydro%D_b( ti)
+      ! Diffusivity on the triangle (Tijn suggested taking the vertices to get a higher value)
+      ! Probs have to exchange_halos
+      D_t = basal_hydro%D_b( ti) !max(basal_hydro%D( via), basal_hydro%D( vib), basal_hydro%D( vic))
 
       ! Instead of max of D, we use D on the triangle (I think this makes sense?)
       dt_crit_W = min(dt_crit_W, d_min**2/(8*D_t))
@@ -354,6 +368,14 @@ CONTAINS
 
     ! Timestep we will use here
     dt_hydro = min(correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P), dt)
+    if (par%primary) then
+      write(*,*) "dt_crit_CFL = ", dt_crit_CFL
+      write(*,*) "dt_crit_W   = ", dt_crit_W
+      write(*,*) "dt_crit_P   = ", dt_crit_P
+    end if
+
+    !call MPI_ALLREDUCE( MPI_IN_PLACE, dt_crit_SIA, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    !dt_crit_SIA = min( C%dt_ice_max, dt_crit_SIA)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -415,7 +437,7 @@ CONTAINS
           basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vi) / mesh%A( vi)
         ! u_perp < 0: flow is entering this vertex from vertex vj
         ELSE 
-          ! Skip connection if neighbour is not grounded or there is no ice. No flux across grounding line
+          ! Skip connection if neighbour is not grounded. No flux across grounding line
           ! Can be made more flexible when accounting for partial cells (PMP instead of FCMP)
           IF (mask_grounded_ice_tot( vj)) then
             basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vj) / mesh%A( vi)
@@ -445,7 +467,7 @@ CONTAINS
     ! Local variables:
     character(len=1024) :: routine_name = 'calc_P_next'
     integer             :: vi
-    real(dp), parameter :: Cd = 0.001_dp/sec_per_year
+    real(dp), parameter :: Cd = 0.000_dp
     real(dp), parameter :: rho_w = 1000.0_dp
     real(dp), parameter :: g = 9.81_dp
     real(dp), parameter :: phi = 0.01_dp            ! Englacial porosity
@@ -496,8 +518,6 @@ CONTAINS
     character(len=1024) :: routine_name = 'calc_W_next'
     integer             :: vi
     real(dp), parameter :: rho_w = 1000.0_dp
-    logical, parameter  :: sliding = .true.         ! Whether the ice slides or not when W = 0 and there is ice on land
-
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -550,32 +570,58 @@ CONTAINS
   end subroutine calc_general_dt
   
 
+  subroutine calc_D( mesh, basal_hydro)
+    !< Calculating the diffusivity D>!
+
+    ! In/output variables:
+    type(type_mesh),                    intent(in   ) :: mesh
+    type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=1024) :: routine_name = 'calc_D'
+    integer             :: vi
+    real(dp), parameter :: g = 9.81_dp
+    real(dp), parameter :: rho_w = 1000.0_dp
 
 
-! Comes from Laddie_velocity
-subroutine map_UV_b_c( mesh, basal_hydro)
-  ! Calculate velocities on the c-grid
-  !
-  ! Uses a different scheme then the standard mapping operator, as that one is too diffusive
+    ! Add routine to path
+    call init_routine( routine_name)
 
-  ! In/output variables:
-  type(type_mesh),                        intent(in   )    :: mesh
-  type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+    do vi = mesh%vi1, mesh%vi2
+      basal_hydro%D( vi) = rho_w*g*basal_hydro%K( vi)*basal_hydro%W( vi)
+    end do
 
-  ! Local variables:
-  character(len=256), parameter                         :: routine_name = 'map_UV_b_c'
+    ! Finalise routine path
+    call finalise_routine( routine_name)
 
-  ! Add routine to path
-  call init_routine( routine_name)
+  end subroutine calc_D
 
-  call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
-    mesh%pai_Tri, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
-  call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_b_c, &
-    mesh%pai_Tri, basal_hydro%v, mesh%pai_E, basal_hydro%v_c)
 
-  ! Finalise routine path
-  call finalise_routine( routine_name)
 
-end subroutine map_UV_b_c
+  ! Comes from Laddie_velocity
+  subroutine map_UV_b_c( mesh, basal_hydro)
+    ! Calculate velocities on the c-grid
+    !
+    ! Uses a different scheme then the standard mapping operator, as that one is too diffusive
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'map_UV_b_c'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
+      mesh%pai_Tri, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
+    call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_b_c, &
+      mesh%pai_Tri, basal_hydro%v, mesh%pai_E, basal_hydro%v_c)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine map_UV_b_c
 
 END MODULE basal_hydrology_new

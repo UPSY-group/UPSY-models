@@ -255,6 +255,53 @@ contains
       waypoints(1,:) = [mesh%xmin/2._dp,mesh%ymin/4._dp]
       waypoints(2,:) = [mesh%xmax/2._dp,mesh%ymin/4._dp]
 
+    ! == Thule idealised ==
+    ! =====================
+
+    case('CapronaA')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-390000.0_dp,0._dp]
+      waypoints(2,:) = [-590000.0_dp,450000.0_dp]
+
+
+    case('CapronaB')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [390000.0_dp,0._dp]
+      waypoints(2,:) = [590000.0_dp,450000.0_dp]
+
+
+    case('CapronaC')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-390000.0_dp,0._dp]
+      waypoints(2,:) = [-590000.0_dp,-450000.0_dp]
+
+    case('CapronaD')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [390000.0_dp,0._dp]
+      waypoints(2,:) = [590000.0_dp,-450000.0_dp]
+
+
+    case('HalbraneA')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-150000.0_dp,0._dp]
+      waypoints(2,:) = [-150000.0_dp,740000.0_dp]
+
+    case('HalbraneB')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [150000.0_dp,0._dp]
+      waypoints(2,:) = [150000.0_dp,740000.0_dp]
+
+    case('HalbraneC')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-150000.0_dp,0._dp]
+      waypoints(2,:) = [-150000.0_dp,-740000.0_dp]
+  
+    case('HalbraneD')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [150000.0_dp,0._dp]
+      waypoints(2,:) = [150000.0_dp,-740000.0_dp]
+
+
     ! == Realistic ==
     ! ===============
 

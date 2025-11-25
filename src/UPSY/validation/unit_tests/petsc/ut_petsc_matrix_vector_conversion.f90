@@ -1,4 +1,4 @@
-module ut_petsc_matrix_vector_conversio
+module ut_petsc_matrix_vector_conversion
 
   ! Unit tests for different PETSc routines
   !
@@ -239,4 +239,4 @@ contains
 
   end subroutine test_matrix_PETSc_CSR_conversion
 
-end module ut_petsc_matrix_vector_conversio
+end module ut_petsc_matrix_vector_conversion

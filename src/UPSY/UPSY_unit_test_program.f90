@@ -49,9 +49,9 @@ program UPSY_unit_test_program
   ! Run all the unit tests
   call unit_tests_mpi_distributed_memory_main( test_name)
   call unit_tests_petsc_main                 ( test_name)
-  ! call unit_tests_math_utilities_main        ( test_name)
-  ! call unit_tests_mesh_main                  ( test_name)
-  ! call unit_tests_netcdf_main                ( test_name)
+  call unit_tests_math_utilities_main        ( test_name)
+  call unit_tests_mesh_main                  ( test_name)
+  call unit_tests_netcdf_main                ( test_name)
 
   ! Stop the clock
   tstop = MPI_WTIME()

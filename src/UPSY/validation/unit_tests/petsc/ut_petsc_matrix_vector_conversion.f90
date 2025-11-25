@@ -1,4 +1,4 @@
-module ut_petsc
+module ut_petsc_matrix_vector_conversio
 
   ! Unit tests for different PETSc routines
   !
@@ -21,38 +21,9 @@ module ut_petsc
 
   private
 
-  public :: unit_tests_petsc_main
+  public :: test_multiply_PETSc_matrix_with_vector_1D, test_matrix_PETSc_CSR_conversion
 
 contains
-
-  subroutine unit_tests_petsc_main( test_name_parent)
-    ! Run all unit tests for the PETSc subroutines
-
-    ! In/output variables:
-    character(len=*), intent(in) :: test_name_parent
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'unit_tests_petsc_main'
-    character(len=1024), parameter :: test_name_local = 'petsc'
-    character(len=1024)            :: test_name
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Safety - should be run on two cores
-    call assert( test_eq( par%n, 2), 'should be run on two cores')
-
-    ! Add test name to list
-    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
-
-    ! Run all unit tests for the PETSc subroutines
-    call test_multiply_PETSc_matrix_with_vector_1D( test_name)
-    call test_matrix_PETSc_CSR_conversion( test_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine unit_tests_petsc_main
 
   subroutine test_multiply_PETSc_matrix_with_vector_1D( test_name_parent)
     ! Test mmultiply_PETSc_matrix_with_vector_1D
@@ -268,4 +239,4 @@ contains
 
   end subroutine test_matrix_PETSc_CSR_conversion
 
-end module ut_petsc
+end module ut_petsc_matrix_vector_conversio

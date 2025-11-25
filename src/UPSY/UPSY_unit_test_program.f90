@@ -12,7 +12,7 @@ program UPSY_unit_test_program
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
 
   use ut_mpi, only: unit_tests_mpi_distributed_memory_main
-  use ut_petsc, only: unit_tests_petsc_main
+  use ut_petsc_main, only: unit_tests_petsc_main
   use ut_math_utilities, only: unit_tests_math_utilities_main
   use ut_mesh, only: unit_tests_mesh_main
   use ut_netcdf, only: unit_tests_netcdf_main

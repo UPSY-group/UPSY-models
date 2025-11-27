@@ -485,10 +485,12 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'pore_water_likelihood', region%ice%pore_water_likelihood)
       case ('pore_water_fraction')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'pore_water_fraction', region%ice%pore_water_fraction)
-      case("W")
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'W', region%ice%hydro_Salle2025%W)
-      case("W_til")
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'W_til', region%ice%hydro_Salle2025%W_til)
+      case("basal_hydro_W")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_W', region%ice%hydro_Salle2025%W)
+      case("basal_hydro_W_til")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_W_til', region%ice%hydro_Salle2025%W_til)
+      case("basal_hydro_divQ")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_divQ', region%ice%hydro_Salle2025%divQ)
 
     ! == Basal sliding ==
     ! ===================
@@ -1188,10 +1190,12 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'pore_water_likelihood', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till pore water likelihood', units = '0-1')
       case ('pore_water_fraction')
         call add_field_mesh_dp_2D( filename, ncid, 'pore_water_fraction', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Fraction of overburden pressure reduced by pore water ', units = '0-1')
-      case("W")
-        call add_field_mesh_dp_2D( filename, ncid, 'W', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer thickness', units = 'm')
-      case("W_til")
-        call add_field_mesh_dp_2D( filename, ncid, 'W_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial till water layer thickness', units = 'm')
+      case("basal_hydro_W")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_W', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer thickness', units = 'm')
+      case("basal_hydro_W_til")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_W_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial till water layer thickness', units = 'm')
+      case("basal_hydro_divQ")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Divergence of subglacial water flux', units = 'm yr^-1')
 
     ! == Basal sliding ==
     ! ===================

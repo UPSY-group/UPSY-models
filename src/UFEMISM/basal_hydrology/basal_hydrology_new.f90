@@ -28,6 +28,7 @@ MODULE basal_hydrology_new
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D
   use mesh_utilities                                         , only: find_containing_vertex
+  use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist
 
   IMPLICIT NONE
 
@@ -97,14 +98,14 @@ CONTAINS
     call calc_general_dt(time, basal_hydro, dt)
 
     ! Initialise for 1 point test
-    !point = [100000.0_dp, 0.0_dp]
-    !vi_point = 1
+    point = [100000.0_dp, 0.0_dp]
+    vi_point = 1
 
-    !call find_containing_vertex(mesh, point, vi_point)
+    call find_containing_vertex(mesh, point, vi_point)
 
-    !if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
-    !  basal_hydro%W( vi_point) = 0.1_dp
-    !end if
+    if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
+     basal_hydro%W( vi_point) = 0.1_dp
+    end if
 
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
 
@@ -162,6 +163,7 @@ CONTAINS
 
     ! Local variables:
     character(len=1024) :: routine_name = 'allocate_basal_hydro'
+    integer             :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -176,8 +178,8 @@ CONTAINS
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.001_dp)
     allocate(basal_hydro%D(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 2.0_dp)
-    allocate(basal_hydro%v(mesh%vi1:mesh%vi2), source = 1.0_dp)
+    allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 10.0_dp)
+    allocate(basal_hydro%v(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dK_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%dD_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%du_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
@@ -186,13 +188,18 @@ CONTAINS
     allocate(basal_hydro%D_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%u_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%v_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
-    allocate(basal_hydro%u_c(mesh%ei1:mesh%ei2), source = 1.0_dp)
+    allocate(basal_hydro%u_c(mesh%ei1:mesh%ei2), source = 10.0_dp)
     allocate(basal_hydro%v_c(mesh%ei1:mesh%ei2), source = 0.0_dp)
     allocate(basal_hydro%Z(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%C(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%O(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%divQ( mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%old_time, source = 0.0_dp)
+    allocate(basal_hydro%mask_a(mesh%vi1:mesh%vi2), source = .false.)
+    allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
+    ! do vi = mesh%vi1, mesh%vi2
+    !   basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
+    ! end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -406,6 +413,8 @@ CONTAINS
     ! This is very similar to what is done in laddie_thickness.90 in the compute_divQH subroutine
 
     call gather_to_all(ice%mask_grounded_ice, mask_grounded_ice_tot)
+    !call calc_M_b_c(mesh, ice, basal_hydro)
+    !call map_UV_b_c(mesh, basal_hydro)
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)
@@ -416,6 +425,9 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       ! Initialise
+      basal_hydro%divQ( vi) = 0_dp
+
+      if (.not. ice%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
 
       ! Loop over all connections of vertex vi
       DO ci = 1, mesh%nC( vi)
@@ -623,5 +635,135 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine map_UV_b_c
+
+
+
+  subroutine calc_M_b_c( mesh, ice, basal_hydro)
+    ! Calculate mapping matrix from b-grid to c-grid
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_M_b_c'
+    integer                                               :: ncols, ncols_loc, nrows, nrows_loc, nnz_per_row_est, nnz_est_proc
+    integer                                               :: row, ti, n, i, vi, vj, ei, til, tir
+    logical, dimension(mesh%nTri)                          :: mask_b_tot
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Get the basal hydrology mask on (a) and b-grid
+    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+    call gather_to_all(basal_hydro%mask_b, mask_b_tot)
+
+    ! Matrix size
+    ncols           = mesh%nTri        ! from
+    ncols_loc       = mesh%nTri_loc
+    nrows           = mesh%nE        ! to
+    nrows_loc       = mesh%nE_loc
+    nnz_per_row_est = 2
+    nnz_est_proc    = nrows_loc * nnz_per_row_est
+
+    call allocate_matrix_CSR_dist( basal_hydro%M_b_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+      pai_x = mesh%pai_Tri, pai_y = mesh%pai_E)
+
+    ! == Calculate coefficients
+    ! =========================
+
+    do row = basal_hydro%M_b_c%i1, basal_hydro%M_b_c%i2
+
+      ! The vertex represented by this matrix row
+      ei = mesh%n2ei( row)
+
+      ! Get neighbouring triangles
+      til = mesh%ETri( ei, 1)
+      tir = mesh%ETri( ei, 2)
+
+      if (til == 0 .and. tir > 0) then
+        ! Only triangle on right side exists
+        if (mask_b_tot( tir)) then
+          ! Within basal_hydro domain, so add
+          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, tir, 1._dp)
+        else
+          ! Outside basal_hydro domain, so omit
+          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+        end if
+      elseif (tir == 0 .and. til > 0) then
+        ! Only triangle on left side exists
+        if (mask_b_tot( til)) then
+          ! Within basal_hydro domain, so add
+          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, til, 1._dp)
+        else
+          ! Outside basal_hydro domain, so omit
+          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+        end if
+      elseif (til > 0 .and. tir > 0) then
+        ! Both triangles exist
+        if (mask_b_tot( til) .or. mask_b_tot( tir)) then
+          ! At least one traingle in basal_hydro domain, so add average
+          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, til, 0.5_dp)
+          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, tir, 0.5_dp)
+        else
+          ! Both outside basal_hydro domain, so omit
+          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+        end if
+      else
+          call crash('something is seriously wrong with the ETri array of this mesh!')
+      end if
+
+    end do
+
+    ! Crop matrix memory
+    call finalise_matrix_CSR_dist( basal_hydro%M_b_c)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_M_b_c
+
+
+
+  subroutine calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+    !< Calculating the basal hydrology mask on b-grid >!
+
+    ! In/output variables:
+    type(type_mesh),                    intent(in   ) :: mesh
+    type(type_ice_model),               intent(in   ) :: ice
+    type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=1024)                                   :: routine_name = 'calc_basal_hydro_mask_a_b'
+    integer                                               :: vi, i, ti
+    logical, dimension(mesh%nV)                           :: mask_a_tot
+
+    ! Add routine to path
+    call init_routine( routine_name)
+    
+    do vi = mesh%vi1, mesh%vi2
+      basal_hydro%mask_a( vi) = .false.
+      basal_hydro%mask_a( vi) = ice%mask_grounded_ice( vi)
+    end do
+
+    call gather_to_all(basal_hydro%mask_a, mask_a_tot)
+
+    ! Define grounded if any of the three vertices is grounded
+    do ti = mesh%ti1, mesh%ti2
+      basal_hydro%mask_b( ti) = .false.
+      DO i = 1, 3
+        vi = mesh%Tri( ti, i)
+        IF (mask_a_tot( vi)) THEN
+          ! Set true if any of the three vertices is grounded
+          basal_hydro%mask_b( ti) = .true.
+        END IF
+      END DO
+    end do
+  
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_basal_hydro_mask_a_b
 
 END MODULE basal_hydrology_new

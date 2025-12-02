@@ -6,7 +6,7 @@ MODULE basal_hydrology_new
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_SUM
   USE precisions                                             , ONLY: dp
-  USE mpi_basic                                              , ONLY: par
+  USE mpi_basic                                              , ONLY: par, sync
   USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE model_configuration                                    , ONLY: C
   USE parameters
@@ -28,7 +28,7 @@ MODULE basal_hydrology_new
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D
   use mesh_utilities                                         , only: find_containing_vertex
-  use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist
+  use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist
 
   IMPLICIT NONE
 
@@ -98,38 +98,33 @@ CONTAINS
     call calc_general_dt(time, basal_hydro, dt)
 
     ! Initialise for 1 point test
-    point = [100000.0_dp, 0.0_dp]
-    vi_point = 1
+    !point = [100000.0_dp, 0.0_dp]
+    !vi_point = 1
 
-    call find_containing_vertex(mesh, point, vi_point)
+    !call find_containing_vertex(mesh, point, vi_point)
 
-    if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
-     basal_hydro%W( vi_point) = 0.1_dp
-    end if
+    !if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
+    !  basal_hydro%W( vi_point) = 0.1_dp
+    !end if
 
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
-
-    ! All kinds of variables are allocated down below. This is called in UFEMISM_main_model around line 500.
-
-    ! Loop over all vertices and set them within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
 
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
-
     call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
-    ! 4) Get W values on staggered grid 
+    ! 4) Get values on staggered grid 
     call map_all_a_b(mesh, basal_hydro)
 
     ! 8) Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
-
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
 
-    write(*,*) "dt_hydro = ", dt_hydro
+    if (par%primary) then
+      write(*,*) "dt_hydro = ", dt_hydro
+    end if
 
     ! 9) Compute the advective fluxes (Q) on the staggered grid
-    
     call calc_divQ(mesh, ice, basal_hydro)
 
     ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
@@ -141,10 +136,10 @@ CONTAINS
     ! 13) Otherwise, compute next timestep of W using the equation in the paper
     call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
 
-    ! 15) Update time and repeat (not how it is done here?)
-    ! time = time + dt_hydro
-
-    write(*,*) "Time after basal hydrology step: ", time
+    ! 15) Update time and repeat
+    if (par%primary) then
+      write(*,*) "Time after basal hydrology step: ", time
+    end if
 
     !call crash('Hello world!')
   
@@ -163,13 +158,13 @@ CONTAINS
 
     ! Local variables:
     character(len=1024) :: routine_name = 'allocate_basal_hydro'
-    integer             :: vi
+    integer             :: vi, ti
 
     ! Add routine to path
     call init_routine( routine_name)
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 1.0_dp)
+    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  1.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -197,9 +192,11 @@ CONTAINS
     allocate(basal_hydro%old_time, source = 0.0_dp)
     allocate(basal_hydro%mask_a(mesh%vi1:mesh%vi2), source = .false.)
     allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
-    ! do vi = mesh%vi1, mesh%vi2
-    !   basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
-    ! end do
+
+    do vi = mesh%vi1, mesh%vi2
+      basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
+      basal_hydro%u( vi) = 10_dp - mesh%V(vi, 1)/50000_dp
+    end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -413,8 +410,8 @@ CONTAINS
     ! This is very similar to what is done in laddie_thickness.90 in the compute_divQH subroutine
 
     call gather_to_all(ice%mask_grounded_ice, mask_grounded_ice_tot)
-    !call calc_M_b_c(mesh, ice, basal_hydro)
-    !call map_UV_b_c(mesh, basal_hydro)
+    call calc_M_b_c(mesh, ice, basal_hydro)
+    call map_UV_b_c(mesh, basal_hydro)
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)
@@ -424,7 +421,7 @@ CONTAINS
 
     DO vi = mesh%vi1, mesh%vi2
 
-      ! Initialise
+      ! Initialise divQ with zeros
       basal_hydro%divQ( vi) = 0_dp
 
       if (.not. ice%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
@@ -626,10 +623,12 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
+    call sync
+
     call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
-      mesh%pai_Tri, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
+      mesh%pai_Tri, basal_hydro%u_b, mesh%pai_E, basal_hydro%u_c)
     call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_b_c, &
-      mesh%pai_Tri, basal_hydro%v, mesh%pai_E, basal_hydro%v_c)
+      mesh%pai_Tri, basal_hydro%v_b, mesh%pai_E, basal_hydro%v_c)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -650,7 +649,7 @@ CONTAINS
     character(len=256), parameter                         :: routine_name = 'calc_M_b_c'
     integer                                               :: ncols, ncols_loc, nrows, nrows_loc, nnz_per_row_est, nnz_est_proc
     integer                                               :: row, ti, n, i, vi, vj, ei, til, tir
-    logical, dimension(mesh%nTri)                          :: mask_b_tot
+    logical, dimension(mesh%nTri)                         :: mask_b_tot
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -658,6 +657,8 @@ CONTAINS
     ! Get the basal hydrology mask on (a) and b-grid
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
     call gather_to_all(basal_hydro%mask_b, mask_b_tot)
+
+    call deallocate_matrix_CSR_dist( basal_hydro%M_b_c)
 
     ! Matrix size
     ncols           = mesh%nTri        ! from

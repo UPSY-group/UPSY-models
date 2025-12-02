@@ -491,6 +491,10 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_W_til', region%ice%hydro_Salle2025%W_til)
       case("basal_hydro_divQ")
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_divQ', region%ice%hydro_Salle2025%divQ)
+      case("basal_hydro_ub")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_ub', region%ice%hydro_Salle2025%u_b)
+      case("basal_hydro_vb")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_vb', region%ice%hydro_Salle2025%v_b)
 
     ! == Basal sliding ==
     ! ===================
@@ -1196,6 +1200,10 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_W_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial till water layer thickness', units = 'm')
       case("basal_hydro_divQ")
         call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Divergence of subglacial water flux', units = 'm yr^-1')
+      case("basal_hydro_ub")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_ub', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water velocity x-direction', units = 'm yr^-1')
+      case("basal_hydro_vb")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_vb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water velocity y-direction', units = 'm yr^-1')
 
     ! == Basal sliding ==
     ! ===================

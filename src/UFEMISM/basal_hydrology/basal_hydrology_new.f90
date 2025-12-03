@@ -194,12 +194,22 @@ CONTAINS
     allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
 
     do vi = mesh%vi1, mesh%vi2
+      ! Initial basal water depth
       basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
+
       ! Vortex
       !basal_hydro%u( vi) = 10*sin(mesh%V(vi, 2)*pi/(2_dp*40000_dp))
       !basal_hydro%v( vi) = 10*cos(mesh%V(vi, 1)*pi/(2_dp*40000_dp))
+
       ! Decreasing flow
-      basal_hydro%u( vi) = 10_dp - mesh%V(vi, 1)/22500_dp
+      !basal_hydro%u( vi) = 10_dp - mesh%V(vi, 1)/22500_dp
+
+      ! Only diverging flow up and down
+      if (mesh%V(vi, 2) >= 0.0_dp) then
+        basal_hydro%v( vi) = 10.0_dp
+      else
+        basal_hydro%v( vi) = -10.0_dp
+      end if
     end do
 
     ! Sometimes when I try to run I get this error: Program received signal SIGABRT: Process abort signal.

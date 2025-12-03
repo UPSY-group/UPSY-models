@@ -195,8 +195,17 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
-      basal_hydro%u( vi) = 10_dp - mesh%V(vi, 1)/50000_dp
+      ! Vortex
+      !basal_hydro%u( vi) = 10*sin(mesh%V(vi, 2)*pi/(2_dp*40000_dp))
+      !basal_hydro%v( vi) = 10*cos(mesh%V(vi, 1)*pi/(2_dp*40000_dp))
+      ! Decreasing flow
+      basal_hydro%u( vi) = 10_dp - mesh%V(vi, 1)/22500_dp
     end do
+
+    ! Sometimes when I try to run I get this error: Program received signal SIGABRT: Process abort signal.
+    ! prterun noticed that process rank 1 with PID 76361 on node macbookair exited on
+    ! signal 6 (Abort trap: 6).
+    ! But most of the time I do not get this.
 
     ! Finalise routine path
     call finalise_routine( routine_name)

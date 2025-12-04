@@ -171,7 +171,7 @@ CONTAINS
       CASE ('uniform')
         ! Update BMB only for cells in ROI
         DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_ROI(vi)) THEN
+          IF (ice%mask_ROI(vi) > 0) THEN
             IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
               BMB%BMB_shelf( vi) = C%uniform_BMB_ROI
             END IF
@@ -683,7 +683,7 @@ CONTAINS
 
     DO vi = mesh%vi1, mesh%vi2
       ! Only for ROI cells
-      IF (ice%mask_ROI(vi)) THEN
+      IF (ice%mask_ROI(vi) > 0) THEN
         CALL compute_subgrid_BMB(ice, BMB, vi)
       END IF
     END DO

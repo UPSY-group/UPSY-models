@@ -601,11 +601,11 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%v, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_v", d_grid_vec_partial_2D)
       case("basal_hydro_ub")
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%u_b, d_grid_vec_partial_2D)
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%u_b, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_ub", d_grid_vec_partial_2D)
       case("basal_hydro_vb")
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%v_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_ub", d_grid_vec_partial_2D)
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%v_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_vb", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================

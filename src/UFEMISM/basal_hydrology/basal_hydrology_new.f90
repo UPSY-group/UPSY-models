@@ -22,7 +22,7 @@ MODULE basal_hydrology_new
                                                                      replace_Ti_with_robin_solution
   use tridiagonal_solver, only: solve_tridiagonal_matrix_equation
   use netcdf_io_main
-  USE mesh_disc_apply_operators                              , ONLY: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_b_a_2D
+  USE mesh_disc_apply_operators                              , ONLY: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_b_a_2D, ddx_a_a_2D, ddy_a_a_2D
   use laddie_utilities                                       , ONLY: map_H_a_c
   use mpi_distributed_memory                                 , only: gather_to_all
   use mesh_halo_exchange                                     , only: exchange_halos
@@ -113,8 +113,12 @@ CONTAINS
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
     call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
+    call calc_R(mesh, ice, basal_hydro, .true.)
+
+    call calc_K(mesh, basal_hydro)
+
     ! 4) Get values on staggered grid 
-    call map_all_a_b(mesh, basal_hydro)
+    call map_all_a_b(mesh, basal_hydro) !calc_D is in here
 
     ! 8) Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
@@ -192,6 +196,9 @@ CONTAINS
     allocate(basal_hydro%old_time, source = 0.0_dp)
     allocate(basal_hydro%mask_a(mesh%vi1:mesh%vi2), source = .false.)
     allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
+    allocate(basal_hydro%R(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%dR_dx(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%dR_dy(mesh%vi1:mesh%vi2), source = 0.0_dp)
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
@@ -614,6 +621,7 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
+    !Some are NaNs here. This is due to K being NaN sometimes. But why? Probably because dR_dx and dR_dy are NaN.
 
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%D( vi) = rho_w*g*basal_hydro%K( vi)*basal_hydro%W( vi)
@@ -785,5 +793,68 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_basal_hydro_mask_a_b
+
+
+  subroutine calc_R( mesh, ice, basal_hydro, test)
+    ! Calculate subglacial water pressure R
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+    type(type_ice_model),                   intent(in   )    :: ice
+    logical,                                intent(in   )    :: test
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_R'
+    integer                                               :: vi
+    real(dp), parameter                                   :: g = 9.81_dp
+    real(dp), parameter                                   :: rho_w = 1000.0_dp
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+      if (test) then                          ! For now we take R without the pressure component
+      basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g
+      else 
+      basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g + basal_hydro%P( vi)
+      end if
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_R
+
+
+  subroutine calc_K( mesh, basal_hydro)
+    ! Calculate K
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_K'
+    integer                                               :: vi
+    real(dp), parameter                                   :: k = 0.001_dp
+    real(dp), parameter                                   :: alpha = 1.25_dp
+    real(dp), parameter                                   :: beta = 1.5_dp
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call ddx_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dx)
+    call ddy_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dy)
+
+    ! For some reason the dR_dx and dR_dy values are zero sometimes and if this is precisely 0, this breaks calc_K by dividing by zero.
+    do vi = mesh%vi1, mesh%vi2
+      basal_hydro%K( vi) = k*basal_hydro%W( vi)**(alpha - 1._dp)*abs(basal_hydro%dR_dx( vi)**2._dp + basal_hydro%dR_dy( vi)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_K
 
 END MODULE basal_hydrology_new

@@ -84,6 +84,10 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: C                   ! Closing rates
     real(dp), dimension(:), allocatable :: O                   ! Opening rates
 
+    real(dp), dimension(:), allocatable :: R                   ! Subglacial water layer pressure: P + rho_w*g*b
+    real(dp), dimension(:), allocatable :: dR_dx               ! Derivative of R to x on A grid.
+    real(dp), dimension(:), allocatable :: dR_dy               ! Derivative of R to y on A grid.
+
     real(dp), allocatable               :: old_time            ! Time at previous timestep
 
     TYPE(type_sparse_matrix_CSR_dp)     :: M_b_c               ! Matrix for going from grid b to grid c
@@ -96,7 +100,6 @@ MODULE basal_hydrology_model_types
 
     ! Timestepping
     REAL(dp)                                :: t_next
-    !real(dp)                                :: dt                  ! Timestep
     
 
     ! LADDIE

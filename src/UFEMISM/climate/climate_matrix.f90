@@ -187,7 +187,7 @@ contains
 
       ! Adapt temperature to model orography using matrix-derived lapse-rate
       do m = 1, 12
-        climate%T2m( vi,:) = T_ref_GCM( vi, m) - lambda_GCM( vi) * (ice%Hs( vi) - Hs_GCM( vi))  ! Berends et al., 2018 - Eq. 11
+        climate%T2m( vi,m) = T_ref_GCM( vi, m) - lambda_GCM( vi) * (ice%Hs( vi) - Hs_GCM( vi))  ! Berends et al., 2018 - Eq. 11
       end do
 
     end do

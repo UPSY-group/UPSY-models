@@ -113,12 +113,14 @@ CONTAINS
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
     call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
-    call calc_R(mesh, ice, basal_hydro, .true.)
+    call calc_R(mesh, ice, basal_hydro, .false.)
 
     call calc_K(mesh, basal_hydro)
 
     ! 4) Get values on staggered grid 
     call map_all_a_b(mesh, basal_hydro) !calc_D is in here
+
+    call calc_uv(mesh, ice, basal_hydro)
 
     ! 8) Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
@@ -177,7 +179,7 @@ CONTAINS
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.001_dp)
     allocate(basal_hydro%D(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 10.0_dp)
+    allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%v(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dK_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%dD_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
@@ -187,7 +189,7 @@ CONTAINS
     allocate(basal_hydro%D_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%u_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%v_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
-    allocate(basal_hydro%u_c(mesh%ei1:mesh%ei2), source = 10.0_dp)
+    allocate(basal_hydro%u_c(mesh%ei1:mesh%ei2), source = 0.0_dp)
     allocate(basal_hydro%v_c(mesh%ei1:mesh%ei2), source = 0.0_dp)
     allocate(basal_hydro%Z(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%C(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -212,17 +214,12 @@ CONTAINS
       !basal_hydro%u( vi) = 10_dp - mesh%V(vi, 1)/22500_dp
 
       ! Only diverging flow up and down
-      if (mesh%V(vi, 2) >= 0.0_dp) then
-        basal_hydro%v( vi) = 10.0_dp
-      else
-        basal_hydro%v( vi) = -10.0_dp
-      end if
+      !if (mesh%V(vi, 2) >= 0.0_dp) then
+      !  basal_hydro%v( vi) = 10.0_dp
+      !else
+      !  basal_hydro%v( vi) = -10.0_dp
+      !end if
     end do
-
-    ! Sometimes when I try to run I get this error: Program received signal SIGABRT: Process abort signal.
-    ! prterun noticed that process rank 1 with PID 76361 on node macbookair exited on
-    ! signal 6 (Abort trap: 6).
-    ! But most of the time I do not get this.
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -621,7 +618,7 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-    !Some are NaNs here. This is due to K being NaN sometimes. But why? Probably because dR_dx and dR_dy are NaN.
+    !Some are NaNs here. This is due to K being NaN sometimes. But why? Probably because dR_dx and dR_dy are zero.
 
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%D( vi) = rho_w*g*basal_hydro%K( vi)*basal_hydro%W( vi)
@@ -664,6 +661,37 @@ CONTAINS
 
 
 
+  subroutine map_UV_a_c( mesh, basal_hydro)
+    ! Calculate velocities from a-grid to the c-grid
+    !
+    ! Uses a different scheme then the standard mapping operator, as that one is too diffusive
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'map_UV_a_c'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call sync
+
+
+
+    call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_a_c, &
+      mesh%pai_V, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
+    call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_c, &
+      mesh%pai_V, basal_hydro%v, mesh%pai_E, basal_hydro%v_c)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine map_UV_a_c
+
+
+  ! Comes from Laddie_operators
   subroutine calc_M_b_c( mesh, ice, basal_hydro)
     ! Calculate mapping matrix from b-grid to c-grid
 
@@ -754,8 +782,86 @@ CONTAINS
 
 
 
+  ! Comes from Laddie_operators
+  subroutine calc_M_a_c( mesh, ice, basal_hydro)
+    ! Calculate mapping matrix from a-grid to c-grid
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_M_a_c'
+    integer                                               :: ncols, ncols_loc, nrows, nrows_loc, nnz_per_row_est, nnz_est_proc
+    integer                                               :: row, vi, vj, ei
+    logical, dimension(mesh%nV)                           :: mask_a_tot
+    real(dp), dimension(2)                                :: cM_a_c
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Get the basal hydrology mask on a (and b) grid
+    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+    call gather_to_all(basal_hydro%mask_a, mask_a_tot)
+
+    call deallocate_matrix_CSR_dist( basal_hydro%M_a_c)
+
+    ! == Initialise the matrix using the native UFEMISM CSR-matrix format
+    ! ===================================================================
+
+    ! Matrix size
+    ncols           = mesh%nV        ! from
+    ncols_loc       = mesh%nV_loc
+    nrows           = mesh%nE        ! to
+    nrows_loc       = mesh%nE_loc
+    nnz_per_row_est = 2
+    nnz_est_proc    = nrows_loc * nnz_per_row_est
+
+    call allocate_matrix_CSR_dist( basal_hydro%M_a_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+      pai_x = mesh%pai_V, pai_y = mesh%pai_E)
+
+    ! == Calculate coefficients
+    ! =========================
+
+    do row = basal_hydro%M_a_c%i1, basal_hydro%M_a_c%i2
+
+      ! The vertex represented by this matrix row
+      ei = mesh%n2ei( row)
+
+      ! Get neighbouring vertices
+      vi = mesh%EV( ei, 1)
+      vj = mesh%EV( ei, 2)
+
+      ! Get masked average between the two vertices
+      if (mask_a_tot( vi) .and. mask_a_tot( vj)) then
+        cM_a_c = [0.5_dp, 0.5_dp]
+      elseif (mask_a_tot( vi)) then
+        cM_a_c = [1._dp, 0._dp]
+      elseif (mask_a_tot( vj)) then
+        cM_a_c = [0._dp, 1._dp]
+      else
+        cM_a_c = 0._dp
+      end if
+
+      ! Add weight to matrix
+      call add_entry_CSR_dist( basal_hydro%M_a_c, ei, vi, cM_a_c( 1))
+      call add_entry_CSR_dist( basal_hydro%M_a_c, ei, vj, cM_a_c( 2))
+
+    end do
+
+    ! Crop matrix memory
+    call finalise_matrix_CSR_dist( basal_hydro%M_a_c)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_M_a_c
+
+
+
   subroutine calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
-    !< Calculating the basal hydrology mask on b-grid >!
+    !< Calculating the basal hydrology mask on a and b-grid >!
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
@@ -770,6 +876,7 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
     
+    ! Define a-grid mask directly from ice model grounded ice mask
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%mask_a( vi) = .false.
       basal_hydro%mask_a( vi) = ice%mask_grounded_ice( vi)
@@ -856,5 +963,41 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_K
+
+
+
+  subroutine calc_uv( mesh, ice, basal_hydro)
+    ! Calculate u and v from K and R
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_uv'
+    integer                                               :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Get the derivatives of R
+    call ddx_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dx)
+    call ddy_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dy)
+
+    ! Calculate u and v
+    do vi = mesh%vi1, mesh%vi2 ! Not using Ke and Kn as in the paper, but just K on the vertex
+      basal_hydro%u( vi) = - basal_hydro%K( vi) * basal_hydro%dR_dx( vi)
+      basal_hydro%v( vi) = - basal_hydro%K( vi) * basal_hydro%dR_dy( vi)
+    end do
+
+    ! Remap to c-grid velocities
+    call calc_M_a_c( mesh, ice, basal_hydro)
+    call map_UV_a_c( mesh, basal_hydro)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_uv
 
 END MODULE basal_hydrology_new

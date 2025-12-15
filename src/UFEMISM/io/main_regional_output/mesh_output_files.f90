@@ -503,6 +503,8 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_R', region%ice%hydro_Salle2025%R)
       case("basal_hydro_D")
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_D', region%ice%hydro_Salle2025%D)
+      case("basal_hydro_K")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_K', region%ice%hydro_Salle2025%K)
 
     ! == Basal sliding ==
     ! ===================
@@ -1220,6 +1222,8 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_R', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure', units = 'Pa')
       case("basal_hydro_D")
         call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water diffusivity', units = 'm^2 yr^-1')
+      case("basal_hydro_K")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_K', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water effective conductivity', units = 'm yr^-1')
 
     ! == Basal sliding ==
     ! ===================

@@ -91,6 +91,7 @@ MODULE basal_hydrology_model_types
     real(dp), allocatable               :: old_time            ! Time at previous timestep
 
     TYPE(type_sparse_matrix_CSR_dp)     :: M_b_c               ! Matrix for going from grid b to grid c
+    TYPE(type_sparse_matrix_CSR_dp)     :: M_a_c               ! Matrix for going from grid b to grid c
 
     logical,  dimension(:), allocatable :: mask_a              ! Mask on b-grid on which to apply computation
     logical,  dimension(:), allocatable :: mask_b              ! Mask on b-grid on which to apply computation

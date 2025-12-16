@@ -88,24 +88,17 @@ CONTAINS
 
     real(dp)                       :: dt
 
-    real(dp), dimension(2)         :: point
-    integer                        :: vi_point
-
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Get the general timestep
     call calc_general_dt(time, basal_hydro, dt)
 
-    ! Initialise for 1 point test
-    !point = [100000.0_dp, 0.0_dp]
-    !vi_point = 1
+    ! Initialise basal hydro masks
+    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
-    !call find_containing_vertex(mesh, point, vi_point)
-
-    !if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
-    !  basal_hydro%W( vi_point) = 0.1_dp
-    !end if
+    ! Point source
+    call point_source( mesh, basal_hydro)
 
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
@@ -113,7 +106,7 @@ CONTAINS
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
     call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
-    call calc_R(mesh, ice, basal_hydro, .false.)
+    call calc_R(mesh, ice, basal_hydro, .true.)
 
     call calc_K(mesh, basal_hydro)
 
@@ -621,7 +614,11 @@ CONTAINS
     !Some are NaNs here. This is due to K being NaN sometimes. But why? Probably because dR_dx and dR_dy are zero.
 
     do vi = mesh%vi1, mesh%vi2
-      basal_hydro%D( vi) = rho_w*g*basal_hydro%K( vi)*basal_hydro%W( vi)
+      if (basal_hydro%mask_a( vi)) then
+        basal_hydro%D( vi) = rho_w*g*basal_hydro%K( vi)*basal_hydro%W( vi)
+      else
+        basal_hydro%D( vi) = 0.0_dp
+      end if
     end do
 
     ! Finalise routine path
@@ -922,9 +919,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       if (test) then                          ! For now we take R without the pressure component
-      basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g
+        basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g
       else 
-      basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g + basal_hydro%P( vi)
+        basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g + basal_hydro%P( vi)
       end if
     end do
 
@@ -956,7 +953,11 @@ CONTAINS
 
     ! For some reason the dR_dx and dR_dy values are zero sometimes and if this is precisely 0, this breaks calc_K by dividing by zero.
     do vi = mesh%vi1, mesh%vi2
-      basal_hydro%K( vi) = k*basal_hydro%W( vi)**(alpha - 1._dp)*abs(basal_hydro%dR_dx( vi)**2._dp + basal_hydro%dR_dy( vi)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
+      if (basal_hydro%mask_a( vi)) then
+        basal_hydro%K( vi) = k*basal_hydro%W( vi)**(alpha - 1._dp)*abs(basal_hydro%dR_dx( vi)**2._dp + basal_hydro%dR_dy( vi)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
+      else
+        basal_hydro%K( vi) = 0.0_dp
+      end if
     end do
 
     ! Finalise routine path
@@ -987,8 +988,8 @@ CONTAINS
 
     ! Calculate u and v
     do vi = mesh%vi1, mesh%vi2 ! Not using Ke and Kn as in the paper, but just K on the vertex
-      basal_hydro%u( vi) = - basal_hydro%K( vi) * basal_hydro%dR_dx( vi)
-      basal_hydro%v( vi) = - basal_hydro%K( vi) * basal_hydro%dR_dy( vi)
+      basal_hydro%u( vi) = (- basal_hydro%K( vi) * basal_hydro%dR_dx( vi))!*sec_per_year
+      basal_hydro%v( vi) = (- basal_hydro%K( vi) * basal_hydro%dR_dy( vi))!*sec_per_year
     end do
 
     ! Remap to c-grid velocities
@@ -999,5 +1000,39 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_uv
+
+
+
+  subroutine point_source( mesh, basal_hydro)
+    ! Calculate a point source for testing. Allocate W with zeros for best viewable results.
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'point_source'
+    integer                                               :: vi, vi_point
+    real(dp), dimension(2)                                :: point
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Initialise for 1 point test
+    point = [100000.0_dp, 0.0_dp]
+    vi_point = 1
+
+    ! Find the vertex closest to the point
+    call find_containing_vertex(mesh, point, vi_point)
+
+    ! Set a point source there and leave everything else zero
+    if (vi_point >= mesh%vi1 .and. vi_point <= mesh%vi2) then
+      basal_hydro%W( vi_point) = 0.1_dp
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine point_source
 
 END MODULE basal_hydrology_new

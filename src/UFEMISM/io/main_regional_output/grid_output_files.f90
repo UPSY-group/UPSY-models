@@ -610,11 +610,14 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%R, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_R", d_grid_vec_partial_2D)
       case("basal_hydro_D")
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%D, d_grid_vec_partial_2D)
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%D_b, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_D", d_grid_vec_partial_2D)
       case("basal_hydro_K")
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%K, d_grid_vec_partial_2D)
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%K_b, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_K", d_grid_vec_partial_2D)
+      case("basal_hydro_P")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%P, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_P", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================
@@ -1414,6 +1417,8 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water diffusivity', units = 'm^2 yr^-1')
       case("basal_hydro_K")
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_K', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water effective conductivity', units = 'm yr^-1')
+      case("basal_hydro_P")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_P', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Pressure', units = 'Pa')
 
     ! == Basal sliding ==
     ! ===================

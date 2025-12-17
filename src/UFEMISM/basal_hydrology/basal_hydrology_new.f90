@@ -98,7 +98,7 @@ CONTAINS
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
     ! Point source
-    call point_source( mesh, basal_hydro)
+    !call point_source( mesh, basal_hydro)
 
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
@@ -106,12 +106,13 @@ CONTAINS
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
     call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
-    call calc_R(mesh, ice, basal_hydro, .true.)
+    call calc_R(mesh, ice, basal_hydro, .false.)
 
-    call calc_K(mesh, basal_hydro)
+    call calc_K(mesh, ice, basal_hydro)
 
     ! 4) Get values on staggered grid 
-    call map_all_a_b(mesh, basal_hydro) !calc_D is in here
+    !call map_all_a_b(mesh, basal_hydro) !calc_D is in here
+    call calc_D(mesh, basal_hydro)
 
     call calc_uv(mesh, ice, basal_hydro)
 
@@ -163,14 +164,14 @@ CONTAINS
     call init_routine( routine_name)
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 1.0_dp)
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  1.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0_dp) ! For now just make this a value
     allocate(basal_hydro%dW_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
-    allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.001_dp)
+    allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%D(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%v(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -192,12 +193,14 @@ CONTAINS
     allocate(basal_hydro%mask_a(mesh%vi1:mesh%vi2), source = .false.)
     allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
     allocate(basal_hydro%R(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%dR_dx(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%dR_dy(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%dR_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
+    allocate(basal_hydro%dR_dy_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
+    allocate(basal_hydro%t_next, source = 0.0_dp)
+    allocate(basal_hydro%dt, source = 0.0_dp)
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
-      basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
+      !basal_hydro%W( vi) = 2.0_dp + sin(mesh%V(vi, 1)*2_dp*pi/80e3_dp)*cos(mesh%V(vi, 2)*2_dp*pi/80e3_dp)
 
       ! Vortex
       !basal_hydro%u( vi) = 10*sin(mesh%V(vi, 2)*pi/(2_dp*40000_dp))
@@ -306,7 +309,6 @@ CONTAINS
 
     ! 5) Also do this for effective conductivity K
     call ddx_a_b_2D(mesh, basal_hydro%K, basal_hydro%dK_dx_b)
-    call map_a_b_2D(mesh, basal_hydro%K, basal_hydro%K_b)
 
     ! 6) Do this again for velocity components u and v
     call ddx_a_b_2D(mesh, basal_hydro%u, basal_hydro%du_dx_b)
@@ -331,7 +333,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_basal_hydrology_model),   intent(in   ) :: basal_hydro
+    type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
     real(dp),                           intent(in   ) :: dt
     real(dp),                           intent(  out) :: dt_hydro
 
@@ -388,6 +390,7 @@ CONTAINS
 
     ! Timestep we will use here
     dt_hydro = min(correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P), dt)
+    basal_hydro%dt = dt_hydro
     if (par%primary) then
       write(*,*) "dt_crit_CFL = ", dt_crit_CFL
       write(*,*) "dt_crit_W   = ", dt_crit_W
@@ -502,12 +505,14 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
+    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+
     do vi = mesh%vi1, mesh%vi2
       if (ice%mask_icefree_land( vi)) then
         basal_hydro%P( vi) =  0.0_dp
       else if (ice%mask_floating_ice( vi)) then
         basal_hydro%P( vi) = basal_hydro%P_o( vi)
-      else if (basal_hydro%W( vi) == 0.0_dp .and. .not. ice%mask_icefree_land( vi) .and. .not. ice%mask_floating_ice( vi) .and. .not. ice%mask_icefree_ocean( vi)) then
+      else if (basal_hydro%W( vi) == 0.0_dp .and. basal_hydro%mask_a( vi)) then
         if (sliding) then
           basal_hydro%P( vi) = 0.0_dp
         else
@@ -583,11 +588,13 @@ CONTAINS
     call init_routine( routine_name)
 
     if (time == 0.0_dp) then
-      dt = C%dt_ice_max
+      dt = 0.0000025_dp!C%dt_ice_max
     else
       dt = time - basal_hydro%old_time
     end if
     basal_hydro%old_time = time
+    ! Get the next timestep time of ice model
+    basal_hydro%t_next = time + dt
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -604,7 +611,7 @@ CONTAINS
 
     ! Local variables:
     character(len=1024) :: routine_name = 'calc_D'
-    integer             :: vi
+    integer             :: ti
     real(dp), parameter :: g = 9.81_dp
     real(dp), parameter :: rho_w = 1000.0_dp
 
@@ -613,11 +620,13 @@ CONTAINS
     call init_routine( routine_name)
     !Some are NaNs here. This is due to K being NaN sometimes. But why? Probably because dR_dx and dR_dy are zero.
 
-    do vi = mesh%vi1, mesh%vi2
-      if (basal_hydro%mask_a( vi)) then
-        basal_hydro%D( vi) = rho_w*g*basal_hydro%K( vi)*basal_hydro%W( vi)
+    call map_a_b_2D(mesh, basal_hydro%W, basal_hydro%W_b)
+
+    do ti = mesh%ti1, mesh%ti2
+      if (basal_hydro%mask_b( ti)) then
+        basal_hydro%D_b( ti) = rho_w*g*basal_hydro%K_b( ti)*basal_hydro%W_b( ti)
       else
-        basal_hydro%D( vi) = 0.0_dp
+        basal_hydro%D_b( ti) = 0.0_dp
       end if
     end do
 
@@ -675,8 +684,6 @@ CONTAINS
 
     call sync
 
-
-
     call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_a_c, &
       mesh%pai_V, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
     call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_c, &
@@ -686,6 +693,32 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine map_UV_a_c
+
+
+
+   subroutine map_W_a_b( mesh, basal_hydro)
+    ! Map basal hydrology layer thickness from a to b grid, accounting for BCs
+
+    ! In- and output variables
+
+    type(type_mesh),                        intent(in)    :: mesh
+    type(type_basal_hydrology_model),       intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'map_W_a_b'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call sync
+
+    call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_b, &
+      mesh%pai_V, basal_hydro%W, mesh%pai_Tri, basal_hydro%W_b)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine map_W_a_b
 
 
   ! Comes from Laddie_operators
@@ -856,6 +889,99 @@ CONTAINS
   end subroutine calc_M_a_c
 
 
+  ! Comes from laddie_operators
+  subroutine calc_M_a_b( mesh, ice, basal_hydro)
+    ! Calculate mapping matrix from a-grid to c-grid
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_M_a_b'
+    integer                                               :: ncols, ncols_loc, nrows, nrows_loc, nnz_per_row_est, nnz_est_proc
+    integer                                               :: row, vi, vj, ei, ti, i, n
+    logical, dimension(mesh%nTri)                         :: mask_b_tot
+    logical, dimension(mesh%nV)                           :: mask_a_tot
+    real(dp), dimension(3)                                :: cM_a_b
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Get the basal hydrology mask on a (and b) grid
+    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+    call gather_to_all(basal_hydro%mask_b, mask_b_tot)
+    call gather_to_all(basal_hydro%mask_a, mask_a_tot)
+
+    call deallocate_matrix_CSR_dist( basal_hydro%M_a_b)
+
+    ! == Initialise the matrix using the native UFEMISM CSR-matrix format
+    ! ===================================================================
+
+    ! Matrix size
+    ncols           = mesh%nV        ! from
+    ncols_loc       = mesh%nV_loc
+    nrows           = mesh%nTri      ! to
+    nrows_loc       = mesh%nTri_loc
+    nnz_per_row_est = 3
+    nnz_est_proc    = nrows_loc * nnz_per_row_est
+
+    call allocate_matrix_CSR_dist( basal_hydro%M_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+      pai_x = mesh%pai_V, pai_y = mesh%pai_Tri)
+
+    ! == Calculate coefficients
+    ! =========================
+
+    do row = basal_hydro%M_a_b%i1, basal_hydro%M_a_b%i2
+
+      ! The vertex represented by this matrix row
+      ti = mesh%n2ti( row)
+
+      if (mask_b_tot( ti)) then
+
+        ! Initialise
+        cM_a_b = 0._dp
+
+        ! Set counter of vertices to average over
+        n = 0
+
+        ! Loop over vertices
+        do i = 1, 3
+          vi = mesh%Tri( ti, i)
+          ! Only add vertex if in mask_a
+          if (mask_a_tot( vi)) then
+            ! Set weight factor
+            cM_a_b( i) = 1._dp
+            n = n + 1
+          end if
+        end do
+
+        ! Scale weight factor by number of available vertices
+        cM_a_b = cM_a_b / real( n, dp)
+
+        ! Add weight to matrix
+        do i = 1, 3
+          vi = mesh%Tri( ti, i)
+          call add_entry_CSR_dist( basal_hydro%M_a_b, ti, vi, cM_a_b( i))
+        end do
+
+      else
+        ! Outside laddie domain, so skip
+        call add_empty_row_CSR_dist( basal_hydro%M_a_b, ti)
+
+      end if
+
+    end do
+    ! Crop matrix memory
+    call finalise_matrix_CSR_dist( basal_hydro%M_a_b)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_M_a_b
+
+
 
   subroutine calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
     !< Calculating the basal hydrology mask on a and b-grid >!
@@ -918,7 +1044,7 @@ CONTAINS
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      if (test) then                          ! For now we take R without the pressure component
+      if (test) then                          ! For testing we take R without the pressure component
         basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g
       else 
         basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g + basal_hydro%P( vi)
@@ -931,16 +1057,17 @@ CONTAINS
   end subroutine calc_R
 
 
-  subroutine calc_K( mesh, basal_hydro)
+  subroutine calc_K( mesh, ice, basal_hydro)
     ! Calculate K
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'calc_K'
-    integer                                               :: vi
+    integer                                               :: ti
     real(dp), parameter                                   :: k = 0.001_dp
     real(dp), parameter                                   :: alpha = 1.25_dp
     real(dp), parameter                                   :: beta = 1.5_dp
@@ -948,15 +1075,20 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    call ddx_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dx)
-    call ddy_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dy)
+    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+
+    call ddx_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dx_b)
+    call ddy_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dy_b)
+
+    call calc_M_a_b( mesh, ice, basal_hydro)
+    call map_W_a_b( mesh, basal_hydro)
 
     ! For some reason the dR_dx and dR_dy values are zero sometimes and if this is precisely 0, this breaks calc_K by dividing by zero.
-    do vi = mesh%vi1, mesh%vi2
-      if (basal_hydro%mask_a( vi)) then
-        basal_hydro%K( vi) = k*basal_hydro%W( vi)**(alpha - 1._dp)*abs(basal_hydro%dR_dx( vi)**2._dp + basal_hydro%dR_dy( vi)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
+    do ti = mesh%ti1, mesh%ti2
+      if (basal_hydro%mask_b( ti)) then
+        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
       else
-        basal_hydro%K( vi) = 0.0_dp
+        basal_hydro%K_b( ti) = 0.0_dp
       end if
     end do
 
@@ -977,24 +1109,24 @@ CONTAINS
 
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'calc_uv'
-    integer                                               :: vi
+    integer                                               :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Get the derivatives of R
-    call ddx_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dx)
-    call ddy_a_a_2D(mesh, basal_hydro%R, basal_hydro%dR_dy)
+    call ddx_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dx_b)
+    call ddy_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dy_b)
 
     ! Calculate u and v
-    do vi = mesh%vi1, mesh%vi2 ! Not using Ke and Kn as in the paper, but just K on the vertex
-      basal_hydro%u( vi) = (- basal_hydro%K( vi) * basal_hydro%dR_dx( vi))!*sec_per_year
-      basal_hydro%v( vi) = (- basal_hydro%K( vi) * basal_hydro%dR_dy( vi))!*sec_per_year
+    do ti = mesh%ti1, mesh%ti2
+      basal_hydro%u_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dx_b( ti))*sec_per_year
+      basal_hydro%v_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dy_b( ti))*sec_per_year
     end do
 
     ! Remap to c-grid velocities
-    call calc_M_a_c( mesh, ice, basal_hydro)
-    call map_UV_a_c( mesh, basal_hydro)
+    call calc_M_b_c( mesh, ice, basal_hydro)
+    call map_UV_b_c( mesh, basal_hydro)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

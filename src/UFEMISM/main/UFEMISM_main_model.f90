@@ -78,6 +78,7 @@ CONTAINS
     REAL(dp)                                                           :: dt_av
     REAL(dp)                                                           :: mesh_fitness_coefficient
     TYPE(type_global_forcing)                                          :: regional_forcing
+    real(dp)                                                           :: time_hydro
 
     ! Add routine to path
     routine_name = 'run_model('  //  region%name  //  ')'
@@ -114,7 +115,22 @@ CONTAINS
       END IF ! IF (C%allow_mesh_updates) THEN
 
       ! Run the subglacial hydrology model
-      CALL run_basal_hydrology_model( region%mesh, region%ice, region%time)
+      call run_basal_hydrology_model( region%mesh, region%ice, region%time)
+      !time_hydro = region%time
+      !if (time_hydro == 0.0_dp) then
+      !  call run_basal_hydrology_model( region%mesh, region%ice, time_hydro)
+      !else
+      !  do while (time_hydro < region%time + 1.0_dp)
+      !    CALL run_basal_hydrology_model( region%mesh, region%ice, time_hydro)
+      !    ! update time_hydro
+      !    if (time_hydro + region%ice%hydro_Salle2025%dt > region%ice%hydro_Salle2025%t_next) then
+      !      region%ice%hydro_Salle2025%dt = region%ice%hydro_Salle2025%t_next - time_hydro
+      !      time_hydro = region%ice%hydro_Salle2025%t_next
+      !    else
+      !      time_hydro = time_hydro + region%ice%hydro_Salle2025%dt
+      !    end if
+      !  end do
+      !end if
 
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN

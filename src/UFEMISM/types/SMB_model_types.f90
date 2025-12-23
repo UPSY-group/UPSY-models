@@ -38,29 +38,53 @@ MODULE SMB_model_types
 
     ! Ideally these parameters should not be region-dependent?
     REAL(dp)  :: albedo_water
-    REAL(dp)  :: albedo_soil 
-    REAL(dp)  :: albedo_ice  
-    REAL(dp)  :: albedo_snow 
-
+    REAL(dp)  :: albedo_soil
+    REAL(dp)  :: albedo_ice
+    REAL(dp)  :: albedo_snow
 
   END TYPE type_SMB_model_IMAU_ITM
+
+  type type_SMB_model_snapshot_plus_anomalies
+
+    ! Baseline climate
+    real(dp), dimension(:,:), allocatable :: T2m_baseline
+    real(dp), dimension(:  ), allocatable :: SMB_baseline
+
+    ! Two anomaly timeframes enveloping the current model time
+    real(dp)                              :: anomaly_t0
+    real(dp), dimension(:  ), allocatable :: T2m_anomaly_0
+    real(dp), dimension(:  ), allocatable :: SMB_anomaly_0
+
+    real(dp)                              :: anomaly_t1
+    real(dp), dimension(:  ), allocatable :: T2m_anomaly_1
+    real(dp), dimension(:  ), allocatable :: SMB_anomaly_1
+
+    ! Time-weighted anomaly
+    real(dp), dimension(:  ), allocatable :: T2m_anomaly
+    real(dp), dimension(:  ), allocatable :: SMB_anomaly
+
+    ! Applied climate
+    real(dp), dimension(:,:), allocatable :: T2m    ! = baseline + anomaly
+    real(dp), dimension(:  ), allocatable :: SMB
+
+  end type type_SMB_model_snapshot_plus_anomalies
 
   TYPE type_SMB_model
     ! The SMB model data structure.
 
     ! Main data fields
-    REAL(dp), DIMENSION(:  ),     ALLOCATABLE :: SMB                     ! Yearly  SMB (m)
-    
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE      :: SMB                       ! Yearly  SMB (m)
+
     ! Sub-models
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: SMB_correction            ! [m.i.e./yr] Surface mass balance
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE      :: SMB_correction            ! [m.i.e./yr] Surface mass balance
+    TYPE(type_SMB_model_IMAU_ITM)                :: IMAUITM
+    type(type_SMB_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
 
     ! Timestepping
-    REAL(dp)                                :: t_next
+    REAL(dp)                                     :: t_next
 
     ! Metadata
-    CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file
-
-    TYPE(type_SMB_model_IMAU_ITM)           :: IMAUITM
+    CHARACTER(LEN=256)                           :: restart_filename          ! Name for generated restart file
 
   END TYPE type_SMB_model
 

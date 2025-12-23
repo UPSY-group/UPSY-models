@@ -20,7 +20,7 @@ module laddie_forcing_types
     ! Forcing
     real(dp), dimension(:),   contiguous, pointer :: Hi                 => null()  ! [m]               Ice thickness
     real(dp), dimension(:),   contiguous, pointer :: Hs                 => null()  ! [m]               Ice surface elevation
-    real(dp), dimension(:),   contiguous, pointer :: Hb                 => null()  ! [m]               Bedrock elevation
+    real(dp), dimension(:),   contiguous, pointer :: Hb                 => null()  ! [m]               Bedrock elevation (w.r.t. PD sea level)
     real(dp), dimension(:),   contiguous, pointer :: Hib                => null()  ! [m]               Ice base elevation (w.r.t. PD sea level)
     real(dp), dimension(:),   contiguous, pointer :: TAF                => null()  ! [m]               Thickness above floatation
     real(dp), dimension(:),   contiguous, pointer :: dHib_dx_b          => null()  ! []                Horizontal derivative of ice draft on b-grid

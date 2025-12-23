@@ -585,6 +585,7 @@ CONTAINS
     ! Forcing
     call repartition( mesh_old, mesh_new, forcing%Hi                , forcing%wHi                )
     call repartition( mesh_old, mesh_new, forcing%Hib               , forcing%wHib               )
+    call repartition( mesh_old, mesh_new, forcing%Hb                , forcing%wHb                )
     call repartition( mesh_old, mesh_new, forcing%TAF               , forcing%wTAF               )
     call repartition( mesh_old, mesh_new, forcing%dHib_dx_b         , forcing%wdHib_dx_b         )
     call repartition( mesh_old, mesh_new, forcing%dHib_dy_b         , forcing%wdHib_dy_b         )
@@ -601,6 +602,7 @@ CONTAINS
 
     forcing%Hi                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hi
     forcing%Hib               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hib
+    forcing%Hb                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hb
     forcing%TAF               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%TAF
     forcing%dHib_dx_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dx_b
     forcing%dHib_dy_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dy_b
@@ -617,6 +619,7 @@ CONTAINS
 
     call checksum( forcing%Hi                , 'forcing%Hi'                , mesh_new%pai_V)
     call checksum( forcing%Hib               , 'forcing%Hib'               , mesh_new%pai_V)
+    call checksum( forcing%Hb                , 'forcing%Hb'                , mesh_new%pai_V)
     call checksum( forcing%TAF               , 'forcing%TAF'               , mesh_new%pai_V)
     call checksum( forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         , mesh_new%pai_Tri)
     call checksum( forcing%dHib_dy_b         , 'forcing%dHib_dy_b'         , mesh_new%pai_Tri)

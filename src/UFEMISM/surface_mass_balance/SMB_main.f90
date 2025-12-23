@@ -23,6 +23,8 @@ MODULE SMB_main
   use plane_geometry, only: is_in_polygon
   use mesh_data_smoothing, only: smooth_Gaussian
   use netcdf_io_main
+  use SMB_snapshot_plus_anomalies, only: initialise_SMB_model_snapshot_plus_anomalies, &
+    run_SMB_model_snapshot_plus_anomalies
 
   IMPLICIT NONE
 
@@ -77,34 +79,34 @@ CONTAINS
 
     ! Determine which SMB model to run for this region
     SELECT CASE (region_name)
-      CASE ('NAM')
-        choice_SMB_model = C%choice_SMB_model_NAM
-      CASE ('EAS')
-        choice_SMB_model = C%choice_SMB_model_EAS
-      CASE ('GRL')
-        choice_SMB_model = C%choice_SMB_model_GRL
-      CASE ('ANT')
-        choice_SMB_model = C%choice_SMB_model_ANT
-      CASE DEFAULT
-        CALL crash('unknown region_name "' // region_name // '"')
+    CASE ('NAM')
+      choice_SMB_model = C%choice_SMB_model_NAM
+    CASE ('EAS')
+      choice_SMB_model = C%choice_SMB_model_EAS
+    CASE ('GRL')
+      choice_SMB_model = C%choice_SMB_model_GRL
+    CASE ('ANT')
+      choice_SMB_model = C%choice_SMB_model_ANT
+    CASE DEFAULT
+      CALL crash('unknown region_name "' // region_name // '"')
     END SELECT
 
     ! Run the chosen SMB model
     SELECT CASE (choice_SMB_model)
-      CASE ('uniform')
-        SMB%SMB = C%uniform_SMB
-      CASE ('idealised')
-        CALL run_SMB_model_idealised( mesh, ice, SMB, time)
-      CASE ('prescribed')
-        !IF (par%primary)  WRITE(*,"(A)") '   Running prescribed SMB...'
-        CALL run_SMB_model_prescribed( mesh, ice, SMB, region_name, time)
-      CASE ('reconstructed')
-        CALL run_SMB_model_reconstructed( mesh, grid_smooth, ice, SMB, region_name, time)
-      CASE ('IMAU-ITM')
-        !IF (par%primary)  WRITE(*,"(A)") '   Running IMAU-ITM SMB model...'
-        CALL run_SMB_model_IMAUITM( mesh, ice, SMB, climate)
-      CASE DEFAULT
-        CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE DEFAULT
+      CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE ('uniform')
+      SMB%SMB = C%uniform_SMB
+    CASE ('idealised')
+      CALL run_SMB_model_idealised( mesh, ice, SMB, time)
+    CASE ('prescribed')
+      CALL run_SMB_model_prescribed( mesh, ice, SMB, region_name, time)
+    CASE ('reconstructed')
+      CALL run_SMB_model_reconstructed( mesh, grid_smooth, ice, SMB, region_name, time)
+    CASE ('IMAU-ITM')
+      CALL run_SMB_model_IMAUITM( mesh, ice, SMB, climate)
+    case ('snapshot_plus_anomalies')
+      call run_SMB_model_snapshot_plus_anomalies( mesh, SMB, time)
     END SELECT
 
     ! Finalise routine path
@@ -136,17 +138,20 @@ CONTAINS
 
     ! Determine which SMB model to initialise for this region
     SELECT CASE (region_name)
-      CASE ('NAM')
-        choice_SMB_model = C%choice_SMB_model_NAM
-      CASE ('EAS')
-        choice_SMB_model = C%choice_SMB_model_EAS
-      CASE ('GRL')
-        choice_SMB_model = C%choice_SMB_model_GRL
-      CASE ('ANT')
-        choice_SMB_model = C%choice_SMB_model_ANT
-      CASE DEFAULT
-        CALL crash('unknown region_name "' // region_name // '"')
+    CASE ('NAM')
+      choice_SMB_model = C%choice_SMB_model_NAM
+    CASE ('EAS')
+      choice_SMB_model = C%choice_SMB_model_EAS
+    CASE ('GRL')
+      choice_SMB_model = C%choice_SMB_model_GRL
+    CASE ('ANT')
+      choice_SMB_model = C%choice_SMB_model_ANT
+    CASE DEFAULT
+      CALL crash('unknown region_name "' // region_name // '"')
     END SELECT
+
+    IF (par%primary)  WRITE(*,"(A)") '   Initialising SMB model ' // &
+      colour_string( trim( choice_SMB_model),'light blue') // '...'
 
     ! Allocate memory for main variables
     ALLOCATE( SMB%SMB( mesh%vi1:mesh%vi2))
@@ -157,20 +162,20 @@ CONTAINS
 
     ! Determine which SMB model to initialise
     SELECT CASE (choice_SMB_model)
-      CASE ('uniform')
-        SMB%SMB = C%uniform_SMB
-      CASE ('idealised')
-        CALL initialise_SMB_model_idealised( mesh, SMB)
-      CASE ('prescribed')
-        IF (par%primary)  WRITE(*,"(A)") '   Initialising prescribed SMB...'
-        CALL initialise_SMB_model_prescribed( mesh, SMB, region_name)
-      CASE ('reconstructed')
-        CALL initialise_SMB_model_reconstructed( mesh, SMB, region_name)
-      CASE ('IMAU-ITM')
-        IF (par%primary)  WRITE(*,"(A)") '   Initialising IMAU-ITM SMB...'
-        CALL initialise_SMB_model_IMAUITM( mesh, ice, SMB%IMAUITM, region_name)
-      CASE DEFAULT
-        CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE ('uniform')
+      SMB%SMB = C%uniform_SMB
+    CASE ('idealised')
+      CALL initialise_SMB_model_idealised( mesh, SMB)
+    CASE ('prescribed')
+      CALL initialise_SMB_model_prescribed( mesh, SMB, region_name)
+    CASE ('reconstructed')
+      CALL initialise_SMB_model_reconstructed( mesh, SMB, region_name)
+    CASE ('IMAU-ITM')
+      CALL initialise_SMB_model_IMAUITM( mesh, ice, SMB%IMAUITM, region_name)
+    case ('snapshot_plus_anomalies')
+      call initialise_SMB_model_snapshot_plus_anomalies( mesh, SMB%snapshot_plus_anomalies)
+    CASE DEFAULT
+      CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
     END SELECT
 
     ! Finalise routine path
@@ -198,32 +203,30 @@ CONTAINS
 
     ! Determine which SMB model to use for this region
     SELECT CASE (region_name)
-      CASE ('NAM')
-        choice_SMB_model = C%choice_SMB_model_NAM
-      CASE ('EAS')
-        choice_SMB_model = C%choice_SMB_model_EAS
-      CASE ('GRL')
-        choice_SMB_model = C%choice_SMB_model_GRL
-      CASE ('ANT')
-        choice_SMB_model = C%choice_SMB_model_ANT
-      CASE DEFAULT
-        CALL crash('unknown region_name "' // region_name // '"')
+    CASE ('NAM')
+      choice_SMB_model = C%choice_SMB_model_NAM
+    CASE ('EAS')
+      choice_SMB_model = C%choice_SMB_model_EAS
+    CASE ('GRL')
+      choice_SMB_model = C%choice_SMB_model_GRL
+    CASE ('ANT')
+      choice_SMB_model = C%choice_SMB_model_ANT
+    CASE DEFAULT
+      CALL crash('unknown region_name "' // region_name // '"')
     END SELECT
 
     ! Write to the restart file of the chosen SMB model
     SELECT CASE (choice_SMB_model)
-      CASE ('uniform')
-        ! No need to do anything
-      CASE ('idealised')
-        ! No need to do anything
-      CASE ('prescribed')
-        ! No need to do anything
-      CASE ('reconstructed')
-        ! No need to do anything
-      CASE ('IMAU-ITM')
-        call write_to_restart_file_SMB_model_region(mesh, SMB, region_name, time)
-      CASE DEFAULT
-        CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE DEFAULT
+      CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE ('uniform', &
+          'idealised', &
+          'prescribed', &
+          'reconstructed', &
+          'snapshot_plus_anomalies')
+      ! No need to do anything
+    CASE ('IMAU-ITM')
+      call write_to_restart_file_SMB_model_region(mesh, SMB, region_name, time)
     END SELECT
 
     ! Finalise routine path
@@ -297,32 +300,30 @@ CONTAINS
 
     ! Determine which SMB model to use for this region
     SELECT CASE (region_name)
-      CASE ('NAM')
-        choice_SMB_model = C%choice_SMB_model_NAM
-      CASE ('EAS')
-        choice_SMB_model = C%choice_SMB_model_EAS
-      CASE ('GRL')
-        choice_SMB_model = C%choice_SMB_model_GRL
-      CASE ('ANT')
-        choice_SMB_model = C%choice_SMB_model_ANT
-      CASE DEFAULT
-        CALL crash('unknown region_name "' // region_name // '"')
+    CASE ('NAM')
+      choice_SMB_model = C%choice_SMB_model_NAM
+    CASE ('EAS')
+      choice_SMB_model = C%choice_SMB_model_EAS
+    CASE ('GRL')
+      choice_SMB_model = C%choice_SMB_model_GRL
+    CASE ('ANT')
+      choice_SMB_model = C%choice_SMB_model_ANT
+    CASE DEFAULT
+      CALL crash('unknown region_name "' // region_name // '"')
     END SELECT
 
     ! Create the restart file of the chosen SMB model
     SELECT CASE (choice_SMB_model)
-      CASE ('uniform')
-        ! No need to do anything
-      CASE ('idealised')
-        ! No need to do anything
-      CASE ('prescribed')
-        ! No need to do anything
-      CASE ('reconstructed')
-        ! No need to do anything
-      CASE ('IMAU-ITM')
-        call create_restart_file_SMB_model_region(mesh, SMB, region_name)
-      CASE DEFAULT
-        CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE ('uniform', &
+          'idealised', &
+          'prescribed', &
+          'reconstructed', &
+          'snapshot_plus_anomalies')
+      ! No need to do anything
+    CASE ('IMAU-ITM')
+      call create_restart_file_SMB_model_region(mesh, SMB, region_name)
+    CASE DEFAULT
+      CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
     END SELECT
 
     ! Finalise routine path

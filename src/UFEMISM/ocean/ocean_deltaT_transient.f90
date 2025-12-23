@@ -72,11 +72,13 @@ subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_nam
 
             ! Apply extrapolation method if required
             select case (C%choice_ocean_extrapolation_method)
-              case('initialisation')
-                call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%T0)
-                call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%S0)
-              case default
-                call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
+            case('none')
+              ! Do nothing (assume input ocean data has already been extrapolated)
+            case('initialisation')
+              call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%T0)
+              call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%S0)
+            case default
+              call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
             end select
 
         call finalise_routine(routine_name)

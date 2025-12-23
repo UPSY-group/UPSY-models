@@ -477,7 +477,7 @@ contains
       case ('Hs')
         call add_field_mesh_dp_2D_notime( filename, ncid, 'Hs', long_name = 'Ice surface elevation', units = 'm')
       case ('Hb')
-        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm w.r.t. sea level')
       case ('Hib')
         call add_field_mesh_dp_2D_notime( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. sea level')
       case ('TAF')

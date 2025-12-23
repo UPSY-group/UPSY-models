@@ -138,7 +138,7 @@ CONTAINS
       CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name, region%time, region%SMB)
 
       ! Calculate the ocean
-      CALL run_ocean_model( region%mesh, region%ice, region%ocean, region%name, region%time)
+      CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, region%time)
 
       ! Calculate the surface mass balance
       CALL run_SMB_model( region%mesh, region%grid_smooth, region%ice, region%climate, region%SMB, region%name, region%time)
@@ -506,7 +506,7 @@ CONTAINS
     ! ===== Ocean =====
     ! =================
 
-    CALL initialise_ocean_model( region%mesh, region%ice, region%ocean, region%name, start_time_of_run)
+    CALL initialise_ocean_model( region%mesh, region%ice, region%ocean, region%name, start_time_of_run, region%refgeo_PD, region%refgeo_init)
 
     ! ===== Surface mass balance =====
     ! ================================
@@ -538,7 +538,7 @@ CONTAINS
 
     ! Run the models
     CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
-    CALL run_ocean_model( region%mesh, region%ice, region%ocean, region%name, C%start_time_of_run)
+    CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, C%start_time_of_run)
     CALL run_SMB_model( region%mesh, region%grid_smooth, region%ice, region%climate, region%SMB, region%name, C%start_time_of_run)
     CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%SMB, region%BMB, region%name, C%start_time_of_run, is_initial=.TRUE.)
     CALL run_LMB_model( region%mesh, region%ice, region%LMB, region%name, region%time)
@@ -987,7 +987,7 @@ CONTAINS
          ! No region requested: don't need to do anything
          EXIT
         CASE ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast','LarsenC', &
-              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &                             ! Antarctica
+              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes','Institute', &                 ! Antarctica
               'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                                                   ! Greenland
               'Patagonia', &                                                                                         ! Patagonia
               'CalvMIP_quarter')                                                             ! Idealised
@@ -1069,6 +1069,8 @@ CONTAINS
               CALL calc_polygon_Franka_WAIS( poly_ROI)
             CASE ('Wilkes')
               CALL calc_polygon_Wilkes_basins( poly_ROI)
+            CASE ('Institute')
+              CALL calc_polygon_Institute_basin( poly_ROI)
             CASE DEFAULT
               ! Requested area not in this model domain; skip
               CYCLE
@@ -1221,7 +1223,7 @@ CONTAINS
 
     ! Remap all the model data from the old mesh to the new mesh
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
-    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%grid_smooth, region%ice, forcing)    
+    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%grid_smooth, region%ice, forcing)
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
     CALL remap_SMB_model(             region%mesh, mesh_new,             region%SMB    , region%name)
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)

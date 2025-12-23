@@ -55,7 +55,7 @@ contains
             call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
         end select
 
-      case ('snapshot_plus_uniform_deltaT')  
+      case ('snapshot_plus_uniform_deltaT')
         ! Apply extrapolation method if required
         select case (C%choice_ocean_extrapolation_method)
           case('initialisation')
@@ -210,11 +210,13 @@ contains
 
     ! Apply extrapolation method if required
     select case (C%choice_ocean_extrapolation_method)
-      case('initialisation')
-        call extrapolate_ocean_forcing( mesh, ice, ocean%T)
-        call extrapolate_ocean_forcing( mesh, ice, ocean%S)
-      case default
-        call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
+    case('none')
+      ! Do nothing (assume input ocean data has already been extrapolated)
+    case('initialisation')
+      call extrapolate_ocean_forcing( mesh, ice, ocean%T)
+      call extrapolate_ocean_forcing( mesh, ice, ocean%S)
+    case default
+      call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
     end select
 
     ! Finalise routine path

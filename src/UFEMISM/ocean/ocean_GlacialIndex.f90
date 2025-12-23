@@ -79,13 +79,15 @@ subroutine initialise_ocean_model_GlacialIndex( mesh, ice, ocean, region_name, s
 
     ! Apply extrapolation method if required
     select case (C%choice_ocean_extrapolation_method)
-        case('initialisation')
-        call extrapolate_ocean_forcing( mesh, ice, ocean%GI%T0_warm)
-        call extrapolate_ocean_forcing( mesh, ice, ocean%GI%S0_warm)
-        call extrapolate_ocean_forcing( mesh, ice, ocean%GI%T0_cold)
-        call extrapolate_ocean_forcing( mesh, ice, ocean%GI%S0_cold)
-        case default
-        call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
+    case('none')
+      ! Do nothing (assume input ocean data has already been extrapolated)
+    case('initialisation')
+      call extrapolate_ocean_forcing( mesh, ice, ocean%GI%T0_warm)
+      call extrapolate_ocean_forcing( mesh, ice, ocean%GI%S0_warm)
+      call extrapolate_ocean_forcing( mesh, ice, ocean%GI%T0_cold)
+      call extrapolate_ocean_forcing( mesh, ice, ocean%GI%S0_cold)
+    case default
+      call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
     end select
 
     call finalise_routine(routine_name)

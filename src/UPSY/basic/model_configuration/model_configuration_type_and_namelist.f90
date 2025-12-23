@@ -473,6 +473,8 @@ module model_configuration_type_and_namelist
     character(len=1024) :: choice_basal_hydrology_model_config          = 'Martin2011'                     ! Choice of basal hydrology model: "none", "Martin2011", "inversion", "read_from_file"
     real(dp)            :: Martin2011_hydro_Hb_min_config               = 0._dp                            ! Martin et al. (2011) basal hydrology model: low-end  Hb  value of bedrock-dependent pore-water pressure
     real(dp)            :: Martin2011_hydro_Hb_max_config               = 1000._dp                         ! Martin et al. (2011) basal hydrology model: high-end Hb  value of bedrock-dependent pore-water pressure
+    real(dp)            :: error_function_max_effective_pressure_config = 5E6_dp                           ! Maximum effective pressure inland for the error-function model
+    real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
 
   ! == Bed roughness
   ! ==================
@@ -762,6 +764,10 @@ module model_configuration_type_and_namelist
     character(len=1024) :: filename_ocean_GI_GRL_config                 = ''
     character(len=1024) :: filename_ocean_GI_ANT_config                 = ''
 
+    ! Settings for the snapshot_plus_anomalies ocean model
+    character(len=1024) :: ocean_snp_p_anml_filename_snapshot_config    = ''                               ! File containing the ocean snapshot (e.g. World Ocean Atlas)
+    character(len=1024) :: ocean_snp_p_anml_filename_anomalies_config   = ''                               ! File containing the ocean anomalies (e.g. from a GCM projection)
+
   ! == Surface mass balance
   ! =======================
 
@@ -839,6 +845,10 @@ module model_configuration_type_and_namelist
     real(dp)            :: SMB_IMAUITM_albedo_ice_config                = 0.5_dp
     real(dp)            :: SMB_IMAUITM_albedo_snow_config               = 0.85_dp
 
+    ! Settings for the snapshot_plus_anomalies SMB model
+    character(len=1024) :: SMB_snp_p_anml_filename_snapshot_T2m_config  = ''                               ! File containing the T2m snapshot (e.g. from a RACMO historical simulation)
+    character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB_config  = ''                               ! File containing the SMB snapshot (e.g. from a RACMO historical simulation)
+    character(len=1024) :: SMB_snp_p_anml_filename_anomalies_config     = ''                               ! File containing the SMB+T2m anomalies (e.g. from a GCM projection)
 
   ! == Basal mass balance
   ! =====================
@@ -1630,6 +1640,8 @@ module model_configuration_type_and_namelist
     character(len=1024) :: choice_basal_hydrology_model
     real(dp)            :: Martin2011_hydro_Hb_min
     real(dp)            :: Martin2011_hydro_Hb_max
+    real(dp)            :: error_function_max_effective_pressure
+    real(dp)            :: Leguy2014_hydro_connect_exponent
 
   ! == Bed roughness
   ! ==================
@@ -1918,6 +1930,10 @@ module model_configuration_type_and_namelist
     character(len=1024) :: filename_ocean_GI_GRL
     character(len=1024) :: filename_ocean_GI_ANT
 
+    ! Settings for the snapshot_plus_anomalies ocean model
+    character(len=1024) :: ocean_snp_p_anml_filename_snapshot
+    character(len=1024) :: ocean_snp_p_anml_filename_anomalies
+
   ! == Surface mass balance
   ! =======================
 
@@ -1996,7 +2012,10 @@ module model_configuration_type_and_namelist
     real(dp)            :: SMB_IMAUITM_albedo_ice
     real(dp)            :: SMB_IMAUITM_albedo_snow
 
-
+    ! Settings for the snapshot_plus_anomalies SMB model
+    character(len=1024) :: SMB_snp_p_anml_filename_snapshot_T2m
+    character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB
+    character(len=1024) :: SMB_snp_p_anml_filename_anomalies
 
   ! == Basal mass balance
   ! =====================
@@ -2658,6 +2677,8 @@ contains
       choice_basal_hydrology_model_config                         , &
       Martin2011_hydro_Hb_min_config                              , &
       Martin2011_hydro_Hb_max_config                              , &
+      error_function_max_effective_pressure_config                , &
+      Leguy2014_hydro_connect_exponent_config                     , &
       choice_bed_roughness_config                                 , &
       choice_bed_roughness_parameterised_config                   , &
       filename_bed_roughness_NAM_config                           , &
@@ -2842,6 +2863,8 @@ contains
       filename_ocean_GI_EAS_config                                , &
       filename_ocean_GI_GRL_config                                , &
       filename_ocean_GI_ANT_config                                , &
+      ocean_snp_p_anml_filename_snapshot_config                   , &
+      ocean_snp_p_anml_filename_anomalies_config                  , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -2895,6 +2918,9 @@ contains
       SMB_IMAUITM_albedo_soil_config                              , &
       SMB_IMAUITM_albedo_ice_config                               , &
       SMB_IMAUITM_albedo_snow_config                              , &
+      SMB_snp_p_anml_filename_snapshot_T2m_config                 , &
+      SMB_snp_p_anml_filename_snapshot_SMB_config                 , &
+      SMB_snp_p_anml_filename_anomalies_config                    , &
       do_asynchronous_BMB_config                                  , &
       dt_BMB_config                                               , &
       dt_BMB_reinit_config                                        , &
@@ -3603,6 +3629,8 @@ contains
     C%choice_basal_hydrology_model                           = choice_basal_hydrology_model_config
     C%Martin2011_hydro_Hb_min                                = Martin2011_hydro_Hb_min_config
     C%Martin2011_hydro_Hb_max                                = Martin2011_hydro_Hb_max_config
+    C%error_function_max_effective_pressure                  = error_function_max_effective_pressure_config
+    C%Leguy2014_hydro_connect_exponent                       = Leguy2014_hydro_connect_exponent_config
 
     ! == Bed roughness
     ! ==================
@@ -3888,6 +3916,10 @@ contains
     C%filename_ocean_GI_GRL                                  = filename_ocean_GI_GRL_config
     C%filename_ocean_GI_ANT                                  = filename_ocean_GI_ANT_config
 
+    ! Settings for the snapshot_plus_anomalies ocean model
+    C%ocean_snp_p_anml_filename_snapshot                     = ocean_snp_p_anml_filename_snapshot_config
+    C%ocean_snp_p_anml_filename_anomalies                    = ocean_snp_p_anml_filename_anomalies_config
+
     ! == Surface mass balance
     ! =======================
 
@@ -3965,6 +3997,11 @@ contains
     C%SMB_IMAUITM_albedo_soil                                = SMB_IMAUITM_albedo_soil_config
     C%SMB_IMAUITM_albedo_ice                                 = SMB_IMAUITM_albedo_ice_config
     c%SMB_IMAUITM_albedo_snow                                = SMB_IMAUITM_albedo_snow_config
+
+    ! Settings for the snapshot_plus_anomalies SMB model
+    C%SMB_snp_p_anml_filename_snapshot_T2m                   = SMB_snp_p_anml_filename_snapshot_T2m_config
+    C%SMB_snp_p_anml_filename_snapshot_SMB                   = SMB_snp_p_anml_filename_snapshot_SMB_config
+    C%SMB_snp_p_anml_filename_anomalies                      = SMB_snp_p_anml_filename_anomalies_config
 
     ! == Basal mass balance
     ! =====================

@@ -182,6 +182,9 @@ contains
       case ('Hi')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hi, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hi', d_grid_vec_partial_2D)
+      case ('Hb')
+        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hb, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
+        call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hb', d_grid_vec_partial_2D)
       case ('Hib')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hib, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hib', d_grid_vec_partial_2D)
@@ -458,6 +461,8 @@ contains
       ! Ice geometry
       case ('Hi')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hi', long_name = 'Ice thickness', units = 'm')
+      case ('Hb')
+        call add_field_grid_dp_2D_notime( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm w.r.t. sea level')
       case ('Hib')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. sea level')
       case ('TAF')

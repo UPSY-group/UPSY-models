@@ -384,6 +384,7 @@ CONTAINS
     ! Forcing
     call allocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh%pai_V%n_nih)
+    call allocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh%pai_Tri%n_nih)
     call allocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , mesh%pai_Tri%n_nih)

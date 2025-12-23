@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<single_run>
+    <name>SSA_icestream</name>
+    <category>integrated_tests/idealised/SSA_icestream</category>
+    <date_and_time>15-Dec-2025 13:52:16</date_and_time>
+    <git_hash_string>2efa3920a3eb0d8e5a45555f87e1e225260cdc89</git_hash_string>
+    <cost_functions>
+        <name>RMSE_32km</name>
+        <definition>sqrt( mean( (u_surf - u_an).^2 ))</definition>
+        <value>384.8429</value>
+    </cost_functions>
+    <cost_functions>
+        <name>RMSE_16km</name>
+        <definition>sqrt( mean( (u_surf - u_an).^2 ))</definition>
+        <value>283.241</value>
+    </cost_functions>
+    <cost_functions>
+        <name>RMSE_8km</name>
+        <definition>sqrt( mean( (u_surf - u_an).^2 ))</definition>
+        <value>127.2302</value>
+    </cost_functions>
+    <cost_functions>
+        <name>RMSE_4km</name>
+        <definition>sqrt( mean( (u_surf - u_an).^2 ))</definition>
+        <value>85.3579</value>
+    </cost_functions>
+    <cost_functions>
+        <name>n_dt_ice</name>
+        <definition>total number of ice-dynamical time steps</definition>
+        <value>1</value>
+    </cost_functions>
+    <cost_functions>
+        <name>n_visc_its</name>
+        <definition>total number of viscosity iterations</definition>
+        <value>524</value>
+    </cost_functions>
+    <cost_functions>
+        <name>n_Axb_its</name>
+        <definition>total number of linear solver iterations</definition>
+        <value>338870</value>
+    </cost_functions>
+</single_run>

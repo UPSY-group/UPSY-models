@@ -170,6 +170,8 @@ contains
       ! Ice geometry
       case ('Hi')
         call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'Hi', forcing%Hi, d_is_hybrid = .true.)
+      case ('Hb')
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'Hb', forcing%Hb, d_is_hybrid = .true.)
       case ('Hib')
         call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'Hib', forcing%Hib, d_is_hybrid = .true.)
       case ('TAF')
@@ -424,6 +426,8 @@ contains
       ! Ice geometry
       case ('Hi')
         call add_field_mesh_dp_2D_notime( filename, ncid, 'Hi', long_name = 'Ice thickness', units = 'm')
+      case ('Hb')
+        call add_field_mesh_dp_2D_notime( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm w.r.t. sea level')
       case ('Hib')
         call add_field_mesh_dp_2D_notime( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. sea level')
       case ('TAF')

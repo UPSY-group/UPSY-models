@@ -27,6 +27,7 @@ MODULE BMB_main
   use laddie_main_utils, only: remap_laddie_model
   use laddie_utilities, only: allocate_laddie_forcing
   use laddie_forcing_main, only: calculate_coriolis_parameter
+  use laddie_hydrology, only: initialise_transects_SGD
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use ice_geometry_basics, only: is_floating
   USE mesh_utilities                                         , ONLY: extrapolate_Gaussian
@@ -310,6 +311,7 @@ CONTAINS
       CASE ('laddie')
         call allocate_laddie_forcing( mesh, BMB%forcing)
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+        call initialise_transects_SGD( mesh, BMB%forcing)
         CALL initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .FALSE.)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')

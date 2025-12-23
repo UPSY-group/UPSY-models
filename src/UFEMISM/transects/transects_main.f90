@@ -28,7 +28,7 @@ module transects_main
 
   private
 
-  public :: initialise_transects, write_to_transect_netcdf_output_files
+  public :: initialise_transects, write_to_transect_netcdf_output_files, initialise_transect_waypoints_from_file, calc_transect_vertices_from_waypoints
 
 contains
 

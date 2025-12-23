@@ -67,6 +67,10 @@ module transect_types
     ! NetCDF output file
     type(type_transect_netcdf)            :: nc
 
+    ! For transect_SGD
+    real(dp)                              :: flux_strength
+    integer, dimension(10000)             :: index_point
+
   end type type_transect
 
 end module transect_types

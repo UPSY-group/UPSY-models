@@ -24,7 +24,7 @@ module LADDIE_main_model
   use laddie_scalar_output, only: create_laddie_scalar_output_file, write_to_laddie_scalar_output_file, &
     buffer_laddie_scalars
   use laddie_integration, only: integrate_euler, integrate_fbrk3, integrate_lfra, move_laddie_timestep
-  use laddie_physics, only: compute_subglacial_discharge
+  use laddie_physics, only: compute_subglacial_discharge, compute_SGD_at_transects
   use mesh_types, only: type_mesh
   use ocean_main, only: initialise_ocean_model, run_ocean_model
   use netcdf_io_main
@@ -145,6 +145,9 @@ contains
           ! Set SGD to zero
           laddie%SGD = 0._dp
         end if
+      case ('read_transects')
+        ! Compute SGD from transects
+        call compute_SGD_at_transects(mesh, laddie, forcing)
     end select
 
     ! Set values to zero if outside laddie mask

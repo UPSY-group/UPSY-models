@@ -487,7 +487,7 @@ contains
     call init_routine( routine_name)
 
     select case (C%choice_laddie_SGD)
-      case ('none')
+      case ('none', 'read_transects')
         ! No SGD: don't need to do anything
       case ('idealised')
         call calc_mask_SGD_idealised(mesh, ice)

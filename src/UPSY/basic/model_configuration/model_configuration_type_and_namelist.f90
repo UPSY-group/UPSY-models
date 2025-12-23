@@ -110,6 +110,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: r_smooth_geometry_config                     = 0.5_dp                           ! [m]             Geometry smoothing radius
     logical             :: remove_Lake_Vostok_config                    = .true.                           ! Whether or not to replace subglacial Lake Vostok in Antarctica with ice (recommended to set to TRUE, otherwise it will really slow down your model for the first few hundred years...)
 
+    ! Remapping method for gridded geometry input
+    character(len=1024) :: choice_refgeo_remapping_method_config        = '2nd_order_conservative'         ! Remapping method to apply to gridded geometry input. Default is 2nd_order_conservative, though for high resolution, 1st_order_conservative may be better.
 
     ! == Initial geometry
     ! ===================
@@ -1277,6 +1279,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: r_smooth_geometry
     logical             :: remove_Lake_Vostok
 
+    ! Remapping method for gridded geometry input
+    character(len=1024) :: choice_refgeo_remapping_method
 
     ! == Initial geometry
     ! ===================
@@ -2438,6 +2442,7 @@ contains
       do_smooth_geometry_config                                   , &
       r_smooth_geometry_config                                    , &
       remove_Lake_Vostok_config                                   , &
+      choice_refgeo_remapping_method_config                       , &
       choice_refgeo_init_NAM_config                               , &
       choice_refgeo_init_EAS_config                               , &
       choice_refgeo_init_GRL_config                               , &
@@ -3267,6 +3272,9 @@ contains
     C%do_smooth_geometry                                     = do_smooth_geometry_config
     C%r_smooth_geometry                                      = r_smooth_geometry_config
     C%remove_Lake_Vostok                                     = remove_Lake_Vostok_config
+
+    ! Remapping method for gridded geometry input
+    C%choice_refgeo_remapping_method                         = choice_refgeo_remapping_method_config
 
     ! == Initial geometry
     ! ===================

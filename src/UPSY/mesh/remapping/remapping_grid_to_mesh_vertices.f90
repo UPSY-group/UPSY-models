@@ -28,7 +28,7 @@ module remapping_grid_to_mesh_vertices
 
 contains
 
-  subroutine create_map_from_xy_grid_to_mesh_vertices( grid, mesh, output_dir, map)
+  subroutine create_map_from_xy_grid_to_mesh_vertices( grid, mesh, output_dir, map, method)
     !< Create a new mapping object from an x/y-grid to the vertices of a mesh.
 
     ! By default uses 2nd-order conservative remapping.
@@ -41,10 +41,11 @@ contains
     !       seems like a reasonable compromise.
 
     ! In/output variables
-    type(type_grid),  intent(in   ) :: grid
-    type(type_mesh),  intent(in   ) :: mesh
-    character(len=*), intent(in   ) :: output_dir
-    type(type_map),   intent(inout) :: map
+    type(type_grid),            intent(in   ) :: grid
+    type(type_mesh),            intent(in   ) :: mesh
+    character(len=*),           intent(in   ) :: output_dir
+    type(type_map),             intent(inout) :: map
+    character(len=*), optional, intent(in   ) :: method
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'create_map_from_xy_grid_to_mesh_vertices'
@@ -52,6 +53,7 @@ contains
     logical, dimension(mesh%vi1:mesh%vi2) :: is_large_vertex
     type(type_sparse_matrix_CSR_dp)       :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
     type(tMat)                            :: w0, w1x, w1y
+    type(tMat)                            :: M_cons_1st_order, M_cons_2nd_order
     type(type_sparse_matrix_CSR_dp)       :: grid_M_ddx_CSR, grid_M_ddy_CSR
     character(len=1024)                   :: filename_grid, filename_mesh
 
@@ -65,7 +67,15 @@ contains
     map%is_in_use = .true.
     map%name_src  = grid%name
     map%name_dst  = mesh%name
-    map%method    = '2nd_order_conservative'
+
+    if (present( method)) then
+      map%method = method
+    else
+      map%method = '2nd_order_conservative'
+    end if
+
+    ! Note, now computing full 2nd_order matrices, even if only 1st_order is requested.
+    ! Can be made more efficient by skipping 2nd order terms
 
     call find_vertices_outside_grid_domain( grid, mesh, lies_outside_grid_domain)
     call find_large_vertices( grid, mesh, is_large_vertex)
@@ -80,7 +90,16 @@ contains
 
     call calc_matrix_operators_grid( grid, grid_M_ddx_CSR, grid_M_ddy_CSR)
 
-    call calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, map%M)
+    call calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, M_cons_1st_order, M_cons_2nd_order)
+
+    select case( map%method)
+      case default
+        call crash('unknown method for grid_to_mesh remapping "' // trim( map%method) // '"')
+      case ('1st_order_conservative')
+        map%M = M_cons_1st_order
+      case ('2nd_order_conservative')
+        map%M = M_cons_2nd_order
+    end select
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
@@ -504,13 +523,13 @@ contains
 
   end subroutine calc_w_matrices
 
-  subroutine calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, M)
+  subroutine calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, M_cons_1st_order, M)
     !< Calculate the grid-to-mesh-vertices remapping matrix M
 
     ! In/output variables
     type(tMat),                      intent(in   ) :: w0, w1x, w1y
     type(type_sparse_matrix_CSR_dp), intent(in   ) :: grid_M_ddx_CSR, grid_M_ddy_CSR
-    type(tMat),                      intent(  out) :: M
+    type(tMat),                      intent(  out) :: M_cons_1st_order, M
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'calc_remapping_matrix'
@@ -525,15 +544,15 @@ contains
 
     ! M = w0 + w1x * M_ddx + w1y * M_ddy
 
-    ! M = w0
-    call MatDuplicate( w0, MAT_COPY_VALUES, M, perr)
+    ! 1st order M = w0
+    call MatDuplicate( w0, MAT_COPY_VALUES, M_cons_1st_order, perr)
 
-    ! M = w0 + w1x * M_ddx
+    ! 2nd order M = w0 + w1x * M_ddx + w1y * M+ddy
     call MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M1, perr)
-    call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
-
-    ! M = w0 + w1x * M_ddx + w1y * M_ddy
     call MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
+
+    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, perr)
+    call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
     call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
 
     ! Finalise routine path

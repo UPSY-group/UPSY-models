@@ -74,7 +74,11 @@ contains
       do mi = 1, size( Atlas,1)
         if (.not. Atlas( mi)%is_in_use) then
           found_empty_page = .true.
-          call create_map_from_xy_grid_to_mesh_vertices( grid, mesh, output_dir, Atlas( mi))
+          if (present( method)) then
+            call create_map_from_xy_grid_to_mesh_vertices( grid, mesh, output_dir, Atlas( mi), method)
+          else
+            call create_map_from_xy_grid_to_mesh_vertices( grid, mesh, output_dir, Atlas( mi))
+          end if
           mi_valid = mi
           exit
         end if

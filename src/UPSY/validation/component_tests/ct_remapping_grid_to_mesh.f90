@@ -143,6 +143,9 @@ contains
     allocate( d_mesh( mesh%vi1:mesh%vi2))
     allocate( d_tri(  mesh%ti1:mesh%ti2))
 
+    ! First do a 1st order remapping, to test whether it runs
+    call map_from_xy_grid_to_mesh_2D(           grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_mesh, '1st_order_conservative')
+    ! Then continue the default 2nd_order_conservative remapping
     call map_from_xy_grid_to_mesh_2D(           grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_mesh)
     call map_from_xy_grid_to_mesh_triangles_2D( grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_tri )
 

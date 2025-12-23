@@ -425,6 +425,16 @@ contains
 
         call calc_mask_noice_remove_Ellesmere( mesh, ice%mask_noice)
 
+      case ('Thule')
+        ! Prevent ice growth in the Thule area
+        do vi = mesh%vi1, mesh%vi2
+          if (NORM2( mesh%V( vi,:)) > 750E3_dp) then
+            ice%mask_noice( vi) = .true.
+          else
+            ice%mask_noice( vi) = .false.
+          end if
+        end do
+
     end select
 
     ! Finalise routine path

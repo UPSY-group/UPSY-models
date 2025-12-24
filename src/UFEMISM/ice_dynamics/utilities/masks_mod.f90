@@ -214,7 +214,7 @@ contains
     ! Local variables:
     character(len=1024), parameter                :: routine_name = 'calc_mask_ROI'
     character(len=256)                            :: all_names_ROI, name_ROI
-    integer                                       :: vi, vj, ci, i
+    integer                                       :: vi, vj, ci, i, i_ROI
     real(dp), dimension(:,:  ), allocatable       :: poly_ROI
     real(dp), dimension(2)                        :: point
 
@@ -228,6 +228,7 @@ contains
     end if
 
     all_names_ROI = C%choice_regions_of_interest
+    i_ROI = 0
 
     do while (.true.)
 
@@ -348,12 +349,13 @@ contains
       end select
 
       ! Check for each grid point whether it is located within the polygon of the ROI
+      i_ROI = i_ROI+1
       do vi = mesh%vi1, mesh%vi2
         do ci = 1, mesh%nC(vi)
             vj = mesh%C( vi,ci)
             point = mesh%V( vj,:) ! Just to make sure it's in the right format
             if (is_in_polygon(poly_ROI, point)) then
-              ice%mask_ROI(vi) = .true.
+              ice%mask_ROI(vi) = i_ROI
             end if
         end do
       end do ! do vi = mesh%vi1, mesh%vi2
@@ -362,6 +364,7 @@ contains
       deallocate( poly_ROI)
 
     end do
+    ice%nROI = i_ROI ! keep track of how many ROIs we actually have in the mask
 
     ! Finalise routine path
     call finalise_routine( routine_name)

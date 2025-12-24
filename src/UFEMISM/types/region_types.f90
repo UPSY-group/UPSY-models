@@ -83,7 +83,7 @@ MODULE region_types
     type(type_tracer_tracking_model)        :: tracer_tracking
 
     ! Scalar data
-    TYPE(type_regional_scalars)             :: scalars                     ! Scalar data (e.g. total area, volume, mass balance)
+    TYPE(type_regional_scalars)             :: scalars                 ! Scalar data (e.g. total area, volume, mass balance)
 
     ! Output
     TYPE(type_grid)                         :: output_grid                 ! The square grid used for gridded output files
@@ -95,9 +95,11 @@ MODULE region_types
     REAL(dp)                                :: output_grid_t_next          ! Time when we should next write to gridded output
 
     ! Region-of-interest output
-    INTEGER                                 :: nROI                        ! Number of regions of interest for this model region
-    TYPE(type_grid),     DIMENSION(100)      :: output_grids_ROI            ! The square grids used for gridded output files for the region of interest
-    CHARACTER(LEN=1024), DIMENSION(100)      :: output_filenames_grid_ROI   ! Name of NetCDF output file for the region of interest (grid version)
+    INTEGER                                     :: nROI                        ! Number of regions of interest for this model region
+    TYPE(type_grid),             DIMENSION(100) :: output_grids_ROI            ! The square grids used for gridded output files for the region of interest
+    CHARACTER(LEN=1024),         DIMENSION(100) :: output_filenames_grid_ROI   ! Name of NetCDF output file for the region of interest (grid version)
+    TYPE(type_regional_scalars), DIMENSION(100) :: scalars_ROI                 ! Scalar data (e.g. total area, volume, mass balance) for the region of interest
+    CHARACTER(LEN=1024),         DIMENSION(100) :: output_filenames_scalar_ROI ! Name of NetCDF output file for the region of interest (scalar version)
 
     ! Transects output
     type(type_transect), dimension(:), allocatable :: transects

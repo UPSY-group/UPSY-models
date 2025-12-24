@@ -417,13 +417,14 @@ contains
       case ('mask_SGD')
       case ('mask_ROI')
         ! Exception for mask_ROI, needed for offline laddie coupling
-        where (region%ice%mask_ROI .eqv. .TRUE.)
+        where (region%ice%mask_ROI > 0)
           mask_int = 1.0_dp
         elsewhere
           mask_int = 0.0_dp
         end where
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, mask_int, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'mask_ROI', d_grid_vec_partial_2D)
+        ! call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, DBLE(region%ice%mask_ROI), d_grid_vec_partial_2D) ! we need to convert to real for the remapping function - for now it crashes b/c DBLE() does not save as NF90_DOUBLE
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, mask_int, d_grid_vec_partial_2D) ! TODO: we want this mask to be able to show the different regions under different numbers
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'mask_ROI', d_grid_vec_partial_2D) ! should it be "notime" or not?
 
     ! ===== Area fractions =====
     ! ==========================
@@ -1218,6 +1219,7 @@ contains
       case ('mask_SGD')
       case ('mask_ROI')
         ! Exception for mask_ROI, needed for offline laddie computation
+        ! call add_field_grid_int_2D( filename, ncid, 'mask_ROI', long_name = 'ROI mask', units = '', do_compress = C%do_compress_output) ! for when we get to save mask_ROI with the different regions as different numbers
         call add_field_grid_dp_2D( filename, ncid, 'mask_ROI', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'ROI mask', units = '')
 
 

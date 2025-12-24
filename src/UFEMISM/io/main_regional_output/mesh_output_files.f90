@@ -325,12 +325,7 @@ contains
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_coastline', mask_int)
       case ('mask_ROI')
-        where (region%ice%mask_ROI)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
-        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_ROI', mask_int)
+        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_ROI', region%ice%mask_ROI)
       case ('mask_SGD')
         where (region%ice%mask_SGD)
           mask_int = 1
@@ -1034,7 +1029,7 @@ contains
       case ('mask_coastline')
         call add_field_mesh_int_2D( filename, ncid, 'mask_coastline', do_compress = C%do_compress_output, long_name = 'Mask indicating ice-free land next to ice-free ocean')
       case ('mask_ROI')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_ROI', do_compress = C%do_compress_output, long_name = 'Mask indicating ROI')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_ROI', do_compress = C%do_compress_output, long_name = 'Mask indicating all ROIs')
       case ('mask_SGD')
         call add_field_mesh_int_2D( filename, ncid, 'mask_SGD', do_compress = C%do_compress_output, long_name = 'Mask indicating potential subglacial discharge cells')
       case ('mask')

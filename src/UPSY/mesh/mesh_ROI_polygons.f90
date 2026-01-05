@@ -36,6 +36,7 @@ module mesh_ROI_polygons
   public :: calc_polygon_Scott_glacier
   public :: calc_polygon_Mercer_glacier
   public :: calc_polygon_Wilkes_basins
+  public :: calc_polygon_Antarctic_Peninsula
   public :: calc_polygon_Institute_basin
 
 contains
@@ -236,15 +237,15 @@ subroutine calc_polygon_Riiser_Larsen_ice_shelf( poly)
   poly(  7,:) = [-0.4758e6_dp, 1.9331e6_dp]
   poly(  8,:) = [-0.4451e6_dp, 1.9542e6_dp]
   poly(  9,:) = [-0.4393e6_dp, 1.9946e6_dp]
-  poly( 10,:) = [-0.3336e6_dp, 1.9696e6_dp]
+  poly( 10,:) = [-0.3336e6_dp, 1.9720e6_dp]
   poly( 11,:) = [-0.3048e6_dp, 1.9292e6_dp]
   poly( 12,:) = [-0.2644e6_dp, 1.9081e6_dp]
   poly( 13,:) = [-0.2029e6_dp, 1.8927e6_dp]
   poly( 14,:) = [-0.1741e6_dp, 1.8716e6_dp]
-  poly( 15,:) = [-0.1644e6_dp, 1.8351e6_dp]
+  poly( 15,:) = [-0.1558e6_dp, 1.8351e6_dp]
   poly( 16,:) = [-0.1414e6_dp, 1.8043e6_dp]
   poly( 17,:) = [-0.1222e6_dp, 1.7659e6_dp]
-  poly( 18,:) = [-0.1202e6_dp, 1.7313e6_dp]
+  poly( 18,:) = [-0.1057e6_dp, 1.7269e6_dp]
   poly( 19,:) = [-0.1318e6_dp, 1.6928e6_dp]
   poly( 20,:) = [-0.1644e6_dp, 1.6640e6_dp]
   poly( 21,:) = [-0.2125e6_dp, 1.6275e6_dp]
@@ -1910,6 +1911,35 @@ subroutine calc_polygon_Institute_basin( poly)
 
 end subroutine calc_polygon_Institute_basin
 
+subroutine calc_polygon_Antarctic_Peninsula( poly)
+  ! Return a polygon enveloping the Antarctic Peninsula Ice Sheet reconstruction
+  ! for the Last Glacial Maximum based on manual analysis of the RAISED consortium data 
 
+  ! In/output variables:
+  real(dp), dimension(:,:), allocatable, intent(out) :: poly
+
+  ! Local variables:
+  character(len=1024), parameter :: routine_name = 'calc_polygon_Antarctic_Peninsula'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  allocate( poly( 10,2))
+
+  poly(  1,:) = [-2.0142e+06_dp,4.8160e+05_dp]
+  poly(  2,:) = [-2.3121e+06_dp,4.8134e+05_dp]
+  poly(  3,:) = [-2.7104e+06_dp,1.4240e+06_dp]
+  poly(  4,:) = [-2.6432e+06_dp,1.9042e+06_dp]
+  poly(  5,:) = [-2.5756e+06_dp,1.9042e+06_dp]
+  poly(  6,:) = [-2.2979e+06_dp,1.7968e+06_dp]
+  poly(  7,:) = [-1.7787e+06_dp,1.2831e+06_dp]
+  poly(  8,:) = [-1.7310e+06_dp,1.1544e+06_dp]
+  poly(  9,:) = [-1.7085e+06_dp,4.8895e+05_dp]
+  poly( 10,:) = [-2.0142e+06_dp,4.8160e+05_dp]
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine calc_polygon_Antarctic_Peninsula
 
 end module mesh_ROI_polygons

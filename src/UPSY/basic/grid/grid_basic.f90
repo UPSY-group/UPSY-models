@@ -28,7 +28,7 @@ contains
     !< Set up a square grid that covers the specified domain
 
     ! In/output variables:
-    character(len=256), intent(in   ) :: name
+    character(len=*),   intent(in   ) :: name
     real(dp),           intent(in   ) :: xmin, xmax, ymin, ymax        ! [m] Domain
     real(dp),           intent(in   ) :: dx                            ! [m] Resolution
     type(type_grid),    intent(  out) :: grid

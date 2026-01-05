@@ -160,8 +160,8 @@ contains
     call add_field_dp_0D( filename, ncid, 'ice_volume_af_PD',  long_name = 'Total ice volume above floatation for present-day', units = 'm s.l.e.')
 
     ! Integrated ice shelf geometry
-    call add_field_dp_0D( filename, ncid, 'ice_shelf_area',    long_name = 'Total ice shelf area', units = 'km^2')
-    call add_field_dp_0D( filename, ncid, 'ice_shelf_volume',  long_name = 'Total ice shelf volume', units = 'km^3')
+    call add_field_dp_0D( filename, ncid, 'ice_shelf_area',    long_name = 'Total ice shelf area', units = 'm^2')
+    call add_field_dp_0D( filename, ncid, 'ice_shelf_volume',  long_name = 'Total ice shelf volume', units = 'm^3')
 
     ! Integrated mass fluxes
     call add_field_dp_0D( filename, ncid, 'SMB_total',         long_name = 'Area-integrated total SMB', units = 'Gt yr^-1')

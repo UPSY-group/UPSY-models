@@ -16,6 +16,7 @@ program UPSY_unit_test_program
   use ut_math_utilities, only: unit_tests_math_utilities_main
   use ut_mesh, only: unit_tests_mesh_main
   use ut_netcdf, only: unit_tests_netcdf_main
+  use ut_fields, only: unit_tests_fields_main
 
   implicit none
 
@@ -52,6 +53,7 @@ program UPSY_unit_test_program
   call unit_tests_math_utilities_main        ( test_name)
   call unit_tests_mesh_main                  ( test_name)
   call unit_tests_netcdf_main                ( test_name)
+  call unit_tests_fields_main                ( test_name)
 
   ! Stop the clock
   tstop = MPI_WTIME()

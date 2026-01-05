@@ -46,6 +46,7 @@ module transect_types
     integer :: id_var_CF_dist_from_end
     integer :: id_var_CF_Hi_eff_from_start
     integer :: id_var_CF_Hi_eff_from_end
+    integer :: id_var_basal_mass_balance
 
   end type type_transect_netcdf
 

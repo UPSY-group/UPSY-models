@@ -113,7 +113,7 @@ contains
 
       if (refgeo_PD%Hi( vi) > 0._dp) then
         scalars%ice_volume_PD    = scalars%ice_volume_PD    + max( 0._dp, (refgeo_PD%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
-        scalars%ice_area_PD      = scalars%ice_area_PD      + mesh%A( vi) * 1.0E-06_dp ! [km^2]
+        scalars%ice_area_PD      = scalars%ice_area_PD      + mesh%A( vi)
         scalars%ice_volume_af_PD = scalars%ice_volume_af_PD + max( 0._dp, thickness_af_PD * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
       end if
 
@@ -156,10 +156,10 @@ contains
 
       if (ice%mask_grounded_ice( vi) .or. ice%mask_floating_ice( vi)) then
         scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
-        scalars%ice_area         = scalars%ice_area         + mesh%A( vi) * 1.0E-06_dp ! [km^2]
+        scalars%ice_area         = scalars%ice_area         + mesh%A( vi)
         scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
-        scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi)) * 1.0E-06_dp ! [km^2]
-        scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi)))) * 1.0E-09_dp ! [km^3]
+        scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi))
+        scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))
       end if
 
     end do

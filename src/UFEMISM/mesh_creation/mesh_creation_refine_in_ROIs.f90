@@ -72,9 +72,10 @@ contains
           ! No region requested: don't need to do anything
           exit
         case ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast', 'LarsenC', &
-              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', 'Institute', &                 ! Antarctica
-              'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                                                    ! Greenland
-              'Patagonia', &                                                                                          ! Patagonia
+              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &
+              'Antarctic_Peninsula', 'Institute', &                                           ! Antarctica
+              'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                            ! Greenland
+              'Patagonia', &                                                                  ! Patagonia
               'CalvMIP_quarter')                                                              ! Idealised
           ! List of known regions of interest: these pass the test
         case default
@@ -155,6 +156,8 @@ contains
               call calc_polygon_Dotson_channel( poly_ROI)
             case ('Wilkes')
               call calc_polygon_Wilkes_basins( poly_ROI)  
+            case ('Antarctic_Peninsula')
+              call calc_polygon_Antarctic_Peninsula( poly_ROI)
             CASE ('Institute')
               CALL calc_polygon_Institute_basin( poly_ROI)    
             case default

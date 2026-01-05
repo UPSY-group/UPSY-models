@@ -987,9 +987,10 @@ CONTAINS
          ! No region requested: don't need to do anything
          EXIT
         CASE ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast','LarsenC', &
-              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes','Institute', &                 ! Antarctica
-              'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                                                   ! Greenland
-              'Patagonia', &                                                                                         ! Patagonia
+              'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &
+              'Antarctic_Peninsula', 'Institute', &                                          ! Antarctica
+              'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                           ! Greenland
+              'Patagonia', &                                                                 ! Patagonia
               'CalvMIP_quarter')                                                             ! Idealised
           ! List of known regions of interest: these pass the test
         CASE DEFAULT
@@ -1069,6 +1070,8 @@ CONTAINS
               CALL calc_polygon_Franka_WAIS( poly_ROI)
             CASE ('Wilkes')
               CALL calc_polygon_Wilkes_basins( poly_ROI)
+            CASE ('Antarctic_Peninsula')
+              CALL calc_polygon_Antarctic_Peninsula( poly_ROI)
             CASE ('Institute')
               CALL calc_polygon_Institute_basin( poly_ROI)
             CASE DEFAULT

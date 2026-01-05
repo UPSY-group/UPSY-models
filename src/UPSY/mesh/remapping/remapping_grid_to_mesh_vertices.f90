@@ -523,13 +523,13 @@ contains
 
   end subroutine calc_w_matrices
 
-  subroutine calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, M_cons_1st_order, M)
+  subroutine calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, M_cons_1st_order, M_cons_2nd_order)
     !< Calculate the grid-to-mesh-vertices remapping matrix M
 
     ! In/output variables
     type(tMat),                      intent(in   ) :: w0, w1x, w1y
     type(type_sparse_matrix_CSR_dp), intent(in   ) :: grid_M_ddx_CSR, grid_M_ddy_CSR
-    type(tMat),                      intent(  out) :: M_cons_1st_order, M
+    type(tMat),                      intent(  out) :: M_cons_1st_order, M_cons_2nd_order
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'calc_remapping_matrix'
@@ -551,9 +551,9 @@ contains
     call MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M1, perr)
     call MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
 
-    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, perr)
-    call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
-    call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, perr)
+    call MatAXPY( M_cons_2nd_order, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
+    call MatAXPY( M_cons_2nd_order, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

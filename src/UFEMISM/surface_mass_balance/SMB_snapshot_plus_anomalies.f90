@@ -38,32 +38,36 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! If the current model time falls outside the enveloping window
-    ! of the two timeframes that have been read, update them
-    if (time < SMB%snapshot_plus_anomalies%anomaly_t0 .or. &
-        time > SMB%snapshot_plus_anomalies%anomaly_t1) then
-      call update_timeframes( mesh, SMB%snapshot_plus_anomalies, time)
-    end if
-
-    ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (SMB%snapshot_plus_anomalies%anomaly_t1 - time) / &
-         (SMB%snapshot_plus_anomalies%anomaly_t1 - SMB%snapshot_plus_anomalies%anomaly_t0)
-    w1 = 1._dp - w0
-
-    SMB%snapshot_plus_anomalies%T2m_anomaly = &
-      w0 * SMB%snapshot_plus_anomalies%T2m_anomaly_0 + &
-      w1 * SMB%snapshot_plus_anomalies%T2m_anomaly_1
-
     if (time >= C%SMB_snp_p_anml_tstart_anomalies) then
+
+      ! If the current model time falls outside the enveloping window
+      ! of the two timeframes that have been read, update them
+      if (time < SMB%snapshot_plus_anomalies%anomaly_t0 .or. &
+          time > SMB%snapshot_plus_anomalies%anomaly_t1) then
+        call update_timeframes( mesh, SMB%snapshot_plus_anomalies, time)
+      end if
+
+      ! Interpolate between the two timeframes to find the applied anomaly
+      w0 = (SMB%snapshot_plus_anomalies%anomaly_t1 - time) / &
+          (SMB%snapshot_plus_anomalies%anomaly_t1 - SMB%snapshot_plus_anomalies%anomaly_t0)
+      w1 = 1._dp - w0
+
+      SMB%snapshot_plus_anomalies%T2m_anomaly = &
+        w0 * SMB%snapshot_plus_anomalies%T2m_anomaly_0 + &
+        w1 * SMB%snapshot_plus_anomalies%T2m_anomaly_1
+
       ! Add anomaly to snapshot to find the applied temperature
       do m = 1, 12
         SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,m) = &
           SMB%snapshot_plus_anomalies%T2m_baseline( mesh%vi1:mesh%vi2,m) + &
           SMB%snapshot_plus_anomalies%T2m_anomaly ( mesh%vi1:mesh%vi2  )
       end do
+
     else
-      ! Only apply the baseline
+      ! Don't apply the anomalies, just use the baseline
+
       SMB%snapshot_plus_anomalies%T2m = SMB%snapshot_plus_anomalies%T2m_baseline
+
     end if
 
     ! Copy to climate model
@@ -88,30 +92,34 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! If the current model time falls outside the enveloping window
-    ! of the two timeframes that have been read, update them
-    if (time < SMB%snapshot_plus_anomalies%anomaly_t0 .or. &
-        time > SMB%snapshot_plus_anomalies%anomaly_t1) then
-      call update_timeframes( mesh, SMB%snapshot_plus_anomalies, time)
-    end if
-
-    ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (SMB%snapshot_plus_anomalies%anomaly_t1 - time) / &
-         (SMB%snapshot_plus_anomalies%anomaly_t1 - SMB%snapshot_plus_anomalies%anomaly_t0)
-    w1 = 1._dp - w0
-
-    SMB%snapshot_plus_anomalies%SMB_anomaly = &
-      w0 * SMB%snapshot_plus_anomalies%SMB_anomaly_0 + &
-      w1 * SMB%snapshot_plus_anomalies%SMB_anomaly_1
-
     if (time >= C%SMB_snp_p_anml_tstart_anomalies) then
-    ! Add anomaly to snapshot to find the applied SMB
+
+      ! If the current model time falls outside the enveloping window
+      ! of the two timeframes that have been read, update them
+      if (time < SMB%snapshot_plus_anomalies%anomaly_t0 .or. &
+          time > SMB%snapshot_plus_anomalies%anomaly_t1) then
+        call update_timeframes( mesh, SMB%snapshot_plus_anomalies, time)
+      end if
+
+      ! Interpolate between the two timeframes to find the applied anomaly
+      w0 = (SMB%snapshot_plus_anomalies%anomaly_t1 - time) / &
+          (SMB%snapshot_plus_anomalies%anomaly_t1 - SMB%snapshot_plus_anomalies%anomaly_t0)
+      w1 = 1._dp - w0
+
+      SMB%snapshot_plus_anomalies%SMB_anomaly = &
+        w0 * SMB%snapshot_plus_anomalies%SMB_anomaly_0 + &
+        w1 * SMB%snapshot_plus_anomalies%SMB_anomaly_1
+
+      ! Add anomaly to snapshot to find the applied SMB
       SMB%snapshot_plus_anomalies%SMB = &
         SMB%snapshot_plus_anomalies%SMB_baseline + &
         SMB%snapshot_plus_anomalies%SMB_anomaly
+
     else
-      ! Only apply the baseline
+      ! Don't apply the anomalies, just use the baseline
+
       SMB%snapshot_plus_anomalies%SMB = SMB%snapshot_plus_anomalies%SMB_baseline
+
     end if
 
     ! Copy to SMB model

@@ -356,8 +356,8 @@ contains
     allocate( snapshot_nudge2D_plus_anomalies%T_ref       ( mesh%vi1:mesh%vi2, C%nz_ocean), source = 0._dp)
     allocate( snapshot_nudge2D_plus_anomalies%S_ref       ( mesh%vi1:mesh%vi2, C%nz_ocean), source = 0._dp)
     allocate( snapshot_nudge2D_plus_anomalies%deltaT_nudge( mesh%vi1:mesh%vi2            ), source = 0._dp)
-    allocate( snapshot_nudge2D_plus_anomalies%T           ( mesh%vi1:mesh%vi2, C%nz_ocean), source = 0._dp)
-    allocate( snapshot_nudge2D_plus_anomalies%S           ( mesh%vi1:mesh%vi2, C%nz_ocean), source = 0._dp)
+    allocate( snapshot_nudge2D_plus_anomalies%T_baseline  ( mesh%vi1:mesh%vi2, C%nz_ocean), source = 0._dp)
+    allocate( snapshot_nudge2D_plus_anomalies%S_baseline  ( mesh%vi1:mesh%vi2, C%nz_ocean), source = 0._dp)
 
     ! Set up the grid from the file
     call open_existing_netcdf_file_for_reading( filename, ncid)

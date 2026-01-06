@@ -769,6 +769,7 @@ module model_configuration_type_and_namelist
     ! Settings for the snapshot_plus_anomalies ocean model
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot_config    = ''                               ! File containing the ocean snapshot (e.g. World Ocean Atlas)
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies_config   = ''                               ! File containing the ocean anomalies (e.g. from a GCM projection)
+    real(dp)            :: ocean_snp_p_anml_tstart_anomalies_config     = -9e9_dp                          ! Only add anomalies to the baseline after this time
 
   ! == Surface mass balance
   ! =======================
@@ -851,6 +852,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_T2m_config  = ''                               ! File containing the T2m snapshot (e.g. from a RACMO historical simulation)
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB_config  = ''                               ! File containing the SMB snapshot (e.g. from a RACMO historical simulation)
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies_config     = ''                               ! File containing the SMB+T2m anomalies (e.g. from a GCM projection)
+    real(dp)            :: SMB_snp_p_anml_tstart_anomalies_config       = -9e9_dp                          ! Only add anomalies to the baseline after this time
 
   ! == Basal mass balance
   ! =====================
@@ -1937,6 +1939,7 @@ module model_configuration_type_and_namelist
     ! Settings for the snapshot_plus_anomalies ocean model
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies
+    real(dp)            :: ocean_snp_p_anml_tstart_anomalies
 
   ! == Surface mass balance
   ! =======================
@@ -2020,6 +2023,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_T2m
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies
+    real(dp)            :: SMB_snp_p_anml_tstart_anomalies
 
   ! == Basal mass balance
   ! =====================
@@ -2870,6 +2874,7 @@ contains
       filename_ocean_GI_ANT_config                                , &
       ocean_snp_p_anml_filename_snapshot_config                   , &
       ocean_snp_p_anml_filename_anomalies_config                  , &
+      ocean_snp_p_anml_tstart_anomalies_config                    , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -2926,6 +2931,7 @@ contains
       SMB_snp_p_anml_filename_snapshot_T2m_config                 , &
       SMB_snp_p_anml_filename_snapshot_SMB_config                 , &
       SMB_snp_p_anml_filename_anomalies_config                    , &
+      SMB_snp_p_anml_tstart_anomalies_config                      , &
       do_asynchronous_BMB_config                                  , &
       dt_BMB_config                                               , &
       dt_BMB_reinit_config                                        , &
@@ -3927,6 +3933,7 @@ contains
     ! Settings for the snapshot_plus_anomalies ocean model
     C%ocean_snp_p_anml_filename_snapshot                     = ocean_snp_p_anml_filename_snapshot_config
     C%ocean_snp_p_anml_filename_anomalies                    = ocean_snp_p_anml_filename_anomalies_config
+    C%ocean_snp_p_anml_tstart_anomalies                      = ocean_snp_p_anml_tstart_anomalies_config
 
     ! == Surface mass balance
     ! =======================
@@ -4010,6 +4017,7 @@ contains
     C%SMB_snp_p_anml_filename_snapshot_T2m                   = SMB_snp_p_anml_filename_snapshot_T2m_config
     C%SMB_snp_p_anml_filename_snapshot_SMB                   = SMB_snp_p_anml_filename_snapshot_SMB_config
     C%SMB_snp_p_anml_filename_anomalies                      = SMB_snp_p_anml_filename_anomalies_config
+    C%SMB_snp_p_anml_tstart_anomalies                        = SMB_snp_p_anml_tstart_anomalies_config
 
     ! == Basal mass balance
     ! =====================

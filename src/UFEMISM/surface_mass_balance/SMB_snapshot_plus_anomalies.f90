@@ -54,12 +54,17 @@ contains
       w0 * SMB%snapshot_plus_anomalies%T2m_anomaly_0 + &
       w1 * SMB%snapshot_plus_anomalies%T2m_anomaly_1
 
-    ! Add anomaly to snapshot to find the applied temperature
-    do m = 1, 12
-      SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,m) = &
-        SMB%snapshot_plus_anomalies%T2m_baseline( mesh%vi1:mesh%vi2,m) + &
-        SMB%snapshot_plus_anomalies%T2m_anomaly ( mesh%vi1:mesh%vi2  )
-    end do
+    if (time >= C%SMB_snp_p_anml_tstart_anomalies) then
+      ! Add anomaly to snapshot to find the applied temperature
+      do m = 1, 12
+        SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,m) = &
+          SMB%snapshot_plus_anomalies%T2m_baseline( mesh%vi1:mesh%vi2,m) + &
+          SMB%snapshot_plus_anomalies%T2m_anomaly ( mesh%vi1:mesh%vi2  )
+      end do
+    else
+      ! Only apply the baseline
+      SMB%snapshot_plus_anomalies%T2m = SMB%snapshot_plus_anomalies%T2m_baseline
+    end if
 
     ! Copy to climate model
     climate%T2m( mesh%vi1:mesh%vi2,:) = SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,:)
@@ -99,10 +104,15 @@ contains
       w0 * SMB%snapshot_plus_anomalies%SMB_anomaly_0 + &
       w1 * SMB%snapshot_plus_anomalies%SMB_anomaly_1
 
+    if (time >= C%SMB_snp_p_anml_tstart_anomalies) then
     ! Add anomaly to snapshot to find the applied SMB
-    SMB%snapshot_plus_anomalies%SMB = &
-      SMB%snapshot_plus_anomalies%SMB_baseline + &
-      SMB%snapshot_plus_anomalies%SMB_anomaly
+      SMB%snapshot_plus_anomalies%SMB = &
+        SMB%snapshot_plus_anomalies%SMB_baseline + &
+        SMB%snapshot_plus_anomalies%SMB_anomaly
+    else
+      ! Only apply the baseline
+      SMB%snapshot_plus_anomalies%SMB = SMB%snapshot_plus_anomalies%SMB_baseline
+    end if
 
     ! Copy to SMB model
     SMB%SMB = SMB%snapshot_plus_anomalies%SMB

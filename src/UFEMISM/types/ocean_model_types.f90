@@ -93,6 +93,40 @@ MODULE ocean_model_types
 
   end type type_ocean_model_snapshot_plus_anomalies
 
+  type type_ocean_model_snapshot_nudge2D_plus_anomalies
+
+    type(type_reference_geometry)           :: target_geometry            !< The geometry that the BMB inversion should aim to reproduce
+    logical,  dimension(:    ), allocatable :: target_mask_shelf          !< Shelf mask of the target geometry
+
+    type(type_grid)                         :: grid_ref
+    integer                                 :: ndepth_ref
+    real(dp), dimension(:    ), allocatable :: depth_ref
+    real(dp), dimension(:,:  ), allocatable :: T_ref_grid, S_ref_grid     !< Reference 3-D ocean snapshot on its original grid (in vectorised form)
+    real(dp), dimension(:,:  ), allocatable :: T_ref, S_ref               !< Reference 3-D ocean snapshot on the model mesh
+    real(dp), dimension(:    ), allocatable :: deltaT_nudge               !< 2-D temperature nudging term on the model mesh
+    real(dp), dimension(:,:  ), allocatable :: T_baseline, S_baseline     !< Applied 3-D ocean snapshot on the model mesh
+    real(dp), dimension(:    ), allocatable :: deltaT_nudge_grid          !< 2-D temperature nudging term on the original grid (in vectorised form)
+    real(dp), dimension(:,:  ), allocatable :: T_grid, S_grid             !< Applied 3-D ocean snapshot on the original grid (in vectorised form)
+
+    ! Two anomaly timeframes enveloping the current model time
+    real(dp)                              :: anomaly_t0
+    real(dp), dimension(:,:), allocatable :: T_anomaly_0
+    real(dp), dimension(:,:), allocatable :: S_anomaly_0
+
+    real(dp)                              :: anomaly_t1
+    real(dp), dimension(:,:), allocatable :: T_anomaly_1
+    real(dp), dimension(:,:), allocatable :: S_anomaly_1
+
+    ! Time-weighted anomaly
+    real(dp), dimension(:,:), allocatable :: T_anomaly
+    real(dp), dimension(:,:), allocatable :: S_anomaly
+
+    ! Applied ocean
+    real(dp), dimension(:,:), allocatable :: T    ! = baseline + anomaly
+    real(dp), dimension(:,:), allocatable :: S
+
+  end type type_ocean_model_snapshot_nudge2D_plus_anomalies
+
   TYPE type_ocean_model
     ! The ocean model data structure.
 
@@ -110,6 +144,7 @@ MODULE ocean_model_types
     TYPE(type_ocean_model_deltaT)                  :: deltaT
     type(type_ocean_model_snapshot_nudge2D)        :: snapshot_nudge2D
     type(type_ocean_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
+    type(type_ocean_model_snapshot_nudge2D_plus_anomalies) :: snapshot_nudge2D_plus_anomalies
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

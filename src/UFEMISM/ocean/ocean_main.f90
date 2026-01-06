@@ -20,6 +20,9 @@ MODULE ocean_main
   USE ocean_idealised                                        , ONLY: initialise_ocean_model_idealised, run_ocean_model_idealised
   use netcdf_io_main
   use ocean_snapshot_nudge2D, only: initialise_ocean_model_snapshot_nudge2D, run_ocean_model_snapshot_nudge2D
+  use ocean_snapshot_nudge2D_plus_anomalies, only: &
+    initialise_ocean_model_snapshot_nudge2D_plus_anomalies, &
+    run_ocean_model_snapshot_nudge2D_plus_anomalies
   use reference_geometry_types, only: type_reference_geometry
   use ocean_snapshot_plus_anomalies, only: initialise_ocean_model_snapshot_plus_anomalies, &
     run_ocean_model_snapshot_plus_anomalies
@@ -98,6 +101,8 @@ CONTAINS
       call run_ocean_model_realistic( mesh, ice, ocean, time)
     case( 'snapshot+nudge2D')
       call run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, ocean, time)
+    case( 'snapshot+nudge2D_plus_anomalies')
+      call run_ocean_model_snapshot_nudge2D_plus_anomalies( mesh, grid_smooth, ice, ocean, time)
     case( 'snapshot_plus_anomalies')
       call run_ocean_model_snapshot_plus_anomalies( mesh, ocean, time)
     end select
@@ -175,6 +180,9 @@ CONTAINS
       call initialise_ocean_model_realistic( mesh, ice, ocean, region_name, start_time_of_run)
     case( 'snapshot+nudge2D')
       call initialise_ocean_model_snapshot_nudge2D( mesh, ocean%snapshot_nudge2D, region_name, refgeo_PD, refgeo_init)
+    case( 'snapshot+nudge2D_plus_anomalies')
+      call initialise_ocean_model_snapshot_nudge2D_plus_anomalies( mesh, &
+        ocean%snapshot_nudge2D_plus_anomalies, region_name, refgeo_PD, refgeo_init)
     case( 'snapshot_plus_anomalies')
       call initialise_ocean_model_snapshot_plus_anomalies( mesh, ocean%snapshot_plus_anomalies)
     end select
@@ -218,7 +226,7 @@ CONTAINS
     select case(choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot+nudge2D_plus_anomalies', 'snapshot_plus_anomalies')
       ! No need to do anything
     case( 'realistic')
       call write_to_restart_file_ocean_model_region( mesh, ocean, region_name, time)
@@ -306,7 +314,7 @@ CONTAINS
     select case(choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot+nudge2D_plus_anomalies', 'snapshot_plus_anomalies')
       ! No need to do anything
     case( 'realistic')
       call create_restart_file_ocean_model_region( mesh, ocean, region_name)

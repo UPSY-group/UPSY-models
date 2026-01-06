@@ -32,26 +32,27 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! If the current model time falls outside the enveloping window
-    ! of the two timeframes that have been read, update them
-    if (time < ocean%snapshot_plus_anomalies%anomaly_t0 .or. &
-        time > ocean%snapshot_plus_anomalies%anomaly_t1) then
-      call update_timeframes( mesh, ocean%snapshot_plus_anomalies, time)
-    end if
-
-    ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (ocean%snapshot_plus_anomalies%anomaly_t1 - time) / &
-         (ocean%snapshot_plus_anomalies%anomaly_t1 - ocean%snapshot_plus_anomalies%anomaly_t0)
-    w1 = 1._dp - w0
-
-    ocean%snapshot_plus_anomalies%T_anomaly = &
-      w0 * ocean%snapshot_plus_anomalies%T_anomaly_0 + &
-      w1 * ocean%snapshot_plus_anomalies%T_anomaly_1
-    ocean%snapshot_plus_anomalies%S_anomaly = &
-      w0 * ocean%snapshot_plus_anomalies%S_anomaly_0 + &
-      w1 * ocean%snapshot_plus_anomalies%S_anomaly_1
-
     if (time >= C%ocean_snp_p_anml_tstart_anomalies) then
+
+      ! If the current model time falls outside the enveloping window
+      ! of the two timeframes that have been read, update them
+      if (time < ocean%snapshot_plus_anomalies%anomaly_t0 .or. &
+          time > ocean%snapshot_plus_anomalies%anomaly_t1) then
+        call update_timeframes( mesh, ocean%snapshot_plus_anomalies, time)
+      end if
+
+      ! Interpolate between the two timeframes to find the applied anomaly
+      w0 = (ocean%snapshot_plus_anomalies%anomaly_t1 - time) / &
+          (ocean%snapshot_plus_anomalies%anomaly_t1 - ocean%snapshot_plus_anomalies%anomaly_t0)
+      w1 = 1._dp - w0
+
+      ocean%snapshot_plus_anomalies%T_anomaly = &
+        w0 * ocean%snapshot_plus_anomalies%T_anomaly_0 + &
+        w1 * ocean%snapshot_plus_anomalies%T_anomaly_1
+      ocean%snapshot_plus_anomalies%S_anomaly = &
+        w0 * ocean%snapshot_plus_anomalies%S_anomaly_0 + &
+        w1 * ocean%snapshot_plus_anomalies%S_anomaly_1
+
       ! Add anomaly to snapshot to find the applied ocean state
       ocean%snapshot_plus_anomalies%T = &
         ocean%snapshot_plus_anomalies%T_baseline + &
@@ -59,13 +60,16 @@ contains
       ocean%snapshot_plus_anomalies%S = &
         ocean%snapshot_plus_anomalies%S_baseline + &
         ocean%snapshot_plus_anomalies%S_anomaly
+
     else
-      ! Only apply the baseline
+      ! Don't apply the anomalies, just use the baseline
+
       ocean%snapshot_plus_anomalies%T = ocean%snapshot_plus_anomalies%T_baseline
       ocean%snapshot_plus_anomalies%S = ocean%snapshot_plus_anomalies%S_baseline
+
     end if
 
-    ! Copy to SMB model
+    ! Copy to main ocean model
     ocean%T = ocean%snapshot_plus_anomalies%T
     ocean%S = ocean%snapshot_plus_anomalies%S
 

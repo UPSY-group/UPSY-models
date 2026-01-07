@@ -216,6 +216,13 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
+    ! Set output time step to yearly for the projection phase of a simulation
+    if (region%time >= C%tstart_yearly_output) then
+      C%dt_output         = 1._dp
+      C%dt_output_restart = 1._dp
+      C%dt_output_grid    = 1._dp
+    end if
+
     ! Buffer scalar output data
     call buffer_scalar_output( region)
 

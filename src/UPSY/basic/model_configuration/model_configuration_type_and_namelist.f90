@@ -1118,6 +1118,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: dt_output_config                             = 1000._dp                        !     Time step for writing output
     real(dp)            :: dt_output_restart_config                     = 1000._dp                        !     Time step for writing restart output
     real(dp)            :: dt_output_grid_config                        = 1000._dp                        !     Time step for writing gridded output
+    real(dp)            :: tstart_yearly_output_config                  = 9e9_dp                          !     Time after which all output files should be written to every year
     real(dp)            :: dx_output_grid_NAM_config                    = 40E3_dp                         ! [m] Horizontal resolution for the square grid used for output for North America
     real(dp)            :: dx_output_grid_EAS_config                    = 40E3_dp                         ! [m] Horizontal resolution for the square grid used for output for Eurasia
     real(dp)            :: dx_output_grid_GRL_config                    = 20E3_dp                         ! [m] Horizontal resolution for the square grid used for output for Greenland
@@ -2284,6 +2285,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: dt_output
     real(dp)            :: dt_output_restart
     real(dp)            :: dt_output_grid
+    real(dp)            :: tstart_yearly_output
     real(dp)            :: dx_output_grid_NAM
     real(dp)            :: dx_output_grid_EAS
     real(dp)            :: dx_output_grid_GRL
@@ -3081,6 +3083,7 @@ contains
       dt_output_config                                            , &
       dt_output_restart_config                                    , &
       dt_output_grid_config                                       , &
+      tstart_yearly_output_config                                 , &
       dx_output_grid_NAM_config                                   , &
       dx_output_grid_EAS_config                                   , &
       dx_output_grid_GRL_config                                   , &
@@ -4276,6 +4279,7 @@ contains
     C%dt_output                                              = dt_output_config
     C%dt_output_restart                                      = dt_output_restart_config
     C%dt_output_grid                                         = dt_output_grid_config
+    C%tstart_yearly_output                                   = tstart_yearly_output_config
     C%dx_output_grid_NAM                                     = dx_output_grid_NAM_config
     C%dx_output_grid_EAS                                     = dx_output_grid_EAS_config
     C%dx_output_grid_GRL                                     = dx_output_grid_GRL_config

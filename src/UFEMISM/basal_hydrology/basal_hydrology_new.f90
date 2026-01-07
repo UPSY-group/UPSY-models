@@ -149,16 +149,19 @@ CONTAINS
   end subroutine basal_hydrology
 
 
-  subroutine allocate_basal_hydro( mesh, basal_hydro)
+  subroutine allocate_basal_hydro( mesh, ice, basal_hydro)
     !< allocate memory for the basal hydrology model variables >!
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
+    type(type_ice_model),               intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(  out) :: basal_hydro
 
     ! Local variables:
     character(len=1024) :: routine_name = 'allocate_basal_hydro'
     integer             :: vi, ti
+    real(dp), parameter :: g = 9.81_dp
+    real(dp), parameter :: rho_i = 917.0_dp
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -215,6 +218,9 @@ CONTAINS
       !else
       !  basal_hydro%v( vi) = -10.0_dp
       !end if
+
+      ! Initialise pressure with overburden pressure (for now at least)
+      basal_hydro%P( vi) = rho_i * g * ice%Hi( vi)
     end do
 
     ! Finalise routine path
@@ -429,8 +435,8 @@ CONTAINS
     ! This is very similar to what is done in laddie_thickness.90 in the compute_divQH subroutine
 
     call gather_to_all(ice%mask_grounded_ice, mask_grounded_ice_tot)
-    call calc_M_b_c(mesh, ice, basal_hydro)
-    call map_UV_b_c(mesh, basal_hydro)
+    !call calc_M_b_c(mesh, ice, basal_hydro)
+    !call map_UV_b_c(mesh, basal_hydro)
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)
@@ -441,7 +447,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       ! Initialise divQ with zeros
-      basal_hydro%divQ( vi) = 0_dp
+      basal_hydro%divQ( vi) = 0.0_dp
 
       if (.not. ice%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
 
@@ -624,7 +630,7 @@ CONTAINS
 
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
-        basal_hydro%D_b( ti) = rho_w*g*basal_hydro%K_b( ti)*basal_hydro%W_b( ti)
+        basal_hydro%D_b( ti) = rho_w*g*basal_hydro%K_b( ti)*basal_hydro%W_b( ti)*sec_per_year
       else
         basal_hydro%D_b( ti) = 0.0_dp
       end if
@@ -666,7 +672,7 @@ CONTAINS
   end subroutine map_UV_b_c
 
 
-
+  ! This one is not used anymore
   subroutine map_UV_a_c( mesh, basal_hydro)
     ! Calculate velocities from a-grid to the c-grid
     !
@@ -889,7 +895,7 @@ CONTAINS
   end subroutine calc_M_a_c
 
 
-  ! Comes from laddie_operators
+  ! Comes from laddie_operators (Not used anymore)
   subroutine calc_M_a_b( mesh, ice, basal_hydro)
     ! Calculate mapping matrix from a-grid to c-grid
 
@@ -1080,8 +1086,7 @@ CONTAINS
     call ddx_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dx_b)
     call ddy_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dy_b)
 
-    call calc_M_a_b( mesh, ice, basal_hydro)
-    call map_W_a_b( mesh, basal_hydro)
+    call map_a_b_2D(mesh, basal_hydro%W, basal_hydro%W_b)
 
     ! For some reason the dR_dx and dR_dy values are zero sometimes and if this is precisely 0, this breaks calc_K by dividing by zero.
     do ti = mesh%ti1, mesh%ti2

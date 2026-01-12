@@ -105,7 +105,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_laddie_model_leg'
-    integer                        :: vi, ti
+    integer                        :: vi, ti, iyear
     real(dp)                       :: tl               ! [s] Laddie time
     real(dp)                       :: dt               ! [s] Laddie time step
     real(dp)                       :: duration         ! [days] Duration of run
@@ -118,6 +118,7 @@ contains
     real(dp)                       :: last_write_time_mesh  ! [days]
     real(dp)                       :: time_to_write_grid    ! [days]
     real(dp)                       :: last_write_time_grid  ! [days]
+    real(dp)                       :: fac_time_varying_SGD
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -141,6 +142,15 @@ contains
         if (time >= C%start_time_of_applying_SGD) then 
           ! Compute SGD
           call compute_subglacial_discharge( mesh, laddie, forcing)
+          ! Check if apply boost
+          if (C%apply_SGD_boost_every_10_years) then
+              ! Shift by +1 year so the window moves to 9–10, 19–20, 29–30, ...
+              iyear = floor(time + 1.0_dp)
+
+              if (mod(iyear, 10) == 0) then
+                  laddie%SGD = laddie%SGD * C%SGD_boost_factor
+              end if
+          end if
         else
           ! Set SGD to zero
           laddie%SGD = 0._dp

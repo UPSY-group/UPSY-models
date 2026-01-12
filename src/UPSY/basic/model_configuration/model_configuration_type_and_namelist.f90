@@ -1007,13 +1007,16 @@ module model_configuration_type_and_namelist
     real(dp)            :: uniform_laddie_tidal_velocity_config         = 0.1_dp                           ! [m s^-1] Uniform tidal velocity
 
     ! Subglacial discharge (SGD)
-    character(len=1024) :: choice_laddie_SGD_config                     = 'none'                           ! Choose option for subglacial discharge. Options: 'none', 'idealised', 'read_from_file'
+    character(len=1024) :: choice_laddie_SGD_config                     = 'none'                           ! Choose option for subglacial discharge. Options: 'none', 'idealised', 'read_from_file', 'read_transects'
     character(len=1024) :: choice_laddie_SGD_idealised_config           = 'MISMIPplus_PC'                  ! Choose option for idealised SGD. Options: 'MISMIPplus_PC', 'MISMIPplus_PW', 'MISMIPplus_PE'
     real(dp)            :: laddie_SGD_flux_config                       = 50._dp                           ! [m^3 s^-1] Total subglacial discharge flux
     character(len=1024) :: filename_laddie_mask_SGD_config              = ''                               ! Gridded file containing the subglacial discharge mask
     real(dp)            :: start_time_of_applying_SGD_config            = -9E9_dp                          ! [yr] Start time of applying SGD when choice_laddie_SGD_config is 'idealised' or 'read_from_file'
     character(len=1024) :: transects_SGD_config                         = ''                               ! List of transects to use for applying SGD. Format: [file:file_path1,F=10 || file:file_path2,F=20]
     character(len=1024) :: distribute_SGD_config                        = 'single_cell'                    ! How to apply SGD from transect; single cell ('single_cell'), or distribute over 2 neighbours ('distribute_2neighbours')
+    logical             :: apply_SGD_boost_every_10_years_config        = .false.                          ! Enable/disable periodic SGD boost every 10 years when choice_laddie_SGD_config is 'read_from_file'
+    real(dp)            :: SGD_boost_factor_config                      = 10._dp                           ! Multiplicative factor applied to laddie%SGD during the boost period
+
 
   ! == Lateral mass balance
   ! =======================
@@ -2191,6 +2194,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: start_time_of_applying_SGD
     character(len=1024) :: transects_SGD
     character(len=1024) :: distribute_SGD
+    logical             :: apply_SGD_boost_every_10_years
+    real(dp)            :: SGD_boost_factor
 
   ! == Lateral mass balance
   ! =======================
@@ -3034,6 +3039,8 @@ contains
       start_time_of_applying_SGD_config                           , &
       transects_SGD_config                                        , &
       distribute_SGD_config                                       , &
+      apply_SGD_boost_every_10_years_config                       , &
+      SGD_boost_factor_config                                     , & 
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
       dt_LMB_config                                               , &
@@ -4195,6 +4202,8 @@ contains
     C%start_time_of_applying_SGD                             = start_time_of_applying_SGD_config
     C%transects_SGD                                          = transects_SGD_config
     C%distribute_SGD                                         = distribute_SGD_config
+    C%apply_SGD_boost_every_10_years                         = apply_SGD_boost_every_10_years_config
+    C%SGD_boost_factor                                       = SGD_boost_factor_config
 
     ! == Lateral mass balance
     ! =======================

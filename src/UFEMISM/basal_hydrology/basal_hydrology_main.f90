@@ -24,6 +24,9 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_basal_hydrology_model'
     integer                        :: vi
+    real(dp), parameter :: N0 = 1.0e6_dp    ! 1 MPa
+    real(dp), parameter :: Q0 = 5.0_dp      ! 5 m^3/s
+
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -43,10 +46,18 @@ contains
       end do
     case ('Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)
+      print*, 'ENTERING the MARTIN2011 BASAL HYDROLOGY'
       ! Calculate overburden and effective pressure
       do vi = mesh%vi1, mesh%vi2
         ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
         ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
+        if (ice%mask_SGD(vi)) then 
+          ! decrease effective pressure there
+          ! ice%effective_pressure(vi) = N0 * ( C%laddie_SGD_flux / Q0 )**(-1.0_dp/3.0_dp)
+          ice%effective_pressure(vi) = ice%effective_pressure(  vi) * ( C%laddie_SGD_flux / Q0 )**(-1.0_dp/3.0_dp)
+
+          ! ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))* (C%laddie_SGD_flux/10._dp)**(-1._dp/3._dp)
+        end if
       end do
     case ('Leguy2014')  
       call calc_pore_water_pressure_none( mesh, ice)

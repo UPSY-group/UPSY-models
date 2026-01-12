@@ -273,6 +273,10 @@ contains
 
       bed_roughness%alpha_sq = MISMIPplus_alpha_sq
       bed_roughness%beta_sq  = MISMIPplus_beta_sq
+      ! if (C%SGD_idealised=='Reducesliding') then 
+        ! Reduce sliding below mask ice
+
+      ! end if
 
     end select
 

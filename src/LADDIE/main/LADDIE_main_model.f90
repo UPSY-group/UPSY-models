@@ -146,7 +146,6 @@ contains
           if (C%apply_SGD_boost_every_10_years) then
               ! Shift by +1 year so the window moves to 9–10, 19–20, 29–30, ...
               iyear = floor(time + 1.0_dp)
-
               if (mod(iyear, 10) == 0) then
                   laddie%SGD = laddie%SGD * C%SGD_boost_factor
               end if
@@ -158,6 +157,14 @@ contains
       case ('read_transects')
         ! Compute SGD from transects
         call compute_SGD_at_transects(mesh, laddie, forcing)
+        ! Check if apply boost
+        if (C%apply_SGD_boost_every_10_years) then
+            ! Shift by +1 year so the window moves to 9–10, 19–20, 29–30, ...
+            iyear = floor(time + 1.0_dp)
+            if (mod(iyear, 10) == 0) then
+                laddie%SGD = laddie%SGD * C%SGD_boost_factor
+            end if
+        end if
     end select
 
     ! Set values to zero if outside laddie mask

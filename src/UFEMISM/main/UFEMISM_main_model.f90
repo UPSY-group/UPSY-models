@@ -513,7 +513,7 @@ CONTAINS
 
     CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
-    call allocate_basal_hydro( region%mesh, region%ice%hydro_Salle2025)
+    call allocate_basal_hydro( region%mesh, region%ice, region%ice%hydro_Salle2025)
 
     call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
 

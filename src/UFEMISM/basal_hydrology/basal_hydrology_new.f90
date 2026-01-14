@@ -4,7 +4,7 @@ MODULE basal_hydrology_new
 ! ====================
 ! This is preamble is still copied from thermodynamics_3D_heat_equation.f90
 
-  use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_SUM
+  use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MIN
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
   USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
@@ -34,6 +34,54 @@ MODULE basal_hydrology_new
 
 CONTAINS
 
+  ! Run basal hydrology model x times
+  subroutine basal_hydrology_leg(mesh, ice, basal_hydro, time)
+    !< Main basal hydrology subroutine >!
+
+    ! In/output variables:
+    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_ice_model),             intent(inout) :: ice
+    type(type_basal_hydrology_model), intent(inout) :: basal_hydro
+    real(dp),                         intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'basal_hydrology_leg'
+    real(dp)                       :: duration
+    real(dp)                       :: time_until_convergence
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Start counter on 0
+    duration = 0.0_dp
+
+    time_until_convergence = 0.1_dp  ! Time until convergence (should be in config at some point probably)
+
+    ! Loop until convergence time is reached
+    time_loop: do while (duration < time_until_convergence)
+      call basal_hydrology(mesh, ice, basal_hydro, duration + time)
+      duration = duration + basal_hydro%dt
+      if (par%primary) then
+        write(*,*) "Duration so far basal hydro: ", duration
+      end if
+    end do time_loop
+    ! It looks like the primary core is slower than the other core, so when the second core is done with the loop,
+    ! the first core is still going but then also stops because the first core has reached the time_until_convergence?
+    ! It does not seem to pass the run_ice_dynamics_model in UFEMISM_main_model.f90, so there is probably something
+    ! there that needs all the cores to be done or something. Probably because they need to gather all for masks and such.
+    ! So I would need to give one dt (minimum of the different dts) for the different cores or sync them up somehow.
+
+    if (par%primary) then
+      write(*,*) "Done!"
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine basal_hydrology_leg
+
+
+  ! Run a single leg of basal hydrology model
   subroutine basal_hydrology(mesh, ice, basal_hydro, time)
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
@@ -167,7 +215,7 @@ CONTAINS
     call init_routine( routine_name)
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 1.0_dp)
+    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.001_dp)
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  1.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -350,6 +398,7 @@ CONTAINS
     real(dp)            :: d_min               ! Minimum triangle side length
     real(dp)            :: u_t, v_t, D_t       ! Velocity components on triangle
     real(dp)            :: dt_crit_CFL, dt_crit_W, dt_crit_P ! Critical timesteps for different conditions
+    real(dp)            :: dt_hydro_1, dt_hydro_2
     real(dp), parameter :: phi = 0.01_dp       ! Englacial porosity)
     real(dp), parameter :: correction_factor = 0.9_dp ! To be on the safe side
 
@@ -395,16 +444,16 @@ CONTAINS
     end do
 
     ! Timestep we will use here
-    dt_hydro = min(correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P), dt)
+    dt_hydro = correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, dt_hydro, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD)
     basal_hydro%dt = dt_hydro
-    if (par%primary) then
+    
+    if (par%i == 1) then
       write(*,*) "dt_crit_CFL = ", dt_crit_CFL
       write(*,*) "dt_crit_W   = ", dt_crit_W
       write(*,*) "dt_crit_P   = ", dt_crit_P
     end if
 
-    !call MPI_ALLREDUCE( MPI_IN_PLACE, dt_crit_SIA, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    !dt_crit_SIA = min( C%dt_ice_max, dt_crit_SIA)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -448,6 +497,7 @@ CONTAINS
 
       ! Initialise divQ with zeros
       basal_hydro%divQ( vi) = 0.0_dp
+      call sync
 
       if (.not. ice%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
 
@@ -593,7 +643,10 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (time == 0.0_dp) then
+    if (par%i == 0) then
+      write(*,*) "Time = ", time
+    end if
+    if (time == 0.0_dp .or. basal_hydro%dt == 0.0_dp) then
       dt = 0.0000025_dp!C%dt_ice_max
     else
       dt = time - basal_hydro%old_time

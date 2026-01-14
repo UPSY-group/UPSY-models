@@ -9,7 +9,7 @@ module basal_hydrology_main
   use parameters, only: grav, ice_density
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use basal_hydrology_new, only: basal_hydrology
+  use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg
 
   implicit none
 
@@ -40,7 +40,7 @@ contains
     case ('Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)
     case ('Salle2025')
-      call basal_hydrology(mesh, ice, ice%hydro_Salle2025, time)
+      call basal_hydrology_leg(mesh, ice, ice%hydro_Salle2025, time)
     end select
 
     ! Calculate overburden and effective pressure

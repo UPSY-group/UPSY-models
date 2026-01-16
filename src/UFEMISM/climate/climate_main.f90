@@ -19,6 +19,7 @@ MODULE climate_main
   USE climate_idealised                                      , ONLY: initialise_climate_model_idealised, run_climate_model_idealised
   USE climate_realistic                                      , ONLY: initialise_climate_model_realistic, run_climate_model_realistic, remap_climate_realistic
   USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
+  USE climate_snapshot_plus_transient_deltaT                 , ONLY: initialise_climate_model_snapshot_plus_transient_deltaT, run_climate_model_snapshot_plus_transient_deltaT, remap_climate_snapshot_plus_transient_deltaT
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
@@ -113,7 +114,6 @@ CONTAINS
   END SUBROUTINE run_climate_model
 
   SUBROUTINE initialise_climate_model( mesh, grid, ice, climate, forcing, region_name)
-
     ! Initialise the climate model
 
     IMPLICIT NONE
@@ -123,8 +123,9 @@ CONTAINS
     type(type_grid),                        intent(in)    :: grid
     TYPE(type_ice_model),                   INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(OUT)   :: climate
-    TYPE(type_global_forcing),              INTENT(IN) :: forcing
+    TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+    REAL(dp),                               INTENT(IN)    :: start_time_of_run
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'initialise_climate_model'
@@ -181,6 +182,8 @@ CONTAINS
       call initialise_climate_model_realistic( mesh, ice, climate, forcing, region_name)
     case ('snapshot_plus_uniform_deltaT')
       call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, region_name)
+    case ('snapshot_plus_transient_deltaT')
+      call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, region_name, start_time_of_run)  
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
       call initialise_climate_matrix( mesh, grid, ice, climate, region_name, forcing)
@@ -397,7 +400,7 @@ CONTAINS
 
   END SUBROUTINE create_restart_file_climate_model_region
 
-  SUBROUTINE remap_climate_model( mesh_old, mesh_new, climate, region_name, grid, ice, forcing)
+  SUBROUTINE remap_climate_model( mesh_old, mesh_new, climate, region_name, time, grid, ice, forcing)
     ! Remap the climate model
 
     IMPLICIT NONE
@@ -407,6 +410,7 @@ CONTAINS
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+    REAL(dp),                               INTENT(IN)    :: time
     type(type_grid), optional,                    intent(in)    :: grid
     type(type_ice_model), optional,               intent(in)    :: ice
     type(type_global_forcing), optional,          intent(in) :: forcing
@@ -446,7 +450,9 @@ CONTAINS
     ELSEIF (choice_climate_model == 'realistic') THEN
       call remap_climate_realistic(mesh_old, mesh_new, climate, region_name)
     ELSEIF (choice_climate_model == 'snapshot_plus_uniform_deltaT')  THEN
-      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, climate, region_name)
+      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, ice, climate, region_name)
+    ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
+      call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, ice, climate, region_name, time)
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     ELSE

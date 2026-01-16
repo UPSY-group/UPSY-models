@@ -70,6 +70,19 @@ MODULE climate_model_types
     REAL(dp)                                  :: precip_CC_correction
 
   END TYPE type_climate_model_snapshot_plus_unif_dT
+
+  TYPE type_climate_model_snapshot_plus_transient_dT
+
+    TYPE(type_climate_model_snapshot)         :: snapshot
+
+    ! deltaT and precipitation correction
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series_time
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series 
+    REAL(dp),                   ALLOCATABLE   :: dT_t0, dT_t1, dT_at_t0, dT_at_t1
+    REAL(dp)                                  :: precip_CC_correction
+    REAL(dp)                                  :: deltaT
+
+  END TYPE type_climate_model_snapshot_plus_transient_dT
   
   TYPE type_climate_model_matrix
     ! The "matrix" climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
@@ -123,9 +136,10 @@ MODULE climate_model_types
     REAL(dp)                                :: t_next
     
     ! Add different climate model options
-    TYPE(type_climate_model_snapshot)                 :: snapshot
-    TYPE(type_climate_model_snapshot_plus_unif_dT)    :: snapshot_unif_dT
-    TYPE(type_climate_model_matrix)                   :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
+    TYPE(type_climate_model_snapshot)                   :: snapshot
+    TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
+    TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
+    TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
 
   END TYPE type_climate_model
   

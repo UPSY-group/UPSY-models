@@ -263,10 +263,11 @@ CONTAINS
 
   END SUBROUTINE apply_geometry_downscaling_corrections
 
-  SUBROUTINE remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, climate, region_name)
+  SUBROUTINE remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, ice, climate, region_name)
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_old
     type(type_mesh),                        intent(in)    :: mesh_new
+    type(type_ice_model),                   intent(in)    :: ice
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
 
@@ -335,6 +336,10 @@ CONTAINS
         climate%T2m( vi, m) = climate%T2m( vi, m) + climate%snapshot_unif_dT%deltaT
     end do
     end do
+
+    ! apply corrections (increase in Precip due to deltaT, plus downscaling correction)
+    call apply_precipitation_CC_correction(mesh_new, climate)
+    call apply_geometry_downscaling_corrections( mesh_new, ice, climate)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -1,7 +1,6 @@
 submodule( models_basic) models_basic_submod_restart_file
 
 use netcdf_io_main
-use fields_main, only: type_third_dimension
 
 contains
 

@@ -11,6 +11,8 @@ module SMB_snapshot_plus_anomalies
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use allocate_dist_shared_mod, only: allocate_dist_shared
   use SMB_basic, only: atype_SMB_model
+  use Arakawa_grid_mod, only: Arakawa_grid
+  use fields_main, only: third_dimension
 
   implicit none
 
@@ -109,36 +111,61 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Allocate memory
-
-    call allocate_dist_shared( self%SMB, self%wSMB, mesh%pai_V%n_nih)
-    self%SMB( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB
+    call self%set_name('SMB_snapshot_plus_anomalies')
+    call self%init_common( mesh)
 
     ! Baseline climate
-    call allocate_dist_shared( self%T2m_baseline, self%wT2m_baseline, mesh%pai_V%n_nih, 12)
-    call allocate_dist_shared( self%SMB_baseline, self%wSMB_baseline, mesh%pai_V%n_nih    )
-    self%T2m_baseline( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:12) => self%T2m_baseline
-    self%SMB_baseline( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih      ) => self%SMB_baseline
+    call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
+      mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'T2m_baseline', &
+      long_name = 'baseline monthly 2-m air temperature', &
+      units     = 'K')
+    call self%create_field( self%SMB_baseline, self%wSMB_baseline, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'SMB_baseline', &
+      long_name = 'baseline surface mass balance', &
+      units     = 'm yr^-1')
 
     ! Two anomaly snapshots enveloping the current model time
-    call allocate_dist_shared( self%T2m_anomaly_0, self%wT2m_anomaly_0, mesh%pai_V%n_nih)
-    call allocate_dist_shared( self%SMB_anomaly_0, self%wSMB_anomaly_0, mesh%pai_V%n_nih)
-    call allocate_dist_shared( self%T2m_anomaly_1, self%wT2m_anomaly_1, mesh%pai_V%n_nih)
-    call allocate_dist_shared( self%SMB_anomaly_1, self%wSMB_anomaly_1, mesh%pai_V%n_nih)
-    self%T2m_anomaly_0( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%T2m_anomaly_0
-    self%SMB_anomaly_0( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB_anomaly_0
-    self%T2m_anomaly_1( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%T2m_anomaly_1
-    self%SMB_anomaly_1( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB_anomaly_1
+    call self%create_field( self%T2m_anomaly_0, self%wT2m_anomaly_0, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'T2m_anomaly_0', &
+      long_name = 'previous annual 2-m air temperature anomaly', &
+      units     = 'K')
+    call self%create_field( self%SMB_anomaly_0, self%wSMB_anomaly_0, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'SMB_anomaly_0', &
+      long_name = 'previous surface mass balance anomaly', &
+      units     = 'm yr^-1')
+    call self%create_field( self%T2m_anomaly_1, self%wT2m_anomaly_1, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'T2m_anomaly_1', &
+      long_name = 'next annual 2-m air temperature anomaly', &
+      units     = 'K')
+    call self%create_field( self%SMB_anomaly_1, self%wSMB_anomaly_1, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'SMB_anomaly_1', &
+      long_name = 'next surface mass balance anomaly', &
+      units     = 'm yr^-1')
 
     ! Time-weighted anomaly
-    call allocate_dist_shared( self%T2m_anomaly, self%wT2m_anomaly, mesh%pai_V%n_nih)
-    call allocate_dist_shared( self%SMB_anomaly, self%wSMB_anomaly, mesh%pai_V%n_nih)
-    self%T2m_anomaly( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%T2m_anomaly
-    self%SMB_anomaly( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB_anomaly
+    call self%create_field( self%T2m_anomaly, self%wT2m_anomaly, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'T2m_anomaly', &
+      long_name = 'annual 2-m air temperature anomaly', &
+      units     = 'K')
+    call self%create_field( self%SMB_anomaly, self%wSMB_anomaly, &
+      mesh, Arakawa_grid%a(), &
+      name      = 'SMB_anomaly', &
+      long_name = 'surface mass balance anomaly', &
+      units     = 'm yr^-1')
 
     ! Applied climate
-    call allocate_dist_shared( self%T2m, self%wT2m, mesh%pai_V%n_nih, 12)
-    self%T2m( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:12) => self%T2m
+    call self%create_field( self%T2m, self%wT2m, &
+      mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'T2m', &
+      long_name = 'monthly 2-m air temperature', &
+      units     = 'K')
 
     ! Read baseline snapshot
     call read_field_from_file_2D_monthly( C%SMB_snp_p_anml_filename_snapshot_T2m, 'T2m', &

@@ -6,6 +6,9 @@ module models_basic
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use fields_main, only: type_fields_registry
+  use Arakawa_grid_mod, only: type_Arakawa_grid
+  use fields_dimensions, only: type_third_dimension
+  use mpi_f08, only: MPI_WIN
 
   implicit none
 
@@ -18,43 +21,150 @@ module models_basic
 
   type, abstract :: atype_model
 
-    ! Metadata
-    character(len=1024), private :: name_val
+      ! Metadata
+      character(len=1024), private :: name_val
 
-    ! Grid
-    class(*), pointer, private :: grid_val
+      ! Grid
+      class(*), pointer, private :: grid_val
 
-    ! Fields registry
-    type(type_fields_registry), public :: flds_reg
+      ! Fields registry
+      type(type_fields_registry), private :: flds_reg
 
     contains
 
-    generic,   public  :: operator(==) => eq
-    procedure, private :: eq => test_model_equality
+      generic,   public  :: create_field => &
+        create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
+        create_field_logical_3D, create_field_int_3D, create_field_dp_3D
+      procedure, private :: create_field_logical_2D
+      procedure, private :: create_field_int_2D
+      procedure, private :: create_field_dp_2D
+      procedure, private :: create_field_logical_3D
+      procedure, private :: create_field_int_3D
+      procedure, private :: create_field_dp_3D
 
-    ! ===== Set/get functions
+      generic,   public  :: operator(==) => eq
+      procedure, private :: eq => test_model_equality
 
-    ! Metadata
-    procedure, public :: set_name
-    procedure, public :: name => get_name
-    procedure, public :: is_name
+      ! ===== Set/get functions
 
-    ! Grid
-    procedure, public :: set_grid
-    procedure, public :: grid => get_grid
-    procedure, public :: is_grid
+      ! Metadata
+      procedure, public :: set_name
+      procedure, public :: name => get_name
+      procedure, public :: is_name
 
-    ! ===== NetCDF output
+      ! Grid
+      procedure, public :: set_grid
+      procedure, public :: grid => get_grid
+      procedure, public :: is_grid
 
-    procedure, public :: write_to_restart_file
-    procedure, public :: read_from_restart_file
+      ! ===== NetCDF output
+
+      procedure, public :: write_to_restart_file
+      procedure, public :: read_from_restart_file
 
   end type atype_model
 
   ! Interfaces to type-bound procedures defined in submodules
   ! =========================================================
 
+  ! create_field
   interface
+
+    module subroutine create_field_logical_2D( model, d_nih, w, field_grid, &
+      field_Arakawa_grid, name, long_name, units)
+
+      class(atype_model),                         intent(inout) :: model
+      logical, dimension(:), contiguous, pointer, intent(inout) :: d_nih
+      type(MPI_WIN),                              intent(inout) :: w
+      class(*), target,                           intent(in   ) :: field_grid
+      type(type_Arakawa_grid),                    intent(in   ) :: field_Arakawa_grid
+      character(len=*),                           intent(in   ) :: name
+      character(len=*),                           intent(in   ) :: long_name
+      character(len=*),                           intent(in   ) :: units
+
+    end subroutine create_field_logical_2D
+
+    module subroutine create_field_logical_3D( model, d_nih, w, field_grid, &
+      field_Arakawa_grid, field_third_dimension, name, long_name, units)
+
+      class(atype_model),                           intent(inout) :: model
+      logical, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+      type(MPI_WIN),                                intent(inout) :: w
+      class(*), target,                             intent(in   ) :: field_grid
+      type(type_Arakawa_grid),                      intent(in   ) :: field_Arakawa_grid
+      type(type_third_dimension),                   intent(in   ) :: field_third_dimension
+      character(len=*),                             intent(in   ) :: name
+      character(len=*),                             intent(in   ) :: long_name
+      character(len=*),                             intent(in   ) :: units
+
+    end subroutine create_field_logical_3D
+
+    module subroutine create_field_int_2D( model, d_nih, w, field_grid, &
+      field_Arakawa_grid, name, long_name, units)
+
+      class(atype_model),                         intent(inout) :: model
+      integer, dimension(:), contiguous, pointer, intent(inout) :: d_nih
+      type(MPI_WIN),                              intent(inout) :: w
+      class(*), target,                           intent(in   ) :: field_grid
+      type(type_Arakawa_grid),                    intent(in   ) :: field_Arakawa_grid
+      character(len=*),                           intent(in   ) :: name
+      character(len=*),                           intent(in   ) :: long_name
+      character(len=*),                           intent(in   ) :: units
+
+    end subroutine create_field_int_2D
+
+    module subroutine create_field_int_3D( model, d_nih, w, field_grid, &
+      field_Arakawa_grid, field_third_dimension, name, long_name, units)
+
+      class(atype_model),                           intent(inout) :: model
+      integer, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+      type(MPI_WIN),                                intent(inout) :: w
+      class(*), target,                             intent(in   ) :: field_grid
+      type(type_Arakawa_grid),                      intent(in   ) :: field_Arakawa_grid
+      type(type_third_dimension),                   intent(in   ) :: field_third_dimension
+      character(len=*),                             intent(in   ) :: name
+      character(len=*),                             intent(in   ) :: long_name
+      character(len=*),                             intent(in   ) :: units
+
+    end subroutine create_field_int_3D
+
+    module subroutine create_field_dp_2D( model, d_nih, w, field_grid, &
+      field_Arakawa_grid, name, long_name, units)
+
+      class(atype_model),                          intent(inout) :: model
+      real(dp), dimension(:), contiguous, pointer, intent(inout) :: d_nih
+      type(MPI_WIN),                               intent(inout) :: w
+      class(*), target,                            intent(in   ) :: field_grid
+      type(type_Arakawa_grid),                     intent(in   ) :: field_Arakawa_grid
+      character(len=*),                            intent(in   ) :: name
+      character(len=*),                            intent(in   ) :: long_name
+      character(len=*),                            intent(in   ) :: units
+
+    end subroutine create_field_dp_2D
+
+    module subroutine create_field_dp_3D( model, d_nih, w, field_grid, &
+      field_Arakawa_grid, field_third_dimension, name, long_name, units)
+
+      class(atype_model),                            intent(inout) :: model
+      real(dp), dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+      type(MPI_WIN),                                 intent(inout) :: w
+      class(*), target,                              intent(in   ) :: field_grid
+      type(type_Arakawa_grid),                       intent(in   ) :: field_Arakawa_grid
+      type(type_third_dimension),                    intent(in   ) :: field_third_dimension
+      character(len=*),                              intent(in   ) :: name
+      character(len=*),                              intent(in   ) :: long_name
+      character(len=*),                              intent(in   ) :: units
+
+    end subroutine create_field_dp_3D
+
+  end interface
+
+  interface
+
+    module function create_field( model1, model2) result( res)
+      class(atype_model), intent(in) :: model1, model2
+      logical                        :: res
+    end function create_field
 
     module function test_model_equality( model1, model2) result( res)
       class(atype_model), intent(in) :: model1, model2

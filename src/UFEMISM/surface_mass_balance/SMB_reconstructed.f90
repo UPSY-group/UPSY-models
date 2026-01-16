@@ -132,8 +132,8 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( self%SMB, self%wSMB, mesh%pai_V%n_nih)
-    self%SMB( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB
+    call self%set_name('SMB_reconstructed')
+    call self%init_common( mesh)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

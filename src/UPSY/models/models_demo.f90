@@ -54,31 +54,31 @@ contains
 
     ! Create model fields
 
-    call model%flds_reg%create_field( model%H, model%wH, &
+    call model%create_field( model%H, model%wH, &
       mesh, Arakawa_grid%a(), &
       name      = 'H', &
       long_name = 'ice thickness', &
       units     = 'm')
 
-    call model%flds_reg%create_field( model%u_3D, model%wu_3D, &
+    call model%create_field( model%u_3D, model%wu_3D, &
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = 'u_3D', &
       long_name = 'depth-dependent horizontal ice velocity in x-direction', &
       units     = 'm yr^-1')
 
-    call model%flds_reg%create_field( model%v_3D, model%wv_3D, &
+    call model%create_field( model%v_3D, model%wv_3D, &
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = 'v_3D', &
       long_name = 'depth-dependent horizontal ice velocity in y-direction', &
       units     = 'm yr^-1')
 
-    call model%flds_reg%create_field( model%mask_ice, model%wmask_ice, &
+    call model%create_field( model%mask_ice, model%wmask_ice, &
       mesh, Arakawa_grid%a(), &
       name      = 'mask_ice', &
       long_name = 'ice mask', &
       units     = '-')
 
-    call model%flds_reg%create_field( model%T2m, model%wT2m, &
+    call model%create_field( model%T2m, model%wT2m, &
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'T2m', &
       long_name = 'Monthly 2-m air temperature', &

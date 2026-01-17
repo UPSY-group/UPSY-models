@@ -3,7 +3,7 @@ submodule( fields_registry) fields_registry_submod_create_field
 contains
 
   subroutine create_field_logical_2D( flds_reg, d_nih, w, field_grid, &
-    field_Arakawa_grid, name, long_name, units)
+    field_Arakawa_grid, name, long_name, units, remap_method)
 
     ! In/output variables:
     class(type_fields_registry),                 intent(inout) :: flds_reg
@@ -11,9 +11,10 @@ contains
     type(MPI_WIN),                               intent(inout) :: w
     class(*), target,                            intent(in   ) :: field_grid
     type(type_Arakawa_grid),                     intent(in   ) :: field_Arakawa_grid
-    character(len=*),                            intent(in   ) :: name
-    character(len=*),                            intent(in   ) :: long_name
-    character(len=*),                            intent(in   ) :: units
+    character(len=*),                  optional, intent(in   ) :: name
+    character(len=*),                  optional, intent(in   ) :: long_name
+    character(len=*),                  optional, intent(in   ) :: units
+    character(len=*),                  optional, intent(in   ) :: remap_method
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_field_logical_2D'
@@ -23,10 +24,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call check_nonoptional_optionals( name, long_name, units, remap_method)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
     call allocate_dist_shared( d_nih, w, n)
     d_nih( lb: ub) => d_nih
-    call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, name, long_name, units)
+    call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, name, long_name, units, remap_method)
     call flds_reg%add( field)
 
     ! Remove routine from call stack
@@ -35,7 +37,7 @@ contains
   end subroutine create_field_logical_2D
 
   subroutine create_field_logical_3D( flds_reg, d_nih, w, field_grid, &
-    field_Arakawa_grid, field_third_dimension, name, long_name, units)
+    field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
     ! In/output variables:
     class(type_fields_registry),                  intent(inout) :: flds_reg
@@ -44,9 +46,10 @@ contains
     class(*), target,                             intent(in   ) :: field_grid
     type(type_Arakawa_grid),                      intent(in   ) :: field_Arakawa_grid
     type(type_third_dimension),                   intent(in   ) :: field_third_dimension
-    character(len=*),                             intent(in   ) :: name
-    character(len=*),                             intent(in   ) :: long_name
-    character(len=*),                             intent(in   ) :: units
+    character(len=*),                   optional, intent(in   ) :: name
+    character(len=*),                   optional, intent(in   ) :: long_name
+    character(len=*),                   optional, intent(in   ) :: units
+    character(len=*),                   optional, intent(in   ) :: remap_method
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_field_logical_3D'
@@ -56,12 +59,13 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call check_nonoptional_optionals( name, long_name, units, remap_method)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb1, ub1, n1)
     call determine_bounds_3D( field_third_dimension, lb2, ub2, n2)
     call allocate_dist_shared( d_nih, w, n1, n2)
     d_nih( lb1: ub1, lb2: ub2) => d_nih
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
-      field_third_dimension, name, long_name, units)
+      field_third_dimension, name, long_name, units, remap_method)
     call flds_reg%add( field)
 
     ! Remove routine from call stack
@@ -70,7 +74,7 @@ contains
   end subroutine create_field_logical_3D
 
   subroutine create_field_int_2D( flds_reg, d_nih, w, field_grid, &
-    field_Arakawa_grid, name, long_name, units)
+    field_Arakawa_grid, name, long_name, units, remap_method)
 
     ! In/output variables:
     class(type_fields_registry),                 intent(inout) :: flds_reg
@@ -78,9 +82,10 @@ contains
     type(MPI_WIN),                               intent(inout) :: w
     class(*), target,                            intent(in   ) :: field_grid
     type(type_Arakawa_grid),                     intent(in   ) :: field_Arakawa_grid
-    character(len=*),                            intent(in   ) :: name
-    character(len=*),                            intent(in   ) :: long_name
-    character(len=*),                            intent(in   ) :: units
+    character(len=*),                  optional, intent(in   ) :: name
+    character(len=*),                  optional, intent(in   ) :: long_name
+    character(len=*),                  optional, intent(in   ) :: units
+    character(len=*),                  optional, intent(in   ) :: remap_method
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_field_int_2D'
@@ -90,10 +95,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call check_nonoptional_optionals( name, long_name, units, remap_method)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
     call allocate_dist_shared( d_nih, w, n)
     d_nih( lb: ub) => d_nih
-    call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, name, long_name, units)
+    call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, name, long_name, units, remap_method)
     call flds_reg%add( field)
 
     ! Remove routine from call stack
@@ -102,7 +108,7 @@ contains
   end subroutine create_field_int_2D
 
   subroutine create_field_int_3D( flds_reg, d_nih, w, field_grid, &
-    field_Arakawa_grid, field_third_dimension, name, long_name, units)
+    field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
     ! In/output variables:
     class(type_fields_registry),                  intent(inout) :: flds_reg
@@ -111,9 +117,10 @@ contains
     class(*), target,                             intent(in   ) :: field_grid
     type(type_Arakawa_grid),                      intent(in   ) :: field_Arakawa_grid
     type(type_third_dimension),                   intent(in   ) :: field_third_dimension
-    character(len=*),                             intent(in   ) :: name
-    character(len=*),                             intent(in   ) :: long_name
-    character(len=*),                             intent(in   ) :: units
+    character(len=*),                   optional, intent(in   ) :: name
+    character(len=*),                   optional, intent(in   ) :: long_name
+    character(len=*),                   optional, intent(in   ) :: units
+    character(len=*),                   optional, intent(in   ) :: remap_method
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_field_int_3D'
@@ -123,12 +130,13 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call check_nonoptional_optionals( name, long_name, units, remap_method)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb1, ub1, n1)
     call determine_bounds_3D( field_third_dimension, lb2, ub2, n2)
     call allocate_dist_shared( d_nih, w, n1, n2)
     d_nih( lb1: ub1, lb2: ub2) => d_nih
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
-      field_third_dimension, name, long_name, units)
+      field_third_dimension, name, long_name, units, remap_method)
     call flds_reg%add( field)
 
     ! Remove routine from call stack
@@ -137,7 +145,7 @@ contains
   end subroutine create_field_int_3D
 
   subroutine create_field_dp_2D( flds_reg, d_nih, w, field_grid, &
-    field_Arakawa_grid, name, long_name, units)
+    field_Arakawa_grid, name, long_name, units, remap_method)
 
     ! In/output variables:
     class(type_fields_registry),                 intent(inout) :: flds_reg
@@ -145,9 +153,10 @@ contains
     type(MPI_WIN),                               intent(inout) :: w
     class(*), target,                            intent(in   ) :: field_grid
     type(type_Arakawa_grid),                     intent(in   ) :: field_Arakawa_grid
-    character(len=*),                            intent(in   ) :: name
-    character(len=*),                            intent(in   ) :: long_name
-    character(len=*),                            intent(in   ) :: units
+    character(len=*),                  optional, intent(in   ) :: name
+    character(len=*),                  optional, intent(in   ) :: long_name
+    character(len=*),                  optional, intent(in   ) :: units
+    character(len=*),                  optional, intent(in   ) :: remap_method
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_field_dp_2D'
@@ -157,10 +166,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call check_nonoptional_optionals( name, long_name, units, remap_method)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
     call allocate_dist_shared( d_nih, w, n)
     d_nih( lb: ub) => d_nih
-    call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, name, long_name, units)
+    call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, name, long_name, units, remap_method)
     call flds_reg%add( field)
 
     ! Remove routine from call stack
@@ -169,7 +179,7 @@ contains
   end subroutine create_field_dp_2D
 
   subroutine create_field_dp_3D( flds_reg, d_nih, w, field_grid, &
-    field_Arakawa_grid, field_third_dimension, name, long_name, units)
+    field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
     ! In/output variables:
     class(type_fields_registry),                   intent(inout) :: flds_reg
@@ -178,9 +188,10 @@ contains
     class(*), target,                              intent(in   ) :: field_grid
     type(type_Arakawa_grid),                       intent(in   ) :: field_Arakawa_grid
     type(type_third_dimension),                    intent(in   ) :: field_third_dimension
-    character(len=*),                              intent(in   ) :: name
-    character(len=*),                              intent(in   ) :: long_name
-    character(len=*),                              intent(in   ) :: units
+    character(len=*),                    optional, intent(in   ) :: name
+    character(len=*),                    optional, intent(in   ) :: long_name
+    character(len=*),                    optional, intent(in   ) :: units
+    character(len=*),                    optional, intent(in   ) :: remap_method
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_field_dp_3D'
@@ -190,18 +201,32 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call check_nonoptional_optionals( name, long_name, units, remap_method)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb1, ub1, n1)
     call determine_bounds_3D( field_third_dimension, lb2, ub2, n2)
     call allocate_dist_shared( d_nih, w, n1, n2)
     d_nih( lb1: ub1, lb2: ub2) => d_nih
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
-      field_third_dimension, name, long_name, units)
+      field_third_dimension, name, long_name, units, remap_method)
     call flds_reg%add( field)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine create_field_dp_3D
+
+  ! Utilities
+
+  subroutine check_nonoptional_optionals( name, long_name, units, remap_method)
+    character(len=*),  optional, intent(in   ) :: name
+    character(len=*),  optional, intent(in   ) :: long_name
+    character(len=*),  optional, intent(in   ) :: units
+    character(len=*),  optional, intent(in   ) :: remap_method
+    if (.not. present( name        )) call crash('missing input argument "name"')
+    if (.not. present( long_name   )) call crash('missing input argument "long_name"')
+    if (.not. present( units       )) call crash('missing input argument "a units"')
+    if (.not. present( remap_method)) call crash('missing input argument "remap_method"')
+  end subroutine check_nonoptional_optionals
 
   subroutine determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
 

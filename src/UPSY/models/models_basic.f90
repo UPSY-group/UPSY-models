@@ -32,6 +32,9 @@ module models_basic
     generic,   public  :: operator(==) => eq
     procedure, private :: eq => test_model_equality
 
+    procedure, public  :: remap_common => remap
+    procedure(set_bounds_ifc), deferred, public :: set_bounds
+
     ! ===== Set/get functions
 
     ! Metadata
@@ -55,6 +58,11 @@ module models_basic
   ! =========================================================
 
   interface
+
+    module subroutine remap( self, mesh_new)
+      class(atype_model), intent(inout) :: self
+      type(type_mesh),    intent(in   ) :: mesh_new
+    end subroutine remap
 
     module function test_model_equality( model1, model2) result( res)
       class(atype_model), intent(in) :: model1, model2
@@ -112,6 +120,16 @@ module models_basic
       character(len=*),   intent(in   ) :: filename
     end subroutine read_from_restart_file
 
+  end interface
+
+  ! Abstract interfaces for deferred procedures
+  ! ===========================================
+
+  abstract interface
+    subroutine set_bounds_ifc( self)
+      import atype_model
+      class(atype_model), intent(inout) :: self
+    end subroutine set_bounds_ifc
   end interface
 
 end module models_basic

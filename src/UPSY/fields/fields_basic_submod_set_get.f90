@@ -22,6 +22,12 @@ contains
     field%units_val = units
   end subroutine set_units
 
+  subroutine set_remap_method( field, remap_method)
+    class(atype_field), intent(inout) :: field
+    character(len=*),   intent(in   ) :: remap_method
+    field%remap_method_val = remap_method
+  end subroutine set_remap_method
+
   function get_name( field) result( name)
     class(atype_field), intent(in) :: field
     character(:), allocatable      :: name
@@ -39,6 +45,12 @@ contains
     character(:), allocatable      :: units
     units = field%units_val
   end function get_units
+
+  function get_remap_method( field) result( remap_method)
+    class(atype_field), intent(in) :: field
+    character(:), allocatable      :: remap_method
+    remap_method = field%remap_method_val
+  end function get_remap_method
 
   function is_name( field, name) result( res)
     class(atype_field), intent(in) :: field
@@ -60,6 +72,13 @@ contains
     logical                        :: res
     res = field%units_val == units
   end function is_units
+
+  function is_remap_method( field, remap_method) result( res)
+    class(atype_field), intent(in) :: field
+    character(len=*),   intent(in) :: remap_method
+    logical                        :: res
+    res = field%remap_method_val == remap_method
+  end function is_remap_method
 
   ! Grid
 

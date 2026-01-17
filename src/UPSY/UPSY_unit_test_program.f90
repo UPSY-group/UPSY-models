@@ -3,6 +3,7 @@ program UPSY_unit_test_program
 
   use basic_program_info, only: program_name
   use precisions, only: dp
+  use model_configuration, only: C
   use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
@@ -45,6 +46,7 @@ program UPSY_unit_test_program
 
   ! Create the unit test output folder and file
   foldername_unit_tests_output = 'automated_testing/unit_tests/results'
+  C%output_dir = trim( foldername_unit_tests_output)
   call create_unit_tests_output_folder( foldername_unit_tests_output)
   call create_unit_tests_output_file
 

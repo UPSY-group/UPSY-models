@@ -173,7 +173,8 @@ contains
       grid, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1) = .true.
 
@@ -184,13 +185,18 @@ contains
       grid, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -233,7 +239,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = .true.
 
@@ -244,13 +251,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -292,7 +304,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = .true.
 
@@ -303,13 +316,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -352,7 +370,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = .true.
 
@@ -363,13 +382,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -411,7 +435,8 @@ contains
       grid, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1) = 1337
 
@@ -422,13 +447,18 @@ contains
       grid, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -471,7 +501,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = 1337
 
@@ -482,13 +513,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -530,7 +566,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = 1337
 
@@ -541,13 +578,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -590,7 +632,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = 1337
 
@@ -601,13 +644,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -649,7 +697,8 @@ contains
       grid, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1) = 13.37_dp
 
@@ -660,13 +709,18 @@ contains
       grid, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -709,7 +763,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = 13.37_dp
 
@@ -720,13 +775,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -768,7 +828,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = 13.37_dp
 
@@ -779,13 +840,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -828,7 +894,8 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( grid%n1,3) = 13.37_dp
 
@@ -839,13 +906,18 @@ contains
       grid, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -890,7 +962,8 @@ contains
       mesh, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = .true.
 
@@ -901,13 +974,18 @@ contains
       mesh, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -950,7 +1028,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -961,13 +1040,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1009,7 +1093,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -1020,13 +1105,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1069,7 +1159,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -1080,13 +1171,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1128,7 +1224,8 @@ contains
       mesh, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = 1337
 
@@ -1139,13 +1236,18 @@ contains
       mesh, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1188,7 +1290,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -1199,13 +1302,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1247,7 +1355,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -1258,13 +1367,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1307,7 +1421,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -1318,13 +1433,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1366,7 +1486,8 @@ contains
       mesh, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = 13.37_dp
 
@@ -1377,13 +1498,18 @@ contains
       mesh, Arakawa_grid%a(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1426,7 +1552,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -1437,13 +1564,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1485,7 +1617,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -1496,13 +1629,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1545,7 +1683,8 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -1556,13 +1695,18 @@ contains
       mesh, Arakawa_grid%a(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1607,7 +1751,8 @@ contains
       mesh, Arakawa_grid%b(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = .true.
 
@@ -1618,13 +1763,18 @@ contains
       mesh, Arakawa_grid%b(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1667,7 +1817,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -1678,13 +1829,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1726,7 +1882,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -1737,13 +1894,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1786,7 +1948,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -1797,13 +1960,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1845,7 +2013,8 @@ contains
       mesh, Arakawa_grid%b(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = 1337
 
@@ -1856,13 +2025,18 @@ contains
       mesh, Arakawa_grid%b(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1905,7 +2079,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -1916,13 +2091,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -1964,7 +2144,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -1975,13 +2156,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2024,7 +2210,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -2035,13 +2222,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2083,7 +2275,8 @@ contains
       mesh, Arakawa_grid%b(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = 13.37_dp
 
@@ -2094,13 +2287,18 @@ contains
       mesh, Arakawa_grid%b(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2143,7 +2341,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -2154,13 +2353,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2202,7 +2406,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -2213,13 +2418,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2262,7 +2472,8 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -2273,13 +2484,18 @@ contains
       mesh, Arakawa_grid%b(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2324,7 +2540,8 @@ contains
       mesh, Arakawa_grid%c(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = .true.
 
@@ -2335,13 +2552,18 @@ contains
       mesh, Arakawa_grid%c(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2384,7 +2606,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -2395,13 +2618,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2443,7 +2671,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -2454,13 +2683,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2503,7 +2737,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = .true.
 
@@ -2514,13 +2749,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2562,7 +2802,8 @@ contains
       mesh, Arakawa_grid%c(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = 1337
 
@@ -2573,13 +2814,18 @@ contains
       mesh, Arakawa_grid%c(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2622,7 +2868,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -2633,13 +2880,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2681,7 +2933,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -2692,13 +2945,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2741,7 +2999,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 1337
 
@@ -2752,13 +3011,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2800,7 +3064,8 @@ contains
       mesh, Arakawa_grid%c(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1) = 13.37_dp
 
@@ -2811,13 +3076,18 @@ contains
       mesh, Arakawa_grid%c(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2860,7 +3130,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -2871,13 +3142,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ice_zeta( nz, 'regular'), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2919,7 +3195,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -2930,13 +3207,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%month(), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -2979,7 +3261,8 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     d1( mesh%vi1,3) = 13.37_dp
 
@@ -2990,13 +3273,18 @@ contains
       mesh, Arakawa_grid%c(), third_dimension%ocean_depth( nz), &
       name      = name, &
       long_name = long_name, &
-      units     = units)
+      units     = units, &
+      remap_method = 'reallocate')
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
     call flds_reg2%items(1)%p%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     call unit_test( flds_reg1%items(1)%p == flds_reg2%items(1)%p, test_name)
+
+    ! Clean up after yourself
+    call flds_reg1%destroy
+    call flds_reg2%destroy
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

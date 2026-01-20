@@ -14,7 +14,7 @@ MODULE thermodynamics_main
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
-  USE SMB_model_types                                        , ONLY: type_SMB_model
+  use SMB_main, only: type_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use netcdf_io_main
   USE thermodynamics_3D_heat_equation                        , ONLY: solve_3D_heat_equation, create_restart_file_thermo_3D_heat_equation, &

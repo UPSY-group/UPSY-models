@@ -12,7 +12,6 @@ MODULE LMB_main
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
-  USE SMB_model_types                                        , ONLY: type_SMB_model
   USE LMB_model_types                                        , ONLY: type_LMB_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main

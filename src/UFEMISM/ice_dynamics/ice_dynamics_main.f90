@@ -10,7 +10,7 @@ module ice_dynamics_main
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
-  use SMB_model_types, only: type_SMB_model
+  use SMB_main, only: type_SMB_model
   use BMB_model_types, only: type_BMB_model
   use LMB_model_types, only: type_LMB_model
   use AMB_model_types, only: type_AMB_model
@@ -1083,6 +1083,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2,mesh%nz) :: BC_prescr_v_bk
     real(dp), parameter                            :: dt_relax = 2._dp   ! [yr] Time to relax the ice around the calving front
     real(dp)                                       :: t_pseudo
+    real(dp), dimension(mesh_old%vi1:mesh_old%vi2) :: SMB_old
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: SMB_new
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: BMB_new
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: LMB_new
@@ -1242,7 +1243,8 @@ contains
     ! == Remap SMB, BMB, LMB, and AMB to get more stable ice thickness
     ! ================================================================
 
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, SMB%SMB, SMB_new, '2nd_order_conservative')
+    SMB_old( mesh_old%vi1: mesh_old%vi2) = SMB%SMB( mesh_old%vi1: mesh_old%vi2)
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, SMB_old, SMB_new, '2nd_order_conservative')
     call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, BMB%BMB, BMB_new, '2nd_order_conservative')
     call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, LMB%LMB, LMB_new, '2nd_order_conservative')
     call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, AMB%AMB, AMB_new, '2nd_order_conservative')

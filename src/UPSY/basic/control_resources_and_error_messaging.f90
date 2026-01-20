@@ -48,7 +48,7 @@ CONTAINS
     ! Local variables:
     INTEGER :: i
 
-    ALLOCATE( resource_tracker( 100))
+    ALLOCATE( resource_tracker( 7000))
 
     ! Initialise values
     DO i = 1, size( resource_tracker,1)
@@ -254,7 +254,6 @@ CONTAINS
         RETURN
       ELSEIF (resource_tracker( i)%routine_path == 'subroutine_placeholder') THEN
         ! We've checked all listed subroutines and haven't found the current one; add it
-        if (i == n) call extend_resource_tracker
         resource_tracker( i)%routine_path = routine_path
         RETURN
       END IF
@@ -289,33 +288,6 @@ CONTAINS
 #endif
 
   END SUBROUTINE reset_resource_tracker
-
-  subroutine extend_resource_tracker
-    ! Extend the resource tracker to allow more subroutines
-
-#if (DO_RESOURCE_TRACKING)
-
-    ! Local variables:
-    integer :: i,n
-    type( subroutine_resource_tracker), dimension(:), allocatable :: resource_tracker_temp
-
-    n = size( resource_tracker)
-    allocate( resource_tracker_temp( n), source = resource_tracker)
-    deallocate( resource_tracker)
-    allocate( resource_tracker( n*2))
-    resource_tracker( 1:n) = resource_tracker_temp( 1:n)
-    deallocate( resource_tracker_temp)
-
-    ! Initialise new values
-    do i = n+1, 2*n
-      resource_tracker( i)%routine_path = 'subroutine_placeholder'
-      resource_tracker( i)%tstart       = 0._dp
-      resource_tracker( i)%tcomp        = 0._dp
-    end do
-
-#endif
-
-  end subroutine extend_resource_tracker
 
 ! ===== Error messaging =====
 ! ===========================

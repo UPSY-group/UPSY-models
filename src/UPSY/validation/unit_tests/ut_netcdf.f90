@@ -5,6 +5,7 @@ module ut_netcdf
   use control_resources_and_error_messaging, only: init_routine, finalise_routine
   use ut_netcdf_xy_grid, only: unit_tests_netcdf_xy_grid
   use ut_netcdf_mesh, only: unit_tests_netcdf_mesh
+  use ut_netcdf_read_and_remap, only: unit_tests_netcdf_read_and_remap
 
   implicit none
 
@@ -33,6 +34,7 @@ contains
 
     call unit_tests_netcdf_xy_grid( test_name)
     call unit_tests_netcdf_mesh   ( test_name)
+    call unit_tests_netcdf_read_and_remap( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

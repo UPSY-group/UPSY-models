@@ -160,7 +160,8 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'run_mass_cons_test_on_mesh_with_function'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: Hb, Hs, SL
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: SMB, BMB, LMB, AMB
+    real(dp), dimension(mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) :: SMB
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: BMB, LMB, AMB
     real(dp), dimension(mesh%vi1:mesh%vi2) :: fraction_margin
     logical,  dimension(mesh%vi1:mesh%vi2) :: mask_noice
     real(dp)                               :: dt

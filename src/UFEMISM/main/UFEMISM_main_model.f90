@@ -45,11 +45,13 @@ MODULE UFEMISM_main_model
   use grid_output_files, only: create_main_regional_output_file_grid, write_to_main_regional_output_file_grid, &
     create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI
   use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
+  use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
   use apply_maps, only: clear_all_maps_involving_this_mesh
   USE mesh_memory                                            , ONLY: deallocate_mesh
   use ice_mass_and_fluxes, only: calc_ice_mass_and_fluxes
+  use ice_mass_and_fluxes_ROI, only: calc_ice_mass_and_fluxes_ROI
   use tracer_tracking_model_main, only: initialise_tracer_tracking_model, run_tracer_tracking_model, &
     remap_tracer_tracking_model
   use transects_main, only: initialise_transects, write_to_transect_netcdf_output_files
@@ -73,7 +75,7 @@ CONTAINS
 
     ! Local variables:
     CHARACTER(LEN=256)                                                 :: routine_name
-    INTEGER                                                            :: ndt_av
+    INTEGER                                                            :: ndt_av, i
     REAL(dp)                                                           :: dt_av
     REAL(dp)                                                           :: mesh_fitness_coefficient
     TYPE(type_global_forcing)                                          :: regional_forcing
@@ -162,6 +164,9 @@ CONTAINS
 
       ! Calculate ice-sheet integrated values (total volume, area, etc.)
       CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
+      do i=1, region%nROI
+        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i), i)
+      end do
 
       ! Write to the main regional output NetCDF file
       CALL write_to_regional_output_files( region)
@@ -218,6 +223,9 @@ CONTAINS
 
     ! Buffer scalar output data
     call buffer_scalar_output( region)
+    if (region%nROI > 0) then
+      call buffer_scalar_output_ROI( region)
+    end if
 
     ! Determine time of next output event
     t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next)
@@ -294,6 +302,10 @@ CONTAINS
 
       ! Write to the regional scalar output file
       call write_to_scalar_regional_output_file( region)
+
+      if (region%nROI > 0) then
+        call write_to_scalar_regional_output_file_ROI( region)
+      end if
 
     END IF
 
@@ -422,6 +434,7 @@ CONTAINS
     CHARACTER(LEN=256)                                                 :: grid_name
     REAL(dp)                                                           :: dx_grid_smooth, dx_grid_output
     TYPE(type_global_forcing)                                          :: regional_forcing
+    INTEGER                                                            :: i
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -511,7 +524,7 @@ CONTAINS
     ! ===== Surface mass balance =====
     ! ================================
 
-    CALL initialise_SMB_model( region%mesh, region%ice, region%climate, region%SMB, region%name)
+    CALL initialise_SMB_model( region%mesh, region%ice, region%SMB, region%name)
 
     ! ===== Basal mass balance =====
     ! ==============================
@@ -582,6 +595,9 @@ CONTAINS
 
     ! Calculate ice-sheet integrated values (total volume, area, etc.)
     CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
+    do i=1, region%nROI
+        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i),i)
+    end do
 
     ! ===== Regional output =====
     ! ===========================
@@ -626,6 +642,9 @@ CONTAINS
 
     ! Create the scalar regional output file
     CALL create_scalar_regional_output_file( region)
+    if (region%nROI > 0) then
+      CALL create_scalar_regional_output_file_ROI( region)
+    end if
 
     ! Set output writing time to start of run, so the initial state will be written to output
     IF (C%do_create_netcdf_output) THEN
@@ -931,6 +950,7 @@ CONTAINS
     REAL(dp), DIMENSION(:,:  ), ALLOCATABLE       :: poly_ROI
     REAL(dp)                                      :: xmin, xmax, ymin, ymax, xmid, ymid, dx, dy
     CHARACTER(LEN=256)                            :: grid_name
+    character(len=1024)                           :: filename_base, filename
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -1108,6 +1128,12 @@ CONTAINS
       ! Create an output file for this region of interest
       region%output_filenames_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'main_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
       CALL create_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_grid_ROI( region%nROI))
+
+      ! Generate file names for all scalar files
+      filename_base = TRIM( C%output_dir) // 'scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
+      call generate_filename_XXXXXdotnc(filename_base, filename)
+      region%output_filenames_scalar_ROI(region%nROI) = filename
+
 
       ! Clean up after yourself
       DEALLOCATE( poly_ROI)

@@ -8,7 +8,7 @@ module tracer_tracking_model_main
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use SMB_model_types, only: type_SMB_model
+  use SMB_main, only: type_SMB_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model
   use tracer_tracking_model_particles_main, only: initialise_tracer_tracking_model_particles, &
     run_tracer_tracking_model_particles, remap_tracer_tracking_model_particles

@@ -1,4 +1,4 @@
-module ice_mass_and_fluxes
+module ice_mass_and_fluxes_ROI
   !< Integrate ice volume/mass and ice mass fluxes
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_SUM
@@ -20,11 +20,11 @@ module ice_mass_and_fluxes
 
   private
 
-  public :: calc_ice_mass_and_fluxes
+  public :: calc_ice_mass_and_fluxes_ROI
 
 contains
 
-  subroutine calc_ice_mass_and_fluxes( mesh, ice, SMB, BMB, LMB, refgeo_PD, scalars)
+  subroutine calc_ice_mass_and_fluxes_ROI( mesh, ice, SMB, BMB, LMB, refgeo_PD, scalars, i_ROI)
     !< Determine regional ice-sheet-wide scalar quantities
 
     ! In/output variables:
@@ -35,9 +35,10 @@ contains
     type(type_LMB_model),          intent(in   ) :: LMB
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_regional_scalars),   intent(inout) :: scalars
+    integer,                       intent(in)    :: i_ROI
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_ice_model_scalars'
+    character(len=1024), parameter :: routine_name = 'calc_ice_mass_and_fluxes_ROI'
 
     ! === Initialisation ===
     ! ======================
@@ -49,10 +50,10 @@ contains
     ! =================
 
     ! Observed present-day ice sheet area and volume
-    call calc_icesheet_volume_and_area_PD( mesh, refgeo_PD, scalars)
+    call calc_icesheet_volume_and_area_PD_ROI( mesh, ice, refgeo_PD, scalars, i_ROI)
 
     ! Modelled ice sheet area and volume at current time step
-    call calc_icesheet_volume_and_area( mesh, ice, scalars)
+    call calc_icesheet_volume_and_area_ROI( mesh, ice, scalars, i_ROI)
 
     ! === Global mean sea level contribution ===
     ! ==========================================
@@ -64,26 +65,28 @@ contains
     ! =========================
 
     ! Compute area- and transitional-lines-integrated fluxes
-    call calc_icesheet_integrated_fluxes( mesh, ice, SMB, BMB, LMB, scalars)
+    call calc_icesheet_integrated_fluxes_ROI( mesh, ice, SMB, BMB, LMB, scalars, i_ROI)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_ice_mass_and_fluxes
+  end subroutine calc_ice_mass_and_fluxes_ROI
 
 ! ===== Geometry =====
 ! ====================
 
-  subroutine calc_icesheet_volume_and_area_PD( mesh, refgeo_PD, scalars)
+  subroutine calc_icesheet_volume_and_area_PD_ROI( mesh, ice, refgeo_PD, scalars, i_ROI)
     !< Calculate total present-day regional ice volume and area
 
     ! In/output variables:
     type(type_mesh),               intent(in   ) :: mesh
+    type(type_ice_model),          intent(in   ) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_regional_scalars),   intent(inout) :: scalars
+    integer,                       intent(in)    :: i_ROI
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_icesheet_volume_and_area_PD'
+    character(len=1024), parameter :: routine_name = 'calc_icesheet_volume_and_area_PD_ROI'
     integer                        :: vi, ierr
     real(dp)                       :: sea_level_PD, thickness_af_PD
 
@@ -100,23 +103,24 @@ contains
 
     ! Calculate ice area and volume for each process
     do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_ROI( vi) == i_ROI) then
 
-      ! Re-initialise
-      thickness_af_PD = 0._dp
+        ! Re-initialise
+        thickness_af_PD = 0._dp
 
-      if (refgeo_PD%Hi( vi) > 0._dp) then
-        ! Thickness above flotation
-        thickness_af_PD = refgeo_PD%Hi( vi) - max(0._dp, (sea_level_PD - refgeo_PD%Hb( vi)) * (seawater_density / ice_density))
-        ! Safety
-        thickness_af_PD = max(0._dp, thickness_af_PD)
+        if (refgeo_PD%Hi( vi) > 0._dp) then
+          ! Thickness above flotation
+          thickness_af_PD = refgeo_PD%Hi( vi) - max(0._dp, (sea_level_PD - refgeo_PD%Hb( vi)) * (seawater_density / ice_density))
+          ! Safety
+          thickness_af_PD = max(0._dp, thickness_af_PD)
+        end if
+
+        if (refgeo_PD%Hi( vi) > 0._dp) then
+          scalars%ice_volume_PD    = scalars%ice_volume_PD    + max( 0._dp, (refgeo_PD%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
+          scalars%ice_area_PD      = scalars%ice_area_PD      + mesh%A( vi)! * 1.0E-06_dp ! [km^2]; uncomment multiplier to revert to m^2
+          scalars%ice_volume_af_PD = scalars%ice_volume_af_PD + max( 0._dp, thickness_af_PD * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
+        end if
       end if
-
-      if (refgeo_PD%Hi( vi) > 0._dp) then
-        scalars%ice_volume_PD    = scalars%ice_volume_PD    + max( 0._dp, (refgeo_PD%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
-        scalars%ice_area_PD      = scalars%ice_area_PD      + mesh%A( vi)
-        scalars%ice_volume_af_PD = scalars%ice_volume_af_PD + max( 0._dp, thickness_af_PD * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
-      end if
-
     end do
 
     ! Add together values from each process
@@ -127,18 +131,19 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_icesheet_volume_and_area_PD
+  end subroutine calc_icesheet_volume_and_area_PD_ROI
 
-  subroutine calc_icesheet_volume_and_area( mesh, ice, scalars)
+  subroutine calc_icesheet_volume_and_area_ROI( mesh, ice, scalars, i_ROI)
     ! Calculate total regional ice volume and area
 
     ! In/output variables:
     type(type_mesh),             intent(in   ) :: mesh
     type(type_ice_model),        intent(in   ) :: ice
     type(type_regional_scalars), intent(inout) :: scalars
+    integer,                     intent(in)    :: i_ROI
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_icesheet_volume_and_area'
+    character(len=1024), parameter :: routine_name = 'calc_icesheet_volume_and_area_ROI'
     integer                        :: vi, ierr
 
     ! Add routine to path
@@ -153,15 +158,16 @@ contains
 
     ! Calculate ice area and volume for each process
     do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_ROI( vi) == i_ROI) then
 
-      if (ice%mask_grounded_ice( vi) .or. ice%mask_floating_ice( vi)) then
-        scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
-        scalars%ice_area         = scalars%ice_area         + mesh%A( vi)
-        scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
-        scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi))
-        scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))
+        if (ice%mask_grounded_ice( vi) .or. ice%mask_floating_ice( vi)) then
+          scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
+          scalars%ice_area         = scalars%ice_area         + mesh%A( vi)! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
+          scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
+          scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi))! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
+          scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))! * 1.0E-09_dp ! [m^3]; uncomment multiplier to revert to km^3
+        end if
       end if
-
     end do
 
     ! Add together values from each process
@@ -174,12 +180,12 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_icesheet_volume_and_area
+  end subroutine calc_icesheet_volume_and_area_ROI
 
 ! ===== Mass fluxes =====
 ! =======================
 
-  subroutine calc_icesheet_integrated_fluxes( mesh, ice, SMB, BMB, LMB, scalars)
+  subroutine calc_icesheet_integrated_fluxes_ROI( mesh, ice, SMB, BMB, LMB, scalars, i_ROI)
     !< Calculate total regional SMB, BMB, LMB, etc.
 
     ! In/output variables:
@@ -189,9 +195,10 @@ contains
     type(type_BMB_model),        intent(in   ) :: BMB
     type(type_LMB_model),        intent(in   ) :: LMB
     type(type_regional_scalars), intent(inout) :: scalars
+    integer,                     intent(in)    :: i_ROI
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_icesheet_integrated_fluxes'
+    character(len=1024), parameter :: routine_name = 'calc_icesheet_integrated_fluxes_ROI'
     integer                        :: vi, ierr
     real(dp)                       :: total_amb
 
@@ -215,38 +222,39 @@ contains
 
     ! Calculate SMB and BMB for each process
     do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_ROI( vi) == i_ROI) then
 
-      ! Over whole domain
-      scalars%SMB_total = scalars%SMB_total + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        ! Over whole domain
+        scalars%SMB_total = scalars%SMB_total + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
 
-      ! Over grounded ice
-      if (ice%mask_grounded_ice( vi)) then
-        scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        ! Over grounded ice
+        if (ice%mask_grounded_ice( vi)) then
+          scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+          scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+          scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
+
+        ! Over floating ice
+        if (ice%mask_floating_ice( vi)) then
+          scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+          scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+          scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
+
+        ! Over ice-free land
+        if (ice%mask_icefree_land( vi)) then
+          scalars%SMB_land = scalars%SMB_land + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+          scalars%BMB_land = scalars%BMB_land + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
+
+        ! Over ice-free ocean
+        if (ice%mask_icefree_ocean( vi)) then
+          scalars%SMB_ocean = scalars%SMB_ocean + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+          scalars%BMB_ocean = scalars%BMB_ocean + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
       end if
-
-      ! Over floating ice
-      if (ice%mask_floating_ice( vi)) then
-        scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      end if
-
-      ! Over ice-free land
-      if (ice%mask_icefree_land( vi)) then
-        scalars%SMB_land = scalars%SMB_land + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_land = scalars%BMB_land + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      end if
-
-      ! Over ice-free ocean
-      if (ice%mask_icefree_ocean( vi)) then
-        scalars%SMB_ocean = scalars%SMB_ocean + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_ocean = scalars%BMB_ocean + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      end if
-
     end do
 
     ! Add together values from each process
@@ -270,7 +278,7 @@ contains
     ! ===========================
 
     ! Compute lateral fluxes for transition zones: grounding line, calving fronts, margins
-    call calc_ice_transitional_fluxes( mesh, ice, scalars)
+    call calc_ice_transitional_fluxes_ROI( mesh, ice, scalars, i_ROI)
 
     ! === Additional mass input/output ===
     ! ====================================
@@ -284,32 +292,33 @@ contains
 
     ! Calculate ice area and volume for each process
     do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_ROI( vi) == i_ROI) then
 
-      ! DENK DROM : Add here other sources if implemented in the future
-      total_amb = - ice%dHi_dt_target( vi) - ice%dHi_dt_residual( vi)
+        ! DENK DROM : Add here other sources if implemented in the future
+        total_amb = - ice%dHi_dt_target( vi) - ice%dHi_dt_residual( vi)
 
-      scalars%AMB_total = scalars%AMB_total + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_total = scalars%AMB_total + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
 
-      ! Over grounded ice
-      if (ice%mask_grounded_ice( vi)) then
-        scalars%AMB_gr = scalars%AMB_gr + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        ! Over grounded ice
+        if (ice%mask_grounded_ice( vi)) then
+          scalars%AMB_gr = scalars%AMB_gr + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
+
+        ! Over floating ice
+        if (ice%mask_floating_ice( vi)) then
+          scalars%AMB_fl = scalars%AMB_fl + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
+
+        ! Over ice-free land
+        if (ice%mask_icefree_land( vi)) then
+          scalars%AMB_land = scalars%AMB_land + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
+
+        ! Over ice-free ocean
+        if (ice%mask_icefree_ocean( vi)) then
+          scalars%AMB_ocean = scalars%AMB_ocean + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        end if
       end if
-
-      ! Over floating ice
-      if (ice%mask_floating_ice( vi)) then
-        scalars%AMB_fl = scalars%AMB_fl + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      end if
-
-      ! Over ice-free land
-      if (ice%mask_icefree_land( vi)) then
-        scalars%AMB_land = scalars%AMB_land + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      end if
-
-      ! Over ice-free ocean
-      if (ice%mask_icefree_ocean( vi)) then
-        scalars%AMB_ocean = scalars%AMB_ocean + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      end if
-
     end do
 
     ! Add together values from each process
@@ -322,9 +331,9 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_icesheet_integrated_fluxes
+  end subroutine calc_icesheet_integrated_fluxes_ROI
 
-  subroutine calc_ice_transitional_fluxes( mesh, ice, scalars)
+  subroutine calc_ice_transitional_fluxes_ROI( mesh, ice, scalars, i_ROI)
     !< Calculate the ice flux through transition zones using an upwind scheme
 
     ! The vertically averaged ice flux divergence represents the net ice volume (which,
@@ -340,9 +349,10 @@ contains
     type(type_mesh),             intent(in   ) :: mesh
     type(type_ice_model),        intent(in   ) :: ice
     type(type_regional_scalars), intent(inout) :: scalars
+    integer,                     intent(in)    :: i_ROI
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_ice_transitional_fluxes'
+    character(len=1024), parameter         :: routine_name = 'calc_ice_transitional_fluxes_ROI'
     real(dp), dimension(mesh%ei1:mesh%ei2) :: u_vav_c, v_vav_c
     real(dp), dimension(mesh%nE)           :: u_vav_c_tot, v_vav_c_tot
     real(dp), dimension(mesh%nV)           :: Hi_tot
@@ -379,64 +389,65 @@ contains
     scalars%margin_ocean_flux = 0._dp
 
     do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_ROI( vi) == i_ROI) then
 
-      ! Loop over all connections of vertex vi
-      do ci = 1, mesh%nC( vi)
+        ! Loop over all connections of vertex vi
+        do ci = 1, mesh%nC( vi)
 
-        ! Connection ci from vertex vi leads through edge ei to vertex vj
-        ei = mesh%VE( vi,ci)
-        vj = mesh%C(  vi,ci)
+          ! Connection ci from vertex vi leads through edge ei to vertex vj
+          ei = mesh%VE( vi,ci)
+          vj = mesh%C(  vi,ci)
 
-        ! The Voronoi cell of vertex vi has area A_i
-        A_i = mesh%A( vi)
+          ! The Voronoi cell of vertex vi has area A_i
+          A_i = mesh%A( vi)
 
-        ! The shared Voronoi cell boundary section between the
-        ! Voronoi cells of vertices vi and vj has length L_c
-        L_c = mesh%Cw( vi,ci)
+          ! The shared Voronoi cell boundary section between the
+          ! Voronoi cells of vertices vi and vj has length L_c
+          L_c = mesh%Cw( vi,ci)
 
-        ! Calculate vertically averaged ice velocity component perpendicular
-        ! to this shared Voronoi cell boundary section
-        u_perp = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
+          ! Calculate vertically averaged ice velocity component perpendicular
+          ! to this shared Voronoi cell boundary section
+          u_perp = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
-        ! Calculate the flux: if u_perp > 0, that means that this mass is
-        ! flowing out from our transitional vertex. If so, add it its (negative) total.
-        ! A negative velocity u_perp < 0 means that the ice is flowing _into_ this
-        ! transitional zone. That might happen if there is an ice shelf flowing into
-        ! grounded ice. Account for that as well to get a perfect mass tracking.
-        ! For the other zones, u_perp < 0 would come from an area with no ice, so
-        ! that case adds 0 anyway. Thus, only consider positive velocities.
+          ! Calculate the flux: if u_perp > 0, that means that this mass is
+          ! flowing out from our transitional vertex. If so, add it its (negative) total.
+          ! A negative velocity u_perp < 0 means that the ice is flowing _into_ this
+          ! transitional zone. That might happen if there is an ice shelf flowing into
+          ! grounded ice. Account for that as well to get a perfect mass tracking.
+          ! For the other zones, u_perp < 0 would come from an area with no ice, so
+          ! that case adds 0 anyway. Thus, only consider positive velocities.
 
-        ! Grounding line (grounded side)
-        if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
-          if (fraction_margin_tot( vi) >= 1._dp .and. u_perp > 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * u_perp * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-          elseif (fraction_margin_tot( vj) >= 1._dp .and. u_perp < 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * u_perp * Hi_tot( vj) * 1.0E-09_dp ! [Gt/yr]
+          ! Grounding line (grounded side)
+          if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
+            if (fraction_margin_tot( vi) >= 1._dp .and. u_perp > 0._dp) then
+              scalars%gl_flux = scalars%gl_flux - L_c * u_perp * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            elseif (fraction_margin_tot( vj) >= 1._dp .and. u_perp < 0._dp) then
+              scalars%gl_flux = scalars%gl_flux - L_c * u_perp * Hi_tot( vj) * 1.0E-09_dp ! [Gt/yr]
+            end if
           end if
-        end if
 
-        ! Grounded marine front
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        end if
+          ! Grounded marine front
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
+            scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+          end if
 
-        ! Floating calving front
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        end if
+          ! Floating calving front
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
+            scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+          end if
 
-        ! Land-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        end if
+          ! Land-terminating ice (grounded or floating)
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
+            scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+          end if
 
-        ! Marine-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        end if
+          ! Marine-terminating ice (grounded or floating)
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+            scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+          end if
 
-      end do ! do ci = 1, mesh%nC( vi)
-
+        end do ! do ci = 1, mesh%nC( vi)
+      end if
     end do ! do vi = mesh%vi1, mesh%vi2
 
     ! Add together values from each process
@@ -449,6 +460,6 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_ice_transitional_fluxes
+  end subroutine calc_ice_transitional_fluxes_ROI
 
-end module ice_mass_and_fluxes
+end module ice_mass_and_fluxes_ROI

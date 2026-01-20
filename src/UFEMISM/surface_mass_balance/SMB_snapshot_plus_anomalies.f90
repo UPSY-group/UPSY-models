@@ -5,30 +5,182 @@ module SMB_snapshot_plus_anomalies
   use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use climate_model_types, only: type_climate_model
-  use SMB_model_types, only: type_SMB_model, type_SMB_model_snapshot_plus_anomalies
   use parameters, only: NaN
   use model_configuration, only: C
   use netcdf_io_main
-  use mpi_f08, only: MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
+  use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
+  use allocate_dist_shared_mod, only: allocate_dist_shared
+  use SMB_basic, only: atype_SMB_model
 
   implicit none
 
   private
 
-  public :: &
-    run_climate_model_SMB_snapshot_plus_anomalies, &
-    initialise_SMB_model_snapshot_plus_anomalies, &
-    run_SMB_model_snapshot_plus_anomalies
+  public :: type_SMB_model_snapshot_plus_anomalies
+
+  type, extends(atype_SMB_model) :: type_SMB_model_snapshot_plus_anomalies
+    !< The snapshot+anomalies SMB model (monthly T2m, annual SMB)
+
+      ! Baseline climate
+      real(dp), dimension(:,:), contiguous, pointer :: T2m_baseline
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_baseline
+      type(MPI_WIN) :: wT2m_baseline, wSMB_baseline
+
+      ! Two anomaly timeframes enveloping the current model time
+      real(dp)                              :: anomaly_t0
+      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_0
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_0
+      type(MPI_WIN) :: wT2m_anomaly_0, wSMB_anomaly_0
+
+      real(dp)                              :: anomaly_t1
+      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_1
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_1
+      type(MPI_WIN) :: wT2m_anomaly_1, wSMB_anomaly_1
+
+      ! Time-weighted anomaly
+      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly
+      type(MPI_WIN) :: wT2m_anomaly, wSMB_anomaly
+
+      ! Applied climate
+      real(dp), dimension(:,:), contiguous, pointer :: T2m    ! = baseline + anomaly
+      ! real(dp), dimension(:  ), contiguous, pointer :: SMB
+      type(MPI_WIN) :: wT2m!, wSMB
+
+    contains
+
+      procedure, public  :: init, run, remap
+      procedure, public  :: run_climate
+      procedure, private :: update_timeframes
+
+  end type type_SMB_model_snapshot_plus_anomalies
 
 contains
 
-  subroutine run_climate_model_SMB_snapshot_plus_anomalies( mesh, climate, SMB, time)
+  subroutine run( self, mesh, time)
 
     ! In/output variables:
-    type(type_mesh),          intent(in   ) :: mesh
-    type(type_climate_model), intent(inout) :: climate
-    type(type_SMB_model),     intent(inout) :: SMB
-    real(dp),                 intent(in   ) :: time
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_mesh),                               intent(in   ) :: mesh
+    real(dp),                                      intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_snapshot_plus_anomalies'
+    real(dp)                       :: w0, w1
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! If the current model time falls outside the enveloping window
+    ! of the two timeframes that have been read, update them
+    if (time < self%anomaly_t0 .or. &
+        time > self%anomaly_t1) then
+      call self%update_timeframes( mesh, time)
+    end if
+
+    ! Interpolate between the two timeframes to find the applied anomaly
+    w0 = (self%anomaly_t1 - time) / &
+         (self%anomaly_t1 - self%anomaly_t0)
+    w1 = 1._dp - w0
+
+    self%SMB_anomaly( mesh%vi1: mesh%vi2) = &
+      w0 * self%SMB_anomaly_0( mesh%vi1: mesh%vi2) + &
+      w1 * self%SMB_anomaly_1( mesh%vi1: mesh%vi2)
+
+    ! Add anomaly to snapshot to find the applied SMB
+    self%SMB( mesh%vi1: mesh%vi2) = &
+      self%SMB_baseline( mesh%vi1: mesh%vi2) + &
+      self%SMB_anomaly( mesh%vi1: mesh%vi2)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine run
+
+  subroutine init( self, mesh)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_mesh),                               intent(in   ) :: mesh
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_snapshot_plus_anomalies'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Allocate memory
+
+    call allocate_dist_shared( self%SMB, self%wSMB, mesh%pai_V%n_nih)
+    self%SMB( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB
+
+    ! Baseline climate
+    call allocate_dist_shared( self%T2m_baseline, self%wT2m_baseline, mesh%pai_V%n_nih, 12)
+    call allocate_dist_shared( self%SMB_baseline, self%wSMB_baseline, mesh%pai_V%n_nih    )
+    self%T2m_baseline( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:12) => self%T2m_baseline
+    self%SMB_baseline( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih      ) => self%SMB_baseline
+
+    ! Two anomaly snapshots enveloping the current model time
+    call allocate_dist_shared( self%T2m_anomaly_0, self%wT2m_anomaly_0, mesh%pai_V%n_nih)
+    call allocate_dist_shared( self%SMB_anomaly_0, self%wSMB_anomaly_0, mesh%pai_V%n_nih)
+    call allocate_dist_shared( self%T2m_anomaly_1, self%wT2m_anomaly_1, mesh%pai_V%n_nih)
+    call allocate_dist_shared( self%SMB_anomaly_1, self%wSMB_anomaly_1, mesh%pai_V%n_nih)
+    self%T2m_anomaly_0( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%T2m_anomaly_0
+    self%SMB_anomaly_0( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB_anomaly_0
+    self%T2m_anomaly_1( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%T2m_anomaly_1
+    self%SMB_anomaly_1( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB_anomaly_1
+
+    ! Time-weighted anomaly
+    call allocate_dist_shared( self%T2m_anomaly, self%wT2m_anomaly, mesh%pai_V%n_nih)
+    call allocate_dist_shared( self%SMB_anomaly, self%wSMB_anomaly, mesh%pai_V%n_nih)
+    self%T2m_anomaly( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%T2m_anomaly
+    self%SMB_anomaly( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB_anomaly
+
+    ! Applied climate
+    call allocate_dist_shared( self%T2m, self%wT2m, mesh%pai_V%n_nih, 12)
+    self%T2m( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:12) => self%T2m
+
+    ! Read baseline snapshot
+    call read_field_from_file_2D_monthly( C%SMB_snp_p_anml_filename_snapshot_T2m, 'T2m', &
+      mesh, C%output_dir, self%T2m_baseline)
+    call read_field_from_file_2D( C%SMB_snp_p_anml_filename_snapshot_SMB, 'SMB', &
+      mesh, C%output_dir, self%SMB_baseline)
+
+    ! Initialise anomaly timeframes
+    self%anomaly_t0 = C%start_time_of_run - 200._dp
+    self%anomaly_t1 = C%start_time_of_run - 100._dp
+    call self%update_timeframes( mesh, C%start_time_of_run)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine init
+
+  subroutine remap( self)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_snapshot_plus_anomalies'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call crash('remapping not yet implemented for type_SMB_model_snapshot_plus_anomalies')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap
+
+  subroutine run_climate( self, mesh, climate, time)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_mesh),                               intent(in   ) :: mesh
+    type(type_climate_model),                      intent(inout) :: climate
+    real(dp),                                      intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_climate_model_SMB_snapshot_plus_anomalies'
@@ -40,133 +192,41 @@ contains
 
     ! If the current model time falls outside the enveloping window
     ! of the two timeframes that have been read, update them
-    if (time < SMB%snapshot_plus_anomalies%anomaly_t0 .or. &
-        time > SMB%snapshot_plus_anomalies%anomaly_t1) then
-      call update_timeframes( mesh, SMB%snapshot_plus_anomalies, time)
+    if (time < self%anomaly_t0 .or. &
+        time > self%anomaly_t1) then
+      call self%update_timeframes( mesh, time)
     end if
 
     ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (SMB%snapshot_plus_anomalies%anomaly_t1 - time) / &
-         (SMB%snapshot_plus_anomalies%anomaly_t1 - SMB%snapshot_plus_anomalies%anomaly_t0)
+    w0 = (self%anomaly_t1 - time) / &
+         (self%anomaly_t1 - self%anomaly_t0)
     w1 = 1._dp - w0
 
-    SMB%snapshot_plus_anomalies%T2m_anomaly = &
-      w0 * SMB%snapshot_plus_anomalies%T2m_anomaly_0 + &
-      w1 * SMB%snapshot_plus_anomalies%T2m_anomaly_1
+    self%T2m_anomaly = &
+      w0 * self%T2m_anomaly_0 + &
+      w1 * self%T2m_anomaly_1
 
     ! Add anomaly to snapshot to find the applied temperature
     do m = 1, 12
-      SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,m) = &
-        SMB%snapshot_plus_anomalies%T2m_baseline( mesh%vi1:mesh%vi2,m) + &
-        SMB%snapshot_plus_anomalies%T2m_anomaly ( mesh%vi1:mesh%vi2  )
+      self%T2m( mesh%vi1:mesh%vi2,m) = &
+        self%T2m_baseline( mesh%vi1:mesh%vi2,m) + &
+        self%T2m_anomaly ( mesh%vi1:mesh%vi2  )
     end do
 
     ! Copy to climate model
-    climate%T2m( mesh%vi1:mesh%vi2,:) = SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,:)
+    climate%T2m( mesh%vi1:mesh%vi2,:) = self%T2m( mesh%vi1:mesh%vi2,:)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run_climate_model_SMB_snapshot_plus_anomalies
+  end subroutine run_climate
 
-  subroutine run_SMB_model_snapshot_plus_anomalies( mesh, SMB, time)
-
-    ! In/output variables:
-    type(type_mesh),          intent(in   ) :: mesh
-    type(type_SMB_model),     intent(inout) :: SMB
-    real(dp),                 intent(in   ) :: time
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_snapshot_plus_anomalies'
-    real(dp)                       :: w0, w1
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! If the current model time falls outside the enveloping window
-    ! of the two timeframes that have been read, update them
-    if (time < SMB%snapshot_plus_anomalies%anomaly_t0 .or. &
-        time > SMB%snapshot_plus_anomalies%anomaly_t1) then
-      call update_timeframes( mesh, SMB%snapshot_plus_anomalies, time)
-    end if
-
-    ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (SMB%snapshot_plus_anomalies%anomaly_t1 - time) / &
-         (SMB%snapshot_plus_anomalies%anomaly_t1 - SMB%snapshot_plus_anomalies%anomaly_t0)
-    w1 = 1._dp - w0
-
-    SMB%snapshot_plus_anomalies%SMB_anomaly = &
-      w0 * SMB%snapshot_plus_anomalies%SMB_anomaly_0 + &
-      w1 * SMB%snapshot_plus_anomalies%SMB_anomaly_1
-
-    ! Add anomaly to snapshot to find the applied SMB
-    SMB%snapshot_plus_anomalies%SMB = &
-      SMB%snapshot_plus_anomalies%SMB_baseline + &
-      SMB%snapshot_plus_anomalies%SMB_anomaly
-
-    ! Copy to SMB model
-    SMB%SMB = SMB%snapshot_plus_anomalies%SMB
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine run_SMB_model_snapshot_plus_anomalies
-
-  subroutine initialise_SMB_model_snapshot_plus_anomalies( mesh, snapshot_plus_anomalies)
+  subroutine update_timeframes( self, mesh, time)
 
     ! In/output variables:
-    type(type_mesh),                              intent(in   ) :: mesh
-    type(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: snapshot_plus_anomalies
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_snapshot_plus_anomalies'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Allocate memory
-
-    ! Baseline climate
-    allocate( snapshot_plus_anomalies%T2m_baseline( mesh%vi1:mesh%vi2, 12), source = NaN)
-    allocate( snapshot_plus_anomalies%SMB_baseline( mesh%vi1:mesh%vi2    ), source = NaN)
-
-    ! Two anomaly snapshots enveloping the current model time
-    allocate( snapshot_plus_anomalies%T2m_anomaly_0( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( snapshot_plus_anomalies%SMB_anomaly_0( mesh%vi1:mesh%vi2), source = NaN)
-
-    allocate( snapshot_plus_anomalies%T2m_anomaly_1( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( snapshot_plus_anomalies%SMB_anomaly_1( mesh%vi1:mesh%vi2), source = NaN)
-
-    ! Time-weighted anomaly
-    allocate( snapshot_plus_anomalies%T2m_anomaly( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( snapshot_plus_anomalies%SMB_anomaly( mesh%vi1:mesh%vi2), source = NaN)
-
-    ! Applied climate
-    allocate( snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2, 12), source = NaN)
-    allocate( snapshot_plus_anomalies%SMB( mesh%vi1:mesh%vi2    ), source = NaN)
-
-    ! Read baseline snapshot
-    call read_field_from_file_2D_monthly( C%SMB_snp_p_anml_filename_snapshot_T2m, 'T2m', &
-      mesh, C%output_dir, snapshot_plus_anomalies%T2m_baseline)
-    call read_field_from_file_2D( C%SMB_snp_p_anml_filename_snapshot_SMB, 'SMB', &
-      mesh, C%output_dir, snapshot_plus_anomalies%SMB_baseline)
-
-    ! Initialise anomaly timeframes
-    snapshot_plus_anomalies%anomaly_t0 = C%start_time_of_run - 200._dp
-    snapshot_plus_anomalies%anomaly_t1 = C%start_time_of_run - 100._dp
-    call update_timeframes( mesh, snapshot_plus_anomalies, C%start_time_of_run)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_SMB_model_snapshot_plus_anomalies
-
-  subroutine update_timeframes( mesh, snapshot_plus_anomalies, time)
-
-    ! In/output variables:
-    type(type_mesh),                              intent(in   ) :: mesh
-    type(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: snapshot_plus_anomalies
-    real(dp),                                     intent(in   ) :: time
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_mesh),                               intent(in   ) :: mesh
+    real(dp),                                      intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'update_timeframes'
@@ -208,22 +268,22 @@ contains
       end do
     end if
 
-    snapshot_plus_anomalies%anomaly_t0 = time_from_file( ti0)
-    snapshot_plus_anomalies%anomaly_t1 = time_from_file( ti1)
+    self%anomaly_t0 = time_from_file( ti0)
+    self%anomaly_t1 = time_from_file( ti1)
 
     ! Read the two timeframes
     call read_field_from_file_2D( filename, 'T2m_anomaly', &
-      mesh, C%output_dir, snapshot_plus_anomalies%T2m_anomaly_0, &
-      time_to_read = snapshot_plus_anomalies%anomaly_t0)
+      mesh, C%output_dir, self%T2m_anomaly_0, &
+      time_to_read = self%anomaly_t0)
     call read_field_from_file_2D( filename, 'T2m_anomaly', &
-      mesh, C%output_dir, snapshot_plus_anomalies%T2m_anomaly_1, &
-      time_to_read = snapshot_plus_anomalies%anomaly_t1)
+      mesh, C%output_dir, self%T2m_anomaly_1, &
+      time_to_read = self%anomaly_t1)
     call read_field_from_file_2D( filename, 'SMB_anomaly', &
-      mesh, C%output_dir, snapshot_plus_anomalies%SMB_anomaly_0, &
-      time_to_read = snapshot_plus_anomalies%anomaly_t0)
+      mesh, C%output_dir, self%SMB_anomaly_0, &
+      time_to_read = self%anomaly_t0)
     call read_field_from_file_2D( filename, 'SMB_anomaly', &
-      mesh, C%output_dir, snapshot_plus_anomalies%SMB_anomaly_1, &
-      time_to_read = snapshot_plus_anomalies%anomaly_t1)
+      mesh, C%output_dir, self%SMB_anomaly_1, &
+      time_to_read = self%anomaly_t1)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

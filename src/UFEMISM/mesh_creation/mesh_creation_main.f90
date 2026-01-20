@@ -91,7 +91,7 @@ contains
       xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, mesh)
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 12)
 
   end subroutine create_mesh_from_meshed_geometry
 

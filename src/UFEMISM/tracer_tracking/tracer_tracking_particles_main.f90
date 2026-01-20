@@ -8,7 +8,7 @@ module tracer_tracking_model_particles_main
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles
   use model_configuration, only: C
   use tracer_tracking_model_particles_basic, only: update_particle_velocity, create_particle_at_ice_surface
-  use SMB_model_types, only: type_SMB_model
+  use SMB_main, only: type_SMB_model
   use grid_basic, only: setup_square_grid
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D
   use mpi_distributed_memory, only: gather_to_all
@@ -180,7 +180,7 @@ contains
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
       ice%Hi , Hi_grid_vec_partial)
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
-      SMB%SMB, SMB_grid_vec_partial)
+      SMB%SMB, SMB_grid_vec_partial, d_mesh_is_hybrid = .true.)
 
     ! Gather data to all processes, so they can be interpolated to the particle positions
     ! (necessary, as a particle owned by process n will generally not be located in the

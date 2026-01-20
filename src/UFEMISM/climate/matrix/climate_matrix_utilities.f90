@@ -11,7 +11,6 @@ module climate_matrix_utilities
   use grid_types                                             , only: type_grid
   use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
   use global_forcing_types                                   , only: type_global_forcing
-  use SMB_model_types, only: type_SMB_model
   use netcdf_io_main
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
   use erf_mod, only: error_function
@@ -56,7 +55,7 @@ module climate_matrix_utilities
     allocate( snapshot%Wind_LR( mesh%vi1:mesh%vi2, 12))
     allocate( snapshot%Wind_DU( mesh%vi1:mesh%vi2, 12))
     allocate( snapshot%lambda( mesh%vi1:mesh%vi2))
-    
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -84,7 +83,7 @@ module climate_matrix_utilities
     call read_field_from_file_2D_monthly( filename, 'Precip'              , mesh, C%output_dir, snapshot%Precip )
     call read_field_from_file_2D_monthly( filename, 'Wind_WE||uas||'      , mesh, C%output_dir, snapshot%Wind_WE) ! is needed the last ||? I copy it from SMB_realistic
     call read_field_from_file_2D_monthly( filename, 'Wind_SN||vas||'      , mesh, C%output_dir, snapshot%Wind_SN)
-    
+
     call rotate_wind_to_model_mesh( mesh, snapshot%Wind_WE, snapshot%Wind_SN, snapshot%Wind_LR, snapshot%Wind_DU)
 
    ! Check if the snapshot have negative values in the Precip after mapping to mesh
@@ -339,7 +338,7 @@ module climate_matrix_utilities
     ! Local variables:
     character(len=256), parameter                    :: routine_name = 'get_insolation_at_time'
     real(dp)                                         :: time_applied
-    integer                                          :: vi,m 
+    integer                                          :: vi,m
     real(dp)                                         :: wt0, wt1
 
     ! Add routine to path

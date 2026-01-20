@@ -59,7 +59,7 @@ contains
       ocean%snapshot_plus_anomalies%S_baseline + &
       ocean%snapshot_plus_anomalies%S_anomaly
 
-    ! Copy to SMB model
+    ! Copy to main ocean model
     ocean%T = ocean%snapshot_plus_anomalies%T
     ocean%S = ocean%snapshot_plus_anomalies%S
 

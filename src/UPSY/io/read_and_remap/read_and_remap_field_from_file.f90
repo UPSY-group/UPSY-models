@@ -23,6 +23,7 @@ module read_and_remap_field_from_file
   use netcdf_read_field_from_xy_grid_file
   use netcdf_read_field_from_series_file
   use netcdf, only: NF90_MAX_VAR_DIMS
+  use dist_to_hybrid_mod, only: dist_to_hybrid
 
   implicit none
 
@@ -33,8 +34,208 @@ module read_and_remap_field_from_file
 
 contains
 
-  ! Read and map to mesh
+  ! Wrappers to deal with fully-distributed and hybrid distributed/shared memory
+  ! ============================================================================
+
   subroutine read_field_from_file_2D( filename, field_name_options, &
+    mesh, output_dir, d_partial, time_to_read)
+    !< Read a data field from a NetCDF file, and map it to the model mesh.
+
+    ! In/output variables:
+    character(len=*),       intent(in   ) :: filename
+    character(len=*),       intent(in   ) :: field_name_options
+    type(type_mesh),        intent(in   ) :: mesh
+    character(len=*),       intent(in   ) :: output_dir
+    real(dp), dimension(:), intent(  out) :: d_partial
+    real(dp), optional,     intent(in   ) :: time_to_read
+
+    ! Local variables:
+    character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D'
+    real(dp), dimension(:), allocatable :: d_partial_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      ! d_partial is distributed memory
+      call read_field_from_file_2D_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial, time_to_read)
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      ! d_partial is hybrid distributed/shared memory
+      allocate( d_partial_loc( mesh%pai_V%n_loc))
+      call read_field_from_file_2D_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial_loc, time_to_read)
+      call dist_to_hybrid( mesh%pai_V, d_partial_loc, d_partial)
+    else
+      call crash('invalid size for d_partial')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_field_from_file_2D
+
+  subroutine read_field_from_file_2D_b( filename, field_name_options, &
+    mesh, output_dir, d_partial, time_to_read)
+    !< Read a data field from a NetCDF file, and map it to the model mesh triangles.
+
+    ! In/output variables:
+    character(len=*),       intent(in   ) :: filename
+    character(len=*),       intent(in   ) :: field_name_options
+    type(type_mesh),        intent(in   ) :: mesh
+    character(len=*),       intent(in   ) :: output_dir
+    real(dp), dimension(:), intent(  out) :: d_partial
+    real(dp), optional,     intent(in   ) :: time_to_read
+
+    ! Local variables:
+    character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_b'
+    real(dp), dimension(:), allocatable :: d_partial_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
+      ! d_partial is distributed memory
+      call read_field_from_file_2D_b_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial, time_to_read)
+    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
+      ! d_partial is hybrid distributed/shared memory
+      allocate( d_partial_loc( mesh%pai_Tri%n_loc))
+      call read_field_from_file_2D_b_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial_loc, time_to_read)
+      call dist_to_hybrid( mesh%pai_Tri, d_partial_loc, d_partial)
+    else
+      call crash('invalid size for d_partial')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_field_from_file_2D_b
+
+  subroutine read_field_from_file_2D_monthly( filename, field_name_options, &
+    mesh, output_dir, d_partial, time_to_read)
+    !< Read a data field from a NetCDF file, and map it to the model mesh.
+
+    ! In/output variables:
+    character(len=*),         intent(in   ) :: filename
+    character(len=*),         intent(in   ) :: field_name_options
+    type(type_mesh),          intent(in   ) :: mesh
+    character(len=*),         intent(in   ) :: output_dir
+    real(dp), dimension(:,:), intent(  out) :: d_partial
+    real(dp), optional,       intent(in   ) :: time_to_read
+
+    ! Local variables:
+    character(len=1024), parameter        :: routine_name = 'read_field_from_file_2D_monthly'
+    real(dp), dimension(:,:), allocatable :: d_partial_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      ! d_partial is distributed memory
+      call read_field_from_file_2D_monthly_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial, time_to_read)
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      ! d_partial is hybrid distributed/shared memory
+      allocate( d_partial_loc( mesh%pai_V%n_loc, 12))
+      call read_field_from_file_2D_monthly_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial_loc, time_to_read)
+      call dist_to_hybrid( mesh%pai_V, 12, d_partial_loc, d_partial)
+    else
+      call crash('invalid size for d_partial')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_field_from_file_2D_monthly
+
+  subroutine read_field_from_file_3D( filename, field_name_options, &
+    mesh, output_dir, d_partial, time_to_read, nzeta, zeta)
+    !< Read a data field from a NetCDF file, and map it to the model mesh.
+
+    ! In/output variables:
+    character(len=*),                              intent(in   ) :: filename
+    character(len=*),                              intent(in   ) :: field_name_options
+    type(type_mesh),                               intent(in   ) :: mesh
+    character(len=*),                              intent(in   ) :: output_dir
+    real(dp), dimension(:,:),                      intent(  out) :: d_partial
+    real(dp), optional,                            intent(in   ) :: time_to_read
+    integer,                             optional, intent(  out) :: nzeta
+    real(dp), dimension(:), allocatable, optional, intent(  out) :: zeta
+
+    ! Local variables:
+    character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D'
+    real(dp), dimension(:,:), allocatable :: d_partial_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      ! d_partial is distributed memory
+      call read_field_from_file_3D_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial, time_to_read, nzeta, zeta)
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      ! d_partial is hybrid distributed/shared memory
+      allocate( d_partial_loc( mesh%pai_V%n_loc, size( d_partial,2)))
+      call read_field_from_file_3D_dist( filename, field_name_options, &
+        mesh, output_dir, d_partial_loc, time_to_read, nzeta, zeta)
+      call dist_to_hybrid( mesh%pai_V, size( d_partial,2), d_partial_loc, d_partial)
+    else
+      call crash('invalid size for d_partial')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_field_from_file_3D
+
+  subroutine read_field_from_file_3D_ocean( filename, field_name_options, &
+    mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth)
+    !< Read a data field from a NetCDF file, and map it to the model mesh.
+
+    ! In/output variables:
+    character(len=*),                              intent(in   ) :: filename
+    character(len=*),                              intent(in   ) :: field_name_options
+    type(type_mesh),                               intent(in   ) :: mesh
+    character(len=*),                              intent(in   ) :: output_dir
+    real(dp), dimension(:),                        intent(in   ) :: z_ocean
+    real(dp), dimension(:,:),                      intent(  out) :: d_partial
+    real(dp), optional,                            intent(in   ) :: time_to_read
+    integer ,                            optional, intent(  out) :: ndepth
+    real(dp), dimension(:), allocatable, optional, intent(  out) :: depth
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'read_field_from_file_3D_ocean'
+    real(dp), dimension(:,:), allocatable :: d_partial_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      ! d_partial is distributed memory
+      call read_field_from_file_3D_ocean_dist( filename, field_name_options, &
+        mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth)
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      ! d_partial is hybrid distributed/shared memory
+      allocate( d_partial_loc( mesh%pai_V%n_loc, size( d_partial,2)))
+      call read_field_from_file_3D_ocean_dist( filename, field_name_options, &
+        mesh, output_dir, z_ocean, d_partial_loc, time_to_read, ndepth, depth)
+      call dist_to_hybrid( mesh%pai_V, size( d_partial,2), d_partial_loc, d_partial)
+    else
+      call crash('invalid size for d_partial')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_field_from_file_3D_ocean
+
+  ! Actual subroutines only work with fully-distributed memory
+  ! ==========================================================
+
+  subroutine read_field_from_file_2D_dist( filename, field_name_options, &
     mesh, output_dir, d_partial, time_to_read)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
@@ -52,7 +253,7 @@ contains
     real(dp), optional,     intent(in   ) :: time_to_read
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D'
+    character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_dist'
     logical                             :: file_exists
     logical                             :: has_xy_grid, has_lonlat_grid, has_mesh
     integer                             :: ncid
@@ -154,9 +355,9 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine read_field_from_file_2D
+  end subroutine read_field_from_file_2D_dist
 
-  subroutine read_field_from_file_2D_b( filename, field_name_options, &
+  subroutine read_field_from_file_2D_b_dist( filename, field_name_options, &
     mesh, output_dir, d_partial, time_to_read)
     !< Read a data field from a NetCDF file, and map it to the model mesh triangles.
 
@@ -174,7 +375,7 @@ contains
     real(dp), optional,     intent(in   ) :: time_to_read
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_b'
+    character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_b_dist'
     logical                             :: file_exists
     logical                             :: has_xy_grid, has_lonlat_grid, has_mesh
     integer                             :: ncid
@@ -258,9 +459,9 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine read_field_from_file_2D_b
+  end subroutine read_field_from_file_2D_b_dist
 
-  subroutine read_field_from_file_2D_monthly( filename, field_name_options, &
+  subroutine read_field_from_file_2D_monthly_dist( filename, field_name_options, &
     mesh, output_dir, d_partial, time_to_read)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
@@ -278,7 +479,7 @@ contains
     real(dp), optional,       intent(in   ) :: time_to_read
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'read_field_from_file_2D_monthly'
+    character(len=1024), parameter        :: routine_name = 'read_field_from_file_2D_monthly_dist'
     logical                               :: file_exists
     logical                               :: has_xy_grid, has_lonlat_grid, has_mesh, has_lat_grid
     integer                               :: ncid
@@ -404,9 +605,9 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine read_field_from_file_2D_monthly
+  end subroutine read_field_from_file_2D_monthly_dist
 
-  subroutine read_field_from_file_3D( filename, field_name_options, &
+  subroutine read_field_from_file_3D_dist( filename, field_name_options, &
     mesh, output_dir, d_partial, time_to_read, nzeta, zeta)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
@@ -428,7 +629,7 @@ contains
     real(dp), dimension(:), allocatable, optional, intent(  out) :: zeta
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D'
+    character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D_dist'
     logical                               :: file_exists
     logical                               :: has_xy_grid, has_lonlat_grid, has_mesh
     integer                               :: ncid
@@ -545,9 +746,9 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine read_field_from_file_3D
+  end subroutine read_field_from_file_3D_dist
 
-  subroutine read_field_from_file_3D_ocean( filename, field_name_options, &
+  subroutine read_field_from_file_3D_ocean_dist( filename, field_name_options, &
     mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
@@ -568,7 +769,7 @@ contains
     real(dp), dimension(:), allocatable, optional, intent(  out) :: depth
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D_ocean'
+    character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D_ocean_dist'
     logical                               :: file_exists
     logical                               :: has_xy_grid, has_lonlat_grid, has_mesh
     integer                               :: ncid
@@ -706,7 +907,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine read_field_from_file_3D_ocean
+  end subroutine read_field_from_file_3D_ocean_dist
 
   subroutine read_field_from_file_0D( filename, field_name_options, d, time_to_read)
     !< Read a 0-D data field from a NetCDF file

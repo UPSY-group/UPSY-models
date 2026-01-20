@@ -12,7 +12,7 @@ MODULE climate_main
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
-  use SMB_model_types                                        , only: type_SMB_model
+  use SMB_main, only: type_SMB_model
   use grid_types                                             , ONLY: type_grid
   USE climate_model_types                                    , ONLY: type_climate_model
   USE global_forcing_types                                   , ONLY: type_global_forcing
@@ -22,7 +22,7 @@ MODULE climate_main
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
-  use SMB_snapshot_plus_anomalies, only: run_climate_model_SMB_snapshot_plus_anomalies
+  use SMB_snapshot_plus_anomalies, only: type_SMB_model_snapshot_plus_anomalies
 
   IMPLICIT NONE
 
@@ -102,7 +102,7 @@ CONTAINS
     CASE ('matrix')
       call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
     case ('SMB_snapshot_plus_anomalies')
-      call run_climate_model_SMB_snapshot_plus_anomalies( mesh, climate, SMB, time)
+      call SMB%snapshot_plus_anomalies%run_climate( mesh, climate, time)
     CASE DEFAULT
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT

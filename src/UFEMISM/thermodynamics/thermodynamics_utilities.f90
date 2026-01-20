@@ -12,7 +12,7 @@ MODULE thermodynamics_utilities
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
-  USE SMB_model_types                                        , ONLY: type_SMB_model
+  use SMB_main, only: type_SMB_model
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
   use plane_geometry, only: cross2
   use mpi_distributed_memory, only: gather_to_all

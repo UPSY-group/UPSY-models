@@ -2,12 +2,15 @@ module fields_registry
 
   use precisions, only: dp
   use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
-  use fields_basic, only: atype_field
+  use fields_basic, only: atype_field, &
+    type_field_logical_2D, type_field_int_2D, type_field_dp_2D, &
+    type_field_logical_3D, type_field_int_3D, type_field_dp_3D
   use Arakawa_grid_mod, only: type_Arakawa_grid, Arakawa_grid
   use fields_dimensions, only: type_third_dimension
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use allocate_dist_shared_mod, only: allocate_dist_shared
+use deallocate_dist_shared_mod, only: deallocate_dist_shared
   use fields_init_field, only: initialise_field
   use mpi_f08, only: MPI_WIN, MPI_GATHER, MPI_INTEGER, MPI_COMM_WORLD
 
@@ -52,6 +55,8 @@ module fields_registry
     procedure, public  :: find => find_field_by_name
     procedure, public  :: print_info
 
+    procedure, public  :: destroy
+
     procedure, public  :: write_to_netcdf
     procedure, public  :: read_from_netcdf
 
@@ -80,6 +85,10 @@ module fields_registry
     module subroutine print_info( flds_reg)
       class(type_fields_registry), intent(in) :: flds_reg
     end subroutine print_info
+
+    module subroutine destroy( flds_reg)
+      class(type_fields_registry), intent(inout) :: flds_reg
+    end subroutine destroy
 
     module function find_field_by_name( flds_reg, name) result(i)
       class(type_fields_registry), intent(in) :: flds_reg

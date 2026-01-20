@@ -260,8 +260,8 @@ contains
     call add_field_mesh_dp_2D_b_notime( filename, ncid, 'f'   )
 
     ! Write all the variables
-    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f_ex', f_ex_nih, d_is_hybrid = .true.)
-    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f'   , f_nih   , d_is_hybrid = .true.)
+    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f_ex', f_ex_nih)
+    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f'   , f_nih   )
 
     ! Close the file
     call close_netcdf_file( ncid)

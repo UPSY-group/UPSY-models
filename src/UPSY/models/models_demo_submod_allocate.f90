@@ -3,7 +3,7 @@ submodule( models_demo) models_demo_submod_allocate
 contains
 
   function demo_model_context_allocate( self, mesh) result( context)
-    !< Return an instance of the demo model creation context type
+    !< Return an instance of the demo model allocation context type
     class(type_demo_model),  intent(in   ) :: self
     type(type_mesh), target, intent(in   ) :: mesh
     type(type_demo_model_context_allocate)  :: context

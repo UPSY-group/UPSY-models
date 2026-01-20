@@ -14,7 +14,7 @@ module models_basic
 
   private
 
-  public :: atype_model
+  public :: atype_model, atype_model_context
 
   ! Abstract basic model type
   ! =========================
@@ -31,6 +31,12 @@ module models_basic
       type(type_fields_registry), private :: flds_reg
 
     contains
+
+      ! The four basic functions that every model should have
+      procedure(create_ifc), deferred :: create    !< Create an allocated but uninitialised instance of the model
+      procedure(init_ifc),   deferred :: init      !< Initialise the model data
+      procedure(run_ifc),    deferred :: run       !< Run the model
+      procedure(remap_ifc),  deferred :: remap     !< Remap the model
 
       generic,   public  :: create_field => &
         create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
@@ -89,6 +95,47 @@ module models_basic
       procedure, public :: is_grid
 
   end type atype_model
+
+  type, abstract :: atype_model_context
+    !< A container for the input data required by the create/init/run/remap routines
+
+    ! Every concrete model type should have its own concrete model context types,
+    ! which should be instantiated before running the relevant model functions.
+    ! See the 'models_demo' module and corresponding unit tests
+    ! for an example of how to implement this.
+
+  end type atype_model_context
+
+  ! Abstract interfaces for deferred procedures
+  ! ===========================================
+
+  abstract interface
+
+    subroutine create_ifc( self, context)
+      import atype_model, atype_model_context
+      class(atype_model),         intent(inout) :: self
+      class(atype_model_context), intent(in   ) :: context
+    end subroutine create_ifc
+
+    subroutine init_ifc( self, context)
+      import atype_model, atype_model_context
+      class(atype_model),         intent(inout) :: self
+      class(atype_model_context), intent(in   ) :: context
+    end subroutine init_ifc
+
+    subroutine run_ifc( self, context)
+      import atype_model, atype_model_context
+      class(atype_model),         intent(inout) :: self
+      class(atype_model_context), intent(in   ) :: context
+    end subroutine run_ifc
+
+    subroutine remap_ifc( self, context)
+      import atype_model, atype_model_context
+      class(atype_model),         intent(inout) :: self
+      class(atype_model_context), intent(in   ) :: context
+    end subroutine remap_ifc
+
+  end interface
 
   ! Interfaces to type-bound procedures defined in submodules
   ! =========================================================

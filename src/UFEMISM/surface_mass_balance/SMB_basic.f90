@@ -37,10 +37,10 @@ module SMB_basic
       procedure, public :: run        => run_SMB_model_common_abs
       procedure, public :: remap      => remap_SMB_model_common_abs
 
-      procedure, public :: allocate_ct   => SMB_model_context_allocate
-      procedure, public :: initialise_ct => SMB_model_context_initialise
-      procedure, public :: run_ct        => SMB_model_context_run
-      procedure, public :: remap_ct      => SMB_model_context_remap
+      procedure, public :: ct_allocate   => SMB_model_context_allocate
+      procedure, public :: ct_initialise => SMB_model_context_initialise
+      procedure, public :: ct_run        => SMB_model_context_run
+      procedure, public :: ct_remap      => SMB_model_context_remap
 
       ! ! The specific parts of allocate/initialise/run/remap, executed only be each concrete type of SMB_model
       procedure(allocate_SMB_model_ifc),   deferred :: allocate_SMB_model

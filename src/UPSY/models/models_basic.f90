@@ -33,10 +33,10 @@ module models_basic
     contains
 
       ! The four basic functions that every model should have
-      procedure(create_ifc), deferred :: create    !< Create an allocated but uninitialised instance of the model
-      procedure(init_ifc),   deferred :: init      !< Initialise the model data
-      procedure(run_ifc),    deferred :: run       !< Run the model
-      procedure(remap_ifc),  deferred :: remap     !< Remap the model
+      procedure(allocate_ifc),   deferred :: allocate     !< Create an allocated but uninitialised instance of the model
+      procedure(initialise_ifc), deferred :: initialise   !< Initialise the model data
+      procedure(run_ifc),        deferred :: run          !< Run the model
+      procedure(remap_ifc),      deferred :: remap        !< Remap the model
 
       generic,   public  :: create_field => &
         create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
@@ -111,17 +111,17 @@ module models_basic
 
   abstract interface
 
-    subroutine create_ifc( self, context)
+    subroutine allocate_ifc( self, context)
       import atype_model, atype_model_context
       class(atype_model),         intent(inout) :: self
       class(atype_model_context), intent(in   ) :: context
-    end subroutine create_ifc
+    end subroutine allocate_ifc
 
-    subroutine init_ifc( self, context)
+    subroutine initialise_ifc( self, context)
       import atype_model, atype_model_context
       class(atype_model),         intent(inout) :: self
       class(atype_model_context), intent(in   ) :: context
-    end subroutine init_ifc
+    end subroutine initialise_ifc
 
     subroutine run_ifc( self, context)
       import atype_model, atype_model_context

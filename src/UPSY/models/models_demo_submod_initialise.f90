@@ -1,24 +1,24 @@
-submodule( models_demo) models_demo_submod_init
+submodule( models_demo) models_demo_submod_initialise
 
 contains
 
-  function demo_model_context_init( self, a, b) result( context)
+  function demo_model_context_initialise( self, a, b) result( context)
     !< Return an instance of the model initialisation context type
-    class(type_demo_model), intent(in   ) :: self
-    integer,                intent(in   ) :: a, b
-    type(type_demo_model_context_init)    :: context
+    class(type_demo_model),    intent(in   ) :: self
+    integer,                   intent(in   ) :: a, b
+    type(type_demo_model_context_initialise) :: context
     context%a = a
     context%b = b
-  end function demo_model_context_init
+  end function demo_model_context_initialise
 
-  subroutine init_demo_model_abs( self, context)
+  subroutine initialise_demo_model_abs( self, context)
 
     ! In/output variables:
     class(type_demo_model),     intent(inout) :: self
     class(atype_model_context), intent(in   ) :: context
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'init_demo_model_abs'
+    character(len=1024), parameter :: routine_name = 'initialise_demo_model_abs'
     type(type_mesh), pointer       :: mesh
 
     ! Add routine to call stack
@@ -26,14 +26,14 @@ contains
 
     select type (ct => context)
     class default
-      call crash('context should be of type type_demo_model_context_init')
-    class is (type_demo_model_context_init)
+      call crash('context should be of type type_demo_model_context_initialise')
+    class is (type_demo_model_context_initialise)
 
       select type (g => self%grid())
       class default
         call crash('demo model only defined on mesh')
       class is (type_mesh)
-        call init_demo_model( self, g, ct%a, ct%b)
+        call initialise_demo_model( self, g, ct%a, ct%b)
       end select
 
     end select
@@ -41,9 +41,9 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine init_demo_model_abs
+  end subroutine initialise_demo_model_abs
 
-  subroutine init_demo_model( self, mesh, a, b)
+  subroutine initialise_demo_model( self, mesh, a, b)
 
     ! In/output variables:
     class(type_demo_model), intent(inout) :: self
@@ -51,7 +51,7 @@ contains
     integer,                intent(in   ) :: a, b
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'init_demo_model'
+    character(len=1024), parameter :: routine_name = 'initialise_demo_model'
     integer                        :: nz,vi,ti,k,m
     real(dp)                       :: x,y,cx,cy
 
@@ -93,6 +93,6 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine init_demo_model
+  end subroutine initialise_demo_model
 
-end submodule models_demo_submod_init
+end submodule models_demo_submod_initialise

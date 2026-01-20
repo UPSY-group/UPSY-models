@@ -1,16 +1,16 @@
-submodule( models_demo) models_demo_submod_create
+submodule( models_demo) models_demo_submod_allocate
 
 contains
 
-  function demo_model_context_create( self, mesh) result( context)
+  function demo_model_context_allocate( self, mesh) result( context)
     !< Return an instance of the demo model creation context type
     class(type_demo_model),  intent(in   ) :: self
     type(type_mesh), target, intent(in   ) :: mesh
-    type(type_demo_model_context_create)  :: context
+    type(type_demo_model_context_allocate)  :: context
     context%mesh => mesh
-  end function demo_model_context_create
+  end function demo_model_context_allocate
 
-  subroutine create_demo_model_abs( self, context)
+  subroutine allocate_demo_model_abs( self, context)
     !< Create an allocated but uninitialised instance of the demo model
 
     ! In/output variables:
@@ -18,31 +18,31 @@ contains
     class(atype_model_context), intent(in   ) :: context
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_demo_model_abs'
+    character(len=1024), parameter :: routine_name = 'allocate_demo_model_abs'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
     select type (ct => context)
     class default
-      call crash('context should be of type type_demo_model_context_create')
-    class is (type_demo_model_context_create)
-      call create_demo_model( self, ct%mesh)
+      call crash('context should be of type type_demo_model_context_allocate')
+    class is (type_demo_model_context_allocate)
+      call allocate_demo_model( self, ct%mesh)
     end select
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine create_demo_model_abs
+  end subroutine allocate_demo_model_abs
 
-  subroutine create_demo_model( self, mesh)
+  subroutine allocate_demo_model( self, mesh)
 
     ! In/output variables:
     class(type_demo_model), intent(inout) :: self
     type(type_mesh),        intent(in   ) :: mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_demo_model'
+    character(len=1024), parameter :: routine_name = 'allocate_demo_model'
     integer, parameter             :: nz = 10
 
     ! Add routine to call stack
@@ -93,6 +93,6 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine create_demo_model
+  end subroutine allocate_demo_model
 
-end submodule models_demo_submod_create
+end submodule models_demo_submod_allocate

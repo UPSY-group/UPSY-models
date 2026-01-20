@@ -27,37 +27,37 @@ module models_demo
 
   contains
 
-    procedure, public :: create    => create_demo_model_abs
-    procedure, public :: init      => init_demo_model_abs
-    procedure, public :: run       => run_demo_model_abs
-    procedure, public :: remap     => remap_demo_model_abs
+    procedure, public :: allocate   => allocate_demo_model_abs
+    procedure, public :: initialise => initialise_demo_model_abs
+    procedure, public :: run        => run_demo_model_abs
+    procedure, public :: remap      => remap_demo_model_abs
 
-    procedure, public :: create_ct => demo_model_context_create
-    procedure, public :: init_ct   => demo_model_context_init
-    procedure, public :: run_ct    => demo_model_context_run
-    procedure, public :: remap_ct  => demo_model_context_remap
+    procedure, public :: allocate_ct   => demo_model_context_allocate
+    procedure, public :: initialise_ct => demo_model_context_initialise
+    procedure, public :: run_ct        => demo_model_context_run
+    procedure, public :: remap_ct      => demo_model_context_remap
 
   end type type_demo_model
 
-  type, extends( atype_model_context) :: type_demo_model_context_create
-    ! Whatever data your model requires to be created
+  type, extends( atype_model_context) :: type_demo_model_context_allocate
+    ! Whatever variables your model requires to be allocated
     type(type_mesh), pointer, public :: mesh
-  end type type_demo_model_context_create
+  end type type_demo_model_context_allocate
 
-  type, extends( atype_model_context) :: type_demo_model_context_init
-    ! Whatever data your model requires to initialise itself
+  type, extends( atype_model_context) :: type_demo_model_context_initialise
+    ! Whatever variables your model requires to be initialised
     integer, public :: a
     integer, public :: b
-  end type type_demo_model_context_init
+  end type type_demo_model_context_initialise
 
   type, extends( atype_model_context) :: type_demo_model_context_run
-    ! Whatever data your model requires to run
+    ! Whatever variables your model requires to be run
     integer, public :: c
     integer, public :: d
   end type type_demo_model_context_run
 
   type, extends( atype_model_context) :: type_demo_model_context_remap
-    ! Whatever data your model requires to be remapped
+    ! Whatever variables your model requires to be remapped
     type(type_mesh), pointer, public :: mesh_new
   end type type_demo_model_context_remap
 
@@ -66,15 +66,15 @@ module models_demo
 
   interface
 
-    module subroutine create_demo_model_abs( self, context)
+    module subroutine allocate_demo_model_abs( self, context)
       class(type_demo_model),     intent(inout) :: self
       class(atype_model_context), intent(in   ) :: context
-    end subroutine create_demo_model_abs
+    end subroutine allocate_demo_model_abs
 
-    module subroutine init_demo_model_abs( self, context)
+    module subroutine initialise_demo_model_abs( self, context)
       class(type_demo_model),     intent(inout) :: self
       class(atype_model_context), intent(in   ) :: context
-    end subroutine init_demo_model_abs
+    end subroutine initialise_demo_model_abs
 
     module subroutine run_demo_model_abs( self, context)
       class(type_demo_model),     intent(inout) :: self
@@ -87,17 +87,17 @@ module models_demo
     end subroutine remap_demo_model_abs
 
 
-    module function demo_model_context_create( self, mesh) result( context)
+    module function demo_model_context_allocate( self, mesh) result( context)
       class(type_demo_model),  intent(in   ) :: self
       type(type_mesh), target, intent(in   ) :: mesh
-      type(type_demo_model_context_create)  :: context
-    end function demo_model_context_create
+      type(type_demo_model_context_allocate) :: context
+    end function demo_model_context_allocate
 
-    module function demo_model_context_init( self, a, b) result( context)
-      class(type_demo_model),  intent(in   ) :: self
-      integer,                 intent(in   ) :: a, b
-      type(type_demo_model_context_init)     :: context
-    end function demo_model_context_init
+    module function demo_model_context_initialise( self, a, b) result( context)
+      class(type_demo_model),    intent(in   ) :: self
+      integer,                   intent(in   ) :: a, b
+      type(type_demo_model_context_initialise) :: context
+    end function demo_model_context_initialise
 
     module function demo_model_context_run( self, c, d) result( context)
       class(type_demo_model),  intent(in   ) :: self

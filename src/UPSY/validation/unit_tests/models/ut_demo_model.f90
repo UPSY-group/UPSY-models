@@ -35,9 +35,9 @@ contains
     ! Add test name to list
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
-    ! Create and initialise an instance of the demo model
-    call demo_model1%create( demo_model1%create_ct( mesh1))
-    call demo_model1%init  ( demo_model1%init_ct( 1, 2))
+    ! Allocate and initialise an instance of the demo model
+    call demo_model1%allocate  ( demo_model1%allocate_ct( mesh1))
+    call demo_model1%initialise( demo_model1%initialise_ct( 1, 2))
 
     ! Run the demo model
     call demo_model1%run( demo_model1%run_ct( 3, 4))
@@ -46,7 +46,7 @@ contains
     call demo_model1%write_to_restart_file( foldername_unit_tests_output, filename)
 
     ! Create, but do not initialise, a second instance of the demo model
-    call demo_model2%create( demo_model2%create_ct( mesh1))
+    call demo_model2%allocate( demo_model2%allocate_ct( mesh1))
 
     ! Initialise this instance's data from the restart file
     call demo_model2%read_from_restart_file( filename)
@@ -57,11 +57,11 @@ contains
     ! Remap the first instance to another mesh, and re-initialise its data
     ! (so that the test won't fail due to remapping inaccuracies)
     call demo_model1%remap( demo_model1%remap_ct( mesh2))
-    call demo_model1%init ( demo_model1%init_ct( 1, 2))
+    call demo_model1%initialise( demo_model1%initialise_ct( 1, 2))
 
     ! Create and initialise a third instance of the demo model directly on the new mesh
-    call demo_model3%create( demo_model3%create_ct( mesh1))
-    call demo_model3%init  ( demo_model3%init_ct( 1, 2))
+    call demo_model3%allocate  ( demo_model3%allocate_ct( mesh1))
+    call demo_model3%initialise( demo_model3%initialise_ct( 1, 2))
 
     ! Test if the two instances are identical
     call unit_test( demo_model1 == demo_model3, trim( test_name) // '_remap')

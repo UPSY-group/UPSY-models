@@ -2,12 +2,14 @@ submodule( SMB_basic) SMB_basic_submod_remap
 
 contains
 
-  function SMB_model_context_remap( self, mesh_new) result( context)
+  function SMB_model_context_remap( self, mesh_new, region_name) result( context)
     !< Return an instance of the SMB model remapping context type
     class(atype_SMB_model),  intent(in) :: self
     type(type_mesh), target, intent(in) :: mesh_new
+    character(len=3),        intent(in) :: region_name
     type(type_SMB_model_context_remap)  :: context
-    context%mesh_new => mesh_new
+    context%mesh_new    => mesh_new
+    context%region_name =  region_name
   end function SMB_model_context_remap
 
   subroutine remap_SMB_model_common_abs( self, context)

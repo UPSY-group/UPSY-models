@@ -75,6 +75,7 @@ module SMB_basic
   type, extends( atype_model_context) :: type_SMB_model_context_remap
     ! The set of variables required by any SMB model in order to be remapped
     type(type_mesh), pointer, public :: mesh_new
+    character(len=3)                 :: region_name
   end type type_SMB_model_context_remap
 
   ! Abstract interfaces for deferred procedures
@@ -157,9 +158,10 @@ module SMB_basic
       type(type_SMB_model_context_run)             :: context
     end function SMB_model_context_run
 
-    module function SMB_model_context_remap( self, mesh_new) result( context)
+    module function SMB_model_context_remap( self, mesh_new, region_name) result( context)
       class(atype_SMB_model),  intent(in) :: self
       type(type_mesh), target, intent(in) :: mesh_new
+      character(len=3),        intent(in) :: region_name
       type(type_SMB_model_context_remap)  :: context
     end function SMB_model_context_remap
 

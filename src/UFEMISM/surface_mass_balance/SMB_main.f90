@@ -471,7 +471,7 @@ contains
       CASE ('uniform')
         ! No need to do anything
       CASE ('idealised')
-        call SMB%idealised%remap( SMB%idealised%ct_remap( mesh_new))
+        call SMB%idealised%remap( SMB%idealised%ct_remap( mesh_new, region_name))
       ! CASE ('prescribed')
       !   call SMB%prescribed%remap( mesh_new, region_name)
       ! CASE ('reconstructed')

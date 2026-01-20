@@ -32,10 +32,10 @@ module models_demo
     procedure, public :: run        => run_demo_model_abs
     procedure, public :: remap      => remap_demo_model_abs
 
-    procedure, public :: allocate_ct   => demo_model_context_allocate
-    procedure, public :: initialise_ct => demo_model_context_initialise
-    procedure, public :: run_ct        => demo_model_context_run
-    procedure, public :: remap_ct      => demo_model_context_remap
+    procedure, public :: ct_allocate   => demo_model_context_allocate
+    procedure, public :: ct_initialise => demo_model_context_initialise
+    procedure, public :: ct_run        => demo_model_context_run
+    procedure, public :: ct_remap      => demo_model_context_remap
 
   end type type_demo_model
 

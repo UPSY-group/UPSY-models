@@ -97,7 +97,7 @@ module models_basic
   end type atype_model
 
   type, abstract :: atype_model_context
-    !< A container for the input data required by the create/init/run/remap routines
+    !< A container for the input data required by the allocate/initialise/run/remap routines
 
     ! Every concrete model type should have its own concrete model context types,
     ! which should be instantiated before running the relevant model functions.

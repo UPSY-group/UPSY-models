@@ -13,7 +13,7 @@ module SMB_main
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
   use SMB_idealised, only: type_SMB_model_idealised
-  ! use SMB_prescribed, only: type_SMB_model_prescribed
+  use SMB_prescribed, only: type_SMB_model_prescribed
   ! use SMB_reconstructed, only: type_SMB_model_reconstructed
   ! use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
   ! use SMB_snapshot_plus_anomalies, only: type_SMB_model_snapshot_plus_anomalies
@@ -35,7 +35,7 @@ module SMB_main
 
     ! Sub-models
     type(type_SMB_model_idealised)               :: idealised
-    ! type(type_SMB_model_prescribed)              :: prescribed
+    type(type_SMB_model_prescribed)              :: prescribed
     ! type(type_SMB_model_reconstructed)           :: reconstructed
     ! type(type_SMB_model_IMAU_ITM)                :: IMAUITM
     ! type(type_SMB_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
@@ -125,11 +125,12 @@ contains
         SMB%SMB( vi) = SMB%idealised%SMB( vi)
       end do
 
-    ! CASE ('prescribed')
-    !   call SMB%prescribed%run( mesh, region_name, time)
-    !   do vi = mesh%vi1, mesh%vi2
-    !     SMB%SMB( vi) = SMB%prescribed%SMB( vi)
-    !   end do
+    CASE ('prescribed')
+      call SMB%prescribed%run( SMB%prescribed%ct_run( &
+        ice, climate, grid_smooth, time, region_name))
+      do vi = mesh%vi1, mesh%vi2
+        SMB%SMB( vi) = SMB%prescribed%SMB( vi)
+      end do
 
     ! CASE ('reconstructed')
     !   call SMB%reconstructed%run( mesh, grid_smooth, ice, region_name, time)
@@ -204,10 +205,11 @@ contains
     CASE ('uniform')
       SMB%SMB( mesh%vi1: mesh%vi2) = C%uniform_SMB
     CASE ('idealised')
-      call SMB%idealised%allocate( SMB%idealised%ct_allocate( mesh))
+      call SMB%idealised%allocate  ( SMB%idealised%ct_allocate( mesh))
       call SMB%idealised%initialise( SMB%idealised%ct_initialise( region_name))
-    ! CASE ('prescribed')
-    !   call SMB%prescribed%init( mesh, region_name)
+    CASE ('prescribed')
+      call SMB%prescribed%allocate  ( SMB%prescribed%ct_allocate( mesh))
+      call SMB%prescribed%initialise( SMB%prescribed%ct_initialise( region_name))
     ! CASE ('reconstructed')
     !   call SMB%reconstructed%init( mesh)
     ! CASE ('IMAU-ITM')
@@ -472,8 +474,8 @@ contains
         ! No need to do anything
       CASE ('idealised')
         call SMB%idealised%remap( SMB%idealised%ct_remap( mesh_new, region_name))
-      ! CASE ('prescribed')
-      !   call SMB%prescribed%remap( mesh_new, region_name)
+      CASE ('prescribed')
+        call SMB%prescribed%remap( SMB%prescribed%ct_remap( mesh_new, region_name))
       ! CASE ('reconstructed')
       !   call SMB%reconstructed%remap( mesh_new)
       ! CASE ('IMAU-ITM')

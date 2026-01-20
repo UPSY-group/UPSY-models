@@ -10,7 +10,8 @@ module SMB_prescribed
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
   use netcdf_io_main
-  use SMB_basic, only: atype_SMB_model
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, type_SMB_model_context_initialise, &
+    type_SMB_model_context_run, type_SMB_model_context_remap
 
   implicit none
 
@@ -22,7 +23,10 @@ module SMB_prescribed
 
     contains
 
-      procedure, public  :: init, run, remap
+      procedure, public :: allocate_SMB_model   => allocate_SMB_model_prescribed
+      procedure, public :: initialise_SMB_model => initialise_SMB_model_prescribed
+      procedure, public :: run_SMB_model        => run_SMB_model_prescribed
+      procedure, public :: remap_SMB_model      => remap_SMB_model_prescribed
 
       procedure, private :: run_SMB_model_prescribed_notime
       procedure, private :: fill_initialised_fields
@@ -31,13 +35,49 @@ module SMB_prescribed
 
 contains
 
-  subroutine run( self, mesh, region_name, time)
+  subroutine allocate_SMB_model_prescribed( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_prescribed),      intent(inout) :: self
+    type(type_SMB_model_context_allocate), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_prescribed'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%set_name('SMB_model_prescribed')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_SMB_model_prescribed
+
+  subroutine initialise_SMB_model_prescribed( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_prescribed),        intent(inout) :: self
+    type(type_SMB_model_context_initialise), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_prescribed'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%fill_initialised_fields( self%mesh, context%region_name)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_SMB_model_prescribed
+
+  subroutine run_SMB_model_prescribed( self, context)
 
     ! In/output variables:
     class(type_SMB_model_prescribed), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
-    character(len=3),                 intent(in   ) :: region_name
-    real(dp),                         intent(in   ) :: time
+    type(type_SMB_model_context_run), intent(in   ) :: context
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_SMB_model_prescribed'
@@ -47,9 +87,9 @@ contains
     call init_routine( routine_name)
 
     ! Determine the type of prescribed SMB forcing for this region
-    select case (region_name)
+    select case (context%region_name)
     case default
-      call crash('unknown region_name "' // trim( region_name) // '"!')
+      call crash('unknown region_name "' // trim( context%region_name) // '"!')
     case ('NAM')
       choice_SMB_prescribed  = trim( C%choice_SMB_prescribed_NAM)
     case ('EAS')
@@ -66,42 +106,19 @@ contains
       call crash('unknown choice_SMB_prescribed "' // trim( choice_SMB_prescribed) // '"!')
     case ('SMB_no_time')
       ! SMB only, no time
-      call self%run_SMB_model_prescribed_notime( mesh)
+      call self%run_SMB_model_prescribed_notime( self%mesh)
     end select
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run
+  end subroutine run_SMB_model_prescribed
 
-  subroutine init( self, mesh, region_name)
-
-    ! In- and output variables
-    class(type_SMB_model_prescribed), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
-    character(len=3),                 intent(in   ) :: region_name
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_prescribed'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call self%set_name('SMB_prescribed')
-    call self%init_common( mesh)
-    call self%fill_initialised_fields( mesh, region_name)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine init
-
-  subroutine remap( self, mesh_new, region_name)
+  subroutine remap_SMB_model_prescribed( self, context)
 
     ! In/output variables:
-    class(type_SMB_model_prescribed), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh_new
-    character(len=3),                 intent(in   ) :: region_name
+    class(type_SMB_model_prescribed),   intent(inout) :: self
+    type(type_SMB_model_context_remap), intent(in   ) :: context
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'remap_SMB_model_prescribed'
@@ -109,13 +126,12 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call self%remap_field( mesh_new, 'SMB', self%SMB)
-    call self%fill_initialised_fields( mesh_new, region_name)
+    call self%fill_initialised_fields( self%mesh, context%region_name)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap
+  end subroutine remap_SMB_model_prescribed
 
   ! == SMB only, no time
   ! ====================

@@ -8,6 +8,8 @@ module SMB_basic
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
+  use ice_model_types, only: type_ice_model
+  use climate_model_types, only: type_climate_model
 
   implicit none
 
@@ -63,11 +65,11 @@ module SMB_basic
 
   type, extends( atype_model_context) :: type_SMB_model_context_run
     ! The set of variables required by any SMB model in order to be run
-    class(*),        pointer :: ice
-    class(*),        pointer :: climate
-    type(type_grid), pointer :: grid_smooth
-    real(dp)                 :: time
-    character(len=3)         :: region_name
+    type(type_ice_model),     pointer :: ice
+    type(type_climate_model), pointer :: climate
+    type(type_grid),          pointer :: grid_smooth
+    real(dp)                          :: time
+    character(len=3)                  :: region_name
   end type type_SMB_model_context_run
 
   type, extends( atype_model_context) :: type_SMB_model_context_remap
@@ -133,25 +135,32 @@ module SMB_basic
 
 
     module function SMB_model_context_allocate( self, mesh) result( context)
-      class(atype_SMB_model),  intent(in   ) :: self
-      type(type_mesh), target, intent(in   ) :: mesh
-      type(type_SMB_model_context_allocate)  :: context
+      class(atype_SMB_model),  intent(in)   :: self
+      type(type_mesh), target, intent(in)   :: mesh
+      type(type_SMB_model_context_allocate) :: context
     end function SMB_model_context_allocate
 
-    module function SMB_model_context_initialise( self) result( context)
-      class(atype_SMB_model),   intent(in   ) :: self
+    module function SMB_model_context_initialise( self, region_name) result( context)
+      class(atype_SMB_model),      intent(in) :: self
+      character(len=3),            intent(in) :: region_name
       type(type_SMB_model_context_initialise) :: context
     end function SMB_model_context_initialise
 
-    module function SMB_model_context_run( self) result( context)
-      class(atype_SMB_model), intent(in   ) :: self
-      type(type_SMB_model_context_run)      :: context
+    module function SMB_model_context_run( self, &
+      ice, climate, grid_smooth, time, region_name) result( context)
+      class(atype_SMB_model),           intent(in) :: self
+      type(type_ice_model),     target, intent(in) :: ice
+      type(type_climate_model), target, intent(in) :: climate
+      type(type_grid),          target, intent(in) :: grid_smooth
+      real(dp),                         intent(in) :: time
+      character(len=3),                 intent(in) :: region_name
+      type(type_SMB_model_context_run)             :: context
     end function SMB_model_context_run
 
     module function SMB_model_context_remap( self, mesh_new) result( context)
-      class(atype_SMB_model),  intent(in   ) :: self
-      type(type_mesh), target, intent(in   ) :: mesh_new
-      type(type_SMB_model_context_remap)     :: context
+      class(atype_SMB_model),  intent(in) :: self
+      type(type_mesh), target, intent(in) :: mesh_new
+      type(type_SMB_model_context_remap)  :: context
     end function SMB_model_context_remap
 
   end interface

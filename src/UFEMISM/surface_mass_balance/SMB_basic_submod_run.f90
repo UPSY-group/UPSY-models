@@ -2,10 +2,25 @@ submodule( SMB_basic) SMB_basic_submod_run
 
 contains
 
-  function SMB_model_context_run( self) result( context)
+  function SMB_model_context_run( self, &
+    ice, climate, grid_smooth, time, region_name) result( context)
     !< Return an instance of the SMB model run context type
-    class(atype_SMB_model), intent(in) :: self
-    type(type_SMB_model_context_run)   :: context
+
+    ! In/output variables:
+    class(atype_SMB_model),           intent(in) :: self
+    type(type_ice_model),     target, intent(in) :: ice
+    type(type_climate_model), target, intent(in) :: climate
+    type(type_grid),          target, intent(in) :: grid_smooth
+    real(dp),                         intent(in) :: time
+    character(len=3),                 intent(in) :: region_name
+    type(type_SMB_model_context_run)             :: context
+
+    context%ice         => ice
+    context%climate     => climate
+    context%grid_smooth => grid_smooth
+    context%time        =  time
+    context%region_name =  region_name
+
   end function SMB_model_context_run
 
   subroutine run_SMB_model_common_abs( self, context)

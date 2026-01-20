@@ -44,8 +44,8 @@ contains
   subroutine allocate_SMB_model_common( self, mesh)
 
     ! In/output variables:
-    class(atype_SMB_model), intent(inout) :: self
-    type(type_mesh),        intent(in   ) :: mesh
+    class(atype_SMB_model),  intent(inout) :: self
+    type(type_mesh), target, intent(in   ) :: mesh
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_SMB_model_common'
@@ -55,7 +55,7 @@ contains
 
     ! Set model metadata and mesh
     call self%set_name('abstract_SMB_model')
-    call self%set_grid( mesh)
+    self%mesh => mesh
 
     ! Create model fields
     ! ===================

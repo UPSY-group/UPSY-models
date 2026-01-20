@@ -5,6 +5,7 @@ module SMB_basic
   use control_resources_and_error_messaging, only: init_routine, finalise_routine, warning, crash
   use mpi_f08, only: MPI_WIN
   use UPSY_main, only: atype_model, atype_model_context
+  use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
 
@@ -57,10 +58,16 @@ module SMB_basic
 
   type, extends( atype_model_context) :: type_SMB_model_context_initialise
     ! The set of variables required by any SMB model in order to be initialised
+    character(len=3)  :: region_name
   end type type_SMB_model_context_initialise
 
   type, extends( atype_model_context) :: type_SMB_model_context_run
     ! The set of variables required by any SMB model in order to be run
+    class(*),        pointer :: ice
+    class(*),        pointer :: climate
+    type(type_grid), pointer :: grid_smooth
+    real(dp)                 :: time
+    character(len=3)         :: region_name
   end type type_SMB_model_context_run
 
   type, extends( atype_model_context) :: type_SMB_model_context_remap

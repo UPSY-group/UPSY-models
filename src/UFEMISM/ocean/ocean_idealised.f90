@@ -47,6 +47,10 @@ CONTAINS
         ! No need to do anything
       CASE ('TANH')
         ! No need to do anything
+      CASE ('TANH_Franka_Sdens')
+        ! No need to do anything
+      CASE ('TANH_Franka_Stanh')
+        ! No need to do anything
       CASE ('LINEAR')
         ! No need to do anything
       CASE ('LINEAR_THERMOCLINE')
@@ -91,6 +95,10 @@ CONTAINS
         CALL initialise_ocean_model_idealised_LINEAR( mesh, ocean)
       CASE ('LINEAR_THERMOCLINE')
         CALL initialise_ocean_model_idealised_LINEAR_THERMOCLINE( mesh, ocean)
+      CASE ('TANH_Franka_Sdens')
+        CALL initialise_ocean_model_idealised_TANH_Franka_Sdens( mesh, ocean)
+      CASE ('TANH_Franka_Stanh')
+        CALL initialise_ocean_model_idealised_TANH_Franka_Stanh( mesh, ocean)
     END SELECT
 
     ! Finalise routine path
@@ -225,6 +233,116 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE initialise_ocean_model_idealised_LINEAR
+
+
+  ! == LINEAR ==
+  ! ============
+
+  SUBROUTINE initialise_ocean_model_idealised_TANH_Franka_Sdens( mesh, ocean)
+    ! Tangent hyperbolic function representing a two-layer ocean forcing separated by a smooth thermocline
+
+    IMPLICIT NONE
+
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    TYPE(type_ocean_model),               INTENT(INOUT) :: ocean
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                       :: routine_name = 'initialise_ocean_model_idealised_TANH_Franka_Sdens'
+    INTEGER                                             :: vi
+    INTEGER                                             :: k
+    REAL(dp), PARAMETER                                 :: drho0 = 0.01_dp ! [kg m^-5] Density scale factor to set quadratic stratification
+    REAL(dp)                                            :: S0, S1, T0, T1
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Read in surface (0) / deep (1) layer salinity (S) and temperature (T)
+    S0 = C%ocean_lin_therm_surf_salinity
+    S1 = C%ocean_lin_therm_deep_salinity
+    T0 = C%ocean_lin_therm_surf_temperature
+    T1 = C%ocean_lin_therm_deep_temperature
+
+    DO vi = mesh%vi1, mesh%vi2
+
+      DO k = 1, C%nz_ocean
+        ! Get temperature and salinity value
+        ocean%T( vi, k) = T0 + (T1-T0) * (1+tanh((C%z_ocean( k)-C%ocean_tanh_thermocline_depth)/C%ocean_tanh_thermocline_scale_depth))/2
+
+        ! TANH but Still unstable:
+        ocean%S( vi, k) = S0 + (S1-S0) * tanh(C%z_ocean( k)/C%ocean_tanh_thermocline_depth)
+
+        ! Get salinity value at this depth based on quadratic density profile and linear equation of state
+        ! ocean%S( vi, k) = S0 + C%uniform_laddie_eos_linear_alpha * (ocean%T( vi, k)-T0)/C%uniform_laddie_eos_linear_beta &
+        !                 + drho0*C%z_ocean( k)**.5/(C%uniform_laddie_eos_linear_beta * seawater_density)
+      END DO
+    END DO
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE initialise_ocean_model_idealised_TANH_Franka_Sdens
+  
+  SUBROUTINE initialise_ocean_model_idealised_TANH_Franka_Stanh( mesh, ocean)
+    ! Tangent hyperbolic function representing a two-layer ocean forcing separated by a smooth thermocline
+
+    IMPLICIT NONE
+
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    TYPE(type_ocean_model),               INTENT(INOUT) :: ocean
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                       :: routine_name = 'initialise_ocean_model_idealised_TANH_Franka_Stanh'
+    INTEGER                                             :: vi
+    INTEGER                                             :: k
+    REAL(dp), PARAMETER                                 :: drho0 = 0.01_dp ! [kg m^-5] Density scale factor to set quadratic stratification
+    REAL(dp)                                            :: S0, S1, T0, T1, thermocline_top, z_diff, S_replace, w
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Read in surface (0) / deep (1) layer salinity (S) and temperature (T)
+    S0 = C%ocean_lin_therm_surf_salinity
+    S1 = C%ocean_lin_therm_deep_salinity
+    T0 = C%ocean_lin_therm_surf_temperature
+    T1 = C%ocean_lin_therm_deep_temperature
+
+    DO vi = mesh%vi1, mesh%vi2
+
+      DO k = 1, C%nz_ocean
+        ! Get temperature and salinity values via hyperbolic tangent
+        ocean%T( vi, k) = T0 + (T1-T0) * (1+tanh((C%z_ocean( k)-C%ocean_tanh_thermocline_depth)/C%ocean_tanh_thermocline_scale_depth))/2
+        ocean%S( vi, k) = S0 + (S1-S0) * (1+tanh((C%z_ocean( k)-C%ocean_tanh_thermocline_depth)/C%ocean_tanh_thermocline_scale_depth))/2
+
+        ! Replace if Salinity goes under Salinity quadraticL
+        S_replace = S0 + C%uniform_laddie_eos_linear_alpha * (ocean%T( vi, k)-T0)/C%uniform_laddie_eos_linear_beta &
+                        + drho0*C%z_ocean( k)**.5/(C%uniform_laddie_eos_linear_beta * seawater_density)
+        
+        ! IF (S_replace > ocean%S( vi, k)) THEN 
+        !   ocean%S( vi, k) = S_replace
+        !   print*, 'APPLYING S_REPLACE'
+        ! END IF
+
+        ! Smooth weight (0 → keep original, 1 → replace)
+        w = 0.5 * (1 + tanh((S_replace - (ocean%S( vi, k))) / 0.1))
+        ocean%S( vi, k) = (1 - w) * ocean%S( vi, k) + w * S_replace
+
+        ! ! Add background stratification in top layer
+        ! thermocline_top = C%ocean_tanh_thermocline_depth - C%ocean_tanh_thermocline_scale_depth
+    
+        ! IF (C%z_ocean( k) < (thermocline_top+C%ocean_tanh_thermocline_scale_depth/2)) THEN 
+        !     z_diff = (thermocline_top+C%ocean_tanh_thermocline_scale_depth/2) - C%z_ocean( k)
+
+        !     ocean%T( vi, k) = ocean%T( vi, k) - z_diff * 0.01_dp
+        !     ocean%S( vi, k) = ocean%S( vi, k) - z_diff * 0.05_dp
+
+        ! END IF
+
+      END DO
+    END DO
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE initialise_ocean_model_idealised_TANH_Franka_Stanh
 
   ! == LINEAR THERMOCLINE ==
   ! ========================

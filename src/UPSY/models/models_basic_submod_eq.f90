@@ -8,7 +8,7 @@ contains
     class(atype_model), intent(in) :: model1, model2
     logical                        :: res
 
-    res = model1%is_name( model2%name()) .and. model1%is_grid( model2%grid())
+    res = model1%is_name( model2%name()) .and. model1%mesh%name == model2%mesh%name
     if (.not. res) return
     res = res .and. model1%flds_reg == model2%flds_reg
 

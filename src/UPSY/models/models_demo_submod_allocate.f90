@@ -38,8 +38,8 @@ contains
   subroutine allocate_demo_model( self, mesh)
 
     ! In/output variables:
-    class(type_demo_model), intent(inout) :: self
-    type(type_mesh),        intent(in   ) :: mesh
+    class(type_demo_model),  intent(inout) :: self
+    type(type_mesh), target, intent(in   ) :: mesh
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_demo_model'
@@ -50,7 +50,7 @@ contains
 
     ! Set model metadata and mesh
     call self%set_name('demo_model')
-    call self%set_grid( mesh)
+    self%mesh => mesh
 
     ! Create model fields
     ! ===================

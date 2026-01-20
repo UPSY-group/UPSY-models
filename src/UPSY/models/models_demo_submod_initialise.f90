@@ -28,14 +28,7 @@ contains
     class default
       call crash('context should be of type type_demo_model_context_initialise')
     class is (type_demo_model_context_initialise)
-
-      select type (g => self%grid())
-      class default
-        call crash('demo model only defined on mesh')
-      class is (type_mesh)
-        call initialise_demo_model( self, g, ct%a, ct%b)
-      end select
-
+      call initialise_demo_model( self, self%mesh, ct%a, ct%b)
     end select
 
     ! Remove routine from call stack

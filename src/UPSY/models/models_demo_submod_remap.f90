@@ -26,14 +26,7 @@ contains
     class default
       call crash('context should be of type type_demo_model_context_remap')
     class is (type_demo_model_context_remap)
-
-      select type (g => self%grid())
-      class default
-        call crash('demo model only defined on mesh')
-      class is (type_mesh)
-        call remap_demo_model( self, g, ct%mesh_new)
-      end select
-
+      call remap_demo_model( self, self%mesh, ct%mesh_new)
     end select
 
     ! Remove routine from call stack

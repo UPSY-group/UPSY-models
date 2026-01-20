@@ -23,17 +23,7 @@ contains
     if (present( filename)) filename = filename_loc
 
     call create_new_netcdf_file_for_writing( filename_loc, ncid)
-
-    ! Set up grid/mesh
-    select type (grid => self%grid_val)
-    class default
-      call crash('invalid model%grid type - programming error')
-    class is (type_grid)
-      call setup_xy_grid_in_netcdf_file( filename_loc, ncid, grid)
-    class is (type_mesh)
-      call setup_mesh_in_netcdf_file( filename_loc, ncid, grid)
-    end select
-
+    call setup_mesh_in_netcdf_file( filename_loc, ncid, self%mesh)
     call self%flds_reg%write_to_netcdf( filename_loc, ncid)
 
     call close_netcdf_file( ncid)

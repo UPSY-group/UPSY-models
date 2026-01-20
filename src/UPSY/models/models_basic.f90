@@ -25,7 +25,7 @@ module models_basic
       character(len=1024), private :: name_val
 
       ! Grid
-      class(*), pointer, private :: grid_val
+      type(type_mesh), pointer, public :: mesh
 
       ! Fields registry
       type(type_fields_registry), private :: flds_reg
@@ -88,11 +88,6 @@ module models_basic
       procedure, public :: set_name
       procedure, public :: name => get_name
       procedure, public :: is_name
-
-      ! Grid
-      procedure, public :: set_grid
-      procedure, public :: grid => get_grid
-      procedure, public :: is_grid
 
   end type atype_model
 
@@ -363,24 +358,6 @@ module models_basic
       character(len=*),   intent(in) :: name
       logical                        :: res
     end function is_name
-
-    ! Grid
-
-    module subroutine set_grid( self, grid)
-      class(atype_model), intent(inout) :: self
-      class(*), target,   intent(in   ) :: grid
-    end subroutine set_grid
-
-    module function get_grid( self) result( grid)
-      class(atype_model), intent(in) :: self
-      class(*), pointer              :: grid
-    end function get_grid
-
-    module function is_grid( self, grid) result( res)
-      class(atype_model), intent(in) :: self
-      class(*),           intent(in) :: grid
-      logical                        :: res
-    end function is_grid
 
   end interface
 

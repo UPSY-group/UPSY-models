@@ -38,7 +38,7 @@ module SMB_main
     type(type_SMB_model_prescribed)              :: prescribed
     type(type_SMB_model_reconstructed)           :: reconstructed
     type(type_SMB_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
-    type(type_SMB_model_IMAU_ITM)                :: IMAU_ITM
+    type(type_SMB_model_IMAU_ITM)                :: IMAUITM
 
     ! Timestepping
     real(dp)                                     :: t_next
@@ -147,10 +147,10 @@ contains
       end do
 
     CASE ('IMAU-ITM')
-      call SMB%IMAU_ITM%run( SMB%IMAU_ITM%ct_run( &
+      call SMB%IMAUITM%run( SMB%IMAUITM%ct_run( &
         ice, climate, grid_smooth, time, region_name))
       do vi = mesh%vi1, mesh%vi2
-        SMB%SMB( vi) = sum( SMB%IMAU_ITM%SMB_monthly( vi,:))
+        SMB%SMB( vi) = sum( SMB%IMAUITM%SMB_monthly( vi,:))
       end do
 
     END SELECT
@@ -220,8 +220,8 @@ contains
       call SMB%snapshot_plus_anomalies%allocate  ( SMB%snapshot_plus_anomalies%ct_allocate( mesh))
       call SMB%snapshot_plus_anomalies%initialise( SMB%snapshot_plus_anomalies%ct_initialise( ice, region_name))
     CASE ('IMAU-ITM')
-      call SMB%IMAU_ITM%allocate  ( SMB%IMAU_ITM%ct_allocate( mesh))
-      call SMB%IMAU_ITM%initialise( SMB%IMAU_ITM%ct_initialise( ice, region_name))
+      call SMB%IMAUITM%allocate  ( SMB%IMAUITM%ct_allocate( mesh))
+      call SMB%IMAUITM%initialise( SMB%IMAUITM%ct_initialise( ice, region_name))
     CASE DEFAULT
       CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
     END SELECT
@@ -317,9 +317,9 @@ contains
 
     ! ! Write the SMB fields to the file
     ! TODO: do we need to check if IMAU_ITM is being used before writing these files?
-    CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'SMB_monthly', SMB%IMAU_ITM%SMB_monthly)
-    CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'FirnDepth', SMB%IMAU_ITM%FirnDepth)
-    CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'MeltPreviousYear', SMB%IMAU_ITM%MeltPreviousYear)
+    CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'SMB_monthly', SMB%IMAUITM%SMB_monthly)
+    CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'FirnDepth', SMB%IMAUITM%FirnDepth)
+    CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'MeltPreviousYear', SMB%IMAUITM%MeltPreviousYear)
     CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'SMB', SMB%SMB)
 
     ! Close the file
@@ -487,7 +487,7 @@ contains
       CASE ('snapshot_plus_anomalies')
         call SMB%snapshot_plus_anomalies%remap( SMB%snapshot_plus_anomalies%ct_remap( mesh_new, region_name))
       CASE ('IMAU-ITM')
-        call SMB%IMAU_ITM%remap( SMB%IMAU_ITM%ct_remap( mesh_new, region_name))
+        call SMB%IMAUITM%remap( SMB%IMAUITM%ct_remap( mesh_new, region_name))
       CASE DEFAULT
         CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
     END SELECT

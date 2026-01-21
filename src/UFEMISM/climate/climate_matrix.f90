@@ -160,7 +160,7 @@ contains
     do m = 1, 12
       ! Calculate modelled absorbed insolation. Berends et al., 2018 - Eq. 2
       climate%matrix%I_abs( vi) = climate%matrix%I_abs( vi) + &
-                                  climate%Q_TOA( vi,m) * (1._dp - SMB%IMAU_ITM%Albedo( vi, m))
+                                  climate%Q_TOA( vi,m) * (1._dp - SMB%IMAUITM%Albedo( vi, m))
     end do
     end do
     call sync
@@ -815,8 +815,8 @@ contains
     ! SMB
     ! ===
 
-    call SMB_dummy%IMAU_ITM%allocate  ( SMB_dummy%IMAU_ITM%ct_allocate( mesh))
-    call SMB_dummy%IMAU_ITM%initialise( SMB_dummy%IMAU_ITM%ct_initialise( ice, region_name))
+    call SMB_dummy%IMAUITM%allocate  ( SMB_dummy%IMAUITM%ct_allocate( mesh))
+    call SMB_dummy%IMAUITM%initialise( SMB_dummy%IMAUITM%ct_initialise( ice, region_name))
 
     ! Initialisation choice
     if     (region_name == 'NAM') then
@@ -838,7 +838,7 @@ contains
     ! Run the SMB model for 10 years for this particular climate
     ! (experimentally determined to be long enough to converge)
     do i = 1, 10
-      call SMB_dummy%IMAU_ITM%run( SMB_dummy%IMAU_ITM%ct_run( &
+      call SMB_dummy%IMAUITM%run( SMB_dummy%IMAUITM%ct_run( &
         ice_dummy, climate_dummy, grid_dummy, 0._dp, region_name))
     end do
 
@@ -846,7 +846,7 @@ contains
     snapshot%I_abs( mesh%vi1:mesh%vi2) = 0._dp
     do vi = mesh%vi1, mesh%vi2
     do m = 1, 12
-      snapshot%I_abs( vi) = snapshot%I_abs( vi) + snapshot%Q_TOA( vi,m) * (1._dp - SMB_dummy%IMAU_ITM%Albedo( vi,m))
+      snapshot%I_abs( vi) = snapshot%I_abs( vi) + snapshot%Q_TOA( vi,m) * (1._dp - SMB_dummy%IMAUITM%Albedo( vi,m))
     end do
     end do
 

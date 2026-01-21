@@ -32,8 +32,6 @@ module SMB_basic
 
       private
 
-      ! procedure( allocate_SMB_model_ifc), deferred :: allocate_SMB_model
-
       ! The common parts of allocate/initialise/run/remap, executed by all extensions of atype_SMB_model
       procedure, public :: allocate   => allocate_SMB_model_common_abs
       procedure, public :: initialise => initialise_SMB_model_common_abs

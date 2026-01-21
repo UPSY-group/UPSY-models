@@ -15,8 +15,8 @@ module SMB_main
   use SMB_idealised, only: type_SMB_model_idealised
   use SMB_prescribed, only: type_SMB_model_prescribed
   use SMB_reconstructed, only: type_SMB_model_reconstructed
+  use SMB_snapshot_plus_anomalies, only: type_SMB_model_snapshot_plus_anomalies
   ! use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
-  ! use SMB_snapshot_plus_anomalies, only: type_SMB_model_snapshot_plus_anomalies
   use allocate_dist_shared_mod, only: allocate_dist_shared
   use reallocate_dist_shared_mod, only: reallocate_dist_shared
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
@@ -37,8 +37,8 @@ module SMB_main
     type(type_SMB_model_idealised)               :: idealised
     type(type_SMB_model_prescribed)              :: prescribed
     type(type_SMB_model_reconstructed)           :: reconstructed
+    type(type_SMB_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
     ! type(type_SMB_model_IMAU_ITM)                :: IMAUITM
-    ! type(type_SMB_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
 
     ! Timestepping
     real(dp)                                     :: t_next
@@ -139,16 +139,17 @@ contains
         SMB%SMB( vi) = SMB%reconstructed%SMB( vi)
       end do
 
+    case ('snapshot_plus_anomalies')
+      call SMB%snapshot_plus_anomalies%run( SMB%snapshot_plus_anomalies%ct_run( &
+        ice, climate, grid_smooth, time, region_name))
+      do vi = mesh%vi1, mesh%vi2
+        SMB%SMB( vi) = SMB%snapshot_plus_anomalies%SMB( vi)
+      end do
+
     ! CASE ('IMAU-ITM')
     !   call SMB%IMAUITM%run( mesh, ice, climate)
     !   do vi = mesh%vi1, mesh%vi2
     !     SMB%SMB( vi) = sum( SMB%IMAUITM%SMB_monthly( vi,:))
-    !   end do
-
-    ! case ('snapshot_plus_anomalies')
-    !   call SMB%snapshot_plus_anomalies%run( mesh, time)
-    !   do vi = mesh%vi1, mesh%vi2
-    !     SMB%SMB( vi) = SMB%snapshot_plus_anomalies%SMB( vi)
     !   end do
 
     END SELECT
@@ -214,10 +215,11 @@ contains
     CASE ('reconstructed')
       call SMB%reconstructed%allocate  ( SMB%reconstructed%ct_allocate( mesh))
       call SMB%reconstructed%initialise( SMB%reconstructed%ct_initialise( region_name))
+    case ('snapshot_plus_anomalies')
+      call SMB%snapshot_plus_anomalies%allocate  ( SMB%snapshot_plus_anomalies%ct_allocate( mesh))
+      call SMB%snapshot_plus_anomalies%initialise( SMB%snapshot_plus_anomalies%ct_initialise( region_name))
     ! CASE ('IMAU-ITM')
     !   call SMB%IMAUITM%init( mesh, ice, region_name)
-    ! case ('snapshot_plus_anomalies')
-    !   call SMB%snapshot_plus_anomalies%init( mesh)
     CASE DEFAULT
       CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
     END SELECT
@@ -480,6 +482,8 @@ contains
         call SMB%prescribed%remap( SMB%prescribed%ct_remap( mesh_new, region_name))
       CASE ('reconstructed')
         call SMB%reconstructed%remap( SMB%reconstructed%ct_remap( mesh_new, region_name))
+      CASE ('snapshot_plus_anomalies')
+        call SMB%snapshot_plus_anomalies%remap( SMB%snapshot_plus_anomalies%ct_remap( mesh_new, region_name))
       ! CASE ('IMAU-ITM')
         ! call SMB%IMAUITM%remap( mesh_old, mesh_new)
       CASE DEFAULT

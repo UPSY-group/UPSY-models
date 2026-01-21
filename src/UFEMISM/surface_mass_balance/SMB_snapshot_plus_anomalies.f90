@@ -10,7 +10,8 @@ module SMB_snapshot_plus_anomalies
   use netcdf_io_main
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use allocate_dist_shared_mod, only: allocate_dist_shared
-  use SMB_basic, only: atype_SMB_model
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
 
@@ -29,12 +30,12 @@ module SMB_snapshot_plus_anomalies
       type(MPI_WIN) :: wT2m_baseline, wSMB_baseline
 
       ! Two anomaly timeframes enveloping the current model time
-      real(dp)                              :: anomaly_t0
+      real(dp)                                      :: anomaly_t0
       real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_0
       real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_0
       type(MPI_WIN) :: wT2m_anomaly_0, wSMB_anomaly_0
 
-      real(dp)                              :: anomaly_t1
+      real(dp)                                      :: anomaly_t1
       real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_1
       real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_1
       type(MPI_WIN) :: wT2m_anomaly_1, wSMB_anomaly_1
@@ -46,20 +47,189 @@ module SMB_snapshot_plus_anomalies
 
       ! Applied climate
       real(dp), dimension(:,:), contiguous, pointer :: T2m    ! = baseline + anomaly
-      ! real(dp), dimension(:  ), contiguous, pointer :: SMB
-      type(MPI_WIN) :: wT2m!, wSMB
+      type(MPI_WIN) :: wT2m
 
     contains
 
-      procedure, public  :: init, run, remap
-      procedure, public  :: run_climate
+      procedure, public :: allocate_SMB_model   => allocate_SMB_model_snapshot_plus_anomalies
+      procedure, public :: initialise_SMB_model => initialise_SMB_model_snapshot_plus_anomalies
+      procedure, public :: run_SMB_model        => run_SMB_model_snapshot_plus_anomalies_abs
+      procedure, public :: remap_SMB_model      => remap_SMB_model_snapshot_plus_anomalies
+
+      procedure, private :: run_SMB_model_snapshot_plus_anomalies
+      procedure, private :: run_SMB_model_snapshot_plus_anomalies_climate
       procedure, private :: update_timeframes
 
   end type type_SMB_model_snapshot_plus_anomalies
 
 contains
 
-  subroutine run( self, mesh, time)
+  subroutine allocate_SMB_model_snapshot_plus_anomalies( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_SMB_model_context_allocate),         intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_snapshot_plus_anomalies'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%set_name('SMB_model_snapshot_plus_anomalies')
+
+    ! Create all model fields
+    ! =======================
+
+    ! Baseline climate
+    call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'T2m_baseline', &
+      long_name = 'baseline monthly 2-m air temperature', &
+      units     = 'K')
+    call self%create_field( self%SMB_baseline, self%wSMB_baseline, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'SMB_baseline', &
+      long_name = 'baseline surface mass balance', &
+      units     = 'm yr^-1')
+
+    ! Two anomaly snapshots enveloping the current model time
+    call self%create_field( self%T2m_anomaly_0, self%wT2m_anomaly_0, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'T2m_anomaly_0', &
+      long_name = 'previous annual 2-m air temperature anomaly', &
+      units     = 'K')
+    call self%create_field( self%SMB_anomaly_0, self%wSMB_anomaly_0, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'SMB_anomaly_0', &
+      long_name = 'previous surface mass balance anomaly', &
+      units     = 'm yr^-1')
+    call self%create_field( self%T2m_anomaly_1, self%wT2m_anomaly_1, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'T2m_anomaly_1', &
+      long_name = 'next annual 2-m air temperature anomaly', &
+      units     = 'K')
+    call self%create_field( self%SMB_anomaly_1, self%wSMB_anomaly_1, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'SMB_anomaly_1', &
+      long_name = 'next surface mass balance anomaly', &
+      units     = 'm yr^-1')
+
+    ! Time-weighted anomaly
+    call self%create_field( self%T2m_anomaly, self%wT2m_anomaly, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'T2m_anomaly', &
+      long_name = 'annual 2-m air temperature anomaly', &
+      units     = 'K')
+    call self%create_field( self%SMB_anomaly, self%wSMB_anomaly, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'SMB_anomaly', &
+      long_name = 'surface mass balance anomaly', &
+      units     = 'm yr^-1')
+
+    ! Applied climate
+    call self%create_field( self%T2m, self%wT2m, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'T2m', &
+      long_name = 'monthly 2-m air temperature', &
+      units     = 'K')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_SMB_model_snapshot_plus_anomalies
+
+  subroutine initialise_SMB_model_snapshot_plus_anomalies( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_SMB_model_context_initialise),       intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_snapshot_plus_anomalies'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Read baseline snapshot
+    call read_field_from_file_2D_monthly( C%SMB_snp_p_anml_filename_snapshot_T2m, 'T2m', &
+      self%mesh, C%output_dir, self%T2m_baseline)
+    call read_field_from_file_2D( C%SMB_snp_p_anml_filename_snapshot_SMB, 'SMB', &
+      self%mesh, C%output_dir, self%SMB_baseline)
+
+    ! Initialise anomaly timeframes
+    self%anomaly_t0 = C%start_time_of_run - 200._dp
+    self%anomaly_t1 = C%start_time_of_run - 100._dp
+    call self%update_timeframes( self%mesh, C%start_time_of_run)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_SMB_model_snapshot_plus_anomalies
+
+  subroutine run_SMB_model_snapshot_plus_anomalies_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_SMB_model_context_run),              intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_snapshot_plus_anomalies_abs'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%run_SMB_model_snapshot_plus_anomalies( self%mesh, context%time)
+    call self%run_SMB_model_snapshot_plus_anomalies_climate( self%mesh, context%climate, context%time)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine run_SMB_model_snapshot_plus_anomalies_abs
+
+  subroutine remap_SMB_model_snapshot_plus_anomalies( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
+    type(type_SMB_model_context_remap),            intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_snapshot_plus_anomalies'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Remap all model fields
+    ! ======================
+
+    ! Baseline climate
+    call self%remap_field( context%mesh_new, 'T2m_baseline', self%T2m_baseline)
+    call self%remap_field( context%mesh_new, 'SMB_baseline', self%SMB_baseline)
+
+    ! Two anomaly snapshots enveloping the current model time
+    call self%remap_field( context%mesh_new, 'T2m_anomaly_0', self%T2m_anomaly_0)
+    call self%remap_field( context%mesh_new, 'SMB_anomaly_0', self%SMB_anomaly_0)
+    call self%remap_field( context%mesh_new, 'T2m_anomaly_1', self%T2m_anomaly_1)
+    call self%remap_field( context%mesh_new, 'SMB_anomaly_1', self%SMB_anomaly_1)
+
+    ! ! Time-weighted anomaly
+    call self%remap_field( context%mesh_new, 'T2m_anomaly', self%T2m_anomaly)
+    call self%remap_field( context%mesh_new, 'SMB_anomaly', self%SMB_anomaly)
+
+    ! Applied climate
+    call self%remap_field( context%mesh_new, 'T2m', self%T2m)
+
+    ! Set the timestamps of the timeframes so that they
+    ! will be updated the next time the model is run
+    self%anomaly_t0 = C%start_time_of_run - 200._dp
+    self%anomaly_t1 = C%start_time_of_run - 100._dp
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_SMB_model_snapshot_plus_anomalies
+
+  subroutine run_SMB_model_snapshot_plus_anomalies( self, mesh, time)
 
     ! In/output variables:
     class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
@@ -97,120 +267,18 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run
+  end subroutine run_SMB_model_snapshot_plus_anomalies
 
-  subroutine init( self, mesh)
-
-    ! In/output variables:
-    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
-    type(type_mesh),                               intent(in   ) :: mesh
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_snapshot_plus_anomalies'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call self%set_name('SMB_snapshot_plus_anomalies')
-    call self%init_common( mesh)
-
-    ! Baseline climate
-    call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'T2m_baseline', &
-      long_name = 'baseline monthly 2-m air temperature', &
-      units     = 'K')
-    call self%create_field( self%SMB_baseline, self%wSMB_baseline, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'SMB_baseline', &
-      long_name = 'baseline surface mass balance', &
-      units     = 'm yr^-1')
-
-    ! Two anomaly snapshots enveloping the current model time
-    call self%create_field( self%T2m_anomaly_0, self%wT2m_anomaly_0, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'T2m_anomaly_0', &
-      long_name = 'previous annual 2-m air temperature anomaly', &
-      units     = 'K')
-    call self%create_field( self%SMB_anomaly_0, self%wSMB_anomaly_0, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'SMB_anomaly_0', &
-      long_name = 'previous surface mass balance anomaly', &
-      units     = 'm yr^-1')
-    call self%create_field( self%T2m_anomaly_1, self%wT2m_anomaly_1, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'T2m_anomaly_1', &
-      long_name = 'next annual 2-m air temperature anomaly', &
-      units     = 'K')
-    call self%create_field( self%SMB_anomaly_1, self%wSMB_anomaly_1, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'SMB_anomaly_1', &
-      long_name = 'next surface mass balance anomaly', &
-      units     = 'm yr^-1')
-
-    ! Time-weighted anomaly
-    call self%create_field( self%T2m_anomaly, self%wT2m_anomaly, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'T2m_anomaly', &
-      long_name = 'annual 2-m air temperature anomaly', &
-      units     = 'K')
-    call self%create_field( self%SMB_anomaly, self%wSMB_anomaly, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'SMB_anomaly', &
-      long_name = 'surface mass balance anomaly', &
-      units     = 'm yr^-1')
-
-    ! Applied climate
-    call self%create_field( self%T2m, self%wT2m, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'T2m', &
-      long_name = 'monthly 2-m air temperature', &
-      units     = 'K')
-
-    ! Read baseline snapshot
-    call read_field_from_file_2D_monthly( C%SMB_snp_p_anml_filename_snapshot_T2m, 'T2m', &
-      mesh, C%output_dir, self%T2m_baseline)
-    call read_field_from_file_2D( C%SMB_snp_p_anml_filename_snapshot_SMB, 'SMB', &
-      mesh, C%output_dir, self%SMB_baseline)
-
-    ! Initialise anomaly timeframes
-    self%anomaly_t0 = C%start_time_of_run - 200._dp
-    self%anomaly_t1 = C%start_time_of_run - 100._dp
-    call self%update_timeframes( mesh, C%start_time_of_run)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine init
-
-  subroutine remap( self)
-
-    ! In/output variables:
-    class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_snapshot_plus_anomalies'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call crash('remapping not yet implemented for type_SMB_model_snapshot_plus_anomalies')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine remap
-
-  subroutine run_climate( self, mesh, climate, time)
+  subroutine run_SMB_model_snapshot_plus_anomalies_climate( self, mesh, climate, time)
 
     ! In/output variables:
     class(type_SMB_model_snapshot_plus_anomalies), intent(inout) :: self
     type(type_mesh),                               intent(in   ) :: mesh
-    type(type_climate_model),                      intent(inout) :: climate
+    type(type_climate_model),                      intent(in   ) :: climate
     real(dp),                                      intent(in   ) :: time
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_climate_model_SMB_snapshot_plus_anomalies'
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_snapshot_plus_anomalies_climate'
     real(dp)                       :: w0, w1
     integer                        :: m
 
@@ -240,13 +308,13 @@ contains
         self%T2m_anomaly ( mesh%vi1:mesh%vi2  )
     end do
 
-    ! Copy to climate model
-    climate%T2m( mesh%vi1:mesh%vi2,:) = self%T2m( mesh%vi1:mesh%vi2,:)
+    ! ! Copy to climate model
+    ! climate%T2m( mesh%vi1:mesh%vi2,:) = self%T2m( mesh%vi1:mesh%vi2,:)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run_climate
+  end subroutine run_SMB_model_snapshot_plus_anomalies_climate
 
   subroutine update_timeframes( self, mesh, time)
 

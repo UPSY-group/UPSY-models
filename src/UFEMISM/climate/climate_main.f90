@@ -22,7 +22,6 @@ MODULE climate_main
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
-  use SMB_snapshot_plus_anomalies, only: type_SMB_model_snapshot_plus_anomalies
 
   IMPLICIT NONE
 
@@ -102,7 +101,9 @@ CONTAINS
     CASE ('matrix')
       call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
     case ('SMB_snapshot_plus_anomalies')
-      call SMB%snapshot_plus_anomalies%run_climate( mesh, climate, time)
+      call SMB%snapshot_plus_anomalies%run( SMB%snapshot_plus_anomalies%ct_run( &
+        ice, climate, grid, time, region_name))
+      climate%T2m( mesh%vi1:mesh%vi2,:) = SMB%snapshot_plus_anomalies%T2m( mesh%vi1:mesh%vi2,:)
     CASE DEFAULT
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT

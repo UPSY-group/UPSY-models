@@ -231,212 +231,212 @@ contains
 
   END SUBROUTINE initialise_SMB_model
 
-  ! SUBROUTINE write_to_restart_file_SMB_model( mesh, SMB, region_name, time)
-  !   ! Write to the restart file for the SMB model
+  SUBROUTINE write_to_restart_file_SMB_model( mesh, SMB, region_name, time)
+    ! Write to the restart file for the SMB model
 
-  !   IMPLICIT NONE
+    IMPLICIT NONE
 
-  !   ! In/output variables:
-  !   TYPE(type_mesh),                        INTENT(IN)    :: mesh
-  !   TYPE(type_SMB_model),                   INTENT(IN)    :: SMB
-  !   CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
-  !   REAL(dp),                               INTENT(IN)    :: time
+    ! In/output variables:
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    TYPE(type_SMB_model),                   INTENT(IN)    :: SMB
+    CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+    REAL(dp),                               INTENT(IN)    :: time
 
-  !   ! Local variables:
-  !   CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'write_to_restart_file_SMB_model'
-  !   CHARACTER(LEN=256)                                    :: choice_SMB_model
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'write_to_restart_file_SMB_model'
+    CHARACTER(LEN=256)                                    :: choice_SMB_model
 
-  !   ! Add routine to path
-  !   CALL init_routine( routine_name)
+    ! Add routine to path
+    CALL init_routine( routine_name)
 
-  !   ! Determine which SMB model to use for this region
-  !   SELECT CASE (region_name)
-  !   CASE ('NAM')
-  !     choice_SMB_model = C%choice_SMB_model_NAM
-  !   CASE ('EAS')
-  !     choice_SMB_model = C%choice_SMB_model_EAS
-  !   CASE ('GRL')
-  !     choice_SMB_model = C%choice_SMB_model_GRL
-  !   CASE ('ANT')
-  !     choice_SMB_model = C%choice_SMB_model_ANT
-  !   CASE DEFAULT
-  !     CALL crash('unknown region_name "' // region_name // '"')
-  !   END SELECT
+    ! Determine which SMB model to use for this region
+    SELECT CASE (region_name)
+    CASE ('NAM')
+      choice_SMB_model = C%choice_SMB_model_NAM
+    CASE ('EAS')
+      choice_SMB_model = C%choice_SMB_model_EAS
+    CASE ('GRL')
+      choice_SMB_model = C%choice_SMB_model_GRL
+    CASE ('ANT')
+      choice_SMB_model = C%choice_SMB_model_ANT
+    CASE DEFAULT
+      CALL crash('unknown region_name "' // region_name // '"')
+    END SELECT
 
-  !   ! Write to the restart file of the chosen SMB model
-  !   SELECT CASE (choice_SMB_model)
-  !   CASE DEFAULT
-  !     CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
-  !   CASE ('uniform', &
-  !         'idealised', &
-  !         'prescribed', &
-  !         'reconstructed', &
-  !         'snapshot_plus_anomalies')
-  !     ! No need to do anything
-  !   CASE ('IMAU-ITM')
-  !     call write_to_restart_file_SMB_model_region(mesh, SMB, region_name, time)
-  !   END SELECT
+    ! Write to the restart file of the chosen SMB model
+    SELECT CASE (choice_SMB_model)
+    CASE DEFAULT
+      CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    CASE ('uniform', &
+          'idealised', &
+          'prescribed', &
+          'reconstructed', &
+          'snapshot_plus_anomalies')
+      ! No need to do anything
+    CASE ('IMAU-ITM')
+      call write_to_restart_file_SMB_model_region(mesh, SMB, region_name, time)
+    END SELECT
 
-  !   ! Finalise routine path
-  !   CALL finalise_routine( routine_name)
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
 
-  ! END SUBROUTINE write_to_restart_file_SMB_model
+  END SUBROUTINE write_to_restart_file_SMB_model
 
-  ! SUBROUTINE write_to_restart_file_SMB_model_region(mesh, SMB, region_name, time)
-  !   ! Write to the restart NetCDF file for the SMB model
+  SUBROUTINE write_to_restart_file_SMB_model_region(mesh, SMB, region_name, time)
+    ! Write to the restart NetCDF file for the SMB model
 
-  !   ! In/output variables:
-  !   TYPE(type_mesh),          INTENT(IN) :: mesh
-  !   TYPE(type_SMB_model),     INTENT(IN) :: SMB
-  !   CHARACTER(LEN=3),         INTENT(IN) :: region_name
-  !   REAL(dp),                 INTENT(IN) :: time
+    ! In/output variables:
+    TYPE(type_mesh),          INTENT(IN) :: mesh
+    TYPE(type_SMB_model),     INTENT(IN) :: SMB
+    CHARACTER(LEN=3),         INTENT(IN) :: region_name
+    REAL(dp),                 INTENT(IN) :: time
 
-  !   ! Local variables:
-  !   CHARACTER(LEN=256), PARAMETER        :: routine_name = 'write_to_restart_file_SMB_model_region'
-  !   INTEGER                              :: ncid
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER        :: routine_name = 'write_to_restart_file_SMB_model_region'
+    INTEGER                              :: ncid
 
-  !   ! Add routine to path
-  !   CALL init_routine( routine_name)
+    ! Add routine to path
+    CALL init_routine( routine_name)
 
-  !   ! If no NetCDF output should be created, do nothing
-  !   IF (.NOT. C%do_create_netcdf_output) THEN
-  !     CALL finalise_routine( routine_name)
-  !     RETURN
-  !   END IF
+    ! If no NetCDF output should be created, do nothing
+    IF (.NOT. C%do_create_netcdf_output) THEN
+      CALL finalise_routine( routine_name)
+      RETURN
+    END IF
 
-  !   ! Print to terminal
-  !   IF (par%primary) WRITE(0,'(A)') '   Writing to SMB restart file "' // &
-  !     colour_string( TRIM( SMB%restart_filename), 'light blue') // '"...'
+    ! Print to terminal
+    IF (par%primary) WRITE(0,'(A)') '   Writing to SMB restart file "' // &
+      colour_string( TRIM( SMB%restart_filename), 'light blue') // '"...'
 
-  !   ! Open the NetCDF file
-  !   CALL open_existing_netcdf_file_for_writing( SMB%restart_filename, ncid)
+    ! Open the NetCDF file
+    CALL open_existing_netcdf_file_for_writing( SMB%restart_filename, ncid)
 
-  !   ! Write the time to the file
-  !   CALL write_time_to_file( SMB%restart_filename, ncid, time)
-  !   ! month dimension is already written when adding it to file
+    ! Write the time to the file
+    CALL write_time_to_file( SMB%restart_filename, ncid, time)
+    ! month dimension is already written when adding it to file
 
-  !   ! ! Write the SMB fields to the file
-  !   ! TODO: do we need to check if IMAUITM is being used before writing these files?
-  !   CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'SMB_monthly', SMB%IMAUITM%SMB_monthly)
-  !   CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'FirnDepth', SMB%IMAUITM%FirnDepth)
-  !   CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'MeltPreviousYear', SMB%IMAUITM%MeltPreviousYear)
-  !   CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'SMB', SMB%SMB)
+    ! ! Write the SMB fields to the file
+    ! TODO: do we need to check if IMAU_ITM is being used before writing these files?
+    CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'SMB_monthly', SMB%IMAU_ITM%SMB_monthly)
+    CALL write_to_field_multopt_mesh_dp_2D_monthly( mesh, SMB%restart_filename, ncid, 'FirnDepth', SMB%IMAU_ITM%FirnDepth)
+    CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'MeltPreviousYear', SMB%IMAU_ITM%MeltPreviousYear)
+    CALL write_to_field_multopt_mesh_dp_2D(         mesh, SMB%restart_filename, ncid, 'SMB', SMB%SMB)
 
-  !   ! Close the file
-  !   CALL close_netcdf_file( ncid)
+    ! Close the file
+    CALL close_netcdf_file( ncid)
 
-  !   ! Finalise routine path
-  !   CALL finalise_routine( routine_name)
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
 
-  ! END SUBROUTINE write_to_restart_file_SMB_model_region
+  END SUBROUTINE write_to_restart_file_SMB_model_region
 
-  ! SUBROUTINE create_restart_file_SMB_model( mesh, SMB, region_name)
-  !   ! Create the restart file for the SMB model
+  SUBROUTINE create_restart_file_SMB_model( mesh, SMB, region_name)
+    ! Create the restart file for the SMB model
 
-  !   IMPLICIT NONE
+    IMPLICIT NONE
 
-  !   ! In/output variables:
-  !   TYPE(type_mesh),                        INTENT(IN)    :: mesh
-  !   TYPE(type_SMB_model),                   INTENT(INOUT) :: SMB
-  !   CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+    ! In/output variables:
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    TYPE(type_SMB_model),                   INTENT(INOUT) :: SMB
+    CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
 
-  !   ! Local variables:
-  !   CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'create_restart_file_SMB_model'
-  !   CHARACTER(LEN=256)                                    :: choice_SMB_model
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'create_restart_file_SMB_model'
+    CHARACTER(LEN=256)                                    :: choice_SMB_model
 
-  !   ! Add routine to path
-  !   CALL init_routine( routine_name)
+    ! Add routine to path
+    CALL init_routine( routine_name)
 
-  !   ! Determine which SMB model to use for this region
-  !   SELECT CASE (region_name)
-  !   CASE ('NAM')
-  !     choice_SMB_model = C%choice_SMB_model_NAM
-  !   CASE ('EAS')
-  !     choice_SMB_model = C%choice_SMB_model_EAS
-  !   CASE ('GRL')
-  !     choice_SMB_model = C%choice_SMB_model_GRL
-  !   CASE ('ANT')
-  !     choice_SMB_model = C%choice_SMB_model_ANT
-  !   CASE DEFAULT
-  !     CALL crash('unknown region_name "' // region_name // '"')
-  !   END SELECT
+    ! Determine which SMB model to use for this region
+    SELECT CASE (region_name)
+    CASE ('NAM')
+      choice_SMB_model = C%choice_SMB_model_NAM
+    CASE ('EAS')
+      choice_SMB_model = C%choice_SMB_model_EAS
+    CASE ('GRL')
+      choice_SMB_model = C%choice_SMB_model_GRL
+    CASE ('ANT')
+      choice_SMB_model = C%choice_SMB_model_ANT
+    CASE DEFAULT
+      CALL crash('unknown region_name "' // region_name // '"')
+    END SELECT
 
-  !   ! Create the restart file of the chosen SMB model
-  !   SELECT CASE (choice_SMB_model)
-  !   CASE ('uniform', &
-  !         'idealised', &
-  !         'prescribed', &
-  !         'reconstructed', &
-  !         'snapshot_plus_anomalies')
-  !     ! No need to do anything
-  !   CASE ('IMAU-ITM')
-  !     call create_restart_file_SMB_model_region(mesh, SMB, region_name)
-  !   CASE DEFAULT
-  !     CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
-  !   END SELECT
+    ! Create the restart file of the chosen SMB model
+    SELECT CASE (choice_SMB_model)
+    CASE ('uniform', &
+          'idealised', &
+          'prescribed', &
+          'reconstructed', &
+          'snapshot_plus_anomalies')
+      ! No need to do anything
+    CASE ('IMAU-ITM')
+      call create_restart_file_SMB_model_region(mesh, SMB, region_name)
+    CASE DEFAULT
+      CALL crash('unknown choice_SMB_model "' // TRIM( choice_SMB_model) // '"')
+    END SELECT
 
-  !   ! Finalise routine path
-  !   CALL finalise_routine( routine_name)
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
 
-  ! END SUBROUTINE create_restart_file_SMB_model
+  END SUBROUTINE create_restart_file_SMB_model
 
-  ! SUBROUTINE create_restart_file_SMB_model_region(mesh, SMB, region_name)
-  !   ! Create the restart file for the SMB model
+  SUBROUTINE create_restart_file_SMB_model_region(mesh, SMB, region_name)
+    ! Create the restart file for the SMB model
 
-  !   IMPLICIT NONE
+    IMPLICIT NONE
 
-  !   ! In/output variables:
-  !   TYPE(type_mesh),                        INTENT(IN)    :: mesh
-  !   TYPE(type_SMB_model),                   INTENT(INOUT) :: SMB
-  !   CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+    ! In/output variables:
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    TYPE(type_SMB_model),                   INTENT(INOUT) :: SMB
+    CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
 
-  !   ! Local variables:
-  !   CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'create_restart_file_SMB_model'
-  !   CHARACTER(LEN=256)                                    :: choice_SMB_model
-  !   CHARACTER(LEN=256)                                    :: filename_base
-  !   INTEGER                                               :: ncid
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'create_restart_file_SMB_model'
+    CHARACTER(LEN=256)                                    :: choice_SMB_model
+    CHARACTER(LEN=256)                                    :: filename_base
+    INTEGER                                               :: ncid
 
-  !   ! Add routine to path
-  !   CALL init_routine( routine_name)
+    ! Add routine to path
+    CALL init_routine( routine_name)
 
-  !   ! If no NetCDF output should be created, do nothing
-  !   IF (.NOT. C%do_create_netcdf_output) THEN
-  !     CALL finalise_routine( routine_name)
-  !     RETURN
-  !   END IF
+    ! If no NetCDF output should be created, do nothing
+    IF (.NOT. C%do_create_netcdf_output) THEN
+      CALL finalise_routine( routine_name)
+      RETURN
+    END IF
 
-  !   ! Set the filename
-  !   filename_base = TRIM( C%output_dir) // 'restart_SMB_' // region_name
-  !   CALL generate_filename_XXXXXdotnc( filename_base, SMB%restart_filename)
+    ! Set the filename
+    filename_base = TRIM( C%output_dir) // 'restart_SMB_' // region_name
+    CALL generate_filename_XXXXXdotnc( filename_base, SMB%restart_filename)
 
-  !   ! Print to terminal
-  !   IF (par%primary) WRITE(0,'(A)') '   Creating SMB model restart file "' // &
-  !     colour_string( TRIM( SMB%restart_filename), 'light blue') // '"...'
+    ! Print to terminal
+    IF (par%primary) WRITE(0,'(A)') '   Creating SMB model restart file "' // &
+      colour_string( TRIM( SMB%restart_filename), 'light blue') // '"...'
 
-  !   ! Create the NetCDF file
-  !   CALL create_new_netcdf_file_for_writing( SMB%restart_filename, ncid)
+    ! Create the NetCDF file
+    CALL create_new_netcdf_file_for_writing( SMB%restart_filename, ncid)
 
-  !   ! Set up the mesh in the file
-  !   CALL setup_mesh_in_netcdf_file( SMB%restart_filename, ncid, mesh)
+    ! Set up the mesh in the file
+    CALL setup_mesh_in_netcdf_file( SMB%restart_filename, ncid, mesh)
 
-  !   ! Add a time dimension to the file
-  !   CALL add_month_dimension_to_file( SMB%restart_filename, ncid)
-  !   CALL add_time_dimension_to_file( SMB%restart_filename, ncid)
+    ! Add a time dimension to the file
+    CALL add_month_dimension_to_file( SMB%restart_filename, ncid)
+    CALL add_time_dimension_to_file( SMB%restart_filename, ncid)
 
 
-  !   ! Add the data fields to the file
-  !   CALL add_field_mesh_dp_2D( SMB%restart_filename, ncid, 'SMB',                 long_name = 'Surface mass balance',            units = 'm/yr')
-  !   CALL add_field_mesh_dp_2D_monthly( SMB%restart_filename, ncid, 'SMB_monthly', long_name = 'monthly Surface mass balance',    units = 'm/yr')
-  !   CALL add_field_mesh_dp_2D_monthly( SMB%restart_filename, ncid, 'FirnDepth',   long_name = 'Firn Depth',                      units = 'm')
-  !   CALL add_field_mesh_dp_2D( SMB%restart_filename, ncid, 'MeltPreviousYear',    long_name = 'Total melt in the previous year', units = 'm w.e.')
+    ! Add the data fields to the file
+    CALL add_field_mesh_dp_2D( SMB%restart_filename, ncid, 'SMB',                 long_name = 'Surface mass balance',            units = 'm/yr')
+    CALL add_field_mesh_dp_2D_monthly( SMB%restart_filename, ncid, 'SMB_monthly', long_name = 'monthly Surface mass balance',    units = 'm/yr')
+    CALL add_field_mesh_dp_2D_monthly( SMB%restart_filename, ncid, 'FirnDepth',   long_name = 'Firn Depth',                      units = 'm')
+    CALL add_field_mesh_dp_2D( SMB%restart_filename, ncid, 'MeltPreviousYear',    long_name = 'Total melt in the previous year', units = 'm w.e.')
 
-  !   ! Close the file
-  !   CALL close_netcdf_file( ncid)
+    ! Close the file
+    CALL close_netcdf_file( ncid)
 
-  !   ! Finalise routine path
-  !   CALL finalise_routine( routine_name)
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
 
-  ! END SUBROUTINE create_restart_file_SMB_model_region
+  END SUBROUTINE create_restart_file_SMB_model_region
 
   SUBROUTINE remap_SMB_model( mesh_old, mesh_new, SMB, region_name)
     ! Remap the SMB model

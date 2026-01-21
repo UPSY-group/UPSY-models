@@ -29,19 +29,19 @@ module SMB_IMAU_ITM
     !< The IMAU Insolation-Temperature Model
 
       ! Main data fields
-      real(dp), dimension(:  ), contiguous, pointer :: AlbedoSurf              ! Surface albedo underneath the snow layer (water, rock or ice)
-      real(dp), dimension(:  ), contiguous, pointer :: MeltPreviousYear        ! [m.w.e.] total melt in the previous year
-      real(dp), dimension(:,:), contiguous, pointer :: FirnDepth               ! [m] depth of the firn layer
-      real(dp), dimension(:,:), contiguous, pointer :: Rainfall                ! Monthly rainfall (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Snowfall                ! Monthly snowfall (m)
-      real(dp), dimension(:,:), contiguous, pointer :: AddedFirn               ! Monthly added firn (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Melt                    ! Monthly melt (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Refreezing              ! Monthly refreezing (m)
-      real(dp), dimension(:  ), contiguous, pointer :: Refreezing_year         ! Yearly  refreezing (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Runoff                  ! Monthly runoff (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Albedo                  ! Monthly albedo
-      real(dp), dimension(:  ), contiguous, pointer :: Albedo_year             ! Yearly albedo
-      real(dp), dimension(:,:), contiguous, pointer :: SMB_monthly             ! [m] Monthly SMB
+      real(dp), dimension(:  ), contiguous, pointer :: AlbedoSurf       => null()   ! Surface albedo underneath the snow layer (water, rock or ice)
+      real(dp), dimension(:  ), contiguous, pointer :: MeltPreviousYear => null()   ! [m.w.e.] total melt in the previous year
+      real(dp), dimension(:,:), contiguous, pointer :: FirnDepth        => null()   ! [m] depth of the firn layer
+      real(dp), dimension(:,:), contiguous, pointer :: Rainfall         => null()   ! Monthly rainfall (m)
+      real(dp), dimension(:,:), contiguous, pointer :: Snowfall         => null()   ! Monthly snowfall (m)
+      real(dp), dimension(:,:), contiguous, pointer :: AddedFirn        => null()   ! Monthly added firn (m)
+      real(dp), dimension(:,:), contiguous, pointer :: Melt             => null()   ! Monthly melt (m)
+      real(dp), dimension(:,:), contiguous, pointer :: Refreezing       => null()   ! Monthly refreezing (m)
+      real(dp), dimension(:  ), contiguous, pointer :: Refreezing_year  => null()   ! Yearly  refreezing (m)
+      real(dp), dimension(:,:), contiguous, pointer :: Runoff           => null()   ! Monthly runoff (m)
+      real(dp), dimension(:,:), contiguous, pointer :: Albedo           => null()   ! Monthly albedo
+      real(dp), dimension(:  ), contiguous, pointer :: Albedo_year      => null()   ! Yearly albedo
+      real(dp), dimension(:,:), contiguous, pointer :: SMB_monthly      => null()   ! [m] Monthly SMB
       type(MPI_WIN) :: wAlbedoSurf, wMeltPreviousYear, wFirnDepth, wRainfall
       type(MPI_WIN) :: wSnowfall, wAddedFirn, wMelt, wRefreezing, wRefreezing_year
       type(MPI_WIN) :: wRunoff, wAlbedo, wAlbedo_year, wSMB_monthly

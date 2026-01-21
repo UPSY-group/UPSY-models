@@ -22,7 +22,7 @@ module SMB_basic
     !< The basic surface mass balance model
 
       ! Main data fields
-      real(dp), dimension(:), contiguous, pointer :: SMB   !< [m] Net annual  SMB
+      real(dp), dimension(:), contiguous, pointer :: SMB => null()  !< [m] Net annual  SMB
       type(MPI_WIN) :: wSMB
 
       ! Timestepping

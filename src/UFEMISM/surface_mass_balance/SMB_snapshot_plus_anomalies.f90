@@ -25,24 +25,24 @@ module SMB_snapshot_plus_anomalies
     !< The snapshot+anomalies SMB model (monthly T2m, annual SMB)
 
       ! Baseline climate
-      real(dp), dimension(:,:), contiguous, pointer :: T2m_baseline
-      real(dp), dimension(:  ), contiguous, pointer :: SMB_baseline
+      real(dp), dimension(:,:), contiguous, pointer :: T2m_baseline => null()
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_baseline => null()
       type(MPI_WIN) :: wT2m_baseline, wSMB_baseline
 
       ! Two anomaly timeframes enveloping the current model time
       real(dp)                                      :: anomaly_t0
-      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_0
-      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_0
+      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_0 => null()
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_0 => null()
       type(MPI_WIN) :: wT2m_anomaly_0, wSMB_anomaly_0
 
       real(dp)                                      :: anomaly_t1
-      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_1
-      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_1
+      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly_1 => null()
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly_1 => null()
       type(MPI_WIN) :: wT2m_anomaly_1, wSMB_anomaly_1
 
       ! Time-weighted anomaly
-      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly
-      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly
+      real(dp), dimension(:  ), contiguous, pointer :: T2m_anomaly => null()
+      real(dp), dimension(:  ), contiguous, pointer :: SMB_anomaly => null()
       type(MPI_WIN) :: wT2m_anomaly, wSMB_anomaly
 
       ! Applied climate

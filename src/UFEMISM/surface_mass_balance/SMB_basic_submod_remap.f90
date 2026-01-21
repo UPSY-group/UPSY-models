@@ -55,6 +55,8 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    call self%remap_field( mesh_new, 'SMB', self%SMB)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 

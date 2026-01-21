@@ -14,7 +14,8 @@ module SMB_IMAU_ITM
   use netcdf_io_main
   use global_forcing_types
   use mpi_f08, only: MPI_WIN
-  use SMB_basic, only: atype_SMB_model
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
 
@@ -59,14 +60,272 @@ module SMB_IMAU_ITM
 
     contains
 
-      procedure, public  :: init, run, remap
+      procedure, public :: allocate_SMB_model   => allocate_SMB_model_IMAU_ITM
+      procedure, public :: initialise_SMB_model => initialise_SMB_model_IMAU_ITM
+      procedure, public :: run_SMB_model        => run_SMB_model_IMAU_ITM_abs
+      procedure, public :: remap_SMB_model      => remap_SMB_model_IMAU_ITM
+
       procedure, private :: initialise_IMAUITM_firn_from_file
+      procedure, private :: run_SMB_model_IMAU_ITM
 
   end type type_SMB_model_IMAU_ITM
 
 contains
 
-  subroutine run( self, mesh, ice, climate)
+  subroutine allocate_SMB_model_IMAU_ITM( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_IMAU_ITM),        intent(inout) :: self
+    type(type_SMB_model_context_allocate), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_IMAU_ITM'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%set_name('SMB_model_IMAU_ITM')
+
+    ! Create all model fields
+    ! =======================
+
+    call self%create_field( self%AlbedoSurf, self%wAlbedoSurf, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'AlbedoSurf', &
+      long_name = 'background albedo', &
+      units     = '-')
+
+    call self%create_field( self%Rainfall, self%wRainfall, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Rainfall', &
+      long_name = 'monthly rainfall', &
+      units     = 'm')
+
+    call self%create_field( self%Snowfall, self%wSnowfall, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Snowfall', &
+      long_name = 'monthly snowfall', &
+      units     = 'm')
+
+    call self%create_field( self%AddedFirn, self%wAddedFirn, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'AddedFirn', &
+      long_name = 'monthly added firn', &
+      units     = 'm')
+
+    call self%create_field( self%Melt, self%wMelt, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Melt', &
+      long_name = 'monthly melt', &
+      units     = 'm')
+
+    call self%create_field( self%Refreezing, self%wRefreezing, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Refreezing', &
+      long_name = 'monthly refreezing', &
+      units     = 'm')
+
+    call self%create_field( self%Refreezing_year, self%wRefreezing_year, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Refreezing_year', &
+      long_name = 'annual refreezing', &
+      units     = 'm')
+
+    call self%create_field( self%Runoff, self%wRunoff, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Runoff', &
+      long_name = 'monthly runoff', &
+      units     = 'm')
+
+    call self%create_field( self%Albedo, self%wAlbedo, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Albedo', &
+      long_name = 'monthly albedo', &
+      units     = '-')
+
+    call self%create_field( self%Albedo_year, self%wAlbedo_year, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Albedo_year', &
+      long_name = 'annual albedo', &
+      units     = '-')
+
+    call self%create_field( self%SMB_monthly, self%wSMB_monthly, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'SMB_monthly', &
+      long_name = 'monthly surface mass balance', &
+      units     = 'm')
+
+    call self%create_field( self%FirnDepth, self%wFirnDepth, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'FirnDepth', &
+      long_name = 'monthly firn depth', &
+      units     = 'm')
+
+    call self%create_field( self%MeltPreviousYear, self%wMeltPreviousYear, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'MeltPreviousYear', &
+      long_name = 'total melt in previous year', &
+      units     = 'm')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_SMB_model_IMAU_ITM
+
+  subroutine initialise_SMB_model_IMAU_ITM( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_IMAU_ITM),          intent(inout) :: self
+    type(type_SMB_model_context_initialise), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_IMAU_ITM'
+    character(:), allocatable      :: choice_SMB_IMAUITM_init_firn
+    integer                        :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Determine which constants to use for this region
+    select case (context%region_name)
+    case default
+      call crash('invalid region name "' // context%region_name // '"')
+    case ('NAM')
+      self%C_abl_constant = C%SMB_IMAUITM_C_abl_constant_NAM
+      self%C_abl_Ts       = C%SMB_IMAUITM_C_abl_Ts_NAM
+      self%C_abl_Q        = C%SMB_IMAUITM_C_abl_Q_NAM
+      self%C_refr         = C%SMB_IMAUITM_C_refr_NAM
+    case ('EAS')
+      self%C_abl_constant = C%SMB_IMAUITM_C_abl_constant_EAS
+      self%C_abl_Ts       = C%SMB_IMAUITM_C_abl_Ts_EAS
+      self%C_abl_Q        = C%SMB_IMAUITM_C_abl_Q_EAS
+      self%C_refr         = C%SMB_IMAUITM_C_refr_EAS
+    case ('GRL')
+      self%C_abl_constant = C%SMB_IMAUITM_C_abl_constant_GRL
+      self%C_abl_Ts       = C%SMB_IMAUITM_C_abl_Ts_GRL
+      self%C_abl_Q        = C%SMB_IMAUITM_C_abl_Q_GRL
+      self%C_refr         = C%SMB_IMAUITM_C_refr_GRL
+    case ('ANT')
+      self%C_abl_constant = C%SMB_IMAUITM_C_abl_constant_ANT
+      self%C_abl_Ts       = C%SMB_IMAUITM_C_abl_Ts_ANT
+      self%C_abl_Q        = C%SMB_IMAUITM_C_abl_Q_ANT
+      self%C_refr         = C%SMB_IMAUITM_C_refr_ANT
+    end select
+
+    ! Initialising albedo values
+    self%albedo_water = C%SMB_IMAUITM_albedo_water
+    self%albedo_soil  = C%SMB_IMAUITM_albedo_soil
+    self%albedo_ice   = C%SMB_IMAUITM_albedo_ice
+    self%albedo_snow  = C%SMB_IMAUITM_albedo_snow
+
+    ! Initialisation choice
+    select case (context%region_name)
+    case default
+      call crash('invalid region name "' // context%region_name // '"')
+    case ('NAM')
+      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_NAM
+    case ('EAS')
+      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_EAS
+    case ('GRL')
+      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_GRL
+    case ('ANT')
+      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_ANT
+    end select
+
+    ! Initialise the firn layer
+    select case (choice_SMB_IMAUITM_init_firn)
+    case default
+      call crash('unknown choice_SMB_IMAUITM_init_firn "' // trim( choice_SMB_IMAUITM_init_firn) // '"')
+    case ('uniform')
+      ! Initialise with a uniform firn layer over the ice sheet
+
+      do vi = self%mesh%vi1, self%mesh%vi2
+        if (context%ice%Hi( vi) > 0._dp) then
+          self%FirnDepth(        vi,:) = C%SMB_IMAUITM_initial_firn_thickness
+          self%MeltPreviousYear( vi  ) = 0._dp
+        else
+          self%FirnDepth(        vi,:) = 0._dp
+          self%MeltPreviousYear( vi  ) = 0._dp
+        end if
+      end do
+
+    case ('read_from_file')
+      ! Initialise with the firn layer of a previous run
+      call self%initialise_IMAUITM_firn_from_file( self%mesh, context%region_name)
+    end select
+
+    ! Initialise albedo
+    do vi = self%mesh%vi1, self%mesh%vi2
+      ! Background albedo
+      if (context%ice%Hb( vi) < 0._dp) then
+        self%AlbedoSurf( vi) = self%albedo_water
+      else
+        self%AlbedoSurf( vi) = self%albedo_soil
+      end if
+      if (context%ice%Hi( vi) > 0._dp) then
+        self%AlbedoSurf(  vi) = self%albedo_snow
+      end if
+      self%Albedo( vi,:) = self%AlbedoSurf( vi)
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_SMB_model_IMAU_ITM
+
+  subroutine run_SMB_model_IMAU_ITM_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_IMAU_ITM),   intent(inout) :: self
+    type(type_SMB_model_context_run), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_IMAU_ITM_abs'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%run_SMB_model_IMAU_ITM( self%mesh, context%ice, context%climate)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine run_SMB_model_IMAU_ITM_abs
+
+  subroutine remap_SMB_model_IMAU_ITM( self, context)
+
+    ! In- and output variables
+    class(type_SMB_model_IMAU_ITM),     intent(inout) :: self
+    type(type_SMB_model_context_remap), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_IMAU_ITM'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%remap_field( context%mesh_new, 'AlbedoSurf'      , self%AlbedoSurf      )
+    call self%remap_field( context%mesh_new, 'MeltPreviousYear', self%MeltPreviousYear)
+    call self%remap_field( context%mesh_new, 'Refreezing_year' , self%Refreezing_year )
+    call self%remap_field( context%mesh_new, 'Albedo_year'     , self%Albedo_year     )
+    call self%remap_field( context%mesh_new, 'FirnDepth'       , self%FirnDepth       )
+    call self%remap_field( context%mesh_new, 'Rainfall'        , self%Rainfall        )
+    call self%remap_field( context%mesh_new, 'Snowfall'        , self%Snowfall        )
+    call self%remap_field( context%mesh_new, 'AddedFirn'       , self%AddedFirn       )
+    call self%remap_field( context%mesh_new, 'Melt'            , self%Melt            )
+    call self%remap_field( context%mesh_new, 'Refreezing'      , self%Refreezing      )
+    call self%remap_field( context%mesh_new, 'Runoff'          , self%Runoff          )
+    call self%remap_field( context%mesh_new, 'Albedo'          , self%Albedo          )
+    call self%remap_field( context%mesh_new, 'SMB_monthly'     , self%SMB_monthly     )
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_SMB_model_IMAU_ITM
+
+
+
+  subroutine run_SMB_model_IMAU_ITM( self, mesh, ice, climate)
     ! Run the IMAU-ITM SMB model.
 
     ! NOTE: all the SMB components are in meters of water equivalent;
@@ -79,7 +338,7 @@ contains
     type(type_climate_model),       intent(in)    :: climate
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_IMAUITM'
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_IMAU_ITM'
     integer                        :: vi
     integer                        :: m,mprev
     real(dp)                       :: snowfrac, liquid_water, sup_imp_wat
@@ -165,270 +424,60 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run
-
-  subroutine init( self, mesh, ice, region_name)
-
-    ! In/output variables
-    class(type_SMB_model_IMAU_ITM),    INTENT(INOUT) :: self
-    TYPE(type_mesh),                   INTENT(IN)    :: mesh
-    TYPE(type_ice_model),              INTENT(IN)    :: ice
-    CHARACTER(LEN=3),                  INTENT(IN)    :: region_name
-
-    ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_SMB_model_IMAUITM'
-    INTEGER                                            :: vi
-    CHARACTER(LEN=256)                                 :: choice_SMB_IMAUITM_init_firn
-
-    ! Add routine to path
-    CALL init_routine( routine_name)
-
-    call self%set_name('SMB_IMAUITM')
-    call self%init_common( mesh)
-
-    ! Determine which constants to use for this region
-    IF     (region_name == 'NAM') THEN
-      self%C_abl_constant           = C%SMB_IMAUITM_C_abl_constant_NAM
-      self%C_abl_Ts                 = C%SMB_IMAUITM_C_abl_Ts_NAM
-      self%C_abl_Q                  = C%SMB_IMAUITM_C_abl_Q_NAM
-      self%C_refr                   = C%SMB_IMAUITM_C_refr_NAM
-    ELSEIF (region_name == 'EAS') THEN
-      self%C_abl_constant           = C%SMB_IMAUITM_C_abl_constant_EAS
-      self%C_abl_Ts                 = C%SMB_IMAUITM_C_abl_Ts_EAS
-      self%C_abl_Q                  = C%SMB_IMAUITM_C_abl_Q_EAS
-      self%C_refr                   = C%SMB_IMAUITM_C_refr_EAS
-    ELSEIF (region_name == 'GRL') THEN
-      self%C_abl_constant           = C%SMB_IMAUITM_C_abl_constant_GRL
-      self%C_abl_Ts                 = C%SMB_IMAUITM_C_abl_Ts_GRL
-      self%C_abl_Q                  = C%SMB_IMAUITM_C_abl_Q_GRL
-      self%C_refr                   = C%SMB_IMAUITM_C_refr_GRL
-    ELSEIF (region_name == 'ANT') THEN
-      self%C_abl_constant           = C%SMB_IMAUITM_C_abl_constant_ANT
-      self%C_abl_Ts                 = C%SMB_IMAUITM_C_abl_Ts_ANT
-      self%C_abl_Q                  = C%SMB_IMAUITM_C_abl_Q_ANT
-      self%C_refr                   = C%SMB_IMAUITM_C_refr_ANT
-    END IF
-
-    ! Initialising albedo values
-    self%albedo_water        = C%SMB_IMAUITM_albedo_water
-    self%albedo_soil         = C%SMB_IMAUITM_albedo_soil
-    self%albedo_ice          = C%SMB_IMAUITM_albedo_ice
-    self%albedo_snow         = C%SMB_IMAUITM_albedo_snow
-
-    call self%create_field( self%AlbedoSurf, self%wAlbedoSurf, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'AlbedoSurf', &
-      long_name = 'background albedo', &
-      units     = '-')
-
-    call self%create_field( self%Rainfall, self%wRainfall, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Rainfall', &
-      long_name = 'monthly rainfall', &
-      units     = 'm')
-
-    call self%create_field( self%Snowfall, self%wSnowfall, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Snowfall', &
-      long_name = 'monthly snowfall', &
-      units     = 'm')
-
-    call self%create_field( self%AddedFirn, self%wAddedFirn, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'AddedFirn', &
-      long_name = 'monthly added firn', &
-      units     = 'm')
-
-    call self%create_field( self%Melt, self%wMelt, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Melt', &
-      long_name = 'monthly melt', &
-      units     = 'm')
-
-    call self%create_field( self%Refreezing, self%wRefreezing, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Refreezing', &
-      long_name = 'monthly refreezing', &
-      units     = 'm')
-
-    call self%create_field( self%Refreezing_year, self%wRefreezing_year, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'Refreezing_year', &
-      long_name = 'annual refreezing', &
-      units     = 'm')
-
-    call self%create_field( self%Runoff, self%wRunoff, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Runoff', &
-      long_name = 'monthly runoff', &
-      units     = 'm')
-
-    call self%create_field( self%Albedo, self%wAlbedo, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Albedo', &
-      long_name = 'monthly albedo', &
-      units     = '-')
-
-    call self%create_field( self%Albedo_year, self%wAlbedo_year, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'Albedo_year', &
-      long_name = 'annual albedo', &
-      units     = '-')
-
-    call self%create_field( self%SMB_monthly, self%wSMB_monthly, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'SMB_monthly', &
-      long_name = 'monthly surface mass balance', &
-      units     = 'm')
-
-    call self%create_field( self%FirnDepth, self%wFirnDepth, &
-      mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'FirnDepth', &
-      long_name = 'monthly firn depth', &
-      units     = 'm')
-
-    call self%create_field( self%MeltPreviousYear, self%wMeltPreviousYear, &
-      mesh, Arakawa_grid%a(), &
-      name      = 'MeltPreviousYear', &
-      long_name = 'total melt in previous year', &
-      units     = 'm')
-
-    ! Initialisation choice
-    IF     (region_name == 'NAM') THEN
-      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_NAM
-    ELSEIF (region_name == 'EAS') THEN
-      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_EAS
-    ELSEIF (region_name == 'GRL') THEN
-      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_GRL
-    ELSEIF (region_name == 'ANT') THEN
-      choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_ANT
-    END IF
-
-    ! Initialise the firn layer
-    IF     (choice_SMB_IMAUITM_init_firn == 'uniform') THEN
-      ! Initialise with a uniform firn layer over the ice sheet
-
-      DO vi = mesh%vi1, mesh%vi2
-        IF (ice%Hi( vi) > 0._dp) THEN
-          self%FirnDepth(        vi,:) = C%SMB_IMAUITM_initial_firn_thickness
-          self%MeltPreviousYear( vi  ) = 0._dp
-        ELSE
-          self%FirnDepth(        vi,:) = 0._dp
-          self%MeltPreviousYear( vi  ) = 0._dp
-        END IF
-      END DO
-
-    ELSEIF (choice_SMB_IMAUITM_init_firn == 'read_from_file') THEN
-      ! Initialise with the firn layer of a previous run
-      CALL self%initialise_IMAUITM_firn_from_file( mesh, region_name)
-    ELSE
-      CALL crash('unknown choice_SMB_IMAUITM_init_firn "' // TRIM( choice_SMB_IMAUITM_init_firn) // '"!')
-    END IF
-
-    ! Initialise albedo
-    DO vi = mesh%vi1, mesh%vi2
-      ! Background albedo
-      IF (ice%Hb( vi) < 0._dp) THEN
-        self%AlbedoSurf( vi) = self%albedo_water
-      ELSE
-        self%AlbedoSurf( vi) = self%albedo_soil
-      END IF
-      IF (ice%Hi( vi) > 0._dp) THEN
-        self%AlbedoSurf(  vi) = self%albedo_snow
-      END IF
-      self%Albedo( vi,:) = self%AlbedoSurf( vi)
-    END DO
-
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
-  end subroutine init
+  end subroutine run_SMB_model_IMAU_ITM
 
   subroutine initialise_IMAUITM_firn_from_file( self, mesh, region_name)
     ! If this is a restarted run, read the firn depth and meltpreviousyear data from the restart file
 
     ! In/output variables
-    class(type_SMB_model_IMAU_ITM),      INTENT(INOUT) :: self
-    TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    CHARACTER(LEN=3),                    INTENT(IN)    :: region_name
-
-    ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_IMAUITM_firn_from_file'
-    CHARACTER(LEN=256)                                 :: filename_restart_firn
-    REAL(dp)                                           :: timeframe_restart_firn
-    !TYPE(type_restart_data)                            :: restart
-
-    ! Add routine to path
-    CALL init_routine( routine_name)
-
-    ! Assume that SMB and geometry are read from the same restart file
-    SELECT CASE (region_name)
-    CASE('NAM')
-      filename_restart_firn = C%filename_firn_IMAUITM_NAM
-      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_NAM
-    CASE('EAS')
-      filename_restart_firn = C%filename_firn_IMAUITM_EAS
-      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_EAS
-    CASE('GRL')
-      filename_restart_firn = C%filename_firn_IMAUITM_GRL
-      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_GRL
-    CASE('ANT')
-      filename_restart_firn = C%filename_firn_IMAUITM_ANT
-      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_ANT
-    CASE DEFAULT
-        CALL crash('unknown region_name "' // TRIM( region_name) // '"!')
-    END SELECT
-
-     ! Print to terminal
-    IF (par%primary)  WRITE(*,"(A)") '   Initialising SMB-model firn layer from file "' // colour_string( TRIM(filename_restart_firn),'light blue') // '"...'
-
-
-    ! Read firn layer from file
-    IF (timeframe_restart_firn == 1E9_dp) THEN
-      ! Assume the file has no time dimension
-      CALL read_field_from_file_2D_monthly( filename_restart_firn, 'FirnDepth', mesh, C%output_dir, self%FirnDepth)
-      CALL read_field_from_file_2D( filename_restart_firn, 'MeltPreviousYear', mesh, C%output_dir, self%MeltPreviousYear)
-    ELSE
-      ! Assume the file has a time dimension, and read the specified timeframe
-      CALL read_field_from_file_2D_monthly( filename_restart_firn, 'FirnDepth', mesh, C%output_dir, self%FirnDepth, time_to_read = timeframe_restart_firn)
-      CALL read_field_from_file_2D( filename_restart_firn, 'MeltPreviousYear', mesh, C%output_dir, self%MeltPreviousYear, time_to_read = timeframe_restart_firn)
-    END IF
-
-
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
-
-  end subroutine initialise_IMAUITM_firn_from_file
-
-  subroutine remap( self, mesh_old, mesh_new)
-
-    ! In- and output variables
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    type(type_mesh),                intent(in   ) :: mesh_old
-    type(type_mesh),                intent(in   ) :: mesh_new
+    type(type_mesh),                intent(in   ) :: mesh
+    character(len=3),               intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model'
+    character(len=1024), parameter :: routine_name = 'initialise_IMAUITM_firn_from_file'
+    character(:), allocatable      :: filename_restart_firn
+    real(dp)                       :: timeframe_restart_firn
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call self%remap_field( mesh_new, 'AlbedoSurf'      , self%AlbedoSurf      )
-    call self%remap_field( mesh_new, 'MeltPreviousYear', self%MeltPreviousYear)
-    call self%remap_field( mesh_new, 'Refreezing_year' , self%Refreezing_year )
-    call self%remap_field( mesh_new, 'Albedo_year'     , self%Albedo_year     )
-    call self%remap_field( mesh_new, 'FirnDepth'       , self%FirnDepth       )
-    call self%remap_field( mesh_new, 'Rainfall'        , self%Rainfall        )
-    call self%remap_field( mesh_new, 'Snowfall'        , self%Snowfall        )
-    call self%remap_field( mesh_new, 'AddedFirn'       , self%AddedFirn       )
-    call self%remap_field( mesh_new, 'Melt'            , self%Melt            )
-    call self%remap_field( mesh_new, 'Refreezing'      , self%Refreezing      )
-    call self%remap_field( mesh_new, 'Runoff'          , self%Runoff          )
-    call self%remap_field( mesh_new, 'Albedo'          , self%Albedo          )
-    call self%remap_field( mesh_new, 'SMB_monthly'     , self%SMB_monthly     )
+    ! Assume that SMB and geometry are read from the same restart file
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // trim( region_name) // '"')
+    case ('NAM')
+      filename_restart_firn = C%filename_firn_IMAUITM_NAM
+      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_NAM
+    case ('EAS')
+      filename_restart_firn = C%filename_firn_IMAUITM_EAS
+      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_EAS
+    case ('GRL')
+      filename_restart_firn = C%filename_firn_IMAUITM_GRL
+      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_GRL
+    case ('ANT')
+      filename_restart_firn = C%filename_firn_IMAUITM_ANT
+      timeframe_restart_firn = C%timeframe_restart_firn_IMAUITM_ANT
+    end select
+
+     ! Print to terminal
+    if (par%primary) write(*,"(A)") '   Initialising SMB-model firn layer from file "' // &
+      colour_string( trim( filename_restart_firn),'light blue') // '"...'
+
+    ! Read firn layer from file
+    if (timeframe_restart_firn == 1E9_dp) then
+      ! Assume the file has no time dimension
+      call read_field_from_file_2D_monthly( filename_restart_firn, 'FirnDepth', mesh, C%output_dir, self%FirnDepth)
+      call read_field_from_file_2D( filename_restart_firn, 'MeltPreviousYear', mesh, C%output_dir, self%MeltPreviousYear)
+    else
+      ! Assume the file has a time dimension, and read the specified timeframe
+      call read_field_from_file_2D_monthly( filename_restart_firn, 'FirnDepth', mesh, C%output_dir, self%FirnDepth, time_to_read = timeframe_restart_firn)
+      call read_field_from_file_2D( filename_restart_firn, 'MeltPreviousYear', mesh, C%output_dir, self%MeltPreviousYear, time_to_read = timeframe_restart_firn)
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap
+  end subroutine initialise_IMAUITM_firn_from_file
 
 end module SMB_IMAU_ITM

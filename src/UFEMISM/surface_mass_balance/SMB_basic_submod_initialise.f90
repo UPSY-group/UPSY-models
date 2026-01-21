@@ -2,12 +2,14 @@ submodule( SMB_basic) SMB_basic_submod_initialise
 
 contains
 
-  function SMB_model_context_initialise( self, region_name) result( context)
+  function SMB_model_context_initialise( self, ice, region_name) result( context)
     !< Return an instance of the SMB model initialisation context type
-    class(atype_SMB_model),      intent(in) :: self
-    character(len=3),            intent(in) :: region_name
+    class(atype_SMB_model),       intent(in) :: self
+    type(type_ice_model), target, intent(in) :: ice
+    character(len=3),             intent(in) :: region_name
     type(type_SMB_model_context_initialise) :: context
-    context%region_name = region_name
+    context%ice         => ice
+    context%region_name =  region_name
   end function SMB_model_context_initialise
 
   subroutine initialise_SMB_model_common_abs( self, context)

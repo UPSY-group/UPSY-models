@@ -60,7 +60,8 @@ module SMB_basic
 
   type, extends( atype_model_context) :: type_SMB_model_context_initialise
     ! The set of variables required by any SMB model in order to be initialised
-    character(len=3)  :: region_name
+    type(type_ice_model), pointer :: ice
+    character(len=3)              :: region_name
   end type type_SMB_model_context_initialise
 
   type, extends( atype_model_context) :: type_SMB_model_context_run
@@ -141,9 +142,10 @@ module SMB_basic
       type(type_SMB_model_context_allocate) :: context
     end function SMB_model_context_allocate
 
-    module function SMB_model_context_initialise( self, region_name) result( context)
-      class(atype_SMB_model),      intent(in) :: self
-      character(len=3),            intent(in) :: region_name
+    module function SMB_model_context_initialise( self, ice, region_name) result( context)
+      class(atype_SMB_model),       intent(in) :: self
+      type(type_ice_model), target, intent(in) :: ice
+      character(len=3),             intent(in) :: region_name
       type(type_SMB_model_context_initialise) :: context
     end function SMB_model_context_initialise
 

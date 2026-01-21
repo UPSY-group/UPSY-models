@@ -707,13 +707,13 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%SMB, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'SMB', d_grid_vec_partial_2D)
       case ('Albedo')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%SMB%IMAUITM%Albedo, d_grid_vec_partial_2D_monthly, d_mesh_is_hybrid = .true.)
+        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%SMB%IMAU_ITM%Albedo, d_grid_vec_partial_2D_monthly, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
       case ('FirnDepth')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%SMB%IMAUITM%FirnDepth, d_grid_vec_partial_2D_monthly, d_mesh_is_hybrid = .true.)
+        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%SMB%IMAU_ITM%FirnDepth, d_grid_vec_partial_2D_monthly, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnDepth', d_grid_vec_partial_2D_monthly)
       case ('MeltPreviousYear')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%IMAUITM%MeltPreviousYear, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%IMAU_ITM%MeltPreviousYear, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'MeltPreviousYear', d_grid_vec_partial_2D)
 
     ! == Basal mass balance ==

@@ -11,7 +11,8 @@ module SMB_reconstructed
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon
   use mesh_data_smoothing, only: smooth_Gaussian
-  use SMB_basic, only: atype_SMB_model
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, type_SMB_model_context_initialise, &
+    type_SMB_model_context_run, type_SMB_model_context_remap
 
   implicit none
 
@@ -23,21 +24,96 @@ module SMB_reconstructed
 
     contains
 
-      procedure, public  :: init, run, remap
+      procedure, public :: allocate_SMB_model   => allocate_SMB_model_reconstructed
+      procedure, public :: initialise_SMB_model => initialise_SMB_model_reconstructed
+      procedure, public :: run_SMB_model        => run_SMB_model_reconstructed_abs
+      procedure, public :: remap_SMB_model      => remap_SMB_model_reconstructed
+
+      procedure, private :: run_SMB_model_reconstructed
 
   end type type_SMB_model_reconstructed
 
 contains
 
-  subroutine run( self, mesh, grid_smooth, ice, region_name, time)
+  subroutine allocate_SMB_model_reconstructed( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed),   intent(inout) :: self
+    type(type_SMB_model_context_allocate), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_reconstructed'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%set_name('SMB_model_reconstructed')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_SMB_model_reconstructed
+
+  subroutine initialise_SMB_model_reconstructed( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed),     intent(inout) :: self
+    type(type_SMB_model_context_initialise), intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_reconstructed'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_SMB_model_reconstructed
+
+  subroutine run_SMB_model_reconstructed_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed), intent(inout) :: self
+    type(type_SMB_model_context_run),    intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_reconstructed_abs'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%run_SMB_model_reconstructed( self%mesh, context%grid_smooth, context%ice)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine run_SMB_model_reconstructed_abs
+
+  subroutine remap_SMB_model_reconstructed( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed), intent(inout) :: self
+    type(type_SMB_model_context_remap),  intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_reconstructed'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_SMB_model_reconstructed
+
+  subroutine run_SMB_model_reconstructed( self, mesh, grid_smooth, ice)
 
     ! In/output variables:
     class(type_SMB_model_reconstructed), intent(inout) :: self
     type(type_mesh),                     intent(in   ) :: mesh
     type(type_grid),                     intent(in   ) :: grid_smooth
     type(type_ice_model),                intent(in   ) :: ice
-    character(len=3),                    intent(in   ) :: region_name
-    real(dp),                            intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'run_SMB_model_reconstructed'
@@ -118,45 +194,6 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run
-
-  subroutine init( self, mesh)
-
-    ! In- and output variables
-    class(type_SMB_model_reconstructed), intent(inout) :: self
-    type(type_mesh),                     intent(in   ) :: mesh
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_reconstructed'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call self%set_name('SMB_reconstructed')
-    call self%init_common( mesh)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine init
-
-  subroutine remap( self, mesh_new)
-
-    ! In/output variables:
-    class(type_SMB_model_reconstructed), intent(inout) :: self
-    type(type_mesh),                     intent(in   ) :: mesh_new
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_reconstructed'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call crash('remapping not yet implemented for type_SMB_model_reconstructed')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine remap
+  end subroutine run_SMB_model_reconstructed
 
 end module SMB_reconstructed

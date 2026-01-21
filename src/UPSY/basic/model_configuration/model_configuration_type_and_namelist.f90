@@ -659,6 +659,15 @@ module model_configuration_type_and_namelist
     real(dp)            :: precip_CC_correction_GRL_config              = 1.068_dp                        !
     real(dp)            :: precip_CC_correction_ANT_config              = 1.068_dp                        !
 
+    ! == Climate - snapshot plus a transient deltaT
+    character(len=1024) :: filename_climate_snapshot_trans_dT_NAM_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_EAS_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_GRL_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_ANT_config = ''
+    character(len=1024) :: filename_atmosphere_dT_NAM_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_EAS_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_GRL_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_ANT_config             = ''
 
     ! == Climate - Insolation
     character(len=1024) :: choice_insolation_forcing_config             = 'none'                           ! 'none', 'static' or 'realistic'
@@ -1836,6 +1845,16 @@ module model_configuration_type_and_namelist
     real(dp)            :: precip_CC_correction_GRL
     real(dp)            :: precip_CC_correction_ANT
 
+    ! == Climate - snapshot plus a transient deltaT
+    character(len=1024) :: filename_climate_snapshot_trans_dT_NAM
+    character(len=1024) :: filename_climate_snapshot_trans_dT_EAS
+    character(len=1024) :: filename_climate_snapshot_trans_dT_GRL
+    character(len=1024) :: filename_climate_snapshot_trans_dT_ANT
+    character(len=1024) :: filename_atmosphere_dT_NAM
+    character(len=1024) :: filename_atmosphere_dT_EAS
+    character(len=1024) :: filename_atmosphere_dT_GRL
+    character(len=1024) :: filename_atmosphere_dT_ANT
+
 
     ! == Climate - Insolation
     character(len=1024) :: choice_insolation_forcing
@@ -2821,6 +2840,14 @@ contains
       precip_CC_correction_EAS_config                             , &
       precip_CC_correction_GRL_config                             , &
       precip_CC_correction_ANT_config                             , &
+      filename_climate_snapshot_trans_dT_NAM_config               , &
+      filename_climate_snapshot_trans_dT_EAS_config               , &
+      filename_climate_snapshot_trans_dT_GRL_config               , &
+      filename_climate_snapshot_trans_dT_ANT_config               , &
+      filename_atmosphere_dT_NAM_config                           , &
+      filename_atmosphere_dT_EAS_config                           , &
+      filename_atmosphere_dT_GRL_config                           , &
+      filename_atmosphere_dT_ANT_config                           , &
       choice_insolation_forcing_config                            , &
       filename_insolation_config                                  , &
       static_insolation_time_config                               , &
@@ -3844,6 +3871,16 @@ contains
     C%precip_CC_correction_EAS                               = precip_CC_correction_EAS_config
     C%precip_CC_correction_GRL                               = precip_CC_correction_GRL_config
     C%precip_CC_correction_ANT                               = precip_CC_correction_ANT_config
+
+    ! == Climate - snapshot plus a transient deltaT
+    c%filename_climate_snapshot_trans_dT_NAM                 = filename_climate_snapshot_trans_dT_NAM_config
+    c%filename_climate_snapshot_trans_dT_EAS                 = filename_climate_snapshot_trans_dT_EAS_config
+    c%filename_climate_snapshot_trans_dT_GRL                 = filename_climate_snapshot_trans_dT_GRL_config
+    c%filename_climate_snapshot_trans_dT_ANT                 = filename_climate_snapshot_trans_dT_ANT_config
+    C%filename_atmosphere_dT_NAM                             = filename_atmosphere_dT_NAM_config            
+    C%filename_atmosphere_dT_EAS                             = filename_atmosphere_dT_EAS_config            
+    C%filename_atmosphere_dT_GRL                             = filename_atmosphere_dT_GRL_config            
+    C%filename_atmosphere_dT_ANT                             = filename_atmosphere_dT_ANT_config            
 
     C%choice_insolation_forcing                              = choice_insolation_forcing_config
     C%filename_insolation                                    = filename_insolation_config

@@ -17,7 +17,7 @@ MODULE climate_realistic
   USE global_forcings_main
   USE netcdf_io_main
   USE netcdf_basic
-  use climate_matrix_utilities, only: get_insolation_at_time
+  use climate_model_utilities                                , only: get_insolation_at_time
   use reallocate_mod                                         , only: reallocate_bounds
 
   IMPLICIT NONE
@@ -29,7 +29,7 @@ MODULE climate_realistic
   public :: initialise_insolation_forcing
   public :: apply_geometry_downscaling_corrections
   public :: remap_climate_realistic
-  public :: remap_snapshot
+  public :: remap_insolation
 
 CONTAINS
 
@@ -370,8 +370,8 @@ CONTAINS
       case default
         call crash('remap climate for choice_climate_model_realistic = "' // TRIM( C%choice_climate_model_realistic) // '" and choice_SMB_model = "' // TRIM( choice_SMB_model) // '" not implemented yet!')
       case ('IMAU-ITM')
-        ! Reallocate the IMAU-ITM fields
-        call remap_snapshot( climate%snapshot, mesh_new)
+        ! Reallocate the insolation fields
+        call remap_insolation( climate%snapshot, mesh_new)
       case( 'prescribed')
         ! Nothing extra to do
       end select
@@ -383,13 +383,13 @@ CONTAINS
 
   end subroutine remap_climate_realistic
 
-  subroutine remap_snapshot( snapshot, mesh_new)
+  subroutine remap_insolation( snapshot, mesh_new)
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_new
     type(type_climate_model_snapshot),      intent(inout) :: snapshot
 
     ! Local variables
-    character(LEN=256), parameter                         :: routine_name = 'remap_snapshot'
+    character(LEN=256), parameter                         :: routine_name = 'remap_insolation'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -402,6 +402,6 @@ CONTAINS
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap_snapshot
+  end subroutine remap_insolation
 
 END MODULE climate_realistic

@@ -1,4 +1,4 @@
-module climate_matrix_utilities
+module climate_model_utilities
   ! check which of these is needed!
   use precisions                                             , only: dp
   use mpi_basic                                              , only: par, sync
@@ -15,6 +15,7 @@ module climate_matrix_utilities
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
   use erf_mod, only: error_function
   use assertions_basic, only: assert
+  use series_utilities
 
  implicit none
 
@@ -27,6 +28,9 @@ module climate_matrix_utilities
   !public :: rotate_wind_to_model_mesh ! I don't think is needed...
   public :: get_insolation_at_time
   public :: update_insolation_timeframes_from_file
+  public :: apply_precipitation_CC_correction
+  public :: apply_geometry_downscaling_corrections
+  public :: fill_in_transient_dT_snapshot_fields
 
   contains
 
@@ -437,5 +441,121 @@ module climate_matrix_utilities
     call finalise_routine( routine_name)
 
   end subroutine update_insolation_timeframes_from_file
+
+  SUBROUTINE apply_precipitation_CC_correction(mesh, climate, precip_CC_correction, deltaT)
+  ! Applies a simple Clausius-Clapeyron correction to temperature based on the prescribed deltaT
+
+    IMPLICIT NONE
+
+    TYPE(type_mesh),                       INTENT(IN)    :: mesh
+    TYPE(type_climate_model),              INTENT(INOUT) :: climate
+    REAL(dp),                              INTENT(IN)    :: precip_CC_correction
+    REAL(dp),                              INTENT(IN)    :: deltaT
+
+    ! Local Variables
+    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'apply_precipitation_CC_correction'
+    INTEGER                                              :: vi, m
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+        do m = 1, 12
+            ! Precip(\Delta T) = Precip(PD) \times 1.068^{\Delta T}
+            climate%Precip( vi, m) = climate%Precip( vi, m) * precip_CC_correction**deltaT
+        end do
+    end do
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+  END SUBROUTINE apply_precipitation_CC_correction
+
+  SUBROUTINE apply_geometry_downscaling_corrections( mesh, ice, climate, snapshot, deltaT_snapshot)
+    ! Applies the lapse rate corrections for temperature and precipitation
+    ! to correct for the mismatch between T and P at the forcing's ice surface elevation and the model's ice surface elevation
+
+    IMPLICIT NONE
+
+    TYPE(type_mesh),                       INTENT(IN)    :: mesh
+    TYPE(type_ice_model),                  INTENT(IN)    :: ice
+    TYPE(type_climate_model),              INTENT(INOUT) :: climate
+    TYPE(type_climate_model_snapshot),     INTENT(IN)    :: snapshot
+    REAL(dp),                              INTENT(IN)    :: deltaT_snapshot
+
+    ! Local Variables
+    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'apply_geometry_downscaling_corrections'
+    INTEGER                                              :: vi, m
+    REAL(dp)                                             :: deltaH, deltaT, deltaP
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE                :: T_inv, T_inv_ref
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    IF     ((C%choice_climate_model_realistic == 'snapshot_plus_uniform_deltaT') .AND. (snapshot%do_lapse_rates)) THEN
+
+      allocate( T_inv     (mesh%vi1:mesh%vi2, 12))
+      allocate( T_inv_ref (mesh%vi1:mesh%vi2, 12))
+
+      do vi = mesh%vi1, mesh%vi2
+
+        ! we only apply corrections where it is not open ocean
+        if (ice%mask_icefree_ocean( vi) .eqv. .FALSE.) then
+          deltaT  = (ice%Hs( vi) - snapshot%Hs( vi)) * (-1._dp * abs(snapshot%lapse_rate_temp))
+          do m = 1, 12
+            ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
+            climate%T2m( vi, m)    = snapshot%T2m( vi, m)  + deltaT_snapshot  + deltaT
+
+
+            ! Calculate inversion-layer temperatures
+            T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
+            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - snapshot%lapse_rate_temp * (ice%Hs( vi) - snapshot%Hs( vi)))
+            ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
+            ! Same as implemented in IMAU-ICE
+            climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))
+
+          end do ! m
+        end if
+      end do ! vi
+
+      deallocate(T_inv)
+      deallocate(T_inv_ref)
+
+    ELSEIF (C%choice_climate_model_realistic == 'climate_matrix') THEN
+      ! Not yet implemented! Will likely use the lambda field from Berends et al. (2018)
+    END IF
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE apply_geometry_downscaling_corrections
+
+  subroutine fill_in_transient_dT_snapshot_fields(filename_climate_snapshot, mesh, climate, time)
+  ! Read in snapshot variables
+
+    CHARACTER(LEN=1024),      ALLOCATABLE, INTENT(IN)    :: filename_climate_snapshot
+    TYPE(type_mesh),                       INTENT(IN)    :: mesh
+    TYPE(type_climate_model),              INTENT(INOUT) :: climate
+    REAL(dp),                              INTENT(IN)    :: time
+
+    ! Local Variables
+    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'fill_in_transient_dT_snapshot_fields'
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    call read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot%Hs)
+    CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_trans_dT%snapshot%Hs)
+    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m',    mesh, C%output_dir, climate%T2m)
+    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
+
+    call update_timeframes_from_record(climate%snapshot_trans_dT%dT_series_time, climate%snapshot_trans_dT%dT_series, climate%snapshot_trans_dT%dT_t0, climate%snapshot_trans_dT%dT_t1, &
+                                       climate%snapshot_trans_dT%dT_at_t0, climate%snapshot_trans_dT%dT_at_t1, time)
+
+    call interpolate_value_from_forcing_record(climate%snapshot_trans_dT%dT_t0, climate%snapshot_trans_dT%dT_t1, climate%snapshot_trans_dT%dT_at_t0, climate%snapshot_trans_dT%dT_at_t1, time, climate%snapshot_trans_dT%deltaT)
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+end subroutine fill_in_transient_dT_snapshot_fields
 
 end module

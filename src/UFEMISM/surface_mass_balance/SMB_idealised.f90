@@ -10,8 +10,8 @@ module SMB_idealised
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use Halfar_SIA_solution, only: Halfar
-  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, type_SMB_model_context_initialise, &
-    type_SMB_model_context_run, type_SMB_model_context_remap
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, type_SMB_model_context_remap
 
   implicit none
 

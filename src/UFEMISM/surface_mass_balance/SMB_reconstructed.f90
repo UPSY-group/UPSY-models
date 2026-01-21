@@ -11,8 +11,8 @@ module SMB_reconstructed
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon
   use mesh_data_smoothing, only: smooth_Gaussian
-  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, type_SMB_model_context_initialise, &
-    type_SMB_model_context_run, type_SMB_model_context_remap
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, type_SMB_model_context_remap
 
   implicit none
 

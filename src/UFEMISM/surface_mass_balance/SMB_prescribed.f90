@@ -10,8 +10,8 @@ module SMB_prescribed
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
   use netcdf_io_main
-  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, type_SMB_model_context_initialise, &
-    type_SMB_model_context_run, type_SMB_model_context_remap
+  use SMB_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, type_SMB_model_context_remap
 
   implicit none
 

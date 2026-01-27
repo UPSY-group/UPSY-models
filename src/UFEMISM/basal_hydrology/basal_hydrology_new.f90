@@ -91,8 +91,6 @@ CONTAINS
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'basal_hydrology'
-    integer                        :: vi
-    logical, parameter             :: sliding = .true.         ! Whether the ice slides or not when W = 0 and there is ice on land
 
     real(dp), parameter            :: W_max = 1000000.0_dp     ! Maximum basal water depth (number is placeholder for now, because there is no maximum W)
     real(dp), parameter            :: W_min = 0.0_dp           ! Minimum basal water depth
@@ -102,39 +100,17 @@ CONTAINS
 
     real(dp), parameter            :: P_min = 0.0_dp           ! Minimum pressure of the ice on the basal water
 
-    real(dp), parameter            :: rho_w = 1000.0_dp   ! Density of water
-    real(dp), parameter            :: rho_i = 917.0_dp    ! Density of ice
-
     ! real(dp), parameter            :: k_coef              ! Coefficient of effective conductivity
     ! real(dp), parameter            :: alpha               ! Exponent used in effective conductivity
     ! real(dp), parameter            :: beta                ! Exponent used in effective conductivity
-
-    real(dp), parameter            :: Cd = 0.0_dp        ! Gradual drain of water in till (m a^-1)
-
-    real(dp), parameter            :: g = 9.81_dp         ! Gravitational acceleration
 
     ! real(dp), parameter            :: c_1                 ! Scaling coefficient 1 (non-negative opening term)
     ! real(dp), parameter            :: c_2                 ! Scaling coefficient 2 (closing term)
 
     ! real(dp), parameter            :: W_r                 ! Maximum roughness scale of basal topography
 
-    integer                        :: ti, via, vib, vic   ! Triangle index
-    real(dp)                       :: d_ab, d_bc, d_ca    ! Lengths of triangle sides
-    real(dp)                       :: d_min               ! Minimum triangle side length
-    real(dp)                       :: u_t, v_t, D_t       ! Velocity components on triangle
-    real(dp)                       :: ci, vj, ei, u_perp
-
-    real(dp)                       :: dt_crit_CFL, dt_crit_W, dt_crit_P, dt_hydro   ! Critical timesteps for different conditions
-
-    real(dp), parameter            :: phi = 0.01_dp       ! Englacial porosity (This is just a parameter)
-
-    real(dp), parameter            :: correction_factor = 0.9_dp ! To be on the safe side
-
-    logical,  dimension(mesh%nV)   :: mask_floating_ice_tot, mask_icefree_land_tot, mask_icefree_ocean_tot
-    real(dp), dimension(mesh%nE)   :: u_c_tot, v_c_tot
-    real(dp), dimension(mesh%nV)   :: W_tot
-
     real(dp)                       :: dt
+    real(dp)                       :: dt_hydro
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -158,8 +134,6 @@ CONTAINS
 
     call calc_K(mesh, ice, basal_hydro)
 
-    ! 4) Get values on staggered grid 
-    !call map_all_a_b(mesh, basal_hydro) !calc_D is in here
     call calc_D(mesh, basal_hydro)
 
     call calc_uv(mesh, ice, basal_hydro)
@@ -219,7 +193,7 @@ CONTAINS
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  1.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0_dp) ! For now just make this a value
+    allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0069_dp) ! For now just make this a value
     allocate(basal_hydro%dW_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -248,6 +222,8 @@ CONTAINS
     allocate(basal_hydro%dR_dy_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%t_next, source = 0.0_dp)
     allocate(basal_hydro%dt, source = 0.0_dp)
+    allocate(basal_hydro%W_r(mesh%vi1:mesh%vi2), source = 0.1_dp) !Value used in basal hydrology paper (Bueler and Van Pelt 2015)
+    allocate(basal_hydro%Y(mesh%vi1:mesh%vi2), source = 0.0_dp)
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
@@ -343,44 +319,6 @@ CONTAINS
   end subroutine calc_W_til_next
 
 
-  ! not used anymore
-  subroutine map_all_a_b( mesh, basal_hydro)
-    !< Mapping all the variables that need to go to b grid to the b grid >!
-
-    ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
-
-    ! Local variables:
-    character(len=1024) :: routine_name = 'map_all_a_b'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! 4) Do this for W
-    call ddx_a_b_2D(mesh, basal_hydro%W, basal_hydro%dW_dx_b)
-    call map_a_b_2D(mesh, basal_hydro%W, basal_hydro%W_b)
-
-    ! 5) Also do this for effective conductivity K
-    call ddx_a_b_2D(mesh, basal_hydro%K, basal_hydro%dK_dx_b)
-
-    ! 6) Do this again for velocity components u and v
-    call ddx_a_b_2D(mesh, basal_hydro%u, basal_hydro%du_dx_b)
-    call ddx_a_b_2D(mesh, basal_hydro%v, basal_hydro%dv_dx_b)
-    call map_a_b_2D(mesh, basal_hydro%u, basal_hydro%u_b)
-    call map_a_b_2D(mesh, basal_hydro%v, basal_hydro%v_b)
-
-    ! 7) And lastly for the diffusivity D
-    call calc_D(mesh, basal_hydro)  ! Calculate D from W and K
-    call ddx_a_b_2D(mesh, basal_hydro%D, basal_hydro%dD_dx_b)
-    call map_a_b_2D(mesh, basal_hydro%D, basal_hydro%D_b)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine map_all_a_b
-
-  
 
   subroutine get_basal_hydro_timestep( mesh, basal_hydro, dt, dt_hydro)
     !< Get basal hydrology timestep >!
@@ -453,7 +391,6 @@ CONTAINS
       write(*,*) "dt_crit_W   = ", dt_crit_W
       write(*,*) "dt_crit_P   = ", dt_crit_P
     end if
-
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -561,7 +498,12 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! calculate basal hydro masks
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
+
+    ! calculate opening C and closing O terms
+    call calc_opening_rate(mesh, ice, basal_hydro)
+    call calc_closing_rate(mesh, ice, basal_hydro)
 
     do vi = mesh%vi1, mesh%vi2
       if (ice%mask_icefree_land( vi)) then
@@ -1191,8 +1133,6 @@ CONTAINS
 
   end subroutine calc_uv
 
-
-
   subroutine point_source( mesh, basal_hydro)
     ! Calculate a point source for testing. Allocate W with zeros for best viewable results.
 
@@ -1224,5 +1164,67 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine point_source
+
+
+
+  subroutine calc_opening_rate( mesh, ice, basal_hydro)
+    ! Calculate opening rate
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_opening_rate'
+    integer                                               :: vi
+    real(dp), parameter                                   :: c1 = 0.5 !Cavitation coefficient (m^-1)
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+      ! In the Bueler and Van Pelt 2015 paper Y is defined as W, so we will do that for now too
+      basal_hydro%Y( vi) = basal_hydro%W( vi)
+      ! Calculate opening rate
+      basal_hydro%O( vi) = c1*sqrt(ice%u_base( vi)**2_dp + ice%v_base( vi)**2_dp + ice%w_base( vi)**2_dp)&
+                            *max((basal_hydro%W_r( vi) - basal_hydro%Y( vi)), 0.0_dp)
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_opening_rate
+
+
+
+  subroutine calc_closing_rate( mesh, ice, basal_hydro)
+    ! Calculate opening rate
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(in   )    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_closing_rate'
+    integer                                               :: vi
+    real(dp), parameter                                   :: c2 = 0.04 !Creep closure coefficient 
+    real(dp), parameter                                   :: A = 3.1689e-24_dp ! Ice softness parameter (Pa^-3 s^-1)
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+      ! In the Bueler and Van Pelt 2015 paper Y is defined as W, so we will do that for now too
+      basal_hydro%Y( vi) = basal_hydro%W( vi)
+      ! Calculate closing rate
+      basal_hydro%C( vi) = c2*A*(basal_hydro%P_o( vi) - basal_hydro%P( vi))**3*basal_hydro%Y( vi)
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_closing_rate
 
 END MODULE basal_hydrology_new

@@ -69,16 +69,12 @@ MODULE basal_hydrology_model_types
     ! How do we handle constants? Are those also types somewhere?
     ! Seems to be in model_configuration.f90 and parameters.f90?
 
-    real(dp), dimension(:), allocatable :: u_slide             ! Ice sliding velocity in x direction
-    real(dp), dimension(:), allocatable :: v_slide             ! Ice sliding velocity in y direction
+    real(dp), dimension(:), allocatable :: W_r                 ! Maximum roughness scale of basal topography
+    real(dp), dimension(:), allocatable :: Y                   ! bed seperation
 
     real(dp), dimension(:), allocatable :: A                   ! Softness of the ice
 
     real(dp), dimension(:), allocatable :: psi                 ! Hydraulic potential
-
-    real(dp), dimension(:), allocatable :: b                   ! Bedrock elevation (reference geometry?)
-
-    real(dp), dimension(:), allocatable :: H_i                 ! Ice thickness
 
     real(dp), dimension(:), allocatable :: Z                   ! Sum of zeroth-order terms
     real(dp), dimension(:), allocatable :: C                   ! Closing rates
@@ -86,10 +82,13 @@ MODULE basal_hydrology_model_types
 
     real(dp), dimension(:), allocatable :: R                   ! Subglacial water layer pressure: P + rho_w*g*b
     real(dp), dimension(:), allocatable :: dR_dx               ! Derivative of R to x on A grid.
+    real(dp), dimension(:), allocatable :: dr_dx_b             ! Derivative of R to x on B grid.
     real(dp), dimension(:), allocatable :: dR_dy               ! Derivative of R to y on A grid.
+    real(dp), dimension(:), allocatable :: dR_dy_b             ! Derivative of R to y on B grid.
 
     real(dp), allocatable               :: old_time            ! Time at previous timestep
 
+    type(type_sparse_matrix_CSR_dp)     :: M_a_b               ! Matrix for going from grid a to grid b
     TYPE(type_sparse_matrix_CSR_dp)     :: M_b_c               ! Matrix for going from grid b to grid c
     TYPE(type_sparse_matrix_CSR_dp)     :: M_a_c               ! Matrix for going from grid b to grid c
 
@@ -100,7 +99,8 @@ MODULE basal_hydrology_model_types
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file
 
     ! Timestepping
-    REAL(dp)                                :: t_next
+    REAL(dp), allocatable                   :: t_next
+    real(dp), allocatable                   :: dt
     
 
     ! LADDIE

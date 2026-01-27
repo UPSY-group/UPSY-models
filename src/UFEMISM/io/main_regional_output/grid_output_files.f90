@@ -621,6 +621,12 @@ contains
       case("basal_hydro_dr_dx_b")
         call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%dr_dx_b, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_dr_dx_b", d_grid_vec_partial_2D)
+      case("basal_hydro_O")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%O, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_O", d_grid_vec_partial_2D)
+      case("basal_hydro_C")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%C, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_C", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================
@@ -1424,6 +1430,10 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_P', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Pressure', units = 'Pa')
       case("basal_hydro_dr_dx_b")
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_dr_dx_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure gradient x-direction b-grid', units = 'Pa m^-1')
+      case("basal_hydro_O")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_O', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity opening rate', units = 'm yr^-1')
+      case("basal_hydro_C")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_C', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity closing rate', units = 'm yr^-1')
 
     ! == Basal sliding ==
     ! ===================

@@ -70,20 +70,18 @@ contains
         w0 * ocean%snapshot_nudge2D_plus_anomalies%S_anomaly_0 + &
         w1 * ocean%snapshot_nudge2D_plus_anomalies%S_anomaly_1
 
-      if (time >= C%ocean_snp_p_anml_tstart_anomalies) then
-        ! Add anomaly to snapshot to find the applied ocean state
-        ocean%snapshot_nudge2D_plus_anomalies%T = &
-          ocean%snapshot_nudge2D_plus_anomalies%T_baseline + &
-          ocean%snapshot_nudge2D_plus_anomalies%T_anomaly
-        ocean%snapshot_nudge2D_plus_anomalies%S = &
-          ocean%snapshot_nudge2D_plus_anomalies%S_baseline + &
-          ocean%snapshot_nudge2D_plus_anomalies%S_anomaly
-      else
-        ! Only apply the baseline
-        ocean%snapshot_nudge2D_plus_anomalies%T = ocean%snapshot_nudge2D_plus_anomalies%T_baseline
-        ocean%snapshot_nudge2D_plus_anomalies%S = ocean%snapshot_nudge2D_plus_anomalies%S_baseline
-      end if
+      ! Add anomaly to snapshot to find the applied ocean state
+      ocean%snapshot_nudge2D_plus_anomalies%T = &
+        ocean%snapshot_nudge2D_plus_anomalies%T_baseline + &
+        ocean%snapshot_nudge2D_plus_anomalies%T_anomaly
+      ocean%snapshot_nudge2D_plus_anomalies%S = &
+        ocean%snapshot_nudge2D_plus_anomalies%S_baseline + &
+        ocean%snapshot_nudge2D_plus_anomalies%S_anomaly
 
+    else
+      ! Only apply the baseline
+      ocean%snapshot_nudge2D_plus_anomalies%T = ocean%snapshot_nudge2D_plus_anomalies%T_baseline
+      ocean%snapshot_nudge2D_plus_anomalies%S = ocean%snapshot_nudge2D_plus_anomalies%S_baseline
     end if
 
     ! Set applied ocean data

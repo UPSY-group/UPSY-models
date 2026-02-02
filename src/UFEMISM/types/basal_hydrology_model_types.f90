@@ -64,6 +64,9 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: Q_s                 ! Normal component (south) of the advective flux VW
     real(dp), dimension(:), allocatable :: divQ                ! Divergence of the advective flux
 
+    real(dp), dimension(:), allocatable :: q_til               ! Water flux towards till
+    real(dp), dimension(:), allocatable :: q_water_layer       ! Water flux towards water layer
+
     real(dp), dimension(:), allocatable :: phi_0               ! Englacial porosity
 
     ! How do we handle constants? Are those also types somewhere?

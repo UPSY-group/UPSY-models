@@ -104,7 +104,14 @@ MODULE basal_hydrology_model_types
     ! Timestepping
     REAL(dp), allocatable                   :: t_next
     real(dp), allocatable                   :: dt
-    
+
+    ! Ice model variables converted to m/s
+    real(dp), dimension(:), allocatable     :: ice_u_base
+    real(dp), dimension(:), allocatable     :: ice_v_base
+    real(dp), dimension(:), allocatable     :: ice_w_base
+
+    ! Water leaking back from till to water layer parameter
+    real(dp), allocatable                   :: Cd
 
     ! LADDIE
     type(type_laddie_model)                       :: laddie

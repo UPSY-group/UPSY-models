@@ -7,7 +7,7 @@ module laddie_integration
 
   use precisions                                             , only: dp
   use mpi_basic                                              , only: par, sync
-  use control_resources_and_error_messaging                  , only: crash, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh

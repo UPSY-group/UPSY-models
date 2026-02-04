@@ -6,6 +6,7 @@ module mesh_types
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use parallel_array_info_type, only: type_par_arr_info
   use mpi_f08, only: MPI_WIN
+  use deallocate_dist_shared_mod, only: deallocate_dist_shared
 
   implicit none
 
@@ -276,8 +277,33 @@ module mesh_types
     type(type_sparse_matrix_CSR_dp)         :: M2_ddz_bk_bk
     type(type_sparse_matrix_CSR_dp)         :: M2_d2dz2_bk_bk
 
+  contains
+
+    final :: finalise
+
   end type type_mesh
 
 contains
+
+  subroutine finalise( mesh)
+    !< Deallocate hybrid distributed/shared components (as those are
+    !< not captured by automatic finalisation)
+
+    type(type_mesh) :: mesh
+
+    if (associated( mesh%buffer1_d_a_nih )) call deallocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih )
+    if (associated( mesh%buffer2_d_a_nih )) call deallocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih )
+    if (associated( mesh%buffer1_d_ak_nih)) call deallocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih)
+    if (associated( mesh%buffer2_d_ak_nih)) call deallocate_dist_shared( mesh%buffer2_d_ak_nih, mesh%wbuffer2_d_ak_nih)
+    if (associated( mesh%buffer1_d_b_nih )) call deallocate_dist_shared( mesh%buffer1_d_b_nih , mesh%wbuffer1_d_b_nih )
+    if (associated( mesh%buffer2_d_b_nih )) call deallocate_dist_shared( mesh%buffer2_d_b_nih , mesh%wbuffer2_d_b_nih )
+    if (associated( mesh%buffer1_d_bk_nih)) call deallocate_dist_shared( mesh%buffer1_d_bk_nih, mesh%wbuffer1_d_bk_nih)
+    if (associated( mesh%buffer2_d_bk_nih)) call deallocate_dist_shared( mesh%buffer2_d_bk_nih, mesh%wbuffer2_d_bk_nih)
+    if (associated( mesh%buffer1_d_c_nih )) call deallocate_dist_shared( mesh%buffer1_d_c_nih , mesh%wbuffer1_d_c_nih )
+    if (associated( mesh%buffer2_d_c_nih )) call deallocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih )
+    if (associated( mesh%buffer1_d_ck_nih)) call deallocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih)
+    if (associated( mesh%buffer2_d_ck_nih)) call deallocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih)
+
+  end subroutine finalise
 
 end module mesh_types

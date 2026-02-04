@@ -2,10 +2,10 @@ submodule( fields_registry) fields_registry_submod_basic
 
 contains
 
-  subroutine add_field_to_registry( flds_reg, field)
+  subroutine add_field_to_registry( self, field)
 
     ! In/output variables:
-    class(type_fields_registry), intent(inout) :: flds_reg
+    class(type_fields_registry), intent(inout) :: self
     class(atype_field),          intent(in   ) :: field
 
     ! Local variables:
@@ -17,41 +17,41 @@ contains
     call init_routine( routine_name)
 
     ! If the registry is not allocated yet, allocate it.
-    if (.not. allocated( flds_reg%items)) then
-      flds_reg%n     = 1
-      flds_reg%n_max = 1
-      allocate( flds_reg%items(1))
-      allocate( flds_reg%items(1)%p, source = field)
+    if (.not. allocated( self%items)) then
+      self%n     = 1
+      self%n_max = 1
+      allocate( self%items(1))
+      allocate( self%items(1)%p, source = field)
       call finalise_routine( routine_name)
       return
     end if
 
     ! If the registry is full, extend it
-    if (flds_reg%n == flds_reg%n_max) then
-      call flds_reg%extend
+    if (self%n == self%n_max) then
+      call self%extend
     end if
 
     ! Check that this name is not already in use
     is_in_use = .false.
-    do i = 1, flds_reg%n
-      is_in_use = is_in_use .or. flds_reg%items(i)%p%name() == field%name()
+    do i = 1, self%n
+      is_in_use = is_in_use .or. self%items(i)%p%name() == field%name()
     end do
     if (is_in_use) call crash('a field of name "' // trim( field%name()) // &
       '" already exists in this registry')
 
     ! Add field to registry
-    flds_reg%n = flds_reg%n+1
-    allocate( flds_reg%items( flds_reg%n)%p, source = field)
+    self%n = self%n+1
+    allocate( self%items( self%n)%p, source = field)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine add_field_to_registry
 
-  subroutine extend_field_registry( flds_reg)
+  subroutine extend_field_registry( self)
 
     ! In/output variables:
-    class(type_fields_registry), intent(inout) :: flds_reg
+    class(type_fields_registry), intent(inout) :: self
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'extend_field_registry'
@@ -62,17 +62,17 @@ contains
     call init_routine( routine_name)
 
 
-    allocate( tmp( flds_reg%n))
-    do i = 1, flds_reg%n
-      allocate( tmp(i)%p, source = flds_reg%items(i)%p)
+    allocate( tmp( self%n))
+    do i = 1, self%n
+      allocate( tmp(i)%p, source = self%items(i)%p)
     end do
 
-    flds_reg%n_max = flds_reg%n_max * 2
-    deallocate( flds_reg%items)
-    allocate( flds_reg%items( flds_reg%n_max))
+    self%n_max = self%n_max * 2
+    deallocate( self%items)
+    allocate( self%items( self%n_max))
 
-    do i = 1, flds_reg%n
-      allocate( flds_reg%items(i)%p, source = tmp(i)%p)
+    do i = 1, self%n
+      allocate( self%items(i)%p, source = tmp(i)%p)
     end do
 
     ! Remove routine from call stack
@@ -80,22 +80,22 @@ contains
 
   end subroutine extend_field_registry
 
-  subroutine print_info( flds_reg)
+  subroutine print_info( self)
 
     ! In/output variables:
-    class(type_fields_registry), intent(in) :: flds_reg
+    class(type_fields_registry), intent(in) :: self
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'print_info'
     integer                        :: i
 
-    if (.not. allocated( flds_reg%items)) return
+    if (.not. allocated( self%items)) return
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    do i = 1, flds_reg%n
-       call flds_reg%items(i)%p%print_info
+    do i = 1, self%n
+       call self%items(i)%p%print_info
     end do
 
     ! Remove routine from call stack
@@ -103,10 +103,10 @@ contains
 
   end subroutine print_info
 
-  function find_field_by_name( flds_reg, name) result(i)
+  function find_field_by_name( self, name) result(i)
 
     ! In/output variables:
-    class(type_fields_registry), intent(in) :: flds_reg
+    class(type_fields_registry), intent(in) :: self
     character(len=*),            intent(in) :: name
     integer                                 :: i
 
@@ -118,15 +118,15 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    if (.not. allocated(flds_reg%items)) then
+    if (.not. allocated(self%items)) then
       call crash('field collection not allocated')
     end if
 
     i = 0
     found_it = .false.
-    do ii = 1, size( flds_reg%items)
-      if (allocated( flds_reg%items(ii)%p)) then
-        if (flds_reg%items(ii)%p%name() == name) then
+    do ii = 1, size( self%items)
+      if (allocated( self%items(ii)%p)) then
+        if (self%items(ii)%p%name() == name) then
           found_it = .true.
           i = ii
           exit

@@ -3,8 +3,9 @@ module predictor_corrector_scheme
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_INTEGER, &
     MPI_MAX, MPI_SUM
   use mpi_basic, only: par
+  use UPSY_main, only: UPSY
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
@@ -19,7 +20,6 @@ module predictor_corrector_scheme
   use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use conservation_of_momentum_main, only: solve_stress_balance
   use subgrid_ice_margin, only: calc_effective_thickness
-  use assertions_basic
 
   implicit none
 
@@ -123,20 +123,20 @@ contains
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
-      
+
       ! Making sure verticies in no ice mask have zero thinning rates
       do vi = region%mesh%vi1, region%mesh%vi2
         if (region%ice%mask_noice( vi)) then
           region%ice%pc%dHi_dt_Hi_n_u_n(vi)  = 0._dp
         end if
       end do
-      
+
       ! Calculate predicted ice thickness (Robinson et al., 2020, Eq. 30)
       region%ice%pc%Hi_star_np1 = region%ice%Hi_prev + region%ice%pc%dt_np1 * ((1._dp + region%ice%pc%zeta_t / 2._dp) * &
         region%ice%pc%dHi_dt_Hi_n_u_n - (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
 
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
-      !call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 30 above rearranged to retrieve
@@ -221,8 +221,8 @@ contains
       region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
 
       ! if so desired, modify the corrected ice thickness field based on user-defined settings
-     ! call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
-      
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
+
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 31 above rearranged to retrieve
       ! an updated dHi_dt_Hi_star_np1_u_np1 from the modified Hi_np1. if no ice
@@ -294,10 +294,7 @@ contains
 
     ! == Final quantities
     ! ===================
-     
-    ! Apply any user-defined ice thickness modifications to the final ice thickness
-    call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
-    
+
     ! Set next modelled ice thickness
     region%ice%t_Hi_next = region%ice%t_Hi_prev + region%ice%pc%dt_np1
     region%ice%Hi_next   = region%ice%pc%Hi_np1
@@ -311,7 +308,7 @@ contains
       end if
     end do
 #endif
-    
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -460,7 +457,8 @@ contains
     end if
 
     ! write to terminal
-    if (par%primary) write(0,*) '   Initialising ice thickness predictor/corrector scheme from file "' // colour_string( trim( filename),'light blue') // '"...'
+    if (par%primary) write(0,*) '   Initialising ice thickness predictor/corrector scheme from file "' // &
+      UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read values from the file
     if (timeframe_applied == 1E9_dp) then
@@ -519,7 +517,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to ice dynamics restart file "' // &
-      colour_string( trim( pc%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( pc%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( pc%restart_filename, ncid)
@@ -576,7 +574,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Creating ice dynamics restart file "' // &
-      colour_string( trim( pc%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( pc%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( pc%restart_filename, ncid)

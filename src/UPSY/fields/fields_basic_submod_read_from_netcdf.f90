@@ -6,12 +6,12 @@ submodule (fields_basic) fields_basic_submod_read_from_netcdf
 
 contains
 
-  subroutine read_from_netcdf( field, filename, ncid)
+  subroutine read_from_netcdf( self, filename, ncid)
     ! NOTE: assumes the NetCDF file is defined on
     !       the same grid/mesh as the field
 
     ! In/output variables:
-    class(atype_field), intent(inout) :: field
+    class(atype_field), intent(inout) :: self
     character(len=*),   intent(in   ) :: filename
     integer,            intent(in   ) :: ncid
 
@@ -23,28 +23,28 @@ contains
     call init_routine( routine_name)
 
     ! Check if a variable for this field exists in the netcdf file
-    call inquire_var( filename, ncid, field%name(), id_var)
-    if (id_var == -1) call crash('variable "' // trim( field%name()) // &
+    call inquire_var( filename, ncid, self%name(), id_var)
+    if (id_var == -1) call crash('variable "' // trim( self%name()) // &
       '" not found in file "' // trim( filename) // '"')
 
-    select type (f => field)
+    select type (f => self)
     class default
       call crash('invalid field type')
     class is (atype_field_2D)
     class is (atype_field_3D)
       if (.not. f%third_dimension_val%is_dim_and_var_in_netcdf( filename, ncid)) then
-        call crash('third dimension of field "' // trim( field%name()) // &
+        call crash('third dimension of field "' // trim( self%name()) // &
           '" not found in file "' // trim( filename) // '"')
       end if
     end select
 
-    select type (g => field%grid())
+    select type (g => self%grid())
     class default
       call crash('invalid field%grid type')
     class is (type_grid)
-      call read_from_netcdf_grid( field, g, filename, ncid)
+      call read_from_netcdf_grid( self, g, filename, ncid)
     class is (type_mesh)
-      call read_from_netcdf_mesh( field, filename, ncid)
+      call read_from_netcdf_mesh( self, filename, ncid)
     end select
 
     ! Remove routine from call stack

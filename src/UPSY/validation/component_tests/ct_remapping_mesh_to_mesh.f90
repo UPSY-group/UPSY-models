@@ -2,11 +2,12 @@ module ct_remapping_mesh_to_mesh
 
   ! Test everything related to remapping
 
+  use UPSY_main, only: UPSY
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use precisions, only: dp
   use mpi_basic, only: par
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use mesh_types, only: type_mesh
   use ct_remapping_basic, only: calc_test_function_on_mesh, calc_test_function_on_mesh_triangles
   use remapping_main, only: map_from_mesh_to_mesh_2D, map_from_mesh_tri_to_mesh_tri_2D
@@ -128,8 +129,8 @@ contains
       mesh_name1( 1:len_trim(mesh_name1)) // '_TO_' // mesh_name2( 1:len_trim(mesh_name2)) // '.nc'
 
     if (par%primary) write(0,*) '      Running mesh-to-mesh remapping tests on mesh-mesh combination:'
-    if (par%primary) write(0,*) '        from mesh: ', colour_string( trim( mesh_name1),'light blue')
-    if (par%primary) write(0,*) '          to mesh: ', colour_string( trim( mesh_name2),'light blue')
+    if (par%primary) write(0,*) '        from mesh: ', UPSY%stru%colour_string( trim( mesh_name1),'light blue')
+    if (par%primary) write(0,*) '          to mesh: ', UPSY%stru%colour_string( trim( mesh_name2),'light blue')
 
     ! Set up the mesh and the grid from the provided files
     call open_existing_netcdf_file_for_reading( filename_mesh1, ncid)

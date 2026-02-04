@@ -4,10 +4,11 @@ module SSA_main
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, &
     MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par
   use precisions, only: dp
   use parameters, only: grav, ice_density
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SSA
@@ -482,7 +483,7 @@ contains
 
     ! write to terminal
     if (par%primary) write(0,*) '   Initialising SSA velocities from file "' // &
-      colour_string( trim( filename),'light blue') // '"...'
+      UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read velocities from the file
     if (timeframe == 1E9_dp) then
@@ -562,7 +563,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to SSA restart file "' // &
-      colour_string( trim( SSA%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( SSA%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( SSA%restart_filename, ncid)
@@ -608,7 +609,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Creating SSA restart file "' // &
-      colour_string( trim( SSA%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( SSA%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( SSA%restart_filename, ncid)

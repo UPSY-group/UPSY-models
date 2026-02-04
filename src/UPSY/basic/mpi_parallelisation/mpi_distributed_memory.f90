@@ -7,7 +7,7 @@ module mpi_distributed_memory
     MPI_STATUS, MPI_LOGICAL
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
 
   implicit none
 

@@ -5,7 +5,7 @@ module split_edges
   use tests_main
   use assertions_basic
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, warning, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use mesh_types, only: type_mesh
   use plane_geometry, only: lies_on_line_segment
   use mesh_utilities, only: is_border_edge, update_triangle_circumcenter, add_triangle_to_refinement_stack_last

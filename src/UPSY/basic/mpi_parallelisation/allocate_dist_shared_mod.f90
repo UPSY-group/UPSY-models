@@ -2,7 +2,7 @@ module allocate_dist_shared_mod
 
   use precisions, only: dp
   use mpi_basic, only: par, sync_node
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, n_MPI_windows_used
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, n_MPI_windows_used
   use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
   use mpi_f08, only: MPI_WIN, MPI_ADDRESS_KIND, MPI_WIN_ALLOCATE_SHARED, MPI_INFO_NULL, &
     MPI_WIN_SHARED_QUERY

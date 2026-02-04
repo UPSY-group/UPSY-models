@@ -1,7 +1,8 @@
 module ct_basic
 
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string
+  use UPSY_main, only: UPSY
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
 
   implicit none
 
@@ -37,7 +38,7 @@ contains
       ! Tell the user where it is
       call getcwd( cwd)
       write(0,'(A)') ''
-      write(0,'(A)') ' Output directory: ' // colour_string( trim(cwd)//'/'//trim( output_dir), 'light blue')
+      write(0,'(A)') ' Output directory: ' // UPSY%stru%colour_string( trim(cwd)//'/'//trim( output_dir), 'light blue')
       write(0,'(A)') ''
 
     end if

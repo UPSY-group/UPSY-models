@@ -3,7 +3,7 @@ module conservation_of_mass_main
   ! Contains all the routines needed to calculate ice thickness rates of change (dH/dt)
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind, &
@@ -31,7 +31,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   )           :: u_vav_b               ! [m yr^-1] Vertically averaged ice velocities in the x-direction on the b-grid (triangles)
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   )           :: v_vav_b               ! [m yr^-1] Vertically averaged ice velocities in the y-direction on the b-grid (triangles)
-    real(dp), dimension(mesh%pai_V%i1_nih: mesh%pai_V%i2_nih), intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: AMB                   ! [m yr^-1] Artificial mass balance

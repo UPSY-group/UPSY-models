@@ -4,7 +4,7 @@ module netcdf_write_var_primary
 
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_field_name_options
   use netcdf_basic_wrappers
   use netcdf, only: NF90_MAX_VAR_DIMS, NF90_DOUBLE, NF90_FLOAT, NF90_INT, NF90_PUT_VAR, NF90_INT64

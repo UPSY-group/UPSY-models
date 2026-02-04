@@ -5,8 +5,9 @@ module BPA_main
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, &
     MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX, MPI_SUM
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use model_configuration, only: C
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
@@ -2132,7 +2133,8 @@ contains
     end if
 
     ! Write to terminal
-    if (par%primary) write(0,*) '   Initialising BPA velocities from file "' // colour_string( trim( filename),'light blue') // '"...'
+    if (par%primary) write(0,*) '   Initialising BPA velocities from file "' // &
+      UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read velocities from the file
     if (timeframe == 1E9_dp) then
@@ -2224,7 +2226,7 @@ contains
 
     ! Print to terminal
     if (par%primary) WRITE(0,'(A)') '   Writing to BPA restart file "' // &
-      colour_string( trim( BPA%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( BPA%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( BPA%restart_filename, ncid)
@@ -2270,7 +2272,7 @@ contains
 
     ! Print to terminal
     if (par%primary) WRITE(0,'(A)') '   Creating BPA restart file "' // &
-      colour_string( trim( BPA%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( BPA%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( BPA%restart_filename, ncid)

@@ -2,7 +2,7 @@ module mesh_translation_tables
 
   ! Calculate translation tables relating grid points to matrix rows.
 
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
 
   implicit none

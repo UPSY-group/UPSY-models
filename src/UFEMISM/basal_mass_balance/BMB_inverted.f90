@@ -1,7 +1,8 @@
 module BMB_inverted
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use UPSY_main, only: UPSY
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_basic, only: par
   use model_configuration, only: C
   use mesh_types, only: type_mesh
@@ -113,8 +114,8 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (par%primary) write(0,*) '   Initialising basal mass balance model ' // colour_string('inverted','light blue') // &
-      ' with ' // colour_string(trim(C%choice_inversion_target_geometry),'light blue') // ' target geometry...'
+    if (par%primary) write(0,*) '   Initialising basal mass balance model ' // UPSY%stru%colour_string('inverted','light blue') // &
+      ' with ' // UPSY%stru%colour_string(trim(C%choice_inversion_target_geometry),'light blue') // ' target geometry...'
 
     allocate( BMB_inv%BMB( mesh%vi1:mesh%vi2), source = 0._dp)
 

@@ -4,7 +4,7 @@ module ct_remapping
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ct_remapping_grid_to_mesh, only: run_all_grid_to_mesh_remapping_tests
   use ct_remapping_mesh_to_grid, only: run_all_mesh_to_grid_remapping_tests
   use ct_remapping_mesh_to_mesh, only: run_all_mesh_to_mesh_remapping_tests

@@ -2,8 +2,9 @@ module laddie_mesh_output
 
   use precisions, only: dp
   use mpi_basic, only: par, sync
+  use UPSY_main, only: UPSY
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use laddie_model_types, only: type_laddie_model
@@ -45,7 +46,7 @@ contains
     end if
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to mesh output file "' // colour_string( trim( laddie%output_mesh_filename), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Writing to mesh output file "' // UPSY%stru%colour_string( trim( laddie%output_mesh_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( laddie%output_mesh_filename, ncid)
@@ -297,7 +298,7 @@ contains
     call generate_filename_XXXXXdotnc( filename_base, laddie%output_mesh_filename)
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Creating laddie output file "' // colour_string( trim( laddie%output_mesh_filename), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Creating laddie output file "' // UPSY%stru%colour_string( trim( laddie%output_mesh_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( laddie%output_mesh_filename, ncid)

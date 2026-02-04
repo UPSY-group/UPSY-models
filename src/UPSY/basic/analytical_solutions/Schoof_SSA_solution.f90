@@ -1,7 +1,7 @@
 module Schoof_SSA_solution
 
   use precisions, only: dp
-  use control_resources_and_error_messaging , only:  crash
+  use call_stack_and_comp_time_tracking , only:  crash
   use parameters
 
   implicit none

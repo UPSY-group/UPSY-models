@@ -13,8 +13,9 @@ MODULE BMB_prescribed
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, warning, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, warning, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -205,7 +206,7 @@ CONTAINS
     end if
 
     ! Print to terminal
-    IF (par%primary)  WRITE(*,"(A)") '   Initialising BMB from file "' // colour_string( TRIM( filename_BMB_prescribed),'light blue') // '"...'
+    IF (par%primary)  WRITE(*,"(A)") '   Initialising BMB from file "' // UPSY%stru%colour_string( TRIM( filename_BMB_prescribed),'light blue') // '"...'
 
     ! Read BMB from file
     IF (timeframe_BMB_prescribed == 1E9_dp) THEN

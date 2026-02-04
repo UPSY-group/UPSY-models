@@ -6,7 +6,7 @@ module ut_math_utilities
   use assertions_basic
   use ut_basic
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use tridiagonal_solver, only: solve_tridiagonal_matrix_equation
 
   implicit none

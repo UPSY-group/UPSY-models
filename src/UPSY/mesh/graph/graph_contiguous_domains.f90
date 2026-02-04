@@ -1,7 +1,7 @@
 module graph_contiguous_domains
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use graph_types, only: type_graph
   use sorting, only: quick_n_dirty_sort
 

@@ -7,7 +7,7 @@ module ut_mpi
   use ut_basic
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use mpi_distributed_memory, only: gather_to_primary, gather_to_all, distribute_from_primary
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared, &
     gather_dist_shared_to_primary, gather_dist_shared_to_all, distribute_dist_shared_from_primary

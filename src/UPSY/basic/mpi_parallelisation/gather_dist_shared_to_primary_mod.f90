@@ -5,7 +5,7 @@ module gather_dist_shared_to_primary_mod
   use assertions_basic
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_f08, only: MPI_INTEGER, MPI_ALLGATHER, MPI_GATHERV, &
     MPI_STATUS, MPI_ANY_TAG, MPI_SEND, MPI_RECV, MPI_DOUBLE_PRECISION, MPI_LOGICAL, MPI_DOUBLE_COMPLEX
   use parallel_array_info_type, only: type_par_arr_info

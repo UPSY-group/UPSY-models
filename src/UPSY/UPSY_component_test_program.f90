@@ -7,8 +7,8 @@ program UPSY_component_test_program
   use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
-  use control_resources_and_error_messaging, only: initialise_control_and_resource_tracker, routine_path, &
-    print_model_start, print_model_end
+  use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker, routine_path
+  use basic_model_utilities, only: print_model_start, print_model_end
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
 
   use ct_basic, only: create_component_tests_output_folder

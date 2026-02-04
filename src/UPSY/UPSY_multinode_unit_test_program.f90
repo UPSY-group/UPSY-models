@@ -6,8 +6,8 @@ program UPSY_multinode_unit_test_program
   use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
   use mpi_basic, only: initialise_parallelisation_multinode_tests
   use parameters, only: initialise_constants
-  use control_resources_and_error_messaging, only: initialise_control_and_resource_tracker, &
-    print_model_start, print_model_end, crash
+  use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker, crash
+  use basic_model_utilities, only: print_model_start, print_model_end
   use ut_basic, only: foldername_unit_tests_output, filename_unit_tests_output
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
 

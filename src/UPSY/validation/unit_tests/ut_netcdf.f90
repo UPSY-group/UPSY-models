@@ -2,7 +2,7 @@ module ut_netcdf
 
   ! Unit tests for the netcdf i/o.
 
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ut_netcdf_xy_grid, only: unit_tests_netcdf_xy_grid
   use ut_netcdf_mesh, only: unit_tests_netcdf_mesh
   use ut_netcdf_read_and_remap, only: unit_tests_netcdf_read_and_remap

@@ -3,10 +3,9 @@ module netcdf_read_field_from_mesh_file
 
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_distributed_memory, only: distribute_from_primary
   use mesh_types, only: type_mesh
-  use mesh_memory, only: deallocate_mesh
   use netcdf_basic
   use netcdf_setup_grid_mesh_from_file
 
@@ -90,10 +89,6 @@ contains
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
 
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -167,10 +162,6 @@ contains
 
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
-
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -246,10 +237,6 @@ contains
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
 
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -323,10 +310,6 @@ contains
 
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
-
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -404,10 +387,6 @@ contains
 
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
-
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -488,10 +467,6 @@ contains
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
 
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -571,10 +546,6 @@ contains
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
 
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -653,10 +624,6 @@ contains
 
     ! Distribute data
     call distribute_from_primary( d_mesh_partial, d_mesh)
-
-    ! Clean up after yourself
-    if (par%primary) deallocate( d_mesh)
-    call deallocate_mesh( mesh_loc)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -7,7 +7,8 @@ module ut_netcdf_read_and_remap
   use mpi_basic, only: par
   use precisions, only: dp
   use parameters, only: pi
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, strrep
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use string_module, only: strrep
   use grid_types, only: type_grid
   use grid_basic, only: setup_square_grid
   use mesh_types, only: type_mesh

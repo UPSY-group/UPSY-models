@@ -3,8 +3,9 @@ module DIVA_main
   ! Routines for calculating ice velocities using the Depth-Integrated Viscosity Approximation (DIVA)
 
   use mpi_basic, only: par
+  use UPSY_main, only: UPSY
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA
@@ -268,7 +269,7 @@ contains
 
     ! Write to terminal
     if (par%primary) write(0,*) '   Initialising DIVA velocities from file "' // &
-      colour_string( trim( filename),'light blue') // '"...'
+      UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read velocities from the file
     if (timeframe == 1E9_dp) then
@@ -373,7 +374,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to DIVA restart file "' // &
-      colour_string( trim( DIVA%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( DIVA%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( DIVA%restart_filename, ncid)
@@ -426,7 +427,7 @@ contains
 
     ! Print to terminal
     if (par%primary) WRITE(0,'(A)') '   Creating DIVA restart file "' // &
-      colour_string( TRIM( DIVA%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( DIVA%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( DIVA%restart_filename, ncid)

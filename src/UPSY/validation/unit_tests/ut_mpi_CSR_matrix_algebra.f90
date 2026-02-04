@@ -5,7 +5,7 @@ module ut_mpi_CSR_matrix_algebra
   use tests_main
   use assertions_basic
   use ut_basic
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mpi_basic, only: par
   use ut_mpi_CSR_matrix_vector_multiplication, only: test_CSR_matrix_vector_multiplication_main
   use ut_mpi_CSR_matrix_solving, only: test_CSR_matrix_solving_main

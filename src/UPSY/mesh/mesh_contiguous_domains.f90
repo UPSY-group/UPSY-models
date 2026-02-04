@@ -4,7 +4,7 @@ module mesh_contiguous_domains
 
   use precisions, only: dp
   use mesh_types, only: type_mesh
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use plane_geometry, only: geometric_center
   use sorting, only: quick_n_dirty_sort
 

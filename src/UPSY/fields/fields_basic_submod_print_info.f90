@@ -4,10 +4,10 @@ submodule (fields_basic) fields_basic_submod_print_info
 
 contains
 
-  subroutine print_info( field)
+  subroutine print_info( self)
 
     ! In/output variables:
-    class(atype_field), intent(in) :: field
+    class(atype_field), intent(in) :: self
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'print_field_info'
@@ -27,8 +27,8 @@ contains
     call init_routine( routine_name)
 
     ! Grid
-    field_grid              => field%grid()
-    field_Arakawa_grid      =  field%Arakawa_grid()
+    field_grid              => self%grid()
+    field_Arakawa_grid      =  self%Arakawa_grid()
     field_Arakawa_grid_name =  field_Arakawa_grid%str()
 
     select type (grid => field_grid)
@@ -43,7 +43,7 @@ contains
     end select
 
     ! Third dimension
-    select type (f => field)
+    select type (f => self)
     class default
       call crash('invalid field class')
     class is (atype_field_2D)
@@ -54,7 +54,7 @@ contains
     end select
 
     ! Data type
-    select type( f => field)
+    select type( f => self)
     class default
       call crash('invalid field class')
     class is (type_field_logical_2D)
@@ -76,16 +76,16 @@ contains
     case default
       call crash('invalid field_dimension')
     case ('2-D')
-      call gather_field_bounds_2D( field, lbs, ubs)
+      call gather_field_bounds_2D( self, lbs, ubs)
     case ('3-D')
-      call gather_field_bounds_3D( field, lbs1, ubs1, lbs2, ubs2)
+      call gather_field_bounds_3D( self, lbs1, ubs1, lbs2, ubs2)
     end select
 
     if (par%primary) then
       write(0,*) ''
-      write(0,*) '     Field: ', colour_string( trim( field%name()),'light blue')
+      write(0,*) '     Field: ', colour_string( trim( self%name()),'light blue')
 
-      write(0,*) '       Long name: ', trim( field%long_name())
+      write(0,*) '       Long name: ', trim( self%long_name())
       write(0,*) '       Parent   : ', trim( field_grid_type), ' "', &
         trim( field_grid_name), '" (', trim( field_Arakawa_grid_name), '-grid)'
 
@@ -99,7 +99,7 @@ contains
           trim( field_data_type)
       end select
 
-      write(0,*) '       Units    : [', trim( field%units()), ']'
+      write(0,*) '       Units    : [', trim( self%units()), ']'
 
       select case (field_dimension)
       case default
@@ -131,10 +131,10 @@ contains
 
   end subroutine print_info
 
-  function field_lbound( field, dim) result( lb)
+  function field_lbound( self, dim) result( lb)
 
     ! In/output variables:
-    class(atype_field), intent(in) :: field
+    class(atype_field), intent(in) :: self
     integer,            intent(in) :: dim
     integer                        :: lb
 
@@ -144,7 +144,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    select type (f => field)
+    select type (f => self)
     class default
       call crash('invalid field type')
     class is (type_field_logical_2D)
@@ -166,10 +166,10 @@ contains
 
   end function field_lbound
 
-  function field_ubound( field, dim) result( ub)
+  function field_ubound( self, dim) result( ub)
 
     ! In/output variables:
-    class(atype_field), intent(in) :: field
+    class(atype_field), intent(in) :: self
     integer,            intent(in) :: dim
     integer                        :: ub
 
@@ -179,7 +179,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    select type (f => field)
+    select type (f => self)
     class default
       call crash('invalid field type')
     class is (type_field_logical_2D)

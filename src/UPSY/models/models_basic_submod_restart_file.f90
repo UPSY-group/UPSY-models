@@ -1,14 +1,13 @@
 submodule( models_basic) models_basic_submod_restart_file
 
 use netcdf_io_main
-use fields_main, only: type_third_dimension
 
 contains
 
-  subroutine write_to_restart_file( model, output_dir, filename)
+  subroutine write_to_restart_file( self, output_dir, filename)
 
     ! In/output variables:
-    class(atype_model),                  intent(in   ) :: model
+    class(atype_model),                  intent(in   ) :: self
     character(len=*),                    intent(in   ) :: output_dir
     character(:), allocatable, optional, intent(  out) :: filename
 
@@ -20,23 +19,13 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    filename_loc = trim(  output_dir) // '/restart_file_' // trim( model%name()) // '.nc'
+    filename_loc = trim(  output_dir) // '/restart_file_' // trim( self%name()) // '.nc'
     if (present( filename)) filename = filename_loc
 
+    call delete_existing_file( filename_loc)
     call create_new_netcdf_file_for_writing( filename_loc, ncid)
-
-    ! Set up grid/mesh
-    select type (grid => model%grid_val)
-    class default
-      call crash('invalid model%grid type - programming error')
-    class is (type_grid)
-      call setup_xy_grid_in_netcdf_file( filename_loc, ncid, grid)
-    class is (type_mesh)
-      call setup_mesh_in_netcdf_file( filename_loc, ncid, grid)
-    end select
-
-    call model%flds_reg%write_to_netcdf( filename_loc, ncid)
-
+    call setup_mesh_in_netcdf_file( filename_loc, ncid, self%mesh)
+    call self%flds_reg%write_to_netcdf( filename_loc, ncid)
     call close_netcdf_file( ncid)
 
     ! Remove routine from call stack
@@ -44,10 +33,10 @@ contains
 
   end subroutine write_to_restart_file
 
-  subroutine read_from_restart_file( model, filename)
+  subroutine read_from_restart_file( self, filename)
 
     ! In/output variables:
-    class(atype_model), intent(inout) :: model
+    class(atype_model), intent(inout) :: self
     character(len=*),   intent(in   ) :: filename
 
     ! Local variables:
@@ -58,7 +47,7 @@ contains
     call init_routine( routine_name)
 
     call open_existing_netcdf_file_for_reading( filename, ncid)
-    call model%flds_reg%read_from_netcdf( filename, ncid)
+    call self%flds_reg%read_from_netcdf( filename, ncid)
     call close_netcdf_file( ncid)
 
     ! Remove routine from call stack

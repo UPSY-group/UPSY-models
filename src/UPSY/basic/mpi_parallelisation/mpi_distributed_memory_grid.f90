@@ -5,7 +5,7 @@ module mpi_distributed_memory_grid
   use precisions, only: dp
   use grid_types, only: type_grid
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_distributed_memory, only: distribute_from_primary, gather_to_primary, gather_to_all
 
   implicit none

@@ -4,10 +4,10 @@ module ut_mesh_delete_vertices
   use assertions_basic
   use ut_basic
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mpi_basic, only: par
   use mesh_types, only: type_mesh
-  use mesh_memory, only: allocate_mesh_primary, crop_mesh_primary, deallocate_mesh
+  use mesh_memory, only: allocate_mesh_primary, crop_mesh_primary
   use mesh_dummy_meshes, only: initialise_dummy_mesh_5
   use mesh_refinement_basic, only: refine_mesh_uniform
   use parameters, only: pi
@@ -19,7 +19,7 @@ module ut_mesh_delete_vertices
   use mesh_focussing, only: delete_vertices_along_polyline, focus_mesh_on_polyline
 
   use netcdf_io_main
-  use control_resources_and_error_messaging, only: insert_val_into_string_dp
+  use call_stack_and_comp_time_tracking, only: insert_val_into_string_dp
 
   implicit none
 

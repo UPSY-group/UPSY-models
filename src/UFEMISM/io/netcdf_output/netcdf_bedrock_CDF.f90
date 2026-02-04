@@ -1,7 +1,7 @@
 module netcdf_bedrock_CDF
 
   use model_configuration, only: C
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ice_model_types, only: type_ice_model
   use netcdf_basic
   use netcdf, only: NF90_DOUBLE

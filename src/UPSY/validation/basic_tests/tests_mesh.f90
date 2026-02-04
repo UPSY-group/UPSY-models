@@ -4,7 +4,7 @@ module tests_mesh
 
   use precisions, only: dp
   use mesh_types, only: type_mesh
-  use control_resources_and_error_messaging, only: warning
+  use call_stack_and_comp_time_tracking, only: warning
   use tests_dp, only: test_tol => test_tol_dp_0D
 
   implicit none

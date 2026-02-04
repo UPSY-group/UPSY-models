@@ -1,7 +1,7 @@
 module graph_operators
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use graph_types, only: type_graph
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_empty_row_CSR_dist, &

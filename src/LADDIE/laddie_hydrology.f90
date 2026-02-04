@@ -2,14 +2,14 @@ MODULE laddie_hydrology
 
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
   use mesh_utilities, only: find_containing_vertex
   use laddie_forcing_types, only: type_laddie_forcing, type_transect_SGD
   use transects_main
-  use string_module
+  use UPSY_main, only: UPSY
 
   implicit none
 
@@ -44,7 +44,7 @@ contains
     end if
 
     ! Separate by double vertical bars
-    call separate_strings_by_double_vertical_bars( transects_str, transect_strs)
+    call UPSY%stru%separate_strings_by_double_vertical_bars( transects_str, transect_strs)
 
     ! Allocate the right size
     allocate( forcing%transects( size(transect_strs)))
@@ -84,7 +84,7 @@ contains
     transect%flux_strength   = flux_strength
 
     if (par%primary) write(0,*) '  Initialising SGD transect ', &
-      colour_string( trim( transect%name),'light blue'), '...'
+      UPSY%stru%colour_string( trim( transect%name),'light blue'), '...'
 
     select case (source)
     case default
@@ -103,9 +103,9 @@ contains
     do vi = 1, transect%nV
        p = transect%V(vi,:)
        call find_containing_vertex( mesh, p, index_point)
-       
+
        ! Save index_points of mesh to transect type
-       transect%index_point( vi) = index_point    
+       transect%index_point( vi) = index_point
 
     end do
 

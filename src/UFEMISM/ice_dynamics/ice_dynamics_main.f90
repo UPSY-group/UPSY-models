@@ -2,7 +2,7 @@ module ice_dynamics_main
 
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use parameters, only: grav, ice_density, seawater_density
   use region_types, only: type_model_region
@@ -10,7 +10,7 @@ module ice_dynamics_main
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
-  use SMB_main, only: type_SMB_model
+  use SMB_model, only: atype_SMB_model
   use BMB_model_types, only: type_BMB_model
   use LMB_model_types, only: type_LMB_model
   use AMB_model_types, only: type_AMB_model
@@ -444,7 +444,7 @@ contains
     type(type_ice_model),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
     type(type_reference_geometry),  intent(in   ) :: refgeo_PD
-    type(type_SMB_model),           intent(in   ) :: SMB
+    class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB
     type(type_LMB_model),           intent(in   ) :: LMB
     type(type_AMB_model),           intent(in   ) :: AMB
@@ -1048,7 +1048,7 @@ contains
     type(type_mesh),                intent(inout) :: mesh
     type(type_ice_model),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(in   ) :: bed_roughness
-    type(type_SMB_model),           intent(in   ) :: SMB
+    class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB
     type(type_LMB_model),           intent(in   ) :: LMB
     type(type_AMB_model),           intent(in   ) :: AMB

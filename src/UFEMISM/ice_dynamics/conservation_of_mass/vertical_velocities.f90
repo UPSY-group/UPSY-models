@@ -2,7 +2,7 @@ module vertical_velocities
   !< Routines for calculating vertical ice velocities
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model

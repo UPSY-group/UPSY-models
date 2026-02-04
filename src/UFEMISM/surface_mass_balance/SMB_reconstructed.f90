@@ -1,17 +1,19 @@
 module SMB_reconstructed
 
-  use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine
+  use parameters, only: pi
+  use precisions, only: dp
   use model_configuration, only: C
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use grid_basic, only: type_grid
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_remap
+  use grid_types, only: type_grid
   use ice_model_types, only: type_ice_model
-  use allocate_dist_shared_mod, only: allocate_dist_shared
+  use mesh_data_smoothing, only: smooth_Gaussian
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon
-  use mesh_data_smoothing, only: smooth_Gaussian
-  use SMB_basic, only: atype_SMB_model
 
   implicit none
 
@@ -23,13 +25,109 @@ module SMB_reconstructed
 
     contains
 
-      procedure, public  :: init, run, remap
+      procedure, public :: allocate_SMB_model   => allocate_SMB_model_reconstructed_abs
+      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_reconstructed_abs
+      procedure, public :: initialise_SMB_model => initialise_SMB_model_reconstructed_abs
+      procedure, public :: run_SMB_model        => run_SMB_model_reconstructed_abs
+      procedure, public :: remap_SMB_model      => remap_SMB_model_reconstructed_abs
+
+      procedure, private :: run_SMB_model_reconstructed
 
   end type type_SMB_model_reconstructed
 
 contains
 
-  subroutine run( self, mesh, grid_smooth, ice, region_name, time)
+  subroutine allocate_SMB_model_reconstructed_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed),               intent(inout) :: self
+    type(type_SMB_model_context_allocate), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_reconstructed_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_SMB_model_reconstructed_abs
+
+  subroutine deallocate_SMB_model_reconstructed_abs( self)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed), intent(inout) :: self
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'deallocate_SMB_model_reconstructed_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_SMB_model_reconstructed_abs
+
+  subroutine initialise_SMB_model_reconstructed_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed),                 intent(inout) :: self
+    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_reconstructed_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_SMB_model_reconstructed_abs
+
+  subroutine run_SMB_model_reconstructed_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed),          intent(inout) :: self
+    type(type_SMB_model_context_run), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_reconstructed_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Retrieve input variables from context object
+    call self%run_SMB_model_reconstructed( self%mesh, context%grid_smooth, context%ice, &
+      self%region_name(), context%time)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_SMB_model_reconstructed_abs
+
+  subroutine remap_SMB_model_reconstructed_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed),            intent(inout) :: self
+    type(type_SMB_model_context_remap), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_reconstructed_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine remap_SMB_model_reconstructed_abs
+
+
+
+  subroutine run_SMB_model_reconstructed( self, mesh, grid_smooth, ice, region_name, time)
 
     ! In/output variables:
     class(type_SMB_model_reconstructed), intent(inout) :: self
@@ -40,23 +138,23 @@ contains
     real(dp),                            intent(in   ) :: time
 
     ! Local variables:
-    character(len=1024), parameter          :: routine_name = 'run_SMB_model_reconstructed'
-    integer                                 :: vi
-    real(dp), dimension(:,:  ), allocatable :: poly_ROI             ! Polygon defining reconstructed area
-    real(dp), dimension(2)                  :: p                    ! Coordinates of a vertex
-    real(dp), dimension(mesh%vi1:mesh%vi2)  :: SMB_smoothed         ! Smoothed SMB field
-    real(dp)                                :: w_smooth             ! Weight of the smoothed SMB field
-    real(dp), parameter                     :: r_smooth =  2.E4_dp  ! Radius used to smooth the SMB field
-    real(dp), parameter                     :: Hs_ela   =  500._dp  ! Equilibrium line altitud: SMB becomes positive here
-    real(dp), parameter                     :: Hs_tla   =  1500._dp ! Transitional line altitud: SMB reaches maximum here
-    real(dp), parameter                     :: Hs_dla   =  2500._dp ! Desertification line altitude: SMB becomes zero here
-    real(dp), parameter                     :: SMB_max  =  2._dp    ! Maximum SMB value allowed
-    real(dp), parameter                     :: SMB_min  = -10._dp   ! Minimum SMB value allowed
+    character(len=1024), parameter         :: routine_name = 'run_SMB_model_reconstructed'
+    integer                                :: vi
+    real(dp), dimension(:,:), allocatable  :: poly_ROI             ! Polygon defining reconstructed area
+    real(dp), dimension(2)                 :: p                    ! Coordinates of a vertex
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: SMB_smoothed         ! Smoothed SMB field
+    real(dp)                               :: w_smooth             ! Weight of the smoothed SMB field
+    real(dp), parameter                    :: r_smooth =  2.E4_dp  ! Radius used to smooth the SMB field
+    real(dp), parameter                    :: Hs_ela   =  500._dp  ! Equilibrium line altitud: SMB becomes positive here
+    real(dp), parameter                    :: Hs_tla   =  1500._dp ! Transitional line altitud: SMB reaches maximum here
+    real(dp), parameter                    :: Hs_dla   =  2500._dp ! Desertification line altitude: SMB becomes zero here
+    real(dp), parameter                    :: SMB_max  =  2._dp    ! Maximum SMB value allowed
+    real(dp), parameter                    :: SMB_min  = -10._dp   ! Minimum SMB value allowed
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (.not. C%choice_regions_of_interest == 'Patagonia') THEN
+    if (.not. C%choice_regions_of_interest == 'Patagonia') then
       call crash('reconstructed SMB method only implemented for C%choice_regions_of_interest == Patagonia')
     end if
 
@@ -73,7 +171,7 @@ contains
         ! If yes, check whether point lies above or below estimated transitional line altitude
         if (ice%Hs( vi) <= Hs_tla) then
           ! If below, SMB goes from 0 at the ELA to its estimated maximum at the TLA
-          self%SMB( vi) = SMB_max * MAX( 0._dp, min( 1._dp, (ice%Hs( vi) - Hs_ela)/(Hs_tla - Hs_ela)))
+          self%SMB( vi) = SMB_max * max( 0._dp, min( 1._dp, (ice%Hs( vi) - Hs_ela)/(Hs_tla - Hs_ela)))
         else
           ! If above, SMB goes from estimated maximum at the TLA to 0 at the DLA
           self%SMB( vi) = SMB_max * (1._dp - max( 0._dp, min( 1._dp, (ice%Hs( vi) - Hs_tla)/(Hs_dla - Hs_tla))))
@@ -112,51 +210,12 @@ contains
     ! to conserve the power of negative SMB there
     do vi = mesh%vi1, mesh%vi2
       p = mesh%V( vi,:)
-      if (.not. is_in_polygon( poly_ROI, p)) self%SMB( vi) = SMB_smoothed( vi)
+      if (.not. is_in_polygon(poly_ROI, p)) self%SMB( vi) = SMB_smoothed( vi)
     end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run
-
-  subroutine init( self, mesh)
-
-    ! In- and output variables
-    class(type_SMB_model_reconstructed), intent(inout) :: self
-    type(type_mesh),                     intent(in   ) :: mesh
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_reconstructed'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call allocate_dist_shared( self%SMB, self%wSMB, mesh%pai_V%n_nih)
-    self%SMB( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine init
-
-  subroutine remap( self, mesh_new)
-
-    ! In/output variables:
-    class(type_SMB_model_reconstructed), intent(inout) :: self
-    type(type_mesh),                     intent(in   ) :: mesh_new
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_reconstructed'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call crash('remapping not yet implemented for type_SMB_model_reconstructed')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine remap
+  end subroutine run_SMB_model_reconstructed
 
 end module SMB_reconstructed

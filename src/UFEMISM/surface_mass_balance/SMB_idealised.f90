@@ -1,18 +1,14 @@
 module SMB_idealised
 
-  ! Idealised SMB models
-
+  use parameters, only: pi
   use precisions, only: dp
-  use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine, colour_string
   use model_configuration, only: C
-  use parameters
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_remap
   use Halfar_SIA_solution, only: Halfar
-  use SMB_basic, only: atype_SMB_model
-  use allocate_dist_shared_mod, only: allocate_dist_shared
-  use reallocate_dist_shared_mod, only: reallocate_dist_shared
 
   implicit none
 
@@ -24,91 +20,150 @@ module SMB_idealised
 
     contains
 
-      procedure, public  :: init, run, remap
+      procedure, public :: allocate_SMB_model   => allocate_SMB_model_idealised_abs
+      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_idealised_abs
+      procedure, public :: initialise_SMB_model => initialise_SMB_model_idealised_abs
+      procedure, public :: run_SMB_model        => run_SMB_model_idealised_abs
+      procedure, public :: remap_SMB_model      => remap_SMB_model_idealised_abs
 
-      procedure, private ::  run_SMB_model_idealised_EISMINT1
-      procedure, private ::  run_SMB_model_idealised_Halfar_static
+      procedure, private :: run_SMB_model_idealised
+      procedure, private :: run_SMB_model_idealised_EISMINT1
+      procedure, private :: run_SMB_model_idealised_Halfar_static
 
   end type type_SMB_model_idealised
 
 contains
 
-  subroutine init( self, mesh)
+  subroutine allocate_SMB_model_idealised_abs( self, context)
 
     ! In/output variables:
-    class(type_SMB_model_idealised), intent(inout) :: self
-    type(type_mesh),                 intent(in   ) :: mesh
+    class(type_SMB_model_idealised),               intent(inout) :: self
+    type(type_SMB_model_context_allocate), target, intent(in   ) :: context
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_idealised'
+    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_idealised_abs'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
 
-    call allocate_dist_shared( self%SMB, self%wSMB, mesh%pai_V%n_nih)
-    self%SMB( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => self%SMB
-
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine init
+  end subroutine allocate_SMB_model_idealised_abs
 
-  subroutine run( self, mesh, ice, time)
+  subroutine deallocate_SMB_model_idealised_abs( self)
+
+    ! In/output variables:
+    class(type_SMB_model_idealised), intent(inout) :: self
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'deallocate_SMB_model_idealised_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_SMB_model_idealised_abs
+
+  subroutine initialise_SMB_model_idealised_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_idealised),                 intent(inout) :: self
+    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_idealised_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_SMB_model_idealised_abs
+
+  subroutine run_SMB_model_idealised_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_idealised),          intent(inout) :: self
+    type(type_SMB_model_context_run), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_SMB_model_idealised_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Retrieve input variables from context object
+    call self%run_SMB_model_idealised( self%mesh, context%time)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_SMB_model_idealised_abs
+
+  subroutine remap_SMB_model_idealised_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_idealised),            intent(inout) :: self
+    type(type_SMB_model_context_remap), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_idealised_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine remap_SMB_model_idealised_abs
+
+
+
+  subroutine run_SMB_model_idealised( self, mesh, time)
 
     ! In/output variables:
     class(type_SMB_model_idealised), intent(inout) :: self
     type(type_mesh),                 intent(in   ) :: mesh
-    type(type_ice_model),            intent(in   ) :: ice
     real(dp),                        intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_SMB_model_idealised'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
 
     ! Run the chosen idealised SMB model
     select case (C%choice_SMB_model_idealised)
     case default
-      call crash('unknown choice_SMB_model_idealised "' // TRIM( C%choice_SMB_model_idealised) // '"')
+      call crash('unknown choice_SMB_model_idealised "' // trim( C%choice_SMB_model_idealised) // '"')
+    case ('uniform')
+      self%SMB( mesh%vi1: mesh%vi2) = C%uniform_SMB
     case ('EISMINT1_A', 'EISMINT1_B', 'EISMINT1_C', 'EISMINT1_D', 'EISMINT1_E', 'EISMINT1_F')
       call self%run_SMB_model_idealised_EISMINT1( mesh, time)
     case ('Halfar_static')
       call self%run_SMB_model_idealised_Halfar_static( mesh)
     end select
 
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run
-
-  subroutine remap( self, mesh_new)
-
-    ! In/output variables:
-    class(type_SMB_model_idealised), intent(inout) :: self
-    type(type_mesh),                 intent(in   ) :: mesh_new
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_idealised'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call reallocate_dist_shared( self%SMB, self%wSMB, mesh_new%pai_V%n_nih)
-    self%SMB( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih) => self%SMB
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine remap
+  end subroutine run_SMB_model_idealised
 
   subroutine run_SMB_model_idealised_EISMINT1( self, mesh, time)
+    ! Calculate the surface mass balance
+    !
+    ! use an idealised SMB scheme
+    !
     ! SMB for the EISMINT1 experiments (Huybrechts et al., 1996)
 
     ! In/output variables
     class(type_SMB_model_idealised), intent(inout) :: self
-    type(type_mesh),                 intent(in   ) :: mesh
-    real(dp),                        intent(in   ) :: time
+    type(type_mesh),                 intent(in)    :: mesh
+    real(dp),                        intent(in)    :: time
 
     ! Local variables:
     character(len=256), parameter :: routine_name = 'run_SMB_model_idealised_EISMINT1'
@@ -216,6 +271,7 @@ contains
   end subroutine run_SMB_model_idealised_EISMINT1
 
   subroutine run_SMB_model_idealised_Halfar_static( self, mesh)
+    ! Calculate the surface mass balance
 
     ! In/output variables
     class(type_SMB_model_idealised), intent(inout) :: self
@@ -224,6 +280,7 @@ contains
     ! Local variables:
     character(len=256), parameter :: routine_name = 'run_SMB_model_idealised_Halfar_static'
     integer                       :: vi
+    real(dp), dimension(:), pointer :: d
 
     ! Add routine to path
     call init_routine( routine_name)

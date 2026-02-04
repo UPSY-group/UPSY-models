@@ -3,7 +3,7 @@ module netcdf_add_write_scalar_variables
 
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_basic
   use netcdf, only: NF90_MAX_VAR_DIMS, NF90_INT, NF90_DOUBLE
 

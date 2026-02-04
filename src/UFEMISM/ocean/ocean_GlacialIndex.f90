@@ -6,8 +6,9 @@ module ocean_GlacialIndex
 ! ====================
 
   use precisions                                             , only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic                                              , only: par, sync
-  use control_resources_and_error_messaging                  , only: crash, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
@@ -44,7 +45,7 @@ subroutine initialise_ocean_model_GlacialIndex( mesh, ice, ocean, region_name, s
     call init_routine( routine_name)
 
     if (par%primary)  write(*,"(A)") '     Initialising transient ocean model "' // &
-            colour_string( trim( C%choice_ocean_model_transient),'light blue') // '"...'
+            UPSY%stru%colour_string( trim( C%choice_ocean_model_transient),'light blue') // '"...'
     ! We need the snapshot and the dT to apply to it
     select case (region_name)
         case ('NAM')

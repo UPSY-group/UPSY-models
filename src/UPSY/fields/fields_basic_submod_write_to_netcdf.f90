@@ -8,12 +8,12 @@ submodule (fields_basic) fields_basic_submod_write_to_netcdf
 
 contains
 
-  subroutine write_to_netcdf( field, filename, ncid)
+  subroutine write_to_netcdf( self, filename, ncid)
     ! NOTE: assumes the NetCDF file already exists, is open, and
     !       already contains the grid/mesh and third dimension
 
     ! In/output variables:
-    class(atype_field), intent(in) :: field
+    class(atype_field), intent(in) :: self
     character(len=*),   intent(in) :: filename
     integer,            intent(in) :: ncid
 
@@ -26,7 +26,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    select type (f => field)
+    select type (f => self)
     class default
       call crash('invalid field type')
     class is (atype_field_2D)
@@ -34,17 +34,17 @@ contains
       call f%third_dimension_val%create_dim_and_var_in_netcdf( filename, ncid)
     end select
 
-    var_type = get_var_type( field)
-    dim_ids  = get_dim_ids( field, filename, ncid)
-    call create_variable( filename, ncid, trim( field%name()), var_type, dim_ids, id_var)
+    var_type = get_var_type( self)
+    dim_ids  = get_dim_ids( self, filename, ncid)
+    call create_variable( filename, ncid, trim( self%name()), var_type, dim_ids, id_var)
 
-    select type (g => field%grid())
+    select type (g => self%grid())
     class default
       call crash('invalid field%grid type')
     class is (type_grid)
-      call write_to_netcdf_grid( field, g, filename, ncid, id_var)
+      call write_to_netcdf_grid( self, g, filename, ncid, id_var)
     class is (type_mesh)
-      call write_to_netcdf_mesh( field, g, filename, ncid, id_var)
+      call write_to_netcdf_mesh( self, g, filename, ncid, id_var)
     end select
 
     ! Remove routine from call stack

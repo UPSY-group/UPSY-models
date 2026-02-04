@@ -2,7 +2,7 @@ module ice_thickness_safeties
   !< Different kinds of "safeties" to keep the ice sheet stable during nudging-based initialisation runs
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
@@ -71,7 +71,7 @@ contains
     end do
 
     ! if so specified, remove thin floating ice
-    if (C%choice_calving_law == 'threshold_thickness_ALL') then
+    if (C%choice_calving_law == 'threshold_thickness') then
       do vi = mesh%vi1, mesh%vi2
         if (is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi)) .and. Hi_eff_new( vi) < C%calving_threshold_thickness_shelf) then
           Hi_new( vi) = 0._dp
@@ -79,16 +79,6 @@ contains
       end do
     end if
 
-
-    ! if so specified, remove thin floating ice
-    if (C%choice_calving_law == 'threshold_thickness_FRONT') then
-      do vi = mesh%vi1, mesh%vi2
-        if (ice%mask_cf_fl( vi) .and. (Hi_eff_new( vi) < C%calving_threshold_thickness_shelf)) then
-          Hi_new( vi) = 0._dp
-        end if
-      end do
-    end if
-  
     ! DENK DROM
     if (C%remove_ice_absent_at_PD) then
       do vi = mesh%vi1, mesh%vi2

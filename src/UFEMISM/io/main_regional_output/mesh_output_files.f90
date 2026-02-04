@@ -1,8 +1,9 @@
 module mesh_output_files
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use grid_basic, only: type_grid
   use region_types, only: type_model_region
@@ -13,6 +14,7 @@ module mesh_output_files
   use netcdf, only: NF90_DOUBLE
   use mesh_contour, only: calc_mesh_contour
   use parameters, only: NaN
+  use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
 
   implicit none
 
@@ -42,7 +44,8 @@ contains
     end if
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to mesh output file "' // colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Writing to mesh output file "' // &
+       UPSY%stru%colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( region%output_filename_mesh, ncid)
@@ -601,11 +604,26 @@ contains
       case ('SMB')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SMB', region%SMB%SMB)
       case ('Albedo')
-        call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', region%SMB%IMAUITM%Albedo)
+        select type (IMAU_ITM => region%SMB)
+        class default
+          call crash('Albedo only defined for SMB model IMAU-ITM')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', IMAU_ITM%Albedo)
+        end select
       CASE ('FirnDepth')
-        call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', region%SMB%IMAUITM%FirnDepth)
+        select type (IMAU_ITM => region%SMB)
+        class default
+          call crash('FirnDepth only defined for SMB model IMAU-ITM')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', IMAU_ITM%FirnDepth)
+        end select
       CASE ('MeltPreviousYear')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', region%SMB%IMAUITM%MeltPreviousYear)
+        select type (IMAU_ITM => region%SMB)
+        class default
+          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', IMAU_ITM%MeltPreviousYear)
+        end select
 
     ! == Basal mass balance ==
     ! ========================
@@ -738,7 +756,8 @@ contains
     call generate_filename_XXXXXdotnc( filename_base, region%output_filename_mesh)
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Creating mesh output file "' // colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Creating mesh output file "' // &
+      UPSY%stru%colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( region%output_filename_mesh, ncid)

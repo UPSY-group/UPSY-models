@@ -1,9 +1,10 @@
 module laddie_scalar_output
 
   use parameters
-  use mpi_basic, only: par 
+  use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning
+  use UPSY_main, only: UPSY
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use model_configuration, only: C
   use laddie_model_types, only: type_laddie_model
   use mesh_types, only: type_mesh
@@ -42,7 +43,7 @@ contains
     call open_existing_netcdf_file_for_writing( filename, ncid)
 
     ! Inquire number of timeframes already present in the file
-    call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = ti) 
+    call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = ti)
 
     ! Write the time to the file
     call write_buffer_to_scalar_file_single_variable( filename, ncid, 'time',              laddie%buffer%time,              n, ti+1)
@@ -77,7 +78,7 @@ contains
     call write_buffer_to_scalar_file_single_variable( filename, ncid, 'divQH_sum',         laddie%buffer%divQH_sum,         n, ti+1)
 
     ! Reset buffer
-    laddie%buffer%n = 0 
+    laddie%buffer%n = 0
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -112,7 +113,7 @@ contains
     call generate_filename_XXXXXdotnc( filename_base, laddie%output_scalar_filename)
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Creating laddie scalar output file "' // colour_string( trim( laddie%output_scalar_filename), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Creating laddie scalar output file "' // UPSY%stru%colour_string( trim( laddie%output_scalar_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( laddie%output_scalar_filename, ncid)

@@ -2,10 +2,11 @@ module unit_tests_multinode
 
   ! The main unit tests module
 
+  use UPSY_main, only: UPSY
   use tests_main
   use assertions_basic
   use ut_basic
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_basic, only: par, sync
   use ut_mpi_dist_shared_memory, only: unit_tests_mpi_hybrid_distributed_shared_memory_main
   use ut_halo_exchange, only: test_halo_exchange_main
@@ -107,7 +108,7 @@ contains
       ! Tell the user where it is
       call getcwd( cwd)
       write(0,'(A)') ''
-      write(0,'(A)') ' Output directory: ' // colour_string( trim(cwd)//'/'//trim( output_dir), 'light blue')
+      write(0,'(A)') ' Output directory: ' // UPSY%stru%colour_string( trim(cwd)//'/'//trim( output_dir), 'light blue')
       write(0,'(A)') ''
 
     end if

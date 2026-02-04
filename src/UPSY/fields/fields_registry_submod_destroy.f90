@@ -2,10 +2,10 @@ submodule( fields_registry) fields_registry_submod_destroy
 
 contains
 
-  subroutine destroy( flds_reg)
+  subroutine destroy( self)
 
     ! In/output variables:
-    class(type_fields_registry), intent(inout) :: flds_reg
+    class(type_fields_registry), intent(inout) :: self
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'type_fields_registry_destroy'
@@ -14,10 +14,10 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    do i = 1, flds_reg%n
+    do i = 1, self%n
 
       ! Deallocate the shared memory of the actual array
-      select type (f => flds_reg%items(i)%p)
+      select type (f => self%items(i)%p)
       class default
         call crash('invalid field class')
       class is (type_field_logical_2D)
@@ -35,13 +35,13 @@ contains
       end select
 
       ! Deallocate the field
-      deallocate( flds_reg%items(i)%p)
+      deallocate( self%items(i)%p)
 
     end do
 
-    deallocate( flds_reg%items)
-    flds_reg%n     = 0
-    flds_reg%n_max = 0
+    deallocate( self%items)
+    self%n     = 0
+    self%n_max = 0
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

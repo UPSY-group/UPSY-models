@@ -4,7 +4,7 @@ module netcdf_check_dimensions
   use assertions_basic
   use mpi_basic, only: par, sync
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf, only: NF90_MAX_VAR_DIMS, NF90_DOUBLE, NF90_FLOAT, NF90_UNLIMITED, NF90_INT
   use netcdf_field_name_options
   use netcdf_read_var_primary

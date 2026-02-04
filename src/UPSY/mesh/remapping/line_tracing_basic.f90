@@ -5,7 +5,7 @@ module line_tracing_basic
   use tests_main
   use assertions_basic
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: crash
+  use call_stack_and_comp_time_tracking, only: crash
   use remapping_types, only: type_single_row_mapping_matrices
 
   implicit none

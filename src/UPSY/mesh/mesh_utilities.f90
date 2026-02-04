@@ -11,7 +11,7 @@ MODULE mesh_utilities
     MPI_SUM, MPI_MAX, MPI_MIN, MPI_INTEGER
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE reallocate_mod
   USE mesh_types                                             , ONLY: type_mesh
   use plane_geometry, only: geometric_center, is_in_triangle, lies_on_line_segment, circumcenter, &

@@ -17,7 +17,7 @@ module model_configuration_type_and_namelist
   ! overwritten in the end.
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration_utilities, only: check_config_file_validity
 
   implicit none
@@ -659,6 +659,15 @@ module model_configuration_type_and_namelist
     real(dp)            :: precip_CC_correction_GRL_config              = 1.068_dp                        !
     real(dp)            :: precip_CC_correction_ANT_config              = 1.068_dp                        !
 
+    ! == Climate - snapshot plus a transient deltaT
+    character(len=1024) :: filename_climate_snapshot_trans_dT_NAM_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_EAS_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_GRL_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_ANT_config = ''
+    character(len=1024) :: filename_atmosphere_dT_NAM_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_EAS_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_GRL_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_ANT_config             = ''
 
     ! == Climate - Insolation
     character(len=1024) :: choice_insolation_forcing_config             = 'none'                           ! 'none', 'static' or 'realistic'
@@ -725,7 +734,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_lin_therm_surf_salinity_config         = 34.0_dp                          ! [psu] Surface salinity when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_deep_salinity_config         = 34.7_dp                          ! [psu] Deep salinity when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_surf_temperature_config      = -1.0_dp                          ! [degC] Surface temperature when using 'LINEAR_THERMOCLINE'
-    real(dp)            :: ocean_lin_therm_deep_temperature_config      = 1.2_dp                           ! [degC] Deep temperature when using 'LINEAR_THERMOCLINE' 
+    real(dp)            :: ocean_lin_therm_deep_temperature_config      = 1.2_dp                           ! [degC] Deep temperature when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_thermocline_top_config       = 200.0_dp                         ! [m] Top of thermocline depth when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_thermocline_bottom_config    = 600.0_dp                         ! [m] Bottom of thermocline depth when using 'LINEAR_THERMOCLINE'
 
@@ -1122,6 +1131,7 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output_config               = .true.                          !     Whether or not NetCDF output files should be created at all
+    logical             :: do_create_ismip_output_config                = .false.                          !     Whether or not ISMIP-specific output files should be created at all
     CHARACTER(LEN=1024) :: output_precision_config                      = 'double'                        !     Precision of floating-point output fields ('single' [32-bit], 'double' [64-bit])
     logical             :: do_compress_output_config                    = .false.                         !     Whether or not to use the NetCDF 'shuffle' and 'deflate' options to (losslessly) compress output
     real(dp)            :: dt_output_config                             = 1000._dp                        !     Time step for writing output
@@ -1839,6 +1849,16 @@ module model_configuration_type_and_namelist
     real(dp)            :: precip_CC_correction_GRL
     real(dp)            :: precip_CC_correction_ANT
 
+    ! == Climate - snapshot plus a transient deltaT
+    character(len=1024) :: filename_climate_snapshot_trans_dT_NAM
+    character(len=1024) :: filename_climate_snapshot_trans_dT_EAS
+    character(len=1024) :: filename_climate_snapshot_trans_dT_GRL
+    character(len=1024) :: filename_climate_snapshot_trans_dT_ANT
+    character(len=1024) :: filename_atmosphere_dT_NAM
+    character(len=1024) :: filename_atmosphere_dT_EAS
+    character(len=1024) :: filename_atmosphere_dT_GRL
+    character(len=1024) :: filename_atmosphere_dT_ANT
+
 
     ! == Climate - Insolation
     character(len=1024) :: choice_insolation_forcing
@@ -2296,6 +2316,7 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output
+    logical             :: do_create_ismip_output
     CHARACTER(LEN=1024) :: output_precision
     logical             :: do_compress_output
     real(dp)            :: dt_output
@@ -2826,6 +2847,14 @@ contains
       precip_CC_correction_EAS_config                             , &
       precip_CC_correction_GRL_config                             , &
       precip_CC_correction_ANT_config                             , &
+      filename_climate_snapshot_trans_dT_NAM_config               , &
+      filename_climate_snapshot_trans_dT_EAS_config               , &
+      filename_climate_snapshot_trans_dT_GRL_config               , &
+      filename_climate_snapshot_trans_dT_ANT_config               , &
+      filename_atmosphere_dT_NAM_config                           , &
+      filename_atmosphere_dT_EAS_config                           , &
+      filename_atmosphere_dT_GRL_config                           , &
+      filename_atmosphere_dT_ANT_config                           , &
       choice_insolation_forcing_config                            , &
       filename_insolation_config                                  , &
       static_insolation_time_config                               , &
@@ -3101,6 +3130,7 @@ contains
       tractrackpart_write_raw_output_config                       , &
       tractrackpart_dt_raw_output_config                          , &
       do_create_netcdf_output_config                              , &
+      do_create_ismip_output_config                               , &
       output_precision_config                                     , &
       do_compress_output_config                                   , &
       dt_output_config                                            , &
@@ -3852,6 +3882,16 @@ contains
     C%precip_CC_correction_GRL                               = precip_CC_correction_GRL_config
     C%precip_CC_correction_ANT                               = precip_CC_correction_ANT_config
 
+    ! == Climate - snapshot plus a transient deltaT
+    c%filename_climate_snapshot_trans_dT_NAM                 = filename_climate_snapshot_trans_dT_NAM_config
+    c%filename_climate_snapshot_trans_dT_EAS                 = filename_climate_snapshot_trans_dT_EAS_config
+    c%filename_climate_snapshot_trans_dT_GRL                 = filename_climate_snapshot_trans_dT_GRL_config
+    c%filename_climate_snapshot_trans_dT_ANT                 = filename_climate_snapshot_trans_dT_ANT_config
+    C%filename_atmosphere_dT_NAM                             = filename_atmosphere_dT_NAM_config
+    C%filename_atmosphere_dT_EAS                             = filename_atmosphere_dT_EAS_config
+    C%filename_atmosphere_dT_GRL                             = filename_atmosphere_dT_GRL_config
+    C%filename_atmosphere_dT_ANT                             = filename_atmosphere_dT_ANT_config
+
     C%choice_insolation_forcing                              = choice_insolation_forcing_config
     C%filename_insolation                                    = filename_insolation_config
     C%static_insolation_time                                 = static_insolation_time_config
@@ -4304,6 +4344,7 @@ contains
 
     ! Basic settings
     C%do_create_netcdf_output                                = do_create_netcdf_output_config
+    C%do_create_ismip_output                                 = do_create_ismip_output_config
     C%output_precision                                       = output_precision_config
     C%do_compress_output                                     = do_compress_output_config
     C%dt_output                                              = dt_output_config

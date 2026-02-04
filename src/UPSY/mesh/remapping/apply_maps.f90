@@ -6,7 +6,7 @@ module apply_maps
   use petscksp
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid, type_grid_lonlat
   use remapping_types, only: type_map

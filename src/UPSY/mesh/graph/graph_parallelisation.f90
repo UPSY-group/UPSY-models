@@ -1,7 +1,7 @@
 module graph_parallelisation
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use graph_types, only: type_graph
   use mesh_parallelisation, only: determine_ownership_ranges_equal
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared

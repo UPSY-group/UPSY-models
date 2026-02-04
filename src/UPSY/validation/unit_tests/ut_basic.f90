@@ -1,7 +1,8 @@
 module ut_basic
 
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
 
   implicit none
 
@@ -33,14 +34,14 @@ contains
     if (test_result .eqv. .true.) then
       str_file     = 'Unit test passed:'
       if (all_unit_tests_passed) then
-        str_terminal = colour_string( 'Unit test passed:', 'green')
+        str_terminal = UPSY%stru%colour_string( 'Unit test passed:', 'green')
       else
-        str_terminal = colour_string( 'Unit test passed:', 'yellow')
+        str_terminal = UPSY%stru%colour_string( 'Unit test passed:', 'yellow')
       end if
     else
       all_unit_tests_passed = .false.
       str_file     = 'Unit test failed:'
-      str_terminal = colour_string( 'Unit test failed:', 'red')
+      str_terminal = UPSY%stru%colour_string( 'Unit test failed:', 'red')
     end if
 
     str_file     = trim( str_file)     // ' ' // trim( test_name)
@@ -125,7 +126,7 @@ contains
       ! Tell the user where it is
       call getcwd( cwd)
       write(0,'(A)') ''
-      write(0,'(A)') ' Output directory: ' // colour_string( trim(cwd)//'/'//trim( foldername_unit_tests_output), 'light blue')
+      write(0,'(A)') ' Output directory: ' // UPSY%stru%colour_string( trim(cwd)//'/'//trim( foldername_unit_tests_output), 'light blue')
       write(0,'(A)') ''
 
     end if

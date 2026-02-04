@@ -2,11 +2,12 @@ module ct_discretisation_solve_Laplace_eq
 
   ! Test the mesh matrix operators by solving a Laplace equation on the mesh
 
+  use UPSY_main, only: UPSY
   use assertions_basic
   use tests_main
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
@@ -126,7 +127,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '      Running Laplace equation solving test on mesh ', &
-      colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
+      UPSY%stru%colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
       len_trim( test_mesh_filename))),'light blue'), '...'
 
     ! Set up the mesh from the file (includes calculating secondary geometry data and matrix operators)

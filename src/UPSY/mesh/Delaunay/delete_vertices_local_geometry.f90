@@ -1,7 +1,7 @@
 module delete_vertices_local_geometry
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use assertions_basic, only: assert
   use tests_main

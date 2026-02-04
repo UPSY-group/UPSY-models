@@ -3,8 +3,9 @@ module bed_roughness_nudging_main
   ! Contains all the routines for nudging the bed roughness
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: crash, warning, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: crash, warning, init_routine, finalise_routine
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
@@ -191,7 +192,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,*) ' Initialising bed roughness nudging model "' // &
-      colour_string( trim( C%choice_bed_roughness_nudging_method),'light blue') // '"...'
+      UPSY%stru%colour_string( trim( C%choice_bed_roughness_nudging_method),'light blue') // '"...'
 
     ! Allocate memory for main variables
     ! ==================================

@@ -5,7 +5,7 @@ module netcdf_save_single_variables
   use petscksp
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: deallocate_matrix_CSR_dist, gather_CSR_dist_to_primary
   use petsc_basic, only: mat_petsc2CSR
@@ -363,22 +363,5 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine save_variable_as_netcdf_dp_2D
-
-  subroutine delete_existing_file( filename)
-
-    ! In/output variables:
-    character(len=*), intent(in) :: filename
-
-    ! Local variables:
-    logical :: file_exists
-
-    if (par%primary) then
-      inquire( exist = file_exists, file = trim( filename))
-      if (file_exists) then
-        call system('rm -f ' // filename)
-      end if
-    end if
-
-  end subroutine delete_existing_file
 
 end module netcdf_save_single_variables

@@ -5,12 +5,12 @@ submodule( fields_registry) fields_registry_submod_io
 
 contains
 
-  subroutine write_to_netcdf( flds_reg, filename, ncid)
+  subroutine write_to_netcdf( self, filename, ncid)
     ! NOTE: assumes the NetCDF file already exists, is open, and
     !       already contains the grid/mesh
 
     ! In/output variables:
-    class(type_fields_registry), intent(in) :: flds_reg
+    class(type_fields_registry), intent(in) :: self
     character(len=*),            intent(in) :: filename
     integer,                     intent(in) :: ncid
 
@@ -21,8 +21,8 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    do i = 1, flds_reg%n
-      call flds_reg%items(i)%p%write_to_netcdf( filename, ncid)
+    do i = 1, self%n
+      call self%items(i)%p%write_to_netcdf( filename, ncid)
     end do
 
     ! Remove routine from call stack
@@ -30,12 +30,12 @@ contains
 
   end subroutine write_to_netcdf
 
-  subroutine read_from_netcdf( flds_reg, filename, ncid)
+  subroutine read_from_netcdf( self, filename, ncid)
     ! NOTE: assumes the NetCDF file is defined on
     !       the same grid/mesh as the fields
 
     ! In/output variables:
-    class(type_fields_registry), intent(inout) :: flds_reg
+    class(type_fields_registry), intent(inout) :: self
     character(len=*),            intent(in   ) :: filename
     integer,                     intent(in   ) :: ncid
 
@@ -46,8 +46,8 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    do i = 1, flds_reg%n
-      call flds_reg%items(i)%p%read_from_netcdf( filename, ncid)
+    do i = 1, self%n
+      call self%items(i)%p%read_from_netcdf( filename, ncid)
     end do
 
     ! Remove routine from call stack

@@ -6,7 +6,7 @@ module hybrid_DIVA_BPA_main
     MPI_INTEGER, MPI_LOGICAL, MPI_LOR, MPI_MAX, MPI_MIN, MPI_SUM
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: warning, crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
   use model_configuration, only: C
   use parameters
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc

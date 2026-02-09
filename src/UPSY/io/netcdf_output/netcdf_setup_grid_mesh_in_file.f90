@@ -18,6 +18,7 @@ module netcdf_setup_grid_mesh_in_file
   public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, write_matrix_operators_to_netcdf_file
   public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf, save_graph_pair_as_netcdf
   public :: save_matrix_operator_as_netcdf_file
+  public :: setup_xy_grid_in_netcdf_checksum_file
 
 contains
 
@@ -188,6 +189,62 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine setup_xy_grid_in_netcdf_file
+
+  subroutine setup_xy_grid_in_netcdf_checksum_file( filename, ncid, grid)
+    !< Set up a regular x/y-grid in an existing NetCDF checksum file
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    type(type_grid),  intent(in   ) :: grid
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'setup_xy_grid_in_netcdf_checksum_file'
+    integer                        :: id_dim_x
+    integer                        :: id_dim_y
+    integer                        :: id_var_x
+    integer                        :: id_var_y
+    integer                        :: id_var_lon
+    integer                        :: id_var_lat
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Create x/y dimensions
+    call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_x), grid%nx, id_dim_x)
+    call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_y), grid%ny, id_dim_y)
+
+    ! Create and write x/y variables
+
+    ! x
+    call create_checksum_variable_set( filename, ncid, get_first_option_from_list( field_name_options_x), NF90_DOUBLE, (/ id_dim_x /))
+    call write_var_checksum_notime( filename, ncid, get_first_option_from_list( field_name_options_x), grid%x)
+
+    ! y
+    call create_checksum_variable_set( filename, ncid, get_first_option_from_list( field_name_options_y), NF90_DOUBLE, (/ id_dim_y /))
+    call write_var_checksum_notime( filename, ncid, get_first_option_from_list( field_name_options_x), grid%x)
+
+    ! lon/lat-coordinates
+    if (allocated( grid%lon) .or. allocated( grid%lat)) then
+
+      ! Safety
+      if (.not. allocated( grid%lon)) call crash('grid has lat but no lon coordinates!')
+      if (.not. allocated( grid%lat)) call crash('grid has lon but no lat coordinates!')
+
+      ! lon
+      call create_checksum_variable_set( filename, ncid, get_first_option_from_list( field_name_options_lon), NF90_DOUBLE, (/ id_dim_x, id_dim_y /))
+      call write_var_checksum_notime( filename, ncid, get_first_option_from_list( field_name_options_lon), grid%lon)
+
+      ! lat
+      call create_checksum_variable_set( filename, ncid, get_first_option_from_list( field_name_options_lat), NF90_DOUBLE, (/ id_dim_x, id_dim_y /))
+      call write_var_checksum_notime( filename, ncid, get_first_option_from_list( field_name_options_lat), grid%lat)
+
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine setup_xy_grid_in_netcdf_checksum_file
 
   subroutine setup_mesh_in_netcdf_file( filename, ncid, mesh)
     !< Set up a mesh in an existing NetCDF file

@@ -11,5 +11,6 @@ module netcdf_basic
   use netcdf_check_fields
   use netcdf_find_timeframe
   use netcdf_save_single_variables
+  use netcdf_checksum_variables
 
 end module netcdf_basic

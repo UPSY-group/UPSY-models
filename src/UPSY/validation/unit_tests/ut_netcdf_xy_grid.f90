@@ -54,6 +54,7 @@ contains
     call unit_tests_netcdf_xy_grid_dp_2D_monthly( test_name, grid)
     call unit_tests_netcdf_xy_grid_dp_3D        ( test_name, grid)
     call unit_tests_netcdf_xy_grid_dp_3D_ocean  ( test_name, grid)
+    call unit_tests_netcdf_grid_checksum        ( test_name, grid)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -465,5 +466,39 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine unit_tests_netcdf_xy_grid_dp_3D_ocean
+
+  subroutine unit_tests_netcdf_grid_checksum( test_name_parent, grid)
+    !< Writing an x/y-grid to a netcdf checksum file
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+    type(type_grid),  intent(in) :: grid
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'unit_tests_netcdf_grid_checksum'
+    character(len=*), parameter   :: test_name_local = 'checksum'
+    character(len=:), allocatable :: test_name
+    character(len=:), allocatable :: filename
+    integer                       :: ncid
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! ! Write to output file
+    filename = trim(foldername_unit_tests_output) // '/' // trim( strrep( test_name,'/','_')) // '.nc'
+    call create_new_netcdf_file_for_writing( filename, ncid)
+    call setup_xy_grid_in_netcdf_checksum_file( filename, ncid, grid)
+    call close_netcdf_file( ncid)
+
+    ! Test if what we read is the same as what we wrote
+    call unit_test( .true., test_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine unit_tests_netcdf_grid_checksum
 
 end module ut_netcdf_xy_grid

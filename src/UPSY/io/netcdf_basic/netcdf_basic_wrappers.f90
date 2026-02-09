@@ -72,11 +72,11 @@ contains
     !< Inquire some info of a dimension
 
     ! In/output variables:
-    character(len=*),              intent(in   ) :: filename
-    integer,                       intent(in   ) :: ncid
-    integer,                       intent(in   ) :: id_dim
-    character(len=1024), optional, intent(  out) :: dim_name
-    integer,             optional, intent(  out) :: dim_length
+    character(len=*),           intent(in   ) :: filename
+    integer,                    intent(in   ) :: ncid
+    integer,                    intent(in   ) :: id_dim
+    character(len=*), optional, intent(  out) :: dim_name
+    integer,          optional, intent(  out) :: dim_length
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'inquire_dim_info'

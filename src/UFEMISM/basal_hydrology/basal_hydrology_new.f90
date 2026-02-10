@@ -48,6 +48,7 @@ CONTAINS
     character(len=1024), parameter :: routine_name = 'basal_hydrology_leg'
     real(dp)                       :: duration
     real(dp)                       :: time_until_convergence
+    real(dp)                       :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -55,21 +56,33 @@ CONTAINS
     ! Start counter on 0
     duration = 0.0_dp
 
-    time_until_convergence = 0.1_dp*sec_per_year  ! Time until convergence (should be in config at some point probably)
+    time_until_convergence = C%basal_hydro_equil_time*sec_per_year  ! Time until convergence (should be in config at some point probably)
+
+    basal_hydro%diff_time = time*sec_per_year - basal_hydro%old_time
+
+    !do vi = mesh%vi1, mesh%vi2
+    !  basal_hydro%m_extra( vi) = basal_hydro%m( vi) * basal_hydro%diff_time
+    !end do
+    ! Sometimes this above becomes negative if the time_loop below is run for longer than the time step of
+    ! the main model. For example when nc-files are saved every year, the basal hydrology model can go 
+    ! over that year and then be run for a longer time than the main model leading to negative m_extra.
+
+    !write(*,*) "Adding extra melt of ", maxval(basal_hydro%m_extra)/1000.0_dp, " m/yr water equivalent due to time since last basal hydrology update of ", time*sec_per_year - basal_hydro%old_time, " years."
 
     ! Loop until convergence time is reached
     time_loop: do while (duration < time_until_convergence)
       call basal_hydrology(mesh, ice, basal_hydro, duration + time*sec_per_year)
       duration = duration + basal_hydro%dt
+      !do vi = mesh%vi1, mesh%vi2
+      !   basal_hydro%m_extra( vi) = 0.0_dp ! After the first step, there is no extra melt anymore, because we are already within the timestep of the basal hydrology model, so we can set it to 0.
+      !end do
+      basal_hydro%diff_time = 0.0_dp ! After the first step, there is no extra time anymore, because we are already within the timestep of the basal hydrology model, so we can set it to 0.
       if (par%primary) then
         !write(*,*) "Duration so far basal hydro: ", duration
       end if
     end do time_loop
-    ! It looks like the primary core is slower than the other core, so when the second core is done with the loop,
-    ! the first core is still going but then also stops because the first core has reached the time_until_convergence?
-    ! It does not seem to pass the run_ice_dynamics_model in UFEMISM_main_model.f90, so there is probably something
-    ! there that needs all the cores to be done or something. Probably because they need to gather all for masks and such.
-    ! So I would need to give one dt (minimum of the different dts) for the different cores or sync them up somehow.
+
+    basal_hydro%old_time = time*sec_per_year + duration
 
     if (par%primary) then
       !write(*,*) "Done!"
@@ -117,14 +130,8 @@ CONTAINS
 
     call convert_ice_to_SI(mesh, ice, basal_hydro)
 
-    ! Get the general timestep
-    call calc_general_dt(time, basal_hydro, dt)
-
     ! Initialise basal hydro masks
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
-
-    ! Point source
-    !call point_source( mesh, basal_hydro)
 
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
@@ -200,6 +207,7 @@ CONTAINS
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0069_dp*rho_w/sec_per_year) ! basal melt rate kg m^-2 s^-1 (0.0069 m/yr water equivalent)
+    allocate(basal_hydro%m_extra(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dW_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -228,6 +236,7 @@ CONTAINS
     allocate(basal_hydro%dR_dy_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%t_next, source = 0.0_dp)
     allocate(basal_hydro%dt, source = 0.0_dp)
+    allocate(basal_hydro%diff_time, source = 0.0_dp)
     allocate(basal_hydro%W_r(mesh%vi1:mesh%vi2), source = 0.1_dp) !Value used in basal hydrology paper (Bueler and Van Pelt 2015)
     allocate(basal_hydro%Y(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%q_til(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -556,8 +565,10 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       ! Calculate what portion of water goes into till and what portion into water layer
-      basal_hydro%q_til( vi) = min(W_max_til - basal_hydro%W_til( vi) + basal_hydro%Cd*basal_hydro%dt, basal_hydro%m( vi)*basal_hydro%dt/rho_w)
-      basal_hydro%q_water_layer( vi) = (basal_hydro%Cd + basal_hydro%m( vi)/rho_w)*basal_hydro%dt - basal_hydro%q_til( vi)
+      !basal_hydro%q_til( vi) = min(W_max_til - basal_hydro%W_til( vi) + basal_hydro%Cd*basal_hydro%dt, ((basal_hydro%m( vi))*basal_hydro%dt + basal_hydro%m_extra( vi))/rho_w)
+      basal_hydro%q_til( vi) = min(W_max_til - basal_hydro%W_til( vi) + basal_hydro%Cd*basal_hydro%dt, ((basal_hydro%m( vi)/rho_w)*(basal_hydro%dt + basal_hydro%diff_time)))
+      !basal_hydro%q_water_layer( vi) = (basal_hydro%Cd + basal_hydro%m( vi)/rho_w)*basal_hydro%dt + basal_hydro%m_extra( vi)/rho_w - basal_hydro%q_til( vi)
+      basal_hydro%q_water_layer( vi) = basal_hydro%Cd*basal_hydro%dt + (basal_hydro%m( vi)/rho_w)*(basal_hydro%dt + basal_hydro%diff_time) - basal_hydro%q_til( vi)
     end do
 
     ! Finalise routine path

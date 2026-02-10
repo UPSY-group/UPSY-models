@@ -39,6 +39,7 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: N                   ! Effective pressure (P_o - P)
 
     real(dp), dimension(:), allocatable :: m                   ! Total input of water to the basal system
+    real(dp), dimension(:), allocatable :: m_extra             ! Additional input of water to the basal system because of time that has passed since the last basal hydrology model update
 
     real(dp), dimension(:), allocatable :: D                   ! Diffusivity
     real(dp), dimension(:), allocatable :: dD_dx_b             ! Derivative of D to x on B grid.
@@ -90,6 +91,7 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: dR_dy_b             ! Derivative of R to y on B grid.
 
     real(dp), allocatable               :: old_time            ! Time at previous timestep
+    real(dp), allocatable               :: diff_time           ! Time since previous leg was run
 
     type(type_sparse_matrix_CSR_dp)     :: M_a_b               ! Matrix for going from grid a to grid b
     TYPE(type_sparse_matrix_CSR_dp)     :: M_b_c               ! Matrix for going from grid b to grid c

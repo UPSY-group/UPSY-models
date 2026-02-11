@@ -21,7 +21,9 @@ module masks_mod
 
 contains
 
-  subroutine determine_masks( mesh, ice)
+  !subroutine determine_masks( mesh, ice)
+
+  subroutine determine_masks( mesh, Hi, Hb, SL, mask, mask_icefree_land, mask_icefree_ocean, mask_grounded_ice, mask_floating_ice, mask_margin, mask_gl_fl, mask_gl_gr, mask_cf_gr, mask_cf_fl,mask_coastline)
     !< Determine the different masks
 
     ! mask_icefree_land       ! T: ice-free land , F: otherwise
@@ -39,9 +41,29 @@ contains
     ! mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
     ! mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
 
+
+    ! In variables
+    type(type_mesh),                        intent(in ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in ) :: Hi                      ! [m]       Ice thickness 
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in ) :: Hb                      ! [m]       Bedrock elevation
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in ) :: SL                      ! [m]       Water surface elevation
+
+    ! Out variables 
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_icefree_land       ! T: ice-free land , F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_icefree_ocean      ! T: ice-free ocean, F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_grounded_ice       ! T: grounded ice  , F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_floating_ice       ! T: floating ice  , F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_margin             ! T: ice next to ice-free, F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_gl_gr              ! T: grounded ice next to floating ice, F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_gl_fl              ! T: floating ice next to grounded ice, F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_cf_gr              ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
+    logical,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
+    integer,  dimension(mesh%vi1:mesh%vi2), intent(out) :: mask    
+
     ! In- and output variables
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    ! type(type_mesh),      intent(in   ) :: mesh
+    ! type(type_ice_model), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'determine_masks'
@@ -50,6 +72,10 @@ contains
     logical, dimension(mesh%nV)    :: mask_icefree_ocean_tot
     logical, dimension(mesh%nV)    :: mask_grounded_ice_tot
     logical, dimension(mesh%nV)    :: mask_floating_ice_tot
+    logical, dimension(mesh%vi1:mesh%vi2) :: mask_icefree_land_prev
+    logical, dimension(mesh%vi1:mesh%vi2) :: mask_icefree_ocean_prev
+    logical, dimension(mesh%vi1:mesh%vi2) :: mask_grounded_ice_prev
+    logical, dimension(mesh%vi1:mesh%vi2) :: mask_floating_ice_prev
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -58,52 +84,67 @@ contains
     ! ===================
 
     ! Store previous basic masks
-    ice%mask_icefree_land_prev  = ice%mask_icefree_land
-    ice%mask_icefree_ocean_prev = ice%mask_icefree_ocean
-    ice%mask_grounded_ice_prev  = ice%mask_grounded_ice
-    ice%mask_floating_ice_prev  = ice%mask_floating_ice
+    ! ice%mask_icefree_land_prev  = ice%mask_icefree_land
+    ! ice%mask_icefree_ocean_prev = ice%mask_icefree_ocean
+    ! ice%mask_grounded_ice_prev  = ice%mask_grounded_ice
+    ! ice%mask_floating_ice_prev  = ice%mask_floating_ice
+
+    ! ! Initialise basic masks
+    ! ice%mask_icefree_land  = .false.
+    ! ice%mask_icefree_ocean = .false.
+    ! ice%mask_grounded_ice  = .false.
+    ! ice%mask_floating_ice  = .false.
+    ! ice%mask               = 0
+
+
+
+    ! Store previous basic masks
+    mask_icefree_land_prev  = mask_icefree_land
+    mask_icefree_ocean_prev = mask_icefree_ocean
+    mask_grounded_ice_prev  = mask_grounded_ice
+    mask_floating_ice_prev  = mask_floating_ice
 
     ! Initialise basic masks
-    ice%mask_icefree_land  = .false.
-    ice%mask_icefree_ocean = .false.
-    ice%mask_grounded_ice  = .false.
-    ice%mask_floating_ice  = .false.
-    ice%mask               = 0
+    mask_icefree_land  = .false.
+    mask_icefree_ocean = .false.
+    mask_grounded_ice  = .false.
+    mask_floating_ice  = .false.
+    mask               = 0
 
     ! Calculate
     do vi = mesh%vi1, mesh%vi2
 
-      if (is_floating( ice%Hi( vi), ice%Hb( vi), ice%SL( vi))) then
+      if (is_floating( Hi( vi), Hb( vi), SL( vi))) then
         ! Ice thickness is below the floatation thickness; either floating ice, or ice-free ocean
 
-        if (ice%Hi( vi) > 0._dp) then
+        if (Hi( vi) > 0._dp) then
           ! Floating ice
 
-          ice%mask_floating_ice( vi) = .true.
-          ice%mask( vi) = C%type_floating_ice
+          mask_floating_ice( vi) = .true.
+          mask( vi) = C%type_floating_ice
 
         else
           ! Ice-free ocean
 
-          ice%mask_icefree_ocean( vi) = .true.
-          ice%mask( vi) = C%type_icefree_ocean
+          mask_icefree_ocean( vi) = .true.
+          mask( vi) = C%type_icefree_ocean
 
         end if
 
       else
         ! Ice thickness is above the floatation thickness; either grounded ice, or ice-free land
 
-        if (ice%Hi( vi) > 0._dp) then
+        if (Hi( vi) > 0._dp) then
           ! Grounded ice
 
-          ice%mask_grounded_ice( vi) = .true.
-          ice%mask( vi) = C%type_grounded_ice
+          mask_grounded_ice( vi) = .true.
+          mask( vi) = C%type_grounded_ice
 
         else
           ! Ice-free land
 
-          ice%mask_icefree_land( vi) = .true.
-          ice%mask( vi) = C%type_icefree_land
+          mask_icefree_land( vi) = .true.
+          mask( vi) = C%type_icefree_land
 
         end if
 
@@ -114,19 +155,34 @@ contains
     ! === Transitional masks ===
     ! ==========================
 
+    ! ! Gather basic masks to all processes
+    ! call gather_to_all( ice%mask_icefree_land , mask_icefree_land_tot )
+    ! call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+    ! call gather_to_all( ice%mask_grounded_ice , mask_grounded_ice_tot )
+    ! call gather_to_all( ice%mask_floating_ice , mask_floating_ice_tot )
+
     ! Gather basic masks to all processes
-    call gather_to_all( ice%mask_icefree_land , mask_icefree_land_tot )
-    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
-    call gather_to_all( ice%mask_grounded_ice , mask_grounded_ice_tot )
-    call gather_to_all( ice%mask_floating_ice , mask_floating_ice_tot )
+    call gather_to_all( mask_icefree_land , mask_icefree_land_tot )
+    call gather_to_all( mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( mask_grounded_ice , mask_grounded_ice_tot )
+    call gather_to_all( mask_floating_ice , mask_floating_ice_tot )
+
+    ! ! Initialise transitional masks
+    ! ice%mask_margin    = .false.
+    ! ice%mask_gl_gr     = .false.
+    ! ice%mask_gl_fl     = .false.
+    ! ice%mask_cf_gr     = .false.
+    ! ice%mask_cf_fl     = .false.
+    ! ice%mask_coastline = .false.
+
 
     ! Initialise transitional masks
-    ice%mask_margin    = .false.
-    ice%mask_gl_gr     = .false.
-    ice%mask_gl_fl     = .false.
-    ice%mask_cf_gr     = .false.
-    ice%mask_cf_fl     = .false.
-    ice%mask_coastline = .false.
+    mask_margin    = .false.
+    mask_gl_gr     = .false.
+    mask_gl_fl     = .false.
+    mask_cf_gr     = .false.
+    mask_cf_fl     = .false.
+    mask_coastline = .false.
 
     do vi = mesh%vi1, mesh%vi2
 
@@ -135,8 +191,10 @@ contains
         do ci = 1, mesh%nC( vi)
           vj = mesh%C( vi,ci)
           if (.not. (mask_grounded_ice_tot( vj) .OR. mask_floating_ice_tot( vj))) then
-            ice%mask_margin( vi) = .true.
-            ice%mask( vi) = C%type_margin
+            ! ice%mask_margin( vi) = .true.
+            ! ice%mask( vi) = C%type_margin
+            mask_margin( vi) = .true.
+            mask( vi) = C%type_margin
           end if
         end do
       end if
@@ -146,8 +204,10 @@ contains
         do ci = 1, mesh%nC( vi)
           vj = mesh%C( vi,ci)
           if (mask_floating_ice_tot( vj)) then
-            ice%mask_gl_gr( vi) = .true.
-            ice%mask( vi) = C%type_groundingline_gr
+            ! ice%mask_gl_gr( vi) = .true.
+            ! ice%mask( vi) = C%type_groundingline_gr
+            mask_gl_gr( vi) = .true.
+            mask( vi) = C%type_groundingline_gr
           end if
         end do
       end if
@@ -157,8 +217,10 @@ contains
         do ci = 1, mesh%nC( vi)
           vj = mesh%C( vi,ci)
           if (mask_grounded_ice_tot( vj)) then
-            ice%mask_gl_fl( vi) = .true.
-            ice%mask( vi) = C%type_groundingline_fl
+            ! ice%mask_gl_fl( vi) = .true.
+            ! ice%mask( vi) = C%type_groundingline_fl
+            mask_gl_fl( vi) = .true.
+            mask( vi) = C%type_groundingline_fl
           end if
         end do
       end if
@@ -168,8 +230,10 @@ contains
         do ci = 1, mesh%nC(vi)
           vj = mesh%C( vi,ci)
           if (mask_icefree_ocean_tot( vj)) then
-            ice%mask_cf_gr( vi) = .true.
-            ice%mask( vi) = C%type_calvingfront_gr
+            ! ice%mask_cf_gr( vi) = .true.
+            ! ice%mask( vi) = C%type_calvingfront_gr
+            mask_cf_gr( vi) = .true.
+            mask( vi) = C%type_calvingfront_gr
           end if
         end do
       end if
@@ -179,8 +243,10 @@ contains
         do ci = 1, mesh%nC(vi)
           vj = mesh%C( vi,ci)
           if (mask_icefree_ocean_tot( vj)) then
-            ice%mask_cf_fl( vi) = .true.
-            ice%mask( vi) = C%type_calvingfront_fl
+            ! ice%mask_cf_fl( vi) = .true.
+            ! ice%mask( vi) = C%type_calvingfront_fl
+            mask_cf_fl( vi) = .true.
+            mask( vi) = C%type_calvingfront_fl
           end if
         end do
       end if
@@ -190,8 +256,10 @@ contains
         do ci = 1, mesh%nC(vi)
           vj = mesh%C( vi,ci)
           if (mask_icefree_ocean_tot( vj)) then
-            ice%mask_coastline( vi) = .true.
-            ice%mask( vi) = C%type_coastline
+            ! ice%mask_coastline( vi) = .true.
+            ! ice%mask( vi) = C%type_coastline
+            mask_coastline( vi) = .true.
+            mask( vi) = C%type_coastline
           end if
         end do
       end if

@@ -469,6 +469,10 @@ module model_configuration_type_and_namelist
   ! == Basal hydrology
   ! ==================
 
+    ! Time step
+    logical             :: do_asynchronous_basal_hydro_config           = .true.                           ! Whether or not the basal hydrology should be calculated asynchronously from the rest of the model; if so, use dt_basal_hydro; if not, calculate it in every time step
+    real(dp)            :: dt_basal_hydro_config                        = 10._dp                           ! [yr] Time step for calculating basal hydrology
+
     ! Basal hydrology
     character(len=1024) :: choice_basal_hydrology_model_config          = 'Martin2011'                     ! Choice of basal hydrology model: "none", "Martin2011", "inversion", "read_from_file"
     real(dp)            :: Martin2011_hydro_Hb_min_config               = 0._dp                            ! Martin et al. (2011) basal hydrology model: low-end  Hb  value of bedrock-dependent pore-water pressure
@@ -1627,6 +1631,10 @@ module model_configuration_type_and_namelist
   ! == Basal hydrology
   ! ==================
 
+    ! Time step
+    logical             :: do_asynchronous_basal_hydro
+    real(dp)            :: dt_basal_hydro
+
     ! Basal hydrology
     character(len=1024) :: choice_basal_hydrology_model
     real(dp)            :: Martin2011_hydro_Hb_min
@@ -2657,6 +2665,8 @@ contains
       limitness_H_floating_config                                 , &
       modiness_H_style_config                                     , &
       modiness_T_hom_ref_config                                   , &
+      do_asynchronous_basal_hydro_config                          , &
+      dt_basal_hydro_config                                       , &
       choice_basal_hydrology_model_config                         , &
       Martin2011_hydro_Hb_min_config                              , &
       Martin2011_hydro_Hb_max_config                              , &
@@ -3601,6 +3611,10 @@ contains
 
     ! == Basal hydrology
     ! ==================
+
+    ! Time step
+    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config             
+    C%dt_basal_hydro                                         = dt_basal_hydro_config                   
 
     ! Basal hydrology
     C%choice_basal_hydrology_model                           = choice_basal_hydrology_model_config

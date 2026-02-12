@@ -99,6 +99,7 @@ MODULE basal_hydrology_model_types
 
     logical,  dimension(:), allocatable :: mask_a              ! Mask on b-grid on which to apply computation
     logical,  dimension(:), allocatable :: mask_b              ! Mask on b-grid on which to apply computation
+    logical,  dimension(:), allocatable :: mask_W              ! Mask showing where the water layer is present
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

@@ -29,6 +29,7 @@ MODULE basal_hydrology_new
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D
   use mesh_utilities                                         , only: find_containing_vertex
   use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist
+  use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
 
   IMPLICIT NONE
 
@@ -155,6 +156,10 @@ CONTAINS
     !call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
     call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
 
+    ! Allow boundary conditions to be applied to W
+    call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)
+    call apply_W_thickness_gl_explicit(mesh, ice, basal_hydro)
+
     ! 15) Update time and repeat
     if (par%primary) then
       !write(*,*) "Time after basal hydrology step: ", time
@@ -216,6 +221,7 @@ CONTAINS
     allocate(basal_hydro%old_time, source = 0.0_dp)
     allocate(basal_hydro%mask_a(mesh%vi1:mesh%vi2), source = .false.)
     allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
+    allocate(basal_hydro%mask_W(mesh%vi1:mesh%vi2), source = .false.)
     allocate(basal_hydro%R(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dR_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%dR_dy_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
@@ -490,7 +496,7 @@ CONTAINS
     real(dp), parameter :: rho_w = 1000.0_dp
     real(dp), parameter :: g = 9.81_dp
     real(dp), parameter :: phi = 0.01_dp            ! Englacial porosity
-    logical, parameter  :: sliding = .true.         ! Whether the ice slides or not when W = 0 and there is ice on land
+    logical, parameter  :: sliding = .false.         ! Whether the ice slides or not when W = 0 and there is ice on land
 
 
     ! Add routine to path
@@ -959,6 +965,34 @@ CONTAINS
   end subroutine calc_basal_hydro_mask_a_b
 
 
+
+  subroutine calc_basal_hydro_mask_W(mesh, basal_hydro)
+    !< Calculating the mask for where the water layer is present >!
+
+    ! In/output variables:
+    type(type_mesh),                    intent(in   ) :: mesh
+    type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=1024)                                   :: routine_name = 'calc_basal_hydro_mask_W'
+    integer                                               :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+      basal_hydro%mask_W( vi) = .false.
+      if (basal_hydro%W( vi) > 0.0_dp) then
+        basal_hydro%mask_W( vi) = .true.
+      end if
+    end do
+  
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_basal_hydro_mask_W
+
+
   subroutine calc_R( mesh, ice, basal_hydro, test)
     ! Calculate subglacial water pressure R
 
@@ -1157,5 +1191,280 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_closing_rate
+
+
+
+  subroutine apply_W_thickness_BC_explicit( mesh, ice, basal_hydro)
+    !< Apply boundary conditions to the water layer thickness on the domain border directly
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   ) :: mesh
+    type(type_ice_model),                   intent(in   ) :: ice
+    type(type_basal_hydrology_model),       intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=1024), parameter         :: routine_name = 'apply_W_thickness_BC_explicit'
+    integer,  dimension(mesh%vi1:mesh%vi2) :: n_interior_neighbours
+    logical,  dimension(mesh%nV)           :: mask_W_tot
+    real(dp),  dimension(mesh%nV)          :: W_tot
+    integer                                :: vi
+    character(len=256)                     :: BC_H
+    integer                                :: ci,vj
+    real(dp)                               :: W_sum, W_av
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate where water is present
+    call calc_basal_hydro_mask_W(mesh, basal_hydro)
+
+    call calc_n_interior_neighbours( mesh, .not. basal_hydro%mask_W, n_interior_neighbours)
+
+    call gather_to_all(basal_hydro%mask_W, mask_W_tot)
+    call gather_to_all(basal_hydro%W, W_tot)
+
+    ! == First pass: set values of border vertices to mean of interior neighbours
+    !    ...for those border vertices that actually have interior neighbours.
+    ! ===========================================================================
+
+    do vi = mesh%vi1, mesh%vi2
+
+      if     (mesh%VBI( vi) == 1 .or. mesh%VBI( vi) == 2) then
+        ! Northern domain border
+        BC_H = C%BC_H_north
+        !BC_H = 'zero'
+      elseif (mesh%VBI( vi) == 3 .or. mesh%VBI( vi) == 4) then
+        ! Eastern domain border
+        BC_H = C%BC_H_east
+        !BC_H = 'zero'
+      elseif (mesh%VBI( vi) == 5 .or. mesh%VBI( vi) == 6) then
+        ! Southern domain border
+        BC_H = C%BC_H_south
+        !BC_H = 'zero'
+      elseif (mesh%VBI( vi) == 7 .or. mesh%VBI( vi) == 8) then
+        ! Western domain border
+        BC_H = C%BC_H_west
+        !BC_H = 'zero'
+      else
+        ! Free vertex (This is the part that makes sure that not every vortex is meaned)
+        cycle
+      end if
+
+      select case (BC_H)
+      case default
+        call crash('unknown BC_H "' // trim( BC_H) // '"')
+      case ('zero')
+        ! Set water thickness to zero here
+
+        basal_hydro%W( vi) = 0._dp
+
+      case ('infinite')
+        ! Set W on this vertex equal to the average value on its neighbours
+
+        if (n_interior_neighbours( vi) > 0) then
+
+          W_sum = 0._dp
+          do ci = 1, mesh%nC( vi)
+            vj = mesh%C( vi,ci)
+            if (mesh%VBI( vj) == 0 .and. mask_W_tot( vj)) then
+              W_sum = W_sum + W_tot( vj)
+            end if
+          end do
+          W_av = W_sum / real( n_interior_neighbours( vi),dp)
+          basal_hydro%W( vi) = W_av
+        end if
+
+      end select
+
+    end do
+
+    ! == Second pass: set values of border vertices to mean of all neighbours
+    !    ...for those border vertices that have no interior neighbours.
+    ! =======================================================================
+
+
+    do vi = mesh%vi1, mesh%vi2
+
+      if     (mesh%VBI( vi) == 1 .or. mesh%VBI( vi) == 2) then
+        ! Northern domain border
+        BC_H = C%BC_H_north
+        !BC_H = 'zero'
+      elseif (mesh%VBI( vi) == 3 .or. mesh%VBI( vi) == 4) then
+        ! Eastern domain border
+        BC_H = C%BC_H_east
+        !BC_H = 'zero'
+      elseif (mesh%VBI( vi) == 5 .or. mesh%VBI( vi) == 6) then
+        ! Southern domain border
+        BC_H = C%BC_H_south
+        !BC_H = 'zero'
+      elseif (mesh%VBI( vi) == 7 .or. mesh%VBI( vi) == 8) then
+        ! Western domain border
+        BC_H = C%BC_H_west
+        !BC_H = 'zero'
+      else
+        ! Free vertex (This is the part that ensures that not every vortex is meaned)
+        cycle
+      end if
+
+      select case (BC_H)
+      case default
+        call crash('unknown BC_H "' // trim( BC_H) // '"')
+      case ('zero')
+        ! Set water thickness to zero here
+
+        basal_hydro%W( vi) = 0._dp
+
+      case ('infinite')
+        ! Set W on this vertex equal to the average value on its neighbours
+
+        if (n_interior_neighbours( vi) == 0) then
+
+          W_sum = 0._dp
+          do ci = 1, mesh%nC( vi)
+            vj = mesh%C( vi,ci)
+            W_sum = W_sum + W_tot( vj)
+          end do
+          W_av = W_sum / real( mesh%nC( vi),dp)
+          basal_hydro%W( vi) = W_av
+
+        end if
+
+      end select
+
+    end do ! do vi = mesh%vi1, mesh%vi2
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_W_thickness_BC_explicit
+
+
+
+  subroutine apply_W_thickness_gl_explicit( mesh, ice, basal_hydro)
+    !< Apply boundary conditions to the water layer thickness on the domain border directly
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   ) :: mesh
+    type(type_ice_model),                   intent(in   ) :: ice
+    type(type_basal_hydrology_model),       intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=1024), parameter         :: routine_name = 'apply_W_thickness_gl_explicit'
+    integer,  dimension(mesh%vi1:mesh%vi2) :: n_interior_neighbours
+    logical,  dimension(mesh%nV)           :: mask_W_tot, mask_a_tot, mask_gl_gr_tot
+    real(dp),  dimension(mesh%nV)          :: W_tot
+    integer                                :: vi
+    character(len=256)                     :: BC_H
+    integer                                :: ci,vj
+    real(dp)                               :: W_sum, W_av
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate where water is present
+    call calc_basal_hydro_mask_W(mesh, basal_hydro)
+
+    call gather_to_all(basal_hydro%mask_W, mask_W_tot)
+    call gather_to_all(basal_hydro%W, W_tot)
+    call gather_to_all(ice%mask_gl_gr, mask_gl_gr_tot)
+    call gather_to_all(basal_hydro%mask_a, mask_a_tot)
+
+    ! Slightly adjusted version of calc_n_interior_neighbours
+    do vi = mesh%vi1, mesh%vi2
+
+      n_interior_neighbours( vi) = 0
+
+      do ci = 1, mesh%nC( vi)
+        vj = mesh%C( vi,ci)
+        if (mesh%VBI( vj) == 0 .and. mask_W_tot( vj) .and. .not. mask_gl_gr_tot(vj) .and. mask_a_tot( vj)) then
+          n_interior_neighbours( vi) = n_interior_neighbours( vi) + 1
+        end if
+      end do
+
+    end do
+
+    ! == First pass: set values of border vertices to mean of interior neighbours
+    !    ...for those border vertices that actually have interior neighbours.
+    ! ===========================================================================
+
+    do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_gl_gr( vi)) then
+        ! For now at least just hard-coded to infinite
+        BC_H = 'zero'
+
+        select case (BC_H)
+        case default
+          call crash('unknown BC_H "' // trim( BC_H) // '"')
+        case ('zero')
+          ! Set water thickness to zero here
+
+          basal_hydro%W( vi) = 0._dp
+
+        case ('infinite')
+          ! Set W on this vertex equal to the average value on its neighbours
+
+          if (n_interior_neighbours( vi) > 0) then
+
+            W_sum = 0._dp
+            do ci = 1, mesh%nC( vi)
+              vj = mesh%C( vi,ci)
+              if (mesh%VBI( vj) == 0 .and. mask_W_tot( vj) .and. .not. mask_gl_gr_tot(vj) .and. mask_a_tot( vj)) then
+                W_sum = W_sum + W_tot( vj)
+              end if
+            end do
+            W_av = W_sum / real( n_interior_neighbours( vi),dp)
+            basal_hydro%W( vi) = W_av
+          end if
+
+        end select
+      else !ice%mask_gl_gr( vi)
+        cycle
+      end if
+
+      end do
+
+    ! == Second pass: set values of border vertices to mean of all neighbours
+    !    ...for those border vertices that have no interior neighbours.
+    ! =======================================================================
+
+
+    do vi = mesh%vi1, mesh%vi2
+      if (ice%mask_gl_gr( vi)) then
+        BC_H = 'zero'
+
+        select case (BC_H)
+        case default
+          call crash('unknown BC_H "' // trim( BC_H) // '"')
+        case ('zero')
+          ! Set water thickness to zero here
+
+          basal_hydro%W( vi) = 0._dp
+
+        case ('infinite')
+          ! Set W on this vertex equal to the average value on its neighbours
+
+          if (n_interior_neighbours( vi) == 0) then
+
+            W_sum = 0._dp
+            do ci = 1, mesh%nC( vi)
+              vj = mesh%C( vi,ci)
+              W_sum = W_sum + W_tot( vj)
+            end do
+            W_av = W_sum / real( mesh%nC( vi),dp)
+            basal_hydro%W( vi) = W_av
+
+          end if
+
+        end select
+      else !ice%mask_gl_gr( vi)
+        cycle
+      end if
+
+    end do ! do vi = mesh%vi1, mesh%vi2
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_W_thickness_gl_explicit
 
 END MODULE basal_hydrology_new

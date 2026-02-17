@@ -193,6 +193,8 @@ module ice_geometry_calculations_mod
         character(len=1024), parameter :: routine_name = 'get_ice_geometry'
         
         call init_routine(routine_name)
+
+        allocate(array_out, source=self%Hs)
         
         ! Select field based on name
         select case(trim(name))

@@ -76,6 +76,12 @@ contains
       ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
     end do
 
+    if (C%choice_basal_hydrology_model == 'Salle2025') then
+      do vi = mesh%vi1, mesh%vi2
+        ice%effective_pressure( vi) = basal_hydro%N_til( vi)
+      end do
+    end if
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

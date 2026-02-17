@@ -58,6 +58,9 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: v_b                 ! Velocity in y direction on B grid.
     real(dp), dimension(:), allocatable :: v_c                 ! Velocity in y direction on C grid.
 
+    real(dp), dimension(:), allocatable :: N_til               ! Effective pressure on till
+    real(dp), dimension(:), allocatable :: tau_c               ! Yield stress
+
     ! Is this how it goes in UFEMISM as well? Compass indices do not really make sense here?
     real(dp), dimension(:), allocatable :: Q_e                 ! Normal component (east) of the advective flux VW
     real(dp), dimension(:), allocatable :: Q_w                 ! Normal component (west) of the advective flux VW
@@ -69,6 +72,7 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: q_water_layer       ! Water flux towards water layer
 
     real(dp), dimension(:), allocatable :: phi_0               ! Englacial porosity
+    real(dp), dimension(:), allocatable :: phi                 ! till angle
 
     ! How do we handle constants? Are those also types somewhere?
     ! Seems to be in model_configuration.f90 and parameters.f90?

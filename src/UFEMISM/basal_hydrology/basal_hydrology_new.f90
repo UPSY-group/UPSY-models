@@ -156,9 +156,13 @@ CONTAINS
     !call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
     call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
 
+    ! Calculate output to ice model
+    call calc_N_til(mesh, basal_hydro, W_max_til)
+    call calc_yield_stress(mesh, ice, basal_hydro)
+
     ! Allow boundary conditions to be applied to W
-    call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)
-    call apply_W_thickness_gl_explicit(mesh, ice, basal_hydro)
+    !call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)
+    !call apply_W_thickness_gl_explicit(mesh, ice, basal_hydro)
 
     ! 15) Update time and repeat
     if (par%primary) then
@@ -236,6 +240,9 @@ CONTAINS
     allocate(basal_hydro%ice_u_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%ice_v_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%ice_w_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%N_til(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%tau_c(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%phi(mesh%vi1:mesh%vi2), source = 30.0_dp) !degrees
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
@@ -1466,5 +1473,68 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine apply_W_thickness_gl_explicit
+
+
+
+  subroutine calc_N_til(mesh, basal_hydro, W_max_til)
+    ! Calculate till effective pressure
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+    real(dp),                               intent(in   )    :: W_max_til
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_N_til'
+    integer                                               :: vi
+    real(dp), parameter                                   :: N0 = 1000_dp !Pa
+    real(dp), parameter                                   :: delta = 0.02_dp !Bueler and Van Pelt 2015
+    real(dp), parameter                                   :: e0 = 0.69_dp !Bueler and Van Pelt 2015
+    real(dp), parameter                                   :: Cc = 0.12_dp !Bueler and Van Pelt 2015
+    real(dp)                                              :: s         
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+      s = basal_hydro%W_til( vi) / W_max_til
+      basal_hydro%N_til( vi) = min(basal_hydro%P_o(vi), &
+                                   N0*(delta*basal_hydro%P_o( vi)/N0)**(s)*10**(e0/Cc*(1.0_dp - s)))
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_N_til
+
+
+
+  subroutine calc_yield_stress(mesh, ice, basal_hydro)
+    ! Calculate yield stress of the till
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   )    :: mesh
+    type(type_ice_model),                   intent(inout)    :: ice
+    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'calc_yield_stress'
+    integer                                               :: vi
+    real(dp), parameter                                   :: c0 = 0_dp !Pa
+ 
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+      basal_hydro%tau_c( vi) = c0 + tan(basal_hydro%phi( vi)*pi/180._dp)*basal_hydro%N_til( vi)
+      ! This next part is probably overwritten somewhere now?
+      ice%till_yield_stress( vi) = basal_hydro%tau_c( vi)
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_yield_stress
 
 END MODULE basal_hydrology_new

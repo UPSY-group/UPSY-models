@@ -29,11 +29,13 @@ program UFEMISM_program
   use unit_tests, only: run_all_unit_tests
   use component_tests, only: run_all_component_tests
   use checksum_mod, only: create_checksum_logfile
+  use ice_geometry_calculations_mod, only: type_ice_geometry
 
   implicit none
 
   character(len=1024)       :: input_argument
   type(type_model_region)   :: NAM, EAS, GRL, ANT          !< The four model regions
+  type(type_ice_geometry)   :: geom                       !< The ice geometry 
   type(type_global_forcing) :: forcing                     !< The global forcings
   real(dp)                  :: t_coupling, t_end_models    !< Coupling times
   real(dp)                  :: tstart, tstop, tcomp        !< Computation time tracking
@@ -92,10 +94,10 @@ program UFEMISM_program
     call initialise_global_forcings(forcing)
 
     ! Initialise the model regions
-    if (C%do_NAM) call initialise_model_region( NAM, 'NAM', forcing, C%start_time_of_run)
-    if (C%do_EAS) call initialise_model_region( EAS, 'EAS', forcing, C%start_time_of_run)
-    if (C%do_GRL) call initialise_model_region( GRL, 'GRL', forcing, C%start_time_of_run)
-    if (C%do_ANT) call initialise_model_region( ANT, 'ANT', forcing, C%start_time_of_run)
+    if (C%do_NAM) call initialise_model_region( NAM, 'NAM', forcing, C%start_time_of_run, geom)
+    if (C%do_EAS) call initialise_model_region( EAS, 'EAS', forcing, C%start_time_of_run, geom)
+    if (C%do_GRL) call initialise_model_region( GRL, 'GRL', forcing, C%start_time_of_run, geom)
+    if (C%do_ANT) call initialise_model_region( ANT, 'ANT', forcing, C%start_time_of_run, geom)
 
     ! == The coupling time loop ==
     ! ============================
@@ -109,10 +111,10 @@ program UFEMISM_program
 
       call update_global_forcings(forcing, t_coupling)
 
-      if (C%do_NAM) call run_model_region( NAM, t_end_models, forcing)
-      if (C%do_EAS) call run_model_region( EAS, t_end_models, forcing)
-      if (C%do_GRL) call run_model_region( GRL, t_end_models, forcing)
-      if (C%do_ANT) call run_model_region( ANT, t_end_models, forcing)
+      if (C%do_NAM) call run_model_region( NAM, t_end_models, forcing, geom)
+      if (C%do_EAS) call run_model_region( EAS, t_end_models, forcing, geom)
+      if (C%do_GRL) call run_model_region( GRL, t_end_models, forcing, geom)
+      if (C%do_ANT) call run_model_region( ANT, t_end_models, forcing, geom)
 
       ! Advance coupling time
       t_coupling = t_end_models

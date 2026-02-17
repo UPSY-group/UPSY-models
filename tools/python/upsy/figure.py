@@ -362,11 +362,11 @@ class Field(object):
         if 'vi' in self.data.dims:
             if not self.Mesh.got_voronois:
                 self.Mesh.get_voronois()
-            self.pcoll = PolyCollection(self.Mesh.voronois, fc=pcols)
+            self.pcoll = PolyCollection(self.Mesh.voronois, fc=pcols, ec=pcols, lw=.1)
         elif 'ti' in self.data.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            self.pcoll = PolyCollection(self.Mesh.triangles, fc=pcols)
+            self.pcoll = PolyCollection(self.Mesh.triangles, fc=pcols, ec=pcols, lw=.1)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
 
@@ -383,7 +383,7 @@ class Field(object):
             self.Mesh.get_voronois()
 
         mcols = scalarmap.to_rgba(self.Timeframe.mask)
-        self.mcoll = PolyCollection(self.Mesh.voronois,fc=mcols)
+        self.mcoll = PolyCollection(self.Mesh.voronois,fc=mcols, ec=mcols, lw=.1)
 
         return
 

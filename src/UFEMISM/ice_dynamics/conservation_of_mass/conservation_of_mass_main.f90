@@ -103,13 +103,6 @@ contains
     ! Recalculate dH/dt with adjusted values of H
     dHi_dt = (Hi_tplusdt - Hi) / dt
 
-    ! Making sure verticies in no ice mask have zero thinning rates
-    do vi = mesh%vi1, mesh%vi2
-        if (mask_noice( vi)) then
-          dHi_dt(vi)  = 0._dp
-        end if
-    end do 
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 

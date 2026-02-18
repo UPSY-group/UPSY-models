@@ -57,7 +57,7 @@ MODULE UFEMISM_main_model
   use tracer_tracking_model_main, only: initialise_tracer_tracking_model, run_tracer_tracking_model, &
     remap_tracer_tracking_model
   use transects_main, only: initialise_transects, write_to_transect_netcdf_output_files
-  use ice_geometry_calculations_mod, only: type_ice_geometry
+
   IMPLICIT NONE
 
 CONTAINS
@@ -65,7 +65,7 @@ CONTAINS
 ! ===== Main routine =====
 ! ========================
 
-  SUBROUTINE run_model_region( region, t_end, forcing, geom )
+  SUBROUTINE run_model_region( region, t_end, forcing)
     ! Integrate this model region forward in time until t_end
 
     IMPLICIT NONE
@@ -74,7 +74,6 @@ CONTAINS
     TYPE(type_model_region), target                    , INTENT(INOUT) :: region
     REAL(dp)                                           , INTENT(IN)    :: t_end    ! [yr]
     TYPE(type_global_forcing)                          , INTENT(IN)    :: forcing
-    TYPE(type_ice_geometry)                            , INTENT(INOUT) :: geom
 
     ! Local variables:
     CHARACTER(LEN=256)                                                 :: routine_name
@@ -134,7 +133,7 @@ CONTAINS
 
       ! Run the ice dynamics model to calculate ice geometry at the desired time, and update
       ! velocities, thinning rates, and predicted geometry if necessary
-      CALL run_ice_dynamics_model( region, geom)
+      CALL run_ice_dynamics_model( region)
 
       ! Calculate ice temperature at the desired time, and update
       ! predicted temperature if necessary
@@ -428,14 +427,13 @@ CONTAINS
 ! ===== Model initialisation =====
 ! ================================
 
-  SUBROUTINE initialise_model_region( region, region_name, forcing, start_time_of_run, geom)
+  SUBROUTINE initialise_model_region( region, region_name, forcing, start_time_of_run)
     ! Initialise this model region
 
     IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_model_region), target                    , INTENT(OUT)   :: region
-    TYPE(type_ice_geometry)                            , INTENT(OUT)   :: geom
     CHARACTER(LEN=3),                                    INTENT(IN)    :: region_name
     TYPE(type_global_forcing)                          , INTENT(IN)    :: forcing
     REAL(dp)                                           , INTENT(IN)    :: start_time_of_run
@@ -519,7 +517,7 @@ CONTAINS
     ! ===== Ice dynamics =====
     ! ========================
 
-    CALL initialise_ice_dynamics_model( region%mesh, region%ice, geom, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
+    CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
     call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
 

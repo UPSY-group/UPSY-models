@@ -44,7 +44,6 @@ module ice_dynamics_main
   use global_forcings_main, only: update_sealevel_in_model
   use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
   use bed_roughness_model_types, only: type_bed_roughness_model
-    use ice_geometry_calculations_mod, only: type_ice_geometry
 
   implicit none
 
@@ -53,13 +52,12 @@ contains
 ! ===== Main routines =====
 ! =========================
 
-  subroutine run_ice_dynamics_model( region, geom)
+  subroutine run_ice_dynamics_model( region)
     !< Calculate ice geometry at the desired time, and update
     !< velocities, thinning rates, and predicted geometry if necessary
 
     ! In/output variables:
     type(type_model_region), intent(inout) :: region
-    type(type_ice_geometry), intent(inout) :: geom
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'run_ice_dynamics_model'
@@ -98,7 +96,7 @@ contains
       case default
         call crash('unknown choice_timestepping "' // trim( C%choice_timestepping) // '"!')
       case ('pc')
-        call run_ice_dynamics_model_pc( region, dt_max, geom)
+        call run_ice_dynamics_model_pc( region, dt_max)
       end select
 
     elseif (region%time > region%ice%t_Hi_next) then
@@ -178,13 +176,12 @@ contains
 
   end subroutine run_ice_dynamics_model
 
-  subroutine initialise_ice_dynamics_model( mesh, ice, geom, refgeo_init, refgeo_PD, refgeo_GIAeq, GIA, region_name, forcing, start_time_of_run)
+  subroutine initialise_ice_dynamics_model( mesh, ice, refgeo_init, refgeo_PD, refgeo_GIAeq, GIA, region_name, forcing, start_time_of_run)
     !< Initialise all data fields of the ice module
 
     ! In- and output variables
     type(type_mesh),               intent(in   ) :: mesh
     type(type_ice_model),          intent(inout) :: ice
-    type(type_ice_geometry),       intent(inout) :: geom
     type(type_reference_geometry), intent(in   ) :: refgeo_init
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_reference_geometry), intent(in   ) :: refgeo_GIAeq
@@ -362,7 +359,7 @@ contains
     case ('direct')
       ! No need to initialise anything here
     case ('pc')
-      call initialise_pc_scheme( mesh, ice%pc, region_name, geom)
+      call initialise_pc_scheme( mesh, ice%pc, region_name)
     end select
 
     ! Numerical stability info

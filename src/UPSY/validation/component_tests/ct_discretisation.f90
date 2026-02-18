@@ -5,7 +5,7 @@ module ct_discretisation
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ct_discretisation_mapping_derivatives, only: run_all_map_deriv_tests
   use ct_discretisation_solve_Laplace_eq, only: run_all_Laplace_eq_solving_tests
   use ct_discretisation_mapping_derivatives_graph, only: run_all_map_deriv_tests_graph

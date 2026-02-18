@@ -1,7 +1,7 @@
 module preprocess_geometry
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use reference_geometry_types, only: type_reference_geometry
   use parameters, only: ice_density, seawater_density

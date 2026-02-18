@@ -7,7 +7,7 @@ module ut_mpi
   use ut_basic
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use mpi_distributed_memory, only: gather_to_primary, gather_to_all, distribute_from_primary
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared, &
     gather_dist_shared_to_primary, gather_dist_shared_to_all, distribute_dist_shared_from_primary
@@ -74,15 +74,118 @@ contains
     ! Add test name to list
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
-    call test_gather_to_primary_int_1D( test_name)
-    call test_gather_to_primary_int_2D( test_name)
-    call test_gather_to_primary_dp_1D(  test_name)
-    call test_gather_to_primary_dp_2D(  test_name)
+    call test_gather_to_primary_logical_1D( test_name)
+    call test_gather_to_primary_logical_2D( test_name)
+    call test_gather_to_primary_int_1D    ( test_name)
+    call test_gather_to_primary_int_2D    ( test_name)
+    call test_gather_to_primary_dp_1D     ( test_name)
+    call test_gather_to_primary_dp_2D     ( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine test_gather_to_primary
+
+  subroutine test_gather_to_primary_logical_1D( test_name_parent)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=1024),parameter       :: routine_name = 'test_gather_to_primary_logical_1D'
+    character(len=1024), parameter      :: test_name_local = 'logical_1D'
+    character(len=1024)                 :: test_name
+    logical,  dimension(:), allocatable :: aa, bb, cc
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Safety - should be run on two cores
+    call assert( test_eq( par%n, 2), 'should be run on two cores')
+
+    if (par%i == 0) then
+      allocate( aa( 2))
+      allocate( bb( 7))
+      allocate( cc( 7))
+    elseif (par%i == 1) then
+      allocate( aa( 5))
+      allocate( bb( 7))
+      allocate( cc( 7))
+    end if
+
+    ! Fill test data
+    cc = [.true., .true., .false., .true., .false., .false., .true.]
+
+    if (par%i == 0) then
+      aa = cc( 1:2)
+    elseif (par%i == 1) then
+      aa = cc( 3:7)
+    end if
+
+    ! Gather data
+    call gather_to_primary( aa, bb)
+
+    ! Check results
+    if (par%primary) call unit_test( test_eqv( bb, cc), test_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_gather_to_primary_logical_1D
+
+  subroutine test_gather_to_primary_logical_2D( test_name_parent)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=1024),parameter        :: routine_name = 'test_gather_to_primary_logical_2D'
+    character(len=1024), parameter       :: test_name_local = 'logical_2D'
+    character(len=1024)                  :: test_name
+    logical, dimension(:,:), allocatable :: aa, bb, cc
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Safety - should be run on two cores
+    call assert( test_eq( par%n, 2), 'should be run on two cores')
+
+    if (par%i == 0) then
+      allocate( aa( 2,2))
+      allocate( bb( 7,2))
+      allocate( cc( 7,2))
+    elseif (par%i == 1) then
+      allocate( aa( 5,2))
+      allocate( bb( 7,2))
+      allocate( cc( 7,2))
+    end if
+
+    ! Fill test data
+    cc(:,1) = [.true., .true., .false., .true., .false., .false., .true.]
+    cc(:,2) = [.true., .false., .true., .false., .false., .true., .false.]
+
+    if (par%i == 0) then
+      aa = cc( 1:2,:)
+    elseif (par%i == 1) then
+      aa = cc( 3:7,:)
+    end if
+
+    ! Gather data
+    call gather_to_primary( aa, bb)
+
+    ! Check results
+    if (par%primary) call unit_test( test_eqv( bb, cc), test_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_gather_to_primary_logical_2D
 
   subroutine test_gather_to_primary_int_1D( test_name_parent)
 
@@ -306,15 +409,120 @@ contains
     ! Add test name to list
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
-    call test_gather_to_all_int_1D( test_name)
-    call test_gather_to_all_int_2D( test_name)
-    call test_gather_to_all_dp_1D(  test_name)
-    call test_gather_to_all_dp_2D(  test_name)
+    call test_gather_to_all_logical_1D( test_name)
+    call test_gather_to_all_logical_2D( test_name)
+    call test_gather_to_all_int_1D    ( test_name)
+    call test_gather_to_all_int_2D    ( test_name)
+    call test_gather_to_all_dp_1D     ( test_name)
+    call test_gather_to_all_dp_2D     ( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine test_gather_to_all
+
+  subroutine test_gather_to_all_logical_1D( test_name_parent)
+    ! Test the gather_to_all_TYPE_DIM subroutines
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=1024), parameter     :: routine_name = 'test_gather_to_all_logical_1D'
+    character(len=1024), parameter     :: test_name_local = 'logical_1D'
+    character(len=1024)                :: test_name
+    logical, dimension(:), allocatable :: aa, bb, cc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Safety - should be run on two cores
+    call assert( test_eq( par%n, 2), 'should be run on two cores')
+
+    if (par%i == 0) then
+      allocate( aa( 2))
+      allocate( bb( 7))
+      allocate( cc( 7))
+    elseif (par%i == 1) then
+      allocate( aa( 5))
+      allocate( bb( 7))
+      allocate( cc( 7))
+    end if
+
+    ! Fill test data
+    cc = [.true., .true., .false., .true., .false., .false., .true.]
+
+    if (par%i == 0) then
+      aa = cc( 1:2)
+    elseif (par%i == 1) then
+      aa = cc( 3:7)
+    end if
+
+    ! Gather data
+    call gather_to_all( aa, bb)
+
+    ! Check results
+    call unit_test( test_eqv( bb, cc), test_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_gather_to_all_logical_1D
+
+  subroutine test_gather_to_all_logical_2D( test_name_parent)
+    ! Test the gather_to_all_TYPE_DIM subroutines
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=1024), parameter       :: routine_name = 'test_gather_to_all_logical_2D'
+    character(len=1024), parameter       :: test_name_local = 'logical_2D'
+    character(len=1024)                  :: test_name
+    logical, dimension(:,:), allocatable :: aa, bb, cc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Safety - should be run on two cores
+    call assert( test_eq( par%n, 2), 'should be run on two cores')
+
+    if (par%i == 0) then
+      allocate( aa( 2,2))
+      allocate( bb( 7,2))
+      allocate( cc( 7,2))
+    elseif (par%i == 1) then
+      allocate( aa( 5,2))
+      allocate( bb( 7,2))
+      allocate( cc( 7,2))
+    end if
+
+    ! Fill test data
+    cc(:,1) = [.true., .true., .false., .true., .false., .false., .true.]
+    cc(:,2) = [.true., .false., .true., .false., .false., .true., .false.]
+
+    if (par%i == 0) then
+      aa = cc( 1:2,:)
+    elseif (par%i == 1) then
+      aa = cc( 3:7,:)
+    end if
+
+    ! Gather data
+    call gather_to_all( aa, bb)
+
+    ! Check results
+    call unit_test( test_eqv( bb, cc), test_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_gather_to_all_logical_2D
 
   subroutine test_gather_to_all_int_1D( test_name_parent)
     ! Test the gather_to_all_TYPE_DIM subroutines
@@ -542,15 +750,122 @@ contains
     ! Add test name to list
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
-    call test_distribute_from_primary_int_1D( test_name)
-    call test_distribute_from_primary_int_2D( test_name)
-    call test_distribute_from_primary_dp_1D( test_name)
-    call test_distribute_from_primary_dp_2D( test_name)
+    call test_distribute_from_primary_logical_1D( test_name)
+    call test_distribute_from_primary_logical_2D( test_name)
+    call test_distribute_from_primary_int_1D    ( test_name)
+    call test_distribute_from_primary_int_2D    ( test_name)
+    call test_distribute_from_primary_dp_1D     ( test_name)
+    call test_distribute_from_primary_dp_2D     ( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine test_distribute_from_primary
+
+  subroutine test_distribute_from_primary_logical_1D( test_name_parent)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=1024), parameter     :: routine_name = 'test_distribute_from_primary_logical_1D'
+    character(len=1024), parameter     :: test_name_local = 'logical_1D'
+    character(len=1024)                :: test_name
+    logical, dimension(:), allocatable :: aa, bb, cc
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Safety - should be run on two cores
+    call assert( test_eq( par%n, 2), 'should be run on two cores')
+
+    if (par%i == 0) then
+      allocate( aa( 7))
+      allocate( bb( 2))
+      allocate( cc( 7))
+    elseif (par%i == 1) then
+      allocate( aa( 7))
+      allocate( bb( 5))
+      allocate( cc( 7))
+    end if
+
+    ! Fill test data
+    cc = [.true., .true., .false., .true., .false., .false., .true.]
+
+    if (par%primary) then
+      aa = cc
+    end if
+
+    ! Distribute data
+    call distribute_from_primary( bb, aa)
+
+    ! Check results
+    if (par%primary) then
+      call unit_test( test_eqv(bb( 1:2), cc( 1:2)), test_name)
+    elseif (par%i == 1) then
+      call unit_test( test_eqv(bb( 1:5), cc( 3:7)), test_name)
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_distribute_from_primary_logical_1D
+
+  subroutine test_distribute_from_primary_logical_2D( test_name_parent)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=1024), parameter       :: routine_name = 'test_distribute_from_primary_logical_2D'
+    character(len=1024), parameter       :: test_name_local = 'logical_2D'
+    character(len=1024)                  :: test_name
+    logical, dimension(:,:), allocatable :: aa, bb, cc
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Safety - should be run on two cores
+    call assert( test_eq( par%n, 2), 'should be run on two cores')
+
+    if (par%i == 0) then
+      allocate( aa( 7,2))
+      allocate( bb( 2,2))
+      allocate( cc( 7,2))
+    elseif (par%i == 1) then
+      allocate( aa( 7,2))
+      allocate( bb( 5,2))
+      allocate( cc( 7,2))
+    end if
+
+    ! Fill test data
+    cc(:,1) = [.true., .true., .false., .true., .false., .false., .true.]
+    cc(:,2) = [.true., .false., .true., .false., .false., .true., .false.]
+
+    if (par%primary) then
+      aa = cc
+    end if
+
+    ! Distribute data
+    call distribute_from_primary( bb, aa)
+
+    ! Check results
+    if (par%primary) then
+      call unit_test( test_eqv(bb( 1:2,:), cc( 1:2,:)), test_name)
+    elseif (par%i == 1) then
+      call unit_test( test_eqv(bb( 1:5,:), cc( 3:7,:)), test_name)
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_distribute_from_primary_logical_2D
 
   subroutine test_distribute_from_primary_int_1D( test_name_parent)
 
@@ -590,7 +905,7 @@ contains
     end if
 
     ! Distribute data
-    call distribute_from_primary( aa, bb)
+    call distribute_from_primary( bb, aa)
 
     ! Check results
     if (par%primary) then
@@ -643,7 +958,7 @@ contains
     end if
 
     ! Distribute data
-    call distribute_from_primary( aa, bb)
+    call distribute_from_primary( bb, aa)
 
     ! Check results
     if (par%primary) then
@@ -695,7 +1010,7 @@ contains
     end if
 
     ! Distribute data
-    call distribute_from_primary( aa, bb)
+    call distribute_from_primary( bb, aa)
 
     ! Check results
     if (par%primary) then
@@ -748,7 +1063,7 @@ contains
     end if
 
     ! Distribute data
-    call distribute_from_primary( aa, bb)
+    call distribute_from_primary( bb, aa)
 
     ! Check results
     if (par%primary) then

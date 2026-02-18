@@ -1,13 +1,16 @@
 module fields_registry
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
-  use fields_basic, only: atype_field
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
+  use fields_basic, only: atype_field, &
+    type_field_logical_2D, type_field_int_2D, type_field_dp_2D, &
+    type_field_logical_3D, type_field_int_3D, type_field_dp_3D
   use Arakawa_grid_mod, only: type_Arakawa_grid, Arakawa_grid
   use fields_dimensions, only: type_third_dimension
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use allocate_dist_shared_mod, only: allocate_dist_shared
+  use deallocate_dist_shared_mod, only: deallocate_dist_shared
   use fields_init_field, only: initialise_field
   use mpi_f08, only: MPI_WIN, MPI_GATHER, MPI_INTEGER, MPI_COMM_WORLD
 
@@ -45,249 +48,290 @@ module fields_registry
     procedure, private :: create_field_int_3D
     procedure, private :: create_field_dp_3D
 
+    generic,   public  :: reallocate_field => &
+      reallocate_field_logical_2D, &
+      reallocate_field_logical_3D, &
+      reallocate_field_int_2D, &
+      reallocate_field_int_3D, &
+      reallocate_field_dp_2D, &
+      reallocate_field_dp_3D
+    procedure, private :: reallocate_field_logical_2D
+    procedure, private :: reallocate_field_logical_3D
+    procedure, private :: reallocate_field_int_2D
+    procedure, private :: reallocate_field_int_3D
+    procedure, private :: reallocate_field_dp_2D
+    procedure, private :: reallocate_field_dp_3D
+
+    generic,   public  :: remap_field => &
+      remap_field_logical_2D, &
+      remap_field_logical_3D, &
+      remap_field_int_2D, &
+      remap_field_int_3D, &
+      remap_field_dp_2D, &
+      remap_field_dp_3D
+    procedure, private :: remap_field_logical_2D
+    procedure, private :: remap_field_logical_3D
+    procedure, private :: remap_field_int_2D
+    procedure, private :: remap_field_int_3D
+    procedure, private :: remap_field_dp_2D
+    procedure, private :: remap_field_dp_3D
+
+    procedure, public  :: write_to_netcdf
+    procedure, public  :: read_from_netcdf
+
+    generic,   public  :: operator(==) => eq
+    procedure, private :: eq => test_fields_registry_equality
     procedure, private :: add => add_field_to_registry
     procedure, private :: extend => extend_field_registry
     procedure, public  :: find => find_field_by_name
-
     procedure, public  :: print_info
+    procedure, public  :: destroy
 
   end type type_fields_registry
 
   ! Interfaces to type-bound procedures defined in submodules
   ! =========================================================
 
+  ! create_field
   interface
 
-    module subroutine create_field_logical_2D( flds_reg, d, w, field_grid, &
-      field_Arakawa_grid, name, long_name, units)
+    module subroutine create_field_logical_2D( self, d_nih, w, field_grid, &
+      field_Arakawa_grid, name, long_name, units, remap_method)
 
-      class(type_fields_registry),                intent(inout) :: flds_reg
-      logical, dimension(:), contiguous, pointer, intent(inout) :: d
+      class(type_fields_registry),                intent(inout) :: self
+      logical, dimension(:), contiguous, pointer, intent(inout) :: d_nih
       type(MPI_WIN),                              intent(inout) :: w
       class(*), target,                           intent(in   ) :: field_grid
       type(type_Arakawa_grid),                    intent(in   ) :: field_Arakawa_grid
-      character(len=*),                           intent(in   ) :: name
-      character(len=*),                           intent(in   ) :: long_name
-      character(len=*),                           intent(in   ) :: units
+      character(len=*),                 optional, intent(in   ) :: name
+      character(len=*),                 optional, intent(in   ) :: long_name
+      character(len=*),                 optional, intent(in   ) :: units
+      character(len=*),                 optional, intent(in   ) :: remap_method
 
     end subroutine create_field_logical_2D
 
-    module subroutine create_field_logical_3D( flds_reg, d, w, field_grid, &
-      field_Arakawa_grid, field_third_dimension, name, long_name, units)
+    module subroutine create_field_logical_3D( self, d_nih, w, field_grid, &
+      field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
-      class(type_fields_registry),                  intent(inout) :: flds_reg
-      logical, dimension(:,:), contiguous, pointer, intent(inout) :: d
+      class(type_fields_registry),                  intent(inout) :: self
+      logical, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
       type(MPI_WIN),                                intent(inout) :: w
       class(*), target,                             intent(in   ) :: field_grid
       type(type_Arakawa_grid),                      intent(in   ) :: field_Arakawa_grid
       type(type_third_dimension),                   intent(in   ) :: field_third_dimension
-      character(len=*),                             intent(in   ) :: name
-      character(len=*),                             intent(in   ) :: long_name
-      character(len=*),                             intent(in   ) :: units
+      character(len=*),                   optional, intent(in   ) :: name
+      character(len=*),                   optional, intent(in   ) :: long_name
+      character(len=*),                   optional, intent(in   ) :: units
+      character(len=*),                   optional, intent(in   ) :: remap_method
 
     end subroutine create_field_logical_3D
 
-    module subroutine create_field_int_2D( flds_reg, d, w, field_grid, &
-      field_Arakawa_grid, name, long_name, units)
+    module subroutine create_field_int_2D( self, d_nih, w, field_grid, &
+      field_Arakawa_grid, name, long_name, units, remap_method)
 
-      class(type_fields_registry),                intent(inout) :: flds_reg
-      integer, dimension(:), contiguous, pointer, intent(inout) :: d
+      class(type_fields_registry),                intent(inout) :: self
+      integer, dimension(:), contiguous, pointer, intent(inout) :: d_nih
       type(MPI_WIN),                              intent(inout) :: w
       class(*), target,                           intent(in   ) :: field_grid
       type(type_Arakawa_grid),                    intent(in   ) :: field_Arakawa_grid
-      character(len=*),                           intent(in   ) :: name
-      character(len=*),                           intent(in   ) :: long_name
-      character(len=*),                           intent(in   ) :: units
+      character(len=*),                 optional, intent(in   ) :: name
+      character(len=*),                 optional, intent(in   ) :: long_name
+      character(len=*),                 optional, intent(in   ) :: units
+      character(len=*),                 optional, intent(in   ) :: remap_method
 
     end subroutine create_field_int_2D
 
-    module subroutine create_field_int_3D( flds_reg, d, w, field_grid, &
-      field_Arakawa_grid, field_third_dimension, name, long_name, units)
+    module subroutine create_field_int_3D( self, d_nih, w, field_grid, &
+      field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
-      class(type_fields_registry),                  intent(inout) :: flds_reg
-      integer, dimension(:,:), contiguous, pointer, intent(inout) :: d
+      class(type_fields_registry),                  intent(inout) :: self
+      integer, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
       type(MPI_WIN),                                intent(inout) :: w
       class(*), target,                             intent(in   ) :: field_grid
       type(type_Arakawa_grid),                      intent(in   ) :: field_Arakawa_grid
       type(type_third_dimension),                   intent(in   ) :: field_third_dimension
-      character(len=*),                             intent(in   ) :: name
-      character(len=*),                             intent(in   ) :: long_name
-      character(len=*),                             intent(in   ) :: units
+      character(len=*),                   optional, intent(in   ) :: name
+      character(len=*),                   optional, intent(in   ) :: long_name
+      character(len=*),                   optional, intent(in   ) :: units
+      character(len=*),                   optional, intent(in   ) :: remap_method
 
     end subroutine create_field_int_3D
 
-    module subroutine create_field_dp_2D( flds_reg, d, w, field_grid, &
-      field_Arakawa_grid, name, long_name, units)
+    module subroutine create_field_dp_2D( self, d_nih, w, field_grid, &
+      field_Arakawa_grid, name, long_name, units, remap_method)
 
-      class(type_fields_registry),                 intent(inout) :: flds_reg
-      real(dp), dimension(:), contiguous, pointer, intent(inout) :: d
+      class(type_fields_registry),                 intent(inout) :: self
+      real(dp), dimension(:), contiguous, pointer, intent(inout) :: d_nih
       type(MPI_WIN),                               intent(inout) :: w
       class(*), target,                            intent(in   ) :: field_grid
       type(type_Arakawa_grid),                     intent(in   ) :: field_Arakawa_grid
-      character(len=*),                            intent(in   ) :: name
-      character(len=*),                            intent(in   ) :: long_name
-      character(len=*),                            intent(in   ) :: units
+      character(len=*),                  optional, intent(in   ) :: name
+      character(len=*),                  optional, intent(in   ) :: long_name
+      character(len=*),                  optional, intent(in   ) :: units
+      character(len=*),                  optional, intent(in   ) :: remap_method
 
     end subroutine create_field_dp_2D
 
-    module subroutine create_field_dp_3D( flds_reg, d, w, field_grid, &
-      field_Arakawa_grid, field_third_dimension, name, long_name, units)
+    module subroutine create_field_dp_3D( self, d_nih, w, field_grid, &
+      field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
-      class(type_fields_registry),                   intent(inout) :: flds_reg
-      real(dp), dimension(:,:), contiguous, pointer, intent(inout) :: d
+      class(type_fields_registry),                   intent(inout) :: self
+      real(dp), dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
       type(MPI_WIN),                                 intent(inout) :: w
       class(*), target,                              intent(in   ) :: field_grid
       type(type_Arakawa_grid),                       intent(in   ) :: field_Arakawa_grid
       type(type_third_dimension),                    intent(in   ) :: field_third_dimension
-      character(len=*),                              intent(in   ) :: name
-      character(len=*),                              intent(in   ) :: long_name
-      character(len=*),                              intent(in   ) :: units
+      character(len=*),                    optional, intent(in   ) :: name
+      character(len=*),                    optional, intent(in   ) :: long_name
+      character(len=*),                    optional, intent(in   ) :: units
+      character(len=*),                    optional, intent(in   ) :: remap_method
 
     end subroutine create_field_dp_3D
 
   end interface
 
-contains
+  ! reallocate
+  interface
 
-  subroutine add_field_to_registry( flds_reg, field)
+    module subroutine reallocate_field_logical_2D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                intent(inout) :: self
+      character(len=*),                           intent(in   ) :: field_name
+      type(type_mesh),                            intent(in   ) :: mesh_new
+      logical, dimension(:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine reallocate_field_logical_2D
 
-    ! In/output variables:
-    class(type_fields_registry), intent(inout) :: flds_reg
-    class(atype_field),          intent(in   ) :: field
+    module subroutine reallocate_field_logical_3D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                  intent(inout) :: self
+      character(len=*),                             intent(in   ) :: field_name
+      type(type_mesh),                              intent(in   ) :: mesh_new
+      logical, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine reallocate_field_logical_3D
 
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'add_field_to_registry'
-    logical                        :: is_in_use
-    integer                        :: i
+    module subroutine reallocate_field_int_2D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                intent(inout) :: self
+      character(len=*),                           intent(in   ) :: field_name
+      type(type_mesh),                            intent(in   ) :: mesh_new
+      integer, dimension(:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine reallocate_field_int_2D
 
-    ! Add routine to call stack
-    call init_routine( routine_name)
+    module subroutine reallocate_field_int_3D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                  intent(inout) :: self
+      character(len=*),                             intent(in   ) :: field_name
+      type(type_mesh),                              intent(in   ) :: mesh_new
+      integer, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine reallocate_field_int_3D
 
-    ! If the registry is not allocated yet, allocate it.
-    if (.not. allocated( flds_reg%items)) then
-      flds_reg%n     = 1
-      flds_reg%n_max = 1
-      allocate( flds_reg%items(1))
-      allocate( flds_reg%items(1)%p, source = field)
-      call finalise_routine( routine_name)
-      return
-    end if
+    module subroutine reallocate_field_dp_2D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                 intent(inout) :: self
+      character(len=*),                            intent(in   ) :: field_name
+      type(type_mesh),                             intent(in   ) :: mesh_new
+      real(dp), dimension(:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine reallocate_field_dp_2D
 
-    ! If the registry is full, extend it
-    if (flds_reg%n == flds_reg%n_max) then
-      call flds_reg%extend
-    end if
+    module subroutine reallocate_field_dp_3D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                   intent(inout) :: self
+      character(len=*),                              intent(in   ) :: field_name
+      type(type_mesh),                               intent(in   ) :: mesh_new
+      real(dp), dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine reallocate_field_dp_3D
 
-    ! Check that this name is not already in use
-    is_in_use = .false.
-    do i = 1, flds_reg%n
-      is_in_use = is_in_use .or. flds_reg%items(i)%p%name() == field%name()
-    end do
-    if (is_in_use) call crash('a field of name "' // trim( field%name()) // &
-      '" already exists in this registry')
+  end interface
 
-    ! Add field to registry
-    flds_reg%n = flds_reg%n+1
-    allocate( flds_reg%items( flds_reg%n)%p, source = field)
+  ! remap
+  interface
 
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    module subroutine remap_field_logical_2D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                intent(inout) :: self
+      character(len=*),                           intent(in   ) :: field_name
+      type(type_mesh),                            intent(in   ) :: mesh_new
+      logical, dimension(:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine remap_field_logical_2D
 
-  end subroutine add_field_to_registry
+    module subroutine remap_field_logical_3D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                  intent(inout) :: self
+      character(len=*),                             intent(in   ) :: field_name
+      type(type_mesh),                              intent(in   ) :: mesh_new
+      logical, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine remap_field_logical_3D
 
-  subroutine extend_field_registry( flds_reg)
+    module subroutine remap_field_int_2D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                intent(inout) :: self
+      character(len=*),                           intent(in   ) :: field_name
+      type(type_mesh),                            intent(in   ) :: mesh_new
+      integer, dimension(:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine remap_field_int_2D
 
-    ! In/output variables:
-    class(type_fields_registry), intent(inout) :: flds_reg
+    module subroutine remap_field_int_3D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                  intent(inout) :: self
+      character(len=*),                             intent(in   ) :: field_name
+      type(type_mesh),                              intent(in   ) :: mesh_new
+      integer, dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine remap_field_int_3D
 
-    ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'extend_field_registry'
-    type(type_field_box), allocatable :: tmp(:)
-    integer                           :: i
+    module subroutine remap_field_dp_2D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                 intent(inout) :: self
+      character(len=*),                            intent(in   ) :: field_name
+      type(type_mesh),                             intent(in   ) :: mesh_new
+      real(dp), dimension(:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine remap_field_dp_2D
 
-    ! Add routine to call stack
-    call init_routine( routine_name)
+    module subroutine remap_field_dp_3D( self, mesh_new, field_name, d_nih)
+      class(type_fields_registry),                   intent(inout) :: self
+      character(len=*),                              intent(in   ) :: field_name
+      type(type_mesh),                               intent(in   ) :: mesh_new
+      real(dp), dimension(:,:), contiguous, pointer, intent(inout) :: d_nih
+    end subroutine remap_field_dp_3D
 
+  end interface
 
-    allocate( tmp( flds_reg%n))
-    do i = 1, flds_reg%n
-      allocate( tmp(i)%p, source = flds_reg%items(i)%p)
-    end do
+  ! i/o
+  interface
 
-    flds_reg%n_max = flds_reg%n_max * 2
-    deallocate( flds_reg%items)
-    allocate( flds_reg%items( flds_reg%n_max))
+    module subroutine write_to_netcdf( self, filename, ncid)
+      class(type_fields_registry), intent(in) :: self
+      character(len=*),            intent(in) :: filename
+      integer,                     intent(in) :: ncid
+    end subroutine write_to_netcdf
 
-    do i = 1, flds_reg%n
-      allocate( flds_reg%items(i)%p, source = tmp(i)%p)
-    end do
+    module subroutine read_from_netcdf( self, filename, ncid)
+      class(type_fields_registry), intent(inout) :: self
+      character(len=*),            intent(in   ) :: filename
+      integer,                     intent(in   ) :: ncid
+    end subroutine read_from_netcdf
 
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
+  end interface
 
-  end subroutine extend_field_registry
+  ! basics
+  interface
 
-  subroutine print_info( flds_reg)
+    module function test_fields_registry_equality( flds_reg1, flds_reg2) result( res)
+      class(type_fields_registry), intent(in) :: flds_reg1, flds_reg2
+      logical                                 :: res
+    end function test_fields_registry_equality
 
-    ! In/output variables:
-    class(type_fields_registry), intent(in) :: flds_reg
+    module subroutine add_field_to_registry( self, field)
+      class(type_fields_registry), intent(inout) :: self
+      class(atype_field),          intent(in   ) :: field
+    end subroutine add_field_to_registry
 
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'print_info'
-    integer                        :: i
+    module subroutine extend_field_registry( self)
+      class(type_fields_registry), intent(inout) :: self
+    end subroutine extend_field_registry
 
-    if (.not. allocated( flds_reg%items)) return
+    module function find_field_by_name( self, name) result(i)
+      class(type_fields_registry), intent(in) :: self
+      character(len=*),            intent(in) :: name
+      integer                                 :: i
+    end function find_field_by_name
 
-    ! Add routine to call stack
-    call init_routine( routine_name)
+    module subroutine print_info( self)
+      class(type_fields_registry), intent(in) :: self
+    end subroutine print_info
 
-    do i = 1, flds_reg%n
-       call flds_reg%items(i)%p%print_info
-    end do
+    module subroutine destroy( self)
+      class(type_fields_registry), intent(inout) :: self
+    end subroutine destroy
 
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine print_info
-
-  function find_field_by_name( flds_reg, name) result(i)
-
-    ! In/output variables:
-    class(type_fields_registry), intent(in) :: flds_reg
-    character(len=*),            intent(in) :: name
-    integer                                 :: i
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'find_field_by_name'
-    logical                        :: found_it
-    integer                        :: ii
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    if (.not. allocated(flds_reg%items)) then
-      call crash('field collection not allocated')
-    end if
-
-    i = 0
-    found_it = .false.
-    do ii = 1, size( flds_reg%items)
-      if (allocated( flds_reg%items(ii)%p)) then
-        if (flds_reg%items(ii)%p%name() == name) then
-          found_it = .true.
-          i = ii
-          exit
-        end if
-      end if
-    end do
-
-    if (.not. found_it) then
-      call crash('could not find field "' // trim( name) // '" in field collection')
-    end if
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end function find_field_by_name
+  end interface
 
 end module fields_registry

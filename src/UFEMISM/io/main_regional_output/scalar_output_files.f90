@@ -1,18 +1,22 @@
 module scalar_output_files
 
   use mpi_basic, only: par
+  use UPSY_main, only: UPSY
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use model_configuration, only: C
   use region_types, only: type_model_region
   use netcdf_io_main
   use reallocate_mod
+  use netcdf_basic
+  use netcdf, only: NF90_DOUBLE, NF90_UNLIMITED
 
   implicit none
 
   private
 
   public :: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file, &
+            create_ISMIP_scalar_regional_output_file, buffer_ISMIP_scalar_output, write_to_ISMIP_scalar_regional_output_file, &
             write_buffer_to_scalar_file_single_variable
 
   interface write_buffer_to_scalar_file_single_variable
@@ -43,7 +47,8 @@ contains
     end if
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to scalar output file "' // colour_string( trim( region%output_filename_scalar), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Writing to scalar output file "' // &
+      UPSY%stru%colour_string( trim( region%output_filename_scalar), 'light blue') // '"...'
 
     ! Shorthand for variable names
     filename = region%output_filename_scalar
@@ -142,7 +147,8 @@ contains
     region%output_filename_scalar = filename
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Creating scalar output file "' // colour_string( trim( filename), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Creating scalar output file "' // &
+      UPSY%stru%colour_string( trim( filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( filename, ncid)
@@ -488,5 +494,253 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_buffer_to_scalar_file_single_variable_dp
+
+  subroutine write_to_ISMIP_scalar_regional_output_file( region)
+      !< Write to the scalar regional output NetCDF file
+
+      ! In/output variables:
+      type(type_model_region), intent(inout) :: region
+
+      ! Local variables:
+      character(len=1024), parameter :: routine_name = 'write_to_ISMIP_scalar_regional_output_file'
+      character(len=1024)            :: filename
+      integer                        :: ncid, n, id_dim_time, ti
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! if no NetCDF output should be created, do nothing
+      if (.not. C%do_create_ISMIP_output) then
+        call finalise_routine( routine_name)
+        return
+      end if
+
+      ! Print to terminal
+      if (par%primary) write(0,'(A)') '   Writing to ISMIP scalar output file "' // &
+        UPSY%stru%colour_string( trim( region%output_filename_ismip_scalar), 'light blue') // '"...'
+
+      ! Shorthand for variable names
+      filename = region%output_filename_ismip_scalar
+      n        = region%scalars%buffer%ismip%n
+
+      ! Open the NetCDF file
+      call open_existing_netcdf_file_for_writing( filename, ncid)
+
+      ! Inquire number of timeframes already present in the file
+      call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = ti)
+
+      ! Write the time to the file
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'time',            region%scalars%buffer%ismip%time,            n, ti+1)
+
+      ! Integrated ice geometry
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'lim',             region%scalars%buffer%ismip%lim,             n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'limnsw',          region%scalars%buffer%ismip%limnsw,          n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'iareagr',         region%scalars%buffer%ismip%iareagr,         n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'iareafl',         region%scalars%buffer%ismip%iareafl,         n, ti+1)
+
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'tendacabf',       region%scalars%buffer%ismip%tendacabf,       n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'tendlibmassbf',   region%scalars%buffer%ismip%tendlibmassbf,   n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'tendlibmassbffl', region%scalars%buffer%ismip%tendlibmassbffl, n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'tendlicalvf',     region%scalars%buffer%ismip%tendlicalvf,     n, ti+1)
+      call write_buffer_to_scalar_file_single_variable( filename, ncid, 'tendlifmassbf',   region%scalars%buffer%ismip%tendlifmassbf,   n, ti+1)
+
+      ! Reset buffer
+      region%scalars%buffer%ismip%n = 0
+
+      ! Close the file
+      call close_netcdf_file( ncid)
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+  end subroutine write_to_ISMIP_scalar_regional_output_file
+
+  subroutine create_ISMIP_scalar_regional_output_file( region)
+      !< Create the scalar regional output NetCDF file
+
+      ! In/output variables:
+      type(type_model_region), intent(inout) :: region
+
+      ! Local variables:
+      character(len=1024), parameter :: routine_name = 'create_ISMIP_scalar_regional_output_file'
+      character(len=1024)            :: filename_base, filename
+      integer                        :: ncid
+      integer                        :: id_dim_time
+      integer                        :: id_var_time
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! if no NetCDF output should be created, do nothing
+      if (.not. C%do_create_netcdf_output) then
+        call finalise_routine( routine_name)
+        return
+      end if
+
+      ! Set the filename
+      filename_base = trim( C%output_dir) // 'ismip_scalar_output_' // region%name
+      call generate_filename_XXXXXdotnc( filename_base, filename)
+      region%output_filename_ismip_scalar = filename
+
+      ! Print to terminal
+      if (par%primary) write(0,'(A)') '   Creating ISMIP scalar output file "' // &
+         UPSY%stru%colour_string( trim( filename), 'light blue') // '"...'
+
+      ! Create the NetCDF file
+      call create_new_netcdf_file_for_writing( filename, ncid)
+
+      ! Add time dimension to the file manually because of different units
+      ! call add_time_dimension_to_file( filename, ncid)
+      call create_dimension(   filename, ncid, get_first_option_from_list( field_name_options_time), NF90_UNLIMITED, id_dim_time)
+      call create_variable(    filename, ncid, get_first_option_from_list( field_name_options_time), NF90_DOUBLE, (/ id_dim_time /), id_var_time)
+      call add_attribute_char( filename, ncid, id_var_time, 'long_name', 'Time')
+      call add_attribute_char( filename, ncid, id_var_time, 'units', 'days')
+
+      call add_field_dp_0D( filename, ncid, 'lim',        long_name = 'land_ice_mass',                          units = 'kg')
+      call add_field_dp_0D( filename, ncid, 'limnsw',     long_name = 'land_ice_mass_not_displacing_sea_water', units = 'kg')
+      call add_field_dp_0D( filename, ncid, 'iareagr',    long_name = 'grounded_ice_sheet_area',                units = 'm2')
+      call add_field_dp_0D( filename, ncid, 'iareafl',    long_name = 'floating_ice_sheet_area',                units = 'm2')
+
+      call add_field_dp_0D( filename, ncid, 'tendacabf',       long_name = 'tendency_of_land_ice_mass_due_to_surface_mass_balance',          units = 'kg s-1')
+      call add_field_dp_0D( filename, ncid, 'tendlibmassbf',   long_name = 'tendency_of_land_ice_mass_due_to_basal_mass_balance',            units = 'kg s-1')
+      call add_field_dp_0D( filename, ncid, 'tendlibmassbffl', long_name = 'tendency_of_land_ice_mass_due_to_basal_mass_balance',            units = 'kg s-1')
+      call add_field_dp_0D( filename, ncid, 'tendlicalvf',     long_name = 'tendency_of_land_ice_mass_due_to_calving',                       units = 'kg s-1')
+      call add_field_dp_0D( filename, ncid, 'tendlifmassbf',   long_name = 'tendency_of_land_ice_mass_due_to_calving_and_ice_front_melting', units = 'kg s-1')
+
+
+      ! Allocate memory to buffer scalar output data between output writing intervals
+      call allocate_ISMIP_scalar_output_buffer( region)
+
+      ! Close the file
+      call close_netcdf_file( ncid)
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+  end subroutine create_ISMIP_scalar_regional_output_file
+
+  subroutine allocate_ISMIP_scalar_output_buffer( region)
+      !< Allocate memory to buffer the scalar output data between output writing intervals
+
+      ! In/output variables:
+      type(type_model_region), intent(inout) :: region
+
+      ! Local variables:
+      character(len=1024), parameter :: routine_name = 'allocate_ISMIP_scalar_output_buffer'
+      integer                        :: n_mem
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      region%scalars%buffer%ismip%n_mem = 0
+      region%scalars%buffer%ismip%n     = 0
+
+      ! Only allocate memory for this on the primary
+      if (par%primary) then
+
+        n_mem = 1000
+        region%scalars%buffer%ismip%n_mem = n_mem
+        region%scalars%buffer%ismip%n     = 0
+
+        allocate( region%scalars%buffer%ismip%time            ( n_mem), source = 0._dp)
+
+        allocate( region%scalars%buffer%ismip%lim             ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%limnsw          ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%iareagr         ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%iareafl         ( n_mem), source = 0._dp)
+
+        allocate( region%scalars%buffer%ismip%tendacabf       ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%tendlibmassbf   ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%tendlibmassbffl ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%tendlicalvf     ( n_mem), source = 0._dp)
+        allocate( region%scalars%buffer%ismip%tendlifmassbf   ( n_mem), source = 0._dp)
+
+      end if
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+  end subroutine allocate_ISMIP_scalar_output_buffer
+
+  subroutine buffer_ISMIP_scalar_output( region)
+    !< Buffer the scalar output data between output writing intervals
+
+    ! In/output variables:
+    type(type_model_region), intent(inout) :: region
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'buffer_ISMIP_scalar_output'
+    integer                        :: n
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Only the primary does this
+    if (par%primary) then
+
+      ! Increase timeframe count
+      region%scalars%buffer%ismip%n = region%scalars%buffer%ismip%n + 1
+      n = region%scalars%buffer%ismip%n
+
+      ! Extend buffer memory if necessary
+      if (n > region%scalars%buffer%ismip%n_mem - 10) call extend_ISMIP_scalar_output_buffer( region)
+
+      ! Store new timeframe in buffer
+      region%scalars%buffer%ismip%time    ( n) = region%time * 360._dp ! need to convert to number of days for ISMIP
+
+      region%scalars%buffer%ismip%lim     ( n) = region%scalars%ismip%lim
+      region%scalars%buffer%ismip%limnsw  ( n) = region%scalars%ismip%limnsw
+      region%scalars%buffer%ismip%iareagr ( n) = region%scalars%ismip%iareagr
+      region%scalars%buffer%ismip%iareafl ( n) = region%scalars%ismip%iareafl
+
+      region%scalars%buffer%ismip%tendacabf       ( n) = region%scalars%ismip%tendacabf
+      region%scalars%buffer%ismip%tendlibmassbf   ( n) = region%scalars%ismip%tendlibmassbf
+      region%scalars%buffer%ismip%tendlibmassbffl ( n) = region%scalars%ismip%tendlibmassbffl
+      region%scalars%buffer%ismip%tendlicalvf     ( n) = region%scalars%ismip%tendlicalvf
+      region%scalars%buffer%ismip%tendlifmassbf   ( n) = region%scalars%ismip%tendlifmassbf
+
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine buffer_ISMIP_scalar_output
+
+  subroutine extend_ISMIP_scalar_output_buffer( region)
+    !< Extend memory to buffer the scalar output data between output writing intervals
+    !
+    ! NOTE: should only be called by the primary!
+
+    ! In/output variables:
+    type(type_model_region), intent(inout) :: region
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'extend_ISMIP_scalar_output_buffer'
+    integer                        :: n_mem
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    n_mem = region%scalars%buffer%ismip%n_mem * 2
+    region%scalars%buffer%ismip%n_mem = n_mem
+
+    call reallocate( region%scalars%buffer%ismip%time            , n_mem, source = 0._dp)
+
+    call reallocate( region%scalars%buffer%ismip%lim             , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%limnsw          , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%iareagr         , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%iareafl         , n_mem, source = 0._dp)
+
+    call reallocate( region%scalars%buffer%ismip%tendacabf       , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%tendlibmassbf   , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%tendlibmassbffl , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%tendlicalvf     , n_mem, source = 0._dp)
+    call reallocate( region%scalars%buffer%ismip%tendlifmassbf   , n_mem, source = 0._dp)
+
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine extend_ISMIP_scalar_output_buffer
 
 end module scalar_output_files

@@ -34,10 +34,11 @@ module bedrock_cumulative_density_functions
   ! the numbers; the elevation we're at by that goes into the third bin. Et cetera until
   ! all the bins are filled. Clever, eh?
 
+  use UPSY_main, only: UPSY
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use reference_geometry_types, only: type_reference_geometry
@@ -132,7 +133,8 @@ contains
     end select
 
     ! Write to terminal
-    if (par%primary) write(0,*) '      Reading CDF functions from file "' // colour_string( trim( filename),'light blue') // '"...'
+    if (par%primary) write(0,*) '      Reading CDF functions from file "' // &
+      UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     if (.not. check == 'read_from_file') then
       call crash('The initial mesh was not read from a file. Reading a bedrock CDF this way makes no sense!')
@@ -470,7 +472,7 @@ contains
     ! ==================================================================================
 
     ! Distribute data
-    call distribute_from_primary( d_mesh, d_mesh_partial)
+    call distribute_from_primary( d_mesh_partial, d_mesh)
 
     ! Clean up after yourself
     if (par%primary) deallocate( d_mesh)
@@ -533,7 +535,7 @@ contains
     ! ==================================================================================
 
     ! Distribute data
-    call distribute_from_primary( d_mesh, d_mesh_partial)
+    call distribute_from_primary( d_mesh_partial, d_mesh)
 
     ! Clean up after yourself
     if (par%primary) deallocate( d_mesh)

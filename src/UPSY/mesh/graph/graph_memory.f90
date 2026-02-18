@@ -1,7 +1,7 @@
 module graph_memory
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use graph_types, only: type_graph
   use reallocate_mod, only: reallocate
   use mpi_distributed_shared_memory, only: deallocate_dist_shared

@@ -2,7 +2,7 @@ module ice_thickness_safeties
   !< Different kinds of "safeties" to keep the ice sheet stable during nudging-based initialisation runs
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
@@ -19,13 +19,15 @@ module ice_thickness_safeties
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, Hi_old, Hi_new, refgeo, time)
+  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_model),                   intent(in   ) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_old
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
@@ -46,8 +48,8 @@ contains
     Hi_save = Hi_new
 
     ! Calculate would-be effective thickness
-    call calc_effective_thickness( mesh, ice, Hi_new, Hi_eff_new, fraction_margin_new)
-
+    call calc_effective_thickness( mesh, Hi_new, Hb, SL, Hi_eff_new, fraction_margin_new)
+    
     ! == Mask conservation
     ! ====================
 

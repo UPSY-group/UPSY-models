@@ -6,8 +6,9 @@ module reference_geometries_main
   ! - refgeo_GIA_eq: GIA equilibrium, used for the GIA model
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use model_configuration, only: C
   use parameters
   use reference_geometry_types, only: type_reference_geometry
@@ -420,7 +421,8 @@ contains
 
     ! Print to screen
     if (par%primary) write(0,'(A)') '  Initialising ' // trim( refgeo_name) // ' geometry for model region ' // &
-      colour_string( region_name,'light blue') // ' from idealised case "' // colour_string( trim( choice_refgeo_idealised),'light blue') // '"...'
+      UPSY%stru%colour_string( region_name,'light blue') // ' from idealised case "' // &
+      UPSY%stru%colour_string( trim( choice_refgeo_idealised),'light blue') // '"...'
 
     ! Get domain size for this model region
     select case (region_name)
@@ -476,10 +478,10 @@ contains
     end if
 
     ! Distribute the data over the processes in vector form
-    call distribute_gridded_data_from_primary( refgeo%grid_raw, Hi, refgeo%Hi_grid_raw)
-    call distribute_gridded_data_from_primary( refgeo%grid_raw, Hb, refgeo%Hb_grid_raw)
-    call distribute_gridded_data_from_primary( refgeo%grid_raw, Hs, refgeo%Hs_grid_raw)
-    call distribute_gridded_data_from_primary( refgeo%grid_raw, SL, refgeo%SL_grid_raw)
+    call distribute_gridded_data_from_primary( refgeo%grid_raw, refgeo%Hi_grid_raw, Hi)
+    call distribute_gridded_data_from_primary( refgeo%grid_raw, refgeo%Hb_grid_raw, Hb)
+    call distribute_gridded_data_from_primary( refgeo%grid_raw, refgeo%Hs_grid_raw, Hs)
+    call distribute_gridded_data_from_primary( refgeo%grid_raw, refgeo%SL_grid_raw, SL)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -515,7 +517,8 @@ contains
 
     ! Print to screen
     if (par%primary) write(0,'(A)') '   Initialising ' // trim( refgeo_name) // ' geometry for model region ' // &
-      colour_string( region_name,'light blue') // ' from file "' // colour_string( trim( filename_refgeo_applied),'light blue') // '"...'
+      UPSY%stru%colour_string( region_name,'light blue') // ' from file "' // &
+      UPSY%stru%colour_string( trim( filename_refgeo_applied),'light blue') // '"...'
 
     ! Find out on what kind of grid the file is defined
     call inquire_xy_grid(     filename_refgeo_applied, has_xy_grid    )

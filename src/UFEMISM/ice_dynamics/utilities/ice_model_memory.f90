@@ -2,7 +2,7 @@ module ice_model_memory
   !< Routines for administrating the memory for the ice model data.
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
@@ -77,9 +77,9 @@ contains
     allocate( ice%mask_cf_gr             ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_cf_fl             ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_coastline         ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_ROI               ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_SGD               ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_noice             ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( ice%mask_ROI               ( mesh%vi1:mesh%vi2), source = 0)
     allocate( ice%mask                   ( mesh%vi1:mesh%vi2), source = 0)
     allocate( ice%basin_ID               ( mesh%vi1:mesh%vi2), source = 0)
 

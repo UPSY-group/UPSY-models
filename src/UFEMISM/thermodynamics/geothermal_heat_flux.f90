@@ -6,8 +6,9 @@ MODULE geothermal_heat_flux
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, warning, happy, colour_string, init_routine, finalise_routine
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, warning, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
@@ -47,7 +48,7 @@ CONTAINS
 
         ! Print to terminal
         IF (par%primary) WRITE(0,*) '  Initialising geothermal heat flux from file "' // &
-          colour_string( TRIM( C%filename_geothermal_heat_flux),'light blue') // '"...'
+          UPSY%stru%colour_string( TRIM( C%filename_geothermal_heat_flux),'light blue') // '"...'
 
         ! Read the data from the provided NetCDF file [W m^-2]
         CALL read_field_from_file_2D( C%filename_geothermal_heat_flux, 'hflux', mesh, C%output_dir, ice%geothermal_heat_flux)

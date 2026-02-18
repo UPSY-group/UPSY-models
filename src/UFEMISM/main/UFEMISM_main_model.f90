@@ -6,10 +6,10 @@ MODULE UFEMISM_main_model
 ! ====================
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_SUM, MPI_WTIME
+  use UPSY_main, only: UPSY
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: happy, warning, crash, init_routine, finalise_routine, colour_string, str2int, int2str, &
-                                                                     insert_val_into_string_dp
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
@@ -29,8 +29,7 @@ MODULE UFEMISM_main_model
                                                                      create_restart_file_climate_model, write_to_restart_file_climate_model
   USE ocean_main                                             , ONLY: initialise_ocean_model, run_ocean_model, remap_ocean_model, &
                                                                      create_restart_file_ocean_model, write_to_restart_file_ocean_model
-  USE SMB_main                                               , ONLY: initialise_SMB_model, run_SMB_model, remap_SMB_model, &
-                                                                     create_restart_file_SMB_model, write_to_restart_file_SMB_model
+  use SMB_model, only: create_SMB_model
   USE BMB_main                                               , ONLY: initialise_BMB_model, run_BMB_model, remap_BMB_model, &
                                                                      create_restart_file_BMB_model, write_to_restart_file_BMB_model
   USE LMB_main                                               , ONLY: initialise_LMB_model, run_LMB_model, remap_LMB_model
@@ -43,13 +42,18 @@ MODULE UFEMISM_main_model
   USE grid_basic                                             , ONLY: setup_square_grid
   USE mesh_output_files, only: create_main_regional_output_file_mesh, write_to_main_regional_output_file_mesh
   use grid_output_files, only: create_main_regional_output_file_grid, write_to_main_regional_output_file_grid, &
-    create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI
-  use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
+    create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI, &
+    create_ISMIP_regional_output_file_grid, write_to_ISMIP_regional_output_file_grid, &
+    create_ISMIP_regional_output_file_grid_ROI, write_to_ISMIP_regional_output_file_grid_ROI
+  use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file, &
+                                 create_ISMIP_scalar_regional_output_file, buffer_ISMIP_scalar_output, write_to_ISMIP_scalar_regional_output_file
+  use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI, &
+                                     create_ISMIP_scalar_regional_output_file_ROI, buffer_ISMIP_scalar_output_ROI, write_to_ISMIP_scalar_regional_output_file_ROI
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
   use apply_maps, only: clear_all_maps_involving_this_mesh
-  USE mesh_memory                                            , ONLY: deallocate_mesh
   use ice_mass_and_fluxes, only: calc_ice_mass_and_fluxes
+  use ice_mass_and_fluxes_ROI, only: calc_ice_mass_and_fluxes_ROI
   use tracer_tracking_model_main, only: initialise_tracer_tracking_model, run_tracer_tracking_model, &
     remap_tracer_tracking_model
   use transects_main, only: initialise_transects, write_to_transect_netcdf_output_files
@@ -67,13 +71,13 @@ CONTAINS
     IMPLICIT NONE
 
     ! In/output variables:
-    TYPE(type_model_region)                            , INTENT(INOUT) :: region
+    TYPE(type_model_region), target                    , INTENT(INOUT) :: region
     REAL(dp)                                           , INTENT(IN)    :: t_end    ! [yr]
     TYPE(type_global_forcing)                          , INTENT(IN)    :: forcing
 
     ! Local variables:
     CHARACTER(LEN=256)                                                 :: routine_name
-    INTEGER                                                            :: ndt_av
+    INTEGER                                                            :: ndt_av, i
     REAL(dp)                                                           :: dt_av
     REAL(dp)                                                           :: mesh_fitness_coefficient
     TYPE(type_global_forcing)                                          :: regional_forcing
@@ -84,7 +88,8 @@ CONTAINS
 
     IF (par%primary) WRITE(0,*) ''
     IF (par%primary) WRITE (0,'(A,A,A,A,A,F9.3,A,F9.3,A)') &
-      ' Running model region ', colour_string( region%name, 'light blue'), ' (', colour_string( TRIM( region%long_name), 'light blue'), &
+      ' Running model region ', UPSY%stru%colour_string( region%name, 'light blue'), &
+        ' (', UPSY%stru%colour_string( TRIM( region%long_name), 'light blue'), &
       ') from t = ', region%time/1000._dp, ' to t = ', t_end/1000._dp, ' kyr'
 
     ! Initialise average ice-dynamical time step
@@ -141,7 +146,7 @@ CONTAINS
       CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, region%time)
 
       ! Calculate the surface mass balance
-      CALL run_SMB_model( region%mesh, region%grid_smooth, region%ice, region%climate, region%SMB, region%name, region%time)
+      call region%SMB%run( region%SMB%ct_run( region%time, region%ice, region%climate, region%grid_smooth))
 
       ! Calculate the basal mass balance
       CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%SMB, region%BMB, region%name, region%time, is_initial=.FALSE.)
@@ -162,6 +167,9 @@ CONTAINS
 
       ! Calculate ice-sheet integrated values (total volume, area, etc.)
       CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
+      do i=1, region%nROI
+        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i), i)
+      end do
 
       ! Write to the main regional output NetCDF file
       CALL write_to_regional_output_files( region)
@@ -218,6 +226,12 @@ CONTAINS
 
     ! Buffer scalar output data
     call buffer_scalar_output( region)
+    call buffer_ISMIP_scalar_output( region)
+
+    if (region%nROI > 0) then
+      call buffer_scalar_output_ROI( region)
+      call buffer_ISMIP_scalar_output_ROI( region)
+    end if
 
     ! Determine time of next output event
     t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next)
@@ -267,7 +281,6 @@ CONTAINS
       CALL create_restart_file_thermo       ( region%mesh, region%ice)
       CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
       CALL create_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name)
-      CALL create_restart_file_SMB_model    ( region%mesh, region%SMB    , region%name)
       CALL create_restart_file_BMB_model    ( region%mesh, region%BMB    , region%name)
       CALL create_restart_file_GIA_model    ( region%mesh, region%GIA    , region%name)
 
@@ -284,16 +297,17 @@ CONTAINS
       ! Write to the main regional output files
       CALL write_to_main_regional_output_file_mesh( region)
 
-      ! Write to the region-of-interest output files
-      DO i = 1, region%nROI
-        CALL write_to_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_grid_ROI( i))
-      END DO
-
       ! Write to the transect output files
       call write_to_transect_netcdf_output_files( region)
 
       ! Write to the regional scalar output file
       call write_to_scalar_regional_output_file( region)
+      call write_to_ISMIP_scalar_regional_output_file( region)
+
+      if (region%nROI > 0) then
+        call write_to_scalar_regional_output_file_ROI( region)
+        call write_to_ISMIP_scalar_regional_output_file_ROI( region)
+      end if
 
     END IF
 
@@ -303,7 +317,7 @@ CONTAINS
       CALL write_to_restart_file_thermo       ( region%mesh, region%ice                 , region%time)
       CALL write_to_restart_file_climate_model( region%mesh, region%climate, region%name, region%time)
       CALL write_to_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name, region%time)
-      CALL write_to_restart_file_SMB_model    ( region%mesh, region%SMB    , region%name, region%time)
+      call region%SMB%write_to_restart_file( trim( C%output_dir))
       CALL write_to_restart_file_BMB_model    ( region%mesh, region%BMB    , region%name, region%time)
       CALL write_to_restart_file_GIA_model    ( region%mesh, region%GIA    , region%name, region%time)
     END IF
@@ -311,6 +325,13 @@ CONTAINS
     IF (do_output_grid) THEN
       ! Write to the gridded regional output file
       CALL write_to_main_regional_output_file_grid( region)
+      CALL write_to_ISMIP_regional_output_file_grid( region)
+
+      ! Write to the region-of-interest output files
+      DO i = 1, region%nROI
+        CALL write_to_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_grid_ROI( i))
+        CALL write_to_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_ismip_grid_ROI( i))
+      END DO
     END IF
 
     ! Finalise routine path
@@ -412,7 +433,7 @@ CONTAINS
     IMPLICIT NONE
 
     ! In/output variables:
-    TYPE(type_model_region)                            , INTENT(OUT)   :: region
+    TYPE(type_model_region), target                    , INTENT(OUT)   :: region
     CHARACTER(LEN=3),                                    INTENT(IN)    :: region_name
     TYPE(type_global_forcing)                          , INTENT(IN)    :: forcing
     REAL(dp)                                           , INTENT(IN)    :: start_time_of_run
@@ -422,6 +443,7 @@ CONTAINS
     CHARACTER(LEN=256)                                                 :: grid_name
     REAL(dp)                                                           :: dx_grid_smooth, dx_grid_output
     TYPE(type_global_forcing)                                          :: regional_forcing
+    INTEGER                                                            :: i
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -448,8 +470,9 @@ CONTAINS
 
     ! Print to screen
     IF (par%primary) WRITE(0,'(A)') ''
-    IF (par%primary) WRITE(0,'(A)') ' Initialising model region ' // colour_string( region%name,'light blue') // ' (' // &
-      colour_string( TRIM( region%long_name),'light blue') // ')...'
+    IF (par%primary) WRITE(0,'(A)') ' Initialising model region ' // &
+      UPSY%stru%colour_string( region%name,'light blue') // ' (' // &
+      UPSY%stru%colour_string( TRIM( region%long_name),'light blue') // ')...'
 
     ! ===== Reference geometries =====
     ! ================================
@@ -511,7 +534,21 @@ CONTAINS
     ! ===== Surface mass balance =====
     ! ================================
 
-    CALL initialise_SMB_model( region%mesh, region%ice, region%climate, region%SMB, region%name)
+    select case (region%name)
+    case default
+      call crash('unknown region name "' // region%name // '"')
+    case ('NAM')
+      call create_SMB_model( region%SMB, C%choice_SMB_model_NAM)
+    case ('EAS')
+      call create_SMB_model( region%SMB, C%choice_SMB_model_EAS)
+    case ('GRL')
+      call create_SMB_model( region%SMB, C%choice_SMB_model_GRL)
+    case ('ANT')
+      call create_SMB_model( region%SMB, C%choice_SMB_model_ANT)
+    end select
+
+    call region%SMB%allocate  ( region%SMB%ct_allocate( 'SMB_model', region%name, region%mesh))
+    call region%SMB%initialise( region%SMB%ct_initialise( region%ice))
 
     ! ===== Basal mass balance =====
     ! ==============================
@@ -539,7 +576,7 @@ CONTAINS
     ! Run the models
     CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
     CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, C%start_time_of_run)
-    CALL run_SMB_model( region%mesh, region%grid_smooth, region%ice, region%climate, region%SMB, region%name, C%start_time_of_run)
+    call region%SMB%run( region%SMB%ct_run( C%start_time_of_run, region%ice, region%climate, region%grid_smooth))
     CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%SMB, region%BMB, region%name, C%start_time_of_run, is_initial=.TRUE.)
     CALL run_LMB_model( region%mesh, region%ice, region%LMB, region%name, region%time)
 
@@ -582,6 +619,9 @@ CONTAINS
 
     ! Calculate ice-sheet integrated values (total volume, area, etc.)
     CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
+    do i=1, region%nROI
+        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i),i)
+    end do
 
     ! ===== Regional output =====
     ! ===========================
@@ -608,6 +648,7 @@ CONTAINS
     ! Create the main regional output files
     CALL create_main_regional_output_file_mesh( region)
     CALL create_main_regional_output_file_grid( region)
+    CALL create_ISMIP_regional_output_file_grid( region)
 
     ! Create the main regional output files for the regions of interest
     CALL setup_ROI_grids_and_output_files( region)
@@ -617,7 +658,6 @@ CONTAINS
     CALL create_restart_file_thermo       ( region%mesh, region%ice)
     CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
     CALL create_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name)
-    CALL create_restart_file_SMB_model    ( region%mesh, region%SMB    , region%name)
     CALL create_restart_file_BMB_model    ( region%mesh, region%BMB    , region%name)
     CALL create_restart_file_GIA_model    ( region%mesh, region%GIA    , region%name)
 
@@ -626,6 +666,11 @@ CONTAINS
 
     ! Create the scalar regional output file
     CALL create_scalar_regional_output_file( region)
+    CALL create_ISMIP_scalar_regional_output_file( region)
+    if (region%nROI > 0) then
+      CALL create_scalar_regional_output_file_ROI( region)
+      CALL create_ISMIP_scalar_regional_output_file_ROI( region)
+    end if
 
     ! Set output writing time to start of run, so the initial state will be written to output
     IF (C%do_create_netcdf_output) THEN
@@ -649,7 +694,8 @@ CONTAINS
     ! ========================
 
     ! Print to screen
-    IF (par%primary) WRITE(0,'(A)') ' Finished initialising model region ' // colour_string( TRIM( region%long_name),'light blue')
+    IF (par%primary) WRITE(0,'(A)') ' Finished initialising model region ' // &
+      UPSY%stru%colour_string( TRIM( region%long_name),'light blue')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -673,7 +719,10 @@ CONTAINS
     CALL init_routine( routine_name)
 
     ! Print to screen
-    IF (par%primary) WRITE(0,'(A)') '   Setting up the first mesh for model region ' // colour_string( region%name,'light blue') // '...'
+    IF (par%primary) WRITE(0,'(A)') '   Setting up the first mesh for model region ' // &
+       UPSY%stru%colour_string( region%name,'light blue') // '...'
+
+    allocate( region%mesh)
 
     ! Get settings from config
     IF     (region%name == 'NAM') THEN
@@ -884,7 +933,8 @@ CONTAINS
     end if
 
     ! Print to screen
-    IF (par%primary) WRITE(0,'(A)') '   Reading mesh from file "' // colour_string( TRIM( filename_initial_mesh),'light blue') // '"...'
+    IF (par%primary) WRITE(0,'(A)') '   Reading mesh from file "' // &
+      UPSY%stru%colour_string( TRIM( filename_initial_mesh),'light blue') // '"...'
 
     ! Set mesh configuration
     region%mesh%resolution_tolerance = C%mesh_resolution_tolerance
@@ -931,6 +981,7 @@ CONTAINS
     REAL(dp), DIMENSION(:,:  ), ALLOCATABLE       :: poly_ROI
     REAL(dp)                                      :: xmin, xmax, ymin, ymax, xmid, ymid, dx, dy
     CHARACTER(LEN=256)                            :: grid_name
+    character(len=1024)                           :: filename_base, filename
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -1109,7 +1160,19 @@ CONTAINS
 
       ! Create an output file for this region of interest
       region%output_filenames_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'main_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
+      region%output_filenames_ismip_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'ismip_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
+
       CALL create_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_grid_ROI( region%nROI))
+      CALL create_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_ismip_grid_ROI( region%nROI))
+
+      ! Generate file names for all scalar files
+      filename_base = TRIM( C%output_dir) // 'scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
+      call generate_filename_XXXXXdotnc(filename_base, filename)
+      region%output_filenames_scalar_ROI(region%nROI) = filename
+
+      filename_base = TRIM( C%output_dir) // 'ismip_scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
+      call generate_filename_XXXXXdotnc(filename_base, filename)
+      region%output_filenames_ismip_scalar_ROI(region%nROI) = filename
 
       ! Clean up after yourself
       DEALLOCATE( poly_ROI)
@@ -1133,7 +1196,7 @@ CONTAINS
     IMPLICIT NONE
 
     ! In/output variables:
-    TYPE(type_model_region),                             INTENT(INOUT) :: region
+    TYPE(type_model_region), target,                     INTENT(INOUT) :: region
     TYPE(type_global_forcing),                           INTENT(IN)    :: forcing
 
     ! Local variables:
@@ -1141,9 +1204,9 @@ CONTAINS
     REAL(dp)                                                           :: xmin, xmax, ymin, ymax
     REAL(dp)                                                           :: lambda_M, phi_M, beta_stereo
     INTEGER                                                            :: n_old, stat, n_new
-    CHARACTER(LEN=5)                                                   :: n_new_str
+    character(len=:), allocatable                                      :: n_new_str
     CHARACTER(LEN=256)                                                 :: new_mesh_name
-    TYPE(type_mesh)                                                    :: mesh_new
+    type(type_mesh), allocatable                                       :: mesh_new
     REAL(dp)                                                           :: tstart, tstop
     CHARACTER(LEN=256)                                                 :: str
 
@@ -1155,7 +1218,8 @@ CONTAINS
 
     ! Print to screen
     IF (par%primary) WRITE(0,'(A)') ''
-    IF (par%primary) WRITE(0,'(A)') '   Creating a new mesh for model region ' // colour_string( region%name,'light blue') // '...'
+    IF (par%primary) WRITE(0,'(A)') '   Creating a new mesh for model region ' // &
+      UPSY%stru%colour_string( region%name,'light blue') // '...'
 
     ! Determine model domain
     IF     (region%name == 'NAM') THEN
@@ -1195,13 +1259,14 @@ CONTAINS
     END IF
 
     ! Create numbered name for the new mesh
-    CALL str2int( region%mesh%name( 16:20), n_old, stat)
+    n_old = UPSY%stru%str2int( region%mesh%name( 16:20), stat)
     IF (stat /= 0) CALL crash('couldnt read number of old mesh!')
     n_new = n_old + 1
-    CALL int2str( n_new, n_new_str)
+    n_new_str = UPSY%stru%int2str_with_leading_zeros( n_new, 5)
     new_mesh_name = 'model_mesh_' // TRIM( region%name) // '_' // n_new_str
 
     ! Create a mesh from the modelled ice geometry
+    allocate( mesh_new)
     CALL create_mesh_from_meshed_geometry( region%name, new_mesh_name, &
       region%mesh, &
       region%ice%Hi, &
@@ -1226,9 +1291,9 @@ CONTAINS
 
     ! Remap all the model data from the old mesh to the new mesh
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
-    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%grid_smooth, region%ice, forcing)
+    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%grid_smooth, region%ice, forcing)
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
-    CALL remap_SMB_model(             region%mesh, mesh_new,             region%SMB    , region%name)
+    call region%SMB%remap( region%SMB%ct_remap( mesh_new, region%time))
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )
@@ -1249,9 +1314,8 @@ CONTAINS
     ! Throw away the mapping operators involving the old mesh
     CALL clear_all_maps_involving_this_mesh( region%mesh)
 
-    ! Deallocate the old mesh, bind the region%mesh pointers to the new mesh.
-    CALL deallocate_mesh( region%mesh)
-    region%mesh = mesh_new
+    ! Move mesh allocation
+    call move_alloc( mesh_new, region%mesh)
     region%time_mesh_was_created = region%time
 
     ! We want to know how long this takes, just to show off...
@@ -1259,7 +1323,7 @@ CONTAINS
 
     ! Print to screen
     str = '   Finished the mesh update in {dp_01} seconds'
-    CALL insert_val_into_string_dp( str, '{dp_01}', tstop-tstart)
+    str = UPSY%stru%insert_val_into_string_dp( str, '{dp_01}', tstop-tstart)
     IF (par%primary) WRITE(0,'(A)') str
 
     ! Finalise routine path

@@ -4,17 +4,14 @@ module inversion_utilities
   ! FIXME: group inversion code more logically!
 
   use mpi_basic, only: par
+  use UPSY_main, only: UPSY
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use SMB_model_types, only: type_SMB_model
-  use BMB_model_types, only: type_BMB_model
-  use LMB_model_types, only: type_LMB_model
-  use AMB_model_types, only: type_AMB_model
   use plane_geometry, only: is_in_polygon
   use netcdf_io_main
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
@@ -72,7 +69,8 @@ contains
     end if
 
     ! Print to terminal
-    if (par%primary)  write(*,"(A)") '     Initialising target ice rates of change from file "' // colour_string( trim( filename_dHi_dt_target),'light blue') // '"...'
+    if (par%primary)  write(*,"(A)") '     Initialising target ice rates of change from file "' // &
+      UPSY%stru%colour_string( trim( filename_dHi_dt_target),'light blue') // '"...'
 
     ! Read dHi_dt from file
     if (timeframe_dHi_dt_target == 1E9_dp) then

@@ -1,6 +1,6 @@
 module switch_vertices_triangles
 
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use switch_array_elements, only: switch_rows, switch_entries_by_value
 

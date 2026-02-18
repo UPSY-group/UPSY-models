@@ -1,9 +1,10 @@
 module ocean_snapshot_nudge2D
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use parameters, only: NaN
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid
@@ -463,7 +464,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(a)') '     Creating ocean snapshot+nudge2D output file "' // &
-      colour_string( trim( filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( filename, ncid)

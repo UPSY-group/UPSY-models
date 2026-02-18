@@ -3,7 +3,7 @@ module move_vertices
   ! Move a vertex to a new position and update the Delaunay triangulation accordingly.
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use flip_triangles, only: initialise_Delaunay_check_stack, &
     add_triangle_pairs_around_vertex_to_Delaunay_check_stack, flip_triangles_until_Delaunay

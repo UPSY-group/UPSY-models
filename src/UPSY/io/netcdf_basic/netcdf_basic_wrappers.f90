@@ -4,8 +4,8 @@ module netcdf_basic_wrappers
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_INTEGER
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
-  use mpi_basic, only: par
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use mpi_basic, only: par, sync
   use basic_model_utilities, only: git_commit_hash
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
@@ -20,7 +20,7 @@ module netcdf_basic_wrappers
     create_new_netcdf_file_for_writing, create_dimension, create_variable, &
     create_scalar_variable, add_attribute_int, add_attribute_dp, add_attribute_char, &
     open_existing_netcdf_file_for_reading, open_existing_netcdf_file_for_writing, &
-    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision
+    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, delete_existing_file
 
 contains
 
@@ -551,5 +551,23 @@ contains
     end select
 
   end function parse_netcdf_precision
+
+  subroutine delete_existing_file( filename)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: filename
+
+    ! Local variables:
+    logical :: file_exists
+
+    if (par%primary) then
+      inquire( exist = file_exists, file = trim( filename))
+      if (file_exists) then
+        call system('rm -f ' // filename)
+      end if
+    end if
+    call sync
+
+  end subroutine delete_existing_file
 
 end module netcdf_basic_wrappers

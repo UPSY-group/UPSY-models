@@ -6,13 +6,13 @@ MODULE thermodynamics_utilities
 ! ====================
 
   USE precisions                                             , ONLY: dp
-  USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
-  USE SMB_model_types                                        , ONLY: type_SMB_model
+  use SMB_model, only: atype_SMB_model
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
   use plane_geometry, only: cross2
   use mpi_distributed_memory, only: gather_to_all
@@ -264,7 +264,7 @@ CONTAINS
     TYPE(type_mesh),                                INTENT(IN)    :: mesh
     TYPE(type_ice_model),                           INTENT(INOUT) :: ice
     TYPE(type_climate_model),                       INTENT(IN)    :: climate
-    TYPE(type_SMB_model),                           INTENT(IN)    :: SMB
+    class(atype_SMB_model),                         intent(in   ) :: SMB
     REAL(dp), DIMENSION(mesh%vi1:mesh%vi2,mesh%nz), INTENT(INOUT) :: Ti
     INTEGER,                                        INTENT(IN)    :: vi
 

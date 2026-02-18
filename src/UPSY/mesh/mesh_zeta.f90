@@ -7,11 +7,12 @@ MODULE mesh_zeta
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE reallocate_mod                                         , ONLY: reallocate
   USE mesh_types                                             , ONLY: type_mesh
   USE CSR_matrix_basics                            , ONLY: allocate_matrix_CSR_loc, add_entry_CSR_dist
   use shape_functions, only: calc_shape_functions_1D_reg_2nd_order
+  use assertions_basic, only: assert
 
   IMPLICIT NONE
 
@@ -32,7 +33,7 @@ CONTAINS
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'initialise_scaled_vertical_coordinate'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
 
     if (allocated( mesh%zeta     )) deallocate( mesh%zeta)
@@ -46,48 +47,49 @@ CONTAINS
     case default
       call crash('unknown choice_zeta_grid "' // trim( mesh%choice_zeta_grid) // '"')
     case ('regular')
-      call initialise_scaled_vertical_coordinate_regular( mesh)
+      call initialise_scaled_vertical_coordinate_regular( mesh%nz, mesh%zeta, mesh%zeta_stag)
     case ('irregular_log')
-      call initialise_scaled_vertical_coordinate_irregular_log( mesh)
+      call initialise_scaled_vertical_coordinate_irregular_log( mesh%nz, &
+        mesh%zeta_irregular_log_R, mesh%zeta, mesh%zeta_stag)
     case ('old_15_layer_zeta')
-      call initialise_scaled_vertical_coordinate_old_15_layer( mesh)
+      call initialise_scaled_vertical_coordinate_old_15_layer( mesh%nz, mesh%zeta, mesh%zeta_stag)
     end select
 
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine initialise_scaled_vertical_coordinate
 
-  SUBROUTINE initialise_scaled_vertical_coordinate_regular( mesh)
+  subroutine initialise_scaled_vertical_coordinate_regular( nz, zeta, zeta_stag)
     ! Initialise the scaled vertical coordinate zeta
     ! Regular zeta grid
 
-    IMPLICIT NONE
-
     ! In/output variables:
-    TYPE(type_mesh),                 INTENT(INOUT)     :: mesh
+    integer,                   intent(in   ) :: nz
+    real(dp), dimension(nz  ), intent(  out) :: zeta
+    real(dp), dimension(nz-1), intent(  out) :: zeta_stag
 
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_scaled_vertical_coordinate_regular'
-    INTEGER                                            :: k
+    character(len=1024), parameter :: routine_name = 'initialise_scaled_vertical_coordinate_regular'
+    integer                        :: k
 
-    ! Add routine to path
-    CALL init_routine( routine_name)
+    ! Add routine to call stack
+    call init_routine( routine_name)
 
     ! Fill zeta values
-    DO k = 1, mesh%nz
-      mesh%zeta( k) = REAL( k-1,dp) / REAL( mesh%nz-1,dp)
-    END DO
+    do k = 1, nz
+      zeta( k) = real( k-1,dp) / real( nz-1,dp)
+    end do
 
     ! Calculate zeta_stag
-    mesh%zeta_stag = (mesh%zeta( 1:mesh%nz-1) + mesh%zeta( 2:mesh%nz)) / 2._dp
+    zeta_stag = (zeta( 1:nz-1) + zeta( 2:nz)) / 2._dp
 
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
 
-  END SUBROUTINE initialise_scaled_vertical_coordinate_regular
+  end subroutine initialise_scaled_vertical_coordinate_regular
 
-  SUBROUTINE initialise_scaled_vertical_coordinate_irregular_log( mesh)
+  subroutine initialise_scaled_vertical_coordinate_irregular_log( nz, R, zeta, zeta_stag)
     ! Initialise the scaled vertical coordinate zeta
     !
     ! This scheme ensures that the ratio between subsequent grid spacings is
@@ -95,70 +97,77 @@ CONTAINS
     ! layer thickness is (approximately) equal to R
 
     ! In/output variables:
-    type(type_mesh),    intent(inout) :: mesh
+    integer,                   intent(in   ) :: nz
+    real(dp),                  intent(in   ) :: R
+    real(dp), dimension(nz  ), intent(  out) :: zeta
+    real(dp), dimension(nz-1), intent(  out) :: zeta_stag
 
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_scaled_vertical_coordinate_irregular_log'
-    INTEGER                                            :: k
-    REAL(dp)                                           :: sigma, sigma_stag
+    character(len=1024), parameter :: routine_name = 'initialise_scaled_vertical_coordinate_irregular_log'
+    integer                        :: k
+    real(dp)                       :: sigma, sigma_stag
 
-    ! Add routine to path
-    CALL init_routine( routine_name)
+    ! Add routine to call stack
+    call init_routine( routine_name)
 
-    ! Safety
-    IF (mesh%zeta_irregular_log_R <= 0._dp) CALL crash('R should be positive!')
+#if (DO_ASSERTIONS)
+    call assert(R > 0._dp, 'R should be positive')
+#endif
 
     ! Exception: R = 1 implies a regular grid, but the equation becomes 0/0
-    IF (mesh%zeta_irregular_log_R == 1._dp) THEN
-      CALL initialise_scaled_vertical_coordinate_regular( mesh)
-      CALL finalise_routine( routine_name)
-      RETURN
-    END IF
+    if (R == 1._dp) then
+      call initialise_scaled_vertical_coordinate_regular( nz, zeta, zeta_stag)
+      call finalise_routine( routine_name)
+      return
+    end if
 
-    DO k = 1, mesh%nz
+    do k = 1, nz
       ! Regular grid
-      sigma = REAL( k-1,dp) / REAL( mesh%nz-1,dp)
-      mesh%zeta( mesh%nz + 1 - k) = 1._dp - (mesh%zeta_irregular_log_R**sigma - 1._dp) / (mesh%zeta_irregular_log_R - 1._dp)
+      sigma = real( k-1,dp) / real( nz-1,dp)
+      zeta( nz + 1 - k) = 1._dp - (R**sigma - 1._dp) / (R - 1._dp)
       ! Staggered grid
-      IF (k < mesh%nz) THEN
-        sigma_stag = sigma + 0.5_dp / REAL( mesh%nz-1,dp)
-        mesh%zeta_stag( mesh%nz - k) = 1._dp - (mesh%zeta_irregular_log_R**sigma_stag - 1._dp) / (mesh%zeta_irregular_log_R - 1._dp)
-      END IF
-    END DO
+      if (k < nz) THEN
+        sigma_stag = sigma + 0.5_dp / real( nz-1,dp)
+        zeta_stag( nz - k) = 1._dp - (R**sigma_stag - 1._dp) / (R - 1._dp)
+      end if
+    end do
 
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
 
-  END SUBROUTINE initialise_scaled_vertical_coordinate_irregular_log
+  end subroutine initialise_scaled_vertical_coordinate_irregular_log
 
-  SUBROUTINE initialise_scaled_vertical_coordinate_old_15_layer( mesh)
+  subroutine initialise_scaled_vertical_coordinate_old_15_layer( nz, zeta, zeta_stag)
     ! Set up the vertical zeta grid
     !
     ! Use the old irregularly-spaced 15 layers from ANICE
 
-    IMPLICIT NONE
-
     ! In/output variables:
-    TYPE(type_mesh),                 INTENT(INOUT)     :: mesh
+    integer,                   intent(in   ) :: nz
+    real(dp), dimension(nz  ), intent(  out) :: zeta
+    real(dp), dimension(nz-1), intent(  out) :: zeta_stag
 
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_scaled_vertical_coordinate_old_15_layer'
+    character(len=1024), parameter :: routine_name = 'initialise_scaled_vertical_coordinate_old_15_layer'
 
-    ! Add routine to path
-    CALL init_routine( routine_name)
+    ! Add routine to call stack
+    call init_routine( routine_name)
 
-    ! Safety
-    IF (mesh%nz /= 15) CALL crash('only works when nz = 15!')
+#if (DO_ASSERTIONS)
+    call assert(nz == 15, 'nz must be 15')
+#endif
 
-    mesh%zeta = (/ 0.00_dp, 0.10_dp, 0.20_dp, 0.30_dp, 0.40_dp, 0.50_dp, 0.60_dp, 0.70_dp, 0.80_dp, 0.90_dp, 0.925_dp, 0.95_dp, 0.975_dp, 0.99_dp, 1.00_dp /)
+    zeta = (/ 0.00_dp , 0.10_dp, 0.20_dp , 0.30_dp, 0.40_dp, &
+              0.50_dp , 0.60_dp, 0.70_dp , 0.80_dp, 0.90_dp, &
+              0.925_dp, 0.95_dp, 0.975_dp, 0.99_dp, 1.00_dp /)
 
     ! Calculate zeta_stag
-    mesh%zeta_stag = (mesh%zeta( 1:mesh%nz-1) + mesh%zeta( 2:mesh%nz)) / 2._dp
+    zeta_stag = (zeta( 1:nz-1) + zeta( 2:nz)) / 2._dp
 
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
 
-  END SUBROUTINE initialise_scaled_vertical_coordinate_old_15_layer
+  end subroutine initialise_scaled_vertical_coordinate_old_15_layer
 
   ! Some mathematical operations on a function of zeta
   ! ==================================================

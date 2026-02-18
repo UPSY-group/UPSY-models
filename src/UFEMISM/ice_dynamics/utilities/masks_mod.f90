@@ -2,7 +2,7 @@ module masks_mod
   !< Calculating masks (e.g. mask_ice, mask_shelf, etc.)
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all
   use mesh_types, only: type_mesh
@@ -214,7 +214,7 @@ contains
     ! Local variables:
     character(len=1024), parameter                :: routine_name = 'calc_mask_ROI'
     character(len=256)                            :: all_names_ROI, name_ROI
-    integer                                       :: vi, vj, ci, i
+    integer                                       :: vi, vj, ci, i, i_ROI
     real(dp), dimension(:,:  ), allocatable       :: poly_ROI
     real(dp), dimension(2)                        :: point
 
@@ -228,6 +228,7 @@ contains
     end if
 
     all_names_ROI = C%choice_regions_of_interest
+    i_ROI = 0
 
     do while (.true.)
 
@@ -338,11 +339,11 @@ contains
             case ('Dotson_channel')
               call calc_polygon_Dotson_channel( poly_ROI)
             case ('Wilkes')
-              call calc_polygon_Wilkes_basins( poly_ROI)  
+              call calc_polygon_Wilkes_basins( poly_ROI)
             case ('Antarctic_Peninsula')
               call calc_polygon_Antarctic_Peninsula( poly_ROI)
             case ('Institute')
-              call calc_polygon_Institute_basin( poly_ROI)    
+              call calc_polygon_Institute_basin( poly_ROI)
             case default
               ! Requested area not in this model domain; skip
               cycle
@@ -353,12 +354,13 @@ contains
       end select
 
       ! Check for each grid point whether it is located within the polygon of the ROI
+      i_ROI = i_ROI+1
       do vi = mesh%vi1, mesh%vi2
         do ci = 1, mesh%nC(vi)
             vj = mesh%C( vi,ci)
             point = mesh%V( vj,:) ! Just to make sure it's in the right format
             if (is_in_polygon(poly_ROI, point)) then
-              ice%mask_ROI(vi) = .true.
+              ice%mask_ROI(vi) = i_ROI
             end if
         end do
       end do ! do vi = mesh%vi1, mesh%vi2
@@ -367,6 +369,7 @@ contains
       deallocate( poly_ROI)
 
     end do
+    ice%nROI = i_ROI ! keep track of how many ROIs we actually have in the mask
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -502,7 +505,7 @@ contains
     call init_routine( routine_name)
 
     select case (C%choice_laddie_SGD)
-      case ('none')
+      case ('none', 'read_transects')
         ! No SGD: don't need to do anything
       case ('idealised')
         call calc_mask_SGD_idealised(mesh, ice)

@@ -3,7 +3,7 @@ module netcdf_inquire_grid_mesh
   !< for an x/y-grid, a lon/lat-grid, or a mesh
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use netcdf_field_name_options
   use netcdf_basic_wrappers
 

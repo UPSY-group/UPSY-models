@@ -5,7 +5,7 @@ module model_configuration
   use precisions, only: dp
   use mpi_f08, only: MPI_BCAST, MPI_COMM_WORLD, MPI_CHAR, MPI_LOGICAL
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, &
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, &
     warning, crash, colour_string
   use basic_model_utilities, only: get_git_commit_hash, git_commit_hash, &
     check_for_uncommitted_changes, has_uncommitted_changes, generate_procedural_output_dir_name

@@ -3,8 +3,9 @@ module predictor_corrector_scheme
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_INTEGER, &
     MPI_MAX, MPI_SUM
   use mpi_basic, only: par
+  use UPSY_main, only: UPSY
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
@@ -77,6 +78,26 @@ contains
 
     region%ice%pc%dt_np1 = MIN( region%ice%pc%dt_np1, dt_crit_adv)
 
+    ! == Ice masks for domain or for calving thresholds ==
+    ! ====================================================
+
+    ! Apply no ice mask and assure ice thinning rate is zero where Hi_prev = 0
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (region%ice%mask_noice( vi)) then
+        region%ice%Hi_prev( vi) = 0._dp
+        region%ice%dHi_dt(vi)  = 0._dp
+      end if
+    end do
+
+    ! Update masks
+    call determine_masks( region%mesh, region%ice)
+
+      ! Update sub-grid grounded fractions
+    call calc_grounded_fractions( region%mesh, region%ice)
+
+      ! Update effective ice thickness
+    call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+
     ! == Time step iteration: if, at the end of the PC timestep, the truncation error
     !    turns out to be too large, run it again with a smaller dt, until the truncation
     !    decreases to below the specified tolerance
@@ -103,12 +124,20 @@ contains
       call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
+      ! Making sure verticies in no ice mask have zero thinning rates
+      do vi = region%mesh%vi1, region%mesh%vi2
+        if (region%ice%mask_noice( vi)) then
+          region%ice%pc%dHi_dt_Hi_n_u_n(vi)  = 0._dp
+        end if
+      end do
+
       ! Calculate predicted ice thickness (Robinson et al., 2020, Eq. 30)
       region%ice%pc%Hi_star_np1 = region%ice%Hi_prev + region%ice%pc%dt_np1 * ((1._dp + region%ice%pc%zeta_t / 2._dp) * &
         region%ice%pc%dHi_dt_Hi_n_u_n - (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
 
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
+      
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 30 above rearranged to retrieve
@@ -172,11 +201,19 @@ contains
       call calc_grounded_fractions( region%mesh, region%ice)
 
       ! Update effective ice thickness
-      call calc_effective_thickness( region%mesh, region%ice, region%ice%Hi, region%ice%Hi_eff, region%ice%fraction_margin)
+      call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! Calculate thinning rates for the current ice thickness and predicted velocity
       call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
+
+      ! Making sure verticies in no ice mask have zero thinning rates
+      do vi = region%mesh%vi1, region%mesh%vi2
+        if (region%ice%mask_noice( vi)) then
+          region%ice%pc%dHi_dt_Hi_star_np1_u_np1(vi)  = 0._dp
+        end if
+      end do
+
 
       ! Calculate corrected ice thickness (Robinson et al. (2020), Eq. 31)
       region%ice%pc%Hi_np1 = region%ice%Hi_prev + (region%ice%pc%dt_np1 / 2._dp) * (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
@@ -185,7 +222,7 @@ contains
       region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
 
       ! if so desired, modify the corrected ice thickness field based on user-defined settings
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 31 above rearranged to retrieve
@@ -262,6 +299,16 @@ contains
     ! Set next modelled ice thickness
     region%ice%t_Hi_next = region%ice%t_Hi_prev + region%ice%pc%dt_np1
     region%ice%Hi_next   = region%ice%pc%Hi_np1
+
+#if (DO_ASSERTIONS)
+    ! Safety
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (region%ice%Hi_next(vi) < 0._dp) then
+        call crash('Hi became negative in the PC scheme with a value of {dp_01} at vertex {int_01}!', &
+          dp_01 = region%ice%Hi_next(vi), int_01 = vi)
+      end if
+    end do
+#endif
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -411,7 +458,8 @@ contains
     end if
 
     ! write to terminal
-    if (par%primary) write(0,*) '   Initialising ice thickness predictor/corrector scheme from file "' // colour_string( trim( filename),'light blue') // '"...'
+    if (par%primary) write(0,*) '   Initialising ice thickness predictor/corrector scheme from file "' // &
+      UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read values from the file
     if (timeframe_applied == 1E9_dp) then
@@ -470,7 +518,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to ice dynamics restart file "' // &
-      colour_string( trim( pc%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( pc%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( pc%restart_filename, ncid)
@@ -527,7 +575,7 @@ contains
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Creating ice dynamics restart file "' // &
-      colour_string( trim( pc%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( trim( pc%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( pc%restart_filename, ncid)

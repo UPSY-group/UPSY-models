@@ -1,7 +1,7 @@
 module deallocate_dist_shared_mod
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, n_MPI_windows_used
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, n_MPI_windows_used
   use mpi_f08, only: MPI_WIN, MPI_WIN_FREE
 
   implicit none

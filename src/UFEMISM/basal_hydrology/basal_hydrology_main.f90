@@ -5,7 +5,7 @@ module basal_hydrology_main
   use mpi_basic, only: par
   use precisions, only: dp
   use erf_mod, only: error_function
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration, only: C
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
@@ -48,14 +48,14 @@ contains
         ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
         ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
       end do
-    case ('Leguy2014')  
+    case ('Leguy2014')
       call calc_pore_water_pressure_none( mesh, ice)
       call calc_effective_pressure_Leguy2014(mesh, ice)
     case ('error_function_Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)   ! we need that for the maximum inland effective pressure
       call calc_effective_pressure_error_function_M11(mesh, ice)
     case ('error_function_constant')
-      call calc_effective_pressure_error_function_constant(mesh, ice)  
+      call calc_effective_pressure_error_function_constant(mesh, ice)
     end select
 
     ! Finalise routine path
@@ -136,7 +136,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
         ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
         effective_pressure_max = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
-        
+
         if (effective_pressure_max == 0._dp) then
           ice%effective_pressure( vi)  = 0.0_dp
         else
@@ -149,7 +149,7 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine calc_effective_pressure_error_function_M11
-    
+
 
   subroutine calc_effective_pressure_Leguy2014(mesh, ice)
     ! Calculate effective pressure based on Leguy et al. (2014)

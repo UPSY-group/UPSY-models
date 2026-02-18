@@ -8,7 +8,7 @@ module CSR_matrix_basics
     MPI_LOGICAL, MPI_LOR
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine, colour_string
   use parameters
   use reallocate_mod, only: reallocate
   use mpi_distributed_memory, only: partition_list, gather_to_all

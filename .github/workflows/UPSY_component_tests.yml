@@ -1,0 +1,35 @@
+# The UPSY component tests
+
+name: UPSY component tests
+run-name: ${{ github.actor }} - UPSY component tests
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/UPSY/**'
+  workflow_dispatch:
+
+jobs:
+
+  # Compile the model and cache the executable
+  compile_and_cache_UPSY_dev_MacOS:
+    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_dev_MacOS.yml
+
+  compile_and_cache_UPSY_dev_Linux:
+    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_dev_Linux.yml
+
+  compile_and_cache_UPSY_perf_MacOS:
+    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_perf_MacOS.yml
+
+  compile_and_cache_UPSY_perf_Linux:
+    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_perf_Linux.yml
+
+  # Install and cache Matlab
+  install_and_cache_Matlab:
+    uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Matlab.yml
+
+  # Install and cache Python
+  install_and_cache_Python:
+    uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
+

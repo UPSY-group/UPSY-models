@@ -8,7 +8,8 @@ module laddie_forcing_main
   use parameters
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine, colour_string, warning
+  use UPSY_main, only: UPSY
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine, warning
   use model_configuration, only: C
   use reference_geometry_types, only: type_reference_geometry
   use mesh_types, only: type_mesh
@@ -125,7 +126,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-    call calc_effective_thickness( mesh, ice, ice%Hi, ice%Hi_eff, ice%fraction_margin)
+     call calc_effective_thickness( mesh, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes_onesided( mesh, ice)
@@ -281,7 +282,7 @@ contains
     end if
 
     ! Print to screen
-    if (par%primary) write(0,'(A)') '   Reading mesh from file "' // colour_string( trim( filename_initial_mesh),'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Reading mesh from file "' // UPSY%stru%colour_string( trim( filename_initial_mesh),'light blue') // '"...'
 
     ! Set mesh configuration
     mesh%resolution_tolerance = C%mesh_resolution_tolerance

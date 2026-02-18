@@ -1,10 +1,11 @@
 module ct_mass_conservation
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use model_configuration, only: C
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_mesh_from_file, &
     close_netcdf_file, create_new_netcdf_file_for_writing, setup_mesh_in_netcdf_file, &
@@ -106,7 +107,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '      Running mass conservation tests on mesh ', &
-      colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
+      UPSY%stru%colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
       len_trim( test_mesh_filename))),'light blue'), '...'
 
     ! Set up the mesh from the file (includes calculating secondary geometry data and matrix operators)
@@ -160,7 +161,8 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'run_mass_cons_test_on_mesh_with_function'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: Hb, Hs, SL
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: SMB, BMB, LMB, AMB
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: SMB
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: BMB, LMB, AMB
     real(dp), dimension(mesh%vi1:mesh%vi2) :: fraction_margin
     logical,  dimension(mesh%vi1:mesh%vi2) :: mask_noice
     real(dp)                               :: dt
@@ -172,7 +174,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '       Test ice sheet ' // &
-      colour_string(trim(ice_sheet_name), 'light blue'), '...'
+      UPSY%stru%colour_string(trim(ice_sheet_name), 'light blue'), '...'
 
     Hb              = 0._dp
     Hs              = Hi

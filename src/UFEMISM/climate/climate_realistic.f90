@@ -6,8 +6,9 @@ MODULE climate_realistic
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string, warning, insert_val_into_string_int,insert_val_into_string_dp
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -17,8 +18,7 @@ MODULE climate_realistic
   USE global_forcings_main
   USE netcdf_io_main
   USE netcdf_basic
-  use mpi_distributed_memory, only: distribute_from_primary
-  use climate_matrix_utilities, only: get_insolation_at_time
+  use climate_model_utilities                                , only: get_insolation_at_time
   use reallocate_mod                                         , only: reallocate_bounds
 
   IMPLICIT NONE
@@ -30,7 +30,7 @@ MODULE climate_realistic
   public :: initialise_insolation_forcing
   public :: apply_geometry_downscaling_corrections
   public :: remap_climate_realistic
-  public :: remap_snapshot
+  public :: remap_insolation
 
 CONTAINS
 
@@ -67,7 +67,7 @@ CONTAINS
     IF (climate%snapshot%has_insolation) THEN
       CALL get_insolation_at_time( mesh, time, climate%snapshot)
       climate%Q_TOA = climate%snapshot%Q_TOA
-    
+
       IF (C%choice_climate_model_realistic == 'climate_matrix') THEN
         ! This is probably where we will update insolation, CO2, etc...
         CALL crash('climate_matrix is no longer a climate model subtype; please set choice_climate_model as matrix!"')
@@ -107,7 +107,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary)  WRITE(*,"(A)") '     Initialising realistic climate model "' // &
-      colour_string( TRIM( C%choice_climate_model_realistic),'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( C%choice_climate_model_realistic),'light blue') // '"...'
 
     ! Run the chosen realistic climate model
     climate%snapshot%has_insolation = .FALSE.
@@ -292,7 +292,7 @@ CONTAINS
       snapshot%ins_Q_TOA0 = 0._dp
       snapshot%ins_Q_TOA1 = 0._dp
       snapshot%Q_TOA      = 0._dp
-      
+
       ! find the closest timeframe to the start of the run
       call read_field_from_file_0D( C%filename_insolation, field_name_options_time, closest_t0, time_to_read = C%start_time_of_run)
 
@@ -329,7 +329,7 @@ CONTAINS
     character(LEN=3),                       intent(in)    :: region_name
 
     ! Local variables
-    character(LEN=256), parameter                         :: routine_name = 'remap_climate_realistic' 
+    character(LEN=256), parameter                         :: routine_name = 'remap_climate_realistic'
     character(LEN=256)                                    :: choice_climate_model
     character(LEN=256)                                    :: filename_climate_snapshot
     character(LEN=256)                                    :: choice_SMB_model
@@ -342,7 +342,7 @@ CONTAINS
     case ('NAM')
       filename_climate_snapshot = C%filename_climate_snapshot_NAM
       choice_SMB_model = C%choice_SMB_model_NAM
-    case ('EAS') 
+    case ('EAS')
       filename_climate_snapshot = C%filename_climate_snapshot_EAS
       choice_SMB_model = C%choice_SMB_model_EAS
     case ('GRL')
@@ -361,7 +361,7 @@ CONTAINS
     case ('snapshot')
       ! Reallocate the snapshot Hs field
       call reallocate_bounds( climate%snapshot%Hs, mesh_new%vi1, mesh_new%vi2)
-      
+
       ! Read single-time data from external file
       call read_field_from_file_2D( filename_climate_snapshot, 'Hs', mesh_new, C%output_dir, climate%snapshot%Hs)
       call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m', mesh_new, C%output_dir, climate%T2m)
@@ -371,8 +371,8 @@ CONTAINS
       case default
         call crash('remap climate for choice_climate_model_realistic = "' // TRIM( C%choice_climate_model_realistic) // '" and choice_SMB_model = "' // TRIM( choice_SMB_model) // '" not implemented yet!')
       case ('IMAU-ITM')
-        ! Reallocate the IMAU-ITM fields
-        call remap_snapshot( climate%snapshot, mesh_new)
+        ! Reallocate the insolation fields
+        call remap_insolation( climate%snapshot, mesh_new)
       case( 'prescribed')
         ! Nothing extra to do
       end select
@@ -384,13 +384,13 @@ CONTAINS
 
   end subroutine remap_climate_realistic
 
-  subroutine remap_snapshot( snapshot, mesh_new)
+  subroutine remap_insolation( snapshot, mesh_new)
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_new
     type(type_climate_model_snapshot),      intent(inout) :: snapshot
 
     ! Local variables
-    character(LEN=256), parameter                         :: routine_name = 'remap_snapshot'
+    character(LEN=256), parameter                         :: routine_name = 'remap_insolation'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -403,6 +403,6 @@ CONTAINS
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap_snapshot
+  end subroutine remap_insolation
 
 END MODULE climate_realistic

@@ -1,10 +1,8 @@
 module ice_dynamics_main
 
-  !< The main ice-dynamical model
-
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use parameters, only: grav, ice_density, seawater_density
   use region_types, only: type_model_region
@@ -12,7 +10,7 @@ module ice_dynamics_main
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
-  use SMB_model_types, only: type_SMB_model
+  use SMB_model, only: atype_SMB_model
   use BMB_model_types, only: type_BMB_model
   use LMB_model_types, only: type_LMB_model
   use AMB_model_types, only: type_AMB_model
@@ -155,7 +153,7 @@ contains
     call determine_masks( region%mesh, region%ice)
 
     ! Calculate new effective thickness
-    call calc_effective_thickness( region%mesh, region%ice, region%ice%Hi, region%ice%Hi_eff, region%ice%fraction_margin)
+    call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes_onesided( region%mesh, region%ice)
@@ -309,7 +307,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-    call calc_effective_thickness( mesh, ice, ice%Hi, ice%Hi_eff, ice%fraction_margin)
+     call calc_effective_thickness( mesh, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes_onesided( mesh, ice)
@@ -446,7 +444,7 @@ contains
     type(type_ice_model),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
     type(type_reference_geometry),  intent(in   ) :: refgeo_PD
-    type(type_SMB_model),           intent(in   ) :: SMB
+    class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB
     type(type_LMB_model),           intent(in   ) :: LMB
     type(type_AMB_model),           intent(in   ) :: AMB
@@ -781,7 +779,7 @@ contains
     ! =======================
 
     ! Calculate new effective thickness
-    call calc_effective_thickness( mesh_new, ice, ice%Hi, ice%Hi_eff, ice%fraction_margin)
+     call calc_effective_thickness( mesh_new, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Surface gradients
     ! =================
@@ -1050,7 +1048,7 @@ contains
     type(type_mesh),                intent(inout) :: mesh
     type(type_ice_model),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(in   ) :: bed_roughness
-    type(type_SMB_model),           intent(in   ) :: SMB
+    class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB
     type(type_LMB_model),           intent(in   ) :: LMB
     type(type_AMB_model),           intent(in   ) :: AMB
@@ -1085,6 +1083,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2,mesh%nz) :: BC_prescr_v_bk
     real(dp), parameter                            :: dt_relax = 2._dp   ! [yr] Time to relax the ice around the calving front
     real(dp)                                       :: t_pseudo
+    real(dp), dimension(mesh_old%vi1:mesh_old%vi2) :: SMB_old
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: SMB_new
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: BMB_new
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: LMB_new
@@ -1204,9 +1203,9 @@ contains
     end if
 
     ! Distribute BC masks to all processes
-    call distribute_from_primary( BC_prescr_mask_tot   , BC_prescr_mask   )
-    call distribute_from_primary( BC_prescr_mask_b_tot , BC_prescr_mask_b )
-    call distribute_from_primary( BC_prescr_mask_bk_tot, BC_prescr_mask_bk)
+    call distribute_from_primary( BC_prescr_mask   , BC_prescr_mask_tot   )
+    call distribute_from_primary( BC_prescr_mask_b , BC_prescr_mask_b_tot )
+    call distribute_from_primary( BC_prescr_mask_bk, BC_prescr_mask_bk_tot)
 
     ! == Fill in prescribed velocities and thicknesses away from the front
     ! ====================================================================
@@ -1244,7 +1243,8 @@ contains
     ! == Remap SMB, BMB, LMB, and AMB to get more stable ice thickness
     ! ================================================================
 
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, SMB%SMB, SMB_new, '2nd_order_conservative')
+    SMB_old( mesh_old%vi1: mesh_old%vi2) = SMB%SMB( mesh_old%vi1: mesh_old%vi2)
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, SMB_old, SMB_new, '2nd_order_conservative')
     call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, BMB%BMB, BMB_new, '2nd_order_conservative')
     call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, LMB%LMB, LMB_new, '2nd_order_conservative')
     call map_from_mesh_to_mesh_2D( mesh_old, mesh, C%output_dir, AMB%AMB, AMB_new, '2nd_order_conservative')
@@ -1434,7 +1434,7 @@ contains
       call determine_masks( region%mesh, region%ice)
 
       ! Calculate new effective thickness
-      call calc_effective_thickness( region%mesh, region%ice, region%ice%Hi, region%ice%Hi_eff, region%ice%fraction_margin)
+      call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance

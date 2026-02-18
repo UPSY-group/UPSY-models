@@ -7,7 +7,7 @@ module ut_bedrock_CDFs
   use assertions_basic
   use ut_basic
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use parameters, only: pi
   use mesh_types, only: type_mesh

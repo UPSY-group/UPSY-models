@@ -3,7 +3,7 @@ module subgrid_grounded_fractions_bedrock_CDF
   !< the sub-grid bedrock cumulative density functions
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh

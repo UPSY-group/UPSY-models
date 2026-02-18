@@ -7,7 +7,7 @@ MODULE GIA_ELRA
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -146,7 +146,7 @@ contains
     end if
 
     ! distribute from 2D grid data on primary to vector grid data on all processors
-    call distribute_gridded_data_from_primary( grid, ELRA%dHb_dt_grid, ELRA%dHb_dt_grid_partial)
+    call distribute_gridded_data_from_primary( grid, ELRA%dHb_dt_grid_partial, ELRA%dHb_dt_grid)
 
     ! remap from partial grid vec data to mesh model
     call map_from_xy_grid_to_mesh_2D( grid, mesh, C%output_dir, ELRA%dHb_dt_grid_partial, ELRA%dHb_dt_mesh)

@@ -3,7 +3,7 @@ module permute_mod
   ! Permute arrays
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: crash
+  use call_stack_and_comp_time_tracking, only: crash
 
   implicit none
 

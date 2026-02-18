@@ -3,7 +3,7 @@ module netcdf_write_field_mesh
 
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use mpi_distributed_memory, only: gather_to_primary
   use netcdf_basic
@@ -28,7 +28,7 @@ module netcdf_write_field_mesh
 contains
 
   subroutine write_to_field_multopt_mesh_int_2D( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -40,7 +40,6 @@ contains
     integer,                        intent(in   ) :: ncid
     character(len=*),               intent(in   ) :: field_name_options
     integer,  dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,              intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_int_2D'
@@ -50,15 +49,17 @@ contains
     type(MPI_WIN)                         :: wd_nih
     integer,  dimension(:  ), allocatable :: d_tot
     integer,  dimension(:,:), allocatable :: d_tot_with_time
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -71,7 +72,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
@@ -99,7 +100,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, ti /), count = (/ mesh%nV, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -111,7 +112,7 @@ contains
   end subroutine write_to_field_multopt_mesh_int_2D
 
   subroutine write_to_field_multopt_mesh_dp_2D( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -123,7 +124,6 @@ contains
     integer,                        intent(in   ) :: ncid
     character(len=*),               intent(in   ) :: field_name_options
     real(dp), dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,              intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_dp_2D'
@@ -133,15 +133,17 @@ contains
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:  ), allocatable :: d_tot
     real(dp), dimension(:,:), allocatable :: d_tot_with_time
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -154,7 +156,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
@@ -182,7 +184,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, ti /), count = (/ mesh%nV, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -194,7 +196,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D
 
   subroutine write_to_field_multopt_mesh_dp_2D_b( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -206,7 +208,6 @@ contains
     integer,                        intent(in   ) :: ncid
     character(len=*),               intent(in   ) :: field_name_options
     real(dp), dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,              intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_dp_2D_b'
@@ -216,15 +217,17 @@ contains
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:  ), allocatable :: d_tot
     real(dp), dimension(:,:), allocatable :: d_tot_with_time
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -237,7 +240,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih)
@@ -265,7 +268,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, ti /), count = (/ mesh%nTri, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -277,7 +280,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D_b
 
   subroutine write_to_field_multopt_mesh_dp_2D_monthly( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D monthly data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D monthly in the physical sense, so a 2-D array!)
 
@@ -289,7 +292,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_to_field_multopt_mesh_dp_2D_monthly'
@@ -299,15 +301,17 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid_
+    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -320,7 +324,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, 12)
@@ -348,7 +352,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nV, 12, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -360,7 +364,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D_monthly
 
   subroutine write_to_field_multopt_mesh_dp_3D( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 3-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 3-D in the physical sense, so a 2-D array!)
 
@@ -372,7 +376,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_to_field_multopt_mesh_dp_3D'
@@ -382,15 +385,17 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid_
+    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -403,7 +408,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, mesh%nz)
@@ -431,7 +436,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nV, mesh%nz, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -443,7 +448,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_3D
 
   subroutine write_to_field_multopt_mesh_dp_3D_b( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 3-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 3-D in the physical sense, so a 2-D array!)
 
@@ -455,7 +460,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_to_field_multopt_mesh_dp_3D_b'
@@ -465,15 +469,17 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid_
+    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -486,7 +492,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih, mesh%nz)
@@ -514,7 +520,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nTri, mesh%nz, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -526,7 +532,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_3D_b
 
   subroutine write_to_field_multopt_mesh_dp_3D_ocean( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 3-D ocean data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 3-D in the physical sense, so a 2-D array!)
 
@@ -538,7 +544,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_to_field_multopt_mesh_dp_3D_ocean'
@@ -548,17 +553,19 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid_
+    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
     nz_ocean = size( d_partial,2)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -571,7 +578,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, nz_ocean)
@@ -599,7 +606,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nV, nz_ocean, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -611,7 +618,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_3D_ocean
 
   subroutine write_to_field_multopt_mesh_int_2D_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -621,7 +628,6 @@ contains
     integer,                       intent(in   ) :: ncid
     character(len=*),              intent(in   ) :: field_name_options
     integer, dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,             intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'write_to_field_multopt_mesh_int_2D_notime'
@@ -630,15 +636,17 @@ contains
     integer, dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                      :: wd_nih
     integer, dimension(:), allocatable :: d_tot
-    logical                            :: d_is_hybrid_
+    logical                            :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -651,7 +659,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
@@ -673,7 +681,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -685,7 +693,7 @@ contains
   end subroutine write_to_field_multopt_mesh_int_2D_notime
 
   subroutine write_to_field_multopt_mesh_int_2D_b_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -695,7 +703,6 @@ contains
     integer,                       intent(in   ) :: ncid
     character(len=*),              intent(in   ) :: field_name_options
     integer, dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,             intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'write_to_field_multopt_mesh_int_2D_b_notime'
@@ -704,15 +711,17 @@ contains
     integer, dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                      :: wd_nih
     integer, dimension(:), allocatable :: d_tot
-    logical                            :: d_is_hybrid_
+    logical                            :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -725,7 +734,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih)
@@ -747,7 +756,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -759,7 +768,7 @@ contains
   end subroutine write_to_field_multopt_mesh_int_2D_b_notime
 
   subroutine write_to_field_multopt_mesh_int_2D_c_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -769,7 +778,6 @@ contains
     integer,                       intent(in   ) :: ncid
     character(len=*),              intent(in   ) :: field_name_options
     integer, dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,             intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'write_to_field_multopt_mesh_int_2D_c_notime'
@@ -778,15 +786,17 @@ contains
     integer, dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                      :: wd_nih
     integer, dimension(:), allocatable :: d_tot
-    logical                            :: d_is_hybrid_
+    logical                            :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_E%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_E%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -799,7 +809,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih)
@@ -821,7 +831,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -833,7 +843,7 @@ contains
   end subroutine write_to_field_multopt_mesh_int_2D_c_notime
 
   subroutine write_to_field_multopt_mesh_dp_2D_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -843,7 +853,6 @@ contains
     integer,                        intent(in   ) :: ncid
     character(len=*),               intent(in   ) :: field_name_options
     real(dp), dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,              intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'write_to_field_multopt_mesh_dp_2D_notime'
@@ -852,15 +861,17 @@ contains
     real(dp), dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                       :: wd_nih
     real(dp), dimension(:), allocatable :: d_tot
-    logical                             :: d_is_hybrid_
+    logical                             :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -873,7 +884,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
@@ -895,7 +906,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -907,7 +918,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D_notime
 
   subroutine write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -917,7 +928,6 @@ contains
     integer,                        intent(in   ) :: ncid
     character(len=*),               intent(in   ) :: field_name_options
     real(dp), dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,              intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'write_to_field_multopt_mesh_dp_2D_b_notime'
@@ -926,15 +936,17 @@ contains
     real(dp), dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                       :: wd_nih
     real(dp), dimension(:), allocatable :: d_tot
-    logical                             :: d_is_hybrid_
+    logical                             :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -947,7 +959,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih)
@@ -969,7 +981,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -981,7 +993,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D_b_notime
 
   subroutine write_to_field_multopt_mesh_dp_2D_c_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D in the physical sense, so a 1-D array!)
 
@@ -991,7 +1003,6 @@ contains
     integer,                        intent(in   ) :: ncid
     character(len=*),               intent(in   ) :: field_name_options
     real(dp), dimension(:), target, intent(in   ) :: d_partial
-    logical, optional,              intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'write_to_field_multopt_mesh_dp_2D_c_notime'
@@ -1000,15 +1011,17 @@ contains
     real(dp), dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                       :: wd_nih
     real(dp), dimension(:), allocatable :: d_tot
-    logical                             :: d_is_hybrid_
+    logical                             :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_E%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_E%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -1021,7 +1034,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih)
@@ -1043,7 +1056,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1055,7 +1068,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D_c_notime
 
   subroutine write_to_field_multopt_mesh_dp_2D_monthly_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 2-D monthly data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 2-D monthly in the physical sense, so a 2-D array!)
 
@@ -1065,7 +1078,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_dp_2D_monthly_notime'
@@ -1074,15 +1086,17 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -1095,7 +1109,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, 12)
@@ -1117,7 +1131,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1129,7 +1143,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_2D_monthly_notime
 
   subroutine write_to_field_multopt_mesh_dp_3D_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 3-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 3-D in the physical sense, so a 2-D array!)
 
@@ -1139,7 +1153,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_dp_3D_notime'
@@ -1148,15 +1161,17 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -1169,7 +1184,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, mesh%nz)
@@ -1191,7 +1206,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1203,7 +1218,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_3D_notime
 
   subroutine write_to_field_multopt_mesh_dp_3D_b_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 3-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 3-D in the physical sense, so a 2-D array!)
 
@@ -1213,7 +1228,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_dp_3D_b_notime'
@@ -1222,15 +1236,17 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -1243,7 +1259,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih, mesh%nz)
@@ -1265,7 +1281,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1277,7 +1293,7 @@ contains
   end subroutine write_to_field_multopt_mesh_dp_3D_b_notime
 
   subroutine write_to_field_multopt_mesh_dp_3D_ocean_notime( mesh, filename, ncid, &
-    field_name_options, d_partial, d_is_hybrid)
+    field_name_options, d_partial)
     !< Write a 3-D data field defined on a mesh to a NetCDF file variable on the same mesh
     !< (Mind you, that's 3-D in the physical sense, so a 2-D array!)
 
@@ -1287,7 +1303,6 @@ contains
     integer,                          intent(in   ) :: ncid
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:,:), target, intent(in   ) :: d_partial
-    logical, optional,                intent(in   ) :: d_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_field_multopt_mesh_dp_3D_ocean_notime'
@@ -1296,17 +1311,19 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid_
+    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
     nz_ocean = size( d_partial,2)
 
-    if (present( d_is_hybrid)) then
-      d_is_hybrid_ = d_is_hybrid
+    if (size( d_partial,1) == mesh%pai_V%n_loc) then
+      d_is_hybrid = .false.
+    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
+      d_is_hybrid = .true.
     else
-      d_is_hybrid_ = .false.
+      call crash('invalid size for d_partial')
     end if
 
     ! Inquire the variable
@@ -1319,7 +1336,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, nz_ocean)
@@ -1341,7 +1358,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid_) then
+    if (d_is_hybrid) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)

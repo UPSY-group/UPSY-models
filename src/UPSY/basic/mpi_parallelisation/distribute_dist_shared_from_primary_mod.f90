@@ -3,7 +3,7 @@ module distribute_dist_shared_from_primary_mod
   use assertions_basic
   use precisions, only: dp
   use mpi_basic, only: par, sync, sync_node
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_f08, only: MPI_INTEGER, MPI_LOGICAL, MPI_ALLGATHER, MPI_SCATTERV, MPI_SEND, MPI_RECV, &
     MPI_ANY_TAG, MPI_STATUS, MPI_DOUBLE_PRECISION, MPI_DOUBLE_COMPLEX
   use parallel_array_info_type, only: type_par_arr_info

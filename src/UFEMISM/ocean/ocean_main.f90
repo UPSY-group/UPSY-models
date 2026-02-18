@@ -6,8 +6,9 @@ MODULE ocean_main
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -15,7 +16,7 @@ MODULE ocean_main
   USE ice_model_types                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
-  USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base
+  USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base, interpolate_ocean_depth
   USE ocean_realistic                                        , ONLY: initialise_ocean_model_realistic, run_ocean_model_realistic, remap_ocean_model_realistic
   USE ocean_idealised                                        , ONLY: initialise_ocean_model_idealised, run_ocean_model_idealised
   use netcdf_io_main
@@ -95,6 +96,7 @@ CONTAINS
     case( 'idealised')
       call run_ocean_model_idealised( mesh, ice, ocean)
     case( 'realistic')
+      call limit_ocean_supercooling( mesh, ice, ocean)
       call run_ocean_model_realistic( mesh, ice, ocean, time)
     case( 'snapshot+nudge2D')
       call run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, ocean, time)
@@ -253,7 +255,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Writing to ocean restart file "' // &
-      colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     CALL open_existing_netcdf_file_for_writing( ocean%restart_filename, ncid)
@@ -346,7 +348,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Creating ocean model restart file "' // &
-      colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     CALL create_new_netcdf_file_for_writing( ocean%restart_filename, ncid)
@@ -431,5 +433,47 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE remap_ocean_model
+
+  SUBROUTINE limit_ocean_supercooling( mesh, ice, ocean)
+  ! Calculate the ocean freezing point at 6 km depth, taking it as the coldest temperature we will allow the ocean to be
+    ! so we can prevent unrealistically high refreezing due to uniformly applied deltaT values that might not be representative of a certain region
+
+    implicit none
+
+    ! In/output variables
+    type(type_mesh),                    intent(in)    :: mesh
+    type(type_ice_model),               intent(in)    :: ice
+    type(type_ocean_model),             intent(inout) :: ocean
+
+    ! Local variables:
+    character(len=256), parameter                     :: routine_name = 'limit_ocean_supercooling'
+    integer                                           :: vi, z
+    real(dp), parameter                               :: depth_limit = 6E3_dp ! depth of freezing point that we want to limit the temperature to be
+    real(dp)                                          :: S0                   ! Practical salinity [PSU]
+    real(dp), parameter                               :: lambda1 = -0.0575_dp ! Liquidus slope                [degC PSU^-1] (Favier et al. (2019), Table 2)
+    real(dp), parameter                               :: lambda2 = 0.0832_dp  ! Liquidus intercept            [degC]        (Favier et al. (2019), Table 2)
+    real(dp), parameter                               :: lambda3 = 7.59E-4_dp ! Liquidus pressure coefficient [degC m^-1]   (Favier et al. (2019), Table 2)
+    real(dp)                                          :: T_supercooled_limit
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+    do z = 1, C%nz_ocean
+      ! Find salinity at 6 km depth
+      call interpolate_ocean_depth( C%nz_ocean, C%z_ocean, ocean%S( vi,:), depth_limit, S0)
+      ! Calculate ocean freezing temperature (Favier et al. (2019), Eq. 3) in degrees Celsius
+      T_supercooled_limit = lambda1 * S0 + lambda2 - lambda3 * depth_limit
+
+      if (ocean%T(vi, z) < T_supercooled_limit) then
+        ocean%T(vi, z) = T_supercooled_limit
+      end if
+    end do
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  END SUBROUTINE limit_ocean_supercooling
 
 END MODULE ocean_main

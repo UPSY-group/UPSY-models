@@ -7,7 +7,7 @@ module ut_mesh_remapping
   use ut_basic
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use parameters, only: pi
   use grid_types, only: type_grid
   use grid_basic, only: setup_square_grid

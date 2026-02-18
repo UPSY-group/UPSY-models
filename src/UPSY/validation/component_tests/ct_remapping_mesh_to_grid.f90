@@ -2,11 +2,12 @@ module ct_remapping_mesh_to_grid
 
   ! Test everything related to remapping
 
+  use UPSY_main, only: UPSY
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use precisions, only: dp
   use mpi_basic, only: par
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use netcdf_io_main
@@ -136,8 +137,8 @@ contains
       trim( mesh_name) // '_TO_' // trim( grid_name) // '.nc'
 
     if (par%primary) write(0,*) '      Running mesh-vertices-to-grid remapping tests on mesh-grid combination:'
-    if (par%primary) write(0,*) '        mesh: ', colour_string( trim( mesh_name),'light blue')
-    if (par%primary) write(0,*) '        grid: ', colour_string( trim( grid_name),'light blue')
+    if (par%primary) write(0,*) '        mesh: ', UPSY%stru%colour_string( trim( mesh_name),'light blue')
+    if (par%primary) write(0,*) '        grid: ', UPSY%stru%colour_string( trim( grid_name),'light blue')
 
     ! Set up the mesh and the grid from the provided files
     call open_existing_netcdf_file_for_reading( filename_mesh, ncid)
@@ -204,8 +205,8 @@ contains
       trim( mesh_name) // '_TO_' // trim( grid_name) // '.nc'
 
     if (par%primary) write(0,*) '      Running mesh-triangles-to-grid remapping tests on mesh-grid combination:'
-    if (par%primary) write(0,*) '        mesh: ', colour_string( trim( mesh_name),'light blue')
-    if (par%primary) write(0,*) '        grid: ', colour_string( trim( grid_name),'light blue')
+    if (par%primary) write(0,*) '        mesh: ', UPSY%stru%colour_string( trim( mesh_name),'light blue')
+    if (par%primary) write(0,*) '        grid: ', UPSY%stru%colour_string( trim( grid_name),'light blue')
 
     ! Set up the mesh and the grid from the provided files
     call open_existing_netcdf_file_for_reading( filename_mesh, ncid)

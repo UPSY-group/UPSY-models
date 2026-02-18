@@ -5,7 +5,8 @@ module conservation_of_momentum_main
 
   use mpi_basic, only: par
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use UPSY_main, only: UPSY
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
@@ -48,7 +49,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(*,"(A)") '   Initialising ' // &
-      colour_string( trim( C%choice_stress_balance_approximation),'light blue') // ' solver...'
+      UPSY%stru%colour_string( trim( C%choice_stress_balance_approximation),'light blue') // ' solver...'
 
     select case (C%choice_stress_balance_approximation)
       case default

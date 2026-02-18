@@ -3,10 +3,11 @@ module ct_discretisation_mapping_derivatives_graph
   ! Test the mesh matrix operators for mapping and derivatives
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
+  use UPSY_main, only: UPSY
   use precisions, only: dp
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, &
-    colour_string, warning, strrep
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use string_module, only: strrep
   use mpi_basic, only: par, sync
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph
@@ -124,7 +125,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '      Running mapping/derivative tests on graphs from mesh ', &
-      colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
+      UPSY%stru%colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
       len_trim( test_mesh_filename))),'light blue'), '...'
 
     ! Set up the mesh from the file (includes calculating secondary geometry data and matrix operators)
@@ -182,7 +183,7 @@ contains
       len_trim( graph_name_disp))
 
     if (par%primary) write(0,*) '       Testing 2nd-order operators on the regular nodes of graph ', &
-      colour_string( trim( graph_name_disp),'light blue'), '...'
+      UPSY%stru%colour_string( trim( graph_name_disp),'light blue'), '...'
 
     call calc_graph_matrix_operators_2nd_order( graph, M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2)
 
@@ -244,7 +245,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '        Running all mapping/derivative tests on function ', &
-      colour_string( trim( function_name),'light blue'), '...'
+      UPSY%stru%colour_string( trim( function_name),'light blue'), '...'
 
     ! Allocate hybrid distributed/shared memory
     call allocate_dist_shared( d_ex       , wd_ex       , graph%pai%n_nih)

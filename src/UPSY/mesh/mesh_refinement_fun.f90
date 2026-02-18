@@ -4,7 +4,7 @@ module mesh_refinement_fun
 
   use precisions, only: dp
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use mesh_refinement_basic, only: refine_mesh_point, refine_mesh_line
 

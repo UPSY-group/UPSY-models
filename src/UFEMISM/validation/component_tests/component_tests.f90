@@ -4,7 +4,7 @@ module component_tests
 
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use model_configuration, only: C
   use ct_basic, only: create_component_tests_output_folder
   use ct_create_test_meshes, only: create_all_test_meshes_and_grids

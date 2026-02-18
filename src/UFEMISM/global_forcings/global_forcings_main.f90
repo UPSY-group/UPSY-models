@@ -8,7 +8,7 @@ MODULE global_forcings_main
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string, warning, insert_val_into_string_int,insert_val_into_string_dp
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -91,7 +91,7 @@ CONTAINS
 
   END SUBROUTINE update_global_forcings
 
-  
+
   SUBROUTINE initialise_sealevel_record( forcing, time)
     ! Read the NetCDF file containing the prescribed sea-level curve data.
 
@@ -139,14 +139,14 @@ CONTAINS
 
     ! Add routine to path
     CALL init_routine( routine_name)
-    
+
     ! Check if the requested time is enveloped by the two timeframes;
     ! if not, read the two relevant timeframes from the NetCDF file
     IF (time < forcing%sl_t0 .OR. time > forcing%sl_t1) THEN
       !IF (par%primary)  WRITE(0,*) '   Model time is out of the current sea level timeframes. Updating timeframes...'
       call update_timeframes_from_record(forcing%sea_level_time, forcing%sea_level_record, forcing%sl_t0, forcing%sl_t1, forcing%sl_at_t0, forcing%sl_at_t1, time)
     END IF
-    
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -176,7 +176,7 @@ CONTAINS
     do vi = mesh%vi1, mesh%vi2
       ice%SL( vi) = computed_sea_level
     end do
-    
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -187,7 +187,7 @@ CONTAINS
 
     ! NOTE: assumes time is listed in yr BP (so LGM would be -21000)
     implicit none
-    
+
     ! In/output variables:
 !    REAL(dp),                            INTENT(IN)    :: time
     type(type_global_forcing),         intent(inout)   :: forcing
@@ -206,7 +206,7 @@ CONTAINS
     else
       call crash('should only be called when choice_matrix_forcing = "CO2_direct"!')
     end if
-    
+
     if (par%primary)  write(*,"(A)") ' Initialising CO2 record '
 
     ! Read CO2 record (time and values) from specified text file
@@ -223,7 +223,7 @@ CONTAINS
       !print *, "value of forcing%CO2_time(last), ", forcing%CO2_time(CO2_record_length)
          call warning(' Model time will reach beyond end of CO2 record; constant extrapolation will be used in that case!')
       end if
-    
+
      !Set the value for the current (starting) model time
     call update_CO2_at_model_time( forcing, C%start_time_of_run)
 

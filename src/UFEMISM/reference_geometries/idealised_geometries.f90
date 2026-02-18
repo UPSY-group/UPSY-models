@@ -1,7 +1,7 @@
 module idealised_geometries
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: crash
+  use call_stack_and_comp_time_tracking, only: crash
   use model_configuration, only: C
   use ice_geometry_basics, only: ice_surface_elevation
   use parameters, only: pi

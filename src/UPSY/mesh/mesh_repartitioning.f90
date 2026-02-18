@@ -2,7 +2,7 @@ module mesh_repartitioning
 
   use precisions, only: dp
   use mesh_types, only: type_mesh
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, warning, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use mpi_basic, only: par
   use mesh_memory, only: allocate_mesh_primary
   use mesh_secondary, only: calc_all_secondary_mesh_data

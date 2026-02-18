@@ -4,7 +4,7 @@ module mesh_dummy_meshes
 
   use precisions, only: dp
   use mesh_types, only: type_mesh
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_utilities, only: update_triangle_circumcenter
 
   implicit none

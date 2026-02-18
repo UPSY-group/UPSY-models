@@ -2,7 +2,7 @@ module halo_exchange_mod
 
   use assertions_basic
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mpi_basic, only: par, sync
   use mpi_f08, only: MPI_ISEND, MPI_IRECV, MPI_INTEGER, MPI_REQUEST, MPI_WAITALL, MPI_STATUSES_IGNORE, &
     MPI_WAIT, MPI_STATUS_IGNORE, MPI_DOUBLE_PRECISION, MPI_DOUBLE_COMPLEX, MPI_LOGICAL

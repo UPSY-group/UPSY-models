@@ -3,7 +3,7 @@ module netcdf_determine_indexing
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_basic
   use netcdf, only: NF90_MAX_VAR_DIMS
 

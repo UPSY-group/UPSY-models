@@ -84,7 +84,7 @@ subroutine smooth_Gaussian_grid_2D( grid, d_grid_vec_partial, r)
   end if
 
   ! Distributed smoothed data back from the primary
-  call distribute_gridded_data_from_primary( grid, d_grid_tot, d_grid_vec_partial)
+  call distribute_gridded_data_from_primary( grid, d_grid_vec_partial, d_grid_tot)
 
 end subroutine smooth_Gaussian_grid_2D
 
@@ -152,7 +152,7 @@ subroutine smooth_Gaussian_grid_3D( grid, d_grid_vec_partial, r)
   end if
 
   ! Distributed smoothed data back from the primary
-  call distribute_gridded_data_from_primary( grid, d_grid_tot, d_grid_vec_partial)
+  call distribute_gridded_data_from_primary( grid, d_grid_vec_partial, d_grid_tot)
 
 end subroutine smooth_Gaussian_grid_3D
 

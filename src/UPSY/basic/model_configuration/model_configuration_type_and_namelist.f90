@@ -17,7 +17,7 @@ module model_configuration_type_and_namelist
   ! overwritten in the end.
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration_utilities, only: check_config_file_validity
 
   implicit none
@@ -659,6 +659,15 @@ module model_configuration_type_and_namelist
     real(dp)            :: precip_CC_correction_GRL_config              = 1.068_dp                        !
     real(dp)            :: precip_CC_correction_ANT_config              = 1.068_dp                        !
 
+    ! == Climate - snapshot plus a transient deltaT
+    character(len=1024) :: filename_climate_snapshot_trans_dT_NAM_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_EAS_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_GRL_config = ''
+    character(len=1024) :: filename_climate_snapshot_trans_dT_ANT_config = ''
+    character(len=1024) :: filename_atmosphere_dT_NAM_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_EAS_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_GRL_config             = ''
+    character(len=1024) :: filename_atmosphere_dT_ANT_config             = ''
 
     ! == Climate - Insolation
     character(len=1024) :: choice_insolation_forcing_config             = 'none'                           ! 'none', 'static' or 'realistic'
@@ -722,6 +731,12 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_linear_deep_temperature_config         = -2.3_dp                          ! [degC] Deep ocean temperature when using 'LINEAR' forcing
     real(dp)            :: ocean_linear_deep_salinity_config            = 34.8_dp                          ! [psu] Deep ocean salinity when using 'LINEAR' forcing
     real(dp)            :: ocean_linear_reference_depth_config          = 2000.0_dp                        ! [m] Depth where deep values are prescribed
+    real(dp)            :: ocean_lin_therm_surf_salinity_config         = 34.0_dp                          ! [psu] Surface salinity when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_lin_therm_deep_salinity_config         = 34.7_dp                          ! [psu] Deep salinity when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_lin_therm_surf_temperature_config      = -1.0_dp                          ! [degC] Surface temperature when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_lin_therm_deep_temperature_config      = 1.2_dp                           ! [degC] Deep temperature when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_lin_therm_thermocline_top_config       = 200.0_dp                         ! [m] Top of thermocline depth when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_lin_therm_thermocline_bottom_config    = 600.0_dp                         ! [m] Bottom of thermocline depth when using 'LINEAR_THERMOCLINE'
 
     ! Choice of realistic ocean model
     character(len=1024) :: choice_ocean_model_realistic_config          = ''
@@ -1006,6 +1021,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: laddie_SGD_flux_config                       = 50._dp                           ! [m^3 s^-1] Total subglacial discharge flux
     character(len=1024) :: filename_laddie_mask_SGD_config              = ''                               ! Gridded file containing the subglacial discharge mask
     real(dp)            :: start_time_of_applying_SGD_config            = -9E9_dp                          ! [yr] Start time of applying SGD when choice_laddie_SGD_config is 'idealised' or 'read_from_file'
+    character(len=1024) :: transects_SGD_config                         = ''                               ! List of transects to use for applying SGD. Format: [file:file_path1,F=10 || file:file_path2,F=20]
+    character(len=1024) :: distribute_SGD_config                        = 'single_cell'                    ! How to apply SGD from transect; single cell ('single_cell'), or distribute over 2 neighbours ('distribute_2neighbours')
 
   ! == Lateral mass balance
   ! =======================
@@ -1111,6 +1128,7 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output_config               = .true.                          !     Whether or not NetCDF output files should be created at all
+    logical             :: do_create_ismip_output_config                = .false.                          !     Whether or not ISMIP-specific output files should be created at all
     CHARACTER(LEN=1024) :: output_precision_config                      = 'double'                        !     Precision of floating-point output fields ('single' [32-bit], 'double' [64-bit])
     logical             :: do_compress_output_config                    = .false.                         !     Whether or not to use the NetCDF 'shuffle' and 'deflate' options to (losslessly) compress output
     real(dp)            :: dt_output_config                             = 1000._dp                        !     Time step for writing output
@@ -1828,6 +1846,16 @@ module model_configuration_type_and_namelist
     real(dp)            :: precip_CC_correction_GRL
     real(dp)            :: precip_CC_correction_ANT
 
+    ! == Climate - snapshot plus a transient deltaT
+    character(len=1024) :: filename_climate_snapshot_trans_dT_NAM
+    character(len=1024) :: filename_climate_snapshot_trans_dT_EAS
+    character(len=1024) :: filename_climate_snapshot_trans_dT_GRL
+    character(len=1024) :: filename_climate_snapshot_trans_dT_ANT
+    character(len=1024) :: filename_atmosphere_dT_NAM
+    character(len=1024) :: filename_atmosphere_dT_EAS
+    character(len=1024) :: filename_atmosphere_dT_GRL
+    character(len=1024) :: filename_atmosphere_dT_ANT
+
 
     ! == Climate - Insolation
     character(len=1024) :: choice_insolation_forcing
@@ -1890,6 +1918,12 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_linear_deep_temperature
     real(dp)            :: ocean_linear_deep_salinity
     real(dp)            :: ocean_linear_reference_depth
+    real(dp)            :: ocean_lin_therm_surf_salinity
+    real(dp)            :: ocean_lin_therm_deep_salinity
+    real(dp)            :: ocean_lin_therm_surf_temperature
+    real(dp)            :: ocean_lin_therm_deep_temperature
+    real(dp)            :: ocean_lin_therm_thermocline_top
+    real(dp)            :: ocean_lin_therm_thermocline_bottom
 
     ! Choice of realistic ocean model
     character(len=1024) :: choice_ocean_model_realistic
@@ -2175,6 +2209,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: laddie_SGD_flux
     character(len=1024) :: filename_laddie_mask_SGD
     real(dp)            :: start_time_of_applying_SGD
+    character(len=1024) :: transects_SGD
+    character(len=1024) :: distribute_SGD
 
   ! == Lateral mass balance
   ! =======================
@@ -2275,6 +2311,7 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output
+    logical             :: do_create_ismip_output
     CHARACTER(LEN=1024) :: output_precision
     logical             :: do_compress_output
     real(dp)            :: dt_output
@@ -2805,6 +2842,14 @@ contains
       precip_CC_correction_EAS_config                             , &
       precip_CC_correction_GRL_config                             , &
       precip_CC_correction_ANT_config                             , &
+      filename_climate_snapshot_trans_dT_NAM_config               , &
+      filename_climate_snapshot_trans_dT_EAS_config               , &
+      filename_climate_snapshot_trans_dT_GRL_config               , &
+      filename_climate_snapshot_trans_dT_ANT_config               , &
+      filename_atmosphere_dT_NAM_config                           , &
+      filename_atmosphere_dT_EAS_config                           , &
+      filename_atmosphere_dT_GRL_config                           , &
+      filename_atmosphere_dT_ANT_config                           , &
       choice_insolation_forcing_config                            , &
       filename_insolation_config                                  , &
       static_insolation_time_config                               , &
@@ -2841,6 +2886,12 @@ contains
       ocean_linear_deep_temperature_config                        , &
       ocean_linear_deep_salinity_config                           , &
       ocean_linear_reference_depth_config                         , &
+      ocean_lin_therm_surf_salinity_config                        , &
+      ocean_lin_therm_deep_salinity_config                        , &
+      ocean_lin_therm_surf_temperature_config                     , &
+      ocean_lin_therm_deep_temperature_config                     , &
+      ocean_lin_therm_thermocline_top_config                      , &
+      ocean_lin_therm_thermocline_bottom_config                   , &
       choice_ocean_model_realistic_config                         , &
       filename_ocean_snapshot_NAM_config                          , &
       filename_ocean_snapshot_EAS_config                          , &
@@ -3010,6 +3061,8 @@ contains
       laddie_SGD_flux_config                                      , &
       filename_laddie_mask_SGD_config                             , &
       start_time_of_applying_SGD_config                           , &
+      transects_SGD_config                                        , &
+      distribute_SGD_config                                       , &
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
       dt_LMB_config                                               , &
@@ -3070,6 +3123,7 @@ contains
       tractrackpart_write_raw_output_config                       , &
       tractrackpart_dt_raw_output_config                          , &
       do_create_netcdf_output_config                              , &
+      do_create_ismip_output_config                               , &
       output_precision_config                                     , &
       do_compress_output_config                                   , &
       dt_output_config                                            , &
@@ -3821,6 +3875,16 @@ contains
     C%precip_CC_correction_GRL                               = precip_CC_correction_GRL_config
     C%precip_CC_correction_ANT                               = precip_CC_correction_ANT_config
 
+    ! == Climate - snapshot plus a transient deltaT
+    c%filename_climate_snapshot_trans_dT_NAM                 = filename_climate_snapshot_trans_dT_NAM_config
+    c%filename_climate_snapshot_trans_dT_EAS                 = filename_climate_snapshot_trans_dT_EAS_config
+    c%filename_climate_snapshot_trans_dT_GRL                 = filename_climate_snapshot_trans_dT_GRL_config
+    c%filename_climate_snapshot_trans_dT_ANT                 = filename_climate_snapshot_trans_dT_ANT_config
+    C%filename_atmosphere_dT_NAM                             = filename_atmosphere_dT_NAM_config
+    C%filename_atmosphere_dT_EAS                             = filename_atmosphere_dT_EAS_config
+    C%filename_atmosphere_dT_GRL                             = filename_atmosphere_dT_GRL_config
+    C%filename_atmosphere_dT_ANT                             = filename_atmosphere_dT_ANT_config
+
     C%choice_insolation_forcing                              = choice_insolation_forcing_config
     C%filename_insolation                                    = filename_insolation_config
     C%static_insolation_time                                 = static_insolation_time_config
@@ -3880,6 +3944,12 @@ contains
     C%ocean_linear_deep_temperature                          = ocean_linear_deep_temperature_config
     C%ocean_linear_deep_salinity                             = ocean_linear_deep_salinity_config
     C%ocean_linear_reference_depth                           = ocean_linear_reference_depth_config
+    C%ocean_lin_therm_surf_salinity                          = ocean_lin_therm_surf_salinity_config
+    C%ocean_lin_therm_deep_salinity                          = ocean_lin_therm_deep_salinity_config
+    C%ocean_lin_therm_surf_temperature                       = ocean_lin_therm_surf_temperature_config
+    C%ocean_lin_therm_deep_temperature                       = ocean_lin_therm_deep_temperature_config
+    C%ocean_lin_therm_thermocline_top                        = ocean_lin_therm_thermocline_top_config
+    C%ocean_lin_therm_thermocline_bottom                     = ocean_lin_therm_thermocline_bottom_config
 
     ! Choice of realistic ocean model
     C%choice_ocean_model_realistic                           = choice_ocean_model_realistic_config
@@ -4163,6 +4233,8 @@ contains
     C%laddie_SGD_flux                                        = laddie_SGD_flux_config
     C%filename_laddie_mask_SGD                               = filename_laddie_mask_SGD_config
     C%start_time_of_applying_SGD                             = start_time_of_applying_SGD_config
+    C%transects_SGD                                          = transects_SGD_config
+    C%distribute_SGD                                         = distribute_SGD_config
 
     ! == Lateral mass balance
     ! =======================
@@ -4263,6 +4335,7 @@ contains
 
     ! Basic settings
     C%do_create_netcdf_output                                = do_create_netcdf_output_config
+    C%do_create_ismip_output                                 = do_create_ismip_output_config
     C%output_precision                                       = output_precision_config
     C%do_compress_output                                     = do_compress_output_config
     C%dt_output                                              = dt_output_config

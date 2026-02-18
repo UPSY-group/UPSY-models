@@ -1,9 +1,10 @@
 module ocean_snapshot_plus_anomalies
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use parameters, only: NaN
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ocean_model_types, only: type_ocean_model, type_ocean_model_snapshot_plus_anomalies
@@ -59,7 +60,7 @@ contains
       ocean%snapshot_plus_anomalies%S_baseline + &
       ocean%snapshot_plus_anomalies%S_anomaly
 
-    ! Copy to SMB model
+    ! Copy to main ocean model
     ocean%T = ocean%snapshot_plus_anomalies%T
     ocean%S = ocean%snapshot_plus_anomalies%S
 

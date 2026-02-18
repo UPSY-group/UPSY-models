@@ -2,7 +2,7 @@ module reallocate_dist_shared_mod
 
   use precisions, only: dp
   use mpi_basic, only: par, sync_node
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use, intrinsic :: iso_c_binding, only: c_ptr, c_f_pointer
   use allocate_dist_shared_mod, only: allocate_dist_shared
   use deallocate_dist_shared_mod, only: deallocate_dist_shared

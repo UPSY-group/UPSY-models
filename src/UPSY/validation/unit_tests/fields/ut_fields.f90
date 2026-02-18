@@ -1,7 +1,10 @@
 module ut_fields
 
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use ut_fields_create_field, only: test_create_field
+  use ut_fields_io, only: test_io
+  use ut_fields_reallocate, only: test_reallocate_field
+  use ut_fields_remap, only: test_remap_field
 
   implicit none
 
@@ -29,6 +32,9 @@ contains
 
     ! Run all unit tests
     call test_create_field( test_name)
+    call test_io( test_name)
+    call test_reallocate_field( test_name)
+    call test_remap_field( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

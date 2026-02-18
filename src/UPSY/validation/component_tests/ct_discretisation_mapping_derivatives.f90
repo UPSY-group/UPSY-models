@@ -3,9 +3,10 @@ module ct_discretisation_mapping_derivatives
   ! Test the mesh matrix operators for mapping and derivatives
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
+  use UPSY_main, only: UPSY
   use precisions, only: dp
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mpi_basic, only: par, sync
   use mesh_types, only: type_mesh
   use netcdf_io_main
@@ -117,7 +118,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '      Running mapping/derivative tests on mesh ', &
-      colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
+      UPSY%stru%colour_string(trim(test_mesh_filename( index( test_mesh_filename,'/',back=.true.)+1:&
       len_trim( test_mesh_filename))),'light blue'), '...'
 
     ! Set up the mesh from the file (includes calculating secondary geometry data and matrix operators)
@@ -176,7 +177,7 @@ contains
     call init_routine( routine_name)
 
     if (par%primary) write(0,*) '        Running all mapping/derivative tests on function ', &
-      colour_string(trim(function_name),'light blue'), '...'
+      UPSY%stru%colour_string(trim(function_name),'light blue'), '...'
 
     ! Calculate exact solutions
     call run_all_map_deriv_tests_on_mesh_with_function_calc_ex( mesh, test_function_ptr, &

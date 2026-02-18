@@ -5,7 +5,7 @@ module climate_matrix
 
   use precisions                                             , only: dp
   use mpi_basic                                              , only: par, sync
-  use control_resources_and_error_messaging                  , only: crash, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking                  , only: crash, init_routine, finalise_routine
   use model_configuration                                    , only: C
   use parameters
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER
@@ -14,13 +14,13 @@ module climate_matrix
   use grid_types                                             , only: type_grid
   use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
   use global_forcing_types                                   , only: type_global_forcing
-  use SMB_model_types, only: type_SMB_model
-  use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_snapshot
+  use SMB_model, only: atype_SMB_model
+  use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_insolation
   use reallocate_mod                                         , only: reallocate_bounds
   use netcdf_io_main
   use mesh_data_smoothing, only: smooth_Gaussian
-  use SMB_IMAU_ITM, only: run_SMB_model_IMAUITM, initialise_SMB_model_IMAUITM
-  use climate_matrix_utilities, only: allocate_climate_snapshot, read_climate_snapshot, adapt_precip_CC, adapt_precip_Roe, get_insolation_at_time
+  use climate_model_utilities                                , only: allocate_climate_snapshot, read_climate_snapshot, adapt_precip_CC, adapt_precip_Roe, get_insolation_at_time
   use assertions_basic, only: assert
 
  implicit none
@@ -45,7 +45,7 @@ contains
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
     type(type_ice_model),                intent(in)    :: ice
-    type(type_SMB_model),                intent(in)    :: SMB
+    class(atype_SMB_model),              intent(in)    :: SMB
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
     real(dp),                            intent(in)    :: time
@@ -68,7 +68,12 @@ contains
     !CALL update_CO2_at_model_time( time, forcing)
 
     ! Use the (CO2 + absorbed insolation)-based interpolation scheme for temperature
-    call run_climate_model_matrix_temperature( mesh, grid, ice, SMB, climate, region_name, forcing)
+    select type (IMAU_ITM => SMB)
+    class default
+      call crash('climate matrix can only be run with IMAU-ITM as the SMB model')
+    class is (type_SMB_model_IMAU_ITM)
+      call run_climate_model_matrix_temperature( mesh, grid, ice, IMAU_ITM, climate, region_name, forcing)
+    end select
 
     ! Use the (CO2 + ice-sheet geometry)-based interpolation scheme for precipitation
     call run_climate_model_matrix_precipitation( mesh, grid, ice, climate, region_name, forcing)
@@ -92,14 +97,14 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_climate_model_matrix
-  subroutine run_climate_model_matrix_temperature( mesh, grid, ice, SMB, climate, region_name, forcing)
+  subroutine run_climate_model_matrix_temperature( mesh, grid, ice, IMAU_ITM, climate, region_name, forcing)
     ! The (CO2 + absorbed insolation)-based matrix interpolation for temperature, from Berends et al. (2018)
 
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
     type(type_ice_model),                intent(in)    :: ice
-    type(type_SMB_model),                intent(in)    :: SMB
+    type(type_SMB_model_IMAU_ITM),       intent(in)    :: IMAU_ITM
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
     type(type_global_forcing),           intent(in)    :: forcing
@@ -121,9 +126,9 @@ contains
     allocate( T_ref_GCM(    mesh%vi1:mesh%vi2, 12))
     allocate( Hs_GCM(       mesh%vi1:mesh%vi2))
     allocate( lambda_GCM(   mesh%vi1:mesh%vi2))
-    
+
     !IF (par%primary)  WRITE(*,"(A)") '   Running climate matrix temperature model...'
-    
+
     ! Find CO2 interpolation weight (use either prescribed or modelled CO2)
     ! =====================================================================
 
@@ -143,7 +148,7 @@ contains
 
     end select
     call sync
-    
+
     ! If CO2 ~= warm snap -> weight is 1. If ~= cold snap -> weight is 0.
     ! Otherwise interpolate. Berends et al., 2018 - Eq. 1
     w_CO2 = MAX( -w_cutoff, MIN( 1._dp + w_cutoff, (CO2 - C%climate_matrix_low_CO2_level) / &
@@ -159,8 +164,8 @@ contains
     do vi = mesh%vi1, mesh%vi2
     do m = 1, 12
       ! Calculate modelled absorbed insolation. Berends et al., 2018 - Eq. 2
-      climate%matrix%I_abs( vi) = climate%matrix%I_abs( vi) + & 
-                                  climate%Q_TOA( vi,m) * (1._dp - SMB%IMAUITM%Albedo( vi, m))  
+      climate%matrix%I_abs( vi) = climate%matrix%I_abs( vi) + &
+                                  climate%Q_TOA( vi,m) * (1._dp - IMAU_ITM%Albedo( vi, m))
     end do
     end do
     call sync
@@ -238,7 +243,7 @@ contains
 
     end do
     call sync
-    
+
     w_ins_av      = MAX( -w_cutoff, MIN( 1._dp + w_cutoff, (SUM( climate%matrix%I_abs         )      - SUM( climate%matrix%GCM_cold%I_abs)     ) / &
                                                            (SUM( climate%matrix%GCM_warm%I_abs)      - SUM( climate%matrix%GCM_cold%I_abs)     ) ))
     ! Smooth the weighting field
@@ -277,7 +282,7 @@ contains
 
     ! Finalise routine path
     call finalise_routine( routine_name)
-    
+
   end subroutine weighting_fields_matrix_temperature
   subroutine run_climate_model_matrix_precipitation( mesh, grid, ice, climate, region_name, forcing)
     ! The (CO2 + ice geometry)-based matrix interpolation for precipitation, from Berends et al. (2018)
@@ -329,14 +334,14 @@ contains
 
     do vi = mesh%vi1, mesh%vi2
 
-      T_ref_GCM( vi,:) =      (w_warm( vi) *     climate%matrix%GCM_warm%T2m(    vi,: )) + & 
+      T_ref_GCM( vi,:) =      (w_warm( vi) *     climate%matrix%GCM_warm%T2m(    vi,: )) + &
                               (w_cold( vi) *     climate%matrix%GCM_cold%T2m(    vi,: ))   ! Berends et al., 2018 - Eq. 6
-                              
+
       P_ref_GCM( vi,:) = EXP( (w_warm( vi) * LOG(climate%matrix%GCM_warm%Precip( vi,:))) + &
                               (w_cold( vi) * LOG(climate%matrix%GCM_cold%Precip( vi,:)))) ! Berends et al., 2018 - Eq. 7
-                              
+
       Hs_GCM(    vi  ) =      (w_warm( vi) *     climate%matrix%GCM_warm%Hs(     vi   )) + &
-                              (w_cold( vi) *     climate%matrix%GCM_cold%Hs(     vi   ))   ! Berends et al., 2018 - Eq. 8                  
+                              (w_cold( vi) *     climate%matrix%GCM_cold%Hs(     vi   ))   ! Berends et al., 2018 - Eq. 8
     end do
 
     ! Downscale precipitation from the coarse-resolution reference
@@ -402,8 +407,8 @@ contains
 
       end do
 
-      w_cold( mesh%vi1:mesh%vi2) = w_cold( mesh%vi1:mesh%vi2) * w_tot 
-      
+      w_cold( mesh%vi1:mesh%vi2) = w_cold( mesh%vi1:mesh%vi2) * w_tot
+
       ! Smooth the weighting field
       call smooth_Gaussian( mesh, grid, C%output_dir, w_cold, 200000._dp)
 
@@ -412,13 +417,13 @@ contains
     case ('GRL' , 'ANT')
       ! Use only total ice volume and CO2; Berends et al., 2018, Eq. 13
 
-      w_cold( mesh%vi1:mesh%vi2) = w_tot 
+      w_cold( mesh%vi1:mesh%vi2) = w_tot
       w_warm( mesh%vi1:mesh%vi2) = 1._dp - w_cold( mesh%vi1:mesh%vi2)
 
     end select
 
     if (C%climate_matrix_switch_glacial_index_precip) then ! If a glacial index is used for the precipitation forcing, it will only depend on CO2
-      w_tot = 1._dp - (MAX( -w_cutoff, MIN( 1._dp + w_cutoff, (forcing%CO2_obs - C%climate_matrix_low_CO2_level) & 
+      w_tot = 1._dp - (MAX( -w_cutoff, MIN( 1._dp + w_cutoff, (forcing%CO2_obs - C%climate_matrix_low_CO2_level) &
               / (C%climate_matrix_high_CO2_level - C%climate_matrix_low_CO2_level) )) )
       w_cold( mesh%vi1:mesh%vi2) = w_tot
       w_warm( mesh%vi1:mesh%vi2) = 1._dp - w_cold( mesh%vi1:mesh%vi2)
@@ -437,7 +442,7 @@ contains
     type(type_ice_model),                intent(in)    :: ice
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
-    type(type_global_forcing),           intent(in)    :: forcing    
+    type(type_global_forcing),           intent(in)    :: forcing
 
     ! Local variables:
     character(LEN=256), parameter                      :: routine_name = 'initialise_climate_matrix'
@@ -461,7 +466,7 @@ contains
     call read_climate_snapshot( C%climate_matrix_filename_climate_snapshot_PI  , mesh, climate%matrix%GCM_PI  )
     call read_climate_snapshot( C%climate_matrix_filename_climate_snapshot_warm, mesh, climate%matrix%GCM_warm)
     call read_climate_snapshot( C%climate_matrix_filename_climate_snapshot_cold, mesh, climate%matrix%GCM_cold)
-    
+
     ! Get the orbit time
     climate%matrix%GCM_PI%orbit_time   = 0._dp
     climate%matrix%GCM_warm%orbit_time = C%climate_matrix_warm_orbit_time
@@ -511,7 +516,7 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_climate_matrix
-  
+
   subroutine initialise_matrix_calc_GCM_bias( mesh, GCM_PI, PD_obs, GCM_bias_T2m, GCM_bias_Precip)
     ! Calculate the GCM bias in temperature and precipitation
     !
@@ -520,7 +525,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                            intent(in)    :: mesh
-    type(type_climate_model_snapshot),          intent(in)    :: GCM_PI, PD_obs 
+    type(type_climate_model_snapshot),          intent(in)    :: GCM_PI, PD_obs
     real(dp), dimension(mesh%vi1:mesh%vi2, 12), intent(out)   :: GCM_bias_T2m
     real(dp), dimension(mesh%vi1:mesh%vi2, 12), intent(out)   :: GCM_bias_Precip
 
@@ -744,9 +749,10 @@ contains
     ! Local variables:
     character(LEN=256), parameter                       :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
     integer                                             :: vi,m,i
-    type(type_ice_model)                                :: ice_dummy
-    type(type_climate_model)                            :: climate_dummy
-    type(type_SMB_model)                                :: SMB_dummy
+    type(type_ice_model)      , target                  :: ice_dummy
+    type(type_climate_model)  , target                  :: climate_dummy
+    type(type_grid)           , target                  :: grid_dummy
+    type(type_SMB_model_IMAU_ITM)                       :: SMB_dummy
     character(LEN=256)                                  :: choice_SMB_IMAUITM_init_firn_dummy
 
     ! Add routine to path
@@ -787,10 +793,10 @@ contains
 
     ! Fill in masks for the SMB model
     do vi = mesh%vi1, mesh%vi2
-    
+
    ! In IMAU-ICE SMB it uses region%mask_noice in UFE2 is ice%mask_noice, I will keep the masks from above for ice_dummy
    ! and make ice_dummy%mask_noice = ice%mask_noice to run the SMB using the dummy, following IMAU-ICE code..
-      ice_dummy%mask_noice( vi) = ice%mask_noice( vi) 
+      ice_dummy%mask_noice( vi) = ice%mask_noice( vi)
 
       if (snapshot%Hs( vi) == MINVAL(snapshot%Hs)) then
         ice_dummy%mask_icefree_ocean( vi) = .true.
@@ -813,9 +819,8 @@ contains
 
     ! SMB
     ! ===
-    call initialise_SMB_model_IMAUITM( mesh, ice, SMB_dummy%IMAUITM, region_name)
-    allocate( SMB_dummy%SMB             (mesh%vi1:mesh%vi2))
-    SMB_dummy%SMB = 0._dp
+    call SMB_dummy%allocate  ( SMB_dummy%ct_allocate( 'SMB_IMAU_ITM_dummy', region_name, mesh))
+    call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy))
 
     ! Initialisation choice
     if     (region_name == 'NAM') then
@@ -837,16 +842,19 @@ contains
     ! Run the SMB model for 10 years for this particular climate
     ! (experimentally determined to be long enough to converge)
     do i = 1, 10
-      call run_SMB_model_IMAUITM( mesh, ice_dummy, SMB_dummy, climate_dummy)
+      call SMB_dummy%run( SMB_dummy%ct_run( C%start_time_of_run, ice_dummy, climate_dummy, grid_dummy))
     end do
 
     ! Calculate yearly total absorbed insolation
     snapshot%I_abs( mesh%vi1:mesh%vi2) = 0._dp
     do vi = mesh%vi1, mesh%vi2
     do m = 1, 12
-      snapshot%I_abs( vi) = snapshot%I_abs( vi) + snapshot%Q_TOA( vi,m) * (1._dp - SMB_dummy%IMAUITM%Albedo( vi,m))
+      snapshot%I_abs( vi) = snapshot%I_abs( vi) + snapshot%Q_TOA( vi,m) * (1._dp - SMB_dummy%Albedo( vi,m))
     end do
     end do
+
+    ! Clean up after yourself
+    call SMB_dummy%deallocate
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -870,21 +878,21 @@ contains
     call init_routine( routine_name)
 
     if (par%primary)  WRITE(*,"(A)") '      Remapping climate matrix model data to the new mesh...'
-  
+
     ! reallocate main variables of GCM snapshots
     call remap_climate_matrix_snapshot( mesh_new, climate%matrix%PD_obs)
     call remap_climate_matrix_snapshot( mesh_new, climate%matrix%GCM_PI)
     call remap_climate_matrix_snapshot( mesh_new, climate%matrix%GCM_warm)
     call remap_climate_matrix_snapshot( mesh_new, climate%matrix%GCM_cold)
-    
+
     ! reallocate main variables of climate%snapshot
-    call remap_snapshot( climate%snapshot, mesh_new)
+    call remap_insolation( climate%snapshot, mesh_new)
     call reallocate_bounds( climate%Q_TOA, mesh_new%vi1, mesh_new%vi2,12)
-  
+
     call reallocate_bounds(climate%matrix%I_abs, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(climate%matrix%GCM_bias_T2m, mesh_new%vi1, mesh_new%vi2, 12)
     call reallocate_bounds(climate%matrix%GCM_bias_Precip, mesh_new%vi1, mesh_new%vi2, 12)
-  
+
     ! read the snapshots for the new mesh
     call read_climate_snapshot( C%climate_matrix_filename_PD_obs_climate       , mesh_new, climate%matrix%PD_obs  )
     call read_climate_snapshot( C%climate_matrix_filename_climate_snapshot_PI  , mesh_new, climate%matrix%GCM_PI  )
@@ -957,7 +965,7 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
-  
+
     call reallocate_bounds(snapshot%Precip, mesh_new%vi1, mesh_new%vi2, 12)
     call reallocate_bounds(snapshot%T2m, mesh_new%vi1, mesh_new%vi2, 12)
     call reallocate_bounds(snapshot%Wind_WE, mesh_new%vi1, mesh_new%vi2, 12)

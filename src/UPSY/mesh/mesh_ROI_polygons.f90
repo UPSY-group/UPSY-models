@@ -3,7 +3,7 @@ module mesh_ROI_polygons
   ! Pre-defined regions of interest in Greenland and Antarctica
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
 
   implicit none
 
@@ -1386,7 +1386,7 @@ subroutine calc_polygon_Wilkes_basins( poly)
   poly(179,:) = [8.72E+05_dp, -2.11E+06_dp]
   poly(180,:) = [8.55E+05_dp, -2.12E+06_dp]
 
-  
+
   ! Finalise routine path
   call finalise_routine( routine_name)
 
@@ -1913,7 +1913,7 @@ end subroutine calc_polygon_Institute_basin
 
 subroutine calc_polygon_Antarctic_Peninsula( poly)
   ! Return a polygon enveloping the Antarctic Peninsula Ice Sheet reconstruction
-  ! for the Last Glacial Maximum based on manual analysis of the RAISED consortium data 
+  ! for the Last Glacial Maximum based on manual analysis of the RAISED consortium data
 
   ! In/output variables:
   real(dp), dimension(:,:), allocatable, intent(out) :: poly

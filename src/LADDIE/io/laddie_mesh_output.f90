@@ -195,33 +195,33 @@ contains
       ! Geometry on triangles
       case ('Hs_b')
         call map_a_b_2D( mesh, forcing%Hs, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hs_b', d_partial_b, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hs_b', d_partial_b)
       case ('Hb_b')
         call map_a_b_2D( mesh, forcing%Hb, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hb_b', d_partial_b, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hb_b', d_partial_b)
       case ('Hib_b')
         call map_a_b_2D( mesh, forcing%Hib, d_partial_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hib_b', d_partial_b, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, laddie%output_mesh_filename, ncid, 'Hib_b', d_partial_b)
 
       ! Geometry gradients
       case ('dHs_dx')
         call ddx_a_a_2D( mesh, forcing%Hs, d_partial_a, d_a_is_hybrid = .true., ddx_a_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dx', d_partial_a, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dx', d_partial_a)
       case ('dHs_dy')
         call ddy_a_a_2D( mesh, forcing%Hs, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dy', d_partial_a, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHs_dy', d_partial_a)
       case ('dHb_dx')
         call ddx_a_a_2D( mesh, forcing%Hb, d_partial_a, d_a_is_hybrid = .true., ddx_a_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHb_dx', d_partial_a, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHb_dx', d_partial_a)
       case ('dHb_dy')
         call ddy_a_a_2D( mesh, forcing%Hb, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHb_dy', d_partial_a, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHb_dy', d_partial_a)
       case ('dHib_dx')
         call ddx_a_a_2D( mesh, forcing%Hib, d_partial_a, d_a_is_hybrid = .true., ddx_a_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHib_dx', d_partial_a, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHib_dx', d_partial_a)
       case ('dHib_dy')
         call ddy_a_a_2D( mesh, forcing%Hib, d_partial_a, d_a_is_hybrid = .true., ddy_a_is_hybrid = .true.)
-        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHib_dy', d_partial_a, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_notime( mesh, laddie%output_mesh_filename, ncid, 'dHib_dy', d_partial_a)
 
       ! Ice temperature
       case ('Ti')
@@ -265,7 +265,7 @@ contains
         call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'S_lad', laddie%now%S)
 
       case ('H_lad_b')
-        call write_to_field_multopt_mesh_dp_2D_b( mesh, laddie%output_mesh_filename, ncid, 'H_lad_b', laddie%now%H_b, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( mesh, laddie%output_mesh_filename, ncid, 'H_lad_b', laddie%now%H_b)
 
       ! Useful laddie fields
       case ('drho_amb')

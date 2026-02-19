@@ -28,7 +28,6 @@ jobs:
 
       - name: Install dependencies
         run: | 
-          set -e -o pipefail
           conda create -y -n upsy -f environment.yml -c conda-forge
           conda activate upsy
           # Test commands

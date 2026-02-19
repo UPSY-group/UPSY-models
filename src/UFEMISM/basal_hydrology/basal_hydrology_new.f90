@@ -197,7 +197,7 @@ CONTAINS
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.001_dp)
-    allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  1.0_dp)
+    allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  2.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0069_dp*rho_w/sec_per_year) ! basal melt rate kg m^-2 s^-1 (0.0069 m/yr water equivalent)
@@ -242,7 +242,7 @@ CONTAINS
     allocate(basal_hydro%ice_w_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%N_til(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%tau_c(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%phi(mesh%vi1:mesh%vi2), source = 30.0_dp) !degrees
+    allocate(basal_hydro%phi(mesh%vi1:mesh%vi2), source = 26.565_dp) !degrees
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
@@ -512,7 +512,7 @@ CONTAINS
     ! calculate basal hydro masks
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
-    ! calculate opening C and closing O terms
+    ! calculate opening O and closing C terms
     call calc_opening_rate(mesh, ice, basal_hydro)
     call calc_closing_rate(mesh, ice, basal_hydro)
 
@@ -1159,7 +1159,7 @@ CONTAINS
       ! In the Bueler and Van Pelt 2015 paper Y is defined as W, so we will do that for now too
       basal_hydro%Y( vi) = basal_hydro%W( vi)
       ! Calculate opening rate
-      basal_hydro%O( vi) = c1*sqrt(basal_hydro%ice_u_base( vi)**2_dp + basal_hydro%ice_v_base( vi)**2_dp + basal_hydro%ice_w_base( vi)**2_dp)&
+      basal_hydro%O( vi) = c1*sqrt(basal_hydro%ice_u_base( vi)**2.0_dp + basal_hydro%ice_v_base( vi)**2.0_dp)&
                             *max((basal_hydro%W_r( vi) - basal_hydro%Y( vi)), 0.0_dp)
     end do
 
@@ -1397,7 +1397,7 @@ CONTAINS
     do vi = mesh%vi1, mesh%vi2
       if (ice%mask_gl_gr( vi)) then
         ! For now at least just hard-coded to infinite
-        BC_H = 'zero'
+        BC_H = 'infinite'
 
         select case (BC_H)
         case default
@@ -1437,7 +1437,7 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       if (ice%mask_gl_gr( vi)) then
-        BC_H = 'zero'
+        BC_H = 'infinite'
 
         select case (BC_H)
         case default

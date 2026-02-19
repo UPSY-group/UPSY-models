@@ -28,7 +28,7 @@ jobs:
 
       - name: Install dependencies
         run: | 
-          conda env create -y -n upsy --force environment.yml -c conda-forge
+          conda env create -y -n upsy --file environment.yml
           conda activate upsy
           # Test commands
           upsy-plot-2dfigure --help

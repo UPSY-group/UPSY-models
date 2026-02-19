@@ -19,7 +19,7 @@ jobs:
 
       - name: Install dependencies
         run: | 
-          conda env create -y -n upsy -f environment.yml --channel conda-forge --override-channels
+          conda env create -y -n upsy -f environment.yml
           conda init
           conda activate upsy
           python -m pip install -e . --no-deps --no-build-isolation

@@ -22,7 +22,7 @@ jobs:
   compile_and_cache_LADDIE_dev_MacOS:
     uses: ./.github/workflows/LADDIE_test_suite_compile_and_cache_dev_MacOS.yml
 
-  # Install and cache Python
+  #  Install and cache Python
   # install_and_cache_Python:
   #  uses: ./.github/workflows/LADDIE_test_suite_install_and_cache_Python.yml
 

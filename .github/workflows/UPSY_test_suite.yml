@@ -30,8 +30,8 @@ jobs:
     uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Matlab.yml
 
   # Install and cache Python
-  install_and_cache_Python:
-    uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
+  # install_and_cache_Python:
+  #   uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
 
   # Run the unit tests and analyse the results
   run_unit_tests_dev_MacOS:

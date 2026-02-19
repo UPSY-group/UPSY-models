@@ -15,10 +15,23 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.14"
-          cache: 'pip'
+
+      - name: Set up Conda (Miniforge)
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          miniforge-variant: Miniforge3
+          miniforge-version: latest
+          channels: conda-forge
+          channel-priority: strict
+          auto-update-conda: true
+          use-mamba: false
 
       - name: Install dependencies
         run: | 
-          python -m pip install --upgrade pip
-          pip install -r tools/python/requirements.txt
+          conda env create -y -n upsy --file environment.yml
+          conda init
+          conda activate upsy
+          # Test commands
+          upsy-plot-2dfigure --help
+          upsy-plot-3dfigure --help
 

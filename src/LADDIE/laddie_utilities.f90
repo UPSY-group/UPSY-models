@@ -383,8 +383,9 @@ CONTAINS
 
     ! Forcing
     call allocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh%pai_V%n_nih)
+    call allocate_dist_shared( forcing%Hs                , forcing%wHs                , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh%pai_V%n_nih)
+    call allocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh%pai_Tri%n_nih)
     call allocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , mesh%pai_Tri%n_nih)
@@ -400,6 +401,8 @@ CONTAINS
     call allocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , mesh%pai_V%n_nih, C%nz_ocean)
     call allocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , mesh%pai_Tri%n_nih)
     forcing%Hi                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hi
+    forcing%Hs                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hs
+    forcing%Hb                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hb
     forcing%Hib               ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hib
     forcing%TAF               ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%TAF
     forcing%dHib_dx_b         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih            ) => forcing%dHib_dx_b

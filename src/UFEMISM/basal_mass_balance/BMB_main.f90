@@ -739,6 +739,8 @@ CONTAINS
     call init_routine( routine_name)
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%Hi                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
@@ -781,6 +783,8 @@ CONTAINS
     call calculate_coriolis_parameter( mesh, forcing, lambda_M, phi_M, beta_stereo)
 
     call checksum( forcing%Hi                , 'forcing%Hi'                , mesh%pai_V)
+    call checksum( forcing%Hs                , 'forcing%Hs'                , mesh%pai_V)
+    call checksum( forcing%Hb                , 'forcing%Hb'                , mesh%pai_V)
     call checksum( forcing%Hib               , 'forcing%Hib'               , mesh%pai_V)
     call checksum( forcing%TAF               , 'forcing%TAF'               , mesh%pai_V)
     call checksum( forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         , mesh%pai_Tri)
@@ -818,6 +822,8 @@ CONTAINS
 
     ! Forcing
     call reallocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh_new%pai_V%n_nih)
+    call reallocate_dist_shared( forcing%Hs                , forcing%wHs                , mesh_new%pai_V%n_nih)
+    call reallocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh_new%pai_V%n_nih)
     call reallocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh_new%pai_V%n_nih)
     call reallocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh_new%pai_V%n_nih)
     call reallocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh_new%pai_Tri%n_nih)
@@ -834,6 +840,8 @@ CONTAINS
     call reallocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , mesh_new%pai_V%n_nih, C%nz_ocean)
     call reallocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , mesh_new%pai_Tri%n_nih)
     forcing%Hi                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hi
+    forcing%Hs                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hs
+    forcing%Hb                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hb
     forcing%Hib               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hib
     forcing%TAF               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%TAF
     forcing%dHib_dx_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dx_b

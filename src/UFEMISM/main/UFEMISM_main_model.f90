@@ -1037,7 +1037,7 @@ CONTAINS
         CASE ('')
          ! No region requested: don't need to do anything
          EXIT
-        CASE ('PineIsland','Thwaites','Amery','RiiserLarsen','SipleCoast','LarsenC', &
+        CASE ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast','LarsenC', &
               'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &
               'Antarctic_Peninsula', 'Institute', &                                          ! Antarctica
               'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                           ! Greenland
@@ -1102,6 +1102,8 @@ CONTAINS
               CALL calc_polygon_Amery_ice_shelf( poly_ROI)
             CASE ('RiiserLarsen')
               CALL calc_polygon_Riiser_Larsen_ice_shelf( poly_ROI)
+            CASE ('RiiL_IQ2300')
+              CALL calc_polygon_Riiser_Larsen_IQ2300( poly_ROI)
             CASE ('SipleCoast')
               CALL calc_polygon_Siple_Coast( poly_ROI)
             CASE ('LarsenC')

@@ -1,22 +1,21 @@
 import os
 import glob
 import xarray as xr
-from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
+from matplotlib.collections import PolyCollection
 
-from colormaps import *
-from utils import *
+from upsy.colormaps import *
+from upsy.utils import *
 
 class Mesh(object):
     """ Properties and functions of a single mesh """
 
-    def __init__(self, Run, mesh_number, file='main_output_ANT'):
+    def __init__(self, Run, mesh_number):
         """ Gather basic info from run """
 
         self.Run = Run
-        self.directory = self.Run.directory
+        self.dir = self.Run.dir
+        self.prefix = self.Run.prefix
         self.mesh_number = mesh_number
-        self.file = file
 
         self.got_voronois = False
         self.got_triangles = False
@@ -25,13 +24,13 @@ class Mesh(object):
         self.close()
 
     def __repr__(self):
-        return f"Mesh('{self.directory}',{self.mesh_number},'{self.file}')"
+        return f"Mesh('{self.dir}',{self.mesh_number},'{self.prefix}')"
 
     def __str__(self):
-        return f"Mesh number {self.mesh_number} of Run '{self.directory}'"
+        return f"Mesh number {self.mesh_number} of Run '{self.dir}'"
 
     def open(self):
-        self.ds = xr.open_dataset(f'{self.directory}/{self.file}_{self.mesh_number:05d}.nc')
+        self.ds = xr.open_dataset(f'{self.dir}/{self.prefix}_{self.mesh_number:05d}.nc')
         self.Ntimes = len(self.ds.time)
     
     def close(self):
@@ -41,14 +40,18 @@ class Mesh(object):
         """ Extract Voronoi cells as patches """
         self.voronois = []
 
-        print(f"Computing {len(self.ds.vi)} voronoi polygons ...")
+        print(f"Computing {len(self.ds.vi)} new voronoi polygons ...")
 
-        for vi in range(0,len(self.ds.vi)):
-            nVVor = self.ds.nVVor[vi].values
-            VVor = self.ds.VVor[:nVVor,vi].values
-            Vor = self.ds.Vor[:,VVor-1].values
-            self.voronois.append(Polygon(Vor.T))
-        
+        nVVor = self.ds.nVVor.values
+        VVor = self.ds.VVor.values
+        Vor = self.ds.Vor.values
+
+        for vi in range(len(nVVor)):
+            v_indices = VVor[:nVVor[vi], vi] -1
+            x = Vor[0, v_indices]
+            y = Vor[1, v_indices]
+            self.voronois.append(np.column_stack((x,y)).tolist())
+
         self.got_voronois = True
 
         return f"Finished computing voronoi polygons"
@@ -57,12 +60,16 @@ class Mesh(object):
         """ Extract triangles as patches """
         self.triangles = []
 
-        print(f"Computing {len(self.ds.ti)} triangle polygons ...")
+        print(f"Computing {len(self.ds.ti)} new triangle polygons ...")
+
+        Tri = self.ds.Tri.values
+        V = self.ds.V.values
 
         for ti in range(0,len(self.ds.ti)):
-            Tri = self.ds.Tri[:,ti].values
-            V = self.ds.V[:,Tri-1].values
-            self.triangles.append(Polygon(V.T))
+            tri_indices = Tri[:, ti] -1
+            x = V[0, tri_indices]
+            y = V[1, tri_indices]
+            self.triangles.append(np.column_stack((x,y)).tolist())
         
         self.got_triangles = True
 
@@ -87,7 +94,7 @@ class Timeframe(object):
         return f"Timeframe({repr(self.Mesh)},{self.t})"
 
     def __str__(self):
-        return f"Timeframe {self.t} of Mesh number {self.mesh_number} of Run '{self.directory}'"
+        return f"Timeframe {self.t} of Mesh number {self.mesh_number} of Run '{self.dir}'"
 
     def get_gl(self):
         """ Extract grounding line """
@@ -140,26 +147,26 @@ class Timeframe(object):
             var = self.get_data(varname)
 
         #Get colormap info
-        cmap,norm = get_cmap(varname)
+        scalarmap = get_cmap(varname)
+
+        # Fill array
+        if varname[:3] == 'BMB':
+            #Reverse values for BMB
+            pcols = scalarmap.to_rgba(-var.values)
+        else:
+            pcols = scalarmap.to_rgba(var.values)
 
         #Check type (voronoi / triangle)
         if 'vi' in var.dims:
             if not self.Mesh.got_voronois:
                 self.Mesh.get_voronois()
-            pcoll = PatchCollection(self.Mesh.voronois,cmap=cmap,norm=norm)
+            pcoll = PolyCollection(self.Mesh.voronois, fc=pcols)
         elif 'ti' in var.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            pcoll = PatchCollection(self.Mesh.triangles,cmap=cmap,norm=norm)
+            pcoll = PolyCollection(self.Mesh.triangles, fc=pcols)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
-
-        # Fill array
-        if varname[:3] == 'BMB':
-            #Reverse values for BMB
-            pcoll.set_array(-var.values)
-        else:
-            pcoll.set_array(var.values)
 
         return pcoll
 

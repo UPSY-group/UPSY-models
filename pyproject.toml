@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "upsy"
+dynamic = ["version"]
+description = "A package for plotting and analysing output of UFEMISM and LADDIE models"
+authors = [
+    { name = "Erwin Lambert", email = "erwin.lambert@knmi.nl"}
+]
+readme = "README.md"
+requires-python = ">=3.12"
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "License :: MIT Licence"
+]
+
+dependencies = [
+    "cartopy",
+    "cmocean",
+    "dask",
+    "geopandas",
+    "matplotlib",
+    "netcdf4",
+    "numpy",
+    "pandas",
+    "pyproj",
+    "pyshp",
+    "scipy",
+    "shapely",
+    "xarray",
+    "tqdm",
+    "ipython",
+    "ipykernel"
+]
+
+[tool.setuptools.packages.find]
+where = ["tools/python"]
+include = ["upsy*"]
+
+[project.scripts]
+upsy-diagnose-run = "upsy.__main__:main"
+upsy-plot-3dfigure = "upsy.figure_3d:main"
+upsy-plot-2dfigure = "upsy.figure:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "upsy.version.__version__"}
+

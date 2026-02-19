@@ -1,26 +1,39 @@
 import os
 import glob
+import argparse
+
 import xarray as xr
-from matplotlib.patches import Polygon
-from matplotlib.collections import PatchCollection
+import matplotlib as mpl
+from matplotlib.collections import PolyCollection
 import matplotlib.gridspec as gridspec
 
-from colormaps import *
-from utils import *
+from upsy.run import Run
+from upsy.mesh import Mesh, Timeframe
+from upsy.colormaps import *
+from upsy.utils import *
 
 class Figure(object):
     """ Figure of subplots of Ufe/Lad output """
 
-    def __init__(self, figsize, directory='../figures/'):
+    def __init__(self,
+        figsize: tuple = (7,5),
+        directory: str = 'figures',
+        orientation: str = 'horizontal',
+        cbar_ratio: int | float = 30,
+        dpi: int = 1200,
+        shrink: list = [0,0,0,0],
+    ):
 
-        self.directory = directory
-
-        self.orientation = 'horizontal'
-
-        self.cbar_ratio = 30
         self.figsize = figsize
+        self.directory = directory
+        self.orientation = orientation
+        self.cbar_ratio = cbar_ratio
+        self.dpi = dpi
+        self.shrink = shrink
 
         self.fields = {}
+
+        assert self.orientation in ['horizontal','vertical'], f'Invalid orientation: {self.orientation}'
 
     def __repr__(self):
         return f"Figure()"
@@ -28,19 +41,9 @@ class Figure(object):
     def __str__(self):
         return f"Figure"
 
-    def set_orientation(self,orientation):
 
-        if orientation in ['horizontal','h']:
-            self.orientation = 'horizontal'
-        elif orientation in ['vertical','v']:
-            self.orientation = 'vertical'
-        else:
-            raise ValueError('Invalid option for orientation')
-
-        return f"Set figure orientation to {self.orientation}"
-
-    def add_field(self, Timeframe, varname, mask=None):
-        field = Field(Timeframe, varname, mask=mask)
+    def add_field(self, tf, varname, mask=None):
+        field = Field(tf, varname, mask=mask)
 
         print(f'Added {varname} with hash {hash(field)}')
 
@@ -67,7 +70,7 @@ class Figure(object):
         print(self.fields.keys())
         return
 
-    def make(self,figname,dxmin=0,dxmax=0,dymin=0,dymax=0, add_gl=True, add_time=False, dpi=450):
+    def make(self,figname, add_gl=True, add_time=False):
 
         fig = plt.figure(figsize=self.figsize,constrained_layout=True)
 
@@ -101,8 +104,8 @@ class Figure(object):
                     field.Timeframe.get_gl()
                 field.ax.plot(field.Timeframe.gl[0,:],field.Timeframe.gl[1,:],c='k',lw=.5)
 
-            field.ax.set_xlim([field.xmin+dxmin,field.xmax-dxmax])
-            field.ax.set_ylim([field.ymin+dymin,field.ymax-dymax])
+            field.ax.set_xlim([field.xmin+self.shrink[0], field.xmax-self.shrink[1]])
+            field.ax.set_ylim([field.ymin+self.shrink[2], field.ymax-self.shrink[3]])
             field.ax.set_aspect(1)
             field.ax.set_xticks([])
             field.ax.set_yticks([])
@@ -111,11 +114,160 @@ class Figure(object):
             fig.suptitle(f'Year {field.Timeframe.time:.0f}')
 
         fullfigname = os.path.join(self.directory,f'{figname}.png')
-        plt.savefig(fullfigname, bbox_inches = 'tight', pad_inches = 0,dpi=dpi)
+        plt.savefig(fullfigname, bbox_inches = 'tight', pad_inches = 0,dpi=self.dpi)
         print(f'Created {figname}')
         plt.close()
 
         return
+
+def make_2dplot(
+    rundir: str,
+    variables: list | str,
+    timeindices: list | int,
+    figsize: str | tuple = (7,5),
+    orientation: str = 'horizontal',
+    cbar_ratio: int | float = 30,
+    directory: str = 'figures',
+    shrink: str | list = [0,0,0,0],
+    dpi: str | int = 450,
+):
+
+    try:
+        figsize = tuple(figsize)
+        shrink = list(shrink)
+        dpi = int(dpi)
+        variables = list(variables)
+        timeindices = list(timeindices)
+        cbar_ratio = float(cbar_ratio)
+    except ValueError:
+        raise argparse.ArgumentTypeError("Invalid input type")
+
+    if (len(variables) > 1 and len(timeindices) > 1):
+        assert len(variables) == len(timeindices), f'Number of variables ({len(variables)}) must be equal to number of timeindices ({len(timeindices)})'
+    elif len(variables) > 1:
+        timeindices = timeindices*len(variables)
+    elif len(timeindices) > 1:
+        variables = variables*len(timeindices)
+
+    os.makedirs(directory,exist_ok=True)
+
+    fig = Figure(
+        figsize=figsize,
+        directory=directory,
+        orientation=orientation,
+        cbar_ratio=cbar_ratio,
+        dpi=dpi,
+        shrink=shrink,
+    )
+
+    run = Run(rundir)
+
+    figname = f'{os.path.basename(rundir)}_'
+    for tidx,varname in zip(timeindices,variables):
+
+        #TODO find mesh number
+        midx = 1
+        mesh = Mesh(run,midx)
+        tf = Timeframe(mesh, tidx)
+        fig.add_field(tf=tf, varname=varname, mask=None)
+        figname += f'{varname}_{tidx}_'
+
+    fig.make(figname[:-1])
+
+def main():
+    parser = argparse.ArgumentParser(
+    description='Make figure of subplots'
+    )
+
+    parser.add_argument(
+        'rundir',
+        help='Run directory where output is stored')
+
+    parser.add_argument(
+        '-D',
+        '--directory',
+        dest='directory',
+        default='figures',
+        help='Directory to save figure'
+    )
+
+    parser.add_argument(
+        '-fs',
+        '--figsize',
+        dest='figsize',
+        type = tuple,
+        default=(7,5),
+        help='Figure size (width, height)'
+    )
+
+    parser.add_argument(
+        '-o',
+        '--orientation',
+        dest='orientation',
+        type = str,
+        default= 'horizontal',
+        help="Orientation of panels: 'horizontal' or 'vertical'"
+    )
+
+    parser.add_argument(
+        '-c',
+        '--cbar_ratio',
+        dest='cbar_ratio',
+        type = float,
+        default= 30,
+        help="Ratio of panels height/width versus colorbar width"
+    )
+
+    parser.add_argument(
+        '-v',
+        '--variables',
+        dest='variables',
+        type = str,
+        nargs = '+',
+        help='Variable names'
+    )
+
+    parser.add_argument(
+        '-t',
+        '--timeindices',
+        dest='timeindices',
+        type = int,
+        nargs = '+',
+        help='Time indices'
+    )
+
+    parser.add_argument(
+        '-s',
+        '--shrink',
+        dest='shrink',
+        nargs=4,
+        type=float,
+        default=[1.0,1.0,1.0,1.0],
+        help='Shrink domain [xmin, xmax, ymin, ymax] in km'
+    )
+
+    parser.add_argument(
+        '-d',
+        '--dpi',
+        dest='dpi',
+        type=int,
+        default=1200,
+        help='DPI of figure'
+    )
+
+    args = parser.parse_args()
+
+    make_2dplot(
+        rundir = args.rundir,
+        variables = args.variables,
+        timeindices = args.timeindices,
+        figsize = args.figsize,
+        orientation = args.orientation,
+        cbar_ratio = args.cbar_ratio,
+        directory = args.directory,
+        shrink = args.shrink,
+        dpi = args.dpi,
+    )
 
 
 class Field(object):
@@ -195,30 +347,28 @@ class Field(object):
 
     def get_cmap(self):
         """ Get colormap info """
-        cmap,norm = get_cmap(self.varname)
+        scalarmap = get_cmap(self.varname)
 
-        self.cmap = cmap
-        self.norm = norm
+        self.scalarmap = scalarmap
 
         return
 
     def get_pcoll(self):
         """ Get patch collection """
 
+        pcols = self.scalarmap.to_rgba(self.data.values)
+
         #Check type (voronoi / triangle)
         if 'vi' in self.data.dims:
             if not self.Mesh.got_voronois:
                 self.Mesh.get_voronois()
-            self.pcoll = PatchCollection(self.Mesh.voronois,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PolyCollection(self.Mesh.voronois, fc=pcols, ec=pcols, lw=.1)
         elif 'ti' in self.data.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            self.pcoll = PatchCollection(self.Mesh.triangles,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PolyCollection(self.Mesh.triangles, fc=pcols, ec=pcols, lw=.1)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
-
-        # Fill array
-        self.pcoll.set_array(self.data.values)
 
         return
 
@@ -227,14 +377,13 @@ class Field(object):
 
         mcmap = 'ocean'
         mnorm = mpl.colors.Normalize(vmin=1.7, vmax=3.1, clip=True)
+        scalarmap = mpl.cm.ScalarMappable(norm=mnorm,cmap=mcmap)
 
         if not self.Mesh.got_voronois:
             self.Mesh.get_voronois()
 
-        self.mcoll = PatchCollection(self.Mesh.voronois,cmap=mcmap,norm=mnorm)
-
-        # Fill array
-        self.mcoll.set_array(self.Timeframe.mask)
+        mcols = scalarmap.to_rgba(self.Timeframe.mask)
+        self.mcoll = PolyCollection(self.Mesh.voronois,fc=mcols, ec=mcols, lw=.1)
 
         return
 
@@ -340,20 +489,20 @@ class DiffField(object):
     def get_pcoll(self):
         """ Get patch collection """
 
+        # Fill array
+        pcols = self.scalarmap.to_rgba(self.data.values)
+
         #Check type (voronoi / triangle)
         if 'vi' in self.data.dims:
             if not self.Mesh.got_voronois:
                 self.Mesh.get_voronois()
-            self.pcoll = PatchCollection(self.Mesh.voronois,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PolyCollection(self.Mesh.voronois, fc=pcols)
         elif 'ti' in self.data.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            self.pcoll = PatchCollection(self.Mesh.triangles,cmap=self.cmap,norm=self.norm)
+            self.pcoll = PatchCollection(self.Mesh.triangles, fc=pcols)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
-
-        # Fill array
-        self.pcoll.set_array(self.data.values)
 
         return
 
@@ -363,12 +512,12 @@ class DiffField(object):
         mcmap = 'ocean'
         mnorm = mpl.colors.Normalize(vmin=1.7, vmax=3.1, clip=True)
 
+        scalarmap = mpl.cm.ScalarMappable(norm=mnorm,cmap=mcmap)
+        mcols = scalarmap.to_rgba(self.Timeframe.mask)
+
         if not self.Mesh.got_voronois:
             self.Mesh.get_voronois()
 
-        self.mcoll = PatchCollection(self.Mesh.voronois,cmap=mcmap,norm=mnorm)
-
-        # Fill array
-        self.mcoll.set_array(self.Timeframe.mask)
+        self.mcoll = PolyCollection(self.Mesh.voronois, fc=mcols)
 
         return

@@ -11,6 +11,10 @@ UPSY_component_test_program
 UPSY_component_test_program_dev
 UPSY_component_test_program_perf
 
+UPSY_component_test_program_mesh_creation
+UPSY_component_test_program_mesh_creation_dev
+UPSY_component_test_program_mesh_creation_perf
+
 UFEMISM_program
 UFEMISM_program_dev
 UFEMISM_program_perf
@@ -62,29 +66,7 @@ tools/python/klooi.ipynb
 automated_testing/integrated_tests/idealised/Berends2023_nudging/experiment_I/input_data/*.nc
 automated_testing/integrated_tests/idealised/Berends2023_nudging/experiment_II/input_data/*.nc
 
+
 # Ignore linting mods
 linting_mods/*
-Testing/checksum_logfile.txt
-Testing/config_default.cfg
-Testing/main_output_ANT_00001.nc
-Testing/main_output_ANT_grid.nc
-Testing/resource_tracking.nc
-Testing/restart_pc_scheme_00001.nc
-Testing/scalar_output_ANT_00001.nc
-Testing/transect_westeast.nc
-Testing_pressure/checksum_logfile.txt
-Testing_pressure/config_default.cfg
-Testing_pressure/main_output_ANT_00001.nc
-Testing_pressure/main_output_ANT_grid.nc
-Testing_pressure/resource_tracking.nc
-Testing_pressure/restart_pc_scheme_00001.nc
-Testing_pressure/scalar_output_ANT_00001.nc
-Testing_pressure/transect_westeast.nc
-Testing_pressure_non_initialised/checksum_logfile.txt
-Testing_pressure_non_initialised/config_default.cfg
-Testing_pressure_non_initialised/main_output_ANT_00001.nc
-Testing_pressure_non_initialised/main_output_ANT_grid.nc
-Testing_pressure_non_initialised/resource_tracking.nc
-Testing_pressure_non_initialised/restart_pc_scheme_00001.nc
-Testing_pressure_non_initialised/scalar_output_ANT_00001.nc
-Testing_pressure_non_initialised/transect_westeast.nc
+

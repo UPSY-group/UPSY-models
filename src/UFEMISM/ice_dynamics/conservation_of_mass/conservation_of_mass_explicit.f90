@@ -1,7 +1,7 @@
 module conservation_of_mass_explicit
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
@@ -85,10 +85,15 @@ contains
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Calculate rate of ice thickness change dHi/dt
-    dHi_dt = -divQ + fraction_margin * (SMB + BMB - dHi_dt_target) + LMB
+    dHi_dt( mesh%vi1: mesh%vi2) = -divQ( mesh%vi1: mesh%vi2) &
+      + fraction_margin( mesh%vi1: mesh%vi2) * ( &
+          SMB( mesh%vi1: mesh%vi2) &
+        + BMB( mesh%vi1: mesh%vi2) &
+        - dHi_dt_target( mesh%vi1: mesh%vi2)) &
+      + LMB( mesh%vi1: mesh%vi2)
 
     ! Store this value in the artificial mass balance field
-    AMB = dHi_dt
+    AMB( mesh%vi1: mesh%vi2) = dHi_dt( mesh%vi1: mesh%vi2)
 
     ! Calculate largest time step possible based on dHi_dt
     call calc_flux_limited_timestep( mesh, Hi, dHi_dt, dt_max)
@@ -97,7 +102,7 @@ contains
     dt = min( dt, dt_max)
 
     ! Calculate ice thickness at t+dt
-    Hi_tplusdt = max( 0._dp, Hi + dHi_dt * dt)
+    Hi_tplusdt( mesh%vi1: mesh%vi2) = max( 0._dp, Hi( mesh%vi1: mesh%vi2) + dHi_dt( mesh%vi1: mesh%vi2) * dt)
 
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, mask_noice, Hb, SL, Hi_tplusdt)
@@ -119,14 +124,14 @@ contains
     call apply_mask_noice_direct( mesh, mask_noice, Hi_tplusdt)
 
     ! Recalculate dH/dt, accounting for limit of no negative ice thickness
-    dHi_dt = (Hi_tplusdt - Hi) / dt
+    dHi_dt( mesh%vi1: mesh%vi2) = (Hi_tplusdt( mesh%vi1: mesh%vi2) - Hi( mesh%vi1: mesh%vi2)) / dt
 
     ! Remove the final dH/dt field, which now includes some
     ! artificial ice modifications, from the original field
     ! stored in the AMB field. Any residuals will represent
     ! the component of the original dH/dt that was removed.
     ! The negative of this we call artificial mass balance.
-    AMB = dHi_dt - AMB
+    AMB( mesh%vi1: mesh%vi2) = dHi_dt( mesh%vi1: mesh%vi2) - AMB( mesh%vi1: mesh%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

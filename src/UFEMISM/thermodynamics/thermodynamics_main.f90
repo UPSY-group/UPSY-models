@@ -6,15 +6,16 @@ MODULE thermodynamics_main
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par
-  USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
-  USE SMB_model_types                                        , ONLY: type_SMB_model
+  use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use netcdf_io_main
   USE thermodynamics_3D_heat_equation                        , ONLY: solve_3D_heat_equation, create_restart_file_thermo_3D_heat_equation, &
@@ -197,7 +198,7 @@ CONTAINS
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
     TYPE(type_ice_model),                 INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
-    TYPE(type_SMB_model),                 INTENT(IN)    :: SMB
+    class(atype_SMB_model),               intent(in   ) :: SMB
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
 
     ! Local variables:
@@ -352,7 +353,7 @@ CONTAINS
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
     TYPE(type_ice_model),                 INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
-    TYPE(type_SMB_model),                 INTENT(IN)    :: SMB
+    class(atype_SMB_model),               intent(in   ) :: SMB
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                       :: routine_name = 'initialise_ice_temperature_Robin'
@@ -429,7 +430,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE (0,*) '  Initialising ice temperatures from file "' // &
-      colour_string( TRIM( filename_initial_ice_temperature), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( filename_initial_ice_temperature), 'light blue') // '"...'
 
     ! Allocate
     ALLOCATE( zeta_read (mesh%nz), source=0.0_dp)

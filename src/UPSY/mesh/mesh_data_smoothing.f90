@@ -9,7 +9,7 @@ module mesh_data_smoothing
   use mpi_basic, only: par, sync
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, map_from_mesh_vertices_to_xy_grid_3D, &
     map_from_xy_grid_to_mesh_2D, map_from_xy_grid_to_mesh_3D
   use smooth_gridded_data, only: smooth_Gaussian_grid

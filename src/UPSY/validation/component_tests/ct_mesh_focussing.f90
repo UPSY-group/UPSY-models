@@ -3,9 +3,10 @@ module ct_mesh_focussing
   ! Test everything related to mesh focussing
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
+  use UPSY_main, only: UPSY
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, strrep
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use assertions_basic, only: assert
   use tests_main, only: test_mesh_is_self_consistent
@@ -120,7 +121,7 @@ contains
     mesh_raw_name = test_mesh_filename( index( test_mesh_filename,'/', back = .true.)+1: &
       len_trim( test_mesh_filename))
     if (par%primary) write(0,*) '      Running mesh focussing tests on mesh ', &
-      colour_string( trim( mesh_raw_name),'light blue'), '...'
+      UPSY%stru%colour_string( trim( mesh_raw_name),'light blue'), '...'
 
     ! Set up the mesh from the file (includes calculating secondary geometry data and matrix operators)
     call open_existing_netcdf_file_for_reading( trim(test_mesh_filename), ncid)

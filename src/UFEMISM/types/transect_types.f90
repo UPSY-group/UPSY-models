@@ -7,7 +7,7 @@ module transect_types
 
   private
 
-  public :: type_transect
+  public :: atype_transect, type_transect
 
   type type_transect_netcdf
     !< NetCDF ids for a transect output file
@@ -46,10 +46,11 @@ module transect_types
     integer :: id_var_CF_dist_from_end
     integer :: id_var_CF_Hi_eff_from_start
     integer :: id_var_CF_Hi_eff_from_end
+    integer :: id_var_basal_mass_balance
 
   end type type_transect_netcdf
 
-  type type_transect
+  type, abstract :: atype_transect
     !< Coordinates of points spanning a transect
 
     ! Transect geometry
@@ -60,12 +61,16 @@ module transect_types
     integer                               :: nz
     real(dp), dimension(:  ), allocatable :: zeta
 
+    ! NetCDF output file
+    type(type_transect_netcdf)            :: nc
+
+  end type atype_transect
+
+  type, extends( atype_transect) :: type_transect
+
     ! Weights for calculating parallel/orthogonal velocity components
     real(dp), dimension(:  ), allocatable :: wu_u_par, wv_u_par
     real(dp), dimension(:  ), allocatable :: wu_u_ort, wv_u_ort
-
-    ! NetCDF output file
-    type(type_transect_netcdf)            :: nc
 
   end type type_transect
 

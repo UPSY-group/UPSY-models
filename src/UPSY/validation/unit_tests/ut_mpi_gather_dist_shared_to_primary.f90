@@ -7,7 +7,7 @@ module ut_mpi_gather_dist_shared_to_primary
   use ut_basic
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mpi_distributed_shared_memory
   use mpi_f08, only: MPI_WIN, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, &
     MPI_INTEGER, MPI_ALLGATHER

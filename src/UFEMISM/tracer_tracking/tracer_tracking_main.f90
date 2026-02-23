@@ -3,12 +3,13 @@ module tracer_tracking_model_main
   ! The main tracer tracking model module.
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use SMB_model_types, only: type_SMB_model
+  use SMB_model, only: atype_SMB_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model
   use tracer_tracking_model_particles_main, only: initialise_tracer_tracking_model_particles, &
     run_tracer_tracking_model_particles, remap_tracer_tracking_model_particles
@@ -29,7 +30,7 @@ contains
     ! In- and output variables
     type(type_mesh),                  intent(in   ) :: mesh
     type(type_ice_model),             intent(in   ) :: ice
-    type(type_SMB_model),             intent(in   ) :: SMB
+    class(atype_SMB_model),           intent(in   ) :: SMB
     type(type_tracer_tracking_model), intent(inout) :: tracer_tracking
     real(dp),                         intent(in   ) :: time
 
@@ -89,7 +90,7 @@ contains
 
     ! Print to terminal
     if (par%primary)  write(*,'(a)') '   Initialising tracer-tracking model ' // &
-      colour_string( trim(C%choice_tracer_tracking_model), 'light blue') // '...'
+      UPSY%stru%colour_string( trim(C%choice_tracer_tracking_model), 'light blue') // '...'
 
     ! Allocate memory for the model-independent tracer-tracking data
     allocate( tracer_tracking%age( mesh%vi1:mesh%vi2, C%nz))

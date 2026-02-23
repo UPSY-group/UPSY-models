@@ -3,7 +3,7 @@ module mesh_refinement_basic
   ! The basic mesh refinement routines: uniform (dimensionless), point (0D), line (1D), and poly( 2D)
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use grid_basic, only: poly2line
   use plane_geometry, only: crop_line_to_domain, smallest_triangle_angle, longest_triangle_leg, &

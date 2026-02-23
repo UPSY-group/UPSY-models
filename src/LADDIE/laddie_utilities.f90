@@ -7,7 +7,7 @@ MODULE laddie_utilities
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string, warning
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -384,6 +384,7 @@ CONTAINS
     ! Forcing
     call allocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh%pai_V%n_nih)
+    call allocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh%pai_V%n_nih)
     call allocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh%pai_Tri%n_nih)
     call allocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , mesh%pai_Tri%n_nih)

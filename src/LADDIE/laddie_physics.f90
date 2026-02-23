@@ -7,14 +7,15 @@ MODULE laddie_physics
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_SUM
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string, warning
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE laddie_model_types                                     , ONLY: type_laddie_model, type_laddie_timestep
-  use laddie_forcing_types, only: type_laddie_forcing
+  use laddie_forcing_types, only: type_laddie_forcing, type_transect_SGD
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use checksum_mod, only: checksum
+  use mesh_utilities, only: extrapolate_Gaussian
 
   IMPLICIT NONE
 
@@ -178,6 +179,154 @@ CONTAINS
 
   END SUBROUTINE compute_entrainment
 
+  SUBROUTINE compute_SGD_at_transects( mesh, laddie, forcing)
+  ! Compute subglacial discharge (SGD) at intersect between SGD_transect and grounding line
+
+    ! In- and output variables
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    TYPE(type_laddie_model),                INTENT(INOUT) :: laddie
+    TYPE(type_laddie_forcing),              intent(IN)    :: forcing
+
+    REAL(dp), DIMENSION(mesh%nV)                          :: SGD_temp_tot
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'compute_SGD_at_transects'
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Initialise SGD at zero
+    laddie%SGD    = 0._dp
+    SGD_temp_tot  = 0._dp
+
+    ! Compute SGD on the primary
+    IF (par%primary) THEN
+      CALL compute_SGD_at_transects_on_primary(mesh, laddie, forcing, SGD_temp_tot)
+      laddie%SGD = SGD_temp_tot ! FJFJ: Could multiply by a time dependence, or make flux strength depend on time
+    END IF
+
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+
+  END SUBROUTINE compute_SGD_at_transects
+
+  SUBROUTINE compute_SGD_at_transects_on_primary( mesh, laddie, forcing, SGD_temp_tot)
+
+    ! In- and output variables
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    TYPE(type_laddie_model),                INTENT(INOUT) :: laddie
+    TYPE(type_laddie_forcing),              intent(IN)    :: forcing
+    REAL(dp), DIMENSION(mesh%nV), intent(INOUT)           :: SGD_temp_tot
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'compute_SGD_at_transects_on_primary'
+    INTEGER                                               :: vi, ierr, it, vi_trans, vi_last, nr, vi_neighbour, vis, neighbour_count
+    TYPE(type_transect_SGD)                               :: transect
+    REAL(dp)                                              :: total_area
+    REAL(dp), DIMENSION(mesh%nV)                          :: SGD_temp_transect, SGD_temp_transect_GAUS
+
+    ! Loop over the different transects
+    transect_loop: DO it = 1, size(forcing%transects)
+      transect = forcing%transects(it)
+
+      ! Loop over vertices in transect
+      vertex_loop: DO vi_trans = 1, transect%nV
+        vi = transect%index_point(vi_trans)
+
+        ! Check if the vertex is in mask_gl_fl_tot
+        IF (forcing%mask_gl_fl( vi)) THEN
+
+          ! IF apply SGD to this single vertex only, divide the flux strength by the vertex area
+          IF (C%distribute_SGD == 'single_cell') THEN
+
+            SGD_temp_tot( vi) = SGD_temp_tot( vi) + transect%flux_strength / mesh%A(vi)
+
+            EXIT vertex_loop  ! guarantees “only once per transect”
+
+
+          ! IF distribute SGD over multiple vertices, keep count of area and later on divide by the total area
+          ELSEIF (C%distribute_SGD == 'distribute_2neighbours') THEN
+
+            ! Initialise total_area (over which transect SGD will be distributed), and SGD_temp_transect at zero
+            total_area = 0._dp
+            SGD_temp_transect = 0._dp
+
+            ! Save initial cell
+            SGD_temp_transect( vi) = transect%flux_strength
+            total_area = total_area + mesh%A( vi)
+
+            neighbour_count = 0
+            ! Loop over its neighbours
+            DO nr = 1, mesh%nC( vi)
+
+              ! DO WHILE (neighbour_count < 2)
+              vi_neighbour = mesh%C( vi, nr)
+
+              ! Only apply SGD to cells that are in mask_gl_fl
+              IF (forcing%mask_gl_fl(vi_neighbour) .AND. neighbour_count<2) THEN
+                SGD_temp_transect( vi_neighbour) = transect%flux_strength
+                total_area = total_area + mesh%A( vi_neighbour)
+
+                neighbour_count = neighbour_count + 1
+              END IF
+
+            END DO
+
+            ! Save SGD_temp_transect to SGD_temp_tot
+            SGD_temp_tot = SGD_temp_tot + ( SGD_temp_transect / total_area )
+
+            EXIT vertex_loop  ! guarantees “only once per transect”
+
+            !!! GAUSSIAN distribution - FJFJ: work in progress
+            ! ELSEIF (C%distribute_SGD == 'distribute_Gaussian') THEN
+
+            !   ! Initialise total_area (over which transect SGD will be distributed), and SGD_temp_transect at zero
+            !   total_area = 0._dp
+            !   SGD_temp_transect = 0._dp
+            !   SGD_temp_transect( vi) = 500._dp
+
+            !   SGD_temp_transect_GAUS = 0._dp
+            !   mask_SGD_extrapolation = 0
+
+            !   DO vis = 1, mesh%nV
+            !     IF (forcing%mask_floating_ice(vis)) THEN
+            !     mask_SGD_extrapolation( vis) = 1
+            !     END IF
+            !   END DO
+
+            !   mask_SGD_extrapolation( vi) = 2
+
+            !   CALL extrapolate_Gaussian(mesh, mask_SGD_extrapolation, SGD_temp_transect, 500._dp)
+
+            !   DO vis = 1, mesh%nV
+            !     IF (SGD_temp_transect( vis) > 0) THEN
+            !       print*, 'applying SGD'
+            !       SGD_temp_transect_GAUS( vis) = transect%flux_strength
+            !       total_area = total_area + mesh%A( vis)
+            !       print*, SGD_temp_transect_GAUS( vis)
+            !     END IF
+            !   END DO
+
+            !   print*, 'total_area = ', total_area
+            !   ! print*, 'SGD_temp_transect = ', SGD_temp_transect_GAUS
+
+            !   ! Save SGD_temp_transect to SGD_temp_tot
+            !   SGD_temp_tot = SGD_temp_tot + ( SGD_temp_transect / total_area )
+
+            !   EXIT vertex_loop  ! guarantees “only once per transect”
+
+          END IF
+
+        END IF
+
+      END DO vertex_loop
+
+    END DO transect_loop
+
+  END SUBROUTINE compute_SGD_at_transects_on_primary
+
   SUBROUTINE compute_subglacial_discharge( mesh, laddie, forcing)
   ! Compute subglacial discharge (SGD)
   ! TODO clean up routine; avoid so many if statements
@@ -192,7 +341,7 @@ CONTAINS
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'compute_subglacial_discharge'
     INTEGER                                               :: vi, ierr
-    REAL(dp)                                              :: total_area 
+    REAL(dp)                                              :: total_area
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -204,15 +353,15 @@ CONTAINS
     laddie%SGD = 0._dp
 
     ! Determine total_area by looping over the vertices
-    DO vi = mesh%vi1, mesh%vi2 
+    DO vi = mesh%vi1, mesh%vi2
       IF (laddie%mask_a( vi)) THEN
         IF (forcing%mask_gl_fl( vi) .and. forcing%mask_SGD( vi)) THEN
-          total_area = total_area + mesh%A( vi) 
+          total_area = total_area + mesh%A( vi)
         END IF
-      END IF 
+      END IF
     END DO
 
-    ! Make sure processes have total_area 
+    ! Make sure processes have total_area
     CALL MPI_ALLREDUCE( MPI_IN_PLACE, total_area,      1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
 
     IF (total_area == 0._dp) THEN
@@ -220,13 +369,13 @@ CONTAINS
       IF (par%primary) CALL warning('No subglacial discharge (SGD) is applied because the total_area where SGD is applied is zero!')
     ELSEIF (total_area > 0._dp) THEN
       ! Distribute SGD flux [m^3/s] over the total area to get the SGD in [m/s]
-      DO vi = mesh%vi1, mesh%vi2 
+      DO vi = mesh%vi1, mesh%vi2
         IF (laddie%mask_a( vi)) THEN
           IF (forcing%mask_gl_fl( vi) .and. forcing%mask_SGD( vi)) THEN
             laddie%SGD( vi) = C%laddie_SGD_flux / total_area
           END IF
-        END IF 
-      END DO  
+        END IF
+      END DO
     ELSE
       CALL crash('The total_area where SGD is applied is a negative value')
     END IF

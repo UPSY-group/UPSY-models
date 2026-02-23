@@ -2,16 +2,17 @@ module transects_main
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_ALLREDUCE, MPI_IN_PLACE, &
     MPI_INTEGER, MPI_SUM
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
   use mpi_distributed_memory, only: partition_list
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use transect_types, only: type_transect
-  use string_module, only: separate_strings_by_double_vertical_bars
+  use transect_types, only: atype_transect, type_transect
+  use UPSY_main, only: UPSY
   use netcdf_io_main
   use netcdf, only: NF90_UNLIMITED
   use netcdf_write_field_transect
@@ -23,12 +24,13 @@ module transects_main
   use mpi_distributed_memory, only: gather_to_all
   use interpolation, only: linint_points
   use netcdf, only: NF90_DOUBLE
+  USE BMB_model_types, ONLY: type_BMB_model
 
   implicit none
 
   private
 
-  public :: initialise_transects, write_to_transect_netcdf_output_files
+  public :: initialise_transects, write_to_transect_netcdf_output_files, initialise_transect_waypoints_from_file, calc_transect_vertices_from_waypoints
 
 contains
 
@@ -65,7 +67,7 @@ contains
       return
     end if
 
-    call separate_strings_by_double_vertical_bars( transects_str, transect_strs)
+    call UPSY%stru%separate_strings_by_double_vertical_bars( transects_str, transect_strs)
 
     allocate( region%transects( size(transect_strs)))
 
@@ -100,7 +102,7 @@ contains
     transect%dx   = dx
 
     if (par%primary) write(0,*) '  Initialising output transect ', &
-      colour_string( trim( transect%name),'light blue'), '...'
+      UPSY%stru%colour_string( trim( transect%name),'light blue'), '...'
 
     select case (source)
     case default
@@ -254,6 +256,53 @@ contains
       allocate(waypoints(2,2))
       waypoints(1,:) = [mesh%xmin/2._dp,mesh%ymin/4._dp]
       waypoints(2,:) = [mesh%xmax/2._dp,mesh%ymin/4._dp]
+
+    ! == Thule idealised ==
+    ! =====================
+
+    case('CapronaA')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-390000.0_dp,0._dp]
+      waypoints(2,:) = [-590000.0_dp,450000.0_dp]
+
+
+    case('CapronaB')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [390000.0_dp,0._dp]
+      waypoints(2,:) = [590000.0_dp,450000.0_dp]
+
+
+    case('CapronaC')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-390000.0_dp,0._dp]
+      waypoints(2,:) = [-590000.0_dp,-450000.0_dp]
+
+    case('CapronaD')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [390000.0_dp,0._dp]
+      waypoints(2,:) = [590000.0_dp,-450000.0_dp]
+
+
+    case('HalbraneA')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-150000.0_dp,0._dp]
+      waypoints(2,:) = [-150000.0_dp,740000.0_dp]
+
+    case('HalbraneB')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [150000.0_dp,0._dp]
+      waypoints(2,:) = [150000.0_dp,740000.0_dp]
+
+    case('HalbraneC')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [-150000.0_dp,0._dp]
+      waypoints(2,:) = [-150000.0_dp,-740000.0_dp]
+
+    case('HalbraneD')
+      allocate(waypoints(2,2))
+      waypoints(1,:) = [150000.0_dp,0._dp]
+      waypoints(2,:) = [150000.0_dp,-740000.0_dp]
+
 
     ! == Realistic ==
     ! ===============
@@ -495,7 +544,7 @@ contains
     !< Generate transect vertices spaced dx apart along waypoints
 
     ! In/output variables:
-    type(type_transect),      intent(inout) :: transect
+    class(atype_transect),    intent(inout) :: transect
     real(dp), dimension(:,:), intent(in   ) :: waypoints
     real(dp),                 intent(in   ) :: dx
 
@@ -700,34 +749,38 @@ contains
     call add_attribute_char( filename, ncid, transect%nc%id_var_dw_dz_3D, 'long_name', '3-D zz strain rate')
     call add_attribute_char( filename, ncid, transect%nc%id_var_dw_dz_3D, 'units'    , 'yr^-1')
 
+    call create_variable(  filename, ncid, 'BMB', NF90_DOUBLE, [n, t], transect%nc%id_var_basal_mass_balance)
+    call add_attribute_char( filename, ncid, transect%nc%id_var_basal_mass_balance, 'long_name', 'Basal mass balance')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_basal_mass_balance, 'units'    , 'm yr^-1')
+
     ! Integrated quantities
     call create_variable(  filename, ncid, 'ice_mass_flux', NF90_DOUBLE, [t], transect%nc%id_var_ice_mass_flux)
     call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Ice mass flux across transect')
     call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'kg yr^-1')
 
     call create_variable(  filename, ncid, 'grounding_line_distance_from_start', NF90_DOUBLE, [t], transect%nc%id_var_GL_dist_from_start)
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Distance from start of transect to grounding line')
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'm')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_GL_dist_from_start, 'long_name', 'Distance from start of transect to grounding line')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_GL_dist_from_start, 'units'    , 'm')
 
     call create_variable(  filename, ncid, 'grounding_line_distance_from_end', NF90_DOUBLE, [t], transect%nc%id_var_GL_dist_from_end)
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Distance from end of transect to grounding line')
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'm')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_GL_dist_from_end, 'long_name', 'Distance from end of transect to grounding line')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_GL_dist_from_end, 'units'    , 'm')
 
     call create_variable(  filename, ncid, 'calving_front_distance_from_start', NF90_DOUBLE, [t], transect%nc%id_var_CF_dist_from_start)
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Distance from start of transect to calving front')
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'm')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_dist_from_start, 'long_name', 'Distance from start of transect to calving front')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_dist_from_start, 'units'    , 'm')
 
     call create_variable(  filename, ncid, 'calving_front_distance_from_end', NF90_DOUBLE, [t], transect%nc%id_var_CF_dist_from_end)
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Distance from end of transect to calving front')
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'm')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_dist_from_end, 'long_name', 'Distance from end of transect to calving front')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_dist_from_end, 'units'    , 'm')
 
     call create_variable(  filename, ncid, 'Hi_eff_CF_from_start', NF90_DOUBLE, [t], transect%nc%id_var_CF_Hi_eff_from_start)
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Effective ice thickness at calving front from start of transect')
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'm')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_Hi_eff_from_start, 'long_name', 'Effective ice thickness at calving front from start of transect')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_Hi_eff_from_start, 'units'    , 'm')
 
     call create_variable(  filename, ncid, 'Hi_eff_CF_from_end', NF90_DOUBLE, [t], transect%nc%id_var_CF_Hi_eff_from_end)
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'long_name', 'Effective ice thickness at calving front from end of transect')
-    call add_attribute_char( filename, ncid, transect%nc%id_var_ice_mass_flux, 'units'    , 'm')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_Hi_eff_from_end, 'long_name', 'Effective ice thickness at calving front from end of transect')
+    call add_attribute_char( filename, ncid, transect%nc%id_var_CF_Hi_eff_from_end, 'units'    , 'm')
 
     call close_netcdf_file( ncid)
 
@@ -749,7 +802,7 @@ contains
     call init_routine( routine_name)
 
     do it = 1, size( region%transects)
-      call write_to_transect_netcdf_output_file( region%mesh, region%ice, &
+      call write_to_transect_netcdf_output_file( region%mesh, region%ice, region%BMB, &
         region%transects( it), region%time)
     end do
 
@@ -758,11 +811,12 @@ contains
 
   end subroutine write_to_transect_netcdf_output_files
 
-  subroutine write_to_transect_netcdf_output_file( mesh, ice, transect, time)
+  subroutine write_to_transect_netcdf_output_file( mesh, ice, BMB, transect, time)
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
     type(type_ice_model), intent(in   ) :: ice
+    type(type_BMB_model), intent(in   ) :: BMB
     type(type_transect),  intent(in   ) :: transect
     real(dp),             intent(in   ) :: time
 
@@ -776,6 +830,7 @@ contains
     real(dp), dimension(transect%vi1:transect%vi2     ) :: tHib_partial
     real(dp), dimension(transect%vi1:transect%vi2     ) :: tSL_partial
     real(dp), dimension(transect%vi1:transect%vi2     ) :: tHi_eff_partial
+    real(dp), dimension(transect%vi1:transect%vi2     ) :: tBMB_partial
     real(dp), dimension(transect%vi1:transect%vi2,C%nz) :: tTi_partial
     real(dp), dimension(transect%vi1:transect%vi2,C%nz) :: tu_partial
     real(dp), dimension(transect%vi1:transect%vi2,C%nz) :: tv_partial
@@ -802,7 +857,7 @@ contains
     filename = transect%nc%filename
 
     if (par%primary) write(0,*) '  Writing to transect output file "', &
-      colour_string( trim( filename), 'light blue'), '"...'
+      UPSY%stru%colour_string( trim( filename), 'light blue'), '"...'
 
     ! Map ice model data to transect
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%Hi,       tHi_partial,     'trilin')
@@ -811,6 +866,7 @@ contains
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%Hib,      tHib_partial,    'trilin')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%SL,       tSL_partial,     'trilin')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%Hi_eff,   tHi_eff_partial, 'nearest_neighbour')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, BMB%BMB,      tBMB_partial,    'trilin')
     call map_from_mesh_vertices_to_transect_3D ( mesh, transect, ice%Ti,       tTi_partial,     'trilin')
     call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%u_3D_b,   tu_partial)
     call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%v_3D_b,   tv_partial)
@@ -849,6 +905,7 @@ contains
     call write_to_field_multopt_transect_dp_2D( transect, filename, ncid, 'Hs'      , tHs_partial)
     call write_to_field_multopt_transect_dp_2D( transect, filename, ncid, 'Hib'     , tHib_partial)
     call write_to_field_multopt_transect_dp_2D( transect, filename, ncid, 'SL'      , tSL_partial)
+    call write_to_field_multopt_transect_dp_2D( transect, filename, ncid, 'BMB'     , tBMB_partial)
     call write_to_field_multopt_transect_dp_3D( transect, filename, ncid, 'Ti'      , tTi_partial)
     call write_to_field_multopt_transect_dp_2D( transect, filename, ncid, 'Hi_eff'  , tHi_eff_partial)
     call write_to_field_multopt_transect_dp_3D( transect, filename, ncid, 'u_3D'    , tu_partial)

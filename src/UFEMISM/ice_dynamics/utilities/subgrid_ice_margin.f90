@@ -1,7 +1,7 @@
 module subgrid_ice_margin
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use mpi_distributed_memory, only: gather_to_all
@@ -15,13 +15,14 @@ module subgrid_ice_margin
 
 contains
 
-  subroutine calc_effective_thickness( mesh, ice, Hi, Hi_eff, fraction_margin)
+  subroutine calc_effective_thickness( mesh, Hi, Hb, SL, Hi_eff, fraction_margin)
     !< Determine the ice-filled fraction and effective ice thickness of floating margin pixels
 
     ! In- and output variables
     type(type_mesh),      intent(in   )                 :: mesh
-    type(type_ice_model), intent(in   )                 :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in)  :: Hi
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in)  :: Hb
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in)  :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(out) :: Hi_eff
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(out) :: fraction_margin
 
@@ -40,9 +41,9 @@ contains
     call init_routine( routine_name)
 
     ! Collect Hi from all processes
-    call gather_to_all( Hi,     Hi_tot)
-    call gather_to_all( ice%Hb, Hb_tot)
-    call gather_to_all( ice%SL, SL_tot)
+    call gather_to_all( Hi, Hi_tot)
+    call gather_to_all( Hb, Hb_tot)
+    call gather_to_all( SL, SL_tot)
 
     ! == Margin mask
     ! ==============
@@ -69,7 +70,7 @@ contains
     mask_floating = .false.
 
     do vi = mesh%vi1, mesh%vi2
-      if (is_floating( Hi_tot( vi), ice%Hb( vi), ice%SL( vi))) then
+      if (is_floating( Hi_tot( vi), Hb( vi), SL( vi))) then
         mask_floating( vi) = .true.
       end if
     end do

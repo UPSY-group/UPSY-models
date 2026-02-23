@@ -2,11 +2,12 @@ module ct_remapping_grid_to_mesh
 
   ! Test everything related to remapping
 
+  use UPSY_main, only: UPSY
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use precisions, only: dp
   use mpi_basic, only: par
   use parameters
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use netcdf_io_main
@@ -122,8 +123,8 @@ contains
       grid_name( 1:len_trim(grid_name)) // '_TO_' // mesh_name( 1:len_trim(mesh_name)) // '.nc'
 
     if (par%primary) write(0,*) '      Running grid-to-mesh remapping tests on mesh-grid combination:'
-    if (par%primary) write(0,*) '        grid: ', colour_string( trim( grid_name),'light blue')
-    if (par%primary) write(0,*) '        mesh: ', colour_string( trim( mesh_name),'light blue')
+    if (par%primary) write(0,*) '        grid: ', UPSY%stru%colour_string( trim( grid_name),'light blue')
+    if (par%primary) write(0,*) '        mesh: ', UPSY%stru%colour_string( trim( mesh_name),'light blue')
 
     ! Set up the mesh and the grid from the provided files
     call open_existing_netcdf_file_for_reading( filename_mesh, ncid)
@@ -143,6 +144,9 @@ contains
     allocate( d_mesh( mesh%vi1:mesh%vi2))
     allocate( d_tri(  mesh%ti1:mesh%ti2))
 
+    ! First do a 1st order remapping, to test whether it runs
+    call map_from_xy_grid_to_mesh_2D(           grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_mesh, '1st_order_conservative')
+    ! Then continue the default 2nd_order_conservative remapping
     call map_from_xy_grid_to_mesh_2D(           grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_mesh)
     call map_from_xy_grid_to_mesh_triangles_2D( grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_tri )
 

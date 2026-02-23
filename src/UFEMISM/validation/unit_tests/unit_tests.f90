@@ -5,12 +5,13 @@ module unit_tests
   use tests_main
   use assertions_basic
   use ut_basic
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mpi_basic, only: par, sync
   ! use ut_tracer_tracking, only: unit_tests_tracer_tracking_main
   use ut_bedrock_CDFs, only: unit_tests_bedrock_CDFs_main
   use ut_ocean_extrapolation, only: unit_tests_ocean_extrapolation_main
+  use ut_SMB, only: unit_tests_SMB_main
 
   implicit none
 
@@ -45,6 +46,7 @@ contains
     ! call unit_tests_tracer_tracking_main       ( test_name)
     call unit_tests_bedrock_CDFs_main          ( test_name)
     call unit_tests_ocean_extrapolation_main   ( test_name)
+    call unit_tests_SMB_main                   ( test_name)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

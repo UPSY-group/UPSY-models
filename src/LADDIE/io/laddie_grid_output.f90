@@ -2,7 +2,8 @@ module laddie_grid_output
 
   use precisions, only: dp
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, colour_string, warning, crash
+  use UPSY_main, only: UPSY
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
   use laddie_model_types, only: type_laddie_model
   use laddie_forcing_types, only: type_laddie_forcing
@@ -13,7 +14,7 @@ module laddie_grid_output
     map_from_mesh_vertices_to_xy_grid_3D, map_from_mesh_vertices_to_xy_grid_2D_minval, &
     map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
 
-  implicit none 
+  implicit none
 
   private
 
@@ -33,19 +34,19 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_laddie_output_file_mesh'
-    integer                        :: ncid 
+    integer                        :: ncid
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_netcdf_output) then 
+    if (.not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to grid output file "' // colour_string( trim( laddie%output_grid_filename), 'light blue') // '"...' 
+    if (par%primary) write(0,'(A)') '   Writing to grid output file "' // UPSY%stru%colour_string( trim( laddie%output_grid_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( laddie%output_grid_filename, ncid)
@@ -182,6 +183,9 @@ contains
       case ('Hi')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hi, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hi', d_grid_vec_partial_2D)
+      case ('Hb')
+        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hb, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
+        call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hb', d_grid_vec_partial_2D)
       case ('Hib')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hib, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hib', d_grid_vec_partial_2D)
@@ -337,7 +341,7 @@ contains
     laddie%output_grid_filename = trim( C%output_dir) // 'laddie_output_grid.nc'
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Creating grid output file "' // colour_string( trim( laddie%output_grid_filename), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Creating grid output file "' // UPSY%stru%colour_string( trim( laddie%output_grid_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( laddie%output_grid_filename, ncid)
@@ -458,6 +462,8 @@ contains
       ! Ice geometry
       case ('Hi')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hi', long_name = 'Ice thickness', units = 'm')
+      case ('Hb')
+        call add_field_grid_dp_2D_notime( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm w.r.t. sea level')
       case ('Hib')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. sea level')
       case ('TAF')

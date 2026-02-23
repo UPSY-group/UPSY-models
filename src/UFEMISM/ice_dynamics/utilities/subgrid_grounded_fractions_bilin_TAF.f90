@@ -3,7 +3,7 @@ module subgrid_grounded_fractions_bilin_TAF
   !< bilinearly interpolating the thickness above floatation
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use plane_geometry, only: triangle_area
@@ -18,14 +18,14 @@ module subgrid_grounded_fractions_bilin_TAF
 
 contains
 
-  subroutine calc_grounded_fractions_bilin_interp_TAF_a( mesh, ice, fraction_gr)
+  subroutine calc_grounded_fractions_bilin_interp_TAF_a( mesh, TAF , fraction_gr)
     !< Calculate the sub-grid grounded fractions of the vertices
 
     ! Bilinearly interpolate the thickness above floatation (the CISM/PISM approach)
 
     ! In- and output variables
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: TAF
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: fraction_gr
 
     ! Local variables:
@@ -42,10 +42,10 @@ contains
     call init_routine( routine_name)
 
     ! Gather global thickness above floatation
-    call gather_to_all( ice%TAF, TAF_tot)
+    call gather_to_all( TAF, TAF_tot)
 
     ! Map thickness-above-floatation to the b-grid
-    call map_a_b_2D(  mesh, ice%TAF, TAF_b)
+    call map_a_b_2D(  mesh, TAF, TAF_b)
 
     ! Gather global thickness above floatation on the b-grid
     call gather_to_all( TAF_b, TAF_b_tot)
@@ -179,14 +179,14 @@ contains
 
   end subroutine calc_grounded_fractions_bilin_interp_TAF_a
 
-  subroutine calc_grounded_fractions_bilin_interp_TAF_b( mesh, ice, fraction_gr_b)
+  subroutine calc_grounded_fractions_bilin_interp_TAF_b( mesh, TAF, fraction_gr_b)
     !< Calculate the sub-grid grounded fractions of the triangles
 
     ! Bilinearly interpolate the thickness above floatation (the CISM/PISM approach)
 
     ! In- and output variables
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: TAF
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: fraction_gr_b
 
     ! Local variables:
@@ -201,7 +201,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather global thickness above floatation
-    call gather_to_all( ice%TAF, TAF_tot)
+    call gather_to_all( TAF, TAF_tot)
 
     do ti = mesh%ti1, mesh%ti2
 

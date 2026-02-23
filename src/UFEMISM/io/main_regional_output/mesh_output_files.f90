@@ -1,8 +1,9 @@
 module mesh_output_files
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use grid_basic, only: type_grid
   use region_types, only: type_model_region
@@ -13,6 +14,7 @@ module mesh_output_files
   use netcdf, only: NF90_DOUBLE
   use mesh_contour, only: calc_mesh_contour
   use parameters, only: NaN
+  use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
 
   implicit none
 
@@ -42,7 +44,8 @@ contains
     end if
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to mesh output file "' // colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Writing to mesh output file "' // &
+       UPSY%stru%colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( region%output_filename_mesh, ncid)
@@ -325,12 +328,7 @@ contains
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_coastline', mask_int)
       case ('mask_ROI')
-        where (region%ice%mask_ROI)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
-        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_ROI', mask_int)
+        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_ROI', region%ice%mask_ROI)
       case ('mask_SGD')
         where (region%ice%mask_SGD)
           mask_int = 1
@@ -634,11 +632,26 @@ contains
       case ('SMB')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SMB', region%SMB%SMB)
       case ('Albedo')
-        call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', region%SMB%IMAUITM%Albedo)
+        select type (IMAU_ITM => region%SMB)
+        class default
+          call crash('Albedo only defined for SMB model IMAU-ITM')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', IMAU_ITM%Albedo)
+        end select
       CASE ('FirnDepth')
-        call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', region%SMB%IMAUITM%FirnDepth)
+        select type (IMAU_ITM => region%SMB)
+        class default
+          call crash('FirnDepth only defined for SMB model IMAU-ITM')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', IMAU_ITM%FirnDepth)
+        end select
       CASE ('MeltPreviousYear')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', region%SMB%IMAUITM%MeltPreviousYear)
+        select type (IMAU_ITM => region%SMB)
+        class default
+          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', IMAU_ITM%MeltPreviousYear)
+        end select
 
     ! == Basal mass balance ==
     ! ========================
@@ -658,59 +671,59 @@ contains
 
       ! Main laddie variables
       case ('H_lad')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'H_lad', region%BMB%laddie%now%H, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'H_lad', region%BMB%laddie%now%H)
       case ('U_lad')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'U_lad', region%BMB%laddie%now%U, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'U_lad', region%BMB%laddie%now%U)
       case ('V_lad')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'V_lad', region%BMB%laddie%now%V, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'V_lad', region%BMB%laddie%now%V)
       case ('T_lad')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'T_lad', region%BMB%laddie%now%T, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'T_lad', region%BMB%laddie%now%T)
       case ('S_lad')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'S_lad', region%BMB%laddie%now%S, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'S_lad', region%BMB%laddie%now%S)
 
       ! Useful laddie fields
       case ('drho_amb')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'drho_amb', region%BMB%laddie%drho_amb, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'drho_amb', region%BMB%laddie%drho_amb)
       case ('drho_base')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'drho_base', region%BMB%laddie%drho_base, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'drho_base', region%BMB%laddie%drho_base)
       case ('entr')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'entr', region%BMB%laddie%entr, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'entr', region%BMB%laddie%entr)
       case ('entr_dmin')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'entr_dmin', region%BMB%laddie%entr_dmin, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'entr_dmin', region%BMB%laddie%entr_dmin)
       case ('SGD')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SGD', region%BMB%laddie%SGD, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SGD', region%BMB%laddie%SGD)
       case ('melt')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'melt', region%BMB%laddie%melt, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'melt', region%BMB%laddie%melt)
       case ('divQH')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQH', region%BMB%laddie%divQH, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQH', region%BMB%laddie%divQH)
       case ('divQT')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQT', region%BMB%laddie%divQT, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQT', region%BMB%laddie%divQT)
       case ('divQS')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQS', region%BMB%laddie%divQS, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQS', region%BMB%laddie%divQS)
       case ('diffT')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'diffT', region%BMB%laddie%diffT, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'diffT', region%BMB%laddie%diffT)
       case ('diffS')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'diffS', region%BMB%laddie%diffS, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'diffS', region%BMB%laddie%diffS)
       case ('viscU')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'viscU', region%BMB%laddie%viscU, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'viscU', region%BMB%laddie%viscU)
       case ('viscV')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'viscV', region%BMB%laddie%viscV, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'viscV', region%BMB%laddie%viscV)
       case ('T_base')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'T_base', region%BMB%laddie%T_base, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'T_base', region%BMB%laddie%T_base)
       case ('T_amb')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'T_amb', region%BMB%laddie%T_amb, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'T_amb', region%BMB%laddie%T_amb)
       case ('u_star')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'u_star', region%BMB%laddie%u_star, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'u_star', region%BMB%laddie%u_star)
       case ('gamma_T')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'gamma_T', region%BMB%laddie%gamma_T, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'gamma_T', region%BMB%laddie%gamma_T)
       case ('divQU')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'divQU', region%BMB%laddie%divQU, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'divQU', region%BMB%laddie%divQU)
       case ('divQV')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'divQV', region%BMB%laddie%divQV, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'divQV', region%BMB%laddie%divQV)
       case ('HU_lad')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HU_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%U, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HU_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%U)
       case ('HV_lad')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HV_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%V, d_is_hybrid = .true.)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HV_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%V)
 
     ! == Lateral mass balance ==
     ! ==========================
@@ -771,7 +784,8 @@ contains
     call generate_filename_XXXXXdotnc( filename_base, region%output_filename_mesh)
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Creating mesh output file "' // colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
+    if (par%primary) write(0,'(A)') '   Creating mesh output file "' // &
+      UPSY%stru%colour_string( trim( region%output_filename_mesh), 'light blue') // '"...'
 
     ! Create the NetCDF file
     call create_new_netcdf_file_for_writing( region%output_filename_mesh, ncid)
@@ -1062,7 +1076,7 @@ contains
       case ('mask_coastline')
         call add_field_mesh_int_2D( filename, ncid, 'mask_coastline', do_compress = C%do_compress_output, long_name = 'Mask indicating ice-free land next to ice-free ocean')
       case ('mask_ROI')
-        call add_field_mesh_int_2D( filename, ncid, 'mask_ROI', do_compress = C%do_compress_output, long_name = 'Mask indicating ROI')
+        call add_field_mesh_int_2D( filename, ncid, 'mask_ROI', do_compress = C%do_compress_output, long_name = 'Mask indicating all ROIs')
       case ('mask_SGD')
         call add_field_mesh_int_2D( filename, ncid, 'mask_SGD', do_compress = C%do_compress_output, long_name = 'Mask indicating potential subglacial discharge cells')
       case ('mask')

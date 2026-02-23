@@ -6,19 +6,22 @@ MODULE climate_main
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
-  use SMB_model_types                                        , only: type_SMB_model
+  use SMB_model, only: atype_SMB_model
+  use SMB_snapshot_plus_anomalies, only: type_SMB_model_snp_p_anml
   use grid_types                                             , ONLY: type_grid
   USE climate_model_types                                    , ONLY: type_climate_model
   USE global_forcing_types                                   , ONLY: type_global_forcing
   USE climate_idealised                                      , ONLY: initialise_climate_model_idealised, run_climate_model_idealised
   USE climate_realistic                                      , ONLY: initialise_climate_model_realistic, run_climate_model_realistic, remap_climate_realistic
   USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
+  USE climate_snapshot_plus_transient_deltaT                 , ONLY: initialise_climate_model_snapshot_plus_transient_deltaT, run_climate_model_snapshot_plus_transient_deltaT, remap_climate_snapshot_plus_transient_deltaT
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
@@ -37,13 +40,13 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_grid),                        INTENT(IN)    :: grid
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
-    TYPE(type_climate_model),               INTENT(INOUT) :: climate
+    TYPE(type_grid),             target,    INTENT(IN)    :: grid
+    TYPE(type_ice_model),        target,    INTENT(IN)    :: ice
+    TYPE(type_climate_model),    target,    INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
-    TYPE(type_SMB_model), optional,         INTENT(IN)    :: SMB
+    class(atype_SMB_model), optional,       INTENT(INOUT) :: SMB
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'run_climate_model'
@@ -51,7 +54,7 @@ CONTAINS
 
     ! Add routine to path
     CALL init_routine( routine_name)
-    
+
     ! Check if we need to calculate a new climate
     IF (C%do_asynchronous_climate) THEN
       ! Asynchronous coupling: do not calculate a new climate in
@@ -90,18 +93,27 @@ CONTAINS
 
     ! Run the chosen climate model
     SELECT CASE (choice_climate_model)
-      CASE ('none')
-        ! No need to do anything
-      CASE ('idealised')
-        CALL run_climate_model_idealised( mesh, ice, climate, time)
-      CASE ('realistic')
-        CALL run_climate_model_realistic( mesh, ice, climate, forcing, time)
-      CASE ('snapshot_plus_uniform_deltaT')
-        CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, time)  
-      CASE ('matrix')
-        call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
-      CASE DEFAULT
-        CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
+    CASE ('none')
+      ! No need to do anything
+    CASE ('idealised')
+      CALL run_climate_model_idealised( mesh, ice, climate, time)
+    CASE ('realistic')
+      CALL run_climate_model_realistic( mesh, ice, climate, forcing, time)
+    CASE ('snapshot_plus_uniform_deltaT')
+      CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, time)
+    CASE ('snapshot_plus_transient_deltaT')
+      CALL run_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, time)
+    CASE ('matrix')
+      call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
+    case ('SMB_snapshot_plus_anomalies')
+      select type (snapshot_plus_anomalies => SMB)
+      class default
+        call crash('choice_climate_model = SMB_snapshot_plus_anomalies only works when choice_SMB_model = snapshot_plus_anomalies')
+      class is (type_SMB_model_snp_p_anml)
+        call snapshot_plus_anomalies%run( snapshot_plus_anomalies%ct_run( time, ice, climate, grid))
+      end select
+    CASE DEFAULT
+      CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT
 
     ! Finalise routine path
@@ -109,9 +121,7 @@ CONTAINS
 
   END SUBROUTINE run_climate_model
 
-! solved as
   SUBROUTINE initialise_climate_model( mesh, grid, ice, climate, forcing, region_name)
-
     ! Initialise the climate model
 
     IMPLICIT NONE
@@ -121,7 +131,7 @@ CONTAINS
     type(type_grid),                        intent(in)    :: grid
     TYPE(type_ice_model),                   INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(OUT)   :: climate
-    TYPE(type_global_forcing),              INTENT(IN) :: forcing
+    TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
 
     ! Local variables:
@@ -167,8 +177,11 @@ CONTAINS
     ! Determine which climate model to initialise
     ! Print to terminal
     IF (par%primary)  WRITE(*,"(A)") '     Initialising climate model "' // &
-      colour_string( TRIM( choice_climate_model),'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( choice_climate_model),'light blue') // '"...'
     select case (choice_climate_model)
+    case default
+      call crash('unknown choice_climate_model "' // trim( choice_climate_model) // '"')
+    case ('none')
       ! No need to do anything
     case ('idealised')
       call initialise_climate_model_idealised( mesh, climate)
@@ -176,11 +189,13 @@ CONTAINS
       call initialise_climate_model_realistic( mesh, ice, climate, forcing, region_name)
     case ('snapshot_plus_uniform_deltaT')
       call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, region_name)
+    case ('snapshot_plus_transient_deltaT')
+      call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, region_name, C%start_time_of_run)
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
       call initialise_climate_matrix( mesh, grid, ice, climate, region_name, forcing)
-    case ('default')
-      call crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
+    case ('SMB_snapshot_plus_anomalies')
+      ! No need to do anything (initialisation is handled by the SMB model)
     end select
 
     ! Finalise routine path
@@ -206,31 +221,34 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Determine which climate model to initialise for this region
-    IF     (region_name == 'NAM') THEN
+    ! Determine which climate model is used for this region
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_climate_model = C%choice_climate_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_climate_model = C%choice_climate_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_climate_model = C%choice_climate_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_climate_model = C%choice_climate_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Write to the restart file of the chosen climate model
-    IF     (choice_climate_model == 'none') THEN
+    select case (choice_climate_model)
+    case default
+      call crash('unknown choice_climate_model "' // trim( choice_climate_model) // '"')
+    case ('none', &
+          'idealised', &
+          'SMB_snapshot_plus_anomalies')
       ! No need to do anything
-    ELSEIF (choice_climate_model == 'idealised') THEN
-      ! No need to do anything
-    ELSEIF (choice_climate_model == 'realistic' .OR. &
-            choice_climate_model == 'snapshot_plus_uniform_deltaT' .OR. &
-            choice_climate_model == 'matrix') THEN
-      CALL write_to_restart_file_climate_model_region( mesh, climate, region_name, time)
-    ELSE
-      CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
-    END IF
+    case ('realistic', &
+          'snapshot_plus_uniform_deltaT', &
+          'snapshot_plus_transient_deltaT', &
+          'matrix')
+      call write_to_restart_file_climate_model_region( mesh, climate, region_name, time)
+    end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -263,7 +281,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Writing to climate restart file "' // &
-      colour_string( TRIM( climate%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( climate%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     CALL open_existing_netcdf_file_for_writing( climate%restart_filename, ncid)
@@ -301,30 +319,33 @@ CONTAINS
     CALL init_routine( routine_name)
 
     ! Determine which climate model to initialise for this region
-    IF     (region_name == 'NAM') THEN
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_climate_model = C%choice_climate_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_climate_model = C%choice_climate_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_climate_model = C%choice_climate_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_climate_model = C%choice_climate_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Create the restart file of the chosen climate model
-    IF     (choice_climate_model == 'none') THEN
+    select case (choice_climate_model)
+    case default
+      call crash('unknown choice_climate_model "' // trim( choice_climate_model) // '"')
+    case ('none', &
+          'idealised', &
+          'SMB_snapshot_plus_anomalies')
       ! No need to do anything
-    ELSEIF (choice_climate_model == 'idealised') THEN
-      ! No need to do anything
-    ELSEIF (choice_climate_model == 'realistic' .OR. &
-            choice_climate_model == 'snapshot_plus_uniform_deltaT' .OR. &
-            choice_climate_model == 'matrix') THEN
-      CALL create_restart_file_climate_model_region( mesh, climate, region_name)
-    ELSE
-      CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
-    END IF
+    case ('realistic', &
+          'snapshot_plus_uniform_deltaT', &
+          'snapshot_plus_transient_deltaT', &
+          'matrix')
+      call create_restart_file_climate_model_region( mesh, climate, region_name)
+    end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -362,7 +383,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Creating climate model restart file "' // &
-      colour_string( TRIM( climate%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( climate%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     CALL create_new_netcdf_file_for_writing( climate%restart_filename, ncid)
@@ -388,7 +409,7 @@ CONTAINS
 
   END SUBROUTINE create_restart_file_climate_model_region
 
-  SUBROUTINE remap_climate_model( mesh_old, mesh_new, climate, region_name, grid, ice, forcing)
+  SUBROUTINE remap_climate_model( mesh_old, mesh_new, climate, region_name, time, grid, ice, forcing)
     ! Remap the climate model
 
     IMPLICIT NONE
@@ -398,6 +419,7 @@ CONTAINS
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+    REAL(dp),                               INTENT(IN)    :: time
     type(type_grid), optional,                    intent(in)    :: grid
     type(type_ice_model), optional,               intent(in)    :: ice
     type(type_global_forcing), optional,          intent(in) :: forcing
@@ -437,7 +459,9 @@ CONTAINS
     ELSEIF (choice_climate_model == 'realistic') THEN
       call remap_climate_realistic(mesh_old, mesh_new, climate, region_name)
     ELSEIF (choice_climate_model == 'snapshot_plus_uniform_deltaT')  THEN
-      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, climate, region_name)
+      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, ice, climate, region_name)
+    ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
+      call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, ice, climate, region_name, time)
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     ELSE

@@ -2,7 +2,7 @@ module dist_to_hybrid_mod
 
   use precisions, only: dp
   use mpi_basic, only: par, sync_node
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use parallel_array_info_type, only: type_par_arr_info
 
   implicit none

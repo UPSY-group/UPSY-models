@@ -5,7 +5,7 @@ module grid_basic
   use precisions, only: dp
   use grid_types, only: type_grid
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use parameters
   use petsc_basic, only: mat_CSR2petsc
   use reallocate_mod, only: reallocate
@@ -28,7 +28,7 @@ contains
     !< Set up a square grid that covers the specified domain
 
     ! In/output variables:
-    character(len=256), intent(in   ) :: name
+    character(len=*),   intent(in   ) :: name
     real(dp),           intent(in   ) :: xmin, xmax, ymin, ymax        ! [m] Domain
     real(dp),           intent(in   ) :: dx                            ! [m] Resolution
     type(type_grid),    intent(  out) :: grid

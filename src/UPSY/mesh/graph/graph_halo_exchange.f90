@@ -4,7 +4,7 @@ module graph_halo_exchange
 
   use precisions, only: dp
   use graph_types, only: type_graph
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_basic, only: par, sync
   use halo_exchange_mod, only: basic_halo_exchange
 

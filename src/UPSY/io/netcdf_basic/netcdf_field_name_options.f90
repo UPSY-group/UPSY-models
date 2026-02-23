@@ -1,7 +1,7 @@
 module netcdf_field_name_options
   !< Lists of options for flexibly-named dimensions/variables in NetCDF in/output files
 
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf, only: NF90_MAX_VAR_DIMS
   use netcdf_basic_wrappers, only: inquire_var, inquire_var_info, inquire_dim
 
@@ -22,8 +22,8 @@ module netcdf_field_name_options
     field_name_options_VorC, field_name_options_nVVor, field_name_options_VVor, field_name_options_TriGC, field_name_options_TriA, &
     field_name_options_A, field_name_options_EA, field_name_options_R, field_name_options_Hi, field_name_options_Hb, field_name_options_Hs, &
     field_name_options_SL, field_name_options_dHb, field_name_options_Ti, field_name_options_T_ocean, &
-    field_name_options_S_ocean, field_name_options_dT_ocean, field_name_options_insolation, field_name_options_sealevel, field_name_options_GI, &
-    field_name_options_CO2
+    field_name_options_S_ocean, field_name_options_dT_ocean, field_name_options_dT_atmosphere, field_name_options_insolation, &
+    field_name_options_sealevel, field_name_options_GI, field_name_options_CO2
 
   public :: inquire_dim_multopt, inquire_var_multopt, get_first_option_from_list
 
@@ -90,12 +90,51 @@ module netcdf_field_name_options
   character(len=1024), parameter :: field_name_options_T_ocean        = 'T_ocean||t_ocean||t_an||votemper'
   character(len=1024), parameter :: field_name_options_S_ocean        = 'S_ocean||s_ocean||s_an||vosaline'
   character(len=1024), parameter :: field_name_options_dT_ocean       = 'dT||dT_ocean||dTo'
+  character(len=1024), parameter :: field_name_options_dT_atmosphere  = 'dT||dT_atmosphere||dT_atm||dTa'
 
   ! Global forcing variables
   character(len=1024), parameter :: field_name_options_insolation     = 'Q_TOA'
   character(len=1024), parameter :: field_name_options_sealevel       = 'SL||sea_level||sl'
   character(len=1024), parameter :: field_name_options_GI             = 'GI||gi||Glacial_Index||glacial_index||GlacialIndex'
   character(len=1024), parameter :: field_name_options_CO2            = 'CO2||co2'
+
+  ! ISMIP variables
+  character(len=1024), parameter :: field_name_options_lithk          = 'lithk'
+  character(len=1024), parameter :: field_name_options_orog           = 'orog'
+  character(len=1024), parameter :: field_name_options_topg           = 'topg'
+  character(len=1024), parameter :: field_name_options_hfgeoubed      = 'hfgeoubed'
+  character(len=1024), parameter :: field_name_options_acabf          = 'acabf'
+  character(len=1024), parameter :: field_name_options_libmassbfgr    = 'libmassbfgr'
+  character(len=1024), parameter :: field_name_options_libmassbffl    = 'libmassbffl'
+  character(len=1024), parameter :: field_name_options_dlithkdt       = 'dlithkdt'
+  character(len=1024), parameter :: field_name_options_xvelsurf       = 'xvelsurf'
+  character(len=1024), parameter :: field_name_options_yvelsurf       = 'yvelsurf'
+  character(len=1024), parameter :: field_name_options_zvelsurf       = 'zvelsurf'
+  character(len=1024), parameter :: field_name_options_xvelbase       = 'xvelbase'
+  character(len=1024), parameter :: field_name_options_yvelbase       = 'yvelbase'
+  character(len=1024), parameter :: field_name_options_zvelbase       = 'zvelbase'
+  character(len=1024), parameter :: field_name_options_xvelmean       = 'xvelmean'
+  character(len=1024), parameter :: field_name_options_yvelmean       = 'yvelmean'
+  character(len=1024), parameter :: field_name_options_litemptop      = 'litemptop'
+  character(len=1024), parameter :: field_name_options_litempbotgr    = 'litempbotgr'
+  character(len=1024), parameter :: field_name_options_strbasemag     = 'strbasemag'
+  character(len=1024), parameter :: field_name_options_licalvf        = 'licalvf'
+  character(len=1024), parameter :: field_name_options_lifmassbf      = 'lifmassbf'
+  character(len=1024), parameter :: field_name_options_sftgif         = 'sftgif'
+  character(len=1024), parameter :: field_name_options_sftgrf         = 'sftgrf'
+  character(len=1024), parameter :: field_name_options_sftflf         = 'sftflf'
+
+  character(len=1024), parameter :: field_name_options_lim            = 'lim'
+  character(len=1024), parameter :: field_name_options_limnsw         = 'limnsw'
+  character(len=1024), parameter :: field_name_options_iareagr        = 'iareagr'
+  character(len=1024), parameter :: field_name_options_iareafl        = 'iareafl'
+
+  character(len=1024), parameter :: field_name_options_tendacabf      = 'tendacabf'
+  character(len=1024), parameter :: field_name_options_tendlibmassbf  = 'tendlibmassbf'
+  character(len=1024), parameter :: field_name_options_tendlibmassbffl= 'tendlibmassbffl'
+  character(len=1024), parameter :: field_name_options_tendlicalvf    = 'tendlicalvf'
+  character(len=1024), parameter :: field_name_options_tendlifmassbf  = 'tendlifmassbf'
+
 
 contains
 

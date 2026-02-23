@@ -6,8 +6,9 @@ module ocean_realistic
 ! ====================
 
   use precisions                                             , only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic                                              , only: par, sync
-  use control_resources_and_error_messaging                  , only: crash, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking                  , only: crash, init_routine, finalise_routine
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
@@ -55,7 +56,7 @@ contains
             call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
         end select
 
-      case ('snapshot_plus_uniform_deltaT')  
+      case ('snapshot_plus_uniform_deltaT')
         ! Apply extrapolation method if required
         select case (C%choice_ocean_extrapolation_method)
           case('initialisation')
@@ -96,7 +97,7 @@ contains
 
     ! Print to terminal
     if (par%primary)  write(*,"(A)") '     Initialising realistic ocean model "' // &
-      colour_string( trim( C%choice_ocean_model_realistic),'light blue') // '"...'
+      UPSY%stru%colour_string( trim( C%choice_ocean_model_realistic),'light blue') // '"...'
 
     ! Run the chosen realistic ocean model
     select case (C%choice_ocean_model_realistic)
@@ -210,11 +211,13 @@ contains
 
     ! Apply extrapolation method if required
     select case (C%choice_ocean_extrapolation_method)
-      case('initialisation')
-        call extrapolate_ocean_forcing( mesh, ice, ocean%T)
-        call extrapolate_ocean_forcing( mesh, ice, ocean%S)
-      case default
-        call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
+    case('none')
+      ! Do nothing (assume input ocean data has already been extrapolated)
+    case('initialisation')
+      call extrapolate_ocean_forcing( mesh, ice, ocean%T)
+      call extrapolate_ocean_forcing( mesh, ice, ocean%S)
+    case default
+      call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
     end select
 
     ! Finalise routine path
@@ -316,8 +319,14 @@ contains
       case ('transient')
           select case (C%choice_ocean_model_transient)
             case ('deltaT')
+              call reallocate_bounds(ocean%deltaT_transient%T0, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
+              call reallocate_bounds(ocean%deltaT_transient%S0, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
               call initialise_ocean_model_transient_deltaT( mesh_new, ice, ocean, region_name, time)
             case ('GlacialIndex')
+              call reallocate_bounds(ocean%GI%T0_warm, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
+              call reallocate_bounds(ocean%GI%S0_warm, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
+              call reallocate_bounds(ocean%GI%T0_cold, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
+              call reallocate_bounds(ocean%GI%S0_cold, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
               call initialise_ocean_model_GlacialIndex( mesh_new, ice, ocean, region_name, time)
             case default
               call crash('unknown choice_ocean_model_transient "' // trim( C%choice_ocean_model_transient) // '"')

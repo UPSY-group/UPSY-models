@@ -10,7 +10,7 @@ MODULE BMB_laddie
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -44,7 +44,7 @@ CONTAINS
     CHARACTER(LEN=256)                                    :: filename_laddieready
     LOGICAL                                               :: found_laddie_file
     REAL(dp), DIMENSION(mesh%vi1:mesh%vi2)                :: temporary_BMB
-    INTEGER                                               :: vi
+    INTEGER                                               :: vi, i_ROI
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -78,17 +78,17 @@ CONTAINS
         CALL read_field_from_file_2D( filename_BMB_laddie_output, 'BMBext', mesh, C%output_dir, temporary_BMB)
 
         DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_ROI(vi)) THEN
-            ! Initialise all values in ROI at zero
-            BMB%BMB( vi) = 0._dp
+            IF (ice%mask_ROI(vi) > 0) THEN
+              ! Initialise all values in ROI at zero
+              BMB%BMB( vi) = 0._dp
 
-            ! Copy values from temporary BMB to all floating / grounding cells within ROI
-            IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_fl( vi) .OR. ice%mask_gl_gr( vi)) THEN
-              BMB%BMB_shelf( vi) = temporary_BMB(vi)
-              BMB%BMB( vi)       = BMB%BMB_shelf( vi)
+              ! Copy values from temporary BMB to all floating / grounding cells within ROI
+              IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_fl( vi) .OR. ice%mask_gl_gr( vi)) THEN
+                BMB%BMB_shelf( vi) = temporary_BMB(vi)
+                BMB%BMB( vi)       = BMB%BMB_shelf( vi)
+              END IF
+
             END IF
-
-          END IF
         END DO
 
       ELSE
@@ -105,17 +105,17 @@ CONTAINS
         CALL read_field_from_file_2D( C%filename_BMB_laddie_initial_output, 'BMBext', mesh, C%output_dir, temporary_BMB)
 
         DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_ROI(vi)) THEN
-            ! Initialise all values in ROI at zero
-            BMB%BMB( vi) = 0._dp
+            IF (ice%mask_ROI(vi) > 0) THEN
+              ! Initialise all values in ROI at zero
+              BMB%BMB( vi) = 0._dp
 
-            ! Copy values from temporary BMB to all floating / grounding cells within ROI
-            IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_fl( vi) .OR. ice%mask_gl_gr( vi)) THEN
-              BMB%BMB_shelf( vi) = temporary_BMB(vi)
-              BMB%BMB( vi)       = BMB%BMB_shelf( vi)
+              ! Copy values from temporary BMB to all floating / grounding cells within ROI
+              IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_fl( vi) .OR. ice%mask_gl_gr( vi)) THEN
+                BMB%BMB_shelf( vi) = temporary_BMB(vi)
+                BMB%BMB( vi)       = BMB%BMB_shelf( vi)
+              END IF
+
             END IF
-
-          END IF
         END DO
 
       ELSE

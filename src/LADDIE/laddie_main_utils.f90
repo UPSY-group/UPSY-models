@@ -7,7 +7,7 @@ MODULE laddie_main_utils
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string, warning
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -26,7 +26,6 @@ MODULE laddie_main_utils
   use mpi_distributed_shared_memory, only: reallocate_dist_shared, hybrid_to_dist, dist_to_hybrid
   use mesh_halo_exchange, only: exchange_halos
   use mesh_repartitioning, only: repartition
-  use mesh_memory, only: deallocate_mesh
   use checksum_mod, only: checksum
 
   IMPLICIT NONE
@@ -508,7 +507,7 @@ CONTAINS
         call reallocate_dist_shared( npx%U, npx%wU, mesh_new%pai_Tri%n_nih)
         call dist_to_hybrid( mesh_new%pai_Tri, d_loc, npx%U)
         deallocate( d_loc)
-    
+
         allocate( d_loc( mesh_old%ti1:mesh_old%ti2), source = 0._dp)
         call hybrid_to_dist( mesh_old%pai_Tri, npx%V, d_loc)
         call map_from_mesh_tri_to_mesh_tri_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, d_loc, '2nd_order_conservative')
@@ -585,6 +584,7 @@ CONTAINS
     ! Forcing
     call repartition( mesh_old, mesh_new, forcing%Hi                , forcing%wHi                )
     call repartition( mesh_old, mesh_new, forcing%Hib               , forcing%wHib               )
+    call repartition( mesh_old, mesh_new, forcing%Hb                , forcing%wHb                )
     call repartition( mesh_old, mesh_new, forcing%TAF               , forcing%wTAF               )
     call repartition( mesh_old, mesh_new, forcing%dHib_dx_b         , forcing%wdHib_dx_b         )
     call repartition( mesh_old, mesh_new, forcing%dHib_dy_b         , forcing%wdHib_dy_b         )
@@ -601,6 +601,7 @@ CONTAINS
 
     forcing%Hi                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hi
     forcing%Hib               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hib
+    forcing%Hb                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hb
     forcing%TAF               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%TAF
     forcing%dHib_dx_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dx_b
     forcing%dHib_dy_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dy_b
@@ -617,6 +618,7 @@ CONTAINS
 
     call checksum( forcing%Hi                , 'forcing%Hi'                , mesh_new%pai_V)
     call checksum( forcing%Hib               , 'forcing%Hib'               , mesh_new%pai_V)
+    call checksum( forcing%Hb                , 'forcing%Hb'                , mesh_new%pai_V)
     call checksum( forcing%TAF               , 'forcing%TAF'               , mesh_new%pai_V)
     call checksum( forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         , mesh_new%pai_Tri)
     call checksum( forcing%dHib_dy_b         , 'forcing%dHib_dy_b'         , mesh_new%pai_Tri)

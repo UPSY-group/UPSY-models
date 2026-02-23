@@ -8,7 +8,7 @@ module line_tracing_triangles
   use remapping_types, only: type_map, type_single_row_mapping_matrices
   use line_tracing_basic
   use mesh_types, only: type_mesh
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use plane_geometry, only: lies_on_line_segment, segment_intersection, crop_line_to_domain, &
     is_in_triangle
   use line_integrals, only: line_integral_xdy, line_integral_mxydx, line_integral_xydy

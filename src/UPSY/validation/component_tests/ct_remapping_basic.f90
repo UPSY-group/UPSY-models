@@ -75,7 +75,7 @@ contains
 
     ! Distribute gridded data over the processes
     allocate( d_grid_ex_vec_partial( grid%n_loc))
-    call distribute_gridded_data_from_primary( grid, d_grid_ex, d_grid_ex_vec_partial)
+    call distribute_gridded_data_from_primary( grid, d_grid_ex_vec_partial, d_grid_ex)
     if (par%primary) deallocate( d_grid_ex)
 
   end subroutine calc_test_function_on_grid

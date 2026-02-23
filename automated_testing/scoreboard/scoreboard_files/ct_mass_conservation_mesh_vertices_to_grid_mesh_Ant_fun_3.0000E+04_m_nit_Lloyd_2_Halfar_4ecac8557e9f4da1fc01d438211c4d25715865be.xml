@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<single_run>
+    <name>mesh_Ant_fun_3.0000E+04_m_nit_Lloyd_2_Halfar</name>
+    <category>component_tests/mass_conservation/mesh_vertices_to_grid</category>
+    <date_and_time>06-Jan-2026 14:04:32</date_and_time>
+    <git_hash_string>4ecac8557e9f4da1fc01d438211c4d25715865be</git_hash_string>
+    <cost_functions>
+        <name>rmse_explicit</name>
+        <definition>sqrt( mean( (dHi_dt_explicit - dHi_dt_ex).^2))</definition>
+        <value>2.6323</value>
+    </cost_functions>
+    <cost_functions>
+        <name>rmse_semiimplicit</name>
+        <definition>sqrt( mean( (dHi_dt_semiimplicit - dHi_dt_ex).^2))</definition>
+        <value>2.6321</value>
+    </cost_functions>
+    <cost_functions>
+        <name>rmse_implicit</name>
+        <definition>sqrt( mean( (dHi_dt_implicit - dHi_dt_ex).^2))</definition>
+        <value>2.632</value>
+    </cost_functions>
+    <cost_functions>
+        <name>rmse_overimplicit</name>
+        <definition>sqrt( mean( (dHi_dt_overimplicit - dHi_dt_ex).^2))</definition>
+        <value>2.6318</value>
+    </cost_functions>
+</single_run>

@@ -6,7 +6,7 @@ module tracer_tracking_model_particles_remapping
   use mpi_basic, only: par, sync
   use mpi_f08, only: MPI_COMM_WORLD, MPI_DOUBLE_PRECISION, MPI_INT, MPI_IRECV, MPI_REQUEST, &
     MPI_RSEND, MPI_STATUS_IGNORE, MPI_WAIT
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles, type_map_particles_to_mesh

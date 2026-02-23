@@ -2,14 +2,15 @@ module vertical_velocities
   !< Routines for calculating vertical ice velocities
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use parameters, only: ice_density, seawater_density
+  use parameters, only: ice_density, seawater_density, NaN
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_3D
   use mpi_distributed_memory, only: gather_to_all
+  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
 
   implicit none
 
@@ -204,9 +205,58 @@ contains
 
     end do
 
+    ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
+    call calc_dw_dz( mesh, ice%Hi, ice%Hs, mesh%zeta, &
+      ice%mask_grounded_ice, ice%mask_floating_ice, ice%w_3D, ice%dw_dz_3D)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine calc_vertical_velocities
+
+  subroutine calc_dw_dz( mesh, Hi, Hs, zeta, mask_grounded_ice, mask_floating_ice, w_3D_a, dw_dz_3D_a)
+
+    ! In- and output variables:
+    type(type_mesh),                                   intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: Hi
+    real(dp), dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: Hs
+    real(dp), dimension(:),                            intent(in   ) :: zeta
+    logical,  dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: mask_grounded_ice
+    logical,  dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: mask_floating_ice
+    real(dp), dimension(mesh%vi1:mesh%vi2, 1:mesh%nz), intent(in   ) :: w_3D_a
+    real(dp), dimension(mesh%vi1:mesh%vi2, 1:mesh%nz), intent(  out) :: dw_dz_3D_a
+
+    ! Local variables:
+    character(len=*), parameter  :: routine_name = 'calc_dw_dz'
+    integer                      :: vi
+    real(dp), dimension(mesh%nz) :: w_prof, dw_dzeta_prof
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+
+      ! No ice means undefined velocity
+      if (.not. (mask_grounded_ice( vi) .or. mask_floating_ice( vi))) then
+        dw_dz_3D_a( vi,:) = NaN
+        cycle
+      end if
+
+      ! Calculate dw/dzeta in the vertical column, on the regular zeta-grid (use two-sided differencing)
+      w_prof = w_3D_a( vi,:)
+      call multiply_CSR_matrix_with_vector_local( mesh%M_ddzeta_k_k_1D, w_prof, dw_dzeta_prof)
+
+      ! Calculate dw/dz from dw/dzeta (see Eqs. C2-C3 in Berends et al., 2024:
+      ! Berends, C. J., van de Wal, R. S. W., and Zegeling, P. A.: Improvements
+      ! on the discretisation of boundary conditions to the momentum balance
+      ! for glacial ice, Journal of Glaciology, 1-15, doi: 10.1017/jog.2024.45, 2024)
+      dw_dz_3D_a( vi,:) = -1._dp / Hi( vi) * dw_dzeta_prof
+
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_dw_dz
 
 end module vertical_velocities

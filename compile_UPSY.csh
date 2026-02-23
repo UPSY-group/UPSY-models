@@ -112,30 +112,37 @@ if ($version == 'dev') then
   rm -f UPSY_unit_test_program_dev
   rm -f UPSY_multinode_unit_test_program_dev
   rm -f UPSY_component_test_program_dev
+  rm -f UPSY_component_test_program_mesh_creation_dev
   mv build/src/UPSY/UPSY_unit_test_program UPSY_unit_test_program_dev
   mv build/src/UPSY/UPSY_multinode_unit_test_program UPSY_multinode_unit_test_program_dev
   mv build/src/UPSY/UPSY_component_test_program UPSY_component_test_program_dev
+  mv build/src/UPSY/UPSY_component_test_program_mesh_creation UPSY_component_test_program_mesh_creation_dev
   rm -f UPSY_unit_test_program
   rm -f UPSY_multinode_unit_test_program
   rm -f UPSY_component_test_program
   cp UPSY_unit_test_program_dev UPSY_unit_test_program
   cp UPSY_multinode_unit_test_program_dev UPSY_multinode_unit_test_program
   cp UPSY_component_test_program_dev UPSY_component_test_program
+  cp UPSY_component_test_program_mesh_creation_dev UPSY_component_test_program_mesh_creation
 
 else if ($version == 'perf') then
 
   rm -f UPSY_unit_test_program_perf
   rm -f UPSY_multinode_unit_test_program_perf
   rm -f UPSY_component_test_program_perf
+  rm -f UPSY_component_test_program_mesh_creation_perf
   mv build/src/UPSY/UPSY_unit_test_program UPSY_unit_test_program_perf
   mv build/src/UPSY/UPSY_multinode_unit_test_program UPSY_multinode_unit_test_program_perf
   mv build/src/UPSY/UPSY_component_test_program UPSY_component_test_program_perf
+  mv build/src/UPSY/UPSY_component_test_program_mesh_creation UPSY_component_test_program_mesh_creation_perf
   rm -f UPSY_unit_test_program
   rm -f UPSY_multinode_unit_test_program
   rm -f UPSY_component_test_program
+  rm -f UPSY_component_test_program_mesh_creation
   cp UPSY_unit_test_program_perf UPSY_unit_test_program
   cp UPSY_multinode_unit_test_program_perf UPSY_multinode_unit_test_program
   cp UPSY_component_test_program_perf UPSY_component_test_program
+  cp UPSY_component_test_program_mesh_creation_perf UPSY_component_test_program_mesh_creation
 
 endif
 

@@ -2,7 +2,7 @@ module map_velocities_to_c_grid
   !< Routines for administrating the memory for the ice model data.
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use mpi_distributed_memory, only: gather_to_all
 

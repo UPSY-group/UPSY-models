@@ -3,19 +3,23 @@ program UPSY_unit_test_program
 
   use basic_program_info, only: program_name
   use precisions, only: dp
+  use model_configuration, only: C
   use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
-  use control_resources_and_error_messaging, only: initialise_control_and_resource_tracker, &
-    print_model_start, print_model_end
+  use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker
+  use basic_model_utilities, only: print_model_start, print_model_end
   use ut_basic, only: create_unit_tests_output_folder, create_unit_tests_output_file, foldername_unit_tests_output
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
 
+  use ut_string, only: unit_tests_string_main
   use ut_mpi, only: unit_tests_mpi_distributed_memory_main
   use ut_petsc, only: unit_tests_petsc_main
   use ut_math_utilities, only: unit_tests_math_utilities_main
   use ut_mesh, only: unit_tests_mesh_main
   use ut_netcdf, only: unit_tests_netcdf_main
+  use ut_fields, only: unit_tests_fields_main
+  use ut_models, only: unit_tests_models_main
 
   implicit none
 
@@ -43,15 +47,19 @@ program UPSY_unit_test_program
 
   ! Create the unit test output folder and file
   foldername_unit_tests_output = 'automated_testing/unit_tests/results'
+  C%output_dir = trim( foldername_unit_tests_output)
   call create_unit_tests_output_folder( foldername_unit_tests_output)
   call create_unit_tests_output_file
 
   ! Run all the unit tests
+  call unit_tests_string_main                ( test_name)
   call unit_tests_mpi_distributed_memory_main( test_name)
   call unit_tests_petsc_main                 ( test_name)
   call unit_tests_math_utilities_main        ( test_name)
   call unit_tests_mesh_main                  ( test_name)
   call unit_tests_netcdf_main                ( test_name)
+  call unit_tests_fields_main                ( test_name)
+  call unit_tests_models_main                ( test_name)
 
   ! Stop the clock
   tstop = MPI_WTIME()

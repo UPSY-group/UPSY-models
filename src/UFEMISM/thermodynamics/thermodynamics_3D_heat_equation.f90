@@ -6,15 +6,16 @@ MODULE thermodynamics_3D_heat_equation
 ! ====================
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_SUM
+  use UPSY_main, only: UPSY
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par
-  USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
-  USE SMB_model_types                                        , ONLY: type_SMB_model
+  use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use zeta_gradients, only: calc_zeta_gradients
   USE thermodynamics_utilities                               , ONLY: calc_heat_capacity, calc_thermal_conductivity, calc_pressure_melting_point, &
@@ -46,7 +47,7 @@ CONTAINS
     TYPE(type_mesh),                      INTENT(INOUT) :: mesh
     TYPE(type_ice_model),                 INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
-    TYPE(type_SMB_model),                 INTENT(IN)    :: SMB
+    class(atype_SMB_model),               intent(in   ) :: SMB
     REAL(dp),                             INTENT(IN)    :: dt
 
     ! Local variables:
@@ -503,7 +504,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Writing to thermodynamics restart file "' // &
-      colour_string( TRIM( ice%thermo_restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( ice%thermo_restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     CALL open_existing_netcdf_file_for_writing( ice%thermo_restart_filename, ncid)
@@ -552,7 +553,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Creating thermodynamics restart file "' // &
-      colour_string( TRIM( ice%thermo_restart_filename), 'light blue') // '"...'
+     UPSY%stru%colour_string( TRIM( ice%thermo_restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     CALL create_new_netcdf_file_for_writing( ice%thermo_restart_filename, ncid)

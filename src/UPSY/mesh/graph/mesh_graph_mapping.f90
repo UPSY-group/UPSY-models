@@ -1,7 +1,7 @@
 module mesh_graph_mapping
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph
   use mpi_f08, only: MPI_WIN

@@ -7,7 +7,7 @@ module DIVA_solver_ocean_pressure
   use mpi_basic, only: par
   use precisions, only: dp
   use parameters, only: grav, ice_density, seawater_density
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, warning, colour_string
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair

@@ -3,9 +3,10 @@ module ct_create_test_meshes
   ! Create the suite of test meshes for the component tests.
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
+  use UPSY_main, only: UPSY
   use precisions, only: dp
   use mpi_basic, only: par, sync
-  use control_resources_and_error_messaging, only: warning, crash, happy, init_routine, finalise_routine, colour_string
+  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use tests_main
   use assertions_basic
   use mesh_types, only: type_mesh
@@ -234,7 +235,7 @@ contains
       ! Add it to the list of test grids
       call add_filename_to_list_of_filenames( test_grid_filenames, filename)
 
-      if (par%primary) write(0,*) '    Created test grid ', colour_string( trim( grid_name), 'light blue')
+      if (par%primary) write(0,*) '    Created test grid ', UPSY%stru%colour_string( trim( grid_name), 'light blue')
 
     end do
 
@@ -308,7 +309,7 @@ contains
     ! Add it to the list of test meshes
     call add_filename_to_list_of_filenames( test_mesh_filenames, filename)
 
-    if (par%primary) write(0,*) '    Created test mesh ', colour_string( trim( mesh_name), 'light blue')
+    if (par%primary) write(0,*) '    Created test mesh ', UPSY%stru%colour_string( trim( mesh_name), 'light blue')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -417,7 +418,7 @@ contains
     ! Add it to the list of test meshes
     call add_filename_to_list_of_filenames( test_mesh_filenames, filename)
 
-    if (par%primary) write(0,*) '    Created test mesh ', colour_string( trim( mesh_name), 'light blue')
+    if (par%primary) write(0,*) '    Created test mesh ', UPSY%stru%colour_string( trim( mesh_name), 'light blue')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -493,7 +494,7 @@ contains
     ! Add it to the list of test meshes
     call add_filename_to_list_of_filenames( test_mesh_filenames, filename)
 
-    if (par%primary) write(0,*) '    Created test mesh ', colour_string( trim( mesh_name), 'light blue')
+    if (par%primary) write(0,*) '    Created test mesh ', UPSY%stru%colour_string( trim( mesh_name), 'light blue')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

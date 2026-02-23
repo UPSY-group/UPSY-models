@@ -6,7 +6,7 @@ module mesh_Voronoi
   use assertions_basic
   use precisions, only: dp
   use mesh_types, only: type_mesh
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
 
   implicit none
 
@@ -44,8 +44,8 @@ subroutine calc_number_of_Voronoi_vertices( mesh)
   type(type_mesh), intent(inout) :: mesh
 
   ! Local variables:
-  character(len=1024), parameter :: routine_name = 'calc_number_of_Voronoi_vertices'
-  integer                        :: ei
+  character(len=*), parameter :: routine_name = 'calc_number_of_Voronoi_vertices'
+  integer                     :: ei
 
   ! Add routine to path
   call init_routine( routine_name)

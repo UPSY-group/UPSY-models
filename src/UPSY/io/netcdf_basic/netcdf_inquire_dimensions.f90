@@ -3,7 +3,7 @@ module netcdf_inquire_dimensions
   !< for certain standard dimensions (zeta, time, month)
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use netcdf_field_name_options
 
   implicit none

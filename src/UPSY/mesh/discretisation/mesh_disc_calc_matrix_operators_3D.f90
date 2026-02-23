@@ -3,7 +3,7 @@ module mesh_disc_calc_matrix_operators_3D
   ! Routines for calculating 3-D matrix operators on the mesh.
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use CSR_matrix_basics, only: deallocate_matrix_CSR_dist, allocate_matrix_CSR_dist, &
     read_single_row_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist

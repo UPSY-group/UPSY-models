@@ -6,18 +6,24 @@ MODULE ocean_main
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: crash, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
+  use grid_types, only: type_grid
   USE ice_model_types                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
-  USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base
+  USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base, interpolate_ocean_depth
   USE ocean_realistic                                        , ONLY: initialise_ocean_model_realistic, run_ocean_model_realistic, remap_ocean_model_realistic
   USE ocean_idealised                                        , ONLY: initialise_ocean_model_idealised, run_ocean_model_idealised
   use netcdf_io_main
+  use ocean_snapshot_nudge2D, only: initialise_ocean_model_snapshot_nudge2D, run_ocean_model_snapshot_nudge2D
+  use reference_geometry_types, only: type_reference_geometry
+  use ocean_snapshot_plus_anomalies, only: initialise_ocean_model_snapshot_plus_anomalies, &
+    run_ocean_model_snapshot_plus_anomalies
 
   IMPLICIT NONE
 
@@ -26,13 +32,12 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_ocean_model( mesh, ice, ocean, region_name, time)
+  SUBROUTINE run_ocean_model( mesh, grid_smooth, ice, ocean, region_name, time)
     ! Calculate the ocean
-
-    IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    type(type_grid),                        intent(in   ) :: grid_smooth
     TYPE(type_ice_model),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -69,28 +74,35 @@ CONTAINS
     END IF
 
     ! Determine which ocean model to run for this region
-    IF     (region_name == 'NAM') THEN
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_ocean_model = C%choice_ocean_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_ocean_model = C%choice_ocean_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_ocean_model = C%choice_ocean_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_ocean_model = C%choice_ocean_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Run the chosen ocean model
-    IF (choice_ocean_model == 'none') THEN
+    select case( choice_ocean_model)
+    case default
+      call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
+    case( 'none')
       ! No need to do anything
-    ELSEIF (choice_ocean_model == 'idealised') THEN
-      CALL run_ocean_model_idealised( mesh, ice, ocean)
-    ELSEIF (choice_ocean_model == 'realistic') THEN
-      CALL run_ocean_model_realistic( mesh, ice, ocean, time)
-    ELSE
-      CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
-    END IF
+    case( 'idealised')
+      call run_ocean_model_idealised( mesh, ice, ocean)
+    case( 'realistic')
+      call limit_ocean_supercooling( mesh, ice, ocean)
+      call run_ocean_model_realistic( mesh, ice, ocean, time)
+    case( 'snapshot+nudge2D')
+      call run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, ocean, time)
+    case( 'snapshot_plus_anomalies')
+      call run_ocean_model_snapshot_plus_anomalies( mesh, ocean, time)
+    end select
 
     ! Compute secondary variables
     CALL calc_ocean_temperature_at_shelf_base(    mesh, ice, ocean)
@@ -101,10 +113,8 @@ CONTAINS
 
   END SUBROUTINE run_ocean_model
 
-  SUBROUTINE initialise_ocean_model( mesh, ice, ocean, region_name, start_time_of_run)
+  SUBROUTINE initialise_ocean_model( mesh, ice, ocean, region_name, start_time_of_run, refgeo_PD, refgeo_init)
     ! Initialise the ocean model
-
-    IMPLICIT NONE
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
@@ -112,6 +122,7 @@ CONTAINS
     TYPE(type_ocean_model),                 INTENT(OUT)   :: ocean
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: start_time_of_run
+    type(type_reference_geometry),          intent(in   ) :: refgeo_PD, refgeo_init
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'initialise_ocean_model'
@@ -123,18 +134,19 @@ CONTAINS
     ! Print to terminal
     IF (par%primary)  WRITE(*,"(A)") '   Initialising ocean model...'
 
-    ! Determine which ocean model to initialise for this region
-    IF     (region_name == 'NAM') THEN
+    ! Determine which ocean model to run for this region
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_ocean_model = C%choice_ocean_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_ocean_model = C%choice_ocean_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_ocean_model = C%choice_ocean_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_ocean_model = C%choice_ocean_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Initialise vertical grid: C%z_ocean and C%nz_ocean
     CALL initialise_ocean_vertical_grid
@@ -151,20 +163,23 @@ CONTAINS
     ocean%T_draft          = 0._dp
     ocean%T_freezing_point = 0._dp
 
-
     ! Set time of next calculation to start time
     ocean%t_next = C%start_time_of_run
 
     ! Determine which ocean model to initialise
-    IF     (choice_ocean_model == 'none') THEN
-      ! No need to do anything
-    ELSEIF (choice_ocean_model == 'idealised') THEN
-      CALL initialise_ocean_model_idealised( mesh, ocean)
-    ELSEIF (choice_ocean_model == 'realistic') THEN
-      CALL initialise_ocean_model_realistic( mesh, ice, ocean, region_name, start_time_of_run)
-    ELSE
-      CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
-    END IF
+    select case( choice_ocean_model)
+    case default
+      call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
+    case( 'none')
+    case( 'idealised')
+      call initialise_ocean_model_idealised( mesh, ocean)
+    case( 'realistic')
+      call initialise_ocean_model_realistic( mesh, ice, ocean, region_name, start_time_of_run)
+    case( 'snapshot+nudge2D')
+      call initialise_ocean_model_snapshot_nudge2D( mesh, ocean%snapshot_nudge2D, region_name, refgeo_PD, refgeo_init)
+    case( 'snapshot_plus_anomalies')
+      call initialise_ocean_model_snapshot_plus_anomalies( mesh, ocean%snapshot_plus_anomalies)
+    end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -173,8 +188,6 @@ CONTAINS
 
   SUBROUTINE write_to_restart_file_ocean_model( mesh, ocean, region_name, time)
     ! Write to the restart file for the ocean model
-
-    IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
@@ -189,29 +202,29 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Determine which ocean model to initialise for this region
-    IF     (region_name == 'NAM') THEN
+    ! Determine which ocean model to run for this region
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_ocean_model = C%choice_ocean_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_ocean_model = C%choice_ocean_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_ocean_model = C%choice_ocean_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_ocean_model = C%choice_ocean_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Write to the restart file of the chosen ocean model
-    IF     (choice_ocean_model == 'none') THEN
+    select case(choice_ocean_model)
+    case default
+      call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
       ! No need to do anything
-    ELSEIF (choice_ocean_model == 'idealised') THEN
-      ! No need to do anything
-    ELSEIF (choice_ocean_model == 'realistic') THEN
-      CALL write_to_restart_file_ocean_model_region( mesh, ocean, region_name, time)
-    ELSE
-      CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
-    END IF
+    case( 'realistic')
+      call write_to_restart_file_ocean_model_region( mesh, ocean, region_name, time)
+    end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -220,8 +233,6 @@ CONTAINS
 
   SUBROUTINE write_to_restart_file_ocean_model_region( mesh, ocean, region_name, time)
     ! Write to the restart NetCDF file for the ocean model
-
-    IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_mesh),        INTENT(IN)    :: mesh
@@ -244,7 +255,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Writing to ocean restart file "' // &
-      colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
 
     ! Open the NetCDF file
     CALL open_existing_netcdf_file_for_writing( ocean%restart_filename, ncid)
@@ -267,8 +278,6 @@ CONTAINS
   SUBROUTINE create_restart_file_ocean_model( mesh, ocean, region_name)
     ! Create the restart file for the ocean model
 
-    IMPLICIT NONE
-
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
@@ -281,29 +290,29 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Determine which ocean model to initialise for this region
-    IF     (region_name == 'NAM') THEN
+    ! Determine which ocean model to run for this region
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_ocean_model = C%choice_ocean_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_ocean_model = C%choice_ocean_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_ocean_model = C%choice_ocean_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_ocean_model = C%choice_ocean_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Create the restart file of the chosen ocean model
-    IF     (choice_ocean_model == 'none') THEN
+    select case(choice_ocean_model)
+    case default
+      call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
       ! No need to do anything
-    ELSEIF (choice_ocean_model == 'idealised') THEN
-      ! No need to do anything
-    ELSEIF (choice_ocean_model == 'realistic') THEN
-      CALL create_restart_file_ocean_model_region( mesh, ocean, region_name)
-    ELSE
-      CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
-    END IF
+    case( 'realistic')
+      call create_restart_file_ocean_model_region( mesh, ocean, region_name)
+    end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -313,8 +322,6 @@ CONTAINS
   SUBROUTINE create_restart_file_ocean_model_region( mesh, ocean, region_name)
     ! Create a restart NetCDF file for the ocean submodel
     ! Includes generation of the procedural filename (e.g. "restart_ocean_00001.nc")
-
-    IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_mesh),        INTENT(IN)    :: mesh
@@ -341,7 +348,7 @@ CONTAINS
 
     ! Print to terminal
     IF (par%primary) WRITE(0,'(A)') '   Creating ocean model restart file "' // &
-      colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
+      UPSY%stru%colour_string( TRIM( ocean%restart_filename), 'light blue') // '"...'
 
     ! Create the NetCDF file
     CALL create_new_netcdf_file_for_writing( ocean%restart_filename, ncid)
@@ -370,8 +377,6 @@ CONTAINS
   SUBROUTINE remap_ocean_model( mesh_old, mesh_new, ice, ocean, region_name, time)
     ! Remap the ocean model
 
-    IMPLICIT NONE
-
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
@@ -390,18 +395,19 @@ CONTAINS
     ! Print to terminal
     IF (par%primary)  WRITE(*,"(A)") '    Remapping ocean model data to the new mesh...'
 
-    ! Determine which ocean model to initialise for this region
-    IF     (region_name == 'NAM') THEN
+    ! Determine which ocean model to run for this region
+    select case (region_name)
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    case ('NAM')
       choice_ocean_model = C%choice_ocean_model_NAM
-    ELSEIF (region_name == 'EAS') THEN
+    case ('EAS')
       choice_ocean_model = C%choice_ocean_model_EAS
-    ELSEIF (region_name == 'GRL') THEN
+    case ('GRL')
       choice_ocean_model = C%choice_ocean_model_GRL
-    ELSEIF (region_name == 'ANT') THEN
+    case ('ANT')
       choice_ocean_model = C%choice_ocean_model_ANT
-    ELSE
-      CALL crash('unknown region_name "' // region_name // '"')
-    END IF
+    end select
 
     ! Reallocate memory for main variables
     CALL reallocate_bounds( ocean%T, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
@@ -413,19 +419,61 @@ CONTAINS
 
     ! Determine which ocean model to remap
     select case (choice_ocean_model)
-      case ('none')
-        ! No need to do anything
-      case ('idealised')  
-        call initialise_ocean_model_idealised( mesh_new, ocean)
-      case ('realistic')
-        call remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
-      case default
-        CALL crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
+    case default
+      call crash('unknown choice_ocean_model "' // TRIM( choice_ocean_model) // '"')
+    case ('none')
+      ! No need to do anything
+    case ('idealised')
+      call initialise_ocean_model_idealised( mesh_new, ocean)
+    case ('realistic')
+      call remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
     end select
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE remap_ocean_model
+
+  SUBROUTINE limit_ocean_supercooling( mesh, ice, ocean)
+  ! Calculate the ocean freezing point at 6 km depth, taking it as the coldest temperature we will allow the ocean to be
+    ! so we can prevent unrealistically high refreezing due to uniformly applied deltaT values that might not be representative of a certain region
+
+    implicit none
+
+    ! In/output variables
+    type(type_mesh),                    intent(in)    :: mesh
+    type(type_ice_model),               intent(in)    :: ice
+    type(type_ocean_model),             intent(inout) :: ocean
+
+    ! Local variables:
+    character(len=256), parameter                     :: routine_name = 'limit_ocean_supercooling'
+    integer                                           :: vi, z
+    real(dp), parameter                               :: depth_limit = 6E3_dp ! depth of freezing point that we want to limit the temperature to be
+    real(dp)                                          :: S0                   ! Practical salinity [PSU]
+    real(dp), parameter                               :: lambda1 = -0.0575_dp ! Liquidus slope                [degC PSU^-1] (Favier et al. (2019), Table 2)
+    real(dp), parameter                               :: lambda2 = 0.0832_dp  ! Liquidus intercept            [degC]        (Favier et al. (2019), Table 2)
+    real(dp), parameter                               :: lambda3 = 7.59E-4_dp ! Liquidus pressure coefficient [degC m^-1]   (Favier et al. (2019), Table 2)
+    real(dp)                                          :: T_supercooled_limit
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+    do z = 1, C%nz_ocean
+      ! Find salinity at 6 km depth
+      call interpolate_ocean_depth( C%nz_ocean, C%z_ocean, ocean%S( vi,:), depth_limit, S0)
+      ! Calculate ocean freezing temperature (Favier et al. (2019), Eq. 3) in degrees Celsius
+      T_supercooled_limit = lambda1 * S0 + lambda2 - lambda3 * depth_limit
+
+      if (ocean%T(vi, z) < T_supercooled_limit) then
+        ocean%T(vi, z) = T_supercooled_limit
+      end if
+    end do
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  END SUBROUTINE limit_ocean_supercooling
 
 END MODULE ocean_main

@@ -6,7 +6,7 @@ module laddie_dummy_domain
 ! ====================
 
   use precisions, only: dp
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use parameters, only: pi
   use mesh_types, only: type_mesh
@@ -170,7 +170,7 @@ contains
     end do
 
     ! Compute masks
-    call determine_masks( mesh, ice)
+    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Extract dHib_dx_b and dHib_dy_b
     call calc_ice_shelf_base_slopes_onesided( mesh, ice)

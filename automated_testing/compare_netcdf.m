@@ -310,16 +310,67 @@ end
   function data_matches = compare_data_variable( filename_ref, filename_mod, var_name)
     % Check if the data of a variable the two NetCDF files are identical
 
+    tol = 1e-12;
+
     d_ref = ncread( filename_ref, var_name);
     d_mod = ncread( filename_mod, var_name);
 
     d_ref = d_ref(:);
     d_mod = d_mod(:);
 
-    data_matches = all( d_ref == d_mod);
+    data_matches = true;
 
-    if ~data_matches
-      disp(['  Mismatching data in ' filename_ref '/' var_name])
+    if contains( filename_ref, '_checksum') && length( d_ref) == 4
+      % The 4 values are: sum, sum_abs, min, max
+
+      d_ref_sum     = d_ref(1);
+      d_ref_sum_abs = d_ref(2);
+      d_ref_min     = d_ref(3);
+      d_ref_max     = d_ref(4);
+
+      d_ref_min_max_abs = max( abs( [d_ref_min, d_ref_max]));
+
+      d_mod_sum     = d_mod(1);
+      d_mod_sum_abs = d_mod(2);
+      d_mod_min     = d_mod(3);
+      d_mod_max     = d_mod(4);
+
+      diff_sum = abs( (d_mod_sum - d_ref_sum) / d_ref_sum_abs);
+      if diff_sum > tol
+        data_matches = false;
+      end
+
+      diff_sum_abs = abs( 1 - d_mod_sum_abs / d_ref_sum_abs);
+      if diff_sum_abs > tol
+        data_matches = false;
+      end
+
+      diff_min = abs( (d_mod_min - d_ref_min) / d_ref_min_max_abs);
+      if diff_min > tol
+        data_matches = false;
+      end
+
+      diff_max = abs( (d_mod_max - d_ref_max) / d_ref_min_max_abs);
+      if diff_max > tol
+        data_matches = false;
+      end
+
+      if ~data_matches
+        disp(['  Mismatching data in ' filename_ref '/' var_name])
+        disp(['    Reference: ' num2str( d_ref')])
+        disp(['    Model    : ' num2str( d_mod')])
+      end
+
+    else
+      % This isn't a checksum file; just compare all the data
+
+      dd = abs( 1 - d_mod ./ d_ref);
+      data_matches = all( dd < tol);
+
+      if ~data_matches
+        disp(['  Mismatching data in ' filename_ref '/' var_name])
+      end
+
     end
 
   end

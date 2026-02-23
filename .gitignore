@@ -66,8 +66,7 @@ tools/python/klooi.ipynb
 automated_testing/integrated_tests/idealised/Berends2023_nudging/experiment_I/input_data/*.nc
 automated_testing/integrated_tests/idealised/Berends2023_nudging/experiment_II/input_data/*.nc
 
+
 # Ignore linting mods
 linting_mods/*
 
-#Ignore Thule for now
-automated_testing/integrated_tests/idealised/Thule

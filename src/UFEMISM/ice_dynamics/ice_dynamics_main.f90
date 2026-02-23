@@ -150,7 +150,7 @@ contains
     end do
 
     ! Update masks
-    call determine_masks( region%mesh, region%ice)
+    call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
     ! Calculate new effective thickness
     call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
@@ -294,8 +294,8 @@ contains
     ! ================
 
     ! call it twice so also the "prev" versions are set
-    call determine_masks( mesh, ice)
-    call determine_masks( mesh, ice)
+    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, region_name)
@@ -763,8 +763,8 @@ contains
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%dHi_dt)
 
     ! call it twice so also the "prev" versions are set
-    call determine_masks( mesh_new, ice)
-    call determine_masks( mesh_new, ice)
+    call determine_masks( mesh_new, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call determine_masks( mesh_new, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Compute mask_ROI
     call calc_mask_ROI( mesh_new, ice, region_name)
@@ -1431,7 +1431,7 @@ contains
       end do
 
       ! Update masks
-      call determine_masks( region%mesh, region%ice)
+      call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
       ! Calculate new effective thickness
       call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)

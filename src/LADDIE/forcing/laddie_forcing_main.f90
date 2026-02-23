@@ -27,7 +27,6 @@ module laddie_forcing_main
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
   use subgrid_ice_margin, only: calc_effective_thickness
-  use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection

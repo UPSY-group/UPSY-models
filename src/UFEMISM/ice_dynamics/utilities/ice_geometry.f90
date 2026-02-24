@@ -7,6 +7,8 @@ module ice_geometry_calculations_mod
     use masks_mod, only: determine_masks
     use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, height_of_water_column_at_ice_front
     use mpi_distributed_memory, only: gather_to_all
+    use model_configuration, only: C
+    use subgrid_grounded_fractions_main , only : calc_grounded_fractions
 
     implicit none
 
@@ -32,8 +34,8 @@ module ice_geometry_calculations_mod
         real(dp), dimension(:), allocatable, private :: fraction_margin       ! [0-1]     Sub-grid ice-filled fraction
         real(dp), dimension(:), allocatable, private :: fraction_gr
         real(dp), dimension(:), allocatable, private :: fraction_gr_b
-        ! real(dp), dimension(:,:), allocatable, private :: bedrock_cdf
-        ! real(dp), dimension(:,:), allocatable, private :: bedrock_cdf_b
+        real(dp), dimension(:,:), allocatable, private :: bedrock_cdf
+        real(dp), dimension(:,:), allocatable, private :: bedrock_cdf_b
 
         logical,  dimension(:), allocatable, private :: mask_icefree_land       ! T: ice-free land , F: otherwise
         logical,  dimension(:), allocatable, private :: mask_icefree_ocean      ! T: ice-free ocean, F: otherwise
@@ -50,7 +52,7 @@ module ice_geometry_calculations_mod
         contains
 
         ! Procedures 
-        procedure, public :: allocate_ice_geometry, calc_ice_geometry, calc_ice_geometry_primary_fields, get_ice_geometry, get_mask
+        procedure, public :: allocate_ice_geometry, calc_ice_geometry, calc_ice_geometry_primary_fields, get_ice_geometry_1d, get_mask 
     
     end type type_ice_geometry  
  
@@ -81,10 +83,10 @@ module ice_geometry_calculations_mod
         call self%calc_ice_geometry_primary_fields()
 
         ! Update the masks
-       ! call determine_masks(self%mesh, self%Hi, self%Hb, self%SL, self%mask, self%mask_icefree_land, self%mask_icefree_ocean, self%mask_grounded_ice, self%mask_floating_ice, self%mask_margin, self%mask_gl_fl, self%mask_gl_gr, slef%mask_cf_gr, self%mask_cf_fl, self%mask_coastline)
+        call determine_masks(self%mesh, self%Hi, self%Hb, self%SL, self%mask, self%mask_icefree_land, self%mask_icefree_ocean, self%mask_grounded_ice, self%mask_floating_ice, self%mask_margin, self%mask_gl_fl, self%mask_gl_gr, self%mask_cf_gr, self%mask_cf_fl, self%mask_coastline)
 
         ! Grounded fraction 
-       ! call calc_grounded_fractions( mesh, self%Hi, self%Hb, self%SL, self%dHb, self%fraction_gr, self%fraction_gr_b, self%mask_floating_ice, self%bedrock_cdf,self%bedrock_cdf_b)
+        call calc_grounded_fractions( mesh, self%Hi, self%Hb, self%SL, self%dHb, self%fraction_gr, self%fraction_gr_b, self%mask_floating_ice, self%bedrock_cdf,self%bedrock_cdf_b)
 
         ! Fraction margin and effectif thickness 
         call calc_effective_thickness(mesh, self%Hi, self%Hb, self%SL, self%Hi_eff, self%fraction_margin)
@@ -138,6 +140,8 @@ module ice_geometry_calculations_mod
         allocate(self%fraction_margin(self%mesh%vi1:self%mesh%vi2))
         allocate(self%fraction_gr(self%mesh%vi1:self%mesh%vi2))
         allocate(self%fraction_gr_b(self%mesh%vi1:self%mesh%vi2))
+        allocate(self%bedrock_cdf(self%mesh%vi1:self%mesh%vi2, C%subgrid_bedrock_cdf_nbins))
+        allocate(self%bedrock_cdf_b(self%mesh%vi1:self%mesh%vi2, C%subgrid_bedrock_cdf_nbins))
 
         ! Masks
         allocate(self%mask(self%mesh%vi1:self%mesh%vi2))
@@ -165,6 +169,8 @@ module ice_geometry_calculations_mod
         self%fraction_margin = 0.0_dp
         self%fraction_gr = 0.0_dp
         self%fraction_gr_b = 0.0_dp
+        self%bedrock_cdf = 0.0_dp
+        self%bedrock_cdf_b = 0.0_dp
 
         self%mask = 0
         self%mask_icefree_land = .false.
@@ -183,47 +189,36 @@ module ice_geometry_calculations_mod
     end subroutine allocate_ice_geometry
 
 
-    subroutine get_ice_geometry(self, name, array_out)
+    subroutine get_ice_geometry_1d(self, name, array_out)
         ! Get a field from the ice geometry type
 
         class(type_ice_geometry),            intent(in ) :: self
         character(len=1024),                 intent(in ) :: name
         real(dp), dimension(:), allocatable, intent(out) :: array_out
-
-        character(len=1024), parameter :: routine_name = 'get_ice_geometry'
+    
+        character(len=1024), parameter :: routine_name = 'get_ice_geometry_1d'
         
         call init_routine(routine_name)
+
         
         ! Select field based on name
         select case(trim(name))
-            ! Fields 
-            case('Hs')
-                array_out = self%Hs
-            case('Hib')
-                array_out = self%Hib
-            case('TAF')
-                array_out = self%TAF
-            case('Ho')
-                array_out = self%Ho
-            case('Hi_eff')
-                array_out = self%Hi_eff
-            case('dHb')
-                array_out = self%dHb
-            case('fraction_margin')
-                array_out = self%fraction_margin
-            case('fraction_gr')
-                array_out = self%fraction_gr
-            case('fraction_gr_b')
-                array_out = self%fraction_gr_b
-                        
+            case('Hs');              allocate(array_out, source=self%Hs)
+            case('Hib');             allocate(array_out, source=self%Hib)
+            case('TAF');             allocate(array_out, source=self%TAF)
+            case('Ho');              allocate(array_out, source=self%Ho)
+            case('Hi_eff');          allocate(array_out, source=self%Hi_eff)
+            case('dHb');             allocate(array_out, source=self%dHb)
+            case('fraction_margin'); allocate(array_out, source=self%fraction_margin)
+            case('fraction_gr');     allocate(array_out, source=self%fraction_gr)
+            case('fraction_gr_b');   allocate(array_out, source=self%fraction_gr_b)
             case default
                 call crash("Unknown field name: " // trim(name))
         end select
 
         call finalise_routine(routine_name)
 
-    end subroutine get_ice_geometry
-
+    end subroutine get_ice_geometry_1d
 
     subroutine get_mask(self, mask_name, mask_out)
         ! Get a mask from the ice geometry object
@@ -238,28 +233,17 @@ module ice_geometry_calculations_mod
         
         ! Select mask based on name
         select case(trim(mask_name))
-            case('mask')
-                mask_out = (self%mask == 1)  ! Convert integer to logical
-            case('mask_icefree_land')
-                mask_out = self%mask_icefree_land
-            case('mask_icefree_ocean')
-                mask_out = self%mask_icefree_ocean
-            case('mask_grounded_ice')
-                mask_out = self%mask_grounded_ice
-            case('mask_floating_ice')
-                mask_out = self%mask_floating_ice
-            case('mask_margin')
-                mask_out = self%mask_margin
-            case('mask_gl_gr')
-                mask_out = self%mask_gl_gr
-            case('mask_gl_fl')
-                mask_out = self%mask_gl_fl
-            case('mask_cf_gr')
-                mask_out = self%mask_cf_gr
-            case('mask_cf_fl')
-                mask_out = self%mask_cf_fl
-            case('mask_coastline')
-                mask_out = self%mask_coastline
+            case('mask');               allocate(mask_out, source=(self%mask /= 0)) 
+            case('mask_icefree_land');  allocate(mask_out, source=self%mask_icefree_land)
+            case('mask_icefree_ocean'); allocate(mask_out, source=self%mask_icefree_ocean)
+            case('mask_grounded_ice');  allocate(mask_out, source=self%mask_grounded_ice)
+            case('mask_floating_ice');  allocate(mask_out, source=self%mask_floating_ice)   
+            case('mask_margin');        allocate(mask_out, source=self%mask_margin)
+            case('mask_gl_gr');        allocate(mask_out, source=self%mask_gl_gr)
+            case('mask_gl_fl');        allocate(mask_out, source=self%mask_gl_fl)
+            case('mask_cf_gr');        allocate(mask_out, source=self%mask_cf_gr)
+            case('mask_cf_fl');        allocate(mask_out, source=self%mask_cf_fl)
+            case('mask_coastline');    allocate(mask_out, source=self%mask_coastline)
             case default
                 call crash("Unknown mask name: " // trim(mask_name))
         end select

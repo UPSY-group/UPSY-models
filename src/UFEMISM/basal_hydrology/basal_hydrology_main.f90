@@ -10,16 +10,20 @@ module basal_hydrology_main
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
+  use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg
+  use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
 
   implicit none
 
 contains
 
-  subroutine run_basal_hydrology_model( mesh, ice)
+  subroutine run_basal_hydrology_model( mesh, ice, time, basal_hydro)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_ice_model),             intent(inout) :: ice
+    real(dp),                         intent(in   ) :: time
+    type(type_basal_hydrology_model), intent(inout) :: basal_hydro
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_basal_hydrology_model'
@@ -30,6 +34,29 @@ contains
 
     ! Calculate pore water pressure using the chosen basal hydrology model
     ! ====================================================================
+
+    ! Check if we need to calculate basal hydrology
+    IF (C%do_asynchronous_basal_hydro) THEN
+      ! Asynchronous coupling: do not calculate new basal hydrology in
+      ! every model loop, but only at its own separate time step
+
+      ! Check if this is the next SMB time step
+      IF (time == basal_hydro%t_next) THEN
+        ! Go on to calculate a new SMB
+        basal_hydro%t_next = time + C%dt_basal_hydro
+      ELSEIF (time > basal_hydro%t_next) THEN
+        ! This should not be possible
+        CALL crash('overshot the SMB time step')
+      ELSE
+        ! It is not yet time to calculate a new SMB
+        CALL finalise_routine( routine_name)
+        RETURN
+      END IF
+    
+    ELSE ! IF (C%do_asynchronous_basal_hydro) THEN
+      ! Synchronous coupling: calculate a new SMB in every model loop
+      basal_hydro%t_next = time + C%dt_basal_hydro
+    END IF
 
     select case (C%choice_basal_hydrology_model)
     case default
@@ -43,11 +70,8 @@ contains
       end do
     case ('Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)
-      ! Calculate overburden and effective pressure
-      do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
-        ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
-      end do
+    case ('Salle2025')
+      call basal_hydrology_leg(mesh, ice, ice%hydro_Salle2025, time)
     case ('Leguy2014')
       call calc_pore_water_pressure_none( mesh, ice)
       call calc_effective_pressure_Leguy2014(mesh, ice)
@@ -57,6 +81,20 @@ contains
     case ('error_function_constant')
       call calc_effective_pressure_error_function_constant(mesh, ice)
     end select
+
+    ! Calculate overburden and effective pressure
+    ! ===========================================
+
+    do vi = mesh%vi1, mesh%vi2
+      ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
+      ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
+    end do
+
+    if (C%choice_basal_hydrology_model == 'Salle2025') then
+      do vi = mesh%vi1, mesh%vi2
+        ice%effective_pressure( vi) = basal_hydro%N_til( vi)
+      end do
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

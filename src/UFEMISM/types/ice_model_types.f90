@@ -9,6 +9,7 @@ MODULE ice_model_types
   USE precisions                                             , ONLY: dp
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
+  use basal_hydrology_model_types, only: type_basal_hydrology_model
 
   IMPLICIT NONE
 
@@ -482,6 +483,8 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: effective_pressure          ! [Pa]  Basal effective pressure
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: pore_water_likelihood       ! [0-1] Basal pore water likelihood
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: pore_water_fraction         ! [0-1] Fraction of overburden pressure reduced by pore water pressure
+
+    type(type_basal_hydrology_model) :: hydro_Salle2025
 
   ! == Basal sliding ==
   ! ===================

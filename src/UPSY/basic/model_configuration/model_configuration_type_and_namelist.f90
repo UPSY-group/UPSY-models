@@ -471,10 +471,15 @@ module model_configuration_type_and_namelist
   ! == Basal hydrology
   ! ==================
 
+    ! Time step
+    logical             :: do_asynchronous_basal_hydro_config           = .true.                           ! Whether or not the basal hydrology should be calculated asynchronously from the rest of the model; if so, use dt_basal_hydro; if not, calculate it in every time step
+    real(dp)            :: dt_basal_hydro_config                        = 10._dp                           ! [yr] Time step for calculating basal hydrology
+
     ! Basal hydrology
     character(len=1024) :: choice_basal_hydrology_model_config          = 'Martin2011'                     ! Choice of basal hydrology model: "none", "Martin2011", "inversion", "read_from_file"
     real(dp)            :: Martin2011_hydro_Hb_min_config               = 0._dp                            ! Martin et al. (2011) basal hydrology model: low-end  Hb  value of bedrock-dependent pore-water pressure
     real(dp)            :: Martin2011_hydro_Hb_max_config               = 1000._dp                         ! Martin et al. (2011) basal hydrology model: high-end Hb  value of bedrock-dependent pore-water pressure
+    real(dp)            :: basal_hydro_equil_time_config                = 0.1_dp                          ! [yr] time scale for basal hydrology to get to equilibrium
     real(dp)            :: error_function_max_effective_pressure_config = 5E6_dp                           ! Maximum effective pressure inland for the error-function model
     real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
 
@@ -1658,10 +1663,15 @@ module model_configuration_type_and_namelist
   ! == Basal hydrology
   ! ==================
 
+    ! Time step
+    logical             :: do_asynchronous_basal_hydro
+    real(dp)            :: dt_basal_hydro
+
     ! Basal hydrology
     character(len=1024) :: choice_basal_hydrology_model
     real(dp)            :: Martin2011_hydro_Hb_min
     real(dp)            :: Martin2011_hydro_Hb_max
+    real(dp)            :: basal_hydro_equil_time
     real(dp)            :: error_function_max_effective_pressure
     real(dp)            :: Leguy2014_hydro_connect_exponent
 
@@ -2716,9 +2726,12 @@ contains
       limitness_H_floating_config                                 , &
       modiness_H_style_config                                     , &
       modiness_T_hom_ref_config                                   , &
+      do_asynchronous_basal_hydro_config                          , &
+      dt_basal_hydro_config                                       , &
       choice_basal_hydrology_model_config                         , &
       Martin2011_hydro_Hb_min_config                              , &
       Martin2011_hydro_Hb_max_config                              , &
+      basal_hydro_equil_time_config                               , &
       error_function_max_effective_pressure_config                , &
       Leguy2014_hydro_connect_exponent_config                     , &
       choice_bed_roughness_config                                 , &
@@ -3687,10 +3700,15 @@ contains
     ! == Basal hydrology
     ! ==================
 
+    ! Time step
+    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config             
+    C%dt_basal_hydro                                         = dt_basal_hydro_config                   
+
     ! Basal hydrology
     C%choice_basal_hydrology_model                           = choice_basal_hydrology_model_config
     C%Martin2011_hydro_Hb_min                                = Martin2011_hydro_Hb_min_config
     C%Martin2011_hydro_Hb_max                                = Martin2011_hydro_Hb_max_config
+    C%basal_hydro_equil_time                                 = basal_hydro_equil_time_config
     C%error_function_max_effective_pressure                  = error_function_max_effective_pressure_config
     C%Leguy2014_hydro_connect_exponent                       = Leguy2014_hydro_connect_exponent_config
 

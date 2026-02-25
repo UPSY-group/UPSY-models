@@ -7,7 +7,7 @@ MODULE basal_hydrology_new
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MIN
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  USE control_resources_and_error_messaging                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
+  USE call_stack_and_comp_time_tracking                      , ONLY: init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
@@ -30,6 +30,7 @@ MODULE basal_hydrology_new
   use mesh_utilities                                         , only: find_containing_vertex
   use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
+  use crash_mod                                              , only: crash, warning, happy
 
   IMPLICIT NONE
 
@@ -196,7 +197,7 @@ CONTAINS
     call init_routine( routine_name)
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.001_dp)
+    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  2.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -263,7 +264,7 @@ CONTAINS
       !end if
 
       ! Initialise pressure with overburden pressure (for now at least)
-      basal_hydro%P( vi) = rho_i * g * ice%Hi( vi)
+      !basal_hydro%P( vi) = rho_i * g * ice%Hi( vi)
     end do
 
     ! Finalise routine path
@@ -1491,7 +1492,7 @@ CONTAINS
     real(dp), parameter                                   :: delta = 0.02_dp !Bueler and Van Pelt 2015
     real(dp), parameter                                   :: e0 = 0.69_dp !Bueler and Van Pelt 2015
     real(dp), parameter                                   :: Cc = 0.12_dp !Bueler and Van Pelt 2015
-    real(dp)                                              :: s         
+    real(dp)                                              :: s            !W_til/W_max_til
 
     ! Add routine to path
     call init_routine( routine_name)

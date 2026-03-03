@@ -9,7 +9,7 @@ module subgrid_grounded_fractions_main
   use mpi_distributed_memory, only: gather_to_all
   use subgrid_grounded_fractions_bedrock_CDF
   use subgrid_grounded_fractions_bilin_TAF
-   use ice_geometry_basics, only: thickness_above_floatation
+  use ice_geometry_basics, only: thickness_above_floatation
 
   implicit none
 
@@ -50,7 +50,7 @@ contains
 
 
     do vi = mesh%vi1, mesh%vi2
-      TAF = thickness_above_floatation( Hi( vi), Hb( vi), SL( vi))
+      TAF(vi) = thickness_above_floatation( Hi( vi), Hb( vi), SL( vi))
     end do
 
     ! Use the specified way of calculating sub-grid grounded fractions

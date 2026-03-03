@@ -2,7 +2,7 @@ MODULE basal_hydrology_new
 
 ! ===== Preamble =====
 ! ====================
-! This is preamble is still copied from thermodynamics_3D_heat_equation.f90
+! This preamble is still copied from thermodynamics_3D_heat_equation.f90
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MIN
   USE precisions                                             , ONLY: dp

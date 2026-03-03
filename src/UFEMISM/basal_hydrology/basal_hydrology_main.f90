@@ -5,13 +5,14 @@ module basal_hydrology_main
   use mpi_basic, only: par
   use precisions, only: dp
   use erf_mod, only: error_function
-  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg
   use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
+  use crash_mod, only: crash
 
   implicit none
 

@@ -15,6 +15,7 @@ module mesh_output_files
   use mesh_contour, only: calc_mesh_contour
   use parameters, only: NaN
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_a_2D, ddy_a_a_2D
 
   implicit none
 
@@ -134,6 +135,8 @@ contains
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'write_to_main_regional_output_file_mesh_field'
     integer, dimension(region%mesh%vi1:region%mesh%vi2) :: mask_int
+    real(dp), dimension(:),   allocatable :: d_mesh_vec_partial_2D
+    real(dp), dimension(:),   allocatable :: d_mesh_vec_partial_2D_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -143,6 +146,10 @@ contains
       call finalise_routine( routine_name)
       return
     end if
+
+    ! allocate memory
+    allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+    allocate( d_mesh_vec_partial_2D_b( region%mesh%ti1:region%mesh%ti2))
 
     ! Add the specified data field to the file
     select case (choice_output_field)
@@ -219,6 +226,23 @@ contains
         call write_coastline_to_file( filename, ncid, region%mesh, region%ice)
       case ('grounded_ice_contour')
         call write_grounded_ice_contour_to_file( filename, ncid, region%mesh, region%ice)
+
+    ! ===== Geometry on triangles for 3D plots =====
+    ! ==============================================
+
+      case ('Hs_b')
+        call map_a_b_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'Hs_b', d_mesh_vec_partial_2D_b)
+
+    ! ===== Geometry gradients for hillshade =====
+    ! ============================================
+
+      case ('dHs_dx')
+        call ddx_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dx', d_mesh_vec_partial_2D)
+      case ('dHs_dy')
+        call ddy_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dy', d_mesh_vec_partial_2D)
 
     ! ===== Geometry changes w.r.t. reference =====
     ! =============================================
@@ -726,6 +750,9 @@ contains
 
     end select
 
+    deallocate( d_mesh_vec_partial_2D)
+    deallocate( d_mesh_vec_partial_2D_b)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -983,6 +1010,19 @@ contains
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'long_name', 'Grounded ice contour coordinates')
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'format', 'Matlab contour format')
+
+    ! ===== Geometry on triangles for 3D plots =====
+    ! ==============================================
+      case ('Hs_b')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'Hs_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation on triangles', units = 'm')
+
+    ! ===== Geometry gradients for hillshade =====
+    ! ============================================
+
+      case ('dHs_dx')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHs_dx', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation gradient in x-direction', units = ' ')
+      case ('dHs_dy')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHs_dy', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation gradient in y-direction', units = ' ')
 
     ! ===== Geometry changes w.r.t. reference =====
     ! =============================================

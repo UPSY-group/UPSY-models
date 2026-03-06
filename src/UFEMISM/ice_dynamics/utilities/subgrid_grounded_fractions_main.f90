@@ -50,7 +50,7 @@ contains
 
 
     do vi = mesh%vi1, mesh%vi2
-      TAF = thickness_above_floatation( Hi( vi), Hb( vi), SL( vi))
+      TAF( vi) = thickness_above_floatation( Hi( vi), Hb( vi), SL( vi))
     end do
 
     ! Use the specified way of calculating sub-grid grounded fractions

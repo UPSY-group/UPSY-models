@@ -59,7 +59,7 @@ contains
     elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
       d_is_hybrid = .true.
     else
-      call crash('invalid size for d_partial')
+      call crash('invalid size for d_partial ({int_01})', int_01 = size( d_partial,1))
     end if
 
     ! Inquire the variable
@@ -143,7 +143,7 @@ contains
     elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
       d_is_hybrid = .true.
     else
-      call crash('invalid size for d_partial')
+      call crash('invalid size for d_partial ({int_01})', int_01 = size( d_partial,1))
     end if
 
     ! Inquire the variable

@@ -46,6 +46,7 @@ contains
     integer                                              :: n_visc_its
     integer                                              :: n_Axb_its
     integer                                              :: ierr
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -109,6 +110,9 @@ contains
     ! Store the previous maximum truncation error eta_n
     region%ice%pc%eta_n = region%ice%pc%eta_np1
 
+    ! Store local SMB for hybrid memory reasons
+    SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
+
     pc_it = 0
     iterate_pc_timestep: do while (pc_it < C%pc_nit_max)
 
@@ -121,7 +125,7 @@ contains
       ! ====================
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
       ! Making sure verticies in no ice mask have zero thinning rates
@@ -173,7 +177,7 @@ contains
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate the basal mass balance
-      ! call run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%SMB, region%BMB, region%name, region%time)
+      ! call run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, region%time)
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
@@ -204,7 +208,7 @@ contains
       call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! Calculate thinning rates for the current ice thickness and predicted velocity
-      call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, region%SMB%SMB, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
       ! Making sure verticies in no ice mask have zero thinning rates

@@ -52,20 +52,24 @@ CONTAINS
     CALL init_routine( routine_name)
 
     ! Mask on a-grid
-    DO vi = mesh%vi1, mesh%vi2
+    do vi = mesh%vi1, mesh%vi2
       ! Check whether vertex on border
-      IF (mesh%VBI( vi) > 0) THEN
+      if (mesh%VBI( vi) > 0) then
         laddie%mask_a( vi)    = .false.
         laddie%mask_gr_a( vi) = .true.
-      !ELSE IF (forcing%Hi( vi) < 1.0 .and. forcing%mask_floating_ice( vi)) THEN
-      !  laddie%mask_a( vi)    = .false.
-      !  laddie%mask_oc_a( vi) = .true.
-      ELSE
+      ! Check whether ice is too thin
+      else if (forcing%mask_floating_ice( vi) .and. &
+        (C%choice_calving_law == 'threshold_thickness' &
+        .and. forcing%Hi( vi) < C%calving_threshold_thickness_shelf) &
+        .or. forcing%Hi( vi) < 1.0) then
+        laddie%mask_a( vi)    = .false.
+        laddie%mask_oc_a( vi) = .true.
+      else
         ! Inherit regular masks
         laddie%mask_a( vi)    = forcing%mask_floating_ice( vi)
-        laddie%mask_gr_a( vi) = forcing%mask_grounded_ice( vi) .OR. forcing%mask_icefree_land( vi)
+        laddie%mask_gr_a( vi) = forcing%mask_grounded_ice( vi) .or. forcing%mask_icefree_land( vi)
         laddie%mask_oc_a( vi) = forcing%mask_icefree_ocean( vi)
-      END IF
+      end if
 
       ! Define domain for area integration
       if (laddie%mask_a( vi)) then
@@ -73,7 +77,7 @@ CONTAINS
       else
         laddie%domain_a( vi) = 0.0_dp
       end if
-    END DO
+    end do
 
     call exchange_halos( mesh, laddie%mask_a)
     call exchange_halos( mesh, laddie%mask_gr_a)

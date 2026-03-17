@@ -43,10 +43,13 @@ def get_cmap(varname):
         vmin = -10
         linthresh = .3
         linscale = .25
+        cmax = .9
         fracpos = (np.log10(vmax/linthresh)+linscale)/(np.log10(vmax/linthresh)+np.log10(-(vmin/linthresh))+2*linscale)
         nneg = np.int_((1-fracpos)*Ncols) + 1
-        colors1 = plt.get_cmap('cmo.diff')(np.linspace(.15,.5,nneg))
-        colors2 = plt.get_cmap('afmhot_r')(np.linspace(0,.9, Ncols-nneg))
+        relneg = (1-fracpos)/fracpos
+        cmin = .5-cmax*relneg*.5
+        colors1 = plt.get_cmap('cmo.diff')(np.linspace(cmin,.5,nneg))
+        colors2 = plt.get_cmap('afmhot_r')(np.linspace(0,cmax, Ncols-nneg))
         colors = np.vstack((colors1, colors2))
 
         cmap = mpl.colors.LinearSegmentedColormap.from_list('my_colormap', colors, Ncols)
@@ -95,7 +98,8 @@ def get_cmap(varname):
     
     elif varname == 'Hs':
         cmap = copy(plt.get_cmap('cmo.ice'))
-        norm = mpl.colors.Normalize(vmin=0,vmax=1000,clip=True)
+        #norm = mpl.colors.Normalize(vmin=0,vmax=1000,clip=True)
+        norm = mpl.colors.LogNorm(vmin=1,vmax=3000,clip=True)
 
     elif varname == 'H_lad':
         cmap = copy(plt.get_cmap('cmo.deep'))
@@ -123,8 +127,8 @@ def get_cmap(varname):
 
     elif varname in ['uabs_surf', 'uabs_vav', 'bed_roughness_nudge_H_u_target_velocity']:
         cmap = copy(plt.get_cmap('turbo'))
-        norm = mpl.colors.Normalize(vmin=0,vmax=2000,clip=True)
-        #norm = mpl.colors.LogNorm(vmin=1.,vmax=4000,clip=True)
+        #norm = mpl.colors.Normalize(vmin=0,vmax=2000,clip=True)
+        norm = mpl.colors.LogNorm(vmin=1.,vmax=4000,clip=True)
 
     elif varname == 'mask_SGD':
         cmap = copy(plt.get_cmap('Greys'))
@@ -150,8 +154,26 @@ def get_cmap(varname):
         cmap = copy(plt.get_cmap('nipy_spectral'))
         norm = mpl.colors.LogNorm(vmin=3000,vmax=30e3)
 
+    elif varname == 'SMB':
+        cmap = copy(plt.get_cmap('cmo.tarn'))
+        norm = mpl.colors.SymLogNorm(0.05, vmin=-6, vmax=6, linscale=.01)
+
+    elif varname == 'till_friction_angle':
+        cmap = copy(plt.get_cmap('cmo.turbid'))
+        norm = mpl.colors.Normalize(vmin=0,vmax=45,clip=True)
+
+    elif varname == 'dHi_dt':
+        cmap = copy(plt.get_cmap('cmo.balance_r'))
+        norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
+
+    elif varname == 'divQ':
+        cmap = copy(plt.get_cmap('cmo.diff'))
+        norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
+
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')
         return
 
-    return cmap,norm
+    scalarmap = mpl.cm.ScalarMappable(norm=norm,cmap=cmap)
+
+    return scalarmap

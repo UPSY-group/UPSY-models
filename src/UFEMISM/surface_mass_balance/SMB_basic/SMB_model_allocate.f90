@@ -73,6 +73,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Set generic names
+    call self%set_name('SMB')
+    call self%set_region_name(context%region_name)
+
+    ! Allocate generic fields
     call self%create_field( self%SMB, self%wSMB, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'SMB', &

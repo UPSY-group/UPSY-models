@@ -1,6 +1,7 @@
 module checksum_mod
 
   use precisions, only: dp
+  use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: routine_path, crash, &
     insert_val_into_string_int, insert_val_into_string_dp
   use mpi_basic, only: par
@@ -25,7 +26,6 @@ module checksum_mod
     procedure :: checksum_dp_2D
   end interface checksum
 
-  logical             :: do_write_checksum_log
   logical             :: checksum_logfile_exists
   character(len=1024) :: filename_checksum_logfile
   integer             :: unit_checksum_logfile
@@ -39,7 +39,7 @@ contains
 
     integer :: sum_d, ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     if (.not. present( pai)) then
       sum_d = count( d)
@@ -60,7 +60,7 @@ contains
 
     integer :: sum_d, ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     if (.not. present( pai)) then
       sum_d = count( d)
@@ -86,7 +86,7 @@ contains
     integer :: min_d, max_d
     integer :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     call MPI_ALLREDUCE( d, min_d, 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( d, max_d, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
@@ -103,7 +103,7 @@ contains
 
     integer :: sum_d, sum_abs_d, min_d, max_d, ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     if (.not. present( pai)) then
       sum_d     = sum   ( d)
@@ -133,7 +133,7 @@ contains
 
     integer :: sum_d, sum_abs_d, min_d, max_d, ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     if (.not. present( pai)) then
       sum_d     = sum   ( d)
@@ -168,7 +168,7 @@ contains
     real(dp) :: min_d, max_d
     integer  :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     call MPI_ALLREDUCE( d, min_d, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( d, max_d, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
@@ -186,7 +186,7 @@ contains
     real(dp) :: sum_d, sum_abs_d, min_d, max_d
     integer  :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     if (.not. present( pai)) then
       sum_d     = sum   ( d)
@@ -217,7 +217,7 @@ contains
     real(dp) :: sum_d, sum_abs_d, min_d, max_d
     integer  :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     if (.not. present( pai)) then
       sum_d     = sum   ( d)

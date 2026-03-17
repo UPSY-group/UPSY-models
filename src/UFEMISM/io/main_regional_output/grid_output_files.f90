@@ -371,6 +371,18 @@ contains
       case ('grounded_ice_contour')
         ! Do nothing; only written to mesh files
 
+    ! ===== Geometry on triangles for 3D plots =====
+    ! ==============================================
+      case ('Hs_b')
+        ! Do nothing; only written to mesh files
+
+    ! ===== Geometry gradients for hillshade =====
+    ! ============================================
+      case ('dHs_dx')
+        ! Do nothing; only written to mesh files
+      case ('dHs_dy')
+        ! Do nothing; only written to mesh files
+
     ! ===== Geometry changes w.r.t. reference =====
     ! =============================================
 
@@ -770,7 +782,7 @@ contains
 
       ! Main SMB variables
       case ('SMB')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%SMB, d_grid_vec_partial_2D)
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%SMB, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'SMB', d_grid_vec_partial_2D)
       case ('Albedo')
         select type (IMAU_ITM => region%SMB)
@@ -1378,6 +1390,18 @@ contains
       case ('coastline')
         ! Do nothing; only written to mesh files
       case ('grounded_ice_contour')
+        ! Do nothing; only written to mesh files
+
+    ! ===== Geometry on triangles for 3D plots =====
+    ! ==============================================
+      case ('Hs_b')
+        ! Do nothing; only written to mesh files
+
+    ! ===== Geometry gradients for hillshade =====
+    ! ============================================
+      case ('dHs_dx')
+        ! Do nothing; only written to mesh files
+      case ('dHs_dy')
         ! Do nothing; only written to mesh files
 
     ! ===== Geometry changes w.r.t. reference =====

@@ -151,8 +151,9 @@ contains
     ! ===========================
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%Hi                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
-    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
     forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
@@ -324,6 +325,9 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Print to screen
+    if (par%primary) write(0,'(A)') '   Creating mesh from reference geometry...'
 
     ! Determine if the initial geometry is provided gridded or meshed
     if (allocated( refgeo%grid_raw%x)) then

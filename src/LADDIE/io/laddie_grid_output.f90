@@ -183,6 +183,9 @@ contains
       case ('Hi')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hi, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hi', d_grid_vec_partial_2D)
+      case ('Hs')
+        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hs, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
+        call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hs', d_grid_vec_partial_2D)
       case ('Hb')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hb, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hb', d_grid_vec_partial_2D)
@@ -192,6 +195,25 @@ contains
       case ('TAF')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%TAF, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'TAF', d_grid_vec_partial_2D)
+
+      case ('Hs_b')
+        ! Do nothing
+      case ('Hb_b')
+        ! Do nothing
+      case ('Hib_b')
+        ! Do nothing
+      case ('dHs_dx')
+        ! Do nothing
+      case ('dHs_dy')
+        ! Do nothing
+      case ('dHb_dx')
+        ! Do nothing
+      case ('dHb_dy')
+        ! Do nothing
+      case ('dHib_dx')
+        ! Do nothing
+      case ('dHib_dy')
+        ! Do nothing
 
       ! Ice temperature
       case ('Ti')
@@ -255,6 +277,9 @@ contains
       case ('S_lad')
         call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%S, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'S_lad', d_grid_vec_partial_2D)
+
+      case ('H_lad_b')
+        ! Do nothing
 
       ! Useful laddie fields
       case ('drho_amb')
@@ -462,12 +487,33 @@ contains
       ! Ice geometry
       case ('Hi')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hi', long_name = 'Ice thickness', units = 'm')
+      case ('Hs')
+        call add_field_grid_dp_2D_notime( filename, ncid, 'Hs', long_name = 'Ice surface elevation', units = 'm')
       case ('Hb')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hb', long_name = 'Bedrock elevation', units = 'm w.r.t. sea level')
       case ('Hib')
         call add_field_grid_dp_2D_notime( filename, ncid, 'Hib', long_name = 'Ice base elevation', units = 'm w.r.t. sea level')
       case ('TAF')
         call add_field_grid_dp_2D_notime( filename, ncid, 'TAF', long_name = 'Ice thickness above floatation', units = 'm w.r.t. sea level')
+      case ('Hs_b')
+        ! Do nothing
+      case ('Hb_b')
+        ! Do nothing
+      case ('Hib_b')
+        ! Do nothing
+      case ('dHs_dx')
+        ! Do nothing
+      case ('dHs_dy')
+        ! Do nothing
+      case ('dHb_dx')
+        ! Do nothing
+      case ('dHb_dy')
+        ! Do nothing
+      case ('dHib_dx')
+        ! Do nothing
+      case ('dHib_dy')
+        ! Do nothing
+
       case ('Ti')
         call add_field_grid_dp_3D_notime( filename, ncid, 'Ti', long_name = 'Englacial temperature', units = 'K')
       case ('T_ocean')
@@ -519,6 +565,9 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'T_lad', long_name = 'Laddie temperature', units = 'deg C')
       case ('S_lad')
         call add_field_grid_dp_2D( filename, ncid, 'S_lad', long_name = 'Laddie salinity', units = 'PSU')
+
+      case ('H_lad_b')
+        ! Do nothing
 
       ! Useful laddie fields
       case ('drho_amb')

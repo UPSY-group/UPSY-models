@@ -152,7 +152,7 @@ CONTAINS
       call region%SMB%run( region%SMB%ct_run( region%time, region%ice, region%climate, region%grid_smooth))
 
       ! Calculate the basal mass balance
-      CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%SMB, region%BMB, region%name, region%time, is_initial=.FALSE.)
+      CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, region%time, is_initial=.FALSE.)
 
       ! Calculate the lateral mass balance
       CALL run_LMB_model( region%mesh, region%ice, region%LMB, region%name, region%time)
@@ -582,7 +582,7 @@ CONTAINS
     CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
     CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, C%start_time_of_run)
     call region%SMB%run( region%SMB%ct_run( C%start_time_of_run, region%ice, region%climate, region%grid_smooth))
-    CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%SMB, region%BMB, region%name, C%start_time_of_run, is_initial=.TRUE.)
+    CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, C%start_time_of_run, is_initial=.TRUE.)
     CALL run_LMB_model( region%mesh, region%ice, region%LMB, region%name, region%time)
 
     ! Reset the timers
@@ -1042,7 +1042,7 @@ CONTAINS
         CASE ('')
          ! No region requested: don't need to do anything
          EXIT
-        CASE ('PineIsland','Thwaites','Amery','RiiserLarsen','SipleCoast','LarsenC', &
+        CASE ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast','LarsenC', &
               'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &
               'Antarctic_Peninsula', 'Institute', &                                          ! Antarctica
               'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                           ! Greenland
@@ -1107,6 +1107,8 @@ CONTAINS
               CALL calc_polygon_Amery_ice_shelf( poly_ROI)
             CASE ('RiiserLarsen')
               CALL calc_polygon_Riiser_Larsen_ice_shelf( poly_ROI)
+            CASE ('RiiL_IQ2300')
+              CALL calc_polygon_Riiser_Larsen_IQ2300( poly_ROI)
             CASE ('SipleCoast')
               CALL calc_polygon_Siple_Coast( poly_ROI)
             CASE ('LarsenC')

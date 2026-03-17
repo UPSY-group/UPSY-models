@@ -511,6 +511,8 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_O', region%ice%hydro_Salle2025%O)
       case("basal_hydro_C")
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_C', region%ice%hydro_Salle2025%C)
+      case("basal_hydro_N_til")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_N_til', region%ice%hydro_Salle2025%N_til)
 
     ! == Basal sliding ==
     ! ===================
@@ -1254,6 +1256,8 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_O', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity opening rate', units = 'm yr^-1')
       case("basal_hydro_C")
         call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_C', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity closing rate', units = 'm yr^-1')
+      case("basal_hydro_N_til")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_N_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till effective pressure', units = 'Pa')
 
     ! == Basal sliding ==
     ! ===================

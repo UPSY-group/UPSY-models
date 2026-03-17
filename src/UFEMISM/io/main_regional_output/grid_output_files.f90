@@ -649,6 +649,9 @@ contains
       case("basal_hydro_C")
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%C, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_C", d_grid_vec_partial_2D)
+      case("basal_hydro_N_til")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%N_til, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_N_til", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================
@@ -1610,6 +1613,8 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_O', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity opening rate', units = 'm yr^-1')
       case("basal_hydro_C")
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_C', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity closing rate', units = 'm yr^-1')
+      case("basal_hydro_N_til")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_N_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till effective pressure', units = 'Pa')
 
     ! == Basal sliding ==
     ! ===================

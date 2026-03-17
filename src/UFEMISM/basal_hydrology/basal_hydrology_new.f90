@@ -30,6 +30,7 @@ MODULE basal_hydrology_new
   use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
   use crash_mod                                              , only: crash, warning, happy
+  USE reallocate_mod                                         , ONLY: reallocate_bounds
 
   IMPLICIT NONE
 
@@ -91,7 +92,7 @@ CONTAINS
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'basal_hydrology'
 
-    real(dp), parameter            :: W_max = 1000000.0_dp     ! Maximum basal water depth (number is placeholder for now, because there is no maximum W)
+    real(dp), parameter            :: W_max = 1000.0_dp     ! Maximum basal water depth (number is placeholder for now, because there is no maximum W)
     real(dp), parameter            :: W_min = 0.0_dp           ! Minimum basal water depth
 
     real(dp), parameter            :: W_max_til = 2.0_dp       ! Maximum basal water depth in till
@@ -157,7 +158,7 @@ CONTAINS
     call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
 
     ! Calculate output to ice model
-    call calc_N_til(mesh, basal_hydro, W_max_til)
+    call calc_N_til(mesh, basal_hydro, W_max_til, .true.)
     call calc_yield_stress(mesh, ice, basal_hydro)
 
     ! Allow boundary conditions to be applied to W
@@ -196,7 +197,7 @@ CONTAINS
     call init_routine( routine_name)
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.01_dp)
     allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  2.0_dp)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -508,8 +509,7 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! calculate basal hydro masks
+    ! calculate basal hydro masks (For some reason this calc does not work when new mesh is generated?)
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
     ! calculate opening O and closing C terms
@@ -536,7 +536,6 @@ CONTAINS
         basal_hydro%P( vi) = min( max( basal_hydro%P( vi), P_min), basal_hydro%P_o( vi))
       end if
     end do
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -1476,13 +1475,14 @@ CONTAINS
 
 
 
-  subroutine calc_N_til(mesh, basal_hydro, W_max_til)
+  subroutine calc_N_til(mesh, basal_hydro, W_max_til, testing_water_layer)
     ! Calculate till effective pressure
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
     real(dp),                               intent(in   )    :: W_max_til
+    logical,                                intent(in   )    :: testing_water_layer
 
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'calc_N_til'
@@ -1492,6 +1492,8 @@ CONTAINS
     real(dp), parameter                                   :: e0 = 0.69_dp !Bueler and Van Pelt 2015
     real(dp), parameter                                   :: Cc = 0.12_dp !Bueler and Van Pelt 2015
     real(dp)                                              :: s            !W_til/W_max_til
+    real(dp), parameter                                   :: g = 9.81_dp
+    real(dp), parameter                                   :: rho_w = 1000.0_dp
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -1500,6 +1502,9 @@ CONTAINS
       s = basal_hydro%W_til( vi) / W_max_til
       basal_hydro%N_til( vi) = min(basal_hydro%P_o(vi), &
                                    N0*(delta*basal_hydro%P_o( vi)/N0)**(s)*10**(e0/Cc*(1.0_dp - s)))
+      if (testing_water_layer) then     !Testing some stuff out when just adding the moving water layer to effective pressure
+        basal_hydro%N_til( vi) = basal_hydro%N_til( vi) - rho_w*g*basal_hydro%W( vi)
+      end if
     end do
 
     ! Finalise routine path
@@ -1536,5 +1541,153 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_yield_stress
+
+
+
+  SUBROUTINE remap_basal_hydro_model( mesh_old, mesh_new, ice, basal_hydro, time)
+    ! Remap the BMB model
+
+    ! In- and output variables
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
+    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_basal_hydrology_model),       INTENT(INOUT) :: basal_hydro
+    REAL(dp),                               INTENT(IN)    :: time
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model'
+    CHARACTER(LEN=256)                                    :: choice_basal_hydro_model
+    integer                                               :: vi
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Print to terminal
+    IF (par%primary)  WRITE(*,"(A)") '    Remapping basal hydrology model data to the new mesh...'
+
+    ! Reallocate memory for main variables
+    call reallocate_bounds(basal_hydro%P_o, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%W, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%W_til, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%W_til_next, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%P, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%m, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%m_extra, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%dW_dx_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%W_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%K, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%D, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%u, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%v, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%dK_dx_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%dD_dx_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%du_dx_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%dv_dx_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%K_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%D_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%u_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%v_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%u_c, mesh_new%ei1, mesh_new%ei2)
+    call reallocate_bounds(basal_hydro%v_c, mesh_new%ei1, mesh_new%ei2)
+    call reallocate_bounds(basal_hydro%Z, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%C, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%O, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%divQ, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%mask_a, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%mask_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%mask_W, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%R, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%dR_dx_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%dR_dy_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds(basal_hydro%W_r, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%Y, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%q_til, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%q_water_layer, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%ice_u_base, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%ice_v_base, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%ice_w_base, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%N_til, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%tau_c, mesh_new%vi1, mesh_new%vi2)
+
+    ! Re-initialise
+    call calc_basal_hydro_mask_a_b(mesh_new, ice, basal_hydro)
+
+    ! Use the latest basal hydro output for remapping? (Now because of reallocate_bounds everything is 0)
+    write(*,*), "Doing God's work"
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE remap_basal_hydro_model
+
+
+
+  SUBROUTINE init_basal_hydro_model( mesh, basal_hydro)
+    ! Initialise the basal hydrology model
+    !
+    ! Simply reread the latest basal hydrology output
+
+    ! In/output variables:
+    TYPE(type_mesh),                            INTENT(IN)    :: mesh
+    TYPE(type_basal_hydrology_model),           INTENT(INOUT) :: basal_hydro
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'init_basal_hydro_model'
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Read in basal hydrology data from the latest output for the remapping
+    !CALL read_field_from_file_2D( C%filename_basal_hydro_laddie_initial_output, 'basal_hydroext', mesh, C%output_dir, basal_hydro%basal_hydro_shelf)
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE init_basal_hydro_model
+
+
+
+  ! SUBROUTINE write_to_restart_file_basal_hydro_model_region( mesh, basal_hydro, region_name, time)
+  !   ! Write to the restart NetCDF file for the basal hydrology model
+
+  !   ! In/output variables:
+  !   TYPE(type_mesh),                      INTENT(IN) :: mesh
+  !   TYPE(type_basal_hydrology_model),     INTENT(IN) :: basal_hydro
+  !   CHARACTER(LEN=3),                     INTENT(IN) :: region_name
+  !   REAL(dp),                             INTENT(IN) :: time
+
+  !   ! Local variables:
+  !   CHARACTER(LEN=256), PARAMETER        :: routine_name = 'write_to_restart_file_basal_hydro_model_region'
+  !   INTEGER                              :: ncid
+
+  !   ! Add routine to path
+  !   CALL init_routine( routine_name)
+
+  !   ! If no NetCDF output should be created, do nothing
+  !   IF (.NOT. C%do_create_netcdf_output) THEN
+  !     CALL finalise_routine( routine_name)
+  !     RETURN
+  !   END IF
+
+  !   ! Print to terminal
+  !   IF (par%primary) WRITE(0,'(A)') '   Writing to BMB restart file "' // &
+  !     UPSY%stru%colour_string( TRIM( BMB%restart_filename), 'light blue') // '"...'
+
+  !   ! Open the NetCDF file
+  !   CALL open_existing_netcdf_file_for_writing( BMB%restart_filename, ncid)
+
+  !   ! Write the time to the file
+  !   CALL write_time_to_file( BMB%restart_filename, ncid, time)
+
+  !   ! ! Write the BMB fields to the file
+  !   CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'BMB', BMB%BMB)
+
+  !   ! Close the file
+  !   CALL close_netcdf_file( ncid)
+
+  !   ! Finalise routine path
+  !   CALL finalise_routine( routine_name)
+
+  ! END SUBROUTINE write_to_restart_file_basal_hydro_model_region
 
 END MODULE basal_hydrology_new

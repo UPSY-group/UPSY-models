@@ -41,21 +41,21 @@ contains
       ! Asynchronous coupling: do not calculate new basal hydrology in
       ! every model loop, but only at its own separate time step
 
-      ! Check if this is the next SMB time step
+      ! Check if this is the next basal hydrology time step
       IF (time == basal_hydro%t_next) THEN
-        ! Go on to calculate a new SMB
+        ! Go on to calculate a new basal hydrology
         basal_hydro%t_next = time + C%dt_basal_hydro
       ELSEIF (time > basal_hydro%t_next) THEN
         ! This should not be possible
-        CALL crash('overshot the SMB time step')
+        CALL crash('overshot the basal hydro time step')
       ELSE
-        ! It is not yet time to calculate a new SMB
+        ! It is not yet time to calculate a new basal hydrology
         CALL finalise_routine( routine_name)
         RETURN
       END IF
     
     ELSE ! IF (C%do_asynchronous_basal_hydro) THEN
-      ! Synchronous coupling: calculate a new SMB in every model loop
+      ! Synchronous coupling: calculate a new basal hydrology in every model loop
       basal_hydro%t_next = time + C%dt_basal_hydro
     END IF
 

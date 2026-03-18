@@ -385,6 +385,10 @@ class Field(object):
             else:
                 print(f"ERROR: no valid BMB or melt variable in Timeframe")
                 return
+        elif self.varname == 'C_friction':
+            # Friction coefficient
+            var = self.Timeframe.ds['till_friction_angle']
+            self.data = np.tan(np.deg2rad(var)) 
         else:
             # Regular case: read variable if available in output
             try:

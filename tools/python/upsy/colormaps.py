@@ -125,7 +125,7 @@ def get_cmap(varname):
         cmap = copy(plt.get_cmap('cmo.speed'))
         norm = mpl.colors.Normalize(vmin=0,vmax=0.5,clip=True)
 
-    elif varname in ['uabs_surf', 'uabs_vav', 'bed_roughness_nudge_H_u_target_velocity']:
+    elif varname in ['uabs_surf', 'uabs_base', 'uabs_vav', 'bed_roughness_nudge_H_u_target_velocity']:
         cmap = copy(plt.get_cmap('turbo'))
         #norm = mpl.colors.Normalize(vmin=0,vmax=2000,clip=True)
         norm = mpl.colors.LogNorm(vmin=1.,vmax=4000,clip=True)
@@ -169,6 +169,14 @@ def get_cmap(varname):
     elif varname == 'divQ':
         cmap = copy(plt.get_cmap('cmo.diff'))
         norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
+
+    elif varname == 'basal_friction_coefficient':
+        cmap = copy(plt.get_cmap('magma'))
+        norm = mpl.colors.LogNorm(vmin=1e3,vmax=1e6,clip=True)
+
+    elif varname == 'C_friction':
+        cmap = copy(plt.get_cmap('magma'))
+        norm = mpl.colors.LogNorm(vmin=1e-3,vmax=1,clip=True)
 
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')

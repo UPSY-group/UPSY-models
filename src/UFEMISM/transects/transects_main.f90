@@ -29,7 +29,7 @@ module transects_main
 
   private
 
-  public :: initialise_transects, write_to_transect_netcdf_output_files
+  public :: initialise_transects, write_to_transect_netcdf_output_files, parse_transect_str, initialise_transect_waypoints_hardcoded
 
 contains
 

@@ -240,6 +240,9 @@ module model_configuration_type_and_namelist
     ! Miscellaneous refinement options
     logical             :: do_refine_TransAntMounts_glaciers_config     = .false.                          !              Whether or not to refine the mesh over the Transantarctic Mountains glaciers (resolving those really helps in getting a stable Ross ice shelf)
     real(dp)            :: max_res_TransAntMounts_glaciers_config       = 5e3_dp                           ! [m]          Maximum resolution for the Transantarctic Mountains glaciers
+    logical             :: do_refine_around_transects_config            = .false.                          !              Whether or not to refine the mesh around the user-defined transects
+    real(dp)            :: max_res_around_transects_config              = 5e3_dp                           ! [m]          Maximum resolution around the user-defined transects
+
 
     ! Mesh update settings
     logical             :: allow_mesh_updates_config                    = .true.                           ! [-]          Whether or not mesh updates are allowed
@@ -1412,6 +1415,8 @@ module model_configuration_type_and_namelist
     ! Miscellaneous refinement options
     logical             :: do_refine_TransAntMounts_glaciers
     real(dp)            :: max_res_TransAntMounts_glaciers
+    logical             :: do_refine_around_transects
+    real(dp)            :: max_res_around_transects
 
     ! Mesh update settings
     logical             :: allow_mesh_updates
@@ -2539,6 +2544,8 @@ contains
       ROI_coastline_width_config                                  , &
       do_refine_TransAntMounts_glaciers_config                    , &
       max_res_TransAntMounts_glaciers_config                      , &
+      do_refine_around_transects_config                           , &
+      max_res_around_transects_config                             , &
       allow_mesh_updates_config                                   , &
       dt_mesh_update_min_config                                   , &
       minimum_mesh_fitness_coefficient_config                     , &
@@ -3412,6 +3419,8 @@ contains
     ! Miscellaneous refinement options
     C%do_refine_TransAntMounts_glaciers                      = do_refine_TransAntMounts_glaciers_config
     C%max_res_TransAntMounts_glaciers                        = max_res_TransAntMounts_glaciers_config
+    C%do_refine_around_transects                             = do_refine_around_transects_config
+    C%max_res_around_transects                               = max_res_around_transects_config
 
     ! Mesh update settings
     C%allow_mesh_updates                                     = allow_mesh_updates_config

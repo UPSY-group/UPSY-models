@@ -6,10 +6,12 @@ module mesh_creation_refine_in_ROIs
   use mesh_types, only: type_mesh
   use model_configuration, only: C
   use mpi_basic, only: par
-  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash
-  use mesh_refinement_basic, only: refine_mesh_polygon
+  use control_resources_and_error_messaging, only: init_routine, finalise_routine, crash, colour_string
+  use mesh_refinement_basic, only: refine_mesh_polygon, refine_mesh_line
   use mesh_ROI_polygons
   use mesh_refinement_basic_ROI, only: refine_mesh_polygon_ROI, refine_mesh_line_ROI
+  use string_module, only: separate_strings_by_double_vertical_bars
+  use transects_main, only: parse_transect_str, initialise_transect_waypoints_hardcoded
 
   implicit none
 
@@ -245,6 +247,10 @@ contains
       call refine_mesh_over_TransAntarcticMountain_glaciers( mesh)
     end if
 
+    if (C%do_refine_around_transects) then
+      call refine_mesh_around_transects( region_name, mesh)
+    end if
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -308,5 +314,120 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine refine_mesh_over_TransAntarcticMountain_glaciers
+
+  subroutine refine_mesh_around_transects( region_name, mesh)
+
+    ! In/output variables:
+    character(len=3), intent(in   ) :: region_name
+    type(type_mesh),  intent(inout) :: mesh
+
+    ! Local variables:
+    character(len=1024), parameter                 :: routine_name = 'refine_mesh_around_transects'
+    character(len=1024)                            :: transects_str
+    character(len=1024), dimension(:), allocatable :: transect_strs
+    integer                                        :: it, i
+    character(len=1024)                            :: source, name, filename
+    real(dp), dimension(:,:), allocatable          :: waypoints, line
+    real(dp)                                       :: dx
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    select case (region_name)
+    case default
+      call crash('Unknown region "' // trim( region_name) // '"')
+    case ('NAM')
+      transects_str = C%transects_NAM
+    case ('EAS')
+      transects_str = C%transects_EAS
+    case ('GRL')
+      transects_str = C%transects_GRL
+    case ('ANT')
+      transects_str = C%transects_ANT
+    end select
+
+    if (transects_str == '') then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    call separate_strings_by_double_vertical_bars( transects_str, transect_strs)
+
+    do it = 1, size( transect_strs)
+
+      call parse_transect_str( transect_strs( it), source, name, filename, dx)
+
+      if (par%primary) write(0,*) '     Refining mesh around transect ', &
+        colour_string( trim( name),'light blue'), '...'
+
+      select case (source)
+      case default
+        call crash('invalid transect source "' // trim( source) // '"')
+      case ('hardcoded')
+        call initialise_transect_waypoints_hardcoded( mesh, name, waypoints)
+      case ('read_from_file')
+        call initialise_transect_waypoints_from_file_singlecore( filename, waypoints)
+      end select
+
+      allocate( line( size( waypoints,1)-1, 4))
+      do i = 1, size( waypoints,1)-1
+        line( i,:) = [waypoints(i,1), waypoints(i,2), waypoints(i+1,1), waypoints(i+1,2)]
+      end do
+      call refine_mesh_line( mesh, line, C%max_res_around_transects, C%max_res_around_transects, C%alpha_min)
+      deallocate( line)
+
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine refine_mesh_around_transects
+
+  subroutine initialise_transect_waypoints_from_file_singlecore( filename, waypoints)
+
+    ! In/output variables
+    character(len=*),                      intent(in   ) :: filename
+    real(dp), dimension(:,:), allocatable, intent(  out) :: waypoints
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_transect_waypoints_from_file_singlecore'
+    integer                        :: i, n_wp, ios
+    real(dp), dimension(2)         :: wp
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Let the primary read the file, then broadcast the data to the processes
+
+    ! Determine number of waypoints
+    if (par%primary) then
+      n_wp = 0
+      open( unit = 1337, file = filename, action = 'read')
+      do while (.true.)
+        read( unit = 1337, fmt = *, iostat = ios) wp(1), wp(2)
+        if (ios /= 0) exit
+        n_wp = n_wp + 1
+      end do
+      close( unit  = 1337)
+      ! Safety
+      if (n_wp < 2) call crash('invalid transect in file "' // trim( filename) // &
+        '" - need at least two waypoints')
+    end if
+
+    allocate( waypoints( n_wp,2))
+
+    ! Read waypoints
+    if (par%primary) then
+      open( unit = 1337, file = filename, action = 'read')
+      do i = 1, n_wp
+        read( unit = 1337, fmt = *, iostat = ios) waypoints( i,1), waypoints( i,2)
+      end do
+      close( unit  = 1337)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_transect_waypoints_from_file_singlecore
 
 end module mesh_creation_refine_in_ROIs

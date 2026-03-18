@@ -31,6 +31,7 @@ MODULE basal_hydrology_new
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
   use crash_mod                                              , only: crash, warning, happy
   USE reallocate_mod                                         , ONLY: reallocate_bounds
+  use remapping_main                                         , only: map_from_mesh_to_mesh_with_reallocation_2D
 
   IMPLICIT NONE
 
@@ -447,7 +448,6 @@ CONTAINS
 
       ! Initialise divQ with zeros
       basal_hydro%divQ( vi) = 0.0_dp
-      call sync
 
       if (.not. ice%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
 
@@ -1565,10 +1565,10 @@ CONTAINS
     ! Print to terminal
     IF (par%primary)  WRITE(*,"(A)") '    Remapping basal hydrology model data to the new mesh...'
 
-    ! Reallocate memory for main variables
+    ! Reallocate memory for main variables (Figure out what to calculate again and what to remap)
     call reallocate_bounds(basal_hydro%P_o, mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds(basal_hydro%W, mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds(basal_hydro%W_til, mesh_new%vi1, mesh_new%vi2)
+    call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W)
+    call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W_til)
     call reallocate_bounds(basal_hydro%W_til_next, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%P, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%m, mesh_new%vi1, mesh_new%vi2)
@@ -1620,74 +1620,5 @@ CONTAINS
 
   END SUBROUTINE remap_basal_hydro_model
 
-
-
-  SUBROUTINE init_basal_hydro_model( mesh, basal_hydro)
-    ! Initialise the basal hydrology model
-    !
-    ! Simply reread the latest basal hydrology output
-
-    ! In/output variables:
-    TYPE(type_mesh),                            INTENT(IN)    :: mesh
-    TYPE(type_basal_hydrology_model),           INTENT(INOUT) :: basal_hydro
-
-    ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'init_basal_hydro_model'
-
-    ! Add routine to path
-    CALL init_routine( routine_name)
-
-    ! Read in basal hydrology data from the latest output for the remapping
-    !CALL read_field_from_file_2D( C%filename_basal_hydro_laddie_initial_output, 'basal_hydroext', mesh, C%output_dir, basal_hydro%basal_hydro_shelf)
-
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
-
-  END SUBROUTINE init_basal_hydro_model
-
-
-
-  ! SUBROUTINE write_to_restart_file_basal_hydro_model_region( mesh, basal_hydro, region_name, time)
-  !   ! Write to the restart NetCDF file for the basal hydrology model
-
-  !   ! In/output variables:
-  !   TYPE(type_mesh),                      INTENT(IN) :: mesh
-  !   TYPE(type_basal_hydrology_model),     INTENT(IN) :: basal_hydro
-  !   CHARACTER(LEN=3),                     INTENT(IN) :: region_name
-  !   REAL(dp),                             INTENT(IN) :: time
-
-  !   ! Local variables:
-  !   CHARACTER(LEN=256), PARAMETER        :: routine_name = 'write_to_restart_file_basal_hydro_model_region'
-  !   INTEGER                              :: ncid
-
-  !   ! Add routine to path
-  !   CALL init_routine( routine_name)
-
-  !   ! If no NetCDF output should be created, do nothing
-  !   IF (.NOT. C%do_create_netcdf_output) THEN
-  !     CALL finalise_routine( routine_name)
-  !     RETURN
-  !   END IF
-
-  !   ! Print to terminal
-  !   IF (par%primary) WRITE(0,'(A)') '   Writing to BMB restart file "' // &
-  !     UPSY%stru%colour_string( TRIM( BMB%restart_filename), 'light blue') // '"...'
-
-  !   ! Open the NetCDF file
-  !   CALL open_existing_netcdf_file_for_writing( BMB%restart_filename, ncid)
-
-  !   ! Write the time to the file
-  !   CALL write_time_to_file( BMB%restart_filename, ncid, time)
-
-  !   ! ! Write the BMB fields to the file
-  !   CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'BMB', BMB%BMB)
-
-  !   ! Close the file
-  !   CALL close_netcdf_file( ncid)
-
-  !   ! Finalise routine path
-  !   CALL finalise_routine( routine_name)
-
-  ! END SUBROUTINE write_to_restart_file_basal_hydro_model_region
 
 END MODULE basal_hydrology_new

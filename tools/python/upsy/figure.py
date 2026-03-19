@@ -389,6 +389,12 @@ class Field(object):
             # Friction coefficient
             var = self.Timeframe.ds['till_friction_angle']
             self.data = np.tan(np.deg2rad(var)) 
+        elif self.varname == 'duabs_surf':
+            # Difference in uabs_surf compared to reference
+            uref = self.Timeframe.ds['bed_roughness_nudge_H_u_target_velocity']
+            uvar = self.Timeframe.ds['uabs_surf']
+            self.data = xr.where(uref>0,uvar-uref,0)
+            print(self.data)
         else:
             # Regular case: read variable if available in output
             try:

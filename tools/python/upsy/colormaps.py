@@ -178,6 +178,10 @@ def get_cmap(varname):
         cmap = copy(plt.get_cmap('magma'))
         norm = mpl.colors.LogNorm(vmin=1e-3,vmax=1,clip=True)
 
+    elif varname == 'duabs_surf':
+        cmap = copy(plt.get_cmap('cmo.balance'))
+        norm = mpl.colors.Normalize(vmin=-1000,vmax=1000,clip=True)
+
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')
         return

@@ -394,7 +394,6 @@ class Field(object):
             uref = self.Timeframe.ds['bed_roughness_nudge_H_u_target_velocity']
             uvar = self.Timeframe.ds['uabs_surf']
             self.data = xr.where(uref>0,uvar-uref,0)
-            print(self.data)
         else:
             # Regular case: read variable if available in output
             try:

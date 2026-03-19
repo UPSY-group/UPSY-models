@@ -25,7 +25,8 @@ MODULE climate_main
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
-
+  use climate_retreat_mask                                   , only: run_climate_retreat_mask, initialise_climate_retreat_mask
+  
   IMPLICIT NONE
 
 CONTAINS
@@ -116,6 +117,11 @@ CONTAINS
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT
 
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
+      ! Run the ISMIP-style forcing
+      call run_climate_retreat_mask( mesh, climate, time, ice)
+    end if
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -197,6 +203,11 @@ CONTAINS
     case ('SMB_snapshot_plus_anomalies')
       ! No need to do anything (initialisation is handled by the SMB model)
     end select
+
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
+      ! Initialise the ISMIP-style forcing
+      call initialise_climate_retreat_mask( mesh, climate)
+    end if
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

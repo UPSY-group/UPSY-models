@@ -107,6 +107,22 @@ MODULE climate_model_types
     REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: I_abs
 
   END TYPE type_climate_model_matrix
+
+  type type_climate_model_ISMIP_style
+    ! The "ISMIP-style"
+
+    ! Timeframe 0
+    real(dp)                                   :: shelf_collapse_mask_t0
+    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask0
+
+    ! Timeframe 1
+    real(dp)                                   :: shelf_collapse_mask_t1
+    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask1
+
+    ! Interpolated mask
+    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask
+
+  end type type_climate_model_ISMIP_style
   
   TYPE type_climate_model
     ! The climate model data structure.
@@ -141,6 +157,7 @@ MODULE climate_model_types
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
     TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
 
+    type(type_climate_model_ISMIP_style)    :: ISMIP_style        ! The "ISMIP-style"
   END TYPE type_climate_model
   
 

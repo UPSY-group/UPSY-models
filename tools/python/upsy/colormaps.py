@@ -87,6 +87,9 @@ def get_cmap(varname):
         cmap = copy(plt.get_cmap('cmo.tarn'))
         norm = mpl.colors.Normalize(vmin=-1000,vmax=1000,clip=True)
 
+        cmap = copy(plt.get_cmap('RdYlBu'))
+        norm = mpl.colors.Normalize(vmin=-300,vmax=300,clip=True)
+
     elif varname == 'Hib':
         cmap = copy(plt.get_cmap('GnBu_r'))
         cmap = copy(plt.get_cmap('cmo.rain_r'))
@@ -179,8 +182,8 @@ def get_cmap(varname):
         norm = mpl.colors.LogNorm(vmin=1e-3,vmax=1,clip=True)
 
     elif varname == 'duabs_surf':
-        cmap = copy(plt.get_cmap('cmo.balance'))
-        norm = mpl.colors.Normalize(vmin=-1000,vmax=1000,clip=True)
+        cmap = copy(plt.get_cmap('RdYlBu'))
+        norm = mpl.colors.Normalize(vmin=-500,vmax=500,clip=True)
 
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')

@@ -694,7 +694,9 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    call sync()
+    ! This sync here seems to be necessary probably because after this the timestep is calculated
+    ! and perhaps some cores get there too quickly leading to a too small timestep?
+    !call sync()
 
     call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
       mesh%pai_Tri, basal_hydro%u_b, mesh%pai_E, basal_hydro%u_c)
@@ -1090,6 +1092,9 @@ CONTAINS
       basal_hydro%u_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dx_b( ti))
       basal_hydro%v_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dy_b( ti))
     end do
+
+    write(*,*) "Max u_b: ", maxval(abs(basal_hydro%u_b))
+    write(*,*) "Max v_b: ", maxval(abs(basal_hydro%v_b))
 
     ! Remap to c-grid velocities
     call calc_M_b_c( mesh, ice, basal_hydro)

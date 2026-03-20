@@ -68,7 +68,7 @@ contains
     call calc_icesheet_integrated_fluxes( mesh, ice, SMB, BMB, LMB, scalars)
 
     ! ISMIP quantities
-    if (C%do_create_ISMIP_output) then
+    if (C%do_create_ismip_output) then
       call calc_ISMIP_scalars( mesh, ice, SMB, BMB, scalars)
     end if
 

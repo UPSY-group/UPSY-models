@@ -694,8 +694,6 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    call sync
-
     call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
       mesh%pai_Tri, basal_hydro%u_b, mesh%pai_E, basal_hydro%u_c)
     call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_b_c, &
@@ -723,8 +721,6 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    call sync
-
     call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_a_c, &
       mesh%pai_V, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
     call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_c, &
@@ -750,8 +746,6 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    call sync
 
     call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_b, &
       mesh%pai_V, basal_hydro%W, mesh%pai_Tri, basal_hydro%W_b)

@@ -116,28 +116,46 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
+    call sync
+
     call convert_ice_to_SI(mesh, ice, basal_hydro)
+
+    call sync
 
     ! Initialise basal hydro masks
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
+    call sync
+
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
+
+    call sync
 
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
     !call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
     call calc_R(mesh, ice, basal_hydro, .false.)
 
+    call sync
+
     call calc_K(mesh, ice, basal_hydro)
+
+    call sync
 
     call calc_D(mesh, basal_hydro)
 
+    call sync
+
     call calc_uv(mesh, ice, basal_hydro)
+
+    call sync
 
     ! 8) Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
+
+    call sync
 
     if (par%primary) then
       !write(*,*) "dt_hydro = ", dt_hydro
@@ -146,21 +164,31 @@ CONTAINS
     ! 9) Compute the advective fluxes (Q) on the staggered grid
     call calc_divQ(mesh, ice, basal_hydro)
 
+    call sync
+
     call calc_q_til(mesh, ice, basal_hydro, W_max_til)
+
+    call sync
     
     ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
     ! 11) If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
     ! 11) Otherwise, compute next timestep of P using the equation in the paper
     call calc_P_next(mesh, ice, basal_hydro, P_min)
 
+    call sync
+
     ! 13) If icefree or float, then set next timestep of W to 0.
     ! 13) Otherwise, compute next timestep of W using the equation in the paper
     !call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
     call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
 
+    call sync
+
     ! Calculate output to ice model
     call calc_N_til(mesh, basal_hydro, W_max_til, .true.)
+    call sync
     call calc_yield_stress(mesh, ice, basal_hydro)
+    call sync
 
     ! Allow boundary conditions to be applied to W
     !call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)

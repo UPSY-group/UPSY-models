@@ -116,46 +116,28 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    call sync
-
     call convert_ice_to_SI(mesh, ice, basal_hydro)
-
-    call sync
 
     ! Initialise basal hydro masks
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
-    call sync
-
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
-
-    call sync
 
     ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
     !call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
 
     call calc_R(mesh, ice, basal_hydro, .false.)
 
-    call sync
-
     call calc_K(mesh, ice, basal_hydro)
-
-    call sync
 
     call calc_D(mesh, basal_hydro)
 
-    call sync
-
     call calc_uv(mesh, ice, basal_hydro)
-
-    call sync
 
     ! 8) Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
-
-    call sync
 
     if (par%primary) then
       !write(*,*) "dt_hydro = ", dt_hydro
@@ -164,32 +146,21 @@ CONTAINS
     ! 9) Compute the advective fluxes (Q) on the staggered grid
     call calc_divQ(mesh, ice, basal_hydro)
 
-    call sync
-
     call calc_q_til(mesh, ice, basal_hydro, W_max_til)
-
-    call sync
     
     ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
     ! 11) If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
     ! 11) Otherwise, compute next timestep of P using the equation in the paper
     call calc_P_next(mesh, ice, basal_hydro, P_min)
 
-    call sync
-
     ! 13) If icefree or float, then set next timestep of W to 0.
     ! 13) Otherwise, compute next timestep of W using the equation in the paper
     !call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
     call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
 
-    call sync
-
     ! Calculate output to ice model
     call calc_N_til(mesh, basal_hydro, W_max_til, .true.)
-    call sync
     call calc_yield_stress(mesh, ice, basal_hydro)
-    call sync
-
     ! Allow boundary conditions to be applied to W
     !call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)
     !call apply_W_thickness_gl_explicit(mesh, ice, basal_hydro)
@@ -416,7 +387,8 @@ CONTAINS
 
       ! Diffusivity on the triangle (Tijn suggested taking the vertices to get a higher value)
       ! Probs have to exchange_halos
-      D_t = basal_hydro%D_b( ti) !max(basal_hydro%D( via), basal_hydro%D( vib), basal_hydro%D( vic))
+      ! Now added a small value to avoid division by zero, but maybe using if basal_hydro%mask_b(ti) would be better?
+      D_t = basal_hydro%D_b( ti) + 0.0000001_dp !max(basal_hydro%D( via), basal_hydro%D( vib), basal_hydro%D( vic))
 
       ! Instead of max of D, we use D on the triangle (I think this makes sense?)
       dt_crit_W = min(dt_crit_W, d_min**2/(8*D_t))
@@ -431,9 +403,13 @@ CONTAINS
     basal_hydro%dt = dt_hydro
     
     if (par%i == 1) then
-      !write(*,*) "dt_crit_CFL = ", dt_crit_CFL
-      !write(*,*) "dt_crit_W   = ", dt_crit_W
-      !write(*,*) "dt_crit_P   = ", dt_crit_P
+      write(*,*) "dt_crit_CFL = ", dt_crit_CFL
+      write(*,*) "dt_crit_W   = ", dt_crit_W
+      write(*,*) "dt_crit_P   = ", dt_crit_P
+    else
+      write(*,*) "dt_crit_CFL = ", dt_crit_CFL, " 0"
+      write(*,*) "dt_crit_W   = ", dt_crit_W, " 0"
+      write(*,*) "dt_crit_P   = ", dt_crit_P, " 0"
     end if
 
     ! Finalise routine path
@@ -1583,6 +1559,7 @@ CONTAINS
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model'
     CHARACTER(LEN=256)                                    :: choice_basal_hydro_model
     integer                                               :: vi
+    real(dp), parameter                                   :: rho_w = 1000.0_dp
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -1594,8 +1571,8 @@ CONTAINS
     call reallocate_bounds(basal_hydro%P_o, mesh_new%vi1, mesh_new%vi2)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W_til)
+    call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%P)
     call reallocate_bounds(basal_hydro%W_til_next, mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds(basal_hydro%P, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%m, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%m_extra, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%dW_dx_b, mesh_new%ti1, mesh_new%ti2)
@@ -1633,12 +1610,17 @@ CONTAINS
     call reallocate_bounds(basal_hydro%ice_w_base, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%N_til, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%tau_c, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds(basal_hydro%phi, mesh_new%vi1, mesh_new%vi2)
 
-    ! Re-initialise
-    call calc_basal_hydro_mask_a_b(mesh_new, ice, basal_hydro)
+    ! Initialise m with the same value everywhere
+    do vi = mesh_new%vi1, mesh_new%vi2
+      basal_hydro%m( vi) = 0.0069_dp*rho_w/sec_per_year
+      basal_hydro%phi( vi) = 26.565_dp !degrees
+      basal_hydro%W_r( vi) = 0.1_dp
+    end do
 
     ! Use the latest basal hydro output for remapping? (Now because of reallocate_bounds everything is 0)
-    write(*,*), "Doing God's work"
+    write(*,*) "Doing God's work"
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

@@ -233,7 +233,9 @@ CONTAINS
 
     if (region%nROI > 0) then
       call buffer_scalar_output_ROI( region)
-      call buffer_ISMIP_scalar_output_ROI( region)
+      if (C%do_create_ismip_output) then
+        call buffer_ISMIP_scalar_output_ROI( region)
+      end if
     end if
 
     ! Determine time of next output event
@@ -674,7 +676,9 @@ CONTAINS
     CALL create_ISMIP_scalar_regional_output_file( region)
     if (region%nROI > 0) then
       CALL create_scalar_regional_output_file_ROI( region)
-      CALL create_ISMIP_scalar_regional_output_file_ROI( region)
+      if (C%do_create_ismip_output) then
+        CALL create_ISMIP_scalar_regional_output_file_ROI( region)
+      end if
     end if
 
     ! Set output writing time to start of run, so the initial state will be written to output

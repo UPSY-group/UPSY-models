@@ -1612,6 +1612,8 @@ CONTAINS
     call reallocate_bounds(basal_hydro%tau_c, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%phi, mesh_new%vi1, mesh_new%vi2)
 
+    call sync
+
     ! Initialise m with the same value everywhere
     do vi = mesh_new%vi1, mesh_new%vi2
       basal_hydro%m( vi) = 0.0069_dp*rho_w/sec_per_year

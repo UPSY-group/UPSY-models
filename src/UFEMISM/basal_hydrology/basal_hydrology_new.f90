@@ -403,13 +403,13 @@ CONTAINS
     basal_hydro%dt = dt_hydro
     
     if (par%i == 1) then
-      write(*,*) "dt_crit_CFL = ", dt_crit_CFL
-      write(*,*) "dt_crit_W   = ", dt_crit_W
+      !write(*,*) "dt_crit_CFL = ", dt_crit_CFL
+      !write(*,*) "dt_crit_W   = ", dt_crit_W
       write(*,*) "dt_crit_P   = ", dt_crit_P
     else
-      write(*,*) "dt_crit_CFL = ", dt_crit_CFL, " 0"
-      write(*,*) "dt_crit_W   = ", dt_crit_W, " 0"
-      write(*,*) "dt_crit_P   = ", dt_crit_P, " 0"
+      !write(*,*) "dt_crit_CFL = ", dt_crit_CFL, " 0"
+      !write(*,*) "dt_crit_W   = ", dt_crit_W, " 0"
+      !write(*,*) "dt_crit_P   = ", dt_crit_P, " 0"
     end if
 
     ! Finalise routine path

@@ -32,6 +32,7 @@ MODULE basal_hydrology_new
   use crash_mod                                              , only: crash, warning, happy
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use remapping_main                                         , only: map_from_mesh_to_mesh_with_reallocation_2D
+  use checksum_mod                                           , only: checksum
 
   IMPLICIT NONE
 
@@ -405,7 +406,7 @@ CONTAINS
     if (par%i == 1) then
       !write(*,*) "dt_crit_CFL = ", dt_crit_CFL
       !write(*,*) "dt_crit_W   = ", dt_crit_W
-      write(*,*) "dt_crit_P   = ", dt_crit_P
+      !write(*,*) "dt_crit_P   = ", dt_crit_P
     else
       !write(*,*) "dt_crit_CFL = ", dt_crit_CFL, " 0"
       !write(*,*) "dt_crit_W   = ", dt_crit_W, " 0"
@@ -712,56 +713,6 @@ CONTAINS
   end subroutine map_UV_b_c
 
 
-  ! This one is not used anymore
-  subroutine map_UV_a_c( mesh, basal_hydro)
-    ! Calculate velocities from a-grid to the c-grid
-    !
-    ! Uses a different scheme then the standard mapping operator, as that one is too diffusive
-
-    ! In/output variables:
-    type(type_mesh),                        intent(in   )    :: mesh
-    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
-
-    ! Local variables:
-    character(len=256), parameter                         :: routine_name = 'map_UV_a_c'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_a_c, &
-      mesh%pai_V, basal_hydro%u, mesh%pai_E, basal_hydro%u_c)
-    call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_c, &
-      mesh%pai_V, basal_hydro%v, mesh%pai_E, basal_hydro%v_c)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine map_UV_a_c
-
-
-
-   subroutine map_W_a_b( mesh, basal_hydro)
-    ! Map basal hydrology layer thickness from a to b grid, accounting for BCs
-
-    ! In- and output variables
-
-    type(type_mesh),                        intent(in)    :: mesh
-    type(type_basal_hydrology_model),       intent(inout) :: basal_hydro
-
-    ! Local variables:
-    character(len=256), parameter                         :: routine_name = 'map_W_a_b'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_a_b, &
-      mesh%pai_V, basal_hydro%W, mesh%pai_Tri, basal_hydro%W_b)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine map_W_a_b
-
 
   ! Comes from Laddie_operators
   subroutine calc_M_b_c( mesh, ice, basal_hydro)
@@ -850,83 +801,6 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_M_b_c
-
-
-
-  ! Comes from Laddie_operators
-  subroutine calc_M_a_c( mesh, ice, basal_hydro)
-    ! Calculate mapping matrix from a-grid to c-grid
-
-    ! In/output variables:
-    type(type_mesh),                        intent(in   )    :: mesh
-    type(type_ice_model),                   intent(in   )    :: ice
-    type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
-
-    ! Local variables:
-    character(len=256), parameter                         :: routine_name = 'calc_M_a_c'
-    integer                                               :: ncols, ncols_loc, nrows, nrows_loc, nnz_per_row_est, nnz_est_proc
-    integer                                               :: row, vi, vj, ei
-    logical, dimension(mesh%nV)                           :: mask_a_tot
-    real(dp), dimension(2)                                :: cM_a_c
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Get the basal hydrology mask on a (and b) grid
-    call gather_to_all(basal_hydro%mask_a, mask_a_tot)
-
-    call deallocate_matrix_CSR_dist( basal_hydro%M_a_c)
-
-    ! == Initialise the matrix using the native UFEMISM CSR-matrix format
-    ! ===================================================================
-
-    ! Matrix size
-    ncols           = mesh%nV        ! from
-    ncols_loc       = mesh%nV_loc
-    nrows           = mesh%nE        ! to
-    nrows_loc       = mesh%nE_loc
-    nnz_per_row_est = 2
-    nnz_est_proc    = nrows_loc * nnz_per_row_est
-
-    call allocate_matrix_CSR_dist( basal_hydro%M_a_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = mesh%pai_V, pai_y = mesh%pai_E)
-
-    ! == Calculate coefficients
-    ! =========================
-
-    do row = basal_hydro%M_a_c%i1, basal_hydro%M_a_c%i2
-
-      ! The vertex represented by this matrix row
-      ei = mesh%n2ei( row)
-
-      ! Get neighbouring vertices
-      vi = mesh%EV( ei, 1)
-      vj = mesh%EV( ei, 2)
-
-      ! Get masked average between the two vertices
-      if (mask_a_tot( vi) .and. mask_a_tot( vj)) then
-        cM_a_c = [0.5_dp, 0.5_dp]
-      elseif (mask_a_tot( vi)) then
-        cM_a_c = [1._dp, 0._dp]
-      elseif (mask_a_tot( vj)) then
-        cM_a_c = [0._dp, 1._dp]
-      else
-        cM_a_c = 0._dp
-      end if
-
-      ! Add weight to matrix
-      call add_entry_CSR_dist( basal_hydro%M_a_c, ei, vi, cM_a_c( 1))
-      call add_entry_CSR_dist( basal_hydro%M_a_c, ei, vj, cM_a_c( 2))
-
-    end do
-
-    ! Crop matrix memory
-    call finalise_matrix_CSR_dist( basal_hydro%M_a_c)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine calc_M_a_c
 
 
 
@@ -1020,9 +894,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       if (test) then                          ! For testing we take R without the pressure component
-        basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g
+        basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g ! Should perhaps make this (ice%Hb( vi) + basal_hydro%W( vi)))?
       else 
-        basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g + basal_hydro%P( vi)
+        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi)
       end if
     end do
 
@@ -1058,7 +932,8 @@ CONTAINS
     ! For some reason the dR_dx and dR_dy values are zero sometimes and if this is precisely 0, this breaks calc_K by dividing by zero.
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
-        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
+        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp & 
+                               + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
       else
         basal_hydro%K_b( ti) = 0.0_dp
       end if
@@ -1568,10 +1443,11 @@ CONTAINS
     IF (par%primary)  WRITE(*,"(A)") '    Remapping basal hydrology model data to the new mesh...'
 
     ! Reallocate memory for main variables (Figure out what to calculate again and what to remap)
-    call reallocate_bounds(basal_hydro%P_o, mesh_new%vi1, mesh_new%vi2)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W_til)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%P)
+
+    call reallocate_bounds(basal_hydro%P_o, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%W_til_next, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%m, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%m_extra, mesh_new%vi1, mesh_new%vi2)
@@ -1590,7 +1466,7 @@ CONTAINS
     call reallocate_bounds(basal_hydro%u_b, mesh_new%ti1, mesh_new%ti2)
     call reallocate_bounds(basal_hydro%v_b, mesh_new%ti1, mesh_new%ti2)
     call reallocate_bounds(basal_hydro%u_c, mesh_new%ei1, mesh_new%ei2)
-    call reallocate_bounds(basal_hydro%v_c, mesh_new%ei1, mesh_new%ei2)
+    call reallocate_bounds(basal_hydro%v_c, mesh_new%ei1, mesh_new%ei2) !Snellius does not like this line?
     call reallocate_bounds(basal_hydro%Z, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%C, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds(basal_hydro%O, mesh_new%vi1, mesh_new%vi2)

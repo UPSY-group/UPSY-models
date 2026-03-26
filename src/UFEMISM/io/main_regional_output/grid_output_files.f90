@@ -908,6 +908,8 @@ contains
         ! Not implemented
       case ('HV_lad')
         ! Not implemented
+      case ('S_base')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%S_base, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
 
     ! == Lateral mass balance ==
     ! ==========================
@@ -1837,6 +1839,8 @@ contains
         ! not implemented
       case ('HV_lad')
         ! not implemented
+      case ('S_base')
+        call add_field_grid_dp_2D( filename, ncid, 'S_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salinity at ice shelf base', units = 'PSU')
 
 
     ! == Lateral mass balance ==

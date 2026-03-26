@@ -750,6 +750,8 @@ contains
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HU_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%U)
       case ('HV_lad')
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HV_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%V)
+      case ('S_base')
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'S_base', region%BMB%laddie%S_base)
 
     ! == Lateral mass balance ==
     ! ==========================
@@ -1496,6 +1498,8 @@ contains
         call add_field_mesh_dp_2D_b( filename, ncid, 'HU_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie HU ', units = 'm^2 s^-1')
       case ('HV_lad')
         call add_field_mesh_dp_2D_b( filename, ncid, 'HV_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie HV ', units = 'm^2 s^-1')
+      case ('S_base')
+        call add_field_mesh_dp_2D( filename, ncid, 'S_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salinity at ice shelf base', units = 'PSU')
 
     ! == Lateral mass balance ==
     ! ==========================

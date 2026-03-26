@@ -88,8 +88,8 @@ CONTAINS
         npx_new%S( vi) = HS_next / npx_new%H( vi)
       END IF !(laddie%mask_a( vi)) THEN
     END DO !vi = mesh%vi, mesh%v2
-    call checksum( npx_new%T, 'npx_new%T', mesh%pai_V)
-    call checksum( npx_new%S, 'npx_new%S', mesh%pai_V)
+    call checksum( mesh%pai_V, npx_new%T, 'npx_new%T')
+    call checksum( mesh%pai_V, npx_new%S, 'npx_new%S')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -145,8 +145,8 @@ CONTAINS
 
       END IF
     END DO
-    call checksum( laddie%diffT, 'laddie%diffT', mesh%pai_V)
-    call checksum( laddie%diffS, 'laddie%diffS', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%diffT, 'laddie%diffT')
+    call checksum( mesh%pai_V, laddie%diffS, 'laddie%diffS')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -180,13 +180,13 @@ CONTAINS
     call exchange_halos( mesh, laddie%mask_gr_a)
     call exchange_halos( mesh, laddie%mask_oc_a)
 
-    call checksum( npx%U_c         , 'npx%U_c         ', mesh%pai_E)
-    call checksum( npx%V_c         , 'npx%V_c         ', mesh%pai_E)
-    call checksum( npx%T           , 'npx%T           ', mesh%pai_V)
-    call checksum( npx%S           , 'npx%S           ', mesh%pai_V)
-    call checksum( laddie%mask_a   , 'laddie%mask_a   ', mesh%pai_V)
-    call checksum( laddie%mask_gr_a, 'laddie%mask_gr_a', mesh%pai_V)
-    call checksum( laddie%mask_oc_a, 'laddie%mask_oc_a', mesh%pai_V)
+    call checksum( mesh%pai_E, npx%U_c         , 'npx%U_c         ')
+    call checksum( mesh%pai_E, npx%V_c         , 'npx%V_c         ')
+    call checksum( mesh%pai_V, npx%T           , 'npx%T           ')
+    call checksum( mesh%pai_V, npx%S           , 'npx%S           ')
+    call checksum( mesh%pai_V, laddie%mask_a   , 'laddie%mask_a   ')
+    call checksum( mesh%pai_V, laddie%mask_gr_a, 'laddie%mask_gr_a')
+    call checksum( mesh%pai_V, laddie%mask_oc_a, 'laddie%mask_oc_a')
 
     ! Initialise with zeros
     laddie%divQT( mesh%vi1:mesh%vi2) = 0.0_dp
@@ -240,8 +240,8 @@ CONTAINS
       END IF ! (laddie%mask_a( vi))
 
     END DO ! DO vi = mesh%vi1, mesh%vi2
-    call checksum( laddie%divQT, 'laddie%divQT', mesh%pai_V)
-    call checksum( laddie%divQS, 'laddie%divQS', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%divQT, 'laddie%divQT')
+    call checksum( mesh%pai_V, laddie%divQS, 'laddie%divQS')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

@@ -10,12 +10,13 @@ module ice_thickness_safeties
   use reference_geometry_types, only: type_reference_geometry
   use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
+  use mpi_distributed_memory, only: gather_to_all
 
   implicit none
 
   private
 
-  public :: alter_ice_thickness
+  public :: alter_ice_thickness, calc_and_apply_spill_over_flux
 
 contains
 
@@ -282,5 +283,75 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine alter_ice_thickness
+
+  subroutine calc_and_apply_spill_over_flux( mesh, ice, Hi_new, dt)
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   ) :: mesh
+    type(type_ice_model),                   intent(inout) :: ice
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
+    real(dp),                               intent(in   ) :: dt
+
+    ! Local variables:
+    character(len=1024), parameter   :: routine_name = 'calc_and_apply_spill_over_flux'
+    integer                          :: vi, ci, vj
+    real(dp)                         :: Q_excess
+    real(dp), dimension(mesh%nC_mem) :: weight
+    real(dp)                         :: w_eps = 1e-12
+    logical, dimension(mesh%nV)      :: mask_icefree_ocean_tot
+  
+    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+  
+    ice%Qspill = 0._dp
+  
+    ! Compute spill rate
+    do vi = mesh%vi1, mesh%vi2
+  
+      ! Only compute spill-over when ice thickness exceeds effective ice thickness
+      if (Hi_new( vi) > ice%Hi_eff( vi)) then
+
+        ! Determine spill rate of excess volume toward ocean cells in m/yr
+        ice%Qspill( vi) = - (Hi_new( vi) - ice%Hi_eff( vi)) / dt
+  
+        weight = 0._dp
+
+        ! Determine weights of surrounding ocean cells
+        do ci = 1, mesh%nC( vi)
+          vj = mesh%C( vi,ci)
+    
+          if (mask_icefree_ocean_tot( vj)) then
+            ! Define weight by outflow perpendicular velocity into ocean cells.
+            ! Add small value to avoid division by 0 if no outflow velocity enters
+            ! any ocean cell. In that case, weights will be equally distributed
+            ! over all neighbouring ocean cells.
+            weight( ci) = max(0._dp, ice%u_perp( vi, ci)) + w_eps
+          end if
+        end do
+    
+        ! Determine spill rate into surrounding cells in m/y
+        do ci = 1, mesh%nC( vi)
+          vj = mesh%C( vi, ci)
+
+          if (sum(weight) > 0._dp) then
+            ! Add to Qspill to allow for accumulation from multiple margin cells
+            ice%Qspill( vj) = ice%Qspill( vj) & 
+                            - ice%Qspill( vi) * mesh%A( vi) / mesh%A( vj) &
+                            * weight( ci) / sum(weight)   
+          end if
+
+        end do
+
+      end if
+
+    end do
+
+    ! Apply spill rates
+    do vi = mesh%vi1, mesh%vi2
+
+      Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
+
+    end do
+
+  end subroutine calc_and_apply_spill_over_flux
 
 end module ice_thickness_safeties

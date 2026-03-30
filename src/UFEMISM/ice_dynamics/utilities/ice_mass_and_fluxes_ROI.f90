@@ -359,24 +359,16 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_ice_transitional_fluxes_ROI'
-    real(dp), dimension(mesh%ei1:mesh%ei2) :: u_vav_c, v_vav_c
-    real(dp), dimension(mesh%nE)           :: u_vav_c_tot, v_vav_c_tot
     real(dp), dimension(mesh%nV)           :: Hi_tot
     real(dp), dimension(mesh%nV)           :: fraction_margin_tot
     logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
     logical,  dimension(mesh%nV)           :: mask_icefree_land_tot
     logical,  dimension(mesh%nV)           :: mask_icefree_ocean_tot
-    integer                                :: vi, ci, ei, vj, ierr
+    integer                                :: vi, ci, vj, ierr
     real(dp)                               :: A_i, L_c
-    real(dp)                               :: u_perp
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! Calculate vertically averaged ice velocities on the triangle edges
-    call map_velocities_from_b_to_c_2D( mesh, ice%u_vav_b, ice%v_vav_b, u_vav_c, v_vav_c)
-    call gather_to_all( u_vav_c, u_vav_c_tot)
-    call gather_to_all( v_vav_c, v_vav_c_tot)
 
     ! Gather ice thickness from all processes
     call gather_to_all( ice%Hi, Hi_tot)
@@ -400,8 +392,7 @@ contains
         ! Loop over all connections of vertex vi
         do ci = 1, mesh%nC( vi)
 
-          ! Connection ci from vertex vi leads through edge ei to vertex vj
-          ei = mesh%VE( vi,ci)
+          ! Connection ci from vertex vi leads to vertex vj
           vj = mesh%C(  vi,ci)
 
           ! The Voronoi cell of vertex vi has area A_i
@@ -410,10 +401,6 @@ contains
           ! The shared Voronoi cell boundary section between the
           ! Voronoi cells of vertices vi and vj has length L_c
           L_c = mesh%Cw( vi,ci)
-
-          ! Calculate vertically averaged ice velocity component perpendicular
-          ! to this shared Voronoi cell boundary section
-          u_perp = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
           ! Calculate the flux: if u_perp > 0, that means that this mass is
           ! flowing out from our transitional vertex. If so, add it its (negative) total.
@@ -425,31 +412,31 @@ contains
 
           ! Grounding line (grounded side)
           if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
-            if (fraction_margin_tot( vi) >= 1._dp .and. u_perp > 0._dp) then
-              scalars%gl_flux = scalars%gl_flux - L_c * u_perp * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-            elseif (fraction_margin_tot( vj) >= 1._dp .and. u_perp < 0._dp) then
-              scalars%gl_flux = scalars%gl_flux - L_c * u_perp * Hi_tot( vj) * 1.0E-09_dp ! [Gt/yr]
+            if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
+              scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
+              scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) * 1.0E-09_dp ! [Gt/yr]
             end if
           end if
 
           ! Grounded marine front
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-            scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           end if
 
           ! Floating calving front
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-            scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           end if
 
           ! Land-terminating ice (grounded or floating)
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-            scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           end if
 
           ! Marine-terminating ice (grounded or floating)
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-            scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           end if
 
         end do ! do ci = 1, mesh%nC( vi)
@@ -482,8 +469,6 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_ISMIP_scalars_ROI'
 
-    real(dp), dimension(mesh%ei1:mesh%ei2) :: u_vav_c, v_vav_c
-    real(dp), dimension(mesh%nE)           :: u_vav_c_tot, v_vav_c_tot
     real(dp), dimension(mesh%nV)           :: Hi_tot, TAF_tot
     real(dp), dimension(mesh%nV)           :: fraction_margin_tot
     logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
@@ -493,9 +478,8 @@ contains
     real(dp), dimension( :), allocatable   :: calving_and_front_melt_flux
     real(dp), dimension( :), allocatable   :: land_ice_area_fraction
     real(dp), dimension( :), allocatable   :: floating_ice_shelf_area_fraction
-    integer                                :: vi, ci, ei, vj, ierr
+    integer                                :: vi, ci, vj, ierr
     real(dp)                               :: A_i, L_c
-    real(dp)                               :: u_perp
 
     REAL(dp)                               :: land_ice_mass
     REAL(dp)                               :: mass_above_floatation
@@ -509,11 +493,6 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! Calculate vertically averaged ice velocities on the triangle edges
-    call map_velocities_from_b_to_c_2D( mesh, ice%u_vav_b, ice%v_vav_b, u_vav_c, v_vav_c)
-    call gather_to_all( u_vav_c, u_vav_c_tot)
-    call gather_to_all( v_vav_c, v_vav_c_tot)
 
     ! Gather ice thickness from all processes
     call gather_to_all( ice%Hi, Hi_tot)
@@ -549,8 +528,7 @@ contains
         ! Loop over all connections of vertex vi
         do ci = 1, mesh%nC( vi)
 
-          ! Connection ci from vertex vi leads through edge ei to vertex vj
-          ei = mesh%VE( vi,ci)
+          ! Connection ci from vertex vi leads to vertex vj
           vj = mesh%C(  vi,ci)
 
           ! The Voronoi cell of vertex vi has area A_i
@@ -559,10 +537,6 @@ contains
           ! The shared Voronoi cell boundary section between the
           ! Voronoi cells of vertices vi and vj has length L_c
           L_c = mesh%Cw( vi,ci)
-
-          ! Calculate vertically averaged ice velocity component perpendicular
-          ! to this shared Voronoi cell boundary section
-          u_perp = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
           ! Calculate the flux: if u_perp > 0, that means that this mass is
           ! flowing out from our transitional vertex. If so, add it its (negative) total.
@@ -574,22 +548,22 @@ contains
 
           ! Grounded marine front
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           end if
 
           ! Floating calving front
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           end if
 
           ! ! Land-terminating ice (grounded or floating)
           ! if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-          !   calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+          !   calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           ! end if
 
           ! ! Marine-terminating ice (grounded or floating)
           ! if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-          !   calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+          !   calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
           ! end if
 
         end do ! do ci = 1, mesh%nC( vi)
@@ -675,24 +649,16 @@ contains
 
       ! Local variables:
       character(len=1024), parameter         :: routine_name = 'calc_ice_margin_fluxes_ROI'
-      real(dp), dimension(mesh%ei1:mesh%ei2) :: u_vav_c, v_vav_c
-      real(dp), dimension(mesh%nE)           :: u_vav_c_tot, v_vav_c_tot
       real(dp), dimension(mesh%nV)           :: Hi_tot
       real(dp), dimension(mesh%nV)           :: fraction_margin_tot
       logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
       logical,  dimension(mesh%nV)           :: mask_icefree_land_tot
       logical,  dimension(mesh%nV)           :: mask_icefree_ocean_tot
-      integer                                :: vi, ci, ei, vj, ierr
+      integer                                :: vi, ci, vj, ierr
       real(dp)                               :: A_i, L_c
-      real(dp)                               :: u_perp
 
       ! Add routine to path
       call init_routine( routine_name)
-
-      ! Calculate vertically averaged ice velocities on the triangle edges
-      call map_velocities_from_b_to_c_2D( mesh, ice%u_vav_b, ice%v_vav_b, u_vav_c, v_vav_c)
-      call gather_to_all( u_vav_c, u_vav_c_tot)
-      call gather_to_all( v_vav_c, v_vav_c_tot)
 
       ! Gather ice thickness from all processes
       call gather_to_all( ice%Hi, Hi_tot)
@@ -714,8 +680,7 @@ contains
         ! Loop over all connections of vertex vi
         do ci = 1, mesh%nC( vi)
 
-          ! Connection ci from vertex vi leads through edge ei to vertex vj
-          ei = mesh%VE( vi,ci)
+          ! Connection ci from vertex vi leads to vertex vj
           vj = mesh%C(  vi,ci)
 
           ! The Voronoi cell of vertex vi has area A_i
@@ -724,10 +689,6 @@ contains
           ! The shared Voronoi cell boundary section between the
           ! Voronoi cells of vertices vi and vj has length L_c
           L_c = mesh%Cw( vi,ci)
-
-          ! Calculate vertically averaged ice velocity component perpendicular
-          ! to this shared Voronoi cell boundary section
-          u_perp = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
           ! Calculate the flux: if u_perp > 0, that means that this mass is
           ! flowing out from our transitional vertex. If so, add it its (negative) total.
@@ -739,19 +700,19 @@ contains
 
           ! Floating calving front
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
             ! calving_and_front_melt_flux( vi) = calving_flux( vi) ! TODO: when front melt is computed
           end if
 
           ! Land-terminating ice (grounded or floating)
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
             ! calving_and_front_melt_flux( vi) = calving_flux( vi) ! TODO: when front melt is computed
           end if
 
           ! Marine-terminating ice (grounded or floating)
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, u_perp) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
             ! calving_and_front_melt_flux( vi) = calving_flux( vi) ! TODO: when front melt is computed
           end if
 

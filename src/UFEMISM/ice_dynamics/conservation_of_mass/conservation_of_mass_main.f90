@@ -6,6 +6,7 @@ module conservation_of_mass_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind, &
     apply_mask_noice_direct, calc_flux_limited_timestep
   use conservation_of_mass_explicit, only: calc_dHi_dt_explicit, apply_ice_thickness_BC_explicit
@@ -20,12 +21,13 @@ module conservation_of_mass_main
 
 contains
 
-  subroutine calc_dHi_dt( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+  subroutine calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
     fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness at time t+dt
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )           :: mesh                  ! [-]       The model mesh
+    type(type_ice_model),                   intent(inout)           :: ice                   ! [-]       The ice model
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hi                    ! [m]       Ice thickness at time t
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hb                    ! [m]       Bedrock elevation at time t
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
@@ -70,10 +72,10 @@ contains
       return
 
     case ('explicit')
-      call calc_dHi_dt_explicit( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+      call calc_dHi_dt_explicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
         fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     case ('semi-implicit')
-      call calc_dHi_dt_semiimplicit( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+      call calc_dHi_dt_semiimplicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
         fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     end select
 

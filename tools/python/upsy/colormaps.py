@@ -168,11 +168,11 @@ def get_cmap(varname):
 
     elif varname == 'divQ':
         cmap = copy(plt.get_cmap('cmo.diff'))
-        norm = mpl.colors.Normalize(vmin=-10,vmax=10,clip=True)
+        norm = mpl.colors.Normalize(vmin=-100,vmax=100,clip=True)
 
     elif varname == 'Qspill':
-        cmap = copy(plt.get_cmap('cmo.diff'))
-        norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
+        cmap = copy(plt.get_cmap('cmo.diff_r'))
+        norm = mpl.colors.Normalize(vmin=-100,vmax=100,clip=True)
 
     elif varname == 'fraction_margin':
         cmap = copy(plt.get_cmap('cmo.ice'))

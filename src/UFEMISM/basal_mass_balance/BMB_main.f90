@@ -15,7 +15,6 @@ MODULE BMB_main
   USE ice_model_types                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reference_geometry_types                               , ONLY: type_reference_geometry
-  use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   USE laddie_model_types                                     , ONLY: type_laddie_model
   USE laddie_forcing_types                                   , ONLY: type_laddie_forcing
@@ -43,7 +42,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model( mesh, ice, ocean, refgeo, SMB, BMB, region_name, time, is_initial)
+  SUBROUTINE run_BMB_model( mesh, ice, ocean, refgeo, BMB, region_name, time, is_initial)
     ! Calculate the basal mass balance
 
     ! In/output variables:
@@ -51,7 +50,6 @@ CONTAINS
     TYPE(type_ice_model),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_reference_geometry),          INTENT(IN)    :: refgeo
-    class(atype_SMB_model),                 intent(in   ) :: SMB
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
@@ -739,6 +737,8 @@ CONTAINS
     call init_routine( routine_name)
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%Hi                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
@@ -780,22 +780,24 @@ CONTAINS
 
     call calculate_coriolis_parameter( mesh, forcing, lambda_M, phi_M, beta_stereo)
 
-    call checksum( forcing%Hi                , 'forcing%Hi'                , mesh%pai_V)
-    call checksum( forcing%Hib               , 'forcing%Hib'               , mesh%pai_V)
-    call checksum( forcing%TAF               , 'forcing%TAF'               , mesh%pai_V)
-    call checksum( forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         , mesh%pai_Tri)
-    call checksum( forcing%dHib_dy_b         , 'forcing%dHib_dy_b'         , mesh%pai_Tri)
-    call checksum( forcing%mask_icefree_land , 'forcing%mask_icefree_land' , mesh%pai_V)
-    call checksum( forcing%mask_icefree_ocean, 'forcing%mask_icefree_ocean', mesh%pai_V)
-    call checksum( forcing%mask_grounded_ice , 'forcing%mask_grounded_ice' , mesh%pai_V)
-    call checksum( forcing%mask_floating_ice , 'forcing%mask_floating_ice' , mesh%pai_V)
-    call checksum( forcing%mask_gl_fl        , 'forcing%mask_gl_fl'        , mesh%pai_V)
-    call checksum( forcing%mask_SGD          , 'forcing%mask_SGD'          , mesh%pai_V)
-    call checksum( forcing%mask              , 'forcing%mask'              , mesh%pai_V)
-    call checksum( forcing%Ti                , 'forcing%Ti'                , mesh%pai_V)
-    call checksum( forcing%T_ocean           , 'forcing%T_ocean'           , mesh%pai_V)
-    call checksum( forcing%S_ocean           , 'forcing%S_ocean'           , mesh%pai_V)
-    call checksum( forcing%f_coriolis        , 'forcing%f_coriolis'        , mesh%pai_V)
+    call checksum( mesh%pai_V  , forcing%Hi                , 'forcing%Hi'                )
+    call checksum( mesh%pai_V  , forcing%Hs                , 'forcing%Hs'                )
+    call checksum( mesh%pai_V  , forcing%Hb                , 'forcing%Hb'                )
+    call checksum( mesh%pai_V  , forcing%Hib               , 'forcing%Hib'               )
+    call checksum( mesh%pai_V  , forcing%TAF               , 'forcing%TAF'               )
+    call checksum( mesh%pai_Tri, forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         )
+    call checksum( mesh%pai_Tri, forcing%dHib_dy_b         , 'forcing%dHib_dy_b'         )
+    call checksum( mesh%pai_V  , forcing%mask_icefree_land , 'forcing%mask_icefree_land' )
+    call checksum( mesh%pai_V  , forcing%mask_icefree_ocean, 'forcing%mask_icefree_ocean')
+    call checksum( mesh%pai_V  , forcing%mask_grounded_ice , 'forcing%mask_grounded_ice' )
+    call checksum( mesh%pai_V  , forcing%mask_floating_ice , 'forcing%mask_floating_ice' )
+    call checksum( mesh%pai_V  , forcing%mask_gl_fl        , 'forcing%mask_gl_fl'        )
+    call checksum( mesh%pai_V  , forcing%mask_SGD          , 'forcing%mask_SGD'          )
+    call checksum( mesh%pai_V  , forcing%mask              , 'forcing%mask'              )
+    call checksum( mesh%pai_V  , forcing%Ti                , 'forcing%Ti'                )
+    call checksum( mesh%pai_V  , forcing%T_ocean           , 'forcing%T_ocean'           )
+    call checksum( mesh%pai_V  , forcing%S_ocean           , 'forcing%S_ocean'           )
+    call checksum( mesh%pai_V  , forcing%f_coriolis        , 'forcing%f_coriolis'        )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -818,6 +820,8 @@ CONTAINS
 
     ! Forcing
     call reallocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh_new%pai_V%n_nih)
+    call reallocate_dist_shared( forcing%Hs                , forcing%wHs                , mesh_new%pai_V%n_nih)
+    call reallocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh_new%pai_V%n_nih)
     call reallocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh_new%pai_V%n_nih)
     call reallocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh_new%pai_V%n_nih)
     call reallocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh_new%pai_Tri%n_nih)
@@ -834,6 +838,8 @@ CONTAINS
     call reallocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , mesh_new%pai_V%n_nih, C%nz_ocean)
     call reallocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , mesh_new%pai_Tri%n_nih)
     forcing%Hi                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hi
+    forcing%Hs                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hs
+    forcing%Hb                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hb
     forcing%Hib               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hib
     forcing%TAF               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%TAF
     forcing%dHib_dx_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dx_b

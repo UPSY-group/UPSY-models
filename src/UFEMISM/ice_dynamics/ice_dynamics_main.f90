@@ -42,7 +42,7 @@ module ice_dynamics_main
   use ice_model_memory, only: allocate_ice_model
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D
   use global_forcings_main, only: update_sealevel_in_model
-  use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
+  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
@@ -156,7 +156,7 @@ contains
     call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes_onesided( region%mesh, region%ice)
+    call calc_ice_shelf_base_slopes( region%mesh, region%ice)
 
     ! Calculate absolute surface gradient
     call ddx_a_a_2D( region%mesh, region%ice%Hs, dHs_dx)
@@ -309,7 +309,7 @@ contains
      call calc_effective_thickness( mesh, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes_onesided( mesh, ice)
+    call calc_ice_shelf_base_slopes( mesh, ice)
 
     ! Surface gradients
     ! =================
@@ -733,7 +733,7 @@ contains
     end do ! do vi = mesh_new%vi1, mesh_new%vi2
 
     ! Horizontal derivatives
-    call calc_ice_shelf_base_slopes_onesided( mesh_new, ice)
+    call calc_ice_shelf_base_slopes( mesh_new, ice)
 
     ! Calculate zeta gradients
     call calc_zeta_gradients( mesh_new, ice)

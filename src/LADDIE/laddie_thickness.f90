@@ -72,8 +72,8 @@ CONTAINS
     ! Map new values of H to b grid and c grid
     CALL map_H_a_b( mesh, laddie, npx_new%H, npx_new%H_b)
     CALL map_H_a_c( mesh, laddie, npx_new%H, npx_new%H_c)
-    call checksum( npx_new%H_b, 'npx_new%H_b', mesh%pai_Tri)
-    call checksum( npx_new%H_c, 'npx_new%H_c', mesh%pai_E)
+    call checksum( mesh%pai_Tri, npx_new%H_b, 'npx_new%H_b')
+    call checksum( mesh%pai_E  , npx_new%H_c, 'npx_new%H_c')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -130,10 +130,10 @@ CONTAINS
 
       end if !(laddie%mask_a( vi)) THEN
     end do !vi = mesh%vi, mesh%v2
-    call checksum( laddie%entr_dmin, 'laddie%entr_dmin', mesh%pai_V)
-    call checksum( laddie%entr     , 'laddie%entr     ', mesh%pai_V)
-    call checksum( laddie%detr     , 'laddie%detr     ', mesh%pai_V)
-    call checksum( npx_new%H       , 'npx_new%H       ', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%entr_dmin, 'laddie%entr_dmin')
+    call checksum( mesh%pai_V, laddie%entr     , 'laddie%entr     ')
+    call checksum( mesh%pai_V, laddie%detr     , 'laddie%detr     ')
+    call checksum( mesh%pai_V, npx_new%H       , 'npx_new%H       ')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -160,9 +160,9 @@ CONTAINS
     call exchange_halos( mesh, npx%U_c)
     call exchange_halos( mesh, npx%V_c)
     call exchange_halos( mesh, npx%H  )
-    call checksum( npx%U_c, 'npx%U_c', mesh%pai_E)
-    call checksum( npx%V_c, 'npx%V_c', mesh%pai_E)
-    call checksum( npx%H  , 'npx%H  ', mesh%pai_V)
+    call checksum( mesh%pai_E, npx%U_c, 'npx%U_c')
+    call checksum( mesh%pai_E, npx%V_c, 'npx%V_c')
+    call checksum( mesh%pai_V, npx%H  , 'npx%H  ')
 
     ! Initialise with zeros
     laddie%divQH( mesh%vi1:mesh%vi2) = 0.0_dp
@@ -214,7 +214,7 @@ CONTAINS
       END IF ! (laddie%mask_a( vi))
 
     END DO ! DO vi = mesh%vi1, mesh%vi2
-    call checksum( laddie%divQH, 'laddie%divQH', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%divQH, 'laddie%divQH')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

@@ -1,6 +1,8 @@
 submodule( models_basic) models_basic_submod_restart_file
 
 use netcdf_io_main
+use UPSY_main, only: UPSY
+use mpi_basic, only: par
 
 contains
 
@@ -19,7 +21,12 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    filename_loc = trim(  output_dir) // '/restart_file_' // trim( self%name()) // '.nc'
+    filename_loc = trim( output_dir) // 'restart_file_' // &
+            trim( self%name_val) // '_' // trim( self%region_name_val) // '.nc'
+
+    if (par%primary) write(0,'(A)') '   Writing to ' // trim (self%name_val) // ' restart file "' // &
+      UPSY%stru%colour_string( trim( filename_loc), 'light blue') // '"...'
+
     if (present( filename)) filename = filename_loc
 
     call delete_existing_file( filename_loc)

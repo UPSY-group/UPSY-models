@@ -13,6 +13,7 @@ module mesh_ROI_polygons
   public :: calc_polygon_Thwaites_Glacier
   public :: calc_polygon_Amery_ice_shelf
   public :: calc_polygon_Riiser_Larsen_ice_shelf
+  public :: calc_polygon_Riiser_Larsen_IQ2300
   public :: calc_polygon_Siple_Coast
   public :: calc_polygon_Larsen_ice_shelf
   public :: calc_polygon_Transantarctic_Mountains
@@ -263,6 +264,33 @@ subroutine calc_polygon_Riiser_Larsen_ice_shelf( poly)
   call finalise_routine( routine_name)
 
 end subroutine calc_polygon_Riiser_Larsen_ice_shelf
+
+subroutine calc_polygon_Riiser_Larsen_IQ2300( poly)
+  ! Return a polygon enveloping the IQ2300 region of Riiser-Larsen
+
+  ! In/output variables:
+  real(dp), dimension(:,:), allocatable, intent(out) :: poly
+
+  ! Local variables:
+  character(len=256), parameter :: routine_name = 'calc_polygon_Riiser_Larsen_IQ2300'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  allocate( poly( 7,2))
+
+  poly(  1,:) = [-0.4500e6_dp, 1.9342e6_dp]
+  poly(  2,:) = [-0.4282e6_dp, 1.9045e6_dp]
+  poly(  3,:) = [-0.3896e6_dp, 1.8698e6_dp]
+  poly(  4,:) = [-0.3708e6_dp, 1.8896e6_dp]
+  poly(  5,:) = [-0.3728e6_dp, 1.9785e6_dp]
+  poly(  6,:) = [-0.3965e6_dp, 1.9619e6_dp]
+  poly(  7,:) = [-0.4183e6_dp, 1.9678e6_dp]
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine calc_polygon_Riiser_Larsen_IQ2300
 
 subroutine calc_polygon_Siple_Coast( poly)
   ! Return a polygon enveloping the Siple Coast area

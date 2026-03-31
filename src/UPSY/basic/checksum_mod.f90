@@ -1,12 +1,14 @@
 module checksum_mod
 
   use precisions, only: dp
+  use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: routine_path, crash, &
     insert_val_into_string_int, insert_val_into_string_dp
   use mpi_basic, only: par
   use parallel_array_info_type, only: type_par_arr_info
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_DOUBLE_PRECISION, MPI_SUM, &
     MPI_MIN, MPI_MAX, MPI_COMM_WORLD
+  use crash_mod, only: crash
 
   implicit none
 
@@ -25,54 +27,115 @@ module checksum_mod
     procedure :: checksum_dp_2D
   end interface checksum
 
-  logical             :: do_write_checksum_log
   logical             :: checksum_logfile_exists
   character(len=1024) :: filename_checksum_logfile
   integer             :: unit_checksum_logfile
 
 contains
 
-  subroutine checksum_logical_1D( d, var_name, pai)
-    logical,  dimension(:),            intent(in) :: d
-    character(len=*),                  intent(in) :: var_name
-    type(type_par_arr_info), optional, intent(in) :: pai
+  subroutine checksum_logical_1D( pai, d, var_name)
+    type(type_par_arr_info), intent(in) :: pai
+    logical, dimension(:),   intent(in) :: d
+    character(len=*),        intent(in) :: var_name
 
-    integer :: sum_d, ierr
+    if (.not. C%do_write_checksum_log) return
 
-    if (.not. do_write_checksum_log) return
-
-    if (.not. present( pai)) then
-      sum_d = count( d)
+    if (size( d,1) == pai%n_loc) then
+      call checksum_logical_1D_dist( pai, d, var_name)
+    elseif (size( d,1) == pai%n_node) then
+      call checksum_logical_1D_hybrid( pai, d, var_name)
     else
-      sum_d = count( d( pai%i1:pai%i2))
+      call crash('invalid array size')
     end if
-
-    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
-
-    call log_checksum_int( sum_d, 0, 0, 0, var_name)
 
   end subroutine checksum_logical_1D
 
-  subroutine checksum_logical_2D( d, var_name, pai)
-    logical,  dimension(:,:),          intent(in) :: d
+  subroutine checksum_logical_1D_dist( pai, d, var_name)
+    type(type_par_arr_info),           intent(in) :: pai
+    logical, dimension(pai%i1:pai%i2), intent(in) :: d
     character(len=*),                  intent(in) :: var_name
-    type(type_par_arr_info), optional, intent(in) :: pai
 
     integer :: sum_d, ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
-    if (.not. present( pai)) then
-      sum_d = count( d)
-    else
-      sum_d = count( d( pai%i1:pai%i2,:))
-    end if
+    sum_d = count( d( pai%i1:pai%i2))
 
     call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
 
     call log_checksum_int( sum_d, 0, 0, 0, var_name)
 
+  end subroutine checksum_logical_1D_dist
+
+  subroutine checksum_logical_1D_hybrid( pai, d, var_name)
+    type(type_par_arr_info),                     intent(in) :: pai
+    logical, dimension(pai%i1_node:pai%i2_node), intent(in) :: d
+    character(len=*),                            intent(in) :: var_name
+
+    integer :: sum_d, ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d = count( d( pai%i1:pai%i2))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d, 0, 0, 0, var_name)
+
+  end subroutine checksum_logical_1D_hybrid
+
+  subroutine checksum_logical_2D( pai, d, var_name)
+    type(type_par_arr_info), intent(in) :: pai
+    logical, dimension(:,:), intent(in) :: d
+    character(len=*),        intent(in) :: var_name
+
+    if (.not. C%do_write_checksum_log) return
+
+    if (size( d,1) == pai%n_loc) then
+      call checksum_logical_2D_dist( pai, size( d,2), d, var_name)
+    elseif (size( d,1) == pai%n_node) then
+      call checksum_logical_2D_hybrid( pai, size( d,2), d, var_name)
+    else
+      call crash('invalid array size')
+    end if
+
   end subroutine checksum_logical_2D
+
+  subroutine checksum_logical_2D_dist( pai, nz, d, var_name)
+    type(type_par_arr_info),                 intent(in) :: pai
+    integer,                                 intent(in) :: nz
+    logical, dimension(pai%i1:pai%i2, 1:nz), intent(in) :: d
+    character(len=*),                        intent(in) :: var_name
+
+    integer :: sum_d, ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d = count( d( pai%i1:pai%i2,:))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d, 0, 0, 0, var_name)
+
+  end subroutine checksum_logical_2D_dist
+
+  subroutine checksum_logical_2D_hybrid( pai, nz, d, var_name)
+    type(type_par_arr_info),                           intent(in) :: pai
+    integer,                                           intent(in) :: nz
+    logical, dimension(pai%i1_node:pai%i2_node, 1:nz), intent(in) :: d
+    character(len=*),                                  intent(in) :: var_name
+
+    integer :: sum_d, ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d = count( d( pai%i1:pai%i2,:))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d, 0, 0, 0, var_name)
+
+  end subroutine checksum_logical_2D_hybrid
 
   subroutine checksum_int_0D( d, var_name)
     ! For 0-D values, verify that all processes have the same value,
@@ -86,7 +149,7 @@ contains
     integer :: min_d, max_d
     integer :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     call MPI_ALLREDUCE( d, min_d, 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( d, max_d, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
@@ -96,56 +159,36 @@ contains
 
   end subroutine checksum_int_0D
 
-  subroutine checksum_int_1D( d, var_name, pai)
-    integer,  dimension(:),            intent(in) :: d
-    character(len=*),                  intent(in) :: var_name
-    type(type_par_arr_info), optional, intent(in) :: pai
+  subroutine checksum_int_1D( pai, d, var_name)
+    type(type_par_arr_info), intent(in) :: pai
+    integer, dimension(:),   intent(in) :: d
+    character(len=*),        intent(in) :: var_name
 
-    integer :: sum_d, sum_abs_d, min_d, max_d, ierr
+    if (.not. C%do_write_checksum_log) return
 
-    if (.not. do_write_checksum_log) return
-
-    if (.not. present( pai)) then
-      sum_d     = sum   ( d)
-      sum_abs_d = sum( abs( d))
-      min_d     = minval( d)
-      max_d     = maxval( d)
+    if (size( d,1) == pai%n_loc) then
+      call checksum_int_1D_dist( pai, d, var_name)
+    elseif (size( d,1) == pai%n_node) then
+      call checksum_int_1D_hybrid( pai, d, var_name)
     else
-      sum_d     = sum     ( d( pai%i1:pai%i2))
-      sum_abs_d = sum( abs( d( pai%i1:pai%i2)))
-      min_d     = minval  ( d( pai%i1:pai%i2))
-      max_d     = maxval  ( d( pai%i1:pai%i2))
+      call crash('invalid array size')
     end if
-
-    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
-
-    call log_checksum_int( sum_d, sum_abs_d, min_d, max_d, var_name)
 
   end subroutine checksum_int_1D
 
-  subroutine checksum_int_2D( d, var_name, pai)
-    integer,  dimension(:,:),          intent(in) :: d
+  subroutine checksum_int_1D_dist( pai, d, var_name)
+    type(type_par_arr_info),           intent(in) :: pai
+    integer, dimension(pai%i1:pai%i2), intent(in) :: d
     character(len=*),                  intent(in) :: var_name
-    type(type_par_arr_info), optional, intent(in) :: pai
 
     integer :: sum_d, sum_abs_d, min_d, max_d, ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
-    if (.not. present( pai)) then
-      sum_d     = sum   ( d)
-      sum_abs_d = sum( abs( d))
-      min_d     = minval( d)
-      max_d     = maxval( d)
-    else
-      sum_d     = sum     ( d( pai%i1:pai%i2,:))
-      sum_abs_d = sum( abs( d( pai%i1:pai%i2,:)))
-      min_d     = minval  ( d( pai%i1:pai%i2,:))
-      max_d     = maxval  ( d( pai%i1:pai%i2,:))
-    end if
+    sum_d     = sum     ( d( pai%i1:pai%i2))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2)))
+    min_d     = minval  ( d( pai%i1:pai%i2))
+    max_d     = maxval  ( d( pai%i1:pai%i2))
 
     call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
@@ -154,7 +197,95 @@ contains
 
     call log_checksum_int( sum_d, sum_abs_d, min_d, max_d, var_name)
 
+  end subroutine checksum_int_1D_dist
+
+  subroutine checksum_int_1D_hybrid( pai, d, var_name)
+    type(type_par_arr_info),                     intent(in) :: pai
+    integer, dimension(pai%i1_node:pai%i2_node), intent(in) :: d
+    character(len=*),                            intent(in) :: var_name
+
+    integer :: sum_d, sum_abs_d, min_d, max_d, ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d     = sum     ( d( pai%i1:pai%i2))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2)))
+    min_d     = minval  ( d( pai%i1:pai%i2))
+    max_d     = maxval  ( d( pai%i1:pai%i2))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d, sum_abs_d, min_d, max_d, var_name)
+
+  end subroutine checksum_int_1D_hybrid
+
+  subroutine checksum_int_2D( pai, d, var_name)
+    type(type_par_arr_info), intent(in) :: pai
+    integer, dimension(:,:), intent(in) :: d
+    character(len=*),        intent(in) :: var_name
+
+    if (.not. C%do_write_checksum_log) return
+
+    if (size( d,1) == pai%n_loc) then
+      call checksum_int_2D_dist( pai, size( d,2), d, var_name)
+    elseif (size( d,1) == pai%n_node) then
+      call checksum_int_2D_hybrid( pai, size( d,2), d, var_name)
+    else
+      call crash('invalid array size')
+    end if
+
   end subroutine checksum_int_2D
+
+  subroutine checksum_int_2D_dist( pai, nz, d, var_name)
+    type(type_par_arr_info),                 intent(in) :: pai
+    integer,                                 intent(in) :: nz
+    integer, dimension(pai%i1:pai%i2, 1:nz), intent(in) :: d
+    character(len=*),                        intent(in) :: var_name
+
+    integer :: sum_d, sum_abs_d, min_d, max_d, ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d     = sum     ( d( pai%i1:pai%i2,:))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2,:)))
+    min_d     = minval  ( d( pai%i1:pai%i2,:))
+    max_d     = maxval  ( d( pai%i1:pai%i2,:))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d, sum_abs_d, min_d, max_d, var_name)
+
+  end subroutine checksum_int_2D_dist
+
+  subroutine checksum_int_2D_hybrid( pai, nz, d, var_name)
+    type(type_par_arr_info),                           intent(in) :: pai
+    integer,                                           intent(in) :: nz
+    integer, dimension(pai%i1_node:pai%i2_node, 1:nz), intent(in) :: d
+    character(len=*),                                  intent(in) :: var_name
+
+    integer :: sum_d, sum_abs_d, min_d, max_d, ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d     = sum     ( d( pai%i1:pai%i2,:))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2,:)))
+    min_d     = minval  ( d( pai%i1:pai%i2,:))
+    max_d     = maxval  ( d( pai%i1:pai%i2,:))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_INTEGER, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d, sum_abs_d, min_d, max_d, var_name)
+
+  end subroutine checksum_int_2D_hybrid
 
   subroutine checksum_dp_0D( d, var_name)
     ! For 0-D values, verify that all processes have the same value,
@@ -168,7 +299,7 @@ contains
     real(dp) :: min_d, max_d
     integer  :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
     call MPI_ALLREDUCE( d, min_d, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( d, max_d, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
@@ -178,58 +309,37 @@ contains
 
   end subroutine checksum_dp_0D
 
-  subroutine checksum_dp_1D( d, var_name, pai)
-    real(dp), dimension(:),            intent(in) :: d
-    character(len=*),                  intent(in) :: var_name
-    type(type_par_arr_info), optional, intent(in) :: pai
+  subroutine checksum_dp_1D( pai, d, var_name)
+    type(type_par_arr_info), intent(in) :: pai
+    real(dp), dimension(:),  intent(in) :: d
+    character(len=*),        intent(in) :: var_name
 
-    real(dp) :: sum_d, sum_abs_d, min_d, max_d
-    integer  :: ierr
+    if (.not. C%do_write_checksum_log) return
 
-    if (.not. do_write_checksum_log) return
-
-    if (.not. present( pai)) then
-      sum_d     = sum   ( d)
-      sum_abs_d = sum( abs( d))
-      min_d     = minval( d)
-      max_d     = maxval( d)
+    if (size( d,1) == pai%n_loc) then
+      call checksum_dp_1D_dist( pai, d, var_name)
+    elseif (size( d,1) == pai%n_node) then
+      call checksum_dp_1D_hybrid( pai, d, var_name)
     else
-      sum_d     = sum     ( d( pai%i1:pai%i2))
-      sum_abs_d = sum( abs( d( pai%i1:pai%i2)))
-      min_d     = minval  ( d( pai%i1:pai%i2))
-      max_d     = maxval  ( d( pai%i1:pai%i2))
+      call crash('invalid array size')
     end if
-
-    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-
-    call log_checksum_dp( sum_d, sum_abs_d, min_d, max_d, var_name)
 
   end subroutine checksum_dp_1D
 
-  subroutine checksum_dp_2D( d, var_name, pai)
-    real(dp), dimension(:,:),          intent(in) :: d
-    character(len=*),                  intent(in) :: var_name
-    type(type_par_arr_info), optional, intent(in) :: pai
+  subroutine checksum_dp_1D_dist( pai, d, var_name)
+    type(type_par_arr_info),            intent(in) :: pai
+    real(dp), dimension(pai%i1:pai%i2), intent(in) :: d
+    character(len=*),                   intent(in) :: var_name
 
     real(dp) :: sum_d, sum_abs_d, min_d, max_d
     integer  :: ierr
 
-    if (.not. do_write_checksum_log) return
+    if (.not. C%do_write_checksum_log) return
 
-    if (.not. present( pai)) then
-      sum_d     = sum   ( d)
-      sum_abs_d = sum( abs( d))
-      min_d     = minval( d)
-      max_d     = maxval( d)
-    else
-      sum_d     = sum     ( d( pai%i1:pai%i2,:))
-      sum_abs_d = sum( abs( d( pai%i1:pai%i2,:)))
-      min_d     = minval  ( d( pai%i1:pai%i2,:))
-      max_d     = maxval  ( d( pai%i1:pai%i2,:))
-    end if
+    sum_d     = sum     ( d( pai%i1:pai%i2))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2)))
+    min_d     = minval  ( d( pai%i1:pai%i2))
+    max_d     = maxval  ( d( pai%i1:pai%i2))
 
     call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
@@ -238,7 +348,98 @@ contains
 
     call log_checksum_dp( sum_d, sum_abs_d, min_d, max_d, var_name)
 
+  end subroutine checksum_dp_1D_dist
+
+  subroutine checksum_dp_1D_hybrid( pai, d, var_name)
+    type(type_par_arr_info),                      intent(in) :: pai
+    real(dp), dimension(pai%i1_node:pai%i2_node), intent(in) :: d
+    character(len=*),                             intent(in) :: var_name
+
+    real(dp) :: sum_d, sum_abs_d, min_d, max_d
+    integer  :: ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d     = sum     ( d( pai%i1:pai%i2))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2)))
+    min_d     = minval  ( d( pai%i1:pai%i2))
+    max_d     = maxval  ( d( pai%i1:pai%i2))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_dp( sum_d, sum_abs_d, min_d, max_d, var_name)
+
+  end subroutine checksum_dp_1D_hybrid
+
+  subroutine checksum_dp_2D( pai, d, var_name)
+    type(type_par_arr_info),  intent(in) :: pai
+    real(dp), dimension(:,:), intent(in) :: d
+    character(len=*),         intent(in) :: var_name
+
+    if (.not. C%do_write_checksum_log) return
+
+    if (size( d,1) == pai%n_loc) then
+      call checksum_dp_2D_dist( pai, size( d,2), d, var_name)
+    elseif (size( d,1) == pai%n_node) then
+      call checksum_dp_2D_hybrid( pai, size( d,2), d, var_name)
+    else
+      call crash('invalid array size')
+    end if
+
   end subroutine checksum_dp_2D
+
+  subroutine checksum_dp_2D_dist( pai, nz, d, var_name)
+    type(type_par_arr_info),                  intent(in) :: pai
+    integer,                                  intent(in) :: nz
+    real(dp), dimension(pai%i1:pai%i2, 1:nz), intent(in) :: d
+    character(len=*),                         intent(in) :: var_name
+
+    real(dp) :: sum_d, sum_abs_d, min_d, max_d
+    integer  :: ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d     = sum     ( d( pai%i1:pai%i2,:))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2,:)))
+    min_d     = minval  ( d( pai%i1:pai%i2,:))
+    max_d     = maxval  ( d( pai%i1:pai%i2,:))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_dp( sum_d, sum_abs_d, min_d, max_d, var_name)
+
+  end subroutine checksum_dp_2D_dist
+
+  subroutine checksum_dp_2D_hybrid( pai, nz, d, var_name)
+    type(type_par_arr_info),                            intent(in) :: pai
+    integer,                                            intent(in) :: nz
+    real(dp), dimension(pai%i1_node:pai%i2_node, 1:nz), intent(in) :: d
+    character(len=*),                                   intent(in) :: var_name
+
+    real(dp) :: sum_d, sum_abs_d, min_d, max_d
+    integer  :: ierr
+
+    if (.not. C%do_write_checksum_log) return
+
+    sum_d     = sum     ( d( pai%i1:pai%i2,:))
+    sum_abs_d = sum( abs( d( pai%i1:pai%i2,:)))
+    min_d     = minval  ( d( pai%i1:pai%i2,:))
+    max_d     = maxval  ( d( pai%i1:pai%i2,:))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d    , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, min_d    , 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_d    , 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_dp( sum_d, sum_abs_d, min_d, max_d, var_name)
+
+  end subroutine checksum_dp_2D_hybrid
 
   subroutine log_checksum_int( sum_d, sum_abs_d, min_d, max_d, var_name)
 

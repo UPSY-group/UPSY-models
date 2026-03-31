@@ -51,7 +51,7 @@ CONTAINS
     do vi = mesh%vi1, mesh%vi2
       laddie%u_star( vi) = (C%laddie_drag_coefficient_top * (npx%U_a( vi)**2 + npx%V_a( vi)**2 + C%uniform_laddie_tidal_velocity**2 ))**.5
     end do
-    call checksum( laddie%u_star, 'laddie%u_star', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%u_star, 'laddie%u_star')
 
     ! Get gamma values
     SELECT CASE (C%choice_laddie_gamma)
@@ -73,8 +73,8 @@ CONTAINS
            END IF
         END DO
     END SELECT
-    call checksum( laddie%gamma_T, 'laddie%gamma_T', mesh%pai_V)
-    call checksum( laddie%gamma_S, 'laddie%gamma_S', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%gamma_T, 'laddie%gamma_T')
+    call checksum( mesh%pai_V, laddie%gamma_S, 'laddie%gamma_S')
 
     ! == Get melt rate ==
     ! ===================
@@ -119,8 +119,8 @@ CONTAINS
 
        END IF
     END DO
-    call checksum( laddie%melt  , 'laddie%melt  ', mesh%pai_V)
-    call checksum( laddie%T_base, 'laddie%T_base', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%melt  , 'laddie%melt  ')
+    call checksum( mesh%pai_V, laddie%T_base, 'laddie%T_base')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -169,10 +169,10 @@ CONTAINS
          laddie%detr( vi) = - MIN(laddie%entr( vi),0.0_dp)
        END IF
     END DO
-    call checksum( laddie%S_base   , 'laddie%S_base   ', mesh%pai_V)
-    call checksum( laddie%drho_base, 'laddie%drho_base', mesh%pai_V)
-    call checksum( laddie%entr     , 'laddie%entr     ', mesh%pai_V)
-    call checksum( laddie%detr     , 'laddie%detr     ', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%S_base   , 'laddie%S_base   ')
+    call checksum( mesh%pai_V, laddie%drho_base, 'laddie%drho_base')
+    call checksum( mesh%pai_V, laddie%entr     , 'laddie%entr     ')
+    call checksum( mesh%pai_V, laddie%detr     , 'laddie%detr     ')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -408,7 +408,7 @@ CONTAINS
          laddie%T_freeze( vi) = freezing_lambda_1*npx%S( vi) + freezing_lambda_2 + freezing_lambda_3*forcing%Hib( vi)
        END IF
     END DO
-    call checksum( laddie%T_freeze, 'laddie%T_freeze', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%T_freeze, 'laddie%T_freeze')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -449,8 +449,8 @@ CONTAINS
 
        END IF
     END DO
-    call checksum( laddie%drho_amb , 'laddie%drho_amb ', mesh%pai_V)
-    call checksum( laddie%Hdrho_amb, 'laddie%Hdrho_amb', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%drho_amb , 'laddie%drho_amb ')
+    call checksum( mesh%pai_V, laddie%Hdrho_amb, 'laddie%Hdrho_amb')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

@@ -211,7 +211,7 @@ contains
     integer, dimension(mesh%vi1:mesh%vi2), intent(  out) :: n_interior_neighbours
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_flux_limited_timestep'
+    character(len=1024), parameter :: routine_name = 'calc_n_interior_neighbours'
     logical,  dimension(mesh%nV)   :: mask_noice_tot
     integer                        :: vi, ci, vj
 

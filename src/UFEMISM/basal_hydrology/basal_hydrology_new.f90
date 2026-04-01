@@ -25,7 +25,7 @@ MODULE basal_hydrology_new
   use laddie_utilities                                       , ONLY: map_H_a_c
   use mpi_distributed_memory                                 , only: gather_to_all
   use mesh_halo_exchange                                     , only: exchange_halos
-  use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D
+  use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
   use mesh_utilities                                         , only: find_containing_vertex
   use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
@@ -296,6 +296,9 @@ CONTAINS
       basal_hydro%ice_v_base( vi) = ice%v_base( vi)/sec_per_year  ! Convert to m/s
       basal_hydro%ice_w_base( vi) = ice%w_base( vi)/sec_per_year  ! Convert to m/s
     end do
+    !call checksum(mesh%pai_V, basal_hydro%ice_u_base, "ice_u_base after conversion to SI")
+    !call checksum(mesh%pai_V, basal_hydro%ice_v_base, "ice_v_base after conversion to SI")
+    !call checksum(mesh%pai_V, basal_hydro%ice_w_base, "ice_w_base after conversion to SI")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -328,6 +331,10 @@ CONTAINS
       basal_hydro%W_til( vi)   = min( max( basal_hydro%W_til( vi),   W_min_til),   W_max_til)
       basal_hydro%P( vi)       = min( max( basal_hydro%P( vi),       P_min),       basal_hydro%P_o( vi))
     end do
+    !!call checksum(mesh%pai_V, basal_hydro%P_o, "basal_hydro%P_o")
+    !call checksum(mesh%pai_V, basal_hydro%W, "basal_hydro%W")
+    !call checksum(mesh%pai_V, basal_hydro%W_til, "basal_hydro%W_til")
+    !call checksum(mesh%pai_V, basal_hydro%P, "basal_hydro%P")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -487,6 +494,8 @@ CONTAINS
 
     END DO ! DO vi = mesh%vi1, mesh%vi2
 
+    !call checksum(mesh%pai_V, basal_hydro%divQ, "basal_hydro%divQ")
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -541,6 +550,9 @@ CONTAINS
         basal_hydro%P( vi) = min( max( basal_hydro%P( vi), P_min), basal_hydro%P_o( vi))
       end if
     end do
+    !call checksum(mesh%pai_V, basal_hydro%P, "basal_hydro%P")
+    !call checksum(mesh%pai_V, basal_hydro%Z, "basal_hydro%Z")
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -570,6 +582,8 @@ CONTAINS
       basal_hydro%q_til( vi) = min(W_max_til - basal_hydro%W_til( vi) + basal_hydro%Cd*basal_hydro%dt, ((basal_hydro%m( vi)/rho_w)*basal_hydro%dt))
       basal_hydro%q_water_layer( vi) = (basal_hydro%Cd + basal_hydro%m( vi)/rho_w)*basal_hydro%dt - basal_hydro%q_til( vi)
     end do
+    !call checksum(mesh%pai_V, basal_hydro%q_til, "basal_hydro%q_til")
+    !call checksum(mesh%pai_V, basal_hydro%q_water_layer, "basal_hydro%q_water_layer")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -607,6 +621,8 @@ CONTAINS
       basal_hydro%W( vi) = min( max( basal_hydro%W( vi), W_min), W_max)
       basal_hydro%W_til( vi) = min( max( basal_hydro%W_til( vi),   W_min_til),   W_max_til)
     end do
+    !call checksum(mesh%pai_V, basal_hydro%W, "basal_hydro%W")
+    !call checksum(mesh%pai_V, basal_hydro%W_til, "basal_hydro%W_til")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -675,6 +691,7 @@ CONTAINS
         basal_hydro%D_b( ti) = 0.0_dp
       end if
     end do
+    !call checksum(mesh%pai_Tri, basal_hydro%D_b, "basal_hydro%D_b")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -702,10 +719,12 @@ CONTAINS
     ! This sync here seems to be necessary probably because after this the timestep is calculated
     ! and perhaps some cores get there too quickly leading to a too small timestep?
 
-    call multiply_CSR_matrix_with_vector_1D(basal_hydro%M_b_c, &
+    call multiply_CSR_matrix_with_vector_1D_wrapper(basal_hydro%M_b_c, &
       mesh%pai_Tri, basal_hydro%u_b, mesh%pai_E, basal_hydro%u_c)
-    call multiply_CSR_matrix_with_vector_1D( basal_hydro%M_b_c, &
+    call multiply_CSR_matrix_with_vector_1D_wrapper( basal_hydro%M_b_c, &
       mesh%pai_Tri, basal_hydro%v_b, mesh%pai_E, basal_hydro%v_c)
+    !call checksum(mesh%pai_E, basal_hydro%u_c, "basal_hydro%u_c")
+    !call checksum(mesh%pai_E, basal_hydro%v_c, "basal_hydro%v_c")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -839,7 +858,9 @@ CONTAINS
         END IF
       END DO
     end do
-  
+    !call checksum(mesh%pai_V, basal_hydro%mask_a, "basal_hydro%mask_a")
+    !call checksum(mesh%pai_Tri, basal_hydro%mask_b, "basal_hydro%mask_b")
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -867,7 +888,8 @@ CONTAINS
         basal_hydro%mask_W( vi) = .true.
       end if
     end do
-  
+    !call checksum(mesh%pai_V, basal_hydro%mask_W, "basal_hydro%mask_W")
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -899,6 +921,7 @@ CONTAINS
         basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi)
       end if
     end do
+    !call checksum(mesh%pai_V, basal_hydro%R, "basal_hydro%R")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -938,6 +961,7 @@ CONTAINS
         basal_hydro%K_b( ti) = 0.0_dp
       end if
     end do
+    !call checksum(mesh%pai_Tri, basal_hydro%K_b, "basal_hydro%K_b")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -964,16 +988,21 @@ CONTAINS
     ! Get the derivatives of R
     call ddx_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dx_b)
     call ddy_a_b_2D(mesh, basal_hydro%R, basal_hydro%dR_dy_b)
+    !call checksum(mesh%pai_Tri, basal_hydro%dR_dx_b, "basal_hydro%dR_dx_b")
+    !call checksum(mesh%pai_Tri, basal_hydro%dR_dy_b, "basal_hydro%dR_dy_b")
 
     ! Calculate u and v
     do ti = mesh%ti1, mesh%ti2
       basal_hydro%u_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dx_b( ti))
       basal_hydro%v_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dy_b( ti))
     end do
+    !call checksum(mesh%pai_Tri, basal_hydro%u_b, "basal_hydro%u_b")
+    !call checksum(mesh%pai_Tri, basal_hydro%v_b, "basal_hydro%v_b")
 
     ! Remap to c-grid velocities
     call calc_M_b_c( mesh, ice, basal_hydro)
     call map_UV_b_c( mesh, basal_hydro)
+    
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1038,6 +1067,8 @@ CONTAINS
                             *max((basal_hydro%W_r( vi) - basal_hydro%Y( vi)), 0.0_dp)
     end do
 
+    !call checksum(mesh%pai_V, basal_hydro%O, "basal_hydro%O")
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -1068,6 +1099,7 @@ CONTAINS
       ! Calculate closing rate
       basal_hydro%C( vi) = c2*A*(basal_hydro%P_o( vi) - basal_hydro%P( vi))**3*basal_hydro%Y( vi)
     end do
+    !call checksum(mesh%pai_V, basal_hydro%C, "basal_hydro%C")
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1382,7 +1414,8 @@ CONTAINS
         basal_hydro%N_til( vi) = basal_hydro%N_til( vi) - rho_w*g*basal_hydro%W( vi)
       end if
     end do
-
+    !call checksum(mesh%pai_V, basal_hydro%N_til, "basal_hydro%N_til")
+  
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -1412,6 +1445,7 @@ CONTAINS
       ! This next part is probably overwritten somewhere now?
       ice%till_yield_stress( vi) = basal_hydro%tau_c( vi)
     end do
+    !call checksum(mesh%pai_V, basal_hydro%tau_c, "basal_hydro%tau_c")
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -335,7 +335,7 @@ contains
             ! Add small value to avoid division by 0 if no outflow velocity enters
             ! any ocean cell. In that case, weights will be equally distributed
             ! over all neighbouring ocean cells.
-            weight( ci) = 1._dp !max(0._dp, ice%u_perp( vi, ci)) + w_eps
+            weight( ci) = max(0._dp, ice%u_perp( vi, ci)) + w_eps
           end if
         end do
 

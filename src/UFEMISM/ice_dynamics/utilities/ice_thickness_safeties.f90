@@ -332,7 +332,7 @@ contains
             ! Add small value to avoid division by 0 if no outflow velocity enters
             ! any ocean cell. In that case, weights will be equally distributed
             ! over all neighbouring ocean cells.
-            weight( ci) = max(0._dp, ice%u_perp( vi, ci)) + w_eps
+            weight( ci) = 1._dp !max(0._dp, ice%u_perp( vi, ci)) + w_eps
           end if
         end do
 
@@ -368,8 +368,10 @@ contains
   
             if (mesh%C( vj, cj) == vi) then
             ! Yes, this connection is a match, receive fraction of Q_src
-              Q_dst( vi) = Q_dst( vi) - Q_src_tot( vj) * relweight_tot( vj, cj)
-  
+              if (Q_src_tot( vj) < 0._dp .and. relweight_tot( vj, cj) > 1.e-6_dp) then
+                Q_dst( vi) = Q_dst( vi) - Q_src_tot( vj) * relweight_tot( vj, cj)
+              end if  
+
             end if
   
           end do
@@ -390,6 +392,11 @@ contains
     end do
 
     ! Update masks
+    call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
+                          ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
+                          ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
+                          ice%mask_cf_fl, ice%mask_coastline)
+
     call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
                           ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
                           ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &

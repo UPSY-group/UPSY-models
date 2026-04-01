@@ -140,7 +140,7 @@ contains
         region%ice%pc%dHi_dt_Hi_n_u_n - (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
 
       ! Apply spill over from overfilled margin cells
-      call calc_and_apply_spill_over_flux( region%mesh, region%ice, region%ice%pc%Hi_star_np1, region%ice%pc%dt_np1)
+      ! call calc_and_apply_spill_over_flux( region%mesh, region%ice, region%ice%pc%Hi_star_np1, region%ice%pc%dt_np1)
 
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)

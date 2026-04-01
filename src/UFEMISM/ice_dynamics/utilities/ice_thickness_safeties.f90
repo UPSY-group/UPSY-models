@@ -406,15 +406,15 @@ contains
     if (par%primary) write (*,*) Q_max, Q_min, Q_dsttot, Q_srctot
 
     ! Update masks
-    call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
-                          ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
-                          ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
-                          ice%mask_cf_fl, ice%mask_coastline)
+    ! call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
+    !                       ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
+    !                       ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
+    !                       ice%mask_cf_fl, ice%mask_coastline)
 
-    call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
-                          ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
-                          ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
-                          ice%mask_cf_fl, ice%mask_coastline)
+    ! call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
+    !                       ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
+    !                       ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
+    !                       ice%mask_cf_fl, ice%mask_coastline)
 
   end subroutine calc_and_apply_spill_over_flux
 

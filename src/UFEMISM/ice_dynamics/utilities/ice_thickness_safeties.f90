@@ -11,6 +11,7 @@ module ice_thickness_safeties
   use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_basic, only: sync
 
   implicit none
 
@@ -293,31 +294,37 @@ contains
     real(dp),                               intent(in   ) :: dt
 
     ! Local variables:
-    character(len=1024), parameter   :: routine_name = 'calc_and_apply_spill_over_flux'
-    integer                          :: vi, ci, vj
-    real(dp)                         :: Q_excess
-    real(dp), dimension(mesh%nC_mem) :: weight
-    real(dp)                         :: w_eps = 1e-12
-    logical, dimension(mesh%nV)      :: mask_icefree_ocean_tot
-  
+    character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
+    integer                                              :: vi, ci, vj, cj
+    real(dp), dimension(mesh%nC_mem)                     :: weight        ! [m2/y] Perpendicular outflow to ocean
+    real(dp), dimension(mesh%vi1: mesh%vi2, mesh%nC_mem) :: relweight     ! [0-1] Relative outflow weight
+    real(dp), dimension(mesh%nV, mesh%nC_mem)            :: relweight_tot ! [0-1] Relative outflow weight
+    real(dp), dimension(mesh%vi1: mesh%vi2)              :: Q_src, Q_dst  ! [m3/y] Source and sink spill fluxes
+    real(dp), dimension(mesh%nV)                         :: Q_src_tot     ! [m3/y] Source spill flux
+    real(dp)                                             :: w_eps = 1e-12_dp ! [m2/y] Small value
+    logical, dimension(mesh%nV)                          :: mask_icefree_ocean_tot
+
     call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
-  
-    ice%Qspill = 0._dp
-  
-    ! Compute spill rate
+ 
+    ! Initialise
+    Q_src( :)        = 0._dp
+    Q_dst( :)        = 0._dp
+    relweight( :, :) = 0._dp
+
+    ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2
   
       ! Only compute spill-over when ice thickness exceeds effective ice thickness
       if (Hi_new( vi) > ice%Hi_eff( vi)) then
 
-        ! Determine spill rate of excess volume toward ocean cells in m/yr
-        ice%Qspill( vi) = - (Hi_new( vi) - ice%Hi_eff( vi)) / dt
-  
-        weight = 0._dp
+        ! Determine source flux of spill-over ice in m^3/yr
+        Q_src( vi) = - (Hi_new( vi) - ice%Hi_eff( vi)) * mesh%A( vi) / dt
 
+        weight( :) = 0._dp
+  
         ! Determine weights of surrounding ocean cells
         do ci = 1, mesh%nC( vi)
-          vj = mesh%C( vi,ci)
+          vj = mesh%C( vi, ci)
     
           if (mask_icefree_ocean_tot( vj)) then
             ! Define weight by outflow perpendicular velocity into ocean cells.
@@ -327,27 +334,58 @@ contains
             weight( ci) = max(0._dp, ice%u_perp( vi, ci)) + w_eps
           end if
         end do
-    
-        ! Determine spill rate into surrounding cells in m/y
-        do ci = 1, mesh%nC( vi)
-          vj = mesh%C( vi, ci)
 
-          if (sum(weight) > 0._dp) then
-            ! Add to Qspill to allow for accumulation from multiple margin cells
-            ice%Qspill( vj) = ice%Qspill( vj) & 
-                            - ice%Qspill( vi) * mesh%A( vi) / mesh%A( vj) &
-                            * weight( ci) / sum(weight)   
+        ! Set spill source to zero if no surrounding ocean cells available
+        if (sum(weight) == 0._dp) then
+          Q_src( vi) = 0._dp
+        else
+          ! Define the relative weight of Q_src to Q_dst of the downstream ocean cells
+          do ci = 1, mesh%nC( vi)
+            relweight( vi, ci) = weight( ci) / sum(weight)
+          end do
+        end if
+
+      end if
+    end do
+
+    call gather_to_all( relweight, relweight_tot)
+    call gather_to_all( Q_src, Q_src_tot)
+
+    ! Compute spill flux destination
+    do vi = mesh%vi1, mesh%vi2
+
+      ! Skip if not an ocean cell
+      if (.not. mask_icefree_ocean_tot( vi)) cycle
+
+      do ci = 1, mesh%nC( vi)
+        !Neighbouring cell which potentially has nonzero Q_src
+        vj = mesh%C( vi, ci)
+
+        ! Connections of neighbouring cell
+        do cj = 1, mesh%nC( vj)
+
+          if (mesh%C( vj, cj) == vi) then
+          ! Yes, this connection is a match, receive fraction of Q_src
+            Q_dst( vi) = Q_dst( vi) - Q_src( vj) * relweight( vj, cj)
+
           end if
 
         end do
 
-      end if
+      end do
 
     end do
 
     ! Apply spill rates
     do vi = mesh%vi1, mesh%vi2
 
+      ! Convert spill source flux to thinning rate in m/yr
+      ice%Qspill( vi) = Q_src( vi) / mesh%A( vi)
+
+      ! Add destination flux as thickening rate in m/yr
+      ice%Qspill( vi) = ice%Qspill( vi) + Q_dst( vi) / mesh%A( vi)
+
+      ! Update ice thickness
       Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
 
     end do

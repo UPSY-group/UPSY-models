@@ -385,6 +385,10 @@ class Field(object):
             else:
                 print(f"ERROR: no valid BMB or melt variable in Timeframe")
                 return
+        elif self.varname == 'dHi_eff':
+            Hi = self.Timeframe.ds['Hi']
+            Hi_eff = self.Timeframe.ds['Hi_eff']
+            self.data = Hi-Hi_eff
         else:
             # Regular case: read variable if available in output
             try:

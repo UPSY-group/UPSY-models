@@ -77,7 +77,8 @@ def get_cmap(varname):
         
     elif varname in ['Hi', 'Hi_eff']:
         cmap = copy(plt.get_cmap('cmo.ice'))
-        norm = mpl.colors.Normalize(vmin=0,vmax=3000,clip=True)
+        #norm = mpl.colors.Normalize(vmin=0,vmax=3000,clip=True)
+        norm = mpl.colors.LogNorm(vmin=.1,vmax=3000,clip=True)
 
     elif varname == 'dHi':
         colors1 = plt.get_cmap('afmhot')(np.linspace(0,1,128))
@@ -177,6 +178,10 @@ def get_cmap(varname):
     elif varname == 'fraction_margin':
         cmap = copy(plt.get_cmap('cmo.ice'))
         norm = mpl.colors.Normalize(vmin=0,vmax=1.2,clip=True)
+
+    elif varname == 'dHi_eff':
+        cmap = copy(plt.get_cmap('cmo.balance'))
+        norm = mpl.colors.SymLogNorm(.01, vmin=-100, vmax=100, linscale=.01)
 
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')

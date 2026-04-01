@@ -11,8 +11,9 @@ module ice_thickness_safeties
   use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
-  use mpi_basic, only: sync
+  use mpi_basic, only: par, sync
   use masks_mod, only: determine_masks
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
 
   implicit none
 
@@ -296,7 +297,8 @@ contains
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
-    integer                                              :: vi, ci, vj, cj
+    integer                                              :: vi, ci, vj, cj, ierr
+    real(dp)                                             :: Q_max, Q_min, Q_dsttot, Q_srctot
     real(dp), dimension(mesh%nC_mem)                     :: weight        ! [m2/y] Perpendicular outflow to ocean
     real(dp), dimension(mesh%vi1: mesh%vi2, mesh%nC_mem) :: relweight     ! [0-1] Relative outflow weight
     real(dp), dimension(mesh%nV, mesh%nC_mem)            :: relweight_tot ! [0-1] Relative outflow weight
@@ -307,6 +309,7 @@ contains
 
     ! Initialise
     ice%Qspill = 0._dp
+    Q_src      = 0._dp
     Q_dst      = 0._dp
     relweight  = 0._dp
 
@@ -368,7 +371,7 @@ contains
   
             if (mesh%C( vj, cj) == vi) then
             ! Yes, this connection is a match, receive fraction of Q_src
-              if (Q_src_tot( vj) < 0._dp .and. relweight_tot( vj, cj) > 1.e-6_dp) then
+              if (Q_src_tot( vj) < -1.e-2_dp .and. relweight_tot( vj, cj) > 1.e-6_dp) then
                 Q_dst( vi) = Q_dst( vi) - Q_src_tot( vj) * relweight_tot( vj, cj)
               end if  
 
@@ -390,6 +393,17 @@ contains
       Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
 
     end do
+
+    Q_max = maxval( ice%Qspill)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    Q_min = minval( ice%Qspill)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    Q_dsttot = sum( Q_dst)*1e-9
+    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_dsttot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    Q_srctot = sum( Q_src)*1e-9
+    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_srctot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    if (par%primary) write (*,*) Q_max, Q_min, Q_dsttot, Q_srctot
 
     ! Update masks
     call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 

@@ -293,41 +293,22 @@ contains
     real(dp),                               intent(in   ) :: dt
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_and_apply_spill_over_flux'
-    integer                                :: vi, ci, vj
-    real(dp)                               :: Q_excess
-    real(dp), dimension(mesh%nC_mem)       :: weight
-    real(dp)                               :: w_eps = 1e-12
-    logical, dimension(mesh%nV)            :: mask_icefree_ocean_tot
-    real(dp), dimension(mesh%nV)           :: Hi_tot
-    logical,  dimension(mesh%vi1:mesh%vi2) :: mask_margin
+    character(len=1024), parameter   :: routine_name = 'calc_and_apply_spill_over_flux'
+    integer                          :: vi, ci, vj
+    real(dp)                         :: Q_excess
+    real(dp), dimension(mesh%nC_mem) :: weight
+    real(dp)                         :: w_eps = 1e-12
+    logical, dimension(mesh%nV)      :: mask_icefree_ocean_tot
   
     call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
-    call gather_to_all( Hi_new, Hi_tot)
-
-    ! Initialise
+  
     ice%Qspill = 0._dp
   
-    ! == Margin mask
-    ! ==============
-
-    ! Initialise
-    mask_margin = .false.
-
-    do vi = mesh%vi1, mesh%vi2
-      do ci = 1, mesh%nC( vi)
-        vj = mesh%C( vi,ci)
-        if (Hi_tot( vi) > 0._dp .and. Hi_tot( vj) == 0._dp) then
-          mask_margin( vi) = .true.
-        end if
-      end do
-    end do
-
     ! Compute spill rate
     do vi = mesh%vi1, mesh%vi2
-
+  
       ! Only compute spill-over when ice thickness exceeds effective ice thickness
-      if (mask_margin( vi) .and. Hi_new( vi) > ice%Hi_eff( vi)) then
+      if (Hi_new( vi) > ice%Hi_eff( vi)) then
 
         ! Determine spill rate of excess volume toward ocean cells in m/yr
         ice%Qspill( vi) = - (Hi_new( vi) - ice%Hi_eff( vi)) / dt

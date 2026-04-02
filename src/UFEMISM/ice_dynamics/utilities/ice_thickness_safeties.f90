@@ -307,7 +307,7 @@ contains
     real(dp)                                             :: w_eps = 1.e-2 ! [m2/y] Small value
     logical, dimension(mesh%nV)                          :: mask_icefree_ocean_tot
     real(dp)                                             :: Hi_ups, Hs_ups ! [m] Upstream ice values
-    real(dp), dimension(mesh%nV)                         :: Hi_new_tot
+    real(dp), dimension(mesh%nV)                         :: Hi_new_tot, Hb_tot
 
     ! Initialise
     ice%Qspill = 0._dp
@@ -317,6 +317,7 @@ contains
 
     call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
+    call gather_to_all( ice%Hb, Hb_tot)
 
     ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2
@@ -340,6 +341,27 @@ contains
         if (Hi_new_tot( vj) == 0._dp) cycle
 
         Hi_ups = Hi_new_tot( vj)
+
+      elseif (ice%mask_cf_gr( vi)) then
+
+        ! Find connection with the strongest inflow into this cell
+        cm = minloc(ice%u_perp( vi, :), dim=1)
+
+        ! Skip if somehow there is no inflow at all
+        if (ice%u_perp( vi, cm) >= 0._dp) then
+          call warning('No inflow velocity found')
+          Hi_ups = ice%Hi_eff( vi)
+        end if
+        
+        ! Determine the surface of that cell
+        vj = mesh%C( vi, cm)
+
+        ! Skip if upstream cell is empty
+        if (Hi_new_tot( vj) == 0._dp) cycle
+
+        Hs_ups = Hi_new_tot( vj) + Hb_tot( vj)
+
+        Hi_ups = Hs_ups - ice%Hb( vi)
 
       else
 

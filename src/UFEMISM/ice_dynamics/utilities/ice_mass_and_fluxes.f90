@@ -414,19 +414,35 @@ contains
         end if
 
         ! Floating calving front
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        !if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj) .and. ice%Qspill( vi) == 0._dp) then
+        !  scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        !end if
+
+        ! Add Qspill
+        if (ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%cf_fl_flux = scalars%cf_fl_flux + ice%Qspill( vi) * A_i * 1.0E-09_dp
         end if
 
         ! Land-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        !if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj) .and. ice%Qspill( vi) == 0._dp) then
+        !  scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        !end if
+
+        ! Add Qspill
+        if (ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%cf_gr_flux = scalars%cf_gr_flux + ice%Qspill( vi) * A_i * 1.0E-09_dp
         end if
 
         ! Marine-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        !if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj) .and. ice%Qspill( vi) == 0._dp) then
+        !  scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        !end if
+
+        ! Add Qspill
+        if (ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%margin_ocean_flux = scalars%margin_ocean_flux + ice%Qspill( vi) * A_i * 1.0E-09_dp
         end if
+
 
       end do ! do ci = 1, mesh%nC( vi)
 

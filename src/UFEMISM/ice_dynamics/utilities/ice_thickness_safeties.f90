@@ -418,23 +418,23 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Combine source and destination and convert to thickness rate in m/yr
-      ice%Qspill( vi) = ice%Qspill( vi) + (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
+      ice%Qspill( vi) = (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
 
       ! Update ice thickness
       Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
 
     end do
 
-    Q_max = maxval( ice%Qspill)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-    Q_min = minval( ice%Qspill)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    Q_dsttot = sum( Q_dst)*1e-9
-    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_dsttot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    Q_srctot = sum( Q_src)*1e-9
-    call MPI_ALLREDUCE( MPI_IN_PLACE, Q_srctot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    ! Q_max = maxval( ice%Qspill)
+    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    ! Q_min = minval( ice%Qspill)
+    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    ! Q_dsttot = sum( Q_dst)*1e-9
+    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_dsttot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    ! Q_srctot = sum( Q_src)*1e-9
+    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_srctot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
 
-    if (par%primary) write (*,*) Q_max, Q_min, Q_dsttot, Q_srctot
+    ! if (par%primary) write (*,*) Q_max, Q_min, Q_dsttot, Q_srctot
 
     ! Update masks
 

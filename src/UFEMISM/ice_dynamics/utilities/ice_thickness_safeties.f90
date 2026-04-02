@@ -342,27 +342,6 @@ contains
 
         Hi_ups = Hi_new_tot( vj)
 
-      elseif (ice%mask_cf_gr( vi)) then
-
-        ! Find connection with the strongest inflow into this cell
-        cm = minloc(ice%u_perp( vi, :), dim=1)
-
-        ! Skip if somehow there is no inflow at all
-        if (ice%u_perp( vi, cm) >= 0._dp) then
-          call warning('No inflow velocity found')
-          Hi_ups = ice%Hi_eff( vi)
-        end if
-        
-        ! Determine the surface of that cell
-        vj = mesh%C( vi, cm)
-
-        ! Skip if upstream cell is empty
-        if (Hi_new_tot( vj) == 0._dp) cycle
-
-        Hs_ups = Hi_new_tot( vj) + Hb_tot( vj)
-
-        Hi_ups = Hs_ups - ice%Hb( vi)
-
       else
 
         ! Default

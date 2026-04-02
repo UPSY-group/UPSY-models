@@ -12,6 +12,7 @@ module conservation_of_mass_main
   use conservation_of_mass_explicit, only: calc_dHi_dt_explicit, apply_ice_thickness_BC_explicit
   use conservation_of_mass_semiimplicit, only: calc_dHi_dt_semiimplicit
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD
+  use ice_thickness_safeties, only: calc_and_apply_spill_over_flux
 
   implicit none
 
@@ -78,6 +79,9 @@ contains
       call calc_dHi_dt_semiimplicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
         fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     end select
+
+    ! Apply spill over from overfilled margin cells
+    call calc_and_apply_spill_over_flux( mesh, ice, Hi_tplusdt, dt)
 
     ! Limit Hi( t+dt) to zero; throw a warning if negative thickness are encountered
     found_negative_vals = .false.

@@ -2,7 +2,7 @@ module ice_thickness_safeties
   !< Different kinds of "safeties" to keep the ice sheet stable during nudging-based initialisation runs
 
   use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
@@ -297,7 +297,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
-    integer                                              :: vi, ci, vj, cj, ierr
+    integer                                              :: vi, ci, vj, cj, cm, ierr
     real(dp)                                             :: Q_max, Q_min, Q_dsttot, Q_srctot
     real(dp), dimension(mesh%nC_mem)                     :: weight        ! [m2/y] Perpendicular outflow to ocean
     real(dp), dimension(mesh%vi1: mesh%vi2, mesh%nC_mem) :: relweight     ! [0-1] Relative outflow weight
@@ -306,6 +306,8 @@ contains
     real(dp), dimension(mesh%nV)                         :: Q_src_tot     ! [m3/y] Source spill flux
     real(dp)                                             :: w_eps = 1.e-2 ! [m2/y] Small value
     logical, dimension(mesh%nV)                          :: mask_icefree_ocean_tot
+    real(dp)                                             :: Hi_ups, Hs_ups ! [m] Upstream ice values
+    real(dp), dimension(mesh%nV)                         :: Hi_new_tot
 
     ! Initialise
     ice%Qspill = 0._dp
@@ -314,15 +316,43 @@ contains
     relweight  = 0._dp
 
     call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( Hi_new, Hi_new_tot)
 
     ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2
   
+      ! Determine upstream ice thickness
+      if (ice%mask_cf_fl( vi)) then
+
+        ! Find connection with the strongest inflow into this cell
+        cm = minloc(ice%u_perp( vi, :), dim=1)
+
+        ! Skip if somehow there is no inflow at all
+        if (ice%u_perp( vi, cm) >= 0._dp) then
+          call warning('No inflow velocity found')
+          Hi_ups = ice%Hi_eff( vi)
+        end if
+
+        ! Determine the thickness of that cell
+        vj = mesh%C( vi, cm)
+
+        ! Skip if upstream cell is empty
+        if (Hi_new_tot( vj) == 0._dp) cycle
+
+        Hi_ups = Hi_new_tot( vj)
+
+      else
+
+        ! Default
+        Hi_ups = ice%Hi_eff( vi)
+
+      end if
+
       ! Only compute spill-over when ice thickness exceeds effective ice thickness
-      if ((ice%mask_cf_gr( vi) .or. ice%mask_cf_fl( vi)) .and. Hi_new( vi) > ice%Hi_eff( vi)) then
+      if ((ice%mask_cf_gr( vi) .or. ice%mask_cf_fl( vi)) .and. Hi_new( vi) > Hi_ups) then
 
         ! Determine source flux of spill-over ice in m^3/yr
-        Q_src( vi) = - (Hi_new( vi) - ice%Hi_eff( vi)) * mesh%A( vi) / dt
+        Q_src( vi) = - (Hi_new( vi) - Hi_ups) * mesh%A( vi) / dt
 
         weight = 0._dp
   
@@ -353,6 +383,7 @@ contains
 
     end do
 
+    ! Only apply distribution during corrector step
     call gather_to_all( relweight, relweight_tot)
     call gather_to_all( Q_src, Q_src_tot)
 
@@ -387,7 +418,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Combine source and destination and convert to thickness rate in m/yr
-      ice%Qspill( vi) = (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
+      ice%Qspill( vi) = ice%Qspill( vi) + (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
 
       ! Update ice thickness
       Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
@@ -406,10 +437,6 @@ contains
     if (par%primary) write (*,*) Q_max, Q_min, Q_dsttot, Q_srctot
 
     ! Update masks
-    ! call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
-    !                       ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
-    !                       ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
-    !                       ice%mask_cf_fl, ice%mask_coastline)
 
     ! call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
     !                       ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &

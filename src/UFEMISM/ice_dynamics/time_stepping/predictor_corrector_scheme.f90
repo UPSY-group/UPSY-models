@@ -14,7 +14,7 @@ module predictor_corrector_scheme
   use netcdf_io_main
   use time_step_criteria, only: calc_critical_timestep_adv
   use conservation_of_mass_main, only: calc_dHi_dt
-  use ice_thickness_safeties, only: alter_ice_thickness, calc_and_apply_spill_over_flux
+  use ice_thickness_safeties, only: alter_ice_thickness
   use ice_geometry_basics, only: ice_surface_elevation
   use masks_mod, only: determine_masks
   use subgrid_grounded_fractions_main, only: calc_grounded_fractions
@@ -139,9 +139,6 @@ contains
       region%ice%pc%Hi_star_np1 = region%ice%Hi_prev + region%ice%pc%dt_np1 * ((1._dp + region%ice%pc%zeta_t / 2._dp) * &
         region%ice%pc%dHi_dt_Hi_n_u_n - (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
 
-      ! Apply spill over from overfilled margin cells
-      ! call calc_and_apply_spill_over_flux( region%mesh, region%ice, region%ice%pc%Hi_star_np1, region%ice%pc%dt_np1)
-
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
       
@@ -227,9 +224,6 @@ contains
 
       ! Save "raw" thinning rates, as applied after the corrector step
       region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
-
-      ! Apply spill over from overfilled margin cells
-      call calc_and_apply_spill_over_flux( region%mesh, region%ice, region%ice%pc%Hi_star_np1, region%ice%pc%dt_np1)
 
       ! if so desired, modify the corrected ice thickness field based on user-defined settings
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)

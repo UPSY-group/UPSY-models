@@ -283,7 +283,7 @@ contains
     call check_mesh_dimensions( filename, ncid)
 
     ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nTri)
+    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nTri, id_dim, dim_length = nTri)
 
     ! Look for the specified variable in the file
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -521,7 +521,7 @@ contains
     call check_mesh_dimensions( filename, ncid)
 
     ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nTri)
+    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nTri, id_dim, dim_length = nTri)
 
     ! Set up the vertical coordinate zeta from the file
     call setup_zeta_from_file( filename, ncid, nzeta_loc, zeta_loc)

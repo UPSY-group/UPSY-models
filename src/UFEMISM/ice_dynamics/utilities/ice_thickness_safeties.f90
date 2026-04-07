@@ -323,7 +323,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
   
       ! Determine upstream ice thickness
-      if (ice%mask_cf_fl( vi) .or. ice%mask_gr_fl( vi)) then
+      if (ice%mask_cf_fl( vi) .or. ice%mask_cf_gr( vi)) then
 
         ! Find connection with the strongest inflow into this cell
         cm = minloc(ice%u_perp( vi, :), dim=1)

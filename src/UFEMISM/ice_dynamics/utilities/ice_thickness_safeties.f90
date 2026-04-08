@@ -427,24 +427,6 @@ contains
 
     end do
 
-    ! Q_max = maxval( ice%Qspill)
-    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-    ! Q_min = minval( ice%Qspill)
-    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    ! Q_dsttot = sum( Q_dst)*1e-9
-    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_dsttot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    ! Q_srctot = sum( Q_src)*1e-9
-    ! call MPI_ALLREDUCE( MPI_IN_PLACE, Q_srctot, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-
-    ! if (par%primary) write (*,*) Q_max, Q_min, Q_dsttot, Q_srctot
-
-    ! Update masks
-
-    ! call determine_masks( mesh, Hi_new, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, & 
-    !                       ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, &
-    !                       ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, &
-    !                       ice%mask_cf_fl, ice%mask_coastline)
-
   end subroutine calc_and_apply_spill_over_flux
 
 end module ice_thickness_safeties

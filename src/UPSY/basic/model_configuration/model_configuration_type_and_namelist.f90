@@ -429,6 +429,10 @@ module model_configuration_type_and_namelist
     logical             :: remove_shelves_larger_than_PD_config         = .false.                          ! If set to TRUE, all floating ice beyond the present-day calving front is removed (used for some Antarctic spin-ups)
     logical             :: continental_shelf_calving_config             = .false.                          ! If set to TRUE, all ice beyond the continental shelf edge (set by a maximum depth) is removed
     real(dp)            :: continental_shelf_min_height_config          = -2000._dp                        ! Maximum depth of the continental shelf
+    logical             :: do_use_ISMIP_future_shelf_collapse_forcing_config   = .FALSE.                          ! If set to TRUE, the calving front is forced to retreat according to the ISMIP future calving front collapse scenario
+    character(len=256)  :: shelf_collapse_type_config                          = 'BMB'                           ! Type of calving collapse to aplly: 'BMB' or 'calving'
+    character(len=256)  :: ISMIP_future_shelf_collapse_forcing_filename_config = 'external/data/ISMIP_future_collapse_scenarios/Antarctica_5km_ismip_future_collapse_scenario.nc'
+    logical             :: retreat_mask_without_time_config             = .FALSE.                        ! If set to TRUE, the retreat mask is applied without time dependence (i.e., all ice beyond the specified calving front is removed at all times)
 
   ! == Ice dynamics - stabilisation
   ! ===============================
@@ -1616,7 +1620,11 @@ module model_configuration_type_and_namelist
     logical             :: remove_shelves_larger_than_PD
     logical             :: continental_shelf_calving
     real(dp)            :: continental_shelf_min_height
-
+    logical             :: do_use_ISMIP_future_shelf_collapse_forcing
+    character(len=256)  :: shelf_collapse_type
+    character(len=256)  :: ISMIP_future_shelf_collapse_forcing_filename
+    logical             :: retreat_mask_without_time
+    
   ! == Ice dynamics - stabilisation
   ! ===============================
 
@@ -2691,6 +2699,10 @@ contains
       remove_shelves_larger_than_PD_config                        , &
       continental_shelf_calving_config                            , &
       continental_shelf_min_height_config                         , &
+      do_use_ISMIP_future_shelf_collapse_forcing_config           , &
+      shelf_collapse_type_config                                  , &
+      ISMIP_future_shelf_collapse_forcing_filename_config         , &
+      retreat_mask_without_time_config                            , &
       choice_mask_noice_config                                    , &
       Hi_min_config                                               , &
       Hi_thin_config                                              , &
@@ -3646,6 +3658,10 @@ contains
     C%remove_shelves_larger_than_PD                          = remove_shelves_larger_than_PD_config
     C%continental_shelf_calving                              = continental_shelf_calving_config
     C%continental_shelf_min_height                           = continental_shelf_min_height_config
+    C%do_use_ISMIP_future_shelf_collapse_forcing             = do_use_ISMIP_future_shelf_collapse_forcing_config
+    C%shelf_collapse_type                                    = shelf_collapse_type_config
+    C%ISMIP_future_shelf_collapse_forcing_filename           = ISMIP_future_shelf_collapse_forcing_filename_config
+    C%retreat_mask_without_time                              = retreat_mask_without_time_config
 
     ! == Ice dynamics - stabilisation
     ! ===============================

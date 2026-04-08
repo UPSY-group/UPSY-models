@@ -10,6 +10,7 @@ module ice_thickness_safeties
   use reference_geometry_types, only: type_reference_geometry
   use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
+  use climate_model_types, only: type_climate_model
 
   implicit none
 
@@ -19,7 +20,7 @@ module ice_thickness_safeties
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time)
+  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time, climate)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
@@ -31,6 +32,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
+    type(type_climate_model),               intent(in   ) :: climate
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'alter_ice_thickness'
@@ -115,6 +117,22 @@ contains
           Hi_new( vi) = 0._dp
         end if
       end do
+    end if
+
+    ! if so specified, remove all ice inside the mask
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
+      select case(C%shelf_collapse_type)
+      case('BMB')
+        ! do nothing, collapse will be applied in BMB routine
+      case('calving')
+        do vi = mesh%vi1, mesh%vi2
+          if (climate%ISMIP_style%shelf_collapse_mask( vi) > 0.01_dp .and. is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi))) then
+            Hi_new( vi) = 0._dp
+          end if
+        end do
+      case default
+        call crash('unknown shelf_collapse_type "' // trim( C%shelf_collapse_type) // '"')
+      end select
     end if
 
     ! === Fixiness ===

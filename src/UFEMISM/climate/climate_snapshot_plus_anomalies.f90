@@ -7,6 +7,7 @@ MODULE climate_snapshot_plus_anomalies
 
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
+  use mpi_f08                                                , only: MPI_DOUBLE_PRECISION, MPI_COMM_WORLD, MPI_BCAST
   USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
@@ -20,7 +21,7 @@ MODULE climate_snapshot_plus_anomalies
   USE netcdf_basic
   use reallocate_mod                                         , only: reallocate_bounds
   use mpi_distributed_memory                                 , only: distribute_from_primary
-  use climate_model_utilities                                , only: update_climate_timeframes, get_insolation_at_time
+  use climate_model_utilities                                , only: get_insolation_at_time, apply_geometry_downscaling_corrections
   use series_utilities
 
   IMPLICIT NONE
@@ -64,31 +65,11 @@ CONTAINS
     end if
 
     ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (climate%snapshot_p_anml%anomaly_t1 - time) / (climate%snapshot_p_anml%anomaly_t1 - climate%snapshot_p_anml%anomaly_t0)
-    w1 = 1._dp - w0
-
-    do m = 1,12
-    do vi = mesh%vi1, mesh%vi2
-
-      climate%snapshot_p_anml%T2m_anomaly( vi, m)    = w0 * climate%snapshot_p_anml%T2m_anomaly_0( vi, m)    + w1 * climate%snapshot_p_anml%T2m_anomaly_1( vi, m)
-      climate%snapshot_p_anml%Precip_anomaly( vi, m) = w0 * climate%snapshot_p_anml%Precip_anomaly_0( vi, m) + w1 * climate%snapshot_p_anml%Precip_anomaly_1( vi, m)
-      
-
-      ! Add anomaly to snapshot to find the applied temperature and precipitation
-      climate%snapshot_p_anml%T2m( vi,m)    = climate%snapshot_p_anml%snapshot_baseline%T2m( vi,m)    + climate%snapshot_p_anml%T2m_anomaly( vi, m)
-      climate%snapshot_p_anml%Precip( vi,m) = climate%snapshot_p_anml%snapshot_baseline%Precip( vi,m) + climate%snapshot_p_anml%Precip_anomaly( vi, m)
-      
-
-      ! Copy T2m to climate model
-      climate%T2m( vi,m)    = climate%snapshot_p_anml%T2m( vi,m)
-      climate%Precip( vi,m) = climate%snapshot_p_anml%Precip( vi,m)
-
-    end do
-    end do
+    call interpolate_between_climate_anomaly_timeframes(mesh, climate, time)
 
     ! Update temperature and precipitation fields based on the mismatch between
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
-    call apply_geometry_downscaling_corrections(mesh, ice, climate)
+    call apply_geometry_downscaling_corrections(mesh, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
     IF (climate%snapshot%has_insolation) THEN
@@ -198,30 +179,10 @@ CONTAINS
     climate%snapshot_p_anml%anomaly_t1 = C%start_time_of_run - 100._dp
     call update_climate_timeframes( mesh, climate, C%start_time_of_run)
 
-    ! Calculate climate%snapshot_p_anml%T2m_anomaly
     ! Interpolate between the two timeframes to find the applied anomaly
-    w0 = (climate%snapshot_p_anml%anomaly_t1 - C%start_time_of_run) / (climate%snapshot_p_anml%anomaly_t1 - climate%snapshot_p_anml%anomaly_t0)
-    w1 = 1._dp - w0
+    call interpolate_between_climate_anomaly_timeframes(mesh, climate, C%start_time_of_run)
 
-    do m = 1,12
-    do vi = mesh%vi1, mesh%vi2
-
-      ! Note that the baseline and the applied temperature and precip are monthly, but the anomaly is annual
-      climate%snapshot_p_anml%T2m_anomaly( vi,m)    = w0 * climate%snapshot_p_anml%T2m_anomaly_0( vi,m)    + w1 * climate%snapshot_p_anml%T2m_anomaly_1( vi,m)
-      climate%snapshot_p_anml%Precip_anomaly( vi,m) = w0 * climate%snapshot_p_anml%Precip_anomaly_0( vi,m) + w1 * climate%snapshot_p_anml%Precip_anomaly_1( vi,m)
-
-      ! Add anomaly to snapshots to find the applied temperature and precipitation
-      climate%snapshot_p_anml%T2m( vi,m)    = climate%snapshot_p_anml%snapshot_baseline%T2m( vi,m)    + climate%snapshot_p_anml%T2m_anomaly( vi,m)
-      climate%snapshot_p_anml%Precip( vi,m) = climate%snapshot_p_anml%snapshot_baseline%Precip( vi,m) + climate%snapshot_p_anml%Precip_anomaly( vi,m)
-
-      ! Copy to climate model
-      climate%T2m( vi,m)    = climate%snapshot_p_anml%T2m( vi,m)
-      climate%Precip( vi,m) = climate%snapshot_p_anml%Precip( vi,m)
-
-    end do
-    end do
-
-    call apply_geometry_downscaling_corrections( mesh, ice, climate)
+    call apply_geometry_downscaling_corrections( mesh, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
 
     ! Initialises the insolation (if needed)
     IF (climate%snapshot_p_anml%snapshot_baseline%has_insolation) THEN
@@ -308,13 +269,110 @@ CONTAINS
     ! Update anomaly timeframes
     call update_climate_timeframes( mesh_new, climate, time)
 
-    ! Calculate climate%snapshot_p_anml%T2m_anomaly
     ! Interpolate between the two timeframes to find the applied anomaly
+    call interpolate_between_climate_anomaly_timeframes(mesh_new, climate, time)
+    
+    call apply_geometry_downscaling_corrections( mesh_new, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
+    
+
+    IF (climate%snapshot_p_anml%snapshot_baseline%has_insolation .eqv. .TRUE.) THEN
+      call remap_insolation( climate%snapshot_p_anml%snapshot_baseline, mesh_new)
+    END IF
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  END SUBROUTINE remap_climate_snp_p_anml
+
+  subroutine update_climate_timeframes(mesh, climate, time)
+
+    ! In/output variables:
+    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_climate_model),         intent(inout) :: climate
+    real(dp),                         intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter      :: routine_name = 'update_climate_timeframes'
+    integer                             :: ncid, id_dim_time, nt, id_var_time, ierr
+    real(dp), dimension(:), allocatable :: time_from_file
+    integer                             :: ti0, ti1
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Read time variable from the file
+    call open_existing_netcdf_file_for_reading( climate%snapshot_p_anml%filename_climate_anomalies, ncid)
+    call check_time( climate%snapshot_p_anml%filename_climate_anomalies, ncid)
+    call inquire_dim_multopt( climate%snapshot_p_anml%filename_climate_anomalies, ncid, field_name_options_time, id_dim_time, dim_length = nt)
+    call inquire_var_multopt( climate%snapshot_p_anml%filename_climate_anomalies, ncid, field_name_options_time, id_var_time)
+    allocate( time_from_file( nt))
+    call read_var_primary( climate%snapshot_p_anml%filename_climate_anomalies, ncid, id_var_time, time_from_file)
+    call MPI_BCAST( time_from_file(:), nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+    call close_netcdf_file( ncid)
+
+    ! Find the two timeframes
+    if (time < time_from_file( 1)) then
+      if (par%primary) call warning('model time before start of anomaly file; using first timeframe')
+      ti0 = 1
+      ti1 = 2
+    elseif (time > time_from_file( size( time_from_file,1))) then
+      if (par%primary) call warning('model time beyond end of anomaly file; using last timeframe')
+      ti0 = size( time_from_file,1) - 1
+      ti1 = size( time_from_file,1)
+    else
+      ti0 = 1
+      ti1 = 2
+      do while (time_from_file( ti1) < time .and. ti1 < size( time_from_file,1))
+        ti0 = ti1
+        ti1 = ti1 + 1
+      end do
+    end if
+
+    climate%snapshot_p_anml%anomaly_t0 = time_from_file( ti0)
+    climate%snapshot_p_anml%anomaly_t1 = time_from_file( ti1)
+
+    ! Read the two timeframes
+    call read_field_from_file_2D_monthly( climate%snapshot_p_anml%filename_climate_anomalies, 'T2m_anomaly', &
+      mesh, C%output_dir, climate%snapshot_p_anml%T2m_anomaly_0, &
+      time_to_read = climate%snapshot_p_anml%anomaly_t0)
+    call read_field_from_file_2D_monthly( climate%snapshot_p_anml%filename_climate_anomalies, 'T2m_anomaly', &
+      mesh, C%output_dir, climate%snapshot_p_anml%T2m_anomaly_1, &
+      time_to_read = climate%snapshot_p_anml%anomaly_t1)
+    call read_field_from_file_2D_monthly( climate%snapshot_p_anml%filename_climate_anomalies, 'Precip_anomaly', &
+      mesh, C%output_dir, climate%snapshot_p_anml%Precip_anomaly_0, &
+      time_to_read = climate%snapshot_p_anml%anomaly_t0)
+    call read_field_from_file_2D_monthly( climate%snapshot_p_anml%filename_climate_anomalies, 'Precip_anomaly', &
+      mesh, C%output_dir, climate%snapshot_p_anml%Precip_anomaly_1, &
+      time_to_read = climate%snapshot_p_anml%anomaly_t1)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine update_climate_timeframes
+
+  subroutine interpolate_between_climate_anomaly_timeframes(mesh, climate, time)
+  ! Calculates anomalies by interpolating between the two 
+  ! timeframes to find the applied anomaly, then applies it to the climate variables
+
+
+    ! In/output variables:
+    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_climate_model),         intent(inout) :: climate
+    real(dp),                         intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter      :: routine_name = 'interpolate_between_climate_anomaly_timeframes'
+    real(dp)                            :: w0, w1
+    integer                             :: vi, m
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
     w0 = (climate%snapshot_p_anml%anomaly_t1 - time) / (climate%snapshot_p_anml%anomaly_t1 - climate%snapshot_p_anml%anomaly_t0)
     w1 = 1._dp - w0
 
     do m = 1,12
-    do vi = mesh_new%vi1, mesh_new%vi2
+    do vi = mesh%vi1, mesh%vi2
 
       ! Note that the baseline and the applied temperature and precip are monthly, but the anomaly is annual
       climate%snapshot_p_anml%T2m_anomaly( vi,m)    = w0 * climate%snapshot_p_anml%T2m_anomaly_0( vi,m)    + w1 * climate%snapshot_p_anml%T2m_anomaly_1( vi,m)
@@ -331,73 +389,10 @@ CONTAINS
     end do
     end do
 
-    call apply_geometry_downscaling_corrections( mesh_new, ice, climate)
-    
-
-    IF (climate%snapshot_p_anml%snapshot_baseline%has_insolation .eqv. .TRUE.) THEN
-      call remap_insolation( climate%snapshot_p_anml%snapshot_baseline, mesh_new)
-    END IF
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  END SUBROUTINE remap_climate_snp_p_anml
-
-  SUBROUTINE apply_geometry_downscaling_corrections( mesh, ice, climate)
-    ! Applies the lapse rate corrections for temperature and precipitation
-    ! to correct for the mismatch between T and P at the forcing's ice surface elevation and the model's ice surface elevation
-
-    IMPLICIT NONE
-
-    TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                  INTENT(IN)    :: ice
-    TYPE(type_climate_model),              INTENT(INOUT) :: climate
-
-    ! Local Variables
-    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'apply_geometry_downscaling_corrections'
-    INTEGER                                              :: vi, m
-    REAL(dp)                                             :: deltaH, deltaT, deltaP
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE                :: T_inv, T_inv_ref
-
-    ! Add routine to path
-    CALL init_routine( routine_name)
-
-    IF     (climate%snapshot_p_anml%snapshot_baseline%do_lapse_rates .eqv. .TRUE.) THEN
-
-      allocate( T_inv     (mesh%vi1:mesh%vi2, 12))
-      allocate( T_inv_ref (mesh%vi1:mesh%vi2, 12))
-
-
-      do vi = mesh%vi1, mesh%vi2
-
-        ! we only apply corrections where it is not open ocean
-        if (ice%mask_icefree_ocean( vi) .eqv. .FALSE.) then
-          deltaT  = (ice%Hs( vi) - climate%snapshot_p_anml%snapshot_baseline%Hs( vi)) * (-1._dp * abs(climate%snapshot_p_anml%snapshot_baseline%lapse_rate_temp))
-          do m = 1, 12
-            ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
-            climate%T2m( vi, m)    = climate%T2m( vi, m)    + deltaT
-
-
-            ! Calculate inversion-layer temperatures
-            T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
-            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot_p_anml%snapshot_baseline%lapse_rate_temp * (ice%Hs( vi) - climate%snapshot_p_anml%snapshot_baseline%Hs( vi)))
-            ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
-            ! Same as implemented in IMAU-ICE
-            climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))
-
-          end do ! m
-        end if
-      end do ! vi
-
-      deallocate(T_inv)
-      deallocate(T_inv_ref)
-
-    END IF
-
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
-
-  END SUBROUTINE apply_geometry_downscaling_corrections
+  end subroutine interpolate_between_climate_anomaly_timeframes
 
 
 END MODULE climate_snapshot_plus_anomalies

@@ -13,16 +13,8 @@ MODULE basal_hydrology_new
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
   USE basal_hydrology_model_types                            , ONLY: type_basal_hydrology_model
-  USE climate_model_types                                    , ONLY: type_climate_model
-  USE BMB_model_types                                        , ONLY: type_BMB_model
-  use zeta_gradients, only: calc_zeta_gradients
-  USE thermodynamics_utilities                               , ONLY: calc_heat_capacity, calc_thermal_conductivity, calc_pressure_melting_point, &
-                                                                     calc_upwind_heat_flux_derivatives, calc_strain_heating, calc_frictional_heating, &
-                                                                     replace_Ti_with_robin_solution
-  use tridiagonal_solver, only: solve_tridiagonal_matrix_equation
   use netcdf_io_main
   USE mesh_disc_apply_operators                              , ONLY: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_b_a_2D, ddx_a_a_2D, ddy_a_a_2D
-  use laddie_utilities                                       , ONLY: map_H_a_c
   use mpi_distributed_memory                                 , only: gather_to_all
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
@@ -66,9 +58,9 @@ CONTAINS
     time_loop: do while (duration < time_until_convergence)
       call basal_hydrology(mesh, ice, basal_hydro, duration + time*sec_per_year)
       duration = duration + basal_hydro%dt
-      if (par%primary) then
-        write(*,*) "Duration so far basal hydro: ", duration
-      end if
+      !if (par%primary) then
+      !  write(*,*) "Duration so far basal hydro: ", duration
+      !end if
     end do time_loop
 
     basal_hydro%old_time = time*sec_per_year + duration
@@ -102,15 +94,6 @@ CONTAINS
 
     real(dp), parameter            :: P_min = 0.0_dp           ! Minimum pressure of the ice on the basal water
 
-    ! real(dp), parameter            :: k_coef              ! Coefficient of effective conductivity
-    ! real(dp), parameter            :: alpha               ! Exponent used in effective conductivity
-    ! real(dp), parameter            :: beta                ! Exponent used in effective conductivity
-
-    ! real(dp), parameter            :: c_1                 ! Scaling coefficient 1 (non-negative opening term)
-    ! real(dp), parameter            :: c_2                 ! Scaling coefficient 2 (closing term)
-
-    ! real(dp), parameter            :: W_r                 ! Maximum roughness scale of basal topography
-
     real(dp)                       :: dt
     real(dp)                       :: dt_hydro
 
@@ -125,9 +108,7 @@ CONTAINS
     ! 1) Start with W, W_til and P and make sure they are all within their bounds
     call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
 
-    ! 2) Perform a timestep to get W_til one timestep further, still making sure it is within the bounds
-    !call calc_W_til_next(mesh, ice, basal_hydro, W_min_til, W_max_til, dt)
-
+    ! Calculate some stuff for timesteps and u and v calculation
     call calc_R(mesh, ice, basal_hydro, .false.)
 
     call calc_K(mesh, ice, basal_hydro)
@@ -140,28 +121,26 @@ CONTAINS
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
 
-    if (par%primary) then
-      !write(*,*) "dt_hydro = ", dt_hydro
-    end if
-
     ! 9) Compute the advective fluxes (Q) on the staggered grid
     call calc_divQ(mesh, ice, basal_hydro)
 
+    ! Compute how much goes in the water layer and how much goes in the till
     call calc_q_til(mesh, ice, basal_hydro, W_max_til)
     
     ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
     ! 11) If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
-    ! 11) Otherwise, compute next timestep of P using the equation in the paper
+    ! 11) Otherwise, compute next timestep of P using the equation in the paper (Bueler and Van Pelt 2015)
     call calc_P_next(mesh, ice, basal_hydro, P_min)
 
     ! 13) If icefree or float, then set next timestep of W to 0.
     ! 13) Otherwise, compute next timestep of W using the equation in the paper
-    !call calc_W_next(mesh, ice, basal_hydro, W_min, W_max, dt_hydro)
+    ! Put the computed q to use
     call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
 
-    ! Calculate output to ice model
+    ! Calculate output to ice model (effective pressure and yield stress)
     call calc_N_til(mesh, basal_hydro, W_max_til, .true.)
     call calc_yield_stress(mesh, ice, basal_hydro)
+
     ! Allow boundary conditions to be applied to W
     !call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)
     !call apply_W_thickness_gl_explicit(mesh, ice, basal_hydro)
@@ -170,8 +149,6 @@ CONTAINS
     if (par%primary) then
       !write(*,*) "Time after basal hydrology step: ", time
     end if
-
-    !call crash('Hello world!')
   
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -359,7 +336,6 @@ CONTAINS
     real(dp)            :: d_min               ! Minimum triangle side length
     real(dp)            :: u_t, v_t, D_t       ! Velocity components on triangle
     real(dp)            :: dt_crit_CFL, dt_crit_W, dt_crit_P ! Critical timesteps for different conditions
-    real(dp)            :: dt_hydro_1, dt_hydro_2
     real(dp), parameter :: phi = 0.01_dp       ! Englacial porosity)
     real(dp), parameter :: correction_factor = 0.9_dp ! To be on the safe side
 
@@ -393,12 +369,11 @@ CONTAINS
 
       dt_crit_CFL = min(dt_crit_CFL, d_min/(2*(u_t + v_t)))
 
-      ! Diffusivity on the triangle (Tijn suggested taking the vertices to get a higher value)
-      ! Probs have to exchange_halos
+      ! Diffusivity on the triangle (Tijn suggested taking the vertices to get a higher value (not done yet))
       ! Now added a small value to avoid division by zero, but maybe using if basal_hydro%mask_b(ti) would be better?
       D_t = basal_hydro%D_b( ti) + 0.0000001_dp !max(basal_hydro%D( via), basal_hydro%D( vib), basal_hydro%D( vic))
 
-      ! Instead of max of D, we use D on the triangle (I think this makes sense?)
+      ! Instead of max of D, we use D on the triangle
       dt_crit_W = min(dt_crit_W, d_min**2/(8*D_t))
 
       dt_crit_P = min(dt_crit_P, 2*phi*d_min**2/(8*D_t))
@@ -523,13 +498,12 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-    ! calculate basal hydro masks (For some reason this calc does not work when new mesh is generated?)
-    call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
     ! calculate opening O and closing C terms
     call calc_opening_rate(mesh, ice, basal_hydro)
     call calc_closing_rate(mesh, ice, basal_hydro)
 
+    ! Calculate next timestep of P
     do vi = mesh%vi1, mesh%vi2
       if (ice%mask_icefree_land( vi)) then
         basal_hydro%P( vi) =  0.0_dp
@@ -680,7 +654,6 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-    !Some are NaNs here. This is due to K being NaN sometimes. But why? Probably because dR_dx and dR_dy are zero.
 
     call map_a_b_2D(mesh, basal_hydro%W, basal_hydro%W_b)
 
@@ -703,8 +676,6 @@ CONTAINS
   ! Comes from Laddie_velocity
   subroutine map_UV_b_c( mesh, basal_hydro)
     ! Calculate velocities on the c-grid
-    !
-    ! Uses a different scheme then the standard mapping operator, as that one is too diffusive
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
@@ -715,9 +686,6 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! This sync here seems to be necessary probably because after this the timestep is calculated
-    ! and perhaps some cores get there too quickly leading to a too small timestep?
 
     call multiply_CSR_matrix_with_vector_1D_wrapper(basal_hydro%M_b_c, &
       mesh%pai_Tri, basal_hydro%u_b, mesh%pai_E, basal_hydro%u_c)
@@ -916,7 +884,7 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       if (test) then                          ! For testing we take R without the pressure component
-        basal_hydro%R( vi) = ice%Hb( vi)*rho_w*g ! Should perhaps make this (ice%Hb( vi) + basal_hydro%W( vi)))?
+        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g
       else 
         basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi)
       end if
@@ -952,11 +920,10 @@ CONTAINS
 
     call map_a_b_2D(mesh, basal_hydro%W, basal_hydro%W_b)
 
-    ! For some reason the dR_dx and dR_dy values are zero sometimes and if this is precisely 0, this breaks calc_K by dividing by zero.
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
         basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp & 
-                               + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp)
+                               + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp) ! Added small value to avoid dividing by 0
       else
         basal_hydro%K_b( ti) = 0.0_dp
       end if
@@ -1410,7 +1377,7 @@ CONTAINS
       s = basal_hydro%W_til( vi) / W_max_til
       basal_hydro%N_til( vi) = min(basal_hydro%P_o(vi), &
                                    N0*(delta*basal_hydro%P_o( vi)/N0)**(s)*10**(e0/Cc*(1.0_dp - s)))
-      if (testing_water_layer) then     !Testing some stuff out when just adding the moving water layer to effective pressure
+      if (testing_water_layer) then     !Testing some stuff out when just adding the moving water layer pressure to effective pressure
         basal_hydro%N_til( vi) = basal_hydro%N_til( vi) - rho_w*g*basal_hydro%W( vi)
       end if
     end do

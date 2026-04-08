@@ -53,19 +53,19 @@ jobs:
         uses: actions/cache/save@v3
         id: UPSY_unit_test_program_cache_save
         with:
-          path: UPSY_unit_test_program
+          path: build/src/UPSY/UPSY_unit_test_program
           key: UPSY_unit_test_program_perf_Linux_${{ github.ref_name }}_${{ github.run_id }}
 
       - name: Cache UPSY multi-node unit test program
         uses: actions/cache/save@v3
         id: UPSY_multinode_unit_test_program_cache_save
         with:
-          path: UPSY_multinode_unit_test_program
+          path: build/src/UPSY/UPSY_multinode_unit_test_program
           key: UPSY_multinode_unit_test_program_perf_Linux_${{ github.ref_name }}_${{ github.run_id }}
 
       - name: Cache UPSY component test program
         uses: actions/cache/save@v3
         id: UPSY_component_test_program_cache_save
         with:
-          path: UPSY_component_test_program
+          path: build/src/UPSY/UPSY_component_test_program
           key: UPSY_component_test_program_perf_Linux_${{ github.ref_name }}_${{ github.run_id }}

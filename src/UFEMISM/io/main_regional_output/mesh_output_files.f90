@@ -485,6 +485,8 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQ', region%ice%divQ)
       case ('R_shear')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'R_shear', region%ice%R_shear)
+      case ('Qspill')
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Qspill', region%ice%Qspill)
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -1218,6 +1220,8 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal ice flux divergence', units = 'm yr^-1')
       case ('R_shear')
         call add_field_mesh_dp_2D( filename, ncid, 'R_shear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Slide/shear ratio', units = '0-1')
+      case ('Qspill')
+        call add_field_mesh_dp_2D( filename, ncid, 'Qspill', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal spill over flux', units = 'm yr^-1')
 
     ! == Ice P/C time stepping ==
     ! ===========================

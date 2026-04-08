@@ -7,6 +7,7 @@ module ct_mass_conservation
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_mesh_from_file, &
     close_netcdf_file, create_new_netcdf_file_for_writing, setup_mesh_in_netcdf_file, &
     add_field_mesh_dp_2D_notime, write_to_field_multopt_mesh_dp_2D_notime
@@ -15,6 +16,7 @@ module ct_mass_conservation
   use Halfar_SIA_solution, only: Halfar
   use conservation_of_mass_main, only: calc_dHi_dt
   use parameters, only: pi
+  use ice_model_memory, only: allocate_ice_model
 
   implicit none
 
@@ -100,6 +102,7 @@ contains
     character(len=1024), parameter      :: routine_name = 'run_mass_cons_test_on_mesh'
     integer                             :: ncid
     type(type_mesh)                     :: mesh
+    type(type_ice_model)                :: ice
     real(dp), dimension(:), allocatable :: Hi, u_vav_b, v_vav_b, dHi_dt_ex
     character(len=1024)                 :: ice_sheet_name
 
@@ -119,6 +122,7 @@ contains
     call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
 
     ! Run all the mapping tests with different test ice sheets
+    call allocate_ice_model( mesh, ice)
 
     allocate( Hi       (mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( u_vav_b  (mesh%ti1:mesh%ti2), source = 0._dp)
@@ -128,17 +132,17 @@ contains
     call setup_test_ice_sheet_linear( mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex)
     ice_sheet_name = 'linear'
     call run_mass_cons_test_on_mesh_with_ice_sheet( foldername_mass_cons, test_mesh_filename, &
-      mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
+      mesh, ice, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
 
     call setup_test_ice_sheet_periodic( mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex)
     ice_sheet_name = 'periodic'
     call run_mass_cons_test_on_mesh_with_ice_sheet( foldername_mass_cons, test_mesh_filename, &
-      mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
+      mesh, ice, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
 
     call setup_test_ice_sheet_Halfar( mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex)
     ice_sheet_name = 'Halfar'
     call run_mass_cons_test_on_mesh_with_ice_sheet( foldername_mass_cons, test_mesh_filename, &
-      mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
+      mesh, ice, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -147,12 +151,13 @@ contains
 
   !> Run the mass conservation test on a particular mesh and a particular ice sheet
   subroutine run_mass_cons_test_on_mesh_with_ice_sheet( foldername_mass_cons, test_mesh_filename, &
-    mesh, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
+    mesh, ice, Hi, u_vav_b, v_vav_b, dHi_dt_ex, ice_sheet_name)
 
     ! In/output variables:
     character(len=*),                        intent(in   ) :: foldername_mass_cons
     character(len=*),                        intent(in   ) :: test_mesh_filename
     type(type_mesh),                         intent(in   ) :: mesh
+    type(type_ice_model),                    intent(inout) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in   ) :: Hi
     real(dp), dimension(mesh%ti1:mesh%ti2),  intent(in   ) :: u_vav_b, v_vav_b
     real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in   ) :: dHi_dt_ex
@@ -193,25 +198,25 @@ contains
 
     ! Explicit
     C%choice_ice_integration_method = 'explicit'
-    call calc_dHi_dt( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_expl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Semi-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 0.5_dp
-    call calc_dHi_dt( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_semiimpl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1._dp
-    call calc_dHi_dt( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_impl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Over-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1.5_dp
-    call calc_dHi_dt( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_overimpl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Write results to output

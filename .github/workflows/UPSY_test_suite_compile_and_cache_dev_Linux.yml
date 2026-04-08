@@ -49,23 +49,29 @@ jobs:
       - name: Compile UPSY
         run: csh compile_UPSY.csh  dev  clean
 
+      - name: Copy UPSY test programs
+        run: |
+          cp build/src/UPSY/UPSY_unit_test_program .
+          cp build/src/UPSY/UPSY_multinode_unit_test_program .
+          cp build/src/UPSY/UPSY_component_test_program .
+
       - name: Cache UPSY unit test program
         uses: actions/cache/save@v3
         id: UPSY_unit_test_program_cache_save
         with:
-          path: build/src/UPSY/UPSY_unit_test_program
+          path: UPSY_unit_test_program
           key: UPSY_unit_test_program_dev_Linux_${{ github.ref_name }}_${{ github.run_id }}
 
       - name: Cache UPSY multi-node unit test program
         uses: actions/cache/save@v3
         id: UPSY_multinode_unit_test_program_cache_save
         with:
-          path: build/src/UPSY/UPSY_multinode_unit_test_program
+          path: UPSY_multinode_unit_test_program
           key: UPSY_multinode_unit_test_program_dev_Linux_${{ github.ref_name }}_${{ github.run_id }}
 
       - name: Cache UPSY component test program
         uses: actions/cache/save@v3
         id: UPSY_component_test_program_cache_save
         with:
-          path: build/src/UPSY/UPSY_component_test_program
+          path: UPSY_component_test_program
           key: UPSY_component_test_program_dev_Linux_${{ github.ref_name }}_${{ github.run_id }}

@@ -35,11 +35,12 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_mesh_file_int_2D'
     integer                               :: ncid
-    integer                               :: id_var, id_dim
+    type(type_mesh)                       :: mesh_loc
+    integer                               :: id_var
     character(len=1024)                   :: var_name
     integer , dimension(:  ), allocatable :: d_mesh
     integer , dimension(:,:), allocatable :: d_mesh_with_time
-    integer                               :: ti, nV
+    integer                               :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -50,11 +51,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nV)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Look for the specified variable in the file
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -64,18 +62,18 @@ contains
     call check_mesh_field_int_2D( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nV))
+    if (par%primary) allocate( d_mesh( mesh_loc%nV))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nV, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nV, 1))
       ! Find out which timeframe to read
       call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ nV, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ mesh_loc%nV, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,1)
       ! Clean up after yourself
@@ -111,11 +109,12 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_mesh_file_int_2D_b'
     integer                               :: ncid
-    integer                               :: id_var, id_dim
+    type(type_mesh)                       :: mesh_loc
+    integer                               :: id_var
     character(len=1024)                   :: var_name
     integer , dimension(:  ), allocatable :: d_mesh
     integer , dimension(:,:), allocatable :: d_mesh_with_time
-    integer                               :: ti, nTri
+    integer                               :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -126,11 +125,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nTri, id_dim, dim_length = nTri)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Look for the specified variable in the file
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -140,18 +136,18 @@ contains
     call check_mesh_field_int_2D_b( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nTri))
+    if (par%primary) allocate( d_mesh( mesh_loc%nTri))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nTri, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nTri, 1))
       ! Find out which timeframe to read
       call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ nTri, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ mesh_loc%nTri, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,1)
       ! Clean up after yourself
@@ -187,11 +183,12 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_mesh_file_dp_2D'
     integer                               :: ncid
-    integer                               :: id_var, id_dim
+    type(type_mesh)                       :: mesh_loc
+    integer                               :: id_var
     character(len=1024)                   :: var_name
     real(dp), dimension(:  ), allocatable :: d_mesh
     real(dp), dimension(:,:), allocatable :: d_mesh_with_time
-    integer                               :: vi, nV
+    integer                               :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -202,11 +199,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nV)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Look for the specified variable in the file
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -216,18 +210,18 @@ contains
     call check_mesh_field_dp_2D( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nV))
+    if (par%primary) allocate( d_mesh( mesh_loc%nV))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nV, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nV, 1))
       ! Find out which timeframe to read
-      call find_timeframe( filename, ncid, time_to_read, vi)
+      call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, vi /), count = (/ nV, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ mesh_loc%nV, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,1)
       ! Clean up after yourself
@@ -264,11 +258,11 @@ contains
     character(len=1024), parameter        :: routine_name = 'read_field_from_mesh_file_dp_2D_b'
     integer                               :: ncid
     type(type_mesh)                       :: mesh_loc
-    integer                               :: id_var, id_dim
+    integer                               :: id_var
     character(len=1024)                   :: var_name
     real(dp), dimension(:  ), allocatable :: d_mesh
     real(dp), dimension(:,:), allocatable :: d_mesh_with_time
-    integer                               :: ti, nTri
+    integer                               :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -279,11 +273,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nTri, id_dim, dim_length = nTri)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Look for the specified variable in the file
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -293,18 +284,18 @@ contains
     call check_mesh_field_dp_2D_b( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nTri))
+    if (par%primary) allocate( d_mesh( mesh_loc%nTri))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nTri, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nTri, 1))
       ! Find out which timeframe to read
       call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ nTri, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, ti /), count = (/ mesh_loc%nTri, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,1)
       ! Clean up after yourself
@@ -340,11 +331,12 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'read_field_from_mesh_file_dp_2D_monthly'
     integer                                 :: ncid
-    integer                                 :: id_var, id_dim
+    type(type_mesh)                         :: mesh_loc
+    integer                                 :: id_var
     character(len=1024)                     :: var_name
     real(dp), dimension(:,:  ), allocatable :: d_mesh
     real(dp), dimension(:,:,:), allocatable :: d_mesh_with_time
-    integer                                 :: vi, nV
+    integer                                 :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -355,11 +347,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nV)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Look for the specified variable in the file
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -372,18 +361,18 @@ contains
     call check_mesh_field_dp_2D_monthly( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nV, 12))
+    if (par%primary) allocate( d_mesh( mesh_loc%nV, 12))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nV, 12, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nV, 12, 1))
       ! Find out which timeframe to read
-      call find_timeframe( filename, ncid, time_to_read, vi)
+      call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, vi /), count = (/ nV, 12, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, ti /), count = (/ mesh_loc%nV, 12, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,:,1)
       ! Clean up after yourself
@@ -419,13 +408,14 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'read_field_from_mesh_file_dp_3D'
     integer                                 :: ncid
+    type(type_mesh)                         :: mesh_loc
     integer                                 :: nzeta_loc
     real(dp), dimension(:), allocatable     :: zeta_loc
-    integer                                 :: id_var, id_dim
+    integer                                 :: id_var
     character(len=1024)                     :: var_name
     real(dp), dimension(:,:  ), allocatable :: d_mesh
     real(dp), dimension(:,:,:), allocatable :: d_mesh_with_time
-    integer                                 :: vi, nV
+    integer                                 :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -436,11 +426,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nV)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Set up the vertical coordinate zeta from the file
     call setup_zeta_from_file( filename, ncid, nzeta_loc, zeta_loc)
@@ -453,18 +440,18 @@ contains
     call check_mesh_field_dp_3D( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nV, nzeta_loc))
+    if (par%primary) allocate( d_mesh( mesh_loc%nV, nzeta_loc))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nV, nzeta_loc, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nV, nzeta_loc, 1))
       ! Find out which timeframe to read
-      call find_timeframe( filename, ncid, time_to_read, vi)
+      call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, vi /), count = (/ nV, nzeta_loc, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, ti /), count = (/ mesh_loc%nV, nzeta_loc, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,:,1)
       ! Clean up after yourself
@@ -500,13 +487,14 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'read_field_from_mesh_file_dp_3D_b'
     integer                                 :: ncid
+    type(type_mesh)                         :: mesh_loc
     integer                                 :: nzeta_loc
     real(dp), dimension(:), allocatable     :: zeta_loc
-    integer                                 :: id_var, id_dim
+    integer                                 :: id_var
     character(len=1024)                     :: var_name
     real(dp), dimension(:,:  ), allocatable :: d_mesh
     real(dp), dimension(:,:,:), allocatable :: d_mesh_with_time
-    integer                                 :: ti, nTri
+    integer                                 :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -517,11 +505,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nTri, id_dim, dim_length = nTri)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Set up the vertical coordinate zeta from the file
     call setup_zeta_from_file( filename, ncid, nzeta_loc, zeta_loc)
@@ -534,18 +519,18 @@ contains
     call check_mesh_field_dp_3D_b( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nTri, nzeta_loc))
+    if (par%primary) allocate( d_mesh( mesh_loc%nTri, nzeta_loc))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nTri, nzeta_loc, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nTri, nzeta_loc, 1))
       ! Find out which timeframe to read
       call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, ti /), count = (/ nTri, nzeta_loc, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, ti /), count = (/ mesh_loc%nTri, nzeta_loc, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,:,1)
       ! Clean up after yourself
@@ -581,13 +566,14 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'read_field_from_mesh_file_dp_3D_ocean'
     integer                                 :: ncid
+    type(type_mesh)                         :: mesh_loc
     integer                                 :: ndepth_loc
     real(dp), dimension(:), allocatable     :: depth_loc
-    integer                                 :: id_var, id_dim
+    integer                                 :: id_var
     character(len=1024)                     :: var_name
     real(dp), dimension(:,:  ), allocatable :: d_mesh
     real(dp), dimension(:,:,:), allocatable :: d_mesh_with_time
-    integer                                 :: vi, nV
+    integer                                 :: ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -598,11 +584,8 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
-    ! Check mesh dimensions and variables for validity
-    call check_mesh_dimensions( filename, ncid)
-
-    ! Inquire mesh dimensions
-    call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim, dim_length = nV)
+    ! Set up the mesh from the file
+    call setup_mesh_from_file( filename, ncid, mesh_loc)
 
     ! Set up the vertical coordinate depth from the file
     call setup_depth_from_file( filename, ncid, ndepth_loc, depth_loc)
@@ -615,18 +598,18 @@ contains
     call check_mesh_field_dp_3D_ocean( filename, ncid, var_name, should_have_time = present( time_to_read))
 
     ! allocate memory
-    if (par%primary) allocate( d_mesh( nV, ndepth_loc))
+    if (par%primary) allocate( d_mesh( mesh_loc%nV, ndepth_loc))
 
     ! Read data from file
     if (.not. present( time_to_read)) then
       call read_var_primary( filename, ncid, id_var, d_mesh)
     else
       ! allocate memory
-      if (par%primary) allocate( d_mesh_with_time( nV, ndepth_loc, 1))
+      if (par%primary) allocate( d_mesh_with_time( mesh_loc%nV, ndepth_loc, 1))
       ! Find out which timeframe to read
-      call find_timeframe( filename, ncid, time_to_read, vi)
+      call find_timeframe( filename, ncid, time_to_read, ti)
       ! Read data
-      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, vi /), count = (/ nV, ndepth_loc, 1 /) )
+      call read_var_primary( filename, ncid, id_var, d_mesh_with_time, start = (/ 1, 1, ti /), count = (/ mesh_loc%nV, ndepth_loc, 1 /) )
       ! Copy to output memory
       if (par%primary) d_mesh = d_mesh_with_time( :,:,1)
       ! Clean up after yourself

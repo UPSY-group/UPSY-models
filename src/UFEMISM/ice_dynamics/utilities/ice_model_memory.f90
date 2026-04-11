@@ -195,6 +195,8 @@ contains
 
     allocate( ice%divQ   ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%R_shear( mesh%vi1:mesh%vi2), source = 0._dp)
+    allocate( ice%Qspill ( mesh%vi1:mesh%vi2), source = 0._dp)
+    allocate( ice%u_perp ( mesh%vi1:mesh%vi2, mesh%nC_mem), source = 0._dp)
 
     ! == Basal hydrology ==
     ! =====================

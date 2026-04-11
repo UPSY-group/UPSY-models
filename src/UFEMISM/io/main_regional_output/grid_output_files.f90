@@ -591,6 +591,9 @@ contains
       case ('R_shear')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%R_shear, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'R_shear', d_grid_vec_partial_2D)
+      case ('Qspill')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%Qspill, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'Qspill', d_grid_vec_partial_2D)
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -1544,6 +1547,8 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal ice flux divergence', units = 'm yr^-1')
       case ('R_shear')
         call add_field_grid_dp_2D( filename, ncid, 'R_shear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Slide/shear ratio', units = '0-1')
+      case ('Qspill')
+        call add_field_grid_dp_2D( filename, ncid, 'Qspill', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal spill over flux', units = 'm yr^-1')
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -1868,7 +1873,7 @@ contains
       call init_routine( routine_name)
 
       ! if no NetCDF output should be created, do nothing
-      if (.not. C%do_create_ISMIP_output) then
+      if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
         call finalise_routine( routine_name)
         return
       end if
@@ -1940,7 +1945,7 @@ contains
       call init_routine( routine_name)
 
       ! if no NetCDF output should be created, do nothing
-      if (.not. C%do_create_ISMIP_output) then
+      if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
         call finalise_routine( routine_name)
         return
       end if
@@ -2006,7 +2011,7 @@ contains
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_ISMIP_output) then
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if
@@ -2076,7 +2081,7 @@ contains
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_ISMIP_output) then
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if

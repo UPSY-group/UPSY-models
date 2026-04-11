@@ -9,7 +9,7 @@ MODULE UFEMISM_main_model
   use UPSY_main, only: UPSY
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
@@ -226,7 +226,9 @@ CONTAINS
 
     ! Buffer scalar output data
     call buffer_scalar_output( region)
-    call buffer_ISMIP_scalar_output( region)
+    if (C%do_create_ismip_output) then
+      call buffer_ISMIP_scalar_output( region)
+    end if
 
     if (region%nROI > 0) then
       call buffer_scalar_output_ROI( region)
@@ -648,6 +650,9 @@ CONTAINS
        lambda_M = region%mesh%lambda_M, phi_M = region%mesh%phi_M, beta_stereo = region%mesh%beta_stereo)
 
     ! Create the main regional output files
+    if (C%do_create_ismip_output .AND. .not. C%do_create_netcdf_output) then
+       if (par%primary) call warning('NetCDF creation was set to False, but ISMIP creation was set to True. No ISMIP files will be created!')
+    end if
     CALL create_main_regional_output_file_mesh( region)
     CALL create_main_regional_output_file_grid( region)
     CALL create_ISMIP_regional_output_file_grid( region)

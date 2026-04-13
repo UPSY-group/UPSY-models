@@ -6,6 +6,7 @@ module basic_model_utilities
   use basic_program_info, only: program_name
   use string_module, only: colour_string, insert_val_into_string_dp, insert_val_into_string_int
   use crash_mod, only: crash
+  use mpi_f08, only: MPI_BCAST, MPI_INTEGER, MPI_CHAR, MPI_COMM_WORLD
 
   implicit none
 
@@ -16,6 +17,7 @@ module basic_model_utilities
   public :: generate_procedural_output_dir_name
   public :: print_model_start
   public :: print_model_end
+  public :: list_files_in_folder
 
   ! The hash of the current git commit
   character(len=1024) :: git_commit_hash
@@ -402,5 +404,61 @@ contains
     call sync
 
   end subroutine print_model_end
+
+  subroutine list_files_in_folder( foldername, list_of_filenames)
+
+    ! In/output variables:
+    character(len=*),                            intent(in   ) :: foldername
+    character(len=*), dimension(:), allocatable, intent(inout) :: list_of_filenames
+
+    ! Local variables:
+    integer             :: funit, n_files, ios, i, ierr
+    character(len=1024) :: str
+
+    if (par%primary) then
+
+      ! Create a small text file listing all the files in the directory
+      call system('ls ' // trim( foldername) // ' > ' // trim( foldername) // '/list_of_files.txt')
+
+      ! Count how many there are
+      open( newunit = funit, file = trim( foldername) // '/list_of_files.txt', action = 'read')
+      n_files = 0
+      do while (.true.)
+        read( funit, fmt = '(a)', iostat = ios) str
+        if (ios /= 0) exit
+        if (str /= 'list_of_files.txt') n_files = n_files+1
+      end do
+      close( funit)
+
+    end if
+    call MPI_BCAST( n_files, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
+
+    allocate( list_of_filenames( n_files))
+
+    if (par%primary) then
+
+      ! List all the files
+      open( newunit = funit, file = trim( foldername) // '/list_of_files.txt', action = 'read')
+      i = 0
+      do while (.true.)
+        read( funit, fmt = '(a)', iostat = ios) str
+        if (ios /= 0) exit
+        if (str /= 'list_of_files.txt') then
+          i = i+1
+          list_of_filenames( i) = trim( str)
+        end if
+      end do
+      close( funit)
+
+      ! Delete list_of_files.txt
+      call system('rm -f ' // trim( foldername) // '/list_of_files.txt')
+
+    end if
+
+    do i = 1, n_files
+      call MPI_BCAST( list_of_filenames( i), len( list_of_filenames( i)), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
+    end do
+
+  end subroutine list_files_in_folder
 
 end module basic_model_utilities

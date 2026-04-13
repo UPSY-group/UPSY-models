@@ -1,7 +1,5 @@
-# The UPSY component tests
-
 name: UPSY component tests
-run-name: ${{ github.actor }} - UPSY component tests
+run-name: ${{ github.actor }} - UPSY component tests - ${{ matrix.build_type }} build, ${{ matrix.os }}
 on:
   pull_request:
     branches:
@@ -11,16 +9,72 @@ on:
   workflow_dispatch:
 
 jobs:
+  component_tests:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        build_type: [dev, perf]
+    steps:
 
-  # Install and cache Matlab
-  install_and_cache_Matlab:
-    uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Matlab.yml
+    # Install all required packages and compile the code
+    # ==================================================
 
-  # Install and cache Python
-  # install_and_cache_Python:
-  #   uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
+      - name: Install MATLAB
+        uses: matlab-actions/setup-matlab@v2.2.0
+        with:
+          cache: true
 
-  # Run all the component tests using the development compilation on MacOS
-  component_tests_dev_macOS:
-    needs: install_and_cache_Matlab
-    uses: ./.github/workflows/UPSY_component_tests_dev_MacOS.yml
+      - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
+        if: matrix.os == 'macos-latest'
+        run: |
+          #brew install gcc                    # Not needed on GitHub server, already installed
+          brew install open-mpi
+          brew install petsc
+          brew unlink hdf5-mpi                 # To fix the following conflict: "hdf5-mpi: because hdf5-mpi is a variant of hdf5, one can only use one or the other"
+          brew install netcdf
+          brew install netcdf-fortran
+          #brew install cmake                  # Not needed, already installed
+          #brew install ninja
+
+      - name: Install packages with apt (Ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y openmpi-bin libopenmpi-dev petsc-dev libnetcdf-dev libnetcdff-dev
+
+      - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
+        uses: fortran-lang/setup-fortran@v1
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 15
+
+      - name: Verify compiler setup
+        run: gfortran --version
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update submodules
+        run: |
+          git submodule update --init --remote
+
+      - name: Compile UPSY
+        run: ./compile_UPSY.csh ${{ matrix.build_type }} clean
+
+    # Run the individual component test programs
+    # ==========================================
+
+      - name: Run component test - mesh creation
+        run: |
+          cd automated_testing/UPSY/component_test_mesh_creation
+          ./test_script.csh
+
+      - name: Check test result
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath('automated_testing')
+            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_creation/results')
+            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_creation')

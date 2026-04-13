@@ -440,14 +440,14 @@ contains
     integer,                                     intent(in)    :: nit_Lloyds_algorithm
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_test_mesh_fun'
-    type(type_mesh)                :: mesh
-    character(len=14)              :: res_max_str
-    character(len=3)               :: nit_Lloyds_algorithm_str
-    character(len=1024)            :: mesh_name
-    integer                        :: it_Lloyds_algorithm
-    integer                        :: ncid
-    character(len=1024)            :: filename
+    character(len=*), parameter :: routine_name = 'create_test_mesh_fun'
+    type(type_mesh)             :: mesh
+    character(len=14)           :: res_max_str
+    character(len=3)            :: nit_Lloyds_algorithm_str
+    character(len=1024)         :: mesh_name
+    integer                     :: it_Lloyds_algorithm
+    integer                     :: ncid
+    character(len=1024)         :: filename
 
     ! Add routine to call stack
     call init_routine( routine_name)

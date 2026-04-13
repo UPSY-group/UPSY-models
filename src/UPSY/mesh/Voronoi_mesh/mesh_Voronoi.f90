@@ -44,8 +44,8 @@ subroutine calc_number_of_Voronoi_vertices( mesh)
   type(type_mesh), intent(inout) :: mesh
 
   ! Local variables:
-  character(len=1024), parameter :: routine_name = 'calc_number_of_Voronoi_vertices'
-  integer                        :: ei
+  character(len=*), parameter :: routine_name = 'calc_number_of_Voronoi_vertices'
+  integer                     :: ei
 
   ! Add routine to path
   call init_routine( routine_name)

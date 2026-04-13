@@ -13,7 +13,7 @@ module laddie_dummy_domain
   use ice_model_types, only: type_ice_model
   use ice_model_memory, only: allocate_ice_model
   use masks_mod, only: determine_masks
-  use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
+  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_model_types, only: type_ocean_model
   use ocean_main, only: initialise_ocean_vertical_grid
   use laddie_model_types, only: type_laddie_model, type_laddie_timestep
@@ -170,10 +170,10 @@ contains
     end do
 
     ! Compute masks
-    call determine_masks( mesh, ice)
+    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Extract dHib_dx_b and dHib_dy_b
-    call calc_ice_shelf_base_slopes_onesided( mesh, ice)
+    call calc_ice_shelf_base_slopes( mesh, ice)
 
     ! Define Ti
     do vi = mesh%vi1, mesh%vi2

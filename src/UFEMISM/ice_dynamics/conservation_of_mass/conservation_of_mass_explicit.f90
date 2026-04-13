@@ -4,6 +4,7 @@ module conservation_of_mass_explicit
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use ice_geometry_basics, only: ice_surface_elevation, Hi_from_Hb_Hs_and_SL
   use mpi_distributed_memory, only: gather_to_all
@@ -19,7 +20,7 @@ module conservation_of_mass_explicit
 
 contains
 
-  subroutine calc_dHi_dt_explicit( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+  subroutine calc_dHi_dt_explicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
     fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a time-explicit discretisation scheme for the ice fluxes
@@ -47,6 +48,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )           :: mesh                  ! [-]       The model mesh
+    type(type_ice_model),                   intent(inout)           :: ice                   ! [-]       The ice model
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hi                    ! [m]       Ice thickness at time t
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hb                    ! [m]       Bedrock elevation at time t
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
@@ -76,7 +78,7 @@ contains
     call init_routine( routine_name)
 
     ! Calculate the ice flux divergence matrix M_divQ using an upwind scheme
-    call calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_b, v_vav_b, fraction_margin, M_divQ)
+    call calc_ice_flux_divergence_matrix_upwind( mesh, ice, u_vav_b, v_vav_b, fraction_margin, M_divQ)
 
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &

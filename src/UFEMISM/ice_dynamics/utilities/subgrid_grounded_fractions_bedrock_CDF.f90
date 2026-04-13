@@ -19,14 +19,17 @@ module subgrid_grounded_fractions_bedrock_CDF
 
 contains
 
-  subroutine calc_grounded_fractions_bedrock_CDF_a( mesh, ice, fraction_gr)
+  subroutine calc_grounded_fractions_bedrock_CDF_a( mesh, Hi, SL , dHb, bedrock_cdf, fraction_gr)
     !< Calculate the sub-grid grounded fractions of the vertices,
     !< using the sub-grid bedrock cumulative density functions (CDFs)
 
     ! In- and output variables
-    type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: fraction_gr
+    type(type_mesh),                                                      intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2),                               intent(in   ) :: Hi
+    real(dp), dimension(mesh%vi1:mesh%vi2),                               intent(in   ) :: SL
+    real(dp), dimension(mesh%vi1:mesh%vi2),                               intent(in   ) :: dHb
+    real(dp),  dimension(mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf
+    real(dp), dimension(mesh%vi1:mesh%vi2),                               intent(  out) :: fraction_gr
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_grounded_fractions_bedrock_CDF_a'
@@ -42,17 +45,17 @@ contains
       ! will make this point afloat. Account for GIA here so we don't have to do it in
       ! the computation of the cumulative density function (CDF).
 
-      Hb_float = ice%SL( vi) - ice%Hi( vi) * ice_density/seawater_density - ice%dHb( vi)
+      Hb_float = SL( vi) - Hi( vi) * ice_density/seawater_density - dHb( vi)
 
       ! Get the fraction of bedrock within vertex coverage that is below
       ! Hb_float as a linear interpolation of the numbers in the CDF.
 
-      if     (Hb_float <= ice%bedrock_cdf( vi,1)) then
+      if     (Hb_float <= bedrock_cdf( vi,1)) then
         ! All sub-grid points are above the floating bedrock elevation
 
         fraction_gr( vi) = 1._dp
 
-      elseif (Hb_float >= ice%bedrock_cdf( vi,C%subgrid_bedrock_cdf_nbins)) then
+      elseif (Hb_float >= bedrock_cdf( vi,C%subgrid_bedrock_cdf_nbins)) then
         ! All sub-grid points are below the floating bedrock elevation
 
         fraction_gr( vi) = 0._dp
@@ -61,13 +64,13 @@ contains
 
         ! Find the 2 elements in the CDF surrounding Hb_float
         iu = 1
-        do WHILE (ice%bedrock_cdf( vi,iu) < Hb_float)
+        do WHILE (bedrock_cdf( vi,iu) < Hb_float)
           iu = iu+1
         end do
         il = iu-1
 
         ! Interpolate the two enveloping bedrock bins to find the grounded fraction
-        wl = (ice%bedrock_cdf( vi,iu) - Hb_float) / (ice%bedrock_cdf( vi,iu) - ice%bedrock_cdf( vi,il))
+        wl = (bedrock_cdf( vi,iu) - Hb_float) / (bedrock_cdf( vi,iu) - bedrock_cdf( vi,il))
         wu = 1._dp - wl
         fraction_gr( vi) = 1._dp - (real( il-1,dp) * wl + real( iu-1) * wu) / real( C%subgrid_bedrock_cdf_nbins-1,dp)
 
@@ -83,14 +86,18 @@ contains
 
   end subroutine calc_grounded_fractions_bedrock_CDF_a
 
-  subroutine calc_grounded_fractions_bedrock_CDF_b( mesh, ice, fraction_gr_b)
+  subroutine calc_grounded_fractions_bedrock_CDF_b( mesh, Hi, SL, dHb , TAF, bedrock_cdf_b, fraction_gr_b)
     !< Calculate the sub-grid grounded fractions of the triangles,
     !< using the sub-grid bedrock cumulative density functions (CDFs)
 
     ! In- and output variables
-    type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: fraction_gr_b
+    type(type_mesh),                                                     intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hi
+    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: SL
+    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: dHb
+    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: TAF
+    real(dp), dimension(mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf_b
+    real(dp), dimension(mesh%ti1:mesh%ti2),                              intent(  out) :: fraction_gr_b
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_grounded_fractions_bedrock_CDF_b'
@@ -103,12 +110,12 @@ contains
     call init_routine( routine_name)
 
     ! Map ice thickness, sea level, and bedrock deformation to the b-grid (triangles)
-    call map_a_b_2D( mesh, ice%Hi , Hi_b )
-    call map_a_b_2D( mesh, ice%SL , SL_b )
-    call map_a_b_2D( mesh, ice%dHb, dHb_b)
+    call map_a_b_2D( mesh, Hi , Hi_b )
+    call map_a_b_2D( mesh, SL , SL_b )
+    call map_a_b_2D( mesh, dHb, dHb_b)
 
     ! Gather global thickness above floatation
-    call gather_to_all( ice%TAF, TAF_tot)
+    call gather_to_all( TAF, TAF_tot)
 
     do ti = mesh%ti1, mesh%ti2
 
@@ -138,12 +145,12 @@ contains
       ! Get the fraction of bedrock within vertex coverage that is below
       ! Hb_float as a linear interpolation of the numbers in the CDF.
 
-      if     (Hb_float <= ice%bedrock_cdf_b( ti,1)) then
+      if     (Hb_float <= bedrock_cdf_b( ti,1)) then
         ! All sub-grid points are above the floating bedrock elevation
 
         fraction_gr_b( ti) = 1._dp
 
-      elseif (Hb_float >= ice%bedrock_cdf_b( ti,C%subgrid_bedrock_cdf_nbins)) then
+      elseif (Hb_float >= bedrock_cdf_b( ti,C%subgrid_bedrock_cdf_nbins)) then
         ! All sub-grid points are below the floating bedrock elevation
 
         fraction_gr_b( ti) = 0._dp
@@ -152,13 +159,13 @@ contains
 
         ! Find the 2 elements in the CDF surrounding Hb_float
         iu = 1
-        do WHILE (ice%bedrock_cdf_b( ti,iu) < Hb_float)
+        do WHILE (bedrock_cdf_b( ti,iu) < Hb_float)
           iu = iu+1
         end do
         il = iu-1
 
         ! Interpolate the two enveloping bedrock bins to find the grounded fraction
-        wl = (ice%bedrock_cdf_b( ti,iu) - Hb_float) / (ice%bedrock_cdf_b( ti,iu) - ice%bedrock_cdf_b( ti,il))
+        wl = (bedrock_cdf_b( ti,iu) - Hb_float) / (bedrock_cdf_b( ti,iu) - bedrock_cdf_b( ti,il))
         wu = 1._dp - wl
         fraction_gr_b( ti) = 1._dp - (real( il-1,dp) * wl + real( iu-1) * wu) / real( C%subgrid_bedrock_cdf_nbins-1,dp)
 

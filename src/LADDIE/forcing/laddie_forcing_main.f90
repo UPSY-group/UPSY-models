@@ -27,8 +27,7 @@ module laddie_forcing_main
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
   use subgrid_ice_margin, only: calc_effective_thickness
-  use subgrid_grounded_fractions_main, only: calc_grounded_fractions
-  use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
+  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection
 
@@ -113,8 +112,8 @@ contains
     ! ================
 
     ! call it twice so also the "prev" versions are set
-    call determine_masks( mesh, ice)
-    call determine_masks( mesh, ice)
+    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, 'ANT')
@@ -126,10 +125,10 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-    call calc_effective_thickness( mesh, ice, ice%Hi, ice%Hi_eff, ice%fraction_margin)
+     call calc_effective_thickness( mesh, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes_onesided( mesh, ice)
+    call calc_ice_shelf_base_slopes( mesh, ice)
 
     ! Ice temperature
     ! ===============
@@ -152,8 +151,9 @@ contains
     ! ===========================
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%Hi                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
-    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
     forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
@@ -325,6 +325,9 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Print to screen
+    if (par%primary) write(0,'(A)') '   Creating mesh from reference geometry...'
 
     ! Determine if the initial geometry is provided gridded or meshed
     if (allocated( refgeo%grid_raw%x)) then

@@ -15,6 +15,7 @@ module mesh_output_files
   use mesh_contour, only: calc_mesh_contour
   use parameters, only: NaN
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_a_2D, ddy_a_a_2D
 
   implicit none
 
@@ -134,6 +135,8 @@ contains
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'write_to_main_regional_output_file_mesh_field'
     integer, dimension(region%mesh%vi1:region%mesh%vi2) :: mask_int
+    real(dp), dimension(:),   allocatable :: d_mesh_vec_partial_2D
+    real(dp), dimension(:),   allocatable :: d_mesh_vec_partial_2D_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -143,6 +146,10 @@ contains
       call finalise_routine( routine_name)
       return
     end if
+
+    ! allocate memory
+    allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+    allocate( d_mesh_vec_partial_2D_b( region%mesh%ti1:region%mesh%ti2))
 
     ! Add the specified data field to the file
     select case (choice_output_field)
@@ -219,6 +226,23 @@ contains
         call write_coastline_to_file( filename, ncid, region%mesh, region%ice)
       case ('grounded_ice_contour')
         call write_grounded_ice_contour_to_file( filename, ncid, region%mesh, region%ice)
+
+    ! ===== Geometry on triangles for 3D plots =====
+    ! ==============================================
+
+      case ('Hs_b')
+        call map_a_b_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'Hs_b', d_mesh_vec_partial_2D_b)
+
+    ! ===== Geometry gradients for hillshade =====
+    ! ============================================
+
+      case ('dHs_dx')
+        call ddx_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dx', d_mesh_vec_partial_2D)
+      case ('dHs_dy')
+        call ddy_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dy', d_mesh_vec_partial_2D)
 
     ! ===== Geometry changes w.r.t. reference =====
     ! =============================================
@@ -461,6 +485,8 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQ', region%ice%divQ)
       case ('R_shear')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'R_shear', region%ice%R_shear)
+      case ('Qspill')
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Qspill', region%ice%Qspill)
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -483,6 +509,38 @@ contains
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'pore_water_likelihood', region%ice%pore_water_likelihood)
       case ('pore_water_fraction')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'pore_water_fraction', region%ice%pore_water_fraction)
+      case("basal_hydro_W")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_W', region%ice%hydro_Salle2025%W)
+      case("basal_hydro_W_til")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_W_til', region%ice%hydro_Salle2025%W_til)
+      case("basal_hydro_divQ")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_divQ', region%ice%hydro_Salle2025%divQ)
+      case("basal_hydro_u")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_u', region%ice%hydro_Salle2025%u)
+      case("basal_hydro_v")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_v', region%ice%hydro_Salle2025%v)
+      case("basal_hydro_ub")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_ub', region%ice%hydro_Salle2025%u_b)
+      case("basal_hydro_vb")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_vb', region%ice%hydro_Salle2025%v_b)
+      case("basal_hydro_R")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_R', region%ice%hydro_Salle2025%R)
+      case("basal_hydro_D")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_D', region%ice%hydro_Salle2025%D_b)
+      case("basal_hydro_K")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_K', region%ice%hydro_Salle2025%K_b)
+      case("basal_hydro_P")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_P', region%ice%hydro_Salle2025%P)
+      case("basal_hydro_dr_dx_b")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_dr_dx_b', region%ice%hydro_Salle2025%dr_dx_b)
+      case("basal_hydro_dr_dy_b")
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_hydro_dr_dy_b', region%ice%hydro_Salle2025%dr_dy_b)
+      case("basal_hydro_O")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_O', region%ice%hydro_Salle2025%O)
+      case("basal_hydro_C")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_C', region%ice%hydro_Salle2025%C)
+      case("basal_hydro_N_til")
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_hydro_N_til', region%ice%hydro_Salle2025%N_til)
 
     ! == Basal sliding ==
     ! ===================
@@ -696,6 +754,8 @@ contains
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HU_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%U)
       case ('HV_lad')
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'HV_lad', region%BMB%laddie%now%H_b*region%BMB%laddie%now%V)
+      case ('S_base')
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'S_base', region%BMB%laddie%S_base)
 
     ! == Lateral mass balance ==
     ! ==========================
@@ -725,6 +785,9 @@ contains
         call write_to_field_multopt_mesh_dp_3D( region%mesh, filename, ncid, 'age', region%tracer_tracking%age)
 
     end select
+
+    deallocate( d_mesh_vec_partial_2D)
+    deallocate( d_mesh_vec_partial_2D_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -984,6 +1047,19 @@ contains
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'units', 'm')
         call add_attribute_char( filename, ncid, id_var_grounded_ice_contour, 'format', 'Matlab contour format')
 
+    ! ===== Geometry on triangles for 3D plots =====
+    ! ==============================================
+      case ('Hs_b')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'Hs_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation on triangles', units = 'm')
+
+    ! ===== Geometry gradients for hillshade =====
+    ! ============================================
+
+      case ('dHs_dx')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHs_dx', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation gradient in x-direction', units = ' ')
+      case ('dHs_dy')
+        call add_field_mesh_dp_2D( filename, ncid, 'dHs_dy', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface elevation gradient in y-direction', units = ' ')
+
     ! ===== Geometry changes w.r.t. reference =====
     ! =============================================
 
@@ -1176,6 +1252,8 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal ice flux divergence', units = 'm yr^-1')
       case ('R_shear')
         call add_field_mesh_dp_2D( filename, ncid, 'R_shear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Slide/shear ratio', units = '0-1')
+      case ('Qspill')
+        call add_field_mesh_dp_2D( filename, ncid, 'Qspill', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal spill over flux', units = 'm yr^-1')
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -1198,6 +1276,38 @@ contains
         call add_field_mesh_dp_2D( filename, ncid, 'pore_water_likelihood', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till pore water likelihood', units = '0-1')
       case ('pore_water_fraction')
         call add_field_mesh_dp_2D( filename, ncid, 'pore_water_fraction', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Fraction of overburden pressure reduced by pore water ', units = '0-1')
+      case("basal_hydro_W")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_W', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer thickness', units = 'm')
+      case("basal_hydro_W_til")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_W_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial till water layer thickness', units = 'm')
+      case("basal_hydro_divQ")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Divergence of subglacial water flux', units = 'm s^-1')
+      case("basal_hydro_u")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_u', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water velocity x-direction', units = 'm s^-1')
+      case("basal_hydro_v")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_v', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water velocity y-direction', units = 'm s^-1')
+      case("basal_hydro_ub")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_ub', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water velocity x-direction b-grid', units = 'm s^-1')
+      case("basal_hydro_vb")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_vb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water velocity y-direction b-grid', units = 'm s^-1')
+      case("basal_hydro_R")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_R', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure', units = 'Pa')
+      case("basal_hydro_D")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water diffusivity', units = 'm^2 s^-1')
+      case("basal_hydro_K")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_K', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water effective conductivity', units = 'm s^-1')
+      case("basal_hydro_P")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_P', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Pressure', units = 'Pa')
+      case("basal_hydro_dr_dx_b")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_dr_dx_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure gradient x-direction b-grid', units = 'Pa m^-1')
+      case("basal_hydro_dr_dy_b")
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_hydro_dr_dy_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure gradient y-direction b-grid', units = 'Pa m^-1')
+      case("basal_hydro_O")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_O', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity opening rate', units = 'm s^-1')
+      case("basal_hydro_C")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_C', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity closing rate', units = 'm s^-1')
+      case("basal_hydro_N_til")
+        call add_field_mesh_dp_2D( filename, ncid, 'basal_hydro_N_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till effective pressure', units = 'Pa')
 
     ! == Basal sliding ==
     ! ===================
@@ -1396,6 +1506,8 @@ contains
         call add_field_mesh_dp_2D_b( filename, ncid, 'HU_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie HU ', units = 'm^2 s^-1')
       case ('HV_lad')
         call add_field_mesh_dp_2D_b( filename, ncid, 'HV_lad', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Laddie HV ', units = 'm^2 s^-1')
+      case ('S_base')
+        call add_field_mesh_dp_2D( filename, ncid, 'S_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salinity at ice shelf base', units = 'PSU')
 
     ! == Lateral mass balance ==
     ! ==========================

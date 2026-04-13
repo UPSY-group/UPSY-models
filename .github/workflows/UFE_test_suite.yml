@@ -30,8 +30,8 @@ jobs:
     uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Matlab.yml
 
   # Install and cache Python
-  install_and_cache_Python:
-    uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
+  # install_and_cache_Python:
+  #   uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
 
   # Run the unit tests and analyse the results
   run_unit_tests:
@@ -53,7 +53,7 @@ jobs:
 
   # Run the integrated tests and analyse the results
   run_and_analyse_integrated_tests:
-    needs: [compile_and_cache_UFEMISM_perf_MacOS, install_and_cache_Matlab, install_and_cache_Python]
+    needs: [compile_and_cache_UFEMISM_perf_MacOS, install_and_cache_Matlab]
     uses: ./.github/workflows/UFE_test_suite_run_and_analyse_integrated_tests.yml
 
   # Download artifacts with scoreboard files from the component and integrated tests

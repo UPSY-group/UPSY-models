@@ -532,7 +532,7 @@ module climate_model_utilities
   subroutine fill_in_transient_dT_snapshot_fields(filename_climate_snapshot, mesh, climate, time)
   ! Read in snapshot variables
 
-    CHARACTER(LEN=1024),      ALLOCATABLE, INTENT(IN)    :: filename_climate_snapshot
+    CHARACTER(LEN=*),                      INTENT(IN)    :: filename_climate_snapshot
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
     REAL(dp),                              INTENT(IN)    :: time

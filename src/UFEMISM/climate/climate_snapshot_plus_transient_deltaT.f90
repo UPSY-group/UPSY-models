@@ -151,6 +151,8 @@ CONTAINS
       CALL crash('unknown region_name "' // region_name // '"')
     END IF
 
+    call read_field_from_series_file( filename_atm_dT, field_name_options_dT_atmosphere, climate%snapshot_trans_dT%dT_series, climate%snapshot_trans_dT%dT_series_time)
+
     CALL fill_in_transient_dT_snapshot_fields(filename_climate_snapshot, mesh, climate, start_time_of_run)
     climate%snapshot_trans_dT%snapshot%T2m    = climate%T2m
     climate%snapshot_trans_dT%snapshot%Precip = climate%Precip

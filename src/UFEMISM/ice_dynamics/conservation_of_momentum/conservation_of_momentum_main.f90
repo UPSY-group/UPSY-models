@@ -344,7 +344,7 @@ contains
     ice%dv_dy_3D = 0._dp
     ice%dw_dx_3D = 0._dp
     ice%dw_dy_3D = 0._dp
-    ice%dw_dz_3D = 0._dp
+    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -385,7 +385,7 @@ contains
     ice%dv_dz_3D = 0._dp
     ice%dw_dx_3D = 0._dp
     ice%dw_dy_3D = 0._dp
-    ice%dw_dz_3D = 0._dp
+    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -430,7 +430,7 @@ contains
       ! In the hybrid SIA/SSA, gradients of w are neglected
       ice%dw_dx_3D = 0._dp
       ice%dw_dy_3D = 0._dp
-      ice%dw_dz_3D = 0._dp
+      ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     elseif (C%choice_hybrid_SIASSA_scheme == 'add_SIA_reduced') then
       ! u = (weight * u_SIA) + u_SSA
@@ -458,7 +458,7 @@ contains
       ! In the hybrid SIA/SSA, gradients of w are neglected
       ice%dw_dx_3D = 0._dp
       ice%dw_dy_3D = 0._dp
-      ice%dw_dz_3D = 0._dp
+      ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     else
       call crash('unknown choice_hybrid_SIASSA_scheme_config "' // TRIM( C%choice_hybrid_SIASSA_scheme) // '"!')
@@ -503,7 +503,7 @@ contains
     ! In the DIVA, gradients of w are neglected
     ice%dw_dx_3D = 0._dp
     ice%dw_dy_3D = 0._dp
-    ice%dw_dz_3D = 0._dp
+    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -544,7 +544,7 @@ contains
     ! In the BPA, gradients of w are neglected
     ice%dw_dx_3D = 0._dp
     ice%dw_dy_3D = 0._dp
-    ice%dw_dz_3D = 0._dp
+    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -585,7 +585,7 @@ contains
     ! In the hybrid DIVA/BPA, gradients of w are neglected
     ice%dw_dx_3D = 0._dp
     ice%dw_dy_3D = 0._dp
-    ice%dw_dz_3D = 0._dp
+    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)

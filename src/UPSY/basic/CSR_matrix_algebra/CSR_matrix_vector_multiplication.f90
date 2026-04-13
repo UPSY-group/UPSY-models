@@ -16,7 +16,8 @@ module CSR_matrix_vector_multiplication
   private
 
   public :: multiply_CSR_matrix_with_vector_1D, multiply_CSR_matrix_with_vector_2D, &
-    multiply_CSR_matrix_with_vector_1D_wrapper, multiply_CSR_matrix_with_vector_2D_wrapper
+    multiply_CSR_matrix_with_vector_1D_wrapper, multiply_CSR_matrix_with_vector_2D_wrapper, &
+    multiply_CSR_matrix_with_vector_local
 
 contains
 
@@ -362,5 +363,48 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine multiply_CSR_matrix_with_vector_2D
+
+  subroutine multiply_CSR_matrix_with_vector_local( AA, xx, yy)
+    !< Evaluate the matrix-vector product yy = AA*xx
+
+    ! In- and output variables:
+    type(type_sparse_matrix_CSR_dp), intent(in   ) :: AA
+    real(dp), dimension(:),          intent(in   ) :: xx
+    real(dp), dimension(:),          intent(  out) :: yy
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'multiply_CSR_matrix_with_vector_local'
+    integer                        :: i,k1,k2,k,j
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Safety
+#if (DO_ASSERTIONS)
+    call assert( &
+      (AA%n == size( xx,1)) .and. &
+      (AA%m == size( yy,1)), &
+      'sizes of x/y do not meet expectations of A')
+#endif
+
+    ! Perform CSR matrix multiplication
+    do i = 1, AA%m
+
+      yy( i) = 0._dp
+
+      k1 = AA%ptr( i)
+      k2 = AA%ptr( i+1)-1
+
+      do k = k1, k2
+        j = AA%ind( k)
+        yy( i) = yy( i) + AA%val( k) * xx( j)
+      end do
+
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine multiply_CSR_matrix_with_vector_local
 
 end module CSR_matrix_vector_multiplication

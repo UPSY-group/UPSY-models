@@ -28,7 +28,7 @@ jobs:
           key: UPSY_component_test_program_dev_MacOS_${{ github.ref_name }}_${{ github.run_id }}
 
       - name: Run component tests
-        run: mpiexec  -n 2  UPSY_component_test_program
+        run: mpiexec  -n 2  UPSY_component_test_program   automated_testing/test_meshes_and_grids   automated_testing/component_tests/results
 
       # - name: Run multi-node component tests
       #   run: mpiexec  -n 7 --map-by :OVERSUBSCRIBE  UPSY_component_test_program  component_tests_multinode

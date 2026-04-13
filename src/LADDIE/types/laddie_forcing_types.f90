@@ -31,6 +31,7 @@ module laddie_forcing_types
 
     ! Forcing
     real(dp), dimension(:),   contiguous, pointer :: Hi                 => null()  ! [m]               Ice thickness
+    real(dp), dimension(:),   contiguous, pointer :: Hs                 => null()  ! [m]               Ice surface elevation
     real(dp), dimension(:),   contiguous, pointer :: Hb                 => null()  ! [m]               Bedrock elevation (w.r.t. PD sea level)
     real(dp), dimension(:),   contiguous, pointer :: Hib                => null()  ! [m]               Ice base elevation (w.r.t. PD sea level)
     real(dp), dimension(:),   contiguous, pointer :: TAF                => null()  ! [m]               Thickness above floatation
@@ -49,7 +50,7 @@ module laddie_forcing_types
 
     real(dp), dimension(:),   contiguous, pointer :: f_coriolis         => null()  ! [s^-1]            Coriolis parameter f
 
-    type(MPI_WIN) :: wHi, wHib, wHb, wTAF, wdHib_dx_b, wdHib_dy_b
+    type(MPI_WIN) :: wHi, wHs, wHb, wHib, wTAF, wdHib_dx_b, wdHib_dy_b
     type(MPI_WIN) :: wmask_icefree_land, wmask_icefree_ocean, wmask_grounded_ice, wmask_floating_ice, wmask_gl_fl, wmask_SGD, wmask
     type(MPI_WIN) :: wTi, wT_ocean, wS_ocean
     type(MPI_WIN) :: wf_coriolis

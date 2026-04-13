@@ -173,11 +173,11 @@ contains
       end if
     end do
 
-    call checksum( laddie%now%H, 'laddie%now%H', mesh%pai_V)
-    call checksum( laddie%now%T, 'laddie%now%T', mesh%pai_V)
-    call checksum( laddie%now%S, 'laddie%now%S', mesh%pai_V)
-    call checksum( laddie%melt , 'laddie%melt' , mesh%pai_V)
-    call checksum( laddie%entr , 'laddie%entr' , mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%now%H, 'laddie%now%H')
+    call checksum( mesh%pai_V, laddie%now%T, 'laddie%now%T')
+    call checksum( mesh%pai_V, laddie%now%S, 'laddie%now%S')
+    call checksum( mesh%pai_V, laddie%melt , 'laddie%melt' )
+    call checksum( mesh%pai_V, laddie%entr , 'laddie%entr' )
 
     do ti = mesh%ti1, mesh%ti2
       if (.not. laddie%mask_b( ti)) then
@@ -187,9 +187,9 @@ contains
       end if
     end do
 
-    call checksum( laddie%now%U  , 'laddie%now%U'  , mesh%pai_Tri)
-    call checksum( laddie%now%V  , 'laddie%now%V'  , mesh%pai_Tri)
-    call checksum( laddie%now%H_b, 'laddie%now%H_b', mesh%pai_Tri)
+    call checksum( mesh%pai_Tri, laddie%now%U  , 'laddie%now%U'  )
+    call checksum( mesh%pai_Tri, laddie%now%V  , 'laddie%now%V'  )
+    call checksum( mesh%pai_Tri, laddie%now%H_b, 'laddie%now%H_b')
 
     ! Simply set H_c zero everywhere, will be recomputed through mapping later
     laddie%now%H_c( mesh%ei1:mesh%ei2) = 0.0_dp
@@ -397,13 +397,13 @@ contains
        end if
     end do
     call exchange_halos( mesh, npx%H)
-    call checksum( npx%H, 'npx%H', mesh%pai_V)
+    call checksum( mesh%pai_V, npx%H, 'npx%H')
 
     ! Layer thickness on b and c grid
     call map_H_a_b( mesh, laddie, npx%H, npx%H_b)
     call map_H_a_c( mesh, laddie, npx%H, npx%H_c)
-    call checksum( npx%H_b, 'npx%H_b', mesh%pai_Tri)
-    call checksum( npx%H_c, 'npx%H_c', mesh%pai_E)
+    call checksum( mesh%pai_Tri, npx%H_b, 'npx%H_b')
+    call checksum( mesh%pai_E  , npx%H_c, 'npx%H_c')
 
     ! Initialise ambient T and S
     call compute_ambient_TS( mesh, laddie, forcing, npx%H)
@@ -415,8 +415,8 @@ contains
          npx%S( vi)      = laddie%S_amb( vi) + C%laddie_initial_S_offset
        end if
     end do
-    call checksum( npx%T, 'npx%T', mesh%pai_V)
-    call checksum( npx%S, 'npx%S', mesh%pai_V)
+    call checksum( mesh%pai_V, npx%T, 'npx%T')
+    call checksum( mesh%pai_V, npx%S, 'npx%S')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

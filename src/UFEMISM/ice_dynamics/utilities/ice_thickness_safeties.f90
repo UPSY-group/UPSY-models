@@ -2,7 +2,7 @@ module ice_thickness_safeties
   !< Different kinds of "safeties" to keep the ice sheet stable during nudging-based initialisation runs
 
   use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
@@ -10,22 +10,28 @@ module ice_thickness_safeties
   use reference_geometry_types, only: type_reference_geometry
   use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
+  use mpi_distributed_memory, only: gather_to_all
+  use mpi_basic, only: par, sync
+  use masks_mod, only: determine_masks
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
 
   implicit none
 
   private
 
-  public :: alter_ice_thickness
+  public :: alter_ice_thickness, calc_and_apply_spill_over_flux
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, Hi_old, Hi_new, refgeo, time)
+  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_model),                   intent(in   ) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_old
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
@@ -46,8 +52,8 @@ contains
     Hi_save = Hi_new
 
     ! Calculate would-be effective thickness
-    call calc_effective_thickness( mesh, ice, Hi_new, Hi_eff_new, fraction_margin_new)
-
+    call calc_effective_thickness( mesh, Hi_new, Hb, SL, Hi_eff_new, fraction_margin_new)
+    
     ! == Mask conservation
     ! ====================
 
@@ -280,5 +286,147 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine alter_ice_thickness
+
+  subroutine calc_and_apply_spill_over_flux( mesh, ice, Hi_new, dt)
+
+    ! In/output variables:
+    type(type_mesh),                        intent(in   ) :: mesh
+    type(type_ice_model),                   intent(inout) :: ice
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
+    real(dp),                               intent(in   ) :: dt
+
+    ! Local variables:
+    character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
+    integer                                              :: vi, ci, vj, cj, cm, ierr
+    real(dp)                                             :: Q_max, Q_min, Q_dsttot, Q_srctot
+    real(dp), dimension(mesh%nC_mem)                     :: weight        ! [m2/y] Perpendicular outflow to ocean
+    real(dp), dimension(mesh%vi1: mesh%vi2, mesh%nC_mem) :: relweight     ! [0-1] Relative outflow weight
+    real(dp), dimension(mesh%nV, mesh%nC_mem)            :: relweight_tot ! [0-1] Relative outflow weight
+    real(dp), dimension(mesh%vi1: mesh%vi2)              :: Q_src, Q_dst  ! [m3/y] Source and sink spill fluxes
+    real(dp), dimension(mesh%nV)                         :: Q_src_tot     ! [m3/y] Source spill flux
+    real(dp)                                             :: w_eps = 1.e-2 ! [m2/y] Small value
+    logical, dimension(mesh%nV)                          :: mask_icefree_ocean_tot
+    real(dp)                                             :: Hi_ups, Hs_ups ! [m] Upstream ice values
+    real(dp), dimension(mesh%nV)                         :: Hi_new_tot, Hb_tot
+
+    ! Initialise
+    ice%Qspill = 0._dp
+    Q_src      = 0._dp
+    Q_dst      = 0._dp
+    relweight  = 0._dp
+
+    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( Hi_new, Hi_new_tot)
+    call gather_to_all( ice%Hb, Hb_tot)
+
+    ! Compute spill flux source
+    do vi = mesh%vi1, mesh%vi2
+  
+      ! Determine upstream ice thickness
+      if (ice%mask_cf_fl( vi) .or. ice%mask_cf_gr( vi)) then
+
+        ! Find connection with the strongest inflow into this cell
+        cm = minloc(ice%u_perp( vi, :), dim=1)
+
+        ! If there is no inflow at all, for example during initialisation,
+        ! use effective thickness
+        if (ice%u_perp( vi, cm) >= 0._dp) then
+          Hi_ups = ice%Hi_eff( vi)
+        end if
+
+        ! Find vertex index of strongest inflow cell
+        vj = mesh%C( vi, cm)
+
+        ! Skip if upstream cell is empty
+        if (Hi_new_tot( vj) == 0._dp) cycle
+
+        ! Determine upstream thickness from strongest inflow cell
+        Hi_ups = Hi_new_tot( vj)
+
+      else
+
+        ! Default: use effective ice thickness
+        Hi_ups = ice%Hi_eff( vi)
+
+      end if
+
+      ! Only compute spill-over when ice thickness exceeds effective ice thickness
+      if ((ice%mask_cf_gr( vi) .or. ice%mask_cf_fl( vi)) .and. Hi_new( vi) > Hi_ups) then
+
+        ! Determine source flux of spill-over ice in m^3/yr
+        Q_src( vi) = - (Hi_new( vi) - Hi_ups) * mesh%A( vi) / dt
+
+        weight = 0._dp
+  
+        ! Determine weights of surrounding ocean cells
+        do ci = 1, mesh%nC( vi)
+          vj = mesh%C( vi, ci)
+    
+          if (mask_icefree_ocean_tot( vj)) then
+            ! Define weight by outflow perpendicular velocity into ocean cells.
+            ! Add small value to avoid division by 0 if no outflow velocity enters
+            ! any ocean cell. In that case, weights will be equally distributed
+            ! over all neighbouring ocean cells.
+            weight( ci) = max(0._dp, ice%u_perp( vi, ci)) + w_eps
+          end if
+        end do
+
+        ! Set spill source to zero if no surrounding ocean cells available
+        if (sum(weight) < w_eps) then
+          Q_src( vi) = 0._dp
+        else
+          ! Define the relative weight of Q_src to Q_dst of the downstream ocean cells
+          do ci = 1, mesh%nC( vi)
+            relweight( vi, ci) = weight( ci) / sum(weight)
+          end do
+        end if
+
+      end if
+
+    end do
+
+    ! Only apply distribution during corrector step
+    call gather_to_all( relweight, relweight_tot)
+    call gather_to_all( Q_src, Q_src_tot)
+
+    ! Compute spill flux destination
+    do vi = mesh%vi1, mesh%vi2
+
+      ! Skip if not an ocean cell
+      if (.not. mask_icefree_ocean_tot( vi)) cycle
+
+        do ci = 1, mesh%nC( vi)
+          !Neighbouring cell which potentially has nonzero Q_src
+          vj = mesh%C( vi, ci)
+  
+          ! Connections of neighbouring cell
+          do cj = 1, mesh%nC( vj)
+  
+            if (mesh%C( vj, cj) == vi) then
+            ! Yes, this connection is a match, receive fraction of Q_src
+              if (Q_src_tot( vj) < -1.e-2_dp .and. relweight_tot( vj, cj) > 1.e-6_dp) then
+                Q_dst( vi) = Q_dst( vi) - Q_src_tot( vj) * relweight_tot( vj, cj)
+              end if  
+
+            end if
+  
+          end do
+
+      end do
+
+    end do
+
+    ! Apply spill rates
+    do vi = mesh%vi1, mesh%vi2
+
+      ! Combine source and destination and convert to thickness rate in m/yr
+      ice%Qspill( vi) = (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
+
+      ! Update ice thickness
+      Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
+
+    end do
+
+  end subroutine calc_and_apply_spill_over_flux
 
 end module ice_thickness_safeties

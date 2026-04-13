@@ -49,6 +49,12 @@ jobs:
       - name: Compile UPSY
         run: csh compile_UPSY.csh  perf  clean
 
+      - name: Copy UPSY test programs
+        run: |
+          cp build/src/UPSY/UPSY_unit_test_program .
+          cp build/src/UPSY/UPSY_multinode_unit_test_program .
+          cp build/src/UPSY/UPSY_component_test_program .
+
       - name: Cache UPSY unit test program
         uses: actions/cache/save@v3
         id: UPSY_unit_test_program_cache_save

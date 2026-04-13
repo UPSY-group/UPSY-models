@@ -301,11 +301,16 @@ contains
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'buffer_scalar_output'
+    character(len=1024), parameter :: routine_name = 'buffer_scalar_output_ROI'
     integer                        :: n, i_ROI
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (.not. C%do_create_netcdf_output) then
+      call finalise_routine( routine_name)
+      return
+    end if
 
     ! Only the primary does this
     if (par%primary) then
@@ -525,7 +530,7 @@ contains
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_ISMIP_output) then
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if
@@ -591,7 +596,7 @@ contains
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_ISMIP_output) then
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if
@@ -694,6 +699,11 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
+      call finalise_routine( routine_name)
+      return
+    end if
 
     ! Only the primary does this
     if (par%primary) then

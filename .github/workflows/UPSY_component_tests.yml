@@ -1,5 +1,5 @@
 name: UPSY component tests
-run-name: ${{ github.actor }} - UPSY component tests - ${{ matrix.build_type }} build, ${{ matrix.os }}
+run-name: ${{ github.actor }} - UPSY component tests
 on:
   pull_request:
     branches:
@@ -10,6 +10,7 @@ on:
 
 jobs:
   component_tests:
+    name: UPSY component tests — ${{ matrix.os }} / ${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     strategy:
       matrix:

@@ -18,3 +18,6 @@ jobs:
 
   mesh_focussing:
     uses: ./.github/workflows/UPSY_component_test_mesh_focussing.yml
+
+  mesh_discretisation:
+    uses: ./.github/workflows/UPSY_component_test_mesh_discretisation.yml

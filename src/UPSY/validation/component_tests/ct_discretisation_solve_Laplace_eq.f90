@@ -26,15 +26,14 @@ module ct_discretisation_solve_Laplace_eq
 contains
 
   !> Run all Laplace eq solving tests.
-  subroutine run_all_Laplace_eq_solving_tests( foldername_discretisation, test_mesh_filenames)
+  subroutine run_all_Laplace_eq_solving_tests( output_dir, test_mesh_filenames)
 
     ! In/output variables:
-    character(len=*),               intent(in) :: foldername_discretisation
+    character(len=*),               intent(in) :: output_dir
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_Laplace_eq_solving_tests'
-    character(len=1024)            :: foldername_map_deriv
     character(len=1024)            :: test_mesh_filename
     integer                        :: i
 
@@ -44,11 +43,9 @@ contains
     if (par%primary) write(0,*) '    Running Laplace equation solving tests...'
     if (par%primary) write(0,*) ''
 
-    call create_Laplace_eq_solving_tests_output_folder( foldername_discretisation, foldername_map_deriv)
-
     do i = 1, size(test_mesh_filenames)
-      test_mesh_filename = trim(test_mesh_filenames( i))
-      call run_Laplace_eq_solving_test_on_mesh( foldername_map_deriv, test_mesh_filename)
+      test_mesh_filename = trim( test_mesh_filenames( i))
+      call run_Laplace_eq_solving_test_on_mesh( output_dir, test_mesh_filename)
     end do
 
     if (par%primary) write(0,*) ''
@@ -58,47 +55,11 @@ contains
 
   end subroutine run_all_Laplace_eq_solving_tests
 
-  !> Create the output folder for the Laplace eq tests
-  subroutine create_Laplace_eq_solving_tests_output_folder( foldername_discretisation, foldername_map_deriv)
-
-    ! In/output variables:
-    character(len=*), intent(in)  :: foldername_discretisation
-    character(len=*), intent(out) :: foldername_map_deriv
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_Laplace_eq_tests_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_map_deriv = trim(foldername_discretisation) // '/solve_Laplace_eq'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_map_deriv) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_map_deriv))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_map_deriv))
-
-    end if
-    call MPI_BCAST( foldername_map_deriv, len(foldername_map_deriv), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_Laplace_eq_solving_tests_output_folder
-
   !> Run the Laplace eq solving test on a particular mesh
-  subroutine run_Laplace_eq_solving_test_on_mesh( foldername_map_deriv, test_mesh_filename)
+  subroutine run_Laplace_eq_solving_test_on_mesh( output_dir, test_mesh_filename)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_map_deriv
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: test_mesh_filename
 
     ! Local variables:
@@ -214,7 +175,7 @@ contains
 
     ! Write results to NetCDF output file
     call write_Laplace_eq_solving_test_results_to_file( &
-      foldername_map_deriv, test_mesh_filename, mesh, f_ex_nih, f_nih)
+      output_dir, test_mesh_filename, mesh, f_ex_nih, f_nih)
 
     ! Clean up after yourself
     call deallocate_dist_shared( f_ex_nih, wf_ex_nih)
@@ -229,10 +190,10 @@ contains
 
   !> Write the results of Laplace eq solving test, for a particular mesh with a particular test function, to a file.
   subroutine write_Laplace_eq_solving_test_results_to_file( &
-    foldername_map_deriv, test_mesh_filename, mesh, f_ex_nih, f_nih)
+    output_dir, test_mesh_filename, mesh, f_ex_nih, f_nih)
 
     ! In/output variables:
-    character(len=*),       intent(in) :: foldername_map_deriv
+    character(len=*),       intent(in) :: output_dir
     character(len=*),       intent(in) :: test_mesh_filename
     type(type_mesh),        intent(in) :: mesh
     real(dp), dimension(mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih), intent(in) :: f_ex_nih, f_nih
@@ -251,7 +212,7 @@ contains
     mesh_name = test_mesh_filename( 1:len_trim( test_mesh_filename)-3)
     i = index( mesh_name, '/', back = .true.)
     mesh_name = mesh_name( i+1:len_trim( mesh_name))
-    filename = trim( foldername_map_deriv) // '/res_' // &
+    filename = trim( output_dir) // '/res_Laplace_' // &
       trim( mesh_name) // '.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)

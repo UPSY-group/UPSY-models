@@ -1,5 +1,4 @@
 program UPSY_component_test_program_mesh_creation
-  !< A program to run all of UPSY's component tests
 
   use basic_program_info, only: program_name
   use precisions, only: dp
@@ -16,7 +15,6 @@ program UPSY_component_test_program_mesh_creation
   implicit none
 
   integer                                        :: perr, ierr
-  character(len=*), parameter                    :: test_name = 'UPSY'
   character(len=:), allocatable                  :: output_dir
   character(len=1024), dimension(:), allocatable :: test_mesh_filenames
   character(len=1024), dimension(:), allocatable :: test_grid_filenames

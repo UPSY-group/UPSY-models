@@ -5,7 +5,7 @@ on:
 
 jobs:
   component_test_mesh_creation:
-    name: UPSY component tests — mesh creation - ${{ matrix.os }}-${{ matrix.build_type }}
+    name: mesh creation (${{ matrix.os }}-${{ matrix.build_type }})
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false

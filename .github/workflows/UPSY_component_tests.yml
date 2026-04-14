@@ -90,11 +90,11 @@ jobs:
 
       - name: Run component test - mesh creation
         if: matrix.os == 'macos-latest'
-        run: ./test_script.csh
+        run: ./automated_testing/UPSY/component_test_mesh_creation/test_script.csh
 
       - name: Run component test - mesh creation
         if: matrix.os == 'ubuntu-latest'
-        run: csh test_script.csh
+        run: csh automated_testing/UPSY/component_test_mesh_creation/test_script.csh
 
       - name: Check test result
         uses: matlab-actions/run-command@v3

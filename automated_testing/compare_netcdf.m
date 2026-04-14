@@ -126,6 +126,11 @@ end
       return
     end
 
+    % git commit hashes are allowed to be different
+    if strcmpi( att_ref.Name, 'git commit hash')
+      return
+    end
+
     if ischar( att_ref.Value) && ischar( att_mod.Value)
       if ~strcmpi( att_ref.Value, att_mod.Value)
         are_identical = false;

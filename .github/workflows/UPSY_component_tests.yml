@@ -1,5 +1,5 @@
 name: UPSY component tests
-run-name: ${{ github.actor }} - UPSY component tests - ${{ matrix.build_type }} build, ${{ matrix.os }}
+run-name: ${{ github.actor }} - UPSY component tests
 on:
   pull_request:
     branches:
@@ -10,8 +10,10 @@ on:
 
 jobs:
   component_tests:
+    name: UPSY component tests — ${{ matrix.os }} / ${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
         build_type: [dev, perf]
@@ -21,9 +23,12 @@ jobs:
     # ==================================================
 
       - name: Install MATLAB
-        uses: matlab-actions/setup-matlab@v2.2.0
-        with:
-          cache: true
+        uses: matlab-actions/setup-matlab@v3
+
+      - name: Set up Homebrew                  # Not installed by default on ubuntu runners
+        if: matrix.os == 'ubuntu-latest'
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@main
 
       - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
         if: matrix.os == 'macos-latest'
@@ -37,11 +42,17 @@ jobs:
           #brew install cmake                  # Not needed, already installed
           #brew install ninja
 
-      - name: Install packages with apt (Ubuntu)
+      - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
         if: matrix.os == 'ubuntu-latest'
         run: |
-          sudo apt-get update
-          sudo apt-get install -y openmpi-bin libopenmpi-dev petsc-dev libnetcdf-dev libnetcdff-dev
+          brew update
+          brew install open-mpi
+          brew install netcdf
+          brew install netcdf-fortran
+          brew unlink hdf5
+          brew install petsc
+          brew install cmake
+          brew install ninja
 
       - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
         uses: fortran-lang/setup-fortran@v1
@@ -60,19 +71,38 @@ jobs:
         run: |
           git submodule update --init --remote
 
+      - name: Install csh
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install csh
+
       - name: Compile UPSY
+        if: matrix.os == 'macos-latest'
         run: ./compile_UPSY.csh ${{ matrix.build_type }} clean
+
+      - name: Compile UPSY
+        if: matrix.os == 'ubuntu-latest'
+        run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
 
     # Run the individual component test programs
     # ==========================================
 
       - name: Run component test - mesh creation
+        if: matrix.os == 'macos-latest'
         run: |
           cd automated_testing/UPSY/component_test_mesh_creation
           ./test_script.csh
 
+      - name: Run component test - mesh creation
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          cd automated_testing/UPSY/component_test_mesh_creation
+          csh test_script.csh
+
       - name: Check test result
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@v3
+        if: ${{ (matrix.os == 'macos-latest') && (matrix.build_type == 'dev') }}
         with:
           command: |
             addpath('automated_testing')

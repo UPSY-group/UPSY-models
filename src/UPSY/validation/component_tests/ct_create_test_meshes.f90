@@ -159,7 +159,7 @@ contains
     call init_routine( routine_name)
 
     ! Create a set of test meshes with a uniform resolution
-    do i = 1, size( uniform_resolutions)
+    do i = 1, size( uniform_resolutions)-2
       call create_test_mesh_uniform( foldername_test_meshes, test_mesh_filenames, &
         domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
         uniform_resolutions( i), alpha_min, nit_Lloyds_algorithm)

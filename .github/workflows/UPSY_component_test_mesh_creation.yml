@@ -1,0 +1,98 @@
+name: UPSY component tests - mesh creation
+run-name: ${{ github.actor }} - UPSY component tests - mesh creation
+on:
+  workflow_dispatch:
+
+jobs:
+  component_test_mesh_creation:
+    name: UPSY component tests — mesh creation - ${{ matrix.os }} / ${{ matrix.build_type }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-latest, ubuntu-latest]
+        build_type: [dev, perf]
+    steps:
+
+    # Install all required packages and compile the code
+    # ==================================================
+
+      - name: Install MATLAB
+        uses: matlab-actions/setup-matlab@v3
+
+      - name: Set up Homebrew (ubuntu)                 # Not installed by default on ubuntu runners
+        if: matrix.os == 'ubuntu-latest'
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Install packages with Homebrew (macos)  # Packages end up in /opt/homebrew/Cellar
+        if: matrix.os == 'macos-latest'
+        run: |
+          #brew install gcc                    # Not needed on GitHub server, already installed
+          brew install open-mpi
+          brew install petsc
+          brew unlink hdf5-mpi                 # To fix the following conflict: "hdf5-mpi: because hdf5-mpi is a variant of hdf5, one can only use one or the other"
+          brew install netcdf
+          brew install netcdf-fortran
+          #brew install cmake                  # Not needed, already installed
+          #brew install ninja
+
+      - name: Install packages with Homebrew (ubuntu)  # Packages end up in /opt/homebrew/Cellar
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          brew update
+          brew install open-mpi
+          brew install netcdf
+          brew install netcdf-fortran
+          brew unlink hdf5
+          brew install petsc
+          brew install cmake
+          brew install ninja
+
+      - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
+        uses: fortran-lang/setup-fortran@v1
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 15
+
+      - name: Verify compiler setup
+        run: gfortran --version
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update submodules
+        run: |
+          git submodule update --init --remote
+
+      - name: Install csh (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install csh
+
+      - name: Compile UPSY (macos)
+        if: matrix.os == 'macos-latest'
+        run: ./compile_UPSY.csh ${{ matrix.build_type }} clean
+
+      - name: Compile UPSY (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
+
+      - name: Run component test (macos)
+        if: matrix.os == 'macos-latest'
+        run: ./automated_testing/UPSY/component_test_mesh_creation/test_script.csh
+
+      - name: Run component test (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: csh automated_testing/UPSY/component_test_mesh_creation/test_script.csh
+
+      - name: Check test result
+        uses: matlab-actions/run-command@v3
+        if: ${{ (matrix.os == 'macos-latest') && (matrix.build_type == 'dev') }}   # NOTE: currently, only the macos-dev version seems to work; the macos-perf version gives slightly different meshes, and on ubuntu it cant find the test results
+        with:
+          command: |
+            addpath('automated_testing')
+            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_creation/results')
+            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_creation')

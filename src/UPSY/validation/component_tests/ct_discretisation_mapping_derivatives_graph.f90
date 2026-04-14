@@ -1,6 +1,6 @@
 module ct_discretisation_mapping_derivatives_graph
 
-  ! Test the mesh matrix operators for mapping and derivatives
+  ! Test the mesh matrix operators for mapping and derivatives on graphs
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use UPSY_main, only: UPSY

@@ -1,7 +1,7 @@
 name: UPSY component tests - mesh creation
 run-name: ${{ github.actor }} - UPSY component tests - mesh creation
 on:
-  workflow_dispatch:
+  workflow_call:
 
 jobs:
   component_test_mesh_creation:

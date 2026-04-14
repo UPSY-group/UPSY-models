@@ -22,9 +22,7 @@ jobs:
     # ==================================================
 
       - name: Install MATLAB
-        uses: matlab-actions/setup-matlab@v2.2.0
-        with:
-          cache: true
+        uses: matlab-actions/setup-matlab@v3
 
       - name: Set up Homebrew                  # Not installed by default on ubuntu runners
         if: matrix.os == 'ubuntu-latest'

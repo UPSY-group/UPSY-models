@@ -88,6 +88,9 @@ jobs:
     # Run the individual component test programs
     # ==========================================
 
+      # Mesh creation
+      # =============
+
       - name: Run component test - mesh creation
         if: matrix.os == 'macos-latest'
         run: ./automated_testing/UPSY/component_test_mesh_creation/test_script.csh
@@ -96,7 +99,7 @@ jobs:
         if: matrix.os == 'ubuntu-latest'
         run: csh automated_testing/UPSY/component_test_mesh_creation/test_script.csh
 
-      - name: Check test result
+      - name: Check test result - mesh creation
         uses: matlab-actions/run-command@v3
         if: ${{ (matrix.os == 'macos-latest') && (matrix.build_type == 'dev') }}
         with:
@@ -104,3 +107,23 @@ jobs:
             addpath('automated_testing')
             reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_creation/results')
             compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_creation')
+
+      # Mesh focussing
+      # ==============
+
+      - name: Run component test - mesh focussing
+        if: matrix.os == 'macos-latest'
+        run: ./automated_testing/UPSY/component_test_mesh_focussing/test_script.csh
+
+      - name: Run component test - mesh focussing
+        if: matrix.os == 'ubuntu-latest'
+        run: csh automated_testing/UPSY/component_test_mesh_focussing/test_script.csh
+
+      - name: Check test result - mesh focussing
+        uses: matlab-actions/run-command@v3
+        if: ${{ (matrix.os == 'macos-latest') && (matrix.build_type == 'dev') }}
+        with:
+          command: |
+            addpath('automated_testing')
+            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_focussing/results')
+            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UPSY/component_test_mesh_focussing')

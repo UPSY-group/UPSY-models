@@ -13,6 +13,7 @@ jobs:
     name: UPSY component tests — ${{ matrix.os }} / ${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-latest]
         build_type: [dev, perf]
@@ -100,7 +101,7 @@ jobs:
           csh test_script.csh
 
       - name: Check test result
-        uses: matlab-actions/run-command@v2
+        uses: matlab-actions/run-command@v3
         with:
           command: |
             addpath('automated_testing')

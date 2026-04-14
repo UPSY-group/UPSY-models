@@ -90,7 +90,6 @@ jobs:
 
       - name: Check test result
         uses: matlab-actions/run-command@v3
-        if: ${{ (matrix.os == 'macos-latest') && (matrix.build_type == 'dev') }}   # NOTE: currently, only the macos-dev version seems to work; the macos-perf version gives slightly different meshes, and on ubuntu it cant find the test results
         with:
           command: |
             addpath('automated_testing')

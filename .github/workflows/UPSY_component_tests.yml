@@ -24,3 +24,6 @@ jobs:
 
   mesh_remapping_mesh_grid:
     uses: ./.github/workflows/UPSY_component_test_mesh_remapping_mesh_grid.yml
+
+  mesh_remapping_mesh_mesh:
+    uses: ./.github/workflows/UPSY_component_test_mesh_remapping_mesh_mesh.yml

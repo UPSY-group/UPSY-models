@@ -24,7 +24,7 @@ program UPSY_component_test_program_mesh_remapping_mesh_grid
   character(len=1024), dimension(:), allocatable :: test_grid_filenames
   real(dp)                                       :: tstart, tstop, tcomp
 
-  program_name = 'UPSY_component_test_mesh_discretisation'
+  program_name = 'UPSY_component_test_mesh_remapping_mesh_grid'
 
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation

@@ -11,8 +11,6 @@ if ~strcmpi( filename_ref_short, filename_mod_short)
   return;
 end
 
-disp(['Comparing ' filename_ref_short])
-
 info_matches = compare_ncinfo( filename_ref, filename_mod);
 if info_matches
   files_match = compare_data( filename_ref, filename_mod);

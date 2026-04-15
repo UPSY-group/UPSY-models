@@ -81,10 +81,10 @@ jobs:
         run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
 
       - name: Run unit tests
-        run: mpiexec  -n 2  UPSY_unit_test_program
+        run: mpiexec  -n 2  build/src/UPSY/UPSY_unit_test_program
 
       - name: Run multi-node unit tests
-        run: mpiexec  -n 7 --map-by :OVERSUBSCRIBE  UPSY_multinode_unit_test_program
+        run: mpiexec  -n 7 --map-by :OVERSUBSCRIBE  build/src/UPSY/UPSY_multinode_unit_test_program
 
       - name: Check test results
         uses: matlab-actions/run-command@v3

@@ -1,5 +1,5 @@
-name: UPSY component tests - mesh creation
-run-name: ${{ github.actor }} - UPSY component tests - mesh creation
+name: UPSY component test - mesh creation
+run-name: ${{ github.actor }} - UPSY component test - mesh creation
 on:
   workflow_call:
 

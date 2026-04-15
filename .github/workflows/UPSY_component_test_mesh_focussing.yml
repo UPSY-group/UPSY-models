@@ -1,5 +1,5 @@
-name: UPSY component tests - mesh focussing
-run-name: ${{ github.actor }} - UPSY component tests - mesh focussing
+name: UPSY component test - mesh focussing
+run-name: ${{ github.actor }} - UPSY component test - mesh focussing
 on:
   workflow_call:
 

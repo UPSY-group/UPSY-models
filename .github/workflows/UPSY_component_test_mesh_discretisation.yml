@@ -1,5 +1,5 @@
-name: UPSY component tests - mesh discretisation
-run-name: ${{ github.actor }} - UPSY component tests - mesh discretisation
+name: UPSY component test - mesh discretisation
+run-name: ${{ github.actor }} - UPSY component test - mesh discretisation
 on:
   workflow_call:
 

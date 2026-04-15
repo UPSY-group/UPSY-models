@@ -1,5 +1,5 @@
-name: UPSY component tests - mesh remapping_mesh_mesh
-run-name: ${{ github.actor }} - UPSY component tests - mesh remapping_mesh_mesh
+name: UPSY component test - mesh remapping_mesh_mesh
+run-name: ${{ github.actor }} - UPSY component test - mesh remapping_mesh_mesh
 on:
   workflow_call:
 

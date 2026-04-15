@@ -1,5 +1,5 @@
-name: UPSY component tests - mesh remapping_mesh_grid
-run-name: ${{ github.actor }} - UPSY component tests - mesh remapping_mesh_grid
+name: UPSY component test - mesh remapping_mesh_grid
+run-name: ${{ github.actor }} - UPSY component test - mesh remapping_mesh_grid
 on:
   workflow_call:
 

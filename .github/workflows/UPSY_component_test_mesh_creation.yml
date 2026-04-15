@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  component_test_mesh_creation:
+  mesh_creation:
     name: mesh creation
     runs-on: macos-latest
     steps:

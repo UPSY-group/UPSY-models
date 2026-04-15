@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  component_test_mesh_focussing:
+  mesh_focussing:
     name: mesh focussing
     runs-on: macos-latest
     steps:

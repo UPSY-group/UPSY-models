@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  component_test_mesh_remapping_mesh_grid:
+  remapping_mesh_grid:
     name: remapping mesh-to-grid
     runs-on: macos-latest
     steps:

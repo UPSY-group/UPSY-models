@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  component_test_mesh_remapping_mesh_mesh:
+  mesh_remapping_mesh_mesh:
     name: remapping mesh-to-mesh
     runs-on: macos-latest
     steps:

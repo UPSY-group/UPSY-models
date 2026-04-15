@@ -4,7 +4,7 @@ on:
   workflow_call:
 
 jobs:
-  component_test_mesh_discretisation:
+  mesh_discretisation:
     name: mesh discretisation
     runs-on: macos-latest
     steps:

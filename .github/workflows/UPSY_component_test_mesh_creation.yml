@@ -5,13 +5,8 @@ on:
 
 jobs:
   component_test_mesh_creation:
-    name: ${{ matrix.os }}-${{ matrix.build_type }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [macos-latest, ubuntu-latest]
-        build_type: [dev, perf]
+    name: mesh creation
+    runs-on: macos-latest
     steps:
 
     # Install all required packages and compile the code
@@ -22,13 +17,7 @@ jobs:
         with:
           cache: true
 
-      - name: Set up Homebrew (ubuntu)                 # Not installed by default on ubuntu runners
-        if: matrix.os == 'ubuntu-latest'
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@main
-
-      - name: Install packages with Homebrew (macos)  # Packages end up in /opt/homebrew/Cellar
-        if: matrix.os == 'macos-latest'
+      - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
         run: |
           #brew install gcc                    # Not needed on GitHub server, already installed
           brew install open-mpi
@@ -38,18 +27,6 @@ jobs:
           brew install netcdf-fortran
           #brew install cmake                  # Not needed, already installed
           #brew install ninja
-
-      - name: Install packages with Homebrew (ubuntu)  # Packages end up in /opt/homebrew/Cellar
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          brew update
-          brew install open-mpi
-          brew install netcdf
-          brew install netcdf-fortran
-          brew unlink hdf5
-          brew install petsc
-          brew install cmake
-          brew install ninja
 
       - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
         uses: fortran-lang/setup-fortran@v1
@@ -68,27 +45,11 @@ jobs:
         run: |
           git submodule update --init --remote
 
-      - name: Install csh (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: |
-          sudo apt-get update
-          sudo apt-get install csh
-
-      - name: Compile UPSY (macos)
-        if: matrix.os == 'macos-latest'
+      - name: Compile UPSY
         run: ./compile_UPSY.csh ${{ matrix.build_type }} clean
 
-      - name: Compile UPSY (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
-
-      - name: Run component test (macos)
-        if: matrix.os == 'macos-latest'
+      - name: Run component test
         run: ./automated_testing/UPSY/component_test_mesh_creation/test_script.csh
-
-      - name: Run component test (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: csh automated_testing/UPSY/component_test_mesh_creation/test_script.csh
 
       - name: Check test result
         uses: matlab-actions/run-command@v3

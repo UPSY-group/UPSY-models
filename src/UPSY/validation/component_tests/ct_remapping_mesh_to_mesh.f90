@@ -25,15 +25,14 @@ module ct_remapping_mesh_to_mesh
 contains
 
   !> Run all the mesh-to-mesh remapping tests
-  subroutine run_all_mesh_to_mesh_remapping_tests( foldername_remapping, test_mesh_filenames)
+  subroutine run_all_mesh_to_mesh_remapping_tests( output_dir, test_mesh_filenames)
 
     ! In/output variables:
-    character(len=1024)           , intent(in) :: foldername_remapping
+    character(len=1024)           , intent(in) :: output_dir
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_mesh_to_mesh_remapping_tests'
-    character(len=1024)            :: foldername_mesh_to_mesh
     integer                        :: i1, i2
     character(len=1024)            :: filename_mesh1, filename_mesh2
 
@@ -43,13 +42,11 @@ contains
     if (par%primary) write(0,*) '    Running mesh-to-mesh remapping component tests...'
     if (par%primary) write(0,*) ''
 
-    call create_mesh_to_mesh_remapping_output_folder( foldername_remapping, foldername_mesh_to_mesh)
-
     do i1 = 1, size( test_mesh_filenames)
       filename_mesh1 = test_mesh_filenames( i1)
       do i2 = 1, size( test_mesh_filenames)
         filename_mesh2 = test_mesh_filenames( i2)
-        call run_mesh_to_mesh_remapping_tests_on_mesh_mesh_combo( foldername_mesh_to_mesh, filename_mesh1, filename_mesh2)
+        call run_mesh_to_mesh_remapping_tests_on_mesh_mesh_combo( output_dir, filename_mesh1, filename_mesh2)
       end do
     end do
 
@@ -60,47 +57,11 @@ contains
 
   end subroutine run_all_mesh_to_mesh_remapping_tests
 
-  !> Create the output folder for the mesh-to-mesh remapping component tests
-  subroutine create_mesh_to_mesh_remapping_output_folder( foldername_remapping, foldername_mesh_to_mesh)
-
-    ! In/output variables:
-    character(len=*), intent(in)  :: foldername_remapping
-    character(len=*), intent(out) :: foldername_mesh_to_mesh
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_mesh_to_mesh_remapping_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_mesh_to_mesh = trim(foldername_remapping) // '/mesh_to_mesh'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_mesh_to_mesh) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_mesh_to_mesh))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_mesh_to_mesh))
-
-    end if
-    call MPI_BCAST( foldername_mesh_to_mesh, len(foldername_mesh_to_mesh), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_mesh_to_mesh_remapping_output_folder
-
   !> Run all the mesh-to-mesh remapping tests on one mesh/mesh combination
-  subroutine run_mesh_to_mesh_remapping_tests_on_mesh_mesh_combo( foldername_mesh_to_mesh, filename_mesh1, filename_mesh2)
+  subroutine run_mesh_to_mesh_remapping_tests_on_mesh_mesh_combo( output_dir, filename_mesh1, filename_mesh2)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_mesh_to_mesh
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: filename_mesh1
     character(len=*), intent(in) :: filename_mesh2
 
@@ -125,7 +86,7 @@ contains
 
     mesh_name1 = filename_mesh1( index( filename_mesh1, '/', back = .true.)+1 : len_trim( filename_mesh1)-3)
     mesh_name2 = filename_mesh2( index( filename_mesh2, '/', back = .true.)+1 : len_trim( filename_mesh2)-3)
-    filename = trim( foldername_mesh_to_mesh) // '/res_' // &
+    filename = trim( output_dir) // '/res_' // &
       mesh_name1( 1:len_trim(mesh_name1)) // '_TO_' // mesh_name2( 1:len_trim(mesh_name2)) // '.nc'
 
     if (par%primary) write(0,*) '      Running mesh-to-mesh remapping tests on mesh-mesh combination:'
@@ -153,10 +114,10 @@ contains
     allocate( d_mesh2_cons  ( mesh2%nV_loc))
     allocate( d_mesh2_b_cons( mesh2%nTri_loc))
 
-    call map_from_mesh_to_mesh_2D        ( mesh1, mesh2, foldername_mesh_to_mesh, d_mesh1_ex  , d_mesh2_nn    , 'nearest_neighbour')
-    call map_from_mesh_to_mesh_2D        ( mesh1, mesh2, foldername_mesh_to_mesh, d_mesh1_ex  , d_mesh2_trilin, 'trilin')
-    call map_from_mesh_to_mesh_2D        ( mesh1, mesh2, foldername_mesh_to_mesh, d_mesh1_ex  , d_mesh2_cons  , '2nd_order_conservative')
-    call map_from_mesh_tri_to_mesh_tri_2D( mesh1, mesh2, foldername_mesh_to_mesh, d_mesh1_b_ex, d_mesh2_b_cons, '2nd_order_conservative')
+    call map_from_mesh_to_mesh_2D        ( mesh1, mesh2, output_dir, d_mesh1_ex  , d_mesh2_nn    , 'nearest_neighbour')
+    call map_from_mesh_to_mesh_2D        ( mesh1, mesh2, output_dir, d_mesh1_ex  , d_mesh2_trilin, 'trilin')
+    call map_from_mesh_to_mesh_2D        ( mesh1, mesh2, output_dir, d_mesh1_ex  , d_mesh2_cons  , '2nd_order_conservative')
+    call map_from_mesh_tri_to_mesh_tri_2D( mesh1, mesh2, output_dir, d_mesh1_b_ex, d_mesh2_b_cons, '2nd_order_conservative')
 
     ! Write results to NetCDF
     ! (NOTE: deviates slightly from the style of the other tests, as there is no easy support

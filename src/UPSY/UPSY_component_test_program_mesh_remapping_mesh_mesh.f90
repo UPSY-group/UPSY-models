@@ -1,4 +1,4 @@
-program UPSY_component_test_program_mesh_remapping_mesh_grid
+program UPSY_component_test_program_mesh_remapping_mesh_mesh
 
   use basic_program_info, only: program_name
   use precisions, only: dp
@@ -13,8 +13,7 @@ program UPSY_component_test_program_mesh_remapping_mesh_grid
 
   use ct_create_test_meshes, only: list_test_meshes_and_grids_in_folder
   use ct_basic, only: create_component_tests_output_folder
-  use ct_remapping_grid_to_mesh, only: run_all_grid_to_mesh_remapping_tests
-  use ct_remapping_mesh_to_grid, only: run_all_mesh_to_grid_remapping_tests
+  use ct_remapping_mesh_to_mesh, only: run_all_mesh_to_mesh_remapping_tests
 
   implicit none
 
@@ -24,7 +23,7 @@ program UPSY_component_test_program_mesh_remapping_mesh_grid
   character(len=1024), dimension(:), allocatable :: test_grid_filenames
   real(dp)                                       :: tstart, tstop, tcomp
 
-  program_name = 'UPSY_component_test_mesh_remapping_mesh_grid'
+  program_name = 'UPSY_component_test_mesh_remapping_mesh_mesh'
 
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
@@ -55,8 +54,7 @@ program UPSY_component_test_program_mesh_remapping_mesh_grid
 
   call list_test_meshes_and_grids_in_folder( foldername_test_meshes_and_grids, test_grid_filenames, test_mesh_filenames)
   call create_component_tests_output_folder( foldername_output)
-  call run_all_grid_to_mesh_remapping_tests( foldername_output, test_mesh_filenames, test_grid_filenames)
-  call run_all_mesh_to_grid_remapping_tests( foldername_output, test_mesh_filenames, test_grid_filenames)
+  call run_all_mesh_to_mesh_remapping_tests( foldername_output, test_mesh_filenames)
 
   ! Stop the clock
   tstop = MPI_WTIME()
@@ -69,4 +67,4 @@ program UPSY_component_test_program_mesh_remapping_mesh_grid
   call PetscFinalize( perr)
   call MPI_FINALIZE( ierr)
 
-end program UPSY_component_test_program_mesh_remapping_mesh_grid
+end program UPSY_component_test_program_mesh_remapping_mesh_mesh

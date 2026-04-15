@@ -21,6 +21,7 @@ add_executable( UPSY_component_test_program_mesh_creation            "${CMAKE_CU
 add_executable( UPSY_component_test_program_mesh_focussing           "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_focussing.f90")
 add_executable( UPSY_component_test_program_mesh_discretisation      "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_discretisation.f90")
 add_executable( UPSY_component_test_program_mesh_remapping_mesh_grid "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_remapping_mesh_grid.f90")
+add_executable( UPSY_component_test_program_mesh_remapping_mesh_mesh "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_remapping_mesh_mesh.f90")
 
 list( APPEND all_programs UPSY_unit_test_program)
 list( APPEND all_programs UPSY_multinode_unit_test_program)
@@ -29,6 +30,7 @@ list( APPEND all_programs UPSY_component_test_program_mesh_creation)
 list( APPEND all_programs UPSY_component_test_program_mesh_focussing)
 list( APPEND all_programs UPSY_component_test_program_mesh_discretisation)
 list( APPEND all_programs UPSY_component_test_program_mesh_remapping_mesh_grid)
+list( APPEND all_programs UPSY_component_test_program_mesh_remapping_mesh_mesh)
 
 # Link all executables to the UPSY static library and the external dependencies,
 # and set the compiler flags

@@ -12,7 +12,10 @@ on:
 
 jobs:
 
-  # Run the individual component tests in parallel as separate workflows
+  # Run the individual tests in parallel as separate workflows
+  unit_tests:
+    uses: ./.github/workflows/UPSY_unit_tests.yml
+
   mesh_creation:
     uses: ./.github/workflows/UPSY_component_test_mesh_creation.yml
 

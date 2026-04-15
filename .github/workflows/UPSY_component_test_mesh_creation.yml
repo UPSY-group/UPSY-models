@@ -46,7 +46,7 @@ jobs:
           git submodule update --init --remote
 
       - name: Compile UPSY
-        run: ./compile_UPSY.csh ${{ matrix.build_type }} clean
+        run: ./compile_UPSY.csh  dev  clean
 
       - name: Run component test
         run: ./automated_testing/UPSY/component_test_mesh_creation/test_script.csh

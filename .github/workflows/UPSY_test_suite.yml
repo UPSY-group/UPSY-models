@@ -12,25 +12,37 @@ on:
 
 jobs:
 
+  setup_and_cache_Matlab_macos:
+    uses: ./.github/workflows/setup_and_cache_Matlab_macos.yml
+
+  setup_and_cache_Matlab_ubuntu:
+    uses: ./.github/workflows/setup_and_cache_Matlab_ubuntu.yml
+
   # Run the individual tests in parallel as separate workflows
   compile_UPSY:
     uses: ./.github/workflows/UPSY_compiling.yml
 
   unit_tests:
     uses: ./.github/workflows/UPSY_unit_tests.yml
+    needs: [setup_and_cache_Matlab_macos, setup_and_cache_Matlab_ubuntu]
 
   mesh_creation:
     uses: ./.github/workflows/UPSY_component_test_mesh_creation.yml
+    needs: [setup_and_cache_Matlab_macos, setup_and_cache_Matlab_ubuntu]
 
   mesh_focussing:
     uses: ./.github/workflows/UPSY_component_test_mesh_focussing.yml
+    needs: [setup_and_cache_Matlab_macos, setup_and_cache_Matlab_ubuntu]
 
   mesh_discretisation:
     uses: ./.github/workflows/UPSY_component_test_mesh_discretisation.yml
+    needs: [setup_and_cache_Matlab_macos, setup_and_cache_Matlab_ubuntu]
 
   mesh_remapping_mesh_grid:
     uses: ./.github/workflows/UPSY_component_test_mesh_remapping_mesh_grid.yml
+    needs: [setup_and_cache_Matlab_macos, setup_and_cache_Matlab_ubuntu]
 
   mesh_remapping_mesh_mesh:
     uses: ./.github/workflows/UPSY_component_test_mesh_remapping_mesh_mesh.yml
+    needs: [setup_and_cache_Matlab_macos, setup_and_cache_Matlab_ubuntu]
 

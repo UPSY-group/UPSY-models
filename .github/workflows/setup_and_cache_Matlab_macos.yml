@@ -1,0 +1,14 @@
+name: setup and cache Matlab (macos)
+run-name: ${{ github.actor }} - setup and cache Matlab (macos)
+on:
+  workflow_call:
+
+jobs:
+  setup_and_cache_Matlab:
+    runs-on: macos-latest
+    steps:
+
+      - name: Install MATLAB
+        uses: matlab-actions/setup-matlab@v3
+        with:
+          cache: true

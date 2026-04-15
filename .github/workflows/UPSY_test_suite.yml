@@ -12,20 +12,10 @@ on:
 
 jobs:
 
-  # Compile the model and cache the executable
-  compile_and_cache_UPSY_dev_MacOS:
-    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_dev_MacOS.yml
-
-  compile_and_cache_UPSY_dev_Linux:
-    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_dev_Linux.yml
-
-  compile_and_cache_UPSY_perf_MacOS:
-    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_perf_MacOS.yml
-
-  compile_and_cache_UPSY_perf_Linux:
-    uses: ./.github/workflows/UPSY_test_suite_compile_and_cache_perf_Linux.yml
-
   # Run the individual tests in parallel as separate workflows
+  compile_UPSY:
+    uses: ./.github/workflows/UPSY_compiling.yml
+
   unit_tests:
     uses: ./.github/workflows/UPSY_unit_tests.yml
 

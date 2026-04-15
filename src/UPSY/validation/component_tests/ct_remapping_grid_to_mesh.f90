@@ -25,16 +25,15 @@ module ct_remapping_grid_to_mesh
 contains
 
   !> Run all the grid-to-meshremapping tests
-  subroutine run_all_grid_to_mesh_remapping_tests( foldername_remapping, test_mesh_filenames, test_grid_filenames)
+  subroutine run_all_grid_to_mesh_remapping_tests( output_dir, test_mesh_filenames, test_grid_filenames)
 
     ! In/output variables:
-    character(len=1024)           , intent(in) :: foldername_remapping
+    character(len=1024)           , intent(in) :: output_dir
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
     character(len=*), dimension(:), intent(in) :: test_grid_filenames
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_grid_to_mesh_remapping_tests'
-    character(len=1024)            :: foldername_grid_to_mesh
     integer                        :: i_mesh, i_grid
     character(len=1024)            :: filename_mesh, filename_grid
 
@@ -44,13 +43,11 @@ contains
     if (par%primary) write(0,*) '    Running grid-to-mesh remapping component tests...'
     if (par%primary) write(0,*) ''
 
-    call create_grid_to_mesh_remapping_output_folder( foldername_remapping, foldername_grid_to_mesh)
-
     do i_mesh = 1, size( test_mesh_filenames)
       filename_mesh = test_mesh_filenames( i_mesh)
       do i_grid = 1, size( test_grid_filenames)
         filename_grid = test_grid_filenames( i_grid)
-        call run_grid_to_mesh_remapping_tests_on_mesh_grid_combo( foldername_grid_to_mesh, filename_mesh, filename_grid)
+        call run_grid_to_mesh_remapping_tests_on_mesh_grid_combo( output_dir, filename_mesh, filename_grid)
       end do
     end do
 
@@ -61,47 +58,11 @@ contains
 
   end subroutine run_all_grid_to_mesh_remapping_tests
 
-  !> Create the output folder for the grid-to-mesh remapping component tests
-  subroutine create_grid_to_mesh_remapping_output_folder( foldername_remapping, foldername_grid_to_mesh)
-
-    ! In/output variables:
-    character(len=*), intent(in)  :: foldername_remapping
-    character(len=*), intent(out) :: foldername_grid_to_mesh
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_grid_to_mesh_remapping_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_grid_to_mesh = trim(foldername_remapping) // '/grid_to_mesh'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_grid_to_mesh) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_grid_to_mesh))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_grid_to_mesh))
-
-    end if
-    call MPI_BCAST( foldername_grid_to_mesh, len(foldername_grid_to_mesh), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_grid_to_mesh_remapping_output_folder
-
   !> Run all the grid-to-mesh remapping tests on one mesh/grid combination
-  subroutine run_grid_to_mesh_remapping_tests_on_mesh_grid_combo( foldername_grid_to_mesh, filename_mesh, filename_grid)
+  subroutine run_grid_to_mesh_remapping_tests_on_mesh_grid_combo( output_dir, filename_mesh, filename_grid)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_grid_to_mesh
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: filename_mesh
     character(len=*), intent(in) :: filename_grid
 
@@ -119,7 +80,7 @@ contains
 
     mesh_name = filename_mesh( index( filename_mesh, '/', back = .true.)+1 : len_trim( filename_mesh)-3)
     grid_name = filename_grid( index( filename_grid, '/', back = .true.)+1 : len_trim( filename_grid)-3)
-    filename = trim( foldername_grid_to_mesh) // '/res_' // &
+    filename = trim( output_dir) // '/res_' // &
       grid_name( 1:len_trim(grid_name)) // '_TO_' // mesh_name( 1:len_trim(mesh_name)) // '.nc'
 
     if (par%primary) write(0,*) '      Running grid-to-mesh remapping tests on mesh-grid combination:'
@@ -145,10 +106,10 @@ contains
     allocate( d_tri(  mesh%ti1:mesh%ti2))
 
     ! First do a 1st order remapping, to test whether it runs
-    call map_from_xy_grid_to_mesh_2D(           grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_mesh, '1st_order_conservative')
+    call map_from_xy_grid_to_mesh_2D(           grid, mesh, output_dir, d_grid_ex, d_mesh, '1st_order_conservative')
     ! Then continue the default 2nd_order_conservative remapping
-    call map_from_xy_grid_to_mesh_2D(           grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_mesh)
-    call map_from_xy_grid_to_mesh_triangles_2D( grid, mesh, foldername_grid_to_mesh, d_grid_ex, d_tri )
+    call map_from_xy_grid_to_mesh_2D(           grid, mesh, output_dir, d_grid_ex, d_mesh)
+    call map_from_xy_grid_to_mesh_triangles_2D( grid, mesh, output_dir, d_grid_ex, d_tri )
 
     ! Write results to NetCDF
     call create_new_netcdf_file_for_writing( filename, ncid)

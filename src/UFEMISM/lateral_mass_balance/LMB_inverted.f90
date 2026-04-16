@@ -53,9 +53,9 @@ contains
 
         if (fraction_margin( vi) > 0.0_dp .and. fraction_margin( vi) < 1.0_dp) then
 
-          LMB( vi) = divQ( vi) & 
+          LMB( vi) = min(0._dp, divQ( vi) & 
             - fraction_margin( vi) * ( &
-              SMB( vi) + BMB( vi) - dHi_dt_target( vi))         
+              SMB( vi) + BMB( vi) - dHi_dt_target( vi)))
 
         else
 

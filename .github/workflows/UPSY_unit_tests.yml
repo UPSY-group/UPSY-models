@@ -17,11 +17,6 @@ jobs:
     # Install all required packages and compile the code
     # ==================================================
 
-      - name: Install MATLAB
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          cache: true
-
       - name: Set up Homebrew (ubuntu)                 # Not installed by default on ubuntu runners
         if: matrix.os == 'ubuntu-latest'
         id: set-up-homebrew
@@ -88,9 +83,10 @@ jobs:
       - name: Run multi-node unit tests
         run: mpiexec  -n 7 --map-by :OVERSUBSCRIBE  build/src/UPSY/UPSY_multinode_unit_test_program
 
-      - name: Check test results
-        uses: matlab-actions/run-command@v3
-        with:
-          command: |
-            addpath('automated_testing/unit_tests/analysis_scripts')
-            verify_unit_tests_results('${{github.workspace}}/automated_testing')
+      - name: Check unit tests (macos)
+        if: matrix.os == 'macos-latest'
+        run: ./automated_testing/check_unit_tests.csh
+
+      - name: Check unit tests (ubuntu)
+        if: matrix.os == 'ubuntu-latest'
+        run: csh automated_testing/check_unit_tests.csh

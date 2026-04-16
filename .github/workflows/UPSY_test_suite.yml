@@ -21,7 +21,6 @@ jobs:
 
   unit_tests:
     uses: ./.github/workflows/UPSY_unit_tests.yml
-    needs: setup_and_cache_Matlab
 
   mesh_creation:
     uses: ./.github/workflows/UPSY_component_test_mesh_creation.yml

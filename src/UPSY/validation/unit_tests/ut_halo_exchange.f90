@@ -632,15 +632,15 @@ subroutine test_halo_exchange_complex_1D( test_name_parent)
   character(len=*), intent(in) :: test_name_parent
 
   ! Local variables:
-  character(len=1024), parameter             :: routine_name = 'test_halo_exchange_complex_1D'
-  character(len=1024), parameter             :: test_name_local = 'complex_1D'
-  character(len=1024)                        :: test_name
-  type(type_par_arr_info)                    :: pai
-  complex*16, dimension(:), contiguous, pointer :: d_nih => null()
-  type(MPI_WIN)                              :: wd_nih
-  integer                                    :: i
-  logical                                    :: test_result
-  integer                                    :: ierr
+  character(len=1024), parameter                 :: routine_name = 'test_halo_exchange_complex_1D'
+  character(len=1024), parameter                 :: test_name_local = 'complex_1D'
+  character(len=1024)                            :: test_name
+  type(type_par_arr_info)                        :: pai
+  complex(dp), dimension(:), contiguous, pointer :: d_nih => null()
+  type(MPI_WIN)                                  :: wd_nih
+  integer                                        :: i
+  logical                                        :: test_result
+  integer                                        :: ierr
 
   ! Add routine to call stack
   call init_routine( routine_name)
@@ -691,16 +691,16 @@ subroutine test_halo_exchange_complex_2D( test_name_parent)
   character(len=*), intent(in) :: test_name_parent
 
   ! Local variables:
-  character(len=1024), parameter               :: routine_name = 'test_halo_exchange_complex_2D'
-  character(len=1024), parameter               :: test_name_local = 'complex_2D'
-  character(len=1024)                          :: test_name
-  type(type_par_arr_info)                      :: pai
-  integer                                      :: nz
-  complex*16, dimension(:,:), contiguous, pointer :: d_nih => null()
-  type(MPI_WIN)                                :: wd_nih
-  integer                                      :: i,k
-  logical                                      :: test_result
-  integer                                      :: ierr
+  character(len=1024), parameter                   :: routine_name = 'test_halo_exchange_complex_2D'
+  character(len=1024), parameter                   :: test_name_local = 'complex_2D'
+  character(len=1024)                              :: test_name
+  type(type_par_arr_info)                          :: pai
+  integer                                          :: nz
+  complex(dp), dimension(:,:), contiguous, pointer :: d_nih => null()
+  type(MPI_WIN)                                    :: wd_nih
+  integer                                          :: i,k
+  logical                                          :: test_result
+  integer                                          :: ierr
 
   ! Add routine to call stack
   call init_routine( routine_name)
@@ -754,16 +754,16 @@ subroutine test_halo_exchange_complex_3D( test_name_parent)
   character(len=*), intent(in) :: test_name_parent
 
   ! Local variables:
-  character(len=1024), parameter                 :: routine_name = 'test_halo_exchange_complex_3D'
-  character(len=1024), parameter                 :: test_name_local = 'complex_3D'
-  character(len=1024)                            :: test_name
-  type(type_par_arr_info)                        :: pai
-  integer                                        :: nz, nl
-  complex*16, dimension(:,:,:), contiguous, pointer :: d_nih => null()
-  type(MPI_WIN)                                  :: wd_nih
-  integer                                        :: i,k,l
-  logical                                        :: test_result
-  integer                                        :: ierr
+  character(len=1024), parameter                     :: routine_name = 'test_halo_exchange_complex_3D'
+  character(len=1024), parameter                     :: test_name_local = 'complex_3D'
+  character(len=1024)                                :: test_name
+  type(type_par_arr_info)                            :: pai
+  integer                                            :: nz, nl
+  complex(dp), dimension(:,:,:), contiguous, pointer :: d_nih => null()
+  type(MPI_WIN)                                      :: wd_nih
+  integer                                            :: i,k,l
+  logical                                            :: test_result
+  integer                                            :: ierr
 
   ! Add routine to call stack
   call init_routine( routine_name)

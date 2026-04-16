@@ -456,15 +456,15 @@ contains
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                     intent(inout) :: win        !< Corresponding MPI window
-    integer,                           intent(in   ) :: n1_new     !< Dimension(s) of memory to be allocated
+    complex(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
+    integer,                            intent(in   ) :: n1_new     !< Dimension(s) of memory to be allocated
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'reallocate_dist_shared_complex_1D'
-    integer                           :: n1_old
-    complex*16, dimension(:), pointer :: p_temp => null()
-    type(MPI_WIN)                     :: w_temp
+    character(len=1024), parameter     :: routine_name = 'reallocate_dist_shared_complex_1D'
+    integer                            :: n1_old
+    complex(dp), dimension(:), pointer :: p_temp => null()
+    type(MPI_WIN)                      :: w_temp
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -501,15 +501,15 @@ contains
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
-    type(MPI_WIN),                       intent(inout) :: win                !< Corresponding MPI window
-    integer,                             intent(in   ) :: n1_new, n2_new     !< Dimension(s) of memory to be allocated
+    complex(dp), dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
+    type(MPI_WIN),                        intent(inout) :: win                !< Corresponding MPI window
+    integer,                              intent(in   ) :: n1_new, n2_new     !< Dimension(s) of memory to be allocated
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'reallocate_dist_shared_complex_2D'
-    integer                             :: n1_old, n2_old
-    complex*16, dimension(:,:), pointer :: p_temp => null()
-    type(MPI_WIN)                       :: w_temp
+    character(len=1024), parameter       :: routine_name = 'reallocate_dist_shared_complex_2D'
+    integer                              :: n1_old, n2_old
+    complex(dp), dimension(:,:), pointer :: p_temp => null()
+    type(MPI_WIN)                        :: w_temp
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -548,15 +548,15 @@ contains
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
-    type(MPI_WIN),                         intent(inout) :: win                        !< Corresponding MPI window
-    integer,                               intent(in   ) :: n1_new, n2_new, n3_new     !< Dimension(s) of memory to be allocated
+    complex(dp), dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
+    type(MPI_WIN),                          intent(inout) :: win                        !< Corresponding MPI window
+    integer,                                intent(in   ) :: n1_new, n2_new, n3_new     !< Dimension(s) of memory to be allocated
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'reallocate_dist_shared_complex_3D'
-    integer                               :: n1_old, n2_old, n3_old
-    complex*16, dimension(:,:,:), pointer :: p_temp => null()
-    type(MPI_WIN)                         :: w_temp
+    character(len=1024), parameter         :: routine_name = 'reallocate_dist_shared_complex_3D'
+    integer                                :: n1_old, n2_old, n3_old
+    complex(dp), dimension(:,:,:), pointer :: p_temp => null()
+    type(MPI_WIN)                          :: w_temp
 
     ! Add routine to path
     call init_routine( routine_name)

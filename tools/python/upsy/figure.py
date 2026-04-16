@@ -132,8 +132,8 @@ class Figure(object):
                 field.ax.plot(field.Timeframe.gl[0,:],field.Timeframe.gl[1,:],c='k',lw=.5)
 
             # Shrink each subpanel as requested
-            field.ax.set_xlim([field.xmin+self.shrink[0], field.xmax-self.shrink[1]])
-            field.ax.set_ylim([field.ymin+self.shrink[2], field.ymax-self.shrink[3]])
+            field.ax.set_xlim([field.xmin+self.shrink[0]*1e3, field.xmax-self.shrink[1]*1e3])
+            field.ax.set_ylim([field.ymin+self.shrink[2]*1e3, field.ymax-self.shrink[3]*1e3])
             field.ax.set_aspect(1)
             field.ax.set_xticks([])
             field.ax.set_yticks([])

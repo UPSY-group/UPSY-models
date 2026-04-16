@@ -11,11 +11,11 @@ if (! -e $output_file) then
 endif
 
 # Find failed tests
-set failed_count = `grep -c "^Unit test failed:" $output_file`
+set failed_count = `grep -c "^ Unit test failed:" $output_file`
 
 if ($failed_count > 0) then
     echo "The following unit tests failed:"
-    grep "^Unit test failed:" $output_file
+    grep "^ Unit test failed:" $output_file
     echo ""
     echo "Unit tests failed. Exiting with error code 1."
     exit 1

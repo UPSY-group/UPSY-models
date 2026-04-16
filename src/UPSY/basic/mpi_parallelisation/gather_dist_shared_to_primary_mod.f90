@@ -6,8 +6,8 @@ module gather_dist_shared_to_primary_mod
   use precisions, only: dp
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use mpi_f08, only: MPI_INTEGER, MPI_ALLGATHER, MPI_GATHERV, &
-    MPI_STATUS, MPI_ANY_TAG, MPI_SEND, MPI_RECV, MPI_DOUBLE_PRECISION, MPI_LOGICAL, MPI_DOUBLE_COMPLEX
+  use mpi_f08, only: MPI_INTEGER, MPI_ALLGATHER, MPI_GATHERV, MPI_COMM_WORLD, &
+    MPI_DOUBLE_PRECISION, MPI_LOGICAL, MPI_DOUBLE_COMPLEX
   use parallel_array_info_type, only: type_par_arr_info
 
   implicit none
@@ -41,10 +41,10 @@ contains
     logical, dimension(1:pai%n), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'gather_dist_shared_to_primary_logical_1D'
-    logical, dimension(:), pointer    :: d_interior
-    integer                           :: ierr, i
-    integer, dimension(1:par%n_nodes) :: counts, displs
+    character(len=*), parameter    :: routine_name = 'gather_dist_shared_to_primary_logical_1D'
+    logical, dimension(:), pointer :: d_loc
+    integer                        :: ierr, i
+    integer, dimension(1:par%n)    :: counts, displs
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -52,35 +52,20 @@ contains
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
 
-    ! We only need to gather the interior of each node
-    d_interior( pai%i1_node:pai%i2_node) => d_nih( pai%i1_node:pai%i2_node)
+    ! Determine ranges owned by each process
+    call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+    if( sum( counts) /= pai%n) call crash('inconsistency between pai%n_loc and pai%n')
 
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_interior
-      call sync
-      call finalise_routine( routine_name)
-      return
-    end if
+    ! Calculate displacements for MPI_GATHERV
+    displs( 1) = 0
+    do i = 2, par%n
+      displs( i) = displs( i-1) + counts( i-1)
+    end do
 
-    if (par%node_primary) then
-
-      ! Determine ranges owned by each process
-      call MPI_ALLGATHER( pai%n_node, 1, MPI_integer, counts, 1, MPI_integer, par%mpi_comm_node_primaries, ierr)
-
-      if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-
-      ! Calculate displacements for MPI_GATHERV
-      displs( 1) = 0
-      do i = 2, par%n_nodes
-        displs( i) = displs( i-1) + counts( i-1)
-      end do
-
-      ! Gather data to the primary
-      call MPI_GATHERV( d_interior, pai%n_node, MPI_LOGICAL, &
-        d_tot, counts, displs, MPI_LOGICAL, 0, par%mpi_comm_node_primaries, ierr)
-
-    end if
+    ! Gather data to the primary
+    d_loc( pai%i1:pai%i2) => d_nih( pai%i1:pai%i2)
+    call MPI_GATHERV( d_loc, pai%n_loc, MPI_LOGICAL, &
+      d_tot, counts, displs, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -96,7 +81,7 @@ contains
     logical, dimension(1:pai%n,1:nz), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'gather_dist_shared_to_primary_logical_2D'
+    character(len=*), parameter    :: routine_name = 'gather_dist_shared_to_primary_logical_2D'
     logical, dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                        :: k
 
@@ -134,7 +119,7 @@ contains
     logical, dimension(1:pai%n,1:nz,1:nl), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'gather_dist_shared_to_primary_logical_3D'
+    character(len=*), parameter    :: routine_name = 'gather_dist_shared_to_primary_logical_3D'
     logical, dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                        :: k,l
 
@@ -175,10 +160,10 @@ contains
     integer, dimension(1:pai%n), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'gather_dist_shared_to_primary_int_1D'
-    integer, dimension(:), pointer    :: d_interior
-    integer                           :: ierr, i
-    integer, dimension(1:par%n_nodes) :: counts, displs
+    character(len=*), parameter    :: routine_name = 'gather_dist_shared_to_primary_int_1D'
+    integer, dimension(:), pointer :: d_loc
+    integer                        :: ierr, i
+    integer, dimension(1:par%n)    :: counts, displs
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -186,35 +171,20 @@ contains
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
 
-    ! We only need to gather the interior of each node
-    d_interior( pai%i1_node:pai%i2_node) => d_nih( pai%i1_node:pai%i2_node)
+    ! Determine ranges owned by each process
+    call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+    if( sum( counts) /= pai%n) call crash('inconsistency between pai%n_loc and pai%n')
 
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_interior
-      call sync
-      call finalise_routine( routine_name)
-      return
-    end if
+    ! Calculate displacements for MPI_GATHERV
+    displs( 1) = 0
+    do i = 2, par%n
+      displs( i) = displs( i-1) + counts( i-1)
+    end do
 
-    if (par%node_primary) then
-
-      ! Determine ranges owned by each process
-      call MPI_ALLGATHER( pai%n_node, 1, MPI_integer, counts, 1, MPI_integer, par%mpi_comm_node_primaries, ierr)
-
-      if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-
-      ! Calculate displacements for MPI_GATHERV
-      displs( 1) = 0
-      do i = 2, par%n_nodes
-        displs( i) = displs( i-1) + counts( i-1)
-      end do
-
-      ! Gather data to the primary
-      call MPI_GATHERV( d_interior, pai%n_node, MPI_INTEGER, &
-        d_tot, counts, displs, MPI_INTEGER, 0, par%mpi_comm_node_primaries, ierr)
-
-    end if
+    ! Gather data to the primary
+    d_loc( pai%i1:pai%i2) => d_nih( pai%i1:pai%i2)
+    call MPI_GATHERV( d_loc, pai%n_loc, MPI_INTEGER, &
+      d_tot, counts, displs, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -230,7 +200,7 @@ contains
     integer, dimension(1:pai%n,1:nz), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'gather_dist_shared_to_primary_int_2D'
+    character(len=*), parameter    :: routine_name = 'gather_dist_shared_to_primary_int_2D'
     integer, dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                        :: k
 
@@ -268,7 +238,7 @@ contains
     integer, dimension(1:pai%n,1:nz,1:nl), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'gather_dist_shared_to_primary_int_3D'
+    character(len=*), parameter    :: routine_name = 'gather_dist_shared_to_primary_int_3D'
     integer, dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                        :: k,l
 
@@ -309,10 +279,10 @@ contains
     real(dp), dimension(1:pai%n), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'gather_dist_shared_to_primary_dp_1D'
-    real(dp), dimension(:), pointer   :: d_interior
-    integer                           :: ierr, i
-    integer, dimension(1:par%n_nodes) :: counts, displs
+    character(len=*), parameter     :: routine_name = 'gather_dist_shared_to_primary_dp_1D'
+    real(dp), dimension(:), pointer :: d_loc
+    integer                         :: ierr, i
+    integer, dimension(1:par%n)     :: counts, displs
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -320,35 +290,20 @@ contains
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
 
-    ! We only need to gather the interior of each node
-    d_interior( pai%i1_node:pai%i2_node) => d_nih( pai%i1_node:pai%i2_node)
+    ! Determine ranges owned by each process
+    call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+    if( sum( counts) /= pai%n) call crash('inconsistency between pai%n_loc and pai%n')
 
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_interior
-      call sync
-      call finalise_routine( routine_name)
-      return
-    end if
+    ! Calculate displacements for MPI_GATHERV
+    displs( 1) = 0
+    do i = 2, par%n
+      displs( i) = displs( i-1) + counts( i-1)
+    end do
 
-    if (par%node_primary) then
-
-      ! Determine ranges owned by each process
-      call MPI_ALLGATHER( pai%n_node, 1, MPI_integer, counts, 1, MPI_integer, par%mpi_comm_node_primaries, ierr)
-
-      if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-
-      ! Calculate displacements for MPI_GATHERV
-      displs( 1) = 0
-      do i = 2, par%n_nodes
-        displs( i) = displs( i-1) + counts( i-1)
-      end do
-
-      ! Gather data to the primary
-      call MPI_GATHERV( d_interior, pai%n_node, MPI_DOUBLE_PRECISION, &
-        d_tot, counts, displs, MPI_DOUBLE_PRECISION, 0, par%mpi_comm_node_primaries, ierr)
-
-    end if
+    ! Gather data to the primary
+    d_loc( pai%i1:pai%i2) => d_nih( pai%i1:pai%i2)
+    call MPI_GATHERV( d_loc, pai%n_loc, MPI_DOUBLE_PRECISION, &
+      d_tot, counts, displs, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -364,7 +319,7 @@ contains
     real(dp), dimension(1:pai%n,1:nz), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter  :: routine_name = 'gather_dist_shared_to_primary_dp_2D'
+    character(len=*), parameter     :: routine_name = 'gather_dist_shared_to_primary_dp_2D'
     real(dp), dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                         :: k
 
@@ -402,7 +357,7 @@ contains
     real(dp), dimension(1:pai%n,1:nz,1:nl), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter  :: routine_name = 'gather_dist_shared_to_primary_dp_3D'
+    character(len=*), parameter     :: routine_name = 'gather_dist_shared_to_primary_dp_3D'
     real(dp), dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                         :: k,l
 
@@ -443,10 +398,10 @@ contains
     complex(dp), dimension(1:pai%n), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter     :: routine_name = 'gather_dist_shared_to_primary_complex_1D'
-    complex(dp), dimension(:), pointer :: d_interior
+    character(len=*), parameter        :: routine_name = 'gather_dist_shared_to_primary_complex_1D'
+    complex(dp), dimension(:), pointer :: d_loc
     integer                            :: ierr, i
-    integer, dimension(1:par%n_nodes)  :: counts, displs
+    integer, dimension(1:par%n)        :: counts, displs
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -454,35 +409,20 @@ contains
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
 
-    ! We only need to gather the interior of each node
-    d_interior( pai%i1_node:pai%i2_node) => d_nih( pai%i1_node:pai%i2_node)
+    ! Determine ranges owned by each process
+    call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
+    if( sum( counts) /= pai%n) call crash('inconsistency between pai%n_loc and pai%n')
 
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_interior
-      call sync
-      call finalise_routine( routine_name)
-      return
-    end if
+    ! Calculate displacements for MPI_GATHERV
+    displs( 1) = 0
+    do i = 2, par%n
+      displs( i) = displs( i-1) + counts( i-1)
+    end do
 
-    if (par%node_primary) then
-
-      ! Determine ranges owned by each process
-      call MPI_ALLGATHER( pai%n_node, 1, MPI_integer, counts, 1, MPI_integer, par%mpi_comm_node_primaries, ierr)
-
-      if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-
-      ! Calculate displacements for MPI_GATHERV
-      displs( 1) = 0
-      do i = 2, par%n_nodes
-        displs( i) = displs( i-1) + counts( i-1)
-      end do
-
-      ! Gather data to the primary
-      call MPI_GATHERV( d_interior, pai%n_node, MPI_DOUBLE_COMPLEX, &
-        d_tot, counts, displs, MPI_DOUBLE_COMPLEX, 0, par%mpi_comm_node_primaries, ierr)
-
-    end if
+    ! Gather data to the primary
+    d_loc( pai%i1:pai%i2) => d_nih( pai%i1:pai%i2)
+    call MPI_GATHERV( d_loc, pai%n_loc, MPI_DOUBLE_COMPLEX, &
+      d_tot, counts, displs, MPI_DOUBLE_COMPLEX, 0, MPI_COMM_WORLD, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -498,7 +438,7 @@ contains
     complex(dp), dimension(1:pai%n,1:nz), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter     :: routine_name = 'gather_dist_shared_to_primary_complex_2D'
+    character(len=*), parameter        :: routine_name = 'gather_dist_shared_to_primary_complex_2D'
     complex(dp), dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                            :: k
 
@@ -536,7 +476,7 @@ contains
     complex(dp), dimension(1:pai%n,1:nz,1:nl), optional, target,     intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter     :: routine_name = 'gather_dist_shared_to_primary_complex_3D'
+    character(len=*), parameter        :: routine_name = 'gather_dist_shared_to_primary_complex_3D'
     complex(dp), dimension(:), pointer :: d_nih_1D, d_tot_1D
     integer                            :: k,l
 

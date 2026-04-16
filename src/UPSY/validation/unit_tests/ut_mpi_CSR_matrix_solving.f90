@@ -65,7 +65,7 @@ contains
     integer,                         intent(in) :: test_number
 
     ! Local variables:
-    character(len=1024), parameter              :: routine_name = 'test_solve_CSR_SOR'
+    character(len=1024), parameter              :: routine_name = 'test_solve_CSR_Jacobi'
     character(len=1024), parameter              :: test_name_local = 'Jacobi'
     character(len=1024)                         :: test_name
     type(type_par_arr_info)                     :: pai
@@ -343,6 +343,7 @@ contains
 
     end if
 
+    pai%n_loc  = pai%i2      + 1 - pai%i1
     pai%n_node = pai%i2_node + 1 - pai%i1_node
     pai%n_nih  = pai%i2_nih  + 1 - pai%i1_nih
     pai%n_hle  = pai%i2_hle  + 1 - pai%i1_hle

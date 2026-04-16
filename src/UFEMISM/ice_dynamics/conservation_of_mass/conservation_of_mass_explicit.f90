@@ -11,6 +11,7 @@ module conservation_of_mass_explicit
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind, &
     calc_flux_limited_timestep, apply_mask_noice_direct, calc_n_interior_neighbours
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
+  use LMB_inverted, only: calc_inverted_LMB
 
   implicit none
 
@@ -21,7 +22,7 @@ module conservation_of_mass_explicit
 contains
 
   subroutine calc_dHi_dt_explicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
-    fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
+    fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, region_name, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a time-explicit discretisation scheme for the ice fluxes
 
@@ -56,7 +57,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   )           :: v_vav_b               ! [m yr^-1] Vertically averaged ice velocities in the y-direction on the b-grid (triangles)
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: LMB                   ! [m yr^-1] Lateral mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: AMB                   ! [m yr^-1] Artificial mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: fraction_margin       ! [0-1]     Sub-grid ice-filled fraction
     logical,  dimension(mesh%vi1:mesh%vi2), intent(in   )           :: mask_noice            ! [-]       Mask of vertices where no ice is allowed
@@ -65,6 +66,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out)           :: Hi_tplusdt            ! [m]       Ice thickness at time t + dt
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out)           :: divQ                  ! [m yr^-1] Horizontal ice flux divergence
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: dHi_dt_target         ! [m yr^-1] Target ice thickness rate of change
+    character(len=3),                       intent(in   )           :: region_name
     integer,  dimension(mesh%vi1:mesh%vi2), intent(in   ), optional :: BC_prescr_mask        ! [-]       Mask of vertices where thickness is prescribed
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ), optional :: BC_prescr_Hi          ! [m]       Prescribed thicknesses
 
@@ -85,6 +87,9 @@ contains
       mesh%pai_V, Hi, mesh%pai_V, divQ, &
       xx_is_hybrid = .false., yy_is_hybrid = .false., &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
+
+    ! Calculate the inverted LMB if required
+    call calc_inverted_LMB( mesh, divQ, fraction_margin, SMB, BMB, dHi_dt_target, LMB, region_name)
 
     ! Calculate rate of ice thickness change dHi/dt
     dHi_dt( mesh%vi1: mesh%vi2) = -divQ( mesh%vi1: mesh%vi2) &

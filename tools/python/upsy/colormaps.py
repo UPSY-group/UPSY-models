@@ -161,7 +161,7 @@ def get_cmap(varname):
 
     elif varname == 'till_friction_angle':
         cmap = copy(plt.get_cmap('cmo.turbid'))
-        norm = mpl.colors.Normalize(vmin=0,vmax=45,clip=True)
+        norm = mpl.colors.LogNorm(vmin=0.01,vmax=45,clip=True)
 
     elif varname == 'dHi_dt':
         cmap = copy(plt.get_cmap('cmo.balance_r'))

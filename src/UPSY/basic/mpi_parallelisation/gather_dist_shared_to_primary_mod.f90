@@ -52,16 +52,6 @@ contains
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
 
-    ! Make sure all other processes have finished writing
-    call sync
-
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_nih
-      call finalise_routine( routine_name)
-      return
-    end if
-
     ! Determine ranges owned by each process
     call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
     if( sum( counts) /= pai%n) call crash('inconsistency between pai%n_loc and pai%n')
@@ -180,16 +170,6 @@ contains
 
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
-
-    ! Make sure all other processes have finished writing
-    call sync
-
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_nih
-      call finalise_routine( routine_name)
-      return
-    end if
 
     ! Determine ranges owned by each process
     call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
@@ -310,16 +290,6 @@ contains
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
 
-    ! Make sure all other processes have finished writing
-    call sync
-
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_nih
-      call finalise_routine( routine_name)
-      return
-    end if
-
     ! Determine ranges owned by each process
     call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
     if( sum( counts) /= pai%n) call crash('inconsistency between pai%n_loc and pai%n')
@@ -438,16 +408,6 @@ contains
 
     call assert( ((par%primary .and. present( d_tot)) .or. &
       (.not. par%primary .and. .not. present( d_tot))), 'd_tot should only be present on primary')
-
-    ! Make sure all other processes have finished writing
-    call sync
-
-    ! Exception when we're running on a single node
-    if (par%n_nodes == 1) then
-      if (par%primary) d_tot = d_nih
-      call finalise_routine( routine_name)
-      return
-    end if
 
     ! Determine ranges owned by each process
     call MPI_ALLGATHER( pai%n_loc, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)

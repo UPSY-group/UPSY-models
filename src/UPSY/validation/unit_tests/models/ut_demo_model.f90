@@ -71,6 +71,12 @@ contains
 
     ! Allocate the demo model and test if that worked
     call a1%allocate( a1%ct_allocate( 'demo_model_a1', 'aaa', mesh1, nz))
+    write(0,*) 'Process: ', par%i, ' - name       : ', trim( a1%name())       , ' (demo_model_a1)'
+    write(0,*) 'Process: ', par%i, ' - region_name: ', trim( a1%region_name()), ' (aaa)'
+    write(0,*) 'Process: ', par%i, ' - mesh name  : ', trim( a1%mesh%name)    , ' (', trim( mesh1%name), ')'
+    write(0,*) 'Process: ', par%i, ' - size H,1   : ', size( a1%s%H   ,1)     , ' (', mesh1%pai_V%n_nih, ')'
+    write(0,*) 'Process: ', par%i, ' - size u,1   : ', size( a1%s%u_3D,1)     , ' (', mesh1%pai_Tri%n_nih, ')'
+    write(0,*) 'Process: ', par%i, ' - size u,2   : ', size( a1%s%u_3D,2)     , ' (', nz, ')'
     call unit_test( ( &
       trim( a1%name())        == 'demo_model_a1' .and. &
       trim( a1%region_name()) == 'aaa' .and. &

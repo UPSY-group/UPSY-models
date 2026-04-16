@@ -64,10 +64,7 @@ contains
 
       ! Determine ranges owned by each process
       call MPI_ALLGATHER( pai%n_node, 1, MPI_integer, counts, 1, MPI_integer, par%mpi_comm_node_primaries, ierr)
-
-#if (DO_ASSERTIONS)
       if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-#endif
 
       ! Calculate displacements for MPI_GATHERV
       displs( 1) = 0
@@ -177,10 +174,7 @@ contains
 
       ! Determine ranges owned by each process
       call MPI_ALLGATHER( pai%n_node, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, par%mpi_comm_node_primaries, ierr)
-
-#if (DO_ASSERTIONS)
       if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-#endif
 
       ! Calculate displacements for MPI_GATHERV
       displs( 1) = 0
@@ -290,10 +284,7 @@ contains
 
       ! Determine ranges owned by each process
       call MPI_ALLGATHER( pai%n_node, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, par%mpi_comm_node_primaries, ierr)
-
-#if (DO_ASSERTIONS)
       if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-#endif
 
       ! Calculate displacements for MPI_GATHERV
       displs( 1) = 0
@@ -372,15 +363,15 @@ contains
   subroutine gather_dist_shared_to_all_complex_1D( pai, d_nih, d_tot)
 
     ! In/output variables:
-    type(type_par_arr_info),                              intent(in   ) :: pai
-    complex*16, dimension(pai%i1_nih:pai%i2_nih), target, intent(in   ) :: d_nih
-    complex*16, dimension(1:pai%n), target,               intent(  out) :: d_tot
+    type(type_par_arr_info),                               intent(in   ) :: pai
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih), target, intent(in   ) :: d_nih
+    complex(dp), dimension(1:pai%n), target,               intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'gather_dist_shared_to_all_complex_1D'
-    complex*16, dimension(:), pointer :: d_interior
-    integer                           :: ierr, i
-    integer, dimension(1:par%n_nodes) :: counts, displs
+    character(len=1024), parameter     :: routine_name = 'gather_dist_shared_to_all_complex_1D'
+    complex(dp), dimension(:), pointer :: d_interior
+    integer                            :: ierr, i
+    integer, dimension(1:par%n_nodes)  :: counts, displs
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -403,10 +394,7 @@ contains
 
       ! Determine ranges owned by each process
       call MPI_ALLGATHER( pai%n_node, 1, MPI_INTEGER, counts, 1, MPI_INTEGER, par%mpi_comm_node_primaries, ierr)
-
-#if (DO_ASSERTIONS)
       if( sum( counts) /= pai%n) call crash('combined sizes of d_partial dont match size of d_tot')
-#endif
 
       ! Calculate displacements for MPI_GATHERV
       displs( 1) = 0
@@ -429,15 +417,15 @@ contains
   subroutine gather_dist_shared_to_all_complex_2D( pai, nz, d_nih, d_tot)
 
     ! In/output variables:
-    type(type_par_arr_info),                                   intent(in   ) :: pai
-    integer,                                                   intent(in   ) :: nz
-    complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz), target, intent(in   ) :: d_nih
-    complex*16, dimension(1:pai%n,1:nz), target,               intent(  out) :: d_tot
+    type(type_par_arr_info),                                    intent(in   ) :: pai
+    integer,                                                    intent(in   ) :: nz
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz), target, intent(in   ) :: d_nih
+    complex(dp), dimension(1:pai%n,1:nz), target,               intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'gather_dist_shared_to_all_complex_2D'
-    complex*16, dimension(:), pointer :: d_nih_1D, d_tot_1D
-    integer                           :: k
+    character(len=1024), parameter     :: routine_name = 'gather_dist_shared_to_all_complex_2D'
+    complex(dp), dimension(:), pointer :: d_nih_1D, d_tot_1D
+    integer                            :: k
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -456,15 +444,15 @@ contains
   subroutine gather_dist_shared_to_all_complex_3D( pai, nz, nl, d_nih, d_tot)
 
     ! In/output variables:
-    type(type_par_arr_info),                                        intent(in   ) :: pai
-    integer,                                                        intent(in   ) :: nz, nl
-    complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), target, intent(in   ) :: d_nih
-    complex*16, dimension(1:pai%n,1:nz,1:nl), target,               intent(  out) :: d_tot
+    type(type_par_arr_info),                                         intent(in   ) :: pai
+    integer,                                                         intent(in   ) :: nz, nl
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), target, intent(in   ) :: d_nih
+    complex(dp), dimension(1:pai%n,1:nz,1:nl), target,               intent(  out) :: d_tot
 
     ! Local variables:
-    character(len=1024), parameter    :: routine_name = 'gather_dist_shared_to_all_complex_3D'
-    complex*16, dimension(:), pointer :: d_nih_1D, d_tot_1D
-    integer                           :: k,l
+    character(len=1024), parameter     :: routine_name = 'gather_dist_shared_to_all_complex_3D'
+    complex(dp), dimension(:), pointer :: d_nih_1D, d_tot_1D
+    integer                            :: k,l
 
     ! Add routine to path
     call init_routine( routine_name)

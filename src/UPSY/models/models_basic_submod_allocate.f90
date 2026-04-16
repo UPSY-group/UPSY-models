@@ -40,6 +40,7 @@ contains
 
     ! Set model metadata and mesh
     call self%set_name       ( context%name)
+    write(0,*) 'model%allocate_common: = ', self%name_val
     call self%set_region_name( context%region_name)
     self%mesh => context%mesh
 

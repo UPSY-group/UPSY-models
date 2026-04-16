@@ -9,8 +9,9 @@ contains
     type(type_mesh), target,    intent(in) :: mesh
     integer,                    intent(in) :: nz
     type(type_demo_model_context_allocate) :: context
-    context%name        =  name
-    context%region_name =  region_name
+    context%name        =  trim( name)
+    write(0,*) 'demo_model%ct_allocate: name = ', context%name
+    context%region_name =  trim( region_name)
     context%mesh        => mesh
     context%nz          =  nz
   end function ct_allocate

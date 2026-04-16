@@ -551,6 +551,8 @@ class DiffField(object):
             vmax = self.vmax
 
         self.norm = mpl.colors.Normalize(vmin=-vmax,vmax=vmax,clip=True)
+        self.scalarmap = mpl.cm.ScalarMappable(norm=self.norm,cmap=self.cmap) 
+
         return
 
     def get_data(self):
@@ -597,7 +599,7 @@ class DiffField(object):
         elif 'ti' in self.data.dims:
             if not self.Mesh.got_triangles:
                 self.Mesh.get_triangles()
-            self.pcoll = PatchCollection(self.Mesh.triangles, fc=pcols)
+            self.pcoll = PolyCollection(self.Mesh.triangles, fc=pcols)
         else:
             print(f'ERROR: variable {varname} is not on vertices or triangles')
 

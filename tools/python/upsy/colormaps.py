@@ -165,7 +165,7 @@ def get_cmap(varname):
 
     elif varname == 'dHi_dt':
         cmap = copy(plt.get_cmap('cmo.balance_r'))
-        norm = mpl.colors.Normalize(vmin=-10,vmax=10,clip=True)
+        norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
 
     elif varname == 'divQ':
         cmap = copy(plt.get_cmap('cmo.diff'))
@@ -182,6 +182,10 @@ def get_cmap(varname):
     elif varname == 'dHi_eff':
         cmap = copy(plt.get_cmap('cmo.balance'))
         norm = mpl.colors.SymLogNorm(.01, vmin=-100, vmax=100, linscale=.01)
+
+    elif varname == 'LMB':
+        cmap = copy(plt.get_cmap('cmo.curl_r'))
+        norm = mpl.colors.Normalize(vmin=-100,vmax=100,clip=True)
 
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')

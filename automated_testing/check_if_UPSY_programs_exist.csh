@@ -9,6 +9,7 @@ set expected_programs = ( \
     UPSY_component_test_program_mesh_focussing \
     UPSY_component_test_program_mesh_remapping_mesh_grid \
     UPSY_component_test_program_mesh_remapping_mesh_mesh \
+    HENKIEDEPENKIE \
 )
 
 set all_exist = 1

@@ -85,8 +85,8 @@ jobs:
 
       - name: Check unit tests (macos)
         if: matrix.os == 'macos-latest'
-        run: ./check_unit_tests.csh
+        run: ./automated_testing/check_unit_tests.csh
 
       - name: Check unit tests (ubuntu)
         if: matrix.os == 'ubuntu-latest'
-        run: csh check_unit_tests.csh
+        run: csh automated_testing/check_unit_tests.csh

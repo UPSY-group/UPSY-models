@@ -83,15 +83,15 @@ contains
     ! Initialise the demo model and test if that worked
     call a1%initialise( a1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( a1%s%H) == H0 .and. &
-      minval( a1%till_friction_angle) == till_friction_angle_uniform .and. &
-      maxval( a1%till_friction_angle) == till_friction_angle_uniform &
+      minval( a1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
+      minval( a1%till_friction_angle( mesh1%pai_V%i1: mesh1%pai_V%i2)) == till_friction_angle_uniform .and. &
+      maxval( a1%till_friction_angle( mesh1%pai_V%i1: mesh1%pai_V%i2)) == till_friction_angle_uniform &
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
     call a1%run( a1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( a1%s%H) == H0 + dH &
+      minval( a1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
@@ -172,16 +172,16 @@ contains
     ! Initialise the demo model and test if that worked
     call b1%initialise( b1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( b1%s%H) == H0 .and. &
-      minval( b1%beta_sq) == beta_sq_uniform .and. &
-      maxval( b1%beta_sq) == beta_sq_uniform &
+      minval( b1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
+      minval( b1%beta_sq( mesh1%pai_V%i1: mesh1%pai_V%i2)) == beta_sq_uniform .and. &
+      maxval( b1%beta_sq( mesh1%pai_V%i1: mesh1%pai_V%i2)) == beta_sq_uniform &
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
     call b1%run( b1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( b1%s%H) == H_new .and. &
-      maxval( b1%s%H) == H_new &
+      minval( b1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new .and. &
+      maxval( b1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
@@ -263,13 +263,13 @@ contains
     ! Initialise the demo model and test if that worked
     call demo1%initialise( demo1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( demo1%s%H) == H0 &
+      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
     call demo1%run( demo1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( demo1%s%H) == H0 + dH &
+      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
@@ -351,13 +351,13 @@ contains
     ! Initialise the demo model and test if that worked
     call demo1%initialise( demo1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( demo1%s%H) == H0 &
+      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
     call demo1%run( demo1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( demo1%s%H) == H_new &
+      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked

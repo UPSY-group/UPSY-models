@@ -125,6 +125,9 @@ CONTAINS
           !No need to do anything
         case ('laddie')
           call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+          if (C%laddie_keep_polynyas_closed) then
+            call keep_polynyas_closed(mesh, BMB%forcing, refgeo)
+          end if
           call initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .false.)
           call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, .true., .false.)
           BMB%t_next_reinit = BMB%t_next_reinit + C%dt_BMB_reinit
@@ -155,6 +158,9 @@ CONTAINS
         CALL run_BMB_model_laddie( mesh, ice, BMB, time, .FALSE.)
       CASE ('laddie')
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+        if (C%laddie_keep_polynyas_closed) then
+          call keep_polynyas_closed(mesh, BMB%forcing, refgeo)
+        end if  
         CALL run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, is_initial, .FALSE.)
 
         DO vi = mesh%vi1, mesh%vi2
@@ -310,6 +316,9 @@ CONTAINS
       CASE ('laddie')
         call allocate_laddie_forcing( mesh, BMB%forcing)
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+        if (C%laddie_keep_polynyas_closed) then
+          call keep_polynyas_closed(mesh, BMB%forcing, refgeo_PD)
+        end if
         call initialise_transects_SGD( mesh, BMB%forcing)
         CALL initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .FALSE.)
       CASE DEFAULT
@@ -860,6 +869,46 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine remap_laddie_forcing
+
+
+  subroutine keep_polynyas_closed(mesh, forcing, refgeo)
+    !   Ensure that vertices where ice thickness in refgeo exists (Hi > 0)
+    !   but are now ocean because of melt-through are not treated as open
+    !   ocean in the LADDIE forcing fields.
+    !
+    !   Such points are kept within the LADDIE domain by enforcing a minimum
+    !   ice thickness and updating masks accordingly.
+
+    ! In/output variables
+    type(type_mesh),               intent(in   ) :: mesh
+    type(type_laddie_forcing),     intent(inout) :: forcing
+    type(type_reference_geometry), intent(in   ) :: refgeo
+
+    ! Local variables
+    character(len=*), parameter :: routine_name = 'keep_polynyas_closed'
+    integer                     :: vi
+
+    call init_routine(routine_name)
+    write(*,*) 'Enter keep_polynyas_closed routines'
+
+    do vi = mesh%vi1, mesh%vi2
+      ! Condition: Ice exists in reference geometry, but Hib indicates open ocean
+      if (refgeo%Hi(vi) > 0._dp .and. abs(forcing%Hib(vi)) < 0.1_dp) then
+
+        ! Enforce minimum draft depth (negative Hib convention)
+        forcing%Hib(vi) = min(forcing%Hib(vi), -C%Hi_min * 0.9_dp)
+
+        ! Update masks:
+        forcing%mask_icefree_ocean(vi) = .false.
+        forcing%mask_floating_ice(vi)  = .true.
+
+        print*, 'New Hib =', forcing%Hib(vi)
+      end if
+    end do
+
+    call finalise_routine(routine_name)
+
+  end subroutine keep_polynyas_closed
 
 
   subroutine Frankas_BMB_transition

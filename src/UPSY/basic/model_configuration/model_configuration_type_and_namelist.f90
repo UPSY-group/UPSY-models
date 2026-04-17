@@ -1031,6 +1031,8 @@ module model_configuration_type_and_namelist
     logical             :: apply_SGD_boost_every_10_years_config        = .false.                          ! Enable/disable periodic SGD boost every 10 years when choice_laddie_SGD_config is 'read_from_file'
     real(dp)            :: SGD_boost_factor_config                      = 10._dp                           ! Multiplicative factor applied to laddie%SGD during the boost period
 
+    ! Polynyas closed
+    logical             :: laddie_keep_polynyas_closed_config           = .false.
 
   ! == Lateral mass balance
   ! =======================
@@ -2227,6 +2229,8 @@ module model_configuration_type_and_namelist
     logical             :: apply_SGD_boost_every_10_years
     real(dp)            :: SGD_boost_factor
 
+    logical             :: laddie_keep_polynyas_closed
+
   ! == Lateral mass balance
   ! =======================
 
@@ -3083,6 +3087,7 @@ contains
       distribute_SGD_config                                       , &
       apply_SGD_boost_every_10_years_config                       , &
       SGD_boost_factor_config                                     , & 
+      laddie_keep_polynyas_closed_config                          , &
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
       dt_LMB_config                                               , &
@@ -4263,6 +4268,7 @@ contains
     C%apply_SGD_boost_every_10_years                         = apply_SGD_boost_every_10_years_config
     C%SGD_boost_factor                                       = SGD_boost_factor_config
 
+    C%laddie_keep_polynyas_closed                            = laddie_keep_polynyas_closed_config
     ! == Lateral mass balance
     ! =======================
 

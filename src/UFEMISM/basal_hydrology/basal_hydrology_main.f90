@@ -74,7 +74,6 @@ contains
       end do
     case ('Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)
-      print*, 'ENTERING the MARTIN2011 BASAL HYDROLOGY'
       ! Calculate overburden and effective pressure
       do vi = mesh%vi1, mesh%vi2
         ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)

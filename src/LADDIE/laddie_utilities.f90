@@ -131,27 +131,21 @@ CONTAINS
 
     ! Thickness
     if (associated( laddie%dH_dt )) call deallocate_dist_shared( laddie%dH_dt , laddie%wdH_dt )
-    call allocate_dist_shared( laddie%dH_dt         , laddie%wdH_dt         , mesh%pai_V%n_nih  )    ! [m]             change
-    laddie%dH_dt         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%dH_dt
+    call allocate_dist_shared( laddie%dH_dt         , laddie%wdH_dt         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m]             change
 
     ! Temperatures
     if (associated( laddie%T_amb    )) call deallocate_dist_shared( laddie%T_amb    , laddie%wT_amb    )
     if (associated( laddie%T_base   )) call deallocate_dist_shared( laddie%T_base   , laddie%wT_base   )
     if (associated( laddie%T_freeze )) call deallocate_dist_shared( laddie%T_freeze , laddie%wT_freeze )
-    call allocate_dist_shared( laddie%T_amb         , laddie%wT_amb         , mesh%pai_V%n_nih  )    ! [degC]          Temperature layer bottom
-    call allocate_dist_shared( laddie%T_base        , laddie%wT_base        , mesh%pai_V%n_nih  )    ! [degC]          Temperature ice shelf base
-    call allocate_dist_shared( laddie%T_freeze      , laddie%wT_freeze      , mesh%pai_V%n_nih  )    ! [degC]          Temperature freezing
-    laddie%T_amb         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%T_amb
-    laddie%T_base        ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%T_base
-    laddie%T_freeze      ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%T_freeze
+    call allocate_dist_shared( laddie%T_amb         , laddie%wT_amb         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [degC]          Temperature layer bottom
+    call allocate_dist_shared( laddie%T_base        , laddie%wT_base        , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [degC]          Temperature ice shelf base
+    call allocate_dist_shared( laddie%T_freeze      , laddie%wT_freeze      , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [degC]          Temperature freezing
 
     ! Salinities
     if (associated( laddie%S_amb  )) call deallocate_dist_shared( laddie%S_amb  , laddie%wS_amb  )
     if (associated( laddie%S_base )) call deallocate_dist_shared( laddie%S_base , laddie%wS_base )
-    call allocate_dist_shared( laddie%S_amb         , laddie%wS_amb         , mesh%pai_V%n_nih  )    ! [PSU]           Salinity layer bottom
-    call allocate_dist_shared( laddie%S_base        , laddie%wS_base        , mesh%pai_V%n_nih  )    ! [PSU]           Salinity ice shelf base
-    laddie%S_amb         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%S_amb
-    laddie%S_base        ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%S_base
+    call allocate_dist_shared( laddie%S_amb         , laddie%wS_amb         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [PSU]           Salinity layer bottom
+    call allocate_dist_shared( laddie%S_base        , laddie%wS_base        , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [PSU]           Salinity ice shelf base
 
     ! Densities and buoyancies
     if (associated( laddie%rho         )) call deallocate_dist_shared( laddie%rho         , laddie%wrho         )
@@ -160,37 +154,26 @@ CONTAINS
     if (associated( laddie%Hdrho_amb   )) call deallocate_dist_shared( laddie%Hdrho_amb   , laddie%wHdrho_amb   )
     if (associated( laddie%Hdrho_amb_b )) call deallocate_dist_shared( laddie%Hdrho_amb_b , laddie%wHdrho_amb_b )
     if (associated( laddie%drho_base   )) call deallocate_dist_shared( laddie%drho_base   , laddie%wdrho_base   )
-    call allocate_dist_shared( laddie%rho           , laddie%wrho           , mesh%pai_V%n_nih  )    ! [kg m^-3]       Layer density
-    call allocate_dist_shared( laddie%rho_amb       , laddie%wrho_amb       , mesh%pai_V%n_nih  )    ! [kg m^-3]       Ambient water density
-    call allocate_dist_shared( laddie%drho_amb      , laddie%wdrho_amb      , mesh%pai_V%n_nih  )    ! []              Buoyancy at layer bottom
-    call allocate_dist_shared( laddie%Hdrho_amb     , laddie%wHdrho_amb     , mesh%pai_V%n_nih  )    ! []              Depth-integrated buoyancy at layer bottom
-    call allocate_dist_shared( laddie%Hdrho_amb_b   , laddie%wHdrho_amb_b   , mesh%pai_Tri%n_nih)    ! []              Depth-integrated buoyancy at layer bottom
-    call allocate_dist_shared( laddie%drho_base     , laddie%wdrho_base     , mesh%pai_V%n_nih  )    ! []              Buoyancy at ice base
-    laddie%rho           ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%rho
-    laddie%rho_amb       ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%rho_amb
-    laddie%drho_amb      ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%drho_amb
-    laddie%Hdrho_amb     ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%Hdrho_amb
-    laddie%Hdrho_amb_b   ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%Hdrho_amb_b
-    laddie%drho_base     ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%drho_base
+    call allocate_dist_shared( laddie%rho           , laddie%wrho           , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [kg m^-3]       Layer density
+    call allocate_dist_shared( laddie%rho_amb       , laddie%wrho_amb       , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [kg m^-3]       Ambient water density
+    call allocate_dist_shared( laddie%drho_amb      , laddie%wdrho_amb      , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! []              Buoyancy at layer bottom
+    call allocate_dist_shared( laddie%Hdrho_amb     , laddie%wHdrho_amb     , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! []              Depth-integrated buoyancy at layer bottom
+    call allocate_dist_shared( laddie%Hdrho_amb_b   , laddie%wHdrho_amb_b   , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! []              Depth-integrated buoyancy at layer bottom
+    call allocate_dist_shared( laddie%drho_base     , laddie%wdrho_base     , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! []              Buoyancy at ice base
 
     ! Friction velocity
     if (associated( laddie%u_star )) call deallocate_dist_shared( laddie%u_star , laddie%wu_star )
-    call allocate_dist_shared( laddie%u_star        , laddie%wu_star        , mesh%pai_V%n_nih  )    ! [m s^-1]        Friction velocity
-    laddie%u_star        ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%u_star
+    call allocate_dist_shared( laddie%u_star        , laddie%wu_star        , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Friction velocity
 
     ! Physical parameter fields
     if (associated( laddie%gamma_T )) call deallocate_dist_shared( laddie%gamma_T , laddie%wgamma_T )
     if (associated( laddie%gamma_S )) call deallocate_dist_shared( laddie%gamma_S , laddie%wgamma_S )
     if (associated( laddie%A_h     )) call deallocate_dist_shared( laddie%A_h     , laddie%wA_h     )
     if (associated( laddie%K_h     )) call deallocate_dist_shared( laddie%K_h     , laddie%wK_h     )
-    call allocate_dist_shared( laddie%gamma_T       , laddie%wgamma_T       , mesh%pai_V%n_nih  )    ! []              Turbulent heat exchange coefficient
-    call allocate_dist_shared( laddie%gamma_S       , laddie%wgamma_S       , mesh%pai_V%n_nih  )    ! []              Turbulent salt exchange coefficient
-    call allocate_dist_shared( laddie%A_h           , laddie%wA_h           , mesh%pai_Tri%n_nih)    ! [m^2 s^-1]      Horizontal laplacian viscosity
-    call allocate_dist_shared( laddie%K_h           , laddie%wK_h           , mesh%pai_V%n_nih  )    ! [m^2 s^-1]      Horizontal diffusivity
-    laddie%gamma_T       ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%gamma_T
-    laddie%gamma_S       ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%gamma_S
-    laddie%A_h           ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%A_h
-    laddie%K_h           ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%K_h
+    call allocate_dist_shared( laddie%gamma_T       , laddie%wgamma_T       , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! []              Turbulent heat exchange coefficient
+    call allocate_dist_shared( laddie%gamma_S       , laddie%wgamma_S       , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! []              Turbulent salt exchange coefficient
+    call allocate_dist_shared( laddie%A_h           , laddie%wA_h           , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^2 s^-1]      Horizontal laplacian viscosity
+    call allocate_dist_shared( laddie%K_h           , laddie%wK_h           , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m^2 s^-1]      Horizontal diffusivity
 
     ! Vertical rates
     if (associated( laddie%melt      )) call deallocate_dist_shared( laddie%melt      , laddie%wmelt      )
@@ -199,18 +182,12 @@ CONTAINS
     if (associated( laddie%detr      )) call deallocate_dist_shared( laddie%detr      , laddie%wdetr      )
     if (associated( laddie%entr_tot  )) call deallocate_dist_shared( laddie%entr_tot  , laddie%wentr_tot  )
     if (associated( laddie%SGD       )) call deallocate_dist_shared( laddie%SGD       , laddie%wSGD       )
-    call allocate_dist_shared( laddie%melt          , laddie%wmelt          , mesh%pai_V%n_nih  )    ! [m s^-1]        Melting / freezing rate
-    call allocate_dist_shared( laddie%entr          , laddie%wentr          , mesh%pai_V%n_nih  )    ! [m s^-1]        Entrainment
-    call allocate_dist_shared( laddie%entr_dmin     , laddie%wentr_dmin     , mesh%pai_V%n_nih  )    ! [m s^-1]        Entrainment for D_min
-    call allocate_dist_shared( laddie%detr          , laddie%wdetr          , mesh%pai_V%n_nih  )    ! [m s^-1]        Detrainment
-    call allocate_dist_shared( laddie%entr_tot      , laddie%wentr_tot      , mesh%pai_V%n_nih  )    ! [m s^-1]        Total (net) entrainment
-    call allocate_dist_shared( laddie%SGD           , laddie%wSGD           , mesh%pai_V%n_nih  )    ! [m s^-1]        Subglacial discharge
-    laddie%melt          ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%melt
-    laddie%entr          ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%entr
-    laddie%entr_dmin     ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%entr_dmin
-    laddie%detr          ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%detr
-    laddie%entr_tot      ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%entr_tot
-    laddie%SGD           ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%SGD
+    call allocate_dist_shared( laddie%melt          , laddie%wmelt          , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Melting / freezing rate
+    call allocate_dist_shared( laddie%entr          , laddie%wentr          , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Entrainment
+    call allocate_dist_shared( laddie%entr_dmin     , laddie%wentr_dmin     , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Entrainment for D_min
+    call allocate_dist_shared( laddie%detr          , laddie%wdetr          , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Detrainment
+    call allocate_dist_shared( laddie%entr_tot      , laddie%wentr_tot      , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Total (net) entrainment
+    call allocate_dist_shared( laddie%SGD           , laddie%wSGD           , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m s^-1]        Subglacial discharge
 
     ! Horizontal fluxes
     if (associated( laddie%divQH )) call deallocate_dist_shared( laddie%divQH , laddie%wdivQH )
@@ -218,32 +195,23 @@ CONTAINS
     if (associated( laddie%divQV )) call deallocate_dist_shared( laddie%divQV , laddie%wdivQV )
     if (associated( laddie%divQT )) call deallocate_dist_shared( laddie%divQT , laddie%wdivQT )
     if (associated( laddie%divQS )) call deallocate_dist_shared( laddie%divQS , laddie%wdivQS )
-    call allocate_dist_shared( laddie%divQH         , laddie%wdivQH         , mesh%pai_V%n_nih  )    ! [m^3 s^-1]      Divergence of layer thickness
-    call allocate_dist_shared( laddie%divQU         , laddie%wdivQU         , mesh%pai_Tri%n_nih)    ! [m^4 s^-2]      Divergence of momentum
-    call allocate_dist_shared( laddie%divQV         , laddie%wdivQV         , mesh%pai_Tri%n_nih)    ! [m^4 s^-2]
-    call allocate_dist_shared( laddie%divQT         , laddie%wdivQT         , mesh%pai_V%n_nih  )    ! [degC m^3 s^-1] Divergence of heat
-    call allocate_dist_shared( laddie%divQS         , laddie%wdivQS         , mesh%pai_V%n_nih  )    ! [PSU m^3 s^-1]  Divergence of salt
-    laddie%divQH         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%divQH
-    laddie%divQU         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%divQU
-    laddie%divQV         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%divQV
-    laddie%divQT         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%divQT
-    laddie%divQS         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%divQS
+    call allocate_dist_shared( laddie%divQH         , laddie%wdivQH         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m^3 s^-1]      Divergence of layer thickness
+    call allocate_dist_shared( laddie%divQU         , laddie%wdivQU         , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^4 s^-2]      Divergence of momentum
+    call allocate_dist_shared( laddie%divQV         , laddie%wdivQV         , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^4 s^-2]
+    call allocate_dist_shared( laddie%divQT         , laddie%wdivQT         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [degC m^3 s^-1] Divergence of heat
+    call allocate_dist_shared( laddie%divQS         , laddie%wdivQS         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [PSU m^3 s^-1]  Divergence of salt
 
     ! Viscosities
     if (associated( laddie%viscU )) call deallocate_dist_shared( laddie%viscU , laddie%wviscU )
     if (associated( laddie%viscV )) call deallocate_dist_shared( laddie%viscV , laddie%wviscV )
-    call allocate_dist_shared( laddie%viscU         , laddie%wviscU         , mesh%pai_Tri%n_nih)    ! [m^2 s^-2]      Horizontal viscosity term
-    call allocate_dist_shared( laddie%viscV         , laddie%wviscV         , mesh%pai_Tri%n_nih)    ! [m^2 s^-2]
-    laddie%viscU         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%viscU
-    laddie%viscV         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%viscV
+    call allocate_dist_shared( laddie%viscU         , laddie%wviscU         , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^2 s^-2]      Horizontal viscosity term
+    call allocate_dist_shared( laddie%viscV         , laddie%wviscV         , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^2 s^-2]
 
     ! Diffusivities
     if (associated( laddie%diffT )) call deallocate_dist_shared( laddie%diffT , laddie%wdiffT )
     if (associated( laddie%diffS )) call deallocate_dist_shared( laddie%diffS , laddie%wdiffS )
-    call allocate_dist_shared( laddie%diffT         , laddie%wdiffT         , mesh%pai_V%n_nih  )    ! [degC m s^-1]   Horizontal diffusivity of heat
-    call allocate_dist_shared( laddie%diffS         , laddie%wdiffS         , mesh%pai_V%n_nih  )    ! [PSU m s^-1]    Horizontal diffusivity of salt
-    laddie%diffT         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%diffT
-    laddie%diffS         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%diffS
+    call allocate_dist_shared( laddie%diffT         , laddie%wdiffT         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [degC m s^-1]   Horizontal diffusivity of heat
+    call allocate_dist_shared( laddie%diffS         , laddie%wdiffS         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [PSU m s^-1]    Horizontal diffusivity of salt
 
     ! RHS terms
     if (associated( laddie%ddrho_amb_dx_b )) call deallocate_dist_shared( laddie%ddrho_amb_dx_b , laddie%wddrho_amb_dx_b )
@@ -251,32 +219,24 @@ CONTAINS
     if (associated( laddie%dH_dx_b        )) call deallocate_dist_shared( laddie%dH_dx_b        , laddie%wdH_dx_b        )
     if (associated( laddie%dH_dy_b        )) call deallocate_dist_shared( laddie%dH_dy_b        , laddie%wdH_dy_b        )
     if (associated( laddie%detr_b         )) call deallocate_dist_shared( laddie%detr_b         , laddie%wdetr_b         )
-    call allocate_dist_shared( laddie%ddrho_amb_dx_b, laddie%wddrho_amb_dx_b, mesh%pai_Tri%n_nih)    ! [m^-1]          Horizontal derivative of buoyancy
-    call allocate_dist_shared( laddie%ddrho_amb_dy_b, laddie%wddrho_amb_dy_b, mesh%pai_Tri%n_nih)    ! [m^-1]
-    call allocate_dist_shared( laddie%dH_dx_b       , laddie%wdH_dx_b       , mesh%pai_Tri%n_nih)    ! [m^-2]          Horizontal derivative of thickness
-    call allocate_dist_shared( laddie%dH_dy_b       , laddie%wdH_dy_b       , mesh%pai_Tri%n_nih)    ! [m^-2]
-    call allocate_dist_shared( laddie%detr_b        , laddie%wdetr_b        , mesh%pai_Tri%n_nih)    ! [m s^-1]        Detrainment on b grid
-    laddie%ddrho_amb_dx_b( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%ddrho_amb_dx_b
-    laddie%ddrho_amb_dy_b( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%ddrho_amb_dy_b
-    laddie%dH_dx_b       ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%dH_dx_b
-    laddie%dH_dy_b       ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%dH_dy_b
-    laddie%detr_b        ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%detr_b
+    call allocate_dist_shared( laddie%ddrho_amb_dx_b, laddie%wddrho_amb_dx_b, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^-1]          Horizontal derivative of buoyancy
+    call allocate_dist_shared( laddie%ddrho_amb_dy_b, laddie%wddrho_amb_dy_b, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^-1]
+    call allocate_dist_shared( laddie%dH_dx_b       , laddie%wdH_dx_b       , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^-2]          Horizontal derivative of thickness
+    call allocate_dist_shared( laddie%dH_dy_b       , laddie%wdH_dy_b       , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m^-2]
+    call allocate_dist_shared( laddie%detr_b        , laddie%wdetr_b        , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! [m s^-1]        Detrainment on b grid
 
     ! Forward-Backward Runge-Kutta 3 scheme
     if (associated( laddie%Hstar )) call deallocate_dist_shared( laddie%Hstar , laddie%wHstar )
-    call allocate_dist_shared( laddie%Hstar         , laddie%wHstar         , mesh%pai_V%n_nih  )    ! [m]               Intermediate layer thickness
+    call allocate_dist_shared( laddie%Hstar         , laddie%wHstar         , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! [m]               Intermediate layer thickness
     laddie%Hstar         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%Hstar
 
     ! Mapped variables
     if (associated( laddie%H_c     )) call deallocate_dist_shared( laddie%H_c     , laddie%wH_c     )
     if (associated( laddie%Hstar_b )) call deallocate_dist_shared( laddie%Hstar_b , laddie%wHstar_b )
     if (associated( laddie%Hstar_c )) call deallocate_dist_shared( laddie%Hstar_c , laddie%wHstar_c )
-    call allocate_dist_shared( laddie%H_c           , laddie%wH_c           , mesh%pai_E%n_nih  )
-    call allocate_dist_shared( laddie%Hstar_b       , laddie%wHstar_b       , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( laddie%Hstar_c       , laddie%wHstar_c       , mesh%pai_E%n_nih  )
-    laddie%H_c           ( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  ) => laddie%H_c
-    laddie%Hstar_b       ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%Hstar_b
-    laddie%Hstar_c       ( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  ) => laddie%Hstar_c
+    call allocate_dist_shared( laddie%H_c           , laddie%wH_c           , mesh%pai_E%i1_nih  , mesh%pai_E%i2_nih  )
+    call allocate_dist_shared( laddie%Hstar_b       , laddie%wHstar_b       , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+    call allocate_dist_shared( laddie%Hstar_c       , laddie%wHstar_c       , mesh%pai_E%i1_nih  , mesh%pai_E%i2_nih  )
 
     ! Masks
     if (associated( laddie%mask_a    )) call deallocate_dist_shared( laddie%mask_a    , laddie%wmask_a    )
@@ -286,28 +246,19 @@ CONTAINS
     if (associated( laddie%mask_gl_b )) call deallocate_dist_shared( laddie%mask_gl_b , laddie%wmask_gl_b )
     if (associated( laddie%mask_cf_b )) call deallocate_dist_shared( laddie%mask_cf_b , laddie%wmask_cf_b )
     if (associated( laddie%mask_oc_b )) call deallocate_dist_shared( laddie%mask_oc_b , laddie%wmask_oc_b )
-    call allocate_dist_shared( laddie%mask_a        , laddie%wmask_a        , mesh%pai_V%n_nih  )    !                 Mask on a-grid
-    call allocate_dist_shared( laddie%mask_gr_a     , laddie%wmask_gr_a     , mesh%pai_V%n_nih  )    !                 Grounded mask on a-grid
-    call allocate_dist_shared( laddie%mask_oc_a     , laddie%wmask_oc_a     , mesh%pai_V%n_nih  )    !                 Icefree ocean mask on a-grid
-    call allocate_dist_shared( laddie%mask_b        , laddie%wmask_b        , mesh%pai_Tri%n_nih)    !                 Mask on b-grid
-    call allocate_dist_shared( laddie%mask_gl_b     , laddie%wmask_gl_b     , mesh%pai_Tri%n_nih)    !                 Grounding line mask on b-grid
-    call allocate_dist_shared( laddie%mask_cf_b     , laddie%wmask_cf_b     , mesh%pai_Tri%n_nih)    !                 Calving front mask on b-grid
-    call allocate_dist_shared( laddie%mask_oc_b     , laddie%wmask_oc_b     , mesh%pai_Tri%n_nih)    !                 Icefree ocean mask on b-grid
-    laddie%mask_a        ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%mask_a
-    laddie%mask_gr_a     ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%mask_gr_a
-    laddie%mask_oc_a     ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%mask_oc_a
-    laddie%mask_b        ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%mask_b
-    laddie%mask_gl_b     ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%mask_gl_b
-    laddie%mask_cf_b     ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%mask_cf_b
-    laddie%mask_oc_b     ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%mask_oc_b
+    call allocate_dist_shared( laddie%mask_a        , laddie%wmask_a        , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    !                 Mask on a-grid
+    call allocate_dist_shared( laddie%mask_gr_a     , laddie%wmask_gr_a     , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    !                 Grounded mask on a-grid
+    call allocate_dist_shared( laddie%mask_oc_a     , laddie%wmask_oc_a     , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    !                 Icefree ocean mask on a-grid
+    call allocate_dist_shared( laddie%mask_b        , laddie%wmask_b        , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    !                 Mask on b-grid
+    call allocate_dist_shared( laddie%mask_gl_b     , laddie%wmask_gl_b     , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    !                 Grounding line mask on b-grid
+    call allocate_dist_shared( laddie%mask_cf_b     , laddie%wmask_cf_b     , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    !                 Calving front mask on b-grid
+    call allocate_dist_shared( laddie%mask_oc_b     , laddie%wmask_oc_b     , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    !                 Icefree ocean mask on b-grid
 
     ! Domains
     if (associated( laddie%domain_a )) call deallocate_dist_shared( laddie%domain_a , laddie%wdomain_a )
     if (associated( laddie%domain_b )) call deallocate_dist_shared( laddie%domain_b , laddie%wdomain_b )
-    call allocate_dist_shared( laddie%domain_a      , laddie%wdomain_a      , mesh%pai_V%n_nih  )    ! []              Floating domain on a-grid
-    call allocate_dist_shared( laddie%domain_b      , laddie%wdomain_b      , mesh%pai_Tri%n_nih)    ! []              Floating domain on b-grid
-    laddie%domain_a      ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%domain_a
-    laddie%domain_b      ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => laddie%domain_b
+    call allocate_dist_shared( laddie%domain_a      , laddie%wdomain_a      , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )    ! []              Floating domain on a-grid
+    call allocate_dist_shared( laddie%domain_b      , laddie%wdomain_b      , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)    ! []              Floating domain on b-grid
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -339,29 +290,17 @@ CONTAINS
     if (associated( npx%T   )) call deallocate_dist_shared( npx%T   , npx%wT   )
     if (associated( npx%S   )) call deallocate_dist_shared( npx%S   , npx%wS   )
 
-    call allocate_dist_shared( npx%H  , npx%wH  , mesh%pai_V%n_nih  )   ! [m]             Layer thickness
-    call allocate_dist_shared( npx%H_b, npx%wH_b, mesh%pai_Tri%n_nih)   ! [m]             Layer thickness on b grid
-    call allocate_dist_shared( npx%H_c, npx%wH_c, mesh%pai_E%n_nih  )   ! [m]             Layer thickness on c grid
-    call allocate_dist_shared( npx%U  , npx%wU  , mesh%pai_Tri%n_nih)   ! [m s^-1]        2D velocity
-    call allocate_dist_shared( npx%U_a, npx%wU_a, mesh%pai_V%n_nih  )   ! [m s^-1]        2D velocity on a grid
-    call allocate_dist_shared( npx%U_c, npx%wU_c, mesh%pai_E%n_nih  )   ! [m s^-1]        2D velocity on b grid
-    call allocate_dist_shared( npx%V  , npx%wV  , mesh%pai_Tri%n_nih)   ! [m s^-1]
-    call allocate_dist_shared( npx%V_a, npx%wV_a, mesh%pai_V%n_nih  )   ! [m s^-1]
-    call allocate_dist_shared( npx%V_c, npx%wV_c, mesh%pai_E%n_nih  )   ! [m s^-1]
-    call allocate_dist_shared( npx%T  , npx%wT  , mesh%pai_V%n_nih  )   ! [degC]          Temperature
-    call allocate_dist_shared( npx%S  , npx%wS  , mesh%pai_V%n_nih  )   ! [PSU]           Salinity
-
-    npx%H  ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => npx%H
-    npx%H_b( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => npx%H_b
-    npx%H_c( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  ) => npx%H_c
-    npx%U  ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => npx%U
-    npx%U_a( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => npx%U_a
-    npx%U_c( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  ) => npx%U_c
-    npx%V  ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => npx%V
-    npx%V_a( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => npx%V_a
-    npx%V_c( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  ) => npx%V_c
-    npx%T  ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => npx%T
-    npx%S  ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => npx%S
+    call allocate_dist_shared( npx%H  , npx%wH  , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )   ! [m]             Layer thickness
+    call allocate_dist_shared( npx%H_b, npx%wH_b, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)   ! [m]             Layer thickness on b grid
+    call allocate_dist_shared( npx%H_c, npx%wH_c, mesh%pai_E%i1_nih  , mesh%pai_E%i2_nih  )   ! [m]             Layer thickness on c grid
+    call allocate_dist_shared( npx%U  , npx%wU  , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)   ! [m s^-1]        2D velocity
+    call allocate_dist_shared( npx%U_a, npx%wU_a, mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )   ! [m s^-1]        2D velocity on a grid
+    call allocate_dist_shared( npx%U_c, npx%wU_c, mesh%pai_E%i1_nih  , mesh%pai_E%i2_nih  )   ! [m s^-1]        2D velocity on b grid
+    call allocate_dist_shared( npx%V  , npx%wV  , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)   ! [m s^-1]
+    call allocate_dist_shared( npx%V_a, npx%wV_a, mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )   ! [m s^-1]
+    call allocate_dist_shared( npx%V_c, npx%wV_c, mesh%pai_E%i1_nih  , mesh%pai_E%i2_nih  )   ! [m s^-1]
+    call allocate_dist_shared( npx%T  , npx%wT  , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )   ! [degC]          Temperature
+    call allocate_dist_shared( npx%S  , npx%wS  , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )   ! [PSU]           Salinity
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -382,42 +321,24 @@ CONTAINS
     call init_routine( routine_name)
 
     ! Forcing
-    call allocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%Hs                , forcing%wHs                , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( forcing%mask_icefree_land , forcing%wmask_icefree_land , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%mask_icefree_ocean, forcing%wmask_icefree_ocean, mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%mask_grounded_ice , forcing%wmask_grounded_ice , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%mask_floating_ice , forcing%wmask_floating_ice , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%mask_gl_fl        , forcing%wmask_gl_fl        , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%mask_SGD          , forcing%wmask_SGD          , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%mask              , forcing%wmask              , mesh%pai_V%n_nih)
-    call allocate_dist_shared( forcing%Ti                , forcing%wTi                , mesh%pai_V%n_nih, mesh%nz)
-    call allocate_dist_shared( forcing%T_ocean           , forcing%wT_ocean           , mesh%pai_V%n_nih, C%nz_ocean)
-    call allocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , mesh%pai_V%n_nih, C%nz_ocean)
-    call allocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , mesh%pai_Tri%n_nih)
-    forcing%Hi                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hi
-    forcing%Hs                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hs
-    forcing%Hb                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hb
-    forcing%Hib               ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%Hib
-    forcing%TAF               ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%TAF
-    forcing%dHib_dx_b         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih            ) => forcing%dHib_dx_b
-    forcing%dHib_dy_b         ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih            ) => forcing%dHib_dy_b
-    forcing%mask_icefree_land ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask_icefree_land
-    forcing%mask_icefree_ocean( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask_icefree_ocean
-    forcing%mask_grounded_ice ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask_grounded_ice
-    forcing%mask_floating_ice ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask_floating_ice
-    forcing%mask_gl_fl        ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask_gl_fl
-    forcing%mask_SGD          ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask_SGD
-    forcing%mask              ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih              ) => forcing%mask
-    forcing%Ti                ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih, 1:mesh%nz   ) => forcing%Ti
-    forcing%T_ocean           ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih, 1:C%nz_ocean) => forcing%T_ocean
-    forcing%S_ocean           ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih, 1:C%nz_ocean) => forcing%S_ocean
-    forcing%f_coriolis        ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih            ) => forcing%f_coriolis
+    call allocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%Hs                , forcing%wHs                , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+    call allocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+    call allocate_dist_shared( forcing%mask_icefree_land , forcing%wmask_icefree_land , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%mask_icefree_ocean, forcing%wmask_icefree_ocean, mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%mask_grounded_ice , forcing%wmask_grounded_ice , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%mask_floating_ice , forcing%wmask_floating_ice , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%mask_gl_fl        , forcing%wmask_gl_fl        , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%mask_SGD          , forcing%wmask_SGD          , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%mask              , forcing%wmask              , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  )
+    call allocate_dist_shared( forcing%Ti                , forcing%wTi                , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  , 1, mesh%nz)
+    call allocate_dist_shared( forcing%T_ocean           , forcing%wT_ocean           , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  , 1, C%nz_ocean)
+    call allocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  , 1, C%nz_ocean)
+    call allocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

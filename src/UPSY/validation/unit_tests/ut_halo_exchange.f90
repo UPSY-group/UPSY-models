@@ -91,8 +91,7 @@ subroutine test_halo_exchange_logical_1D( test_name_parent)
   call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-  d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -152,8 +151,7 @@ subroutine test_halo_exchange_logical_2D( test_name_parent)
   nz = 3
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -216,8 +214,7 @@ subroutine test_halo_exchange_logical_3D( test_name_parent)
   nl = 5
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -279,8 +276,7 @@ subroutine test_halo_exchange_int_1D( test_name_parent)
   call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-  d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -340,8 +336,7 @@ subroutine test_halo_exchange_int_2D( test_name_parent)
   nz = 3
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -404,8 +399,7 @@ subroutine test_halo_exchange_int_3D( test_name_parent)
   nl = 5
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -467,8 +461,7 @@ subroutine test_halo_exchange_dp_1D( test_name_parent)
   call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-  d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -528,8 +521,7 @@ subroutine test_halo_exchange_dp_2D( test_name_parent)
   nz = 3
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -592,8 +584,7 @@ subroutine test_halo_exchange_dp_3D( test_name_parent)
   nl = 5
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -655,8 +646,7 @@ subroutine test_halo_exchange_complex_1D( test_name_parent)
   call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-  d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -716,8 +706,7 @@ subroutine test_halo_exchange_complex_2D( test_name_parent)
   nz = 3
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
   ! Fill in data in the interior only
   if (par%node_primary) then
@@ -780,8 +769,7 @@ subroutine test_halo_exchange_complex_3D( test_name_parent)
   nl = 5
 
     ! Allocate node-shared memory including halos
-  call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-  d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+  call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
   ! Fill in data in the interior only
   if (par%node_primary) then

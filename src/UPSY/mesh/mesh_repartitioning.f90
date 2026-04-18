@@ -81,8 +81,8 @@ contains
     mesh_new%Tri_li(               1:mesh%nTri,:) = mesh%Tri_li(               1:mesh%nTri,:)
 
     ! Gather masks
-    call allocate_dist_shared( mask_active_a_tot, wmask_active_a_tot, mesh%nV)
-    call allocate_dist_shared( mask_active_b_tot, wmask_active_b_tot, mesh%nTri)
+    call allocate_dist_shared( mask_active_a_tot, wmask_active_a_tot, 1, mesh%nV)
+    call allocate_dist_shared( mask_active_b_tot, wmask_active_b_tot, 1, mesh%nTri)
     call gather_dist_shared_to_all( mesh%pai_V,   mask_active_a_nih, mask_active_a_tot)
     call gather_dist_shared_to_all( mesh%pai_Tri, mask_active_b_nih, mask_active_b_tot)
 
@@ -144,13 +144,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nV)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nV)
     call gather_dist_shared_to_all( mesh_src%pai_V, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%n_nih)
-    d_nih( mesh_dst%pai_V%i1_nih:mesh_dst%pai_V%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%i1_nih, mesh_dst%pai_V%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%vi1:mesh_dst%vi2) = d_tot( mesh_dst%vi1:mesh_dst%vi2)
@@ -177,13 +176,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nTri)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nTri)
     call gather_dist_shared_to_all( mesh_src%pai_Tri, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%n_nih)
-    d_nih( mesh_dst%pai_Tri%i1_nih:mesh_dst%pai_Tri%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%i1_nih, mesh_dst%pai_Tri%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ti1:mesh_dst%ti2) = d_tot( mesh_dst%ti1:mesh_dst%ti2)
@@ -210,13 +208,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nE)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nE)
     call gather_dist_shared_to_all( mesh_src%pai_E, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%n_nih)
-    d_nih( mesh_dst%pai_E%i1_nih:mesh_dst%pai_E%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%i1_nih, mesh_dst%pai_E%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ei1:mesh_dst%ei2) = d_tot( mesh_dst%ei1:mesh_dst%ei2)
@@ -274,13 +271,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nV, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nV, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_V, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%n_nih, nz)
-    d_nih( mesh_dst%pai_V%i1_nih:mesh_dst%pai_V%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%i1_nih, mesh_dst%pai_V%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%vi1:mesh_dst%vi2,:) = d_tot( mesh_dst%vi1:mesh_dst%vi2,:)
@@ -310,13 +306,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nTri, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nTri, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_Tri, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%n_nih, nz)
-    d_nih( mesh_dst%pai_Tri%i1_nih:mesh_dst%pai_Tri%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%i1_nih, mesh_dst%pai_Tri%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ti1:mesh_dst%ti2,:) = d_tot( mesh_dst%ti1:mesh_dst%ti2,:)
@@ -346,13 +341,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nE, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nE, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_E, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%n_nih, nz)
-    d_nih( mesh_dst%pai_E%i1_nih:mesh_dst%pai_E%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%i1_nih, mesh_dst%pai_E%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ei1:mesh_dst%ei2,:) = d_tot( mesh_dst%ei1:mesh_dst%ei2,:)
@@ -407,13 +401,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nV)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nV)
     call gather_dist_shared_to_all( mesh_src%pai_V, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%n_nih)
-    d_nih( mesh_dst%pai_V%i1_nih:mesh_dst%pai_V%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%i1_nih, mesh_dst%pai_V%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%vi1:mesh_dst%vi2) = d_tot( mesh_dst%vi1:mesh_dst%vi2)
@@ -440,13 +433,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nTri)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nTri)
     call gather_dist_shared_to_all( mesh_src%pai_Tri, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%n_nih)
-    d_nih( mesh_dst%pai_Tri%i1_nih:mesh_dst%pai_Tri%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%i1_nih, mesh_dst%pai_Tri%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ti1:mesh_dst%ti2) = d_tot( mesh_dst%ti1:mesh_dst%ti2)
@@ -473,13 +465,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nE)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nE)
     call gather_dist_shared_to_all( mesh_src%pai_E, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%n_nih)
-    d_nih( mesh_dst%pai_E%i1_nih:mesh_dst%pai_E%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%i1_nih, mesh_dst%pai_E%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ei1:mesh_dst%ei2) = d_tot( mesh_dst%ei1:mesh_dst%ei2)
@@ -537,13 +528,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nV, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nV, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_V, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%n_nih, nz)
-    d_nih( mesh_dst%pai_V%i1_nih:mesh_dst%pai_V%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%i1_nih, mesh_dst%pai_V%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%vi1:mesh_dst%vi2,:) = d_tot( mesh_dst%vi1:mesh_dst%vi2,:)
@@ -573,13 +563,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nTri, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nTri, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_Tri, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%n_nih, nz)
-    d_nih( mesh_dst%pai_Tri%i1_nih:mesh_dst%pai_Tri%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%i1_nih, mesh_dst%pai_Tri%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ti1:mesh_dst%ti2,:) = d_tot( mesh_dst%ti1:mesh_dst%ti2,:)
@@ -609,13 +598,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nE, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nE, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_E, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%n_nih, nz)
-    d_nih( mesh_dst%pai_E%i1_nih:mesh_dst%pai_E%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%i1_nih, mesh_dst%pai_E%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ei1:mesh_dst%ei2,:) = d_tot( mesh_dst%ei1:mesh_dst%ei2,:)
@@ -670,13 +658,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nV)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nV)
     call gather_dist_shared_to_all( mesh_src%pai_V, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%n_nih)
-    d_nih( mesh_dst%pai_V%i1_nih:mesh_dst%pai_V%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%i1_nih, mesh_dst%pai_V%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%vi1:mesh_dst%vi2) = d_tot( mesh_dst%vi1:mesh_dst%vi2)
@@ -703,13 +690,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nTri)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nTri)
     call gather_dist_shared_to_all( mesh_src%pai_Tri, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%n_nih)
-    d_nih( mesh_dst%pai_Tri%i1_nih:mesh_dst%pai_Tri%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%i1_nih, mesh_dst%pai_Tri%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ti1:mesh_dst%ti2) = d_tot( mesh_dst%ti1:mesh_dst%ti2)
@@ -736,13 +722,12 @@ contains
     call init_routine( routine_name)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nE)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nE)
     call gather_dist_shared_to_all( mesh_src%pai_E, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%n_nih)
-    d_nih( mesh_dst%pai_E%i1_nih:mesh_dst%pai_E%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%i1_nih, mesh_dst%pai_E%i2_nih)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ei1:mesh_dst%ei2) = d_tot( mesh_dst%ei1:mesh_dst%ei2)
@@ -800,13 +785,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nV, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nV, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_V, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%n_nih, nz)
-    d_nih( mesh_dst%pai_V%i1_nih:mesh_dst%pai_V%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_V%i1_nih, mesh_dst%pai_V%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%vi1:mesh_dst%vi2,:) = d_tot( mesh_dst%vi1:mesh_dst%vi2,:)
@@ -836,13 +820,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nTri, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nTri, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_Tri, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%n_nih, nz)
-    d_nih( mesh_dst%pai_Tri%i1_nih:mesh_dst%pai_Tri%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_Tri%i1_nih, mesh_dst%pai_Tri%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ti1:mesh_dst%ti2,:) = d_tot( mesh_dst%ti1:mesh_dst%ti2,:)
@@ -872,13 +855,12 @@ contains
     nz = size( d_nih,2)
 
     ! Gather data to d_tot
-    call allocate_dist_shared( d_tot, wd_tot, mesh_src%nE, nz)
+    call allocate_dist_shared( d_tot, wd_tot, 1, mesh_src%nE, 1, nz)
     call gather_dist_shared_to_all( mesh_src%pai_E, nz, d_nih, d_tot)
 
     ! Reallocate d_nih
     call deallocate_dist_shared( d_nih, wd_nih)
-    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%n_nih, nz)
-    d_nih( mesh_dst%pai_E%i1_nih:mesh_dst%pai_E%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh_dst%pai_E%i1_nih, mesh_dst%pai_E%i2_nih, 1, nz)
 
     ! Copy data back from d_tot
     d_nih( mesh_dst%ei1:mesh_dst%ei2,:) = d_tot( mesh_dst%ei1:mesh_dst%ei2,:)

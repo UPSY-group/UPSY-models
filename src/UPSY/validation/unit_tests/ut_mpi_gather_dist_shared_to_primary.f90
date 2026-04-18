@@ -90,8 +90,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13) = .true.
@@ -155,8 +154,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1) = .true.
@@ -221,8 +219,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1,2) = .true.
@@ -284,8 +281,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13) = 42
@@ -349,8 +345,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1) = 42
@@ -415,8 +410,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1,2) = 42
@@ -478,8 +472,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13) = 42._dp
@@ -543,8 +536,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1) = 42._dp
@@ -609,8 +601,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1,2) = 42._dp
@@ -672,8 +663,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13) = complex( 13._dp, 37._dp)
@@ -737,8 +727,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1) = complex( 13._dp, 37._dp)
@@ -803,8 +792,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, pai%i1_nih, pai%i2_nih, 1, nz, 1, nl)
 
     ! Let the node primaries write some data to the memory
     if (par%node_ID == 0 .and. par%node_primary) d_nih( 13,1,2) = complex( 13._dp, 37._dp)

@@ -33,8 +33,7 @@ contains
 
     call check_nonoptional_optionals( name, long_name, units)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
-    call allocate_dist_shared( d_nih, w, n)
-    d_nih( lb: ub) => d_nih
+    call allocate_dist_shared( d_nih, w, lb, ub)
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
       name, long_name, units, remap_method_)
     call self%add( field)
@@ -77,8 +76,7 @@ contains
     call check_nonoptional_optionals( name, long_name, units)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb1, ub1, n1)
     call determine_bounds_3D( field_third_dimension, lb2, ub2, n2)
-    call allocate_dist_shared( d_nih, w, n1, n2)
-    d_nih( lb1: ub1, lb2: ub2) => d_nih
+    call allocate_dist_shared( d_nih, w, lb1, ub1, lb2, ub2)
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
       field_third_dimension, name, long_name, units, remap_method_)
     call self%add( field)
@@ -119,8 +117,7 @@ contains
 
     call check_nonoptional_optionals( name, long_name, units)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
-    call allocate_dist_shared( d_nih, w, n)
-    d_nih( lb: ub) => d_nih
+    call allocate_dist_shared( d_nih, w, lb, ub)
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
       name, long_name, units, remap_method_)
     call self%add( field)
@@ -163,8 +160,7 @@ contains
     call check_nonoptional_optionals( name, long_name, units)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb1, ub1, n1)
     call determine_bounds_3D( field_third_dimension, lb2, ub2, n2)
-    call allocate_dist_shared( d_nih, w, n1, n2)
-    d_nih( lb1: ub1, lb2: ub2) => d_nih
+    call allocate_dist_shared( d_nih, w, lb1, ub1, lb2, ub2)
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
       field_third_dimension, name, long_name, units, remap_method_)
     call self%add( field)
@@ -205,8 +201,7 @@ contains
 
     call check_nonoptional_optionals( name, long_name, units)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb, ub, n)
-    call allocate_dist_shared( d_nih, w, n)
-    d_nih( lb: ub) => d_nih
+    call allocate_dist_shared( d_nih, w, lb, ub)
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
       name, long_name, units, remap_method_)
     call self%add( field)
@@ -249,8 +244,7 @@ contains
     call check_nonoptional_optionals( name, long_name, units)
     call determine_bounds_2D( field_grid, field_Arakawa_grid, lb1, ub1, n1)
     call determine_bounds_3D( field_third_dimension, lb2, ub2, n2)
-    call allocate_dist_shared( d_nih, w, n1, n2)
-    d_nih( lb1: ub1, lb2: ub2) => d_nih
+    call allocate_dist_shared( d_nih, w, lb1, ub1, lb2, ub2)
     call initialise_field( field, d_nih, w, field_grid, field_Arakawa_grid, &
       field_third_dimension, name, long_name, units, remap_method_)
     call self%add( field)

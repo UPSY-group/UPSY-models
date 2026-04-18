@@ -69,7 +69,7 @@ contains
       if (present( buffer_xx_nih)) then
         xx_nih => buffer_xx_nih
       else
-        call allocate_dist_shared( xx_nih, wxx_nih, pai_x%n_nih)
+        call allocate_dist_shared( xx_nih, wxx_nih, pai_x%i1_nih, pai_x%i2_nih)
       end if
       call dist_to_hybrid( pai_x, xx, xx_nih)
       call basic_halo_exchange( pai_x, xx_nih)
@@ -81,7 +81,7 @@ contains
       if (present( buffer_bb_nih)) then
         bb_nih => buffer_bb_nih
       else
-        call allocate_dist_shared( bb_nih, wbb_nih, pai_b%n_nih)
+        call allocate_dist_shared( bb_nih, wbb_nih, pai_b%i1_nih, pai_b%i2_nih)
       end if
       call dist_to_hybrid( pai_b, bb, bb_nih)
     end if
@@ -179,7 +179,7 @@ contains
     call init_routine( routine_name)
 
     ! Save diagonal elements of A
-    call allocate_dist_shared( AA_diag, wAA_diag, AA%n_node)
+    call allocate_dist_shared( AA_diag, wAA_diag, AA%i1_node, AA%i2_node)
     AA_diag( AA%i1_node:AA%i2_node) => AA_diag
 
     do i = AA%i1, AA%i2
@@ -190,7 +190,7 @@ contains
     end do
 
     ! Allocate memory for x_old
-    call allocate_dist_shared( xx_old_tot, wxx_old_tot, pai_x%n)
+    call allocate_dist_shared( xx_old_tot, wxx_old_tot, 1, pai_x%n)
 
     ! Run the Jacobi iteration until it converges
     Jacobi_iterate: do it = 1, nit
@@ -260,7 +260,7 @@ contains
     call init_routine( routine_name)
 
     ! Save diagonal elements of A
-    call allocate_dist_shared( AA_diag, wAA_diag, AA%n_node)
+    call allocate_dist_shared( AA_diag, wAA_diag, AA%i1_node, AA%i2_node)
     AA_diag( AA%i1_node:AA%i2_node) => AA_diag
 
     do i = AA%i1, AA%i2
@@ -271,7 +271,7 @@ contains
     end do
 
     ! Allocate memory for x_old
-    call allocate_dist_shared( xx_old_nih, wxx_old_nih, pai_x%n)
+    call allocate_dist_shared( xx_old_nih, wxx_old_nih, 1, pai_x%n)
     xx_old_nih( pai_x%i1_nih:pai_x%i2_nih) => xx_old_nih
 
     ! Run the Jacobi iteration until it converges

@@ -118,8 +118,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
-    d_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -176,8 +175,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
-    d_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -235,8 +233,7 @@ contains
 
     ! Allocate some node-shared memory
     nz = 13
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, nz)
-    d_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, nz)
 
     ! Fill in data
     if (par%node_primary) then
@@ -297,8 +294,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih)
-    d_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -356,8 +352,7 @@ contains
 
     ! Allocate some node-shared memory
     nz = 13
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%n_nih, nz)
-    d_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, nz)
 
     ! Fill in data
     if (par%node_primary) then
@@ -420,8 +415,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih)
-    d_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -478,8 +472,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih)
-    d_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -537,8 +530,7 @@ contains
 
     ! Allocate some node-shared memory
     nz = 13
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih, nz)
-    d_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih, 1, nz)
 
     ! Fill in data
     if (par%node_primary) then
@@ -599,8 +591,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih)
-    d_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -658,8 +649,7 @@ contains
 
     ! Allocate some node-shared memory
     nz = 13
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%n_nih, nz)
-    d_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih, 1, nz)
 
     ! Fill in data
     if (par%node_primary) then
@@ -722,8 +712,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih)
-    d_nih( mesh%pai_E%i1_nih:mesh%pai_E%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -780,8 +769,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih)
-    d_nih( mesh%pai_E%i1_nih:mesh%pai_E%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -839,8 +827,7 @@ contains
 
     ! Allocate some node-shared memory
     nz = 13
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih, nz)
-    d_nih( mesh%pai_E%i1_nih:mesh%pai_E%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih, 1, nz)
 
     ! Fill in data
     if (par%node_primary) then
@@ -901,8 +888,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate some node-shared memory
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih)
-    d_nih( mesh%pai_E%i1_nih:mesh%pai_E%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih)
 
     ! Fill in data
     if (par%node_primary) then
@@ -960,8 +946,7 @@ contains
 
     ! Allocate some node-shared memory
     nz = 13
-    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%n_nih, nz)
-    d_nih( mesh%pai_E%i1_nih:mesh%pai_E%i2_nih,1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih, 1, nz)
 
     ! Fill in data
     if (par%node_primary) then

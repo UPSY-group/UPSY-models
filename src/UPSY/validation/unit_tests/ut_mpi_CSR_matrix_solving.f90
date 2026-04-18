@@ -354,8 +354,8 @@ contains
     b_nih => null()
     x_nih => null()
 
-    call allocate_dist_shared( b_nih, wb_nih, pai%n_nih)
-    call allocate_dist_shared( x_nih, wx_nih, pai%n_nih)
+    call allocate_dist_shared( b_nih, wb_nih, pai%i1_nih, pai%i2_nih)
+    call allocate_dist_shared( x_nih, wx_nih, pai%i1_nih, pai%i2_nih)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

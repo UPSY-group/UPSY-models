@@ -95,7 +95,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nV)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nV)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_V%n_loc) then
@@ -166,7 +166,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nV)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nV)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_V%n_loc) then
@@ -237,7 +237,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nV)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nV)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_V%n_loc) then
@@ -311,7 +311,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nTri)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nTri)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
@@ -382,7 +382,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nTri)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nTri)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
@@ -453,7 +453,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nTri)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nTri)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
@@ -527,7 +527,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nE)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nE)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_E%n_loc) then
@@ -598,7 +598,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nE)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nE)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_E%n_loc) then
@@ -669,7 +669,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, mesh%nE)
+    call allocate_dist_shared( d_mesh_tot, wd_mesh_tot, 1, mesh%nE)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
     if (size( d_mesh,1) == mesh%pai_E%n_loc) then
@@ -744,7 +744,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -820,7 +820,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -896,7 +896,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -975,7 +975,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -1051,7 +1051,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -1127,7 +1127,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -1206,7 +1206,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -1282,7 +1282,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared
@@ -1358,7 +1358,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_dist_shared( d_graph_tot, wd_graph_tot, graph%n)
+    call allocate_dist_shared( d_graph_tot, wd_graph_tot, 1, graph%n)
     call gather_dist_shared_to_all( graph%pai, d_graph_nih, d_graph_tot)
 
     ! Check if the mesh data is distributed or hybrid distributed/shared

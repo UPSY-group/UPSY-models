@@ -31,13 +31,13 @@ module allocate_dist_shared_mod
 
 contains
 
-  subroutine allocate_dist_shared_logical_1D( p, win, i1, i2)
+  subroutine allocate_dist_shared_logical_1D( p, win, bounds_dim1)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                  intent(inout) :: win        !< Corresponding MPI window
-    integer,                        intent(in   ) :: i1, i2     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_logical_1D'
@@ -54,7 +54,7 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
 
     if (par%node_primary) then
       windowsize = n1*4_MPI_ADDRESS_KIND
@@ -76,7 +76,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = .false.
@@ -90,13 +90,13 @@ contains
 
   end subroutine allocate_dist_shared_logical_1D
 
-  subroutine allocate_dist_shared_logical_2D( p, win, i1, i2, j1, j2)
+  subroutine allocate_dist_shared_logical_2D( p, win, bounds_dim1, bounds_dim2)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                    intent(inout) :: win        !< Corresponding MPI window
-    integer,                          intent(in   ) :: i1, i2, j1, j2 !< Bounds of the memory to be allocated
+    integer, dimension(2),            intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_logical_2D'
@@ -113,8 +113,8 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*4_MPI_ADDRESS_KIND
@@ -136,7 +136,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = .false.
@@ -150,13 +150,13 @@ contains
 
   end subroutine allocate_dist_shared_logical_2D
 
-  subroutine allocate_dist_shared_logical_3D( p, win, i1, i2, j1, j2, k1, k2)
+  subroutine allocate_dist_shared_logical_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
-    integer,                            intent(in   ) :: i1, i2, j1, j2, k1, k2 !< Bounds of the memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_logical_3D'
@@ -173,9 +173,9 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
-    n3 = k2 + 1 - k1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
+    n3 = bounds_dim3(2) + 1 - bounds_dim3(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*n3*4_MPI_ADDRESS_KIND
@@ -197,7 +197,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2, n3])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2, k1:k2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2), bounds_dim3(1):bounds_dim3(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = .false.
@@ -211,13 +211,13 @@ contains
 
   end subroutine allocate_dist_shared_logical_3D
 
-  subroutine allocate_dist_shared_int_1D( p, win, i1, i2)
+  subroutine allocate_dist_shared_int_1D( p, win, bounds_dim1)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                  intent(inout) :: win        !< Corresponding MPI window
-    integer,                        intent(in   ) :: i1, i2     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_int_1D'
@@ -234,7 +234,7 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
 
     if (par%node_primary) then
       windowsize = n1*4_MPI_ADDRESS_KIND
@@ -256,7 +256,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0
@@ -270,13 +270,13 @@ contains
 
   end subroutine allocate_dist_shared_int_1D
 
-  subroutine allocate_dist_shared_int_2D( p, win, i1, i2, j1, j2)
+  subroutine allocate_dist_shared_int_2D( p, win, bounds_dim1, bounds_dim2)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                    intent(inout) :: win        !< Corresponding MPI window
-    integer,                          intent(in   ) :: i1, i2, j1, j2 !< Bounds of the memory to be allocated
+    integer, dimension(2),            intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_int_2D'
@@ -293,8 +293,8 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*4_MPI_ADDRESS_KIND
@@ -316,7 +316,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0
@@ -330,13 +330,13 @@ contains
 
   end subroutine allocate_dist_shared_int_2D
 
-  subroutine allocate_dist_shared_int_3D( p, win, i1, i2, j1, j2, k1, k2)
+  subroutine allocate_dist_shared_int_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
-    integer,                            intent(in   ) :: i1, i2, j1, j2, k1, k2 !< Bounds of the memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_int_3D'
@@ -353,9 +353,9 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
-    n3 = k2 + 1 - k1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
+    n3 = bounds_dim3(2) + 1 - bounds_dim3(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*n3*4_MPI_ADDRESS_KIND
@@ -377,7 +377,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2, n3])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2, k1:k2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2), bounds_dim3(1):bounds_dim3(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0
@@ -391,13 +391,13 @@ contains
 
   end subroutine allocate_dist_shared_int_3D
 
-  subroutine allocate_dist_shared_dp_1D( p, win, i1, i2)
+  subroutine allocate_dist_shared_dp_1D( p, win, bounds_dim1)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                   intent(inout) :: win        !< Corresponding MPI window
-    integer,                         intent(in   ) :: i1, i2     !< Bounds of the memory to be allocated
+    integer, dimension(2),           intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_dp_1D'
@@ -414,7 +414,7 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
 
     if (par%node_primary) then
       windowsize = n1*8_MPI_ADDRESS_KIND
@@ -436,7 +436,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0._dp
@@ -450,13 +450,13 @@ contains
 
   end subroutine allocate_dist_shared_dp_1D
 
-  subroutine allocate_dist_shared_dp_2D( p, win, i1, i2, j1, j2)
+  subroutine allocate_dist_shared_dp_2D( p, win, bounds_dim1, bounds_dim2)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                     intent(inout) :: win        !< Corresponding MPI window
-    integer,                           intent(in   ) :: i1, i2, j1, j2 !< Bounds of the memory to be allocated
+    integer, dimension(2),             intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_dp_2D'
@@ -473,8 +473,8 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*8_MPI_ADDRESS_KIND
@@ -496,7 +496,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0._dp
@@ -510,13 +510,13 @@ contains
 
   end subroutine allocate_dist_shared_dp_2D
 
-  subroutine allocate_dist_shared_dp_3D( p, win, i1, i2, j1, j2, k1, k2)
+  subroutine allocate_dist_shared_dp_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                       intent(inout) :: win        !< Corresponding MPI window
-    integer,                             intent(in   ) :: i1, i2, j1, j2, k1, k2 !< Bounds of the memory to be allocated
+    integer, dimension(2),               intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_dp_3D'
@@ -533,9 +533,9 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
-    n3 = k2 + 1 - k1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
+    n3 = bounds_dim3(2) + 1 - bounds_dim3(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*n3*8_MPI_ADDRESS_KIND
@@ -557,7 +557,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2, n3])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2, k1:k2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2), bounds_dim3(1):bounds_dim3(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0._dp
@@ -571,13 +571,13 @@ contains
 
   end subroutine allocate_dist_shared_dp_3D
 
-  subroutine allocate_dist_shared_complex_1D( p, win, i1, i2)
+  subroutine allocate_dist_shared_complex_1D( p, win, bounds_dim1)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
-    integer,                            intent(in   ) :: i1, i2     !< Bounds of the memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_complex_1D'
@@ -594,7 +594,7 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
 
     if (par%node_primary) then
       windowsize = n1*16_MPI_ADDRESS_KIND
@@ -616,7 +616,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0._dp
@@ -630,13 +630,13 @@ contains
 
   end subroutine allocate_dist_shared_complex_1D
 
-  subroutine allocate_dist_shared_complex_2D( p, win, i1, i2, j1, j2)
+  subroutine allocate_dist_shared_complex_2D( p, win, bounds_dim1, bounds_dim2)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                        intent(inout) :: win        !< Corresponding MPI window
-    integer,                              intent(in   ) :: i1, i2, j1, j2 !< Bounds of the memory to be allocated
+    integer, dimension(2),                intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_complex_2D'
@@ -653,8 +653,8 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*16_MPI_ADDRESS_KIND
@@ -676,7 +676,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0._dp
@@ -690,13 +690,13 @@ contains
 
   end subroutine allocate_dist_shared_complex_2D
 
-  subroutine allocate_dist_shared_complex_3D( p, win, i1, i2, j1, j2, k1, k2)
+  subroutine allocate_dist_shared_complex_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                          intent(inout) :: win        !< Corresponding MPI window
-    integer,                                intent(in   ) :: i1, i2, j1, j2, k1, k2 !< Bounds of the memory to be allocated
+    integer, dimension(2),                  intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_complex_3D'
@@ -713,9 +713,9 @@ contains
     ! Safety
     if (associated(p)) call crash('pointer is already/still associated with memory')
 
-    n1 = i2 + 1 - i1
-    n2 = j2 + 1 - j1
-    n3 = k2 + 1 - k1
+    n1 = bounds_dim1(2) + 1 - bounds_dim1(1)
+    n2 = bounds_dim2(2) + 1 - bounds_dim2(1)
+    n3 = bounds_dim3(2) + 1 - bounds_dim3(1)
 
     if (par%node_primary) then
       windowsize = n1*n2*n3*16_MPI_ADDRESS_KIND
@@ -737,7 +737,7 @@ contains
     call c_f_pointer( baseptr, p_raw, [n1, n2, n3])
 
     ! Associate the actual pointer (with the correct bounds)
-    p( i1:i2, j1:j2, k1:k2) => p_raw
+    p( bounds_dim1(1):bounds_dim1(2), bounds_dim2(1):bounds_dim2(2), bounds_dim3(1):bounds_dim3(2)) => p_raw
 
     ! Initialise
     if (par%node_primary) p = 0._dp

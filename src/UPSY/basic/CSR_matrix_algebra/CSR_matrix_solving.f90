@@ -180,7 +180,6 @@ contains
 
     ! Save diagonal elements of A
     call allocate_dist_shared( AA_diag, wAA_diag, [AA%i1_node, AA%i2_node])
-    AA_diag( AA%i1_node:AA%i2_node) => AA_diag
 
     do i = AA%i1, AA%i2
       do k = AA%ptr( i), AA%ptr( i+1)-1
@@ -261,7 +260,6 @@ contains
 
     ! Save diagonal elements of A
     call allocate_dist_shared( AA_diag, wAA_diag, [AA%i1_node, AA%i2_node])
-    AA_diag( AA%i1_node:AA%i2_node) => AA_diag
 
     do i = AA%i1, AA%i2
       do k = AA%ptr( i), AA%ptr( i+1)-1
@@ -272,7 +270,6 @@ contains
 
     ! Allocate memory for x_old
     call allocate_dist_shared( xx_old_nih, wxx_old_nih, [1, pai_x%n])
-    xx_old_nih( pai_x%i1_nih:pai_x%i2_nih) => xx_old_nih
 
     ! Run the Jacobi iteration until it converges
     Jacobi_iterate: do it = 1, nit

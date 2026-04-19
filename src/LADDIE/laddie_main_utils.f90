@@ -540,23 +540,6 @@ CONTAINS
     call repartition( mesh_old, mesh_new, forcing%T_ocean           , forcing%wT_ocean           )
     call repartition( mesh_old, mesh_new, forcing%S_ocean           , forcing%wS_ocean           )
 
-    forcing%Hi                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hi
-    forcing%Hib               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hib
-    forcing%Hb                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hb
-    forcing%TAF               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%TAF
-    forcing%dHib_dx_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dx_b
-    forcing%dHib_dy_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dy_b
-    forcing%mask_icefree_land ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_icefree_land
-    forcing%mask_icefree_ocean( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_icefree_ocean
-    forcing%mask_grounded_ice ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_grounded_ice
-    forcing%mask_floating_ice ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_floating_ice
-    forcing%mask_gl_fl        ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_gl_fl
-    forcing%mask_SGD          ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_SGD
-    forcing%mask              ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask
-    forcing%Ti                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih, 1:mesh_new%nz) => forcing%Ti
-    forcing%T_ocean           ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih, 1:C%nz_ocean ) => forcing%T_ocean
-    forcing%S_ocean           ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih, 1:C%nz_ocean ) => forcing%S_ocean
-
     call checksum( mesh_new%pai_V  , forcing%Hi                , 'forcing%Hi'                )
     call checksum( mesh_new%pai_V  , forcing%Hib               , 'forcing%Hib'               )
     call checksum( mesh_new%pai_V  , forcing%Hb                , 'forcing%Hb'                )

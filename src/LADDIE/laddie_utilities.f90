@@ -228,7 +228,6 @@ CONTAINS
     ! Forward-Backward Runge-Kutta 3 scheme
     if (associated( laddie%Hstar )) call deallocate_dist_shared( laddie%Hstar , laddie%wHstar )
     call allocate_dist_shared( laddie%Hstar         , laddie%wHstar         , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])    ! [m]               Intermediate layer thickness
-    laddie%Hstar         ( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  ) => laddie%Hstar
 
     ! Mapped variables
     if (associated( laddie%H_c     )) call deallocate_dist_shared( laddie%H_c     , laddie%wH_c     )

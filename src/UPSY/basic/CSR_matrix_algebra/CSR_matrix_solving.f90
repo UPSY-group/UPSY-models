@@ -269,7 +269,7 @@ contains
     end do
 
     ! Allocate memory for x_old
-    call allocate_dist_shared( xx_old_nih, wxx_old_nih, [1, pai_x%n])
+    call allocate_dist_shared( xx_old_nih, wxx_old_nih, [pai_x%i1_nih, pai_x%i2_nih])
 
     ! Run the Jacobi iteration until it converges
     Jacobi_iterate: do it = 1, nit

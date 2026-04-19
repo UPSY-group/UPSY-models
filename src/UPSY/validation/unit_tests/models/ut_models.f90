@@ -34,7 +34,7 @@ contains
     real(dp), parameter            :: xmax =  1._dp
     real(dp), parameter            :: ymin = -1._dp
     real(dp), parameter            :: ymax =  1._dp
-    type(type_mesh)                :: mesh1, mesh2
+    type(type_mesh), target        :: mesh1, mesh2
 
     ! Add routine to call stack
     call init_routine( routine_name)

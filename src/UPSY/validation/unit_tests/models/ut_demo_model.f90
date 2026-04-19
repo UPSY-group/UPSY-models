@@ -21,7 +21,7 @@ contains
 
     ! In/output variables:
     character(len=*), intent(in) :: test_name_parent
-    type(type_mesh),  intent(in) :: mesh1, mesh2
+    type(type_mesh), target, intent(in) :: mesh1, mesh2
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'test_demo_model'
@@ -48,7 +48,7 @@ contains
 
     ! In/output variables:
     character(len=*), intent(in) :: test_name_parent
-    type(type_mesh),  intent(in) :: mesh1, mesh2
+    type(type_mesh), target, intent(in) :: mesh1, mesh2
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'test_demo_model_a'
@@ -137,7 +137,7 @@ contains
 
     ! In/output variables:
     character(len=*), intent(in) :: test_name_parent
-    type(type_mesh),  intent(in) :: mesh1, mesh2
+    type(type_mesh), target, intent(in) :: mesh1, mesh2
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'test_demo_model_b'
@@ -227,7 +227,7 @@ contains
 
     ! In/output variables:
     character(len=*), intent(in) :: test_name_parent
-    type(type_mesh),  intent(in) :: mesh1, mesh2
+    type(type_mesh), target, intent(in) :: mesh1, mesh2
 
     ! Local variables:
     character(len=1024), parameter       :: routine_name = 'test_demo_model_abstract_a'
@@ -315,7 +315,7 @@ contains
 
     ! In/output variables:
     character(len=*), intent(in) :: test_name_parent
-    type(type_mesh),  intent(in) :: mesh1, mesh2
+    type(type_mesh), target, intent(in) :: mesh1, mesh2
 
     ! Local variables:
     character(len=1024), parameter       :: routine_name = 'test_demo_model_abstract_b'

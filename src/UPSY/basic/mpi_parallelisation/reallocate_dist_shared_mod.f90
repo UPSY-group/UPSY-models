@@ -32,17 +32,17 @@ module reallocate_dist_shared_mod
 
 contains
 
-  subroutine reallocate_dist_shared_logical_1D( p, win, i1_new, i2_new)
+  subroutine reallocate_dist_shared_logical_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                  intent(inout) :: win        !< Corresponding MPI window
-    integer,                        intent(in   ) :: i1_new, i2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'reallocate_dist_shared_logical_1D'
-    integer                        :: i1_old, i2_old, n1_old, n1_new
+    integer                        :: i1_old, i2_old, n1_old, i1_new, i2_new, n1_new
     logical, dimension(:), pointer :: p_temp => null()
     type(MPI_WIN)                  :: w_temp
 
@@ -55,10 +55,12 @@ contains
     i1_old = lbound( p,1)
     i2_old = ubound( p,1)
     n1_old = size( p,1)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
     n1_new = i2_new + 1 - i1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -66,7 +68,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new])
 
     ! Copy data there
     if (par%node_primary) p     ( i1_new: i1_new - 1 + min( n1_old, n1_new)) = &
@@ -81,17 +83,17 @@ contains
 
   end subroutine reallocate_dist_shared_logical_1D
 
-  subroutine reallocate_dist_shared_logical_2D( p, win, i1_new, i2_new, j1_new, j2_new)
+  subroutine reallocate_dist_shared_logical_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                    intent(inout) :: win                !< Corresponding MPI window
-    integer,                          intent(in   ) :: i1_new, i2_new, j1_new, j2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter   :: routine_name = 'reallocate_dist_shared_logical_2D'
-    integer                          :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, n1_new, n2_new
+    integer                          :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, i1_new, i2_new, j1_new, j2_new, n1_new, n2_new
     logical, dimension(:,:), pointer :: p_temp => null()
     type(MPI_WIN)                    :: w_temp
 
@@ -107,11 +109,15 @@ contains
     j2_old = ubound( p,2)
     n1_old = size( p,1)
     n2_old = size( p,2)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -119,7 +125,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new)) = &
@@ -134,17 +140,17 @@ contains
 
   end subroutine reallocate_dist_shared_logical_2D
 
-  subroutine reallocate_dist_shared_logical_3D( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+  subroutine reallocate_dist_shared_logical_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win                        !< Corresponding MPI window
-    integer,                            intent(in   ) :: i1_new, i2_new, j1_new, j2_new, k1_new, k2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'reallocate_dist_shared_logical_3D'
-    integer                            :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, n1_new, n2_new, n3_new
+    integer                            :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new, n1_new, n2_new, n3_new
     logical, dimension(:,:,:), pointer :: p_temp => null()
     type(MPI_WIN)                      :: w_temp
 
@@ -163,12 +169,18 @@ contains
     n1_old = size( p,1)
     n2_old = size( p,2)
     n3_old = size( p,3)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
+    k1_new = bounds_dim3(1)
+    k2_new = bounds_dim3(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
     n3_new = k2_new + 1 - k1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old, k1_old, k2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old], [k1_old, k2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -176,7 +188,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new], [k1_new, k2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new), k1_new: k1_new - 1 + min( n3_old, n3_new)) = &
@@ -191,17 +203,17 @@ contains
 
   end subroutine reallocate_dist_shared_logical_3D
 
-  subroutine reallocate_dist_shared_int_1D( p, win, i1_new, i2_new)
+  subroutine reallocate_dist_shared_int_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                  intent(inout) :: win        !< Corresponding MPI window
-    integer,                        intent(in   ) :: i1_new, i2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'reallocate_dist_shared_int_1D'
-    integer                        :: i1_old, i2_old, n1_old, n1_new
+    integer                        :: i1_old, i2_old, n1_old, i1_new, i2_new, n1_new
     integer, dimension(:), pointer :: p_temp => null()
     type(MPI_WIN)                  :: w_temp
 
@@ -214,10 +226,12 @@ contains
     i1_old = lbound( p,1)
     i2_old = ubound( p,1)
     n1_old = size( p,1)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
     n1_new = i2_new + 1 - i1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -225,7 +239,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new)) = p_temp( i1_old: i1_old - 1 + min( n1_old, n1_new))
@@ -239,17 +253,17 @@ contains
 
   end subroutine reallocate_dist_shared_int_1D
 
-  subroutine reallocate_dist_shared_int_2D( p, win, i1_new, i2_new, j1_new, j2_new)
+  subroutine reallocate_dist_shared_int_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                    intent(inout) :: win                !< Corresponding MPI window
-    integer,                          intent(in   ) :: i1_new, i2_new, j1_new, j2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter   :: routine_name = 'reallocate_dist_shared_int_2D'
-    integer                          :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, n1_new, n2_new
+    integer                          :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, i1_new, i2_new, j1_new, j2_new, n1_new, n2_new
     integer, dimension(:,:), pointer :: p_temp => null()
     type(MPI_WIN)                    :: w_temp
 
@@ -265,11 +279,15 @@ contains
     j2_old = ubound( p,2)
     n1_old = size( p,1)
     n2_old = size( p,2)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -277,7 +295,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new)) = &
@@ -292,17 +310,17 @@ contains
 
   end subroutine reallocate_dist_shared_int_2D
 
-  subroutine reallocate_dist_shared_int_3D( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+  subroutine reallocate_dist_shared_int_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win                        !< Corresponding MPI window
-    integer,                            intent(in   ) :: i1_new, i2_new, j1_new, j2_new, k1_new, k2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'reallocate_dist_shared_int_3D'
-    integer                            :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, n1_new, n2_new, n3_new
+    integer                            :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new, n1_new, n2_new, n3_new
     integer, dimension(:,:,:), pointer :: p_temp => null()
     type(MPI_WIN)                      :: w_temp
 
@@ -321,12 +339,18 @@ contains
     n1_old = size( p,1)
     n2_old = size( p,2)
     n3_old = size( p,3)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
+    k1_new = bounds_dim3(1)
+    k2_new = bounds_dim3(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
     n3_new = k2_new + 1 - k1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old, k1_old, k2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old], [k1_old, k2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -334,7 +358,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new], [k1_new, k2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new), k1_new: k1_new - 1 + min( n3_old, n3_new)) = &
@@ -349,17 +373,17 @@ contains
 
   end subroutine reallocate_dist_shared_int_3D
 
-  subroutine reallocate_dist_shared_dp_1D( p, win, i1_new, i2_new)
+  subroutine reallocate_dist_shared_dp_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                   intent(inout) :: win        !< Corresponding MPI window
-    integer,                         intent(in   ) :: i1_new, i2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'reallocate_dist_shared_dp_1D'
-    integer                         :: i1_old, i2_old, n1_old, n1_new
+    integer                         :: i1_old, i2_old, n1_old, i1_new, i2_new, n1_new
     real(dp), dimension(:), pointer :: p_temp => null()
     type(MPI_WIN)                   :: w_temp
 
@@ -372,10 +396,12 @@ contains
     i1_old = lbound( p,1)
     i2_old = ubound( p,1)
     n1_old = size( p,1)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
     n1_new = i2_new + 1 - i1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -383,7 +409,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new)) = p_temp( i1_old: i1_old - 1 + min( n1_old, n1_new))
@@ -397,17 +423,17 @@ contains
 
   end subroutine reallocate_dist_shared_dp_1D
 
-  subroutine reallocate_dist_shared_dp_2D( p, win, i1_new, i2_new, j1_new, j2_new)
+  subroutine reallocate_dist_shared_dp_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                     intent(inout) :: win                !< Corresponding MPI window
-    integer,                           intent(in   ) :: i1_new, i2_new, j1_new, j2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'reallocate_dist_shared_dp_2D'
-    integer                           :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, n1_new, n2_new
+    integer                           :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, i1_new, i2_new, j1_new, j2_new, n1_new, n2_new
     real(dp), dimension(:,:), pointer :: p_temp => null()
     type(MPI_WIN)                     :: w_temp
 
@@ -423,11 +449,15 @@ contains
     j2_old = ubound( p,2)
     n1_old = size( p,1)
     n2_old = size( p,2)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -435,7 +465,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new)) = &
@@ -450,17 +480,17 @@ contains
 
   end subroutine reallocate_dist_shared_dp_2D
 
-  subroutine reallocate_dist_shared_dp_3D( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+  subroutine reallocate_dist_shared_dp_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                       intent(inout) :: win                        !< Corresponding MPI window
-    integer,                             intent(in   ) :: i1_new, i2_new, j1_new, j2_new, k1_new, k2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'reallocate_dist_shared_dp_3D'
-    integer                             :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, n1_new, n2_new, n3_new
+    integer                             :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new, n1_new, n2_new, n3_new
     real(dp), dimension(:,:,:), pointer :: p_temp => null()
     type(MPI_WIN)                       :: w_temp
 
@@ -479,12 +509,18 @@ contains
     n1_old = size( p,1)
     n2_old = size( p,2)
     n3_old = size( p,3)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
+    k1_new = bounds_dim3(1)
+    k2_new = bounds_dim3(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
     n3_new = k2_new + 1 - k1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old, k1_old, k2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old], [k1_old, k2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -492,7 +528,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new], [k1_new, k2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new), k1_new: k1_new - 1 + min( n3_old, n3_new)) = &
@@ -507,17 +543,17 @@ contains
 
   end subroutine reallocate_dist_shared_dp_3D
 
-  subroutine reallocate_dist_shared_complex_1D( p, win, i1_new, i2_new)
+  subroutine reallocate_dist_shared_complex_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
-    integer,                            intent(in   ) :: i1_new, i2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'reallocate_dist_shared_complex_1D'
-    integer                            :: i1_old, i2_old, n1_old, n1_new
+    integer                            :: i1_old, i2_old, n1_old, i1_new, i2_new, n1_new
     complex(dp), dimension(:), pointer :: p_temp => null()
     type(MPI_WIN)                      :: w_temp
 
@@ -530,10 +566,12 @@ contains
     i1_old = lbound( p,1)
     i2_old = ubound( p,1)
     n1_old = size( p,1)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
     n1_new = i2_new + 1 - i1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -541,7 +579,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new)) = p_temp( i1_old: i1_old - 1 + min( n1_old, n1_new))
@@ -555,17 +593,17 @@ contains
 
   end subroutine reallocate_dist_shared_complex_1D
 
-  subroutine reallocate_dist_shared_complex_2D( p, win, i1_new, i2_new, j1_new, j2_new)
+  subroutine reallocate_dist_shared_complex_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                        intent(inout) :: win                !< Corresponding MPI window
-    integer,                              intent(in   ) :: i1_new, i2_new, j1_new, j2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter       :: routine_name = 'reallocate_dist_shared_complex_2D'
-    integer                              :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, n1_new, n2_new
+    integer                              :: i1_old, i2_old, j1_old, j2_old, n1_old, n2_old, i1_new, i2_new, j1_new, j2_new, n1_new, n2_new
     complex(dp), dimension(:,:), pointer :: p_temp => null()
     type(MPI_WIN)                        :: w_temp
 
@@ -581,11 +619,15 @@ contains
     j2_old = ubound( p,2)
     n1_old = size( p,1)
     n2_old = size( p,2)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -593,7 +635,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new)) = &
@@ -608,17 +650,17 @@ contains
 
   end subroutine reallocate_dist_shared_complex_2D
 
-  subroutine reallocate_dist_shared_complex_3D( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+  subroutine reallocate_dist_shared_complex_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                          intent(inout) :: win                        !< Corresponding MPI window
-    integer,                                intent(in   ) :: i1_new, i2_new, j1_new, j2_new, k1_new, k2_new     !< Bounds of the memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3     !< [lower bound, upper bound] of the memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'reallocate_dist_shared_complex_3D'
-    integer                                :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, n1_new, n2_new, n3_new
+    integer                                :: i1_old, i2_old, j1_old, j2_old, k1_old, k2_old, n1_old, n2_old, n3_old, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new, n1_new, n2_new, n3_new
     complex(dp), dimension(:,:,:), pointer :: p_temp => null()
     type(MPI_WIN)                          :: w_temp
 
@@ -637,12 +679,18 @@ contains
     n1_old = size( p,1)
     n2_old = size( p,2)
     n3_old = size( p,3)
+    i1_new = bounds_dim1(1)
+    i2_new = bounds_dim1(2)
+    j1_new = bounds_dim2(1)
+    j2_new = bounds_dim2(2)
+    k1_new = bounds_dim3(1)
+    k2_new = bounds_dim3(2)
     n1_new = i2_new + 1 - i1_new
     n2_new = j2_new + 1 - j1_new
     n3_new = k2_new + 1 - k1_new
 
     ! Allocate temporary memory, copy data there
-    call allocate_dist_shared( p_temp, w_temp, i1_old, i2_old, j1_old, j2_old, k1_old, k2_old)
+    call allocate_dist_shared( p_temp, w_temp, [i1_old, i2_old], [j1_old, j2_old], [k1_old, k2_old])
     if (par%node_primary) p_temp = p
     call sync_node
 
@@ -650,7 +698,7 @@ contains
     call deallocate_dist_shared( p, win)
 
     ! Allocate new memory
-    call allocate_dist_shared( p, win, i1_new, i2_new, j1_new, j2_new, k1_new, k2_new)
+    call allocate_dist_shared( p, win, [i1_new, i2_new], [j1_new, j2_new], [k1_new, k2_new])
 
     ! Copy data there
     if (par%node_primary) p( i1_new: i1_new - 1 + min( n1_old, n1_new), j1_new: j1_new - 1 + min( n2_old, n2_new), k1_new: k1_new - 1 + min( n3_old, n3_new)) = &

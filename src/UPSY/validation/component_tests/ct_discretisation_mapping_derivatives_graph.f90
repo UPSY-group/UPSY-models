@@ -209,18 +209,18 @@ contains
       UPSY%stru%colour_string( trim( function_name),'light blue'), '...'
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_ex       , wd_ex       , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( ddx_ex     , wddx_ex     , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( ddy_ex     , wddy_ex     , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( d2dx2_ex   , wd2dx2_ex   , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( d2dxdy_ex  , wd2dxdy_ex  , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( d2dy2_ex   , wd2dy2_ex   , graph%pai%i1_nih, graph%pai%i2_nih)
+    call allocate_dist_shared( d_ex       , wd_ex       , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( ddx_ex     , wddx_ex     , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( ddy_ex     , wddy_ex     , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dx2_ex   , wd2dx2_ex   , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dxdy_ex  , wd2dxdy_ex  , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dy2_ex   , wd2dy2_ex   , [graph%pai%i1_nih, graph%pai%i2_nih])
 
-    call allocate_dist_shared( ddx_disc   , wddx_disc   , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( ddy_disc   , wddy_disc   , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( d2dx2_disc , wd2dx2_disc , graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( d2dxdy_disc, wd2dxdy_disc, graph%pai%i1_nih, graph%pai%i2_nih)
-    call allocate_dist_shared( d2dy2_disc , wd2dy2_disc , graph%pai%i1_nih, graph%pai%i2_nih)
+    call allocate_dist_shared( ddx_disc   , wddx_disc   , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( ddy_disc   , wddy_disc   , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dx2_disc , wd2dx2_disc , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dxdy_disc, wd2dxdy_disc, [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dy2_disc , wd2dy2_disc , [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Calculate exact solutions
     do ni = graph%ni1, graph%ni2

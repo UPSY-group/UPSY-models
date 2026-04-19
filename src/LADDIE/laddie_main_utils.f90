@@ -292,84 +292,84 @@ CONTAINS
     ! == Regular variables ==
 
     ! Thickness
-    call reallocate_dist_shared( laddie%dH_dt,          laddie%wdH_dt,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%dH_dt,          laddie%wdH_dt,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Temperatures
-    call reallocate_dist_shared( laddie%T_amb,          laddie%wT_amb,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%T_base,         laddie%wT_base,         mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%T_freeze,       laddie%wT_freeze,       mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%T_amb,          laddie%wT_amb,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%T_base,         laddie%wT_base,         [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%T_freeze,       laddie%wT_freeze,       [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Salinities
-    call reallocate_dist_shared( laddie%S_amb,          laddie%wS_amb,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%S_base,         laddie%wS_base,         mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%S_amb,          laddie%wS_amb,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%S_base,         laddie%wS_base,         [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Densities and buoyancies
-    call reallocate_dist_shared( laddie%rho,            laddie%wrho,            mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%rho_amb,        laddie%wrho_amb,        mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%drho_amb,       laddie%wdrho_amb,       mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%Hdrho_amb,      laddie%wHdrho_amb,      mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%Hdrho_amb_b,    laddie%wHdrho_amb_b,    mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%drho_base,      laddie%wdrho_base,      mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%rho,            laddie%wrho,            [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%rho_amb,        laddie%wrho_amb,        [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%drho_amb,       laddie%wdrho_amb,       [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%Hdrho_amb,      laddie%wHdrho_amb,      [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%Hdrho_amb_b,    laddie%wHdrho_amb_b,    [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%drho_base,      laddie%wdrho_base,      [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Friction velocity
-    call reallocate_dist_shared( laddie%u_star,         laddie%wu_star,         mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%u_star,         laddie%wu_star,         [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Physical parameter fields
-    call reallocate_dist_shared( laddie%gamma_T,        laddie%wgamma_T,        mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%gamma_S,        laddie%wgamma_S,        mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%A_h,            laddie%wA_h,            mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%K_h,            laddie%wK_h,            mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%gamma_T,        laddie%wgamma_T,        [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%gamma_S,        laddie%wgamma_S,        [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%A_h,            laddie%wA_h,            [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%K_h,            laddie%wK_h,            [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Vertical rates
-    call reallocate_dist_shared( laddie%melt,           laddie%wmelt,           mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%entr,           laddie%wentr,           mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%entr_dmin,      laddie%wentr_dmin,      mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%detr,           laddie%wdetr,           mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%entr_tot,       laddie%wentr_tot,       mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%SGD,            laddie%wSGD,            mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%melt,           laddie%wmelt,           [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%entr,           laddie%wentr,           [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%entr_dmin,      laddie%wentr_dmin,      [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%detr,           laddie%wdetr,           [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%entr_tot,       laddie%wentr_tot,       [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%SGD,            laddie%wSGD,            [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Horizontal fluxes
-    call reallocate_dist_shared( laddie%divQH,          laddie%wdivQH,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%divQU,          laddie%wdivQU,          mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%divQV,          laddie%wdivQV,          mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%divQT,          laddie%wdivQT,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%divQS,          laddie%wdivQS,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%divQH,          laddie%wdivQH,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%divQU,          laddie%wdivQU,          [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%divQV,          laddie%wdivQV,          [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%divQT,          laddie%wdivQT,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%divQS,          laddie%wdivQS,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Viscosities
-    call reallocate_dist_shared( laddie%viscU,          laddie%wviscU,          mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%viscV,          laddie%wviscV,          mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( laddie%viscU,          laddie%wviscU,          [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%viscV,          laddie%wviscV,          [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
 
     ! Diffusivities
-    call reallocate_dist_shared( laddie%diffT,          laddie%wdiffT,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%diffS,          laddie%wdiffS,          mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%diffT,          laddie%wdiffT,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%diffS,          laddie%wdiffS,          [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! RHS terms
-    call reallocate_dist_shared( laddie%ddrho_amb_dx_b, laddie%wddrho_amb_dx_b, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%ddrho_amb_dy_b, laddie%wddrho_amb_dy_b, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%dH_dx_b,        laddie%wdH_dx_b,        mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%dH_dy_b,        laddie%wdH_dy_b,        mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%detr_b,         laddie%wdetr_b,         mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( laddie%ddrho_amb_dx_b, laddie%wddrho_amb_dx_b, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%ddrho_amb_dy_b, laddie%wddrho_amb_dy_b, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%dH_dx_b,        laddie%wdH_dx_b,        [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%dH_dy_b,        laddie%wdH_dy_b,        [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%detr_b,         laddie%wdetr_b,         [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
 
     ! Forward-Backward Runge-Kutta 3 scheme
-    call reallocate_dist_shared( laddie%Hstar         , laddie%wHstar         , mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( laddie%Hstar         , laddie%wHstar         , [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
 
     ! Mapped variables
-    call reallocate_dist_shared( laddie%H_c           , laddie%wH_c           , mesh_new%pai_E%i1_nih  , mesh_new%pai_E%i2_nih  )
-    call reallocate_dist_shared( laddie%Hstar_b       , laddie%wHstar_b       , mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%Hstar_c       , laddie%wHstar_c       , mesh_new%pai_E%i1_nih  , mesh_new%pai_E%i2_nih  )
+    call reallocate_dist_shared( laddie%H_c           , laddie%wH_c           , [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
+    call reallocate_dist_shared( laddie%Hstar_b       , laddie%wHstar_b       , [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%Hstar_c       , laddie%wHstar_c       , [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
 
     ! Masks
-    call reallocate_dist_shared( laddie%mask_a,         laddie%wmask_a,         mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%mask_gr_a,      laddie%wmask_gr_a,      mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%mask_oc_a,      laddie%wmask_oc_a,      mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%mask_b,         laddie%wmask_b,         mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%mask_gl_b,      laddie%wmask_gl_b,      mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%mask_cf_b,      laddie%wmask_cf_b,      mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( laddie%mask_oc_b,      laddie%wmask_oc_b,      mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( laddie%mask_a,         laddie%wmask_a,         [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%mask_gr_a,      laddie%wmask_gr_a,      [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%mask_oc_a,      laddie%wmask_oc_a,      [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%mask_b,         laddie%wmask_b,         [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%mask_gl_b,      laddie%wmask_gl_b,      [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%mask_cf_b,      laddie%wmask_cf_b,      [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( laddie%mask_oc_b,      laddie%wmask_oc_b,      [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
 
     ! Domain
-    call reallocate_dist_shared( laddie%domain_a      , laddie%wdomain_a      , mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( laddie%domain_b      , laddie%wdomain_b      , mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( laddie%domain_a      , laddie%wdomain_a      , [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( laddie%domain_b      , laddie%wdomain_b      , [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
 
     ! == Re-initialise masks ==
     CALL update_laddie_masks( mesh_new, laddie, forcing)
@@ -431,21 +431,21 @@ CONTAINS
     allocate( d_loc( mesh_old%vi1:mesh_old%vi2), source = 0._dp)
     call hybrid_to_dist( mesh_old%pai_V, npx%H, d_loc)
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, d_loc, '2nd_order_conservative')
-    call reallocate_dist_shared( npx%H, npx%wH, mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( npx%H, npx%wH, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
     call dist_to_hybrid( mesh_new%pai_V, d_loc, npx%H)
     deallocate( d_loc)
 
     allocate( d_loc( mesh_old%vi1:mesh_old%vi2), source = 0._dp)
     call hybrid_to_dist( mesh_old%pai_V, npx%T, d_loc)
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, d_loc, '2nd_order_conservative')
-    call reallocate_dist_shared( npx%T, npx%wT, mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( npx%T, npx%wT, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
     call dist_to_hybrid( mesh_new%pai_V, d_loc, npx%T)
     deallocate( d_loc)
 
     allocate( d_loc( mesh_old%vi1:mesh_old%vi2), source = 0._dp)
     call hybrid_to_dist( mesh_old%pai_V, npx%S, d_loc)
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, d_loc, '2nd_order_conservative')
-    call reallocate_dist_shared( npx%S, npx%wS, mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
+    call reallocate_dist_shared( npx%S, npx%wS, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
     call dist_to_hybrid( mesh_new%pai_V, d_loc, npx%S)
     deallocate( d_loc)
 
@@ -457,19 +457,19 @@ CONTAINS
         allocate( d_loc( mesh_old%ti1:mesh_old%ti2), source = 0._dp)
         call hybrid_to_dist( mesh_old%pai_Tri, npx%U, d_loc)
         call map_from_mesh_tri_to_mesh_tri_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, d_loc, '2nd_order_conservative')
-        call reallocate_dist_shared( npx%U, npx%wU, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+        call reallocate_dist_shared( npx%U, npx%wU, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
         call dist_to_hybrid( mesh_new%pai_Tri, d_loc, npx%U)
         deallocate( d_loc)
 
         allocate( d_loc( mesh_old%ti1:mesh_old%ti2), source = 0._dp)
         call hybrid_to_dist( mesh_old%pai_Tri, npx%V, d_loc)
         call map_from_mesh_tri_to_mesh_tri_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, d_loc, '2nd_order_conservative')
-        call reallocate_dist_shared( npx%V, npx%wV, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+        call reallocate_dist_shared( npx%V, npx%wV, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
         call dist_to_hybrid( mesh_new%pai_Tri, d_loc, npx%V)
         deallocate( d_loc)
       case ('no_vel')
-        call reallocate_dist_shared( npx%U, npx%wU, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-        call reallocate_dist_shared( npx%V, npx%wV, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+        call reallocate_dist_shared( npx%U, npx%wU, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+        call reallocate_dist_shared( npx%V, npx%wV, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
     end select
 
     call checksum( mesh_new%pai_V  , npx%H, 'npx%H')
@@ -478,12 +478,12 @@ CONTAINS
     call checksum( mesh_new%pai_Tri, npx%U, 'npx%U')
     call checksum( mesh_new%pai_Tri, npx%V, 'npx%V')
 
-    call reallocate_dist_shared( npx%H_b, npx%wH_b, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
-    call reallocate_dist_shared( npx%H_c, npx%wH_c, mesh_new%pai_E%i1_nih  , mesh_new%pai_E%i2_nih  )
-    call reallocate_dist_shared( npx%U_a, npx%wU_a, mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( npx%U_c, npx%wU_c, mesh_new%pai_E%i1_nih  , mesh_new%pai_E%i2_nih  )
-    call reallocate_dist_shared( npx%V_a, npx%wV_a, mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  )
-    call reallocate_dist_shared( npx%V_c, npx%wV_c, mesh_new%pai_E%i1_nih  , mesh_new%pai_E%i2_nih  )
+    call reallocate_dist_shared( npx%H_b, npx%wH_b, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( npx%H_c, npx%wH_c, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
+    call reallocate_dist_shared( npx%U_a, npx%wU_a, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( npx%U_c, npx%wU_c, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
+    call reallocate_dist_shared( npx%V_a, npx%wV_a, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
+    call reallocate_dist_shared( npx%V_c, npx%wV_c, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
 
     do vi = mesh_new%vi1, mesh_new%vi2
       npx%H( vi) = max(npx%H( vi), C%laddie_thickness_minimum)

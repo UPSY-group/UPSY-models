@@ -153,9 +153,9 @@ contains
 
 
     ! Allocate mask_int
-    call allocate_dist_shared( mask_int, wmask_int, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
-    call allocate_dist_shared( d_partial_a, wd_partial_a, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
-    call allocate_dist_shared( d_partial_b, wd_partial_b, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+    call allocate_dist_shared( mask_int, wmask_int, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_partial_a, wd_partial_a, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_partial_b, wd_partial_b, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
 
     ! Add the specified data field to the file
     select case (choice_output_field)

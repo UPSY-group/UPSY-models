@@ -70,7 +70,7 @@ contains
       call hybrid_to_dist( mesh_old%pai_V, d_nih, d_dist)
 
       ! Reallocate hybrid memory and update bounds and pointers
-      call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih)
+      call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
       field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih) => d_nih
 
       ! Remap the distributed array (remapping code doesn't yet work on hybrid memory)
@@ -110,7 +110,7 @@ contains
       call hybrid_to_dist( mesh_old%pai_Tri, d_nih, d_dist)
 
       ! Reallocate hybrid memory and update bounds and pointers
-      call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+      call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
       field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih) => d_nih
 
       ! Remap the distributed array (remapping code doesn't yet work on hybrid memory)
@@ -200,7 +200,7 @@ contains
       call hybrid_to_dist( mesh_old%pai_V, nz, d_nih, d_dist)
 
       ! Reallocate hybrid memory and update bounds and pointers
-      call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih, 1, nz)
+      call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih], [1, nz])
       field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih, 1:nz) => d_nih
 
       ! Remap the distributed array (remapping code doesn't yet work on hybrid memory)
@@ -243,7 +243,7 @@ contains
       call hybrid_to_dist( mesh_old%pai_Tri, nz, d_nih, d_dist)
 
       ! Reallocate hybrid memory and update bounds and pointers
-      call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih, 1, nz)
+      call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih], [1, nz])
       field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih, 1:nz) => d_nih
 
       ! Remap the distributed array (remapping code doesn't yet work on hybrid memory)

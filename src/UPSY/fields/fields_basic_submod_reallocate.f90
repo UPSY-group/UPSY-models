@@ -62,7 +62,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
     field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -88,7 +88,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
     field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -114,7 +114,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
     field%d_nih( mesh_new%pai_E%i1_nih: mesh_new%pai_E%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -186,7 +186,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -215,7 +215,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -244,7 +244,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_E%i1_nih: mesh_new%pai_E%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -316,7 +316,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
     field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -342,7 +342,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
     field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -368,7 +368,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
     field%d_nih( mesh_new%pai_E%i1_nih: mesh_new%pai_E%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -440,7 +440,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -469,7 +469,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -498,7 +498,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_E%i1_nih: mesh_new%pai_E%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -570,7 +570,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih])
     field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -596,7 +596,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
     field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -622,7 +622,7 @@ contains
     call init_routine( routine_name)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih])
     field%d_nih( mesh_new%pai_E%i1_nih: mesh_new%pai_E%i2_nih) => d_nih
 
     ! Update field grid and parallel array info
@@ -694,7 +694,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_V%i1_nih, mesh_new%pai_V%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_V%i1_nih: mesh_new%pai_V%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -723,7 +723,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_Tri%i1_nih: mesh_new%pai_Tri%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info
@@ -752,7 +752,7 @@ contains
     nz = size( d_nih,2)
 
     ! Reallocate hybrid memory and update bounds and pointers
-    call reallocate_dist_shared( d_nih, field%w, mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih, 1, nz)
+    call reallocate_dist_shared( d_nih, field%w, [mesh_new%pai_E%i1_nih, mesh_new%pai_E%i2_nih], [1, nz])
     field%d_nih( mesh_new%pai_E%i1_nih: mesh_new%pai_E%i2_nih, 1:nz) => d_nih
 
     ! Update field grid and parallel array info

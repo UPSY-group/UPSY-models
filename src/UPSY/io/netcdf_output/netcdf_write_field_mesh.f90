@@ -75,7 +75,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
       call dist_to_hybrid( mesh%pai_V, d_partial, d_nih)
     end if
 
@@ -159,7 +159,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
       call dist_to_hybrid( mesh%pai_V, d_partial, d_nih)
     end if
 
@@ -243,7 +243,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
       call dist_to_hybrid( mesh%pai_Tri, d_partial, d_nih)
     end if
 
@@ -327,7 +327,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, 12)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, 12])
       call dist_to_hybrid( mesh%pai_V, 12, d_partial, d_nih)
     end if
 
@@ -411,7 +411,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, mesh%nz)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, mesh%nz])
       call dist_to_hybrid( mesh%pai_V, mesh%nz, d_partial, d_nih)
     end if
 
@@ -495,7 +495,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih, 1, mesh%nz)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1, mesh%nz])
       call dist_to_hybrid( mesh%pai_Tri, mesh%nz, d_partial, d_nih)
     end if
 
@@ -581,7 +581,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, nz_ocean)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, nz_ocean])
       call dist_to_hybrid( mesh%pai_V, nz_ocean, d_partial, d_nih)
     end if
 
@@ -662,7 +662,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
       call dist_to_hybrid( mesh%pai_V, d_partial, d_nih)
     end if
 
@@ -737,7 +737,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
       call dist_to_hybrid( mesh%pai_Tri, d_partial, d_nih)
     end if
 
@@ -812,7 +812,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
       call dist_to_hybrid( mesh%pai_E, d_partial, d_nih)
     end if
 
@@ -887,7 +887,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
       call dist_to_hybrid( mesh%pai_V, d_partial, d_nih)
     end if
 
@@ -962,7 +962,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
       call dist_to_hybrid( mesh%pai_Tri, d_partial, d_nih)
     end if
 
@@ -1037,7 +1037,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_E%i1_nih, mesh%pai_E%i2_nih)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
       call dist_to_hybrid( mesh%pai_E, d_partial, d_nih)
     end if
 
@@ -1112,7 +1112,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, 12)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, 12])
       call dist_to_hybrid( mesh%pai_V, 12, d_partial, d_nih)
     end if
 
@@ -1187,7 +1187,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, mesh%nz)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, mesh%nz])
       call dist_to_hybrid( mesh%pai_V, mesh%nz, d_partial, d_nih)
     end if
 
@@ -1262,7 +1262,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih, 1, mesh%nz)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1, mesh%nz])
       call dist_to_hybrid( mesh%pai_Tri, mesh%nz, d_partial, d_nih)
     end if
 
@@ -1339,7 +1339,7 @@ contains
     if (d_is_hybrid) then
       d_nih => d_partial
     else
-      call allocate_dist_shared( d_nih, wd_nih, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih, 1, nz_ocean)
+      call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, nz_ocean])
       call dist_to_hybrid( mesh%pai_V, nz_ocean, d_partial, d_nih)
     end if
 

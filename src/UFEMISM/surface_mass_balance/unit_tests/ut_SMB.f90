@@ -169,7 +169,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Set up reference SMB and T2m fields
-    call allocate_dist_shared( SMB_ref, wSMB_ref, mesh%pai_V%i1_nih, mesh%pai_V%i2_nih)
+    call allocate_dist_shared( SMB_ref, wSMB_ref, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
     do vi = mesh%vi1, mesh%vi2
       SMB_ref( vi) = hypot( mesh%V( vi,1), mesh%V( vi,2))
     end do

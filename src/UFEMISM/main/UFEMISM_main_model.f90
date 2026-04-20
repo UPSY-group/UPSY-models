@@ -9,7 +9,7 @@ MODULE UFEMISM_main_model
   use UPSY_main, only: UPSY
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
@@ -21,6 +21,7 @@ MODULE UFEMISM_main_model
   use ice_dynamics_main, only: initialise_ice_dynamics_model, run_ice_dynamics_model, remap_ice_dynamics_model, &
     create_restart_files_ice_model, write_to_restart_files_ice_model, apply_geometry_relaxation
   use basal_hydrology_main, only: run_basal_hydrology_model
+  use basal_hydrology_new, only: allocate_basal_hydro, remap_basal_hydro_model
   use bed_roughness_main, only: initialise_bed_roughness_model
   USE thermodynamics_main                                    , ONLY: initialise_thermodynamics_model, run_thermodynamics_model, &
                                                                      create_restart_file_thermo, write_to_restart_file_thermo
@@ -81,6 +82,7 @@ CONTAINS
     REAL(dp)                                                           :: dt_av
     REAL(dp)                                                           :: mesh_fitness_coefficient
     TYPE(type_global_forcing)                                          :: regional_forcing
+    real(dp)                                                           :: time_hydro
 
     ! Add routine to path
     routine_name = 'run_model('  //  region%name  //  ')'
@@ -118,7 +120,7 @@ CONTAINS
       END IF ! IF (C%allow_mesh_updates) THEN
 
       ! Run the subglacial hydrology model
-      CALL run_basal_hydrology_model( region%mesh, region%ice)
+      call run_basal_hydrology_model( region%mesh, region%ice, region%time, region%ice%hydro_Salle2025)
 
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN
@@ -133,6 +135,7 @@ CONTAINS
 
       ! Run the ice dynamics model to calculate ice geometry at the desired time, and update
       ! velocities, thinning rates, and predicted geometry if necessary
+      ! After a mesh update with Salle2025 enabled, it stops here.
       CALL run_ice_dynamics_model( region)
 
       ! Calculate ice temperature at the desired time, and update
@@ -226,11 +229,15 @@ CONTAINS
 
     ! Buffer scalar output data
     call buffer_scalar_output( region)
-    call buffer_ISMIP_scalar_output( region)
+    if (C%do_create_ismip_output) then
+      call buffer_ISMIP_scalar_output( region)
+    end if
 
     if (region%nROI > 0) then
       call buffer_scalar_output_ROI( region)
-      call buffer_ISMIP_scalar_output_ROI( region)
+      if (C%do_create_ismip_output) then
+        call buffer_ISMIP_scalar_output_ROI( region)
+      end if
     end if
 
     ! Determine time of next output event
@@ -519,6 +526,8 @@ CONTAINS
 
     CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
+    call allocate_basal_hydro( region%mesh, region%ice, region%ice%hydro_Salle2025)
+
     call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
 
     ! ===== Climate =====
@@ -646,6 +655,9 @@ CONTAINS
        lambda_M = region%mesh%lambda_M, phi_M = region%mesh%phi_M, beta_stereo = region%mesh%beta_stereo)
 
     ! Create the main regional output files
+    if (C%do_create_ismip_output .AND. .not. C%do_create_netcdf_output) then
+       if (par%primary) call warning('NetCDF creation was set to False, but ISMIP creation was set to True. No ISMIP files will be created!')
+    end if
     CALL create_main_regional_output_file_mesh( region)
     CALL create_main_regional_output_file_grid( region)
     CALL create_ISMIP_regional_output_file_grid( region)
@@ -669,7 +681,9 @@ CONTAINS
     CALL create_ISMIP_scalar_regional_output_file( region)
     if (region%nROI > 0) then
       CALL create_scalar_regional_output_file_ROI( region)
-      CALL create_ISMIP_scalar_regional_output_file_ROI( region)
+      if (C%do_create_ismip_output) then
+        CALL create_ISMIP_scalar_regional_output_file_ROI( region)
+      end if
     end if
 
     ! Set output writing time to start of run, so the initial state will be written to output
@@ -1298,6 +1312,9 @@ CONTAINS
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )
     CALL remap_GIA_model(             region%mesh, mesh_new,             region%GIA    , region%refgeo_GIAeq, region%ELRA)
+    if (C%choice_basal_hydrology_model == 'Salle2025') then
+      call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice, region%ice%hydro_Salle2025,                region%time)
+    end if
 
     call remap_tracer_tracking_model( region%mesh, mesh_new, region%tracer_tracking, region%time)
 
@@ -1310,6 +1327,7 @@ CONTAINS
     region%BMB%t_next     = region%time
     region%LMB%t_next     = region%time
     region%GIA%t_next     = region%time
+    region%ice%hydro_Salle2025%t_next = region%time
 
     ! Throw away the mapping operators involving the old mesh
     CALL clear_all_maps_involving_this_mesh( region%mesh)

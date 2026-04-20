@@ -9,6 +9,7 @@ MODULE ice_model_types
   USE precisions                                             , ONLY: dp
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
+  use basal_hydrology_model_types, only: type_basal_hydrology_model
 
   IMPLICIT NONE
 
@@ -472,6 +473,8 @@ MODULE ice_model_types
 
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: divQ                        ! [m yr^-1] Horizontal ice flux divergence
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: R_shear                     ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
+    real(dp), dimension(:    ), allocatable :: Qspill                      ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
+    real(dp), dimension(:,:  ), allocatable :: u_perp                      ! [m yr^-1] Perpendicular ice velocity to to edge. 
 
   ! == Basal hydrology ==
   ! =====================
@@ -482,6 +485,8 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: effective_pressure          ! [Pa]  Basal effective pressure
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: pore_water_likelihood       ! [0-1] Basal pore water likelihood
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: pore_water_fraction         ! [0-1] Fraction of overburden pressure reduced by pore water pressure
+
+    type(type_basal_hydrology_model) :: hydro_Salle2025
 
   ! == Basal sliding ==
   ! ===================

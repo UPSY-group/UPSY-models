@@ -284,8 +284,8 @@ contains
     !< Deallocate hybrid distributed/shared memory, using the associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                     intent(inout) :: win        !< Corresponding MPI window
+    complex(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'deallocate_dist_shared_complex_1D'
@@ -312,8 +312,8 @@ contains
     !< Deallocate hybrid distributed/shared memory, using the associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                       intent(inout) :: win        !< Corresponding MPI window
+    complex(dp), dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                        intent(inout) :: win        !< Corresponding MPI window
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'deallocate_dist_shared_complex_2D'
@@ -340,8 +340,8 @@ contains
     !< Deallocate hybrid distributed/shared memory, using the associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                         intent(inout) :: win        !< Corresponding MPI window
+    complex(dp), dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                          intent(inout) :: win        !< Corresponding MPI window
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'deallocate_dist_shared_complex_3D'

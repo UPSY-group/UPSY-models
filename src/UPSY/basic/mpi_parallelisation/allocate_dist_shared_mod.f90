@@ -503,9 +503,9 @@ contains
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                     intent(inout) :: win        !< Corresponding MPI window
-    integer,                           intent(in   ) :: n1         !< Dimension(s) of memory to be allocated
+    complex(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
+    integer,                            intent(in   ) :: n1         !< Dimension(s) of memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_complex_1D'
@@ -555,9 +555,9 @@ contains
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                       intent(inout) :: win        !< Corresponding MPI window
-    integer,                             intent(in   ) :: n1, n2     !< Dimension(s) of memory to be allocated
+    complex(dp), dimension(:,:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                        intent(inout) :: win        !< Corresponding MPI window
+    integer,                              intent(in   ) :: n1, n2     !< Dimension(s) of memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_complex_2D'
@@ -607,9 +607,9 @@ contains
     !< Allocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
-    complex*16, dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
-    type(MPI_WIN),                         intent(inout) :: win        !< Corresponding MPI window
-    integer,                               intent(in   ) :: n1, n2, n3 !< Dimension(s) of memory to be allocated
+    complex(dp), dimension(:,:,:), pointer, intent(inout) :: p          !< Pointer to memory
+    type(MPI_WIN),                          intent(inout) :: win        !< Corresponding MPI window
+    integer,                                intent(in   ) :: n1, n2, n3 !< Dimension(s) of memory to be allocated
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_dist_shared_complex_3D'

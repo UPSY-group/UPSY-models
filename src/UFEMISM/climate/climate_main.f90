@@ -22,6 +22,7 @@ MODULE climate_main
   USE climate_realistic                                      , ONLY: initialise_climate_model_realistic, run_climate_model_realistic, remap_climate_realistic
   USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
   USE climate_snapshot_plus_transient_deltaT                 , ONLY: initialise_climate_model_snapshot_plus_transient_deltaT, run_climate_model_snapshot_plus_transient_deltaT, remap_climate_snapshot_plus_transient_deltaT
+  USE climate_snapshot_plus_anomalies                        , ONLY: initialise_climate_model_snp_p_anml, run_climate_model_snp_p_anml, remap_climate_snp_p_anml
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
@@ -103,6 +104,8 @@ CONTAINS
       CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, time)
     CASE ('snapshot_plus_transient_deltaT')
       CALL run_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, time)
+    CASE ('snapshot_plus_anomalies')
+      CALL run_climate_model_snp_p_anml( mesh, ice, climate, time)  
     CASE ('matrix')
       call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
     case ('SMB_snapshot_plus_anomalies')
@@ -191,6 +194,8 @@ CONTAINS
       call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, region_name)
     case ('snapshot_plus_transient_deltaT')
       call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, region_name, C%start_time_of_run)
+    CASE ('snapshot_plus_anomalies')
+      CALL initialise_climate_model_snp_p_anml( mesh, ice, climate, region_name)    
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
       call initialise_climate_matrix( mesh, grid, ice, climate, region_name, forcing)
@@ -246,6 +251,7 @@ CONTAINS
     case ('realistic', &
           'snapshot_plus_uniform_deltaT', &
           'snapshot_plus_transient_deltaT', &
+          'snapshot_plus_anomalies', &
           'matrix')
       call write_to_restart_file_climate_model_region( mesh, climate, region_name, time)
     end select
@@ -343,6 +349,7 @@ CONTAINS
     case ('realistic', &
           'snapshot_plus_uniform_deltaT', &
           'snapshot_plus_transient_deltaT', &
+          'snapshot_plus_anomalies', &
           'matrix')
       call create_restart_file_climate_model_region( mesh, climate, region_name)
     end select
@@ -462,6 +469,8 @@ CONTAINS
       call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, ice, climate, region_name)
     ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
       call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, ice, climate, region_name, time)
+    ELSEIF (choice_climate_model == 'snapshot_plus_anomalies')  THEN
+      call remap_climate_snp_p_anml(mesh_old, mesh_new, ice, climate, region_name, time)  
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     ELSE

@@ -5,7 +5,7 @@ module climate_model_utilities
   use call_stack_and_comp_time_tracking                  , only: crash, init_routine, finalise_routine, warning
   use model_configuration                                    , only: C
   use parameters
-  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER, MPI_BCAST
   use mesh_types                                             , only: type_mesh
   use ice_model_types                                        , only: type_ice_model
   use grid_types                                             , only: type_grid
@@ -491,7 +491,7 @@ module climate_model_utilities
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    IF     ((C%choice_climate_model_realistic == 'snapshot_plus_uniform_deltaT') .AND. (snapshot%do_lapse_rates)) THEN
+    IF     (snapshot%do_lapse_rates) THEN
 
       allocate( T_inv     (mesh%vi1:mesh%vi2, 12))
       allocate( T_inv_ref (mesh%vi1:mesh%vi2, 12))
@@ -558,4 +558,5 @@ module climate_model_utilities
 
 end subroutine fill_in_transient_dT_snapshot_fields
 
-end module
+
+end module climate_model_utilities

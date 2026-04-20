@@ -54,8 +54,8 @@ CONTAINS
          CALL interpolate_ocean_depth( C%nz_ocean, C%z_ocean, forcing%S_ocean( vi,:), Hstar( vi) - forcing%Hib( vi), laddie%S_amb( vi))
        END IF
     END DO
-    call checksum( laddie%T_amb, 'laddie%T_amb', mesh%pai_V)
-    call checksum( laddie%S_amb, 'laddie%S_amb', mesh%pai_V)
+    call checksum( mesh%pai_V, laddie%T_amb, 'laddie%T_amb')
+    call checksum( mesh%pai_V, laddie%S_amb, 'laddie%S_amb')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -82,7 +82,7 @@ CONTAINS
 
     call multiply_CSR_matrix_with_vector_1D( laddie%M_map_H_a_b, &
       mesh%pai_V, H_a, mesh%pai_Tri, H_b)
-    call checksum( H_b, 'H_b', mesh%pai_Tri)
+    call checksum( mesh%pai_Tri, H_b, 'H_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -109,7 +109,7 @@ CONTAINS
 
     call multiply_CSR_matrix_with_vector_1D( laddie%M_map_H_a_c, &
       mesh%pai_V, H_a, mesh%pai_E, H_c)
-    call checksum( H_c, 'H_c', mesh%pai_E)
+    call checksum( mesh%pai_E, H_c, 'H_c')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

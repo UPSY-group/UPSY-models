@@ -699,9 +699,9 @@ contains
     character(len=1024), parameter             :: test_name_local = 'complex_1D'
     character(len=1024)                        :: test_name
     type(type_par_arr_info)                    :: pai
-    complex*16, dimension(:), contiguous, pointer :: d_nih => null()
+    complex(dp), dimension(:), contiguous, pointer :: d_nih => null()
     type(MPI_WIN)                              :: wd_nih
-    complex*16, dimension(:), allocatable         :: d_tot
+    complex(dp), dimension(:), allocatable         :: d_tot
     logical                                    :: test_result
     integer                                    :: ierr
 
@@ -768,9 +768,9 @@ contains
     character(len=1024)                          :: test_name
     type(type_par_arr_info)                      :: pai
     integer                                      :: nz
-    complex*16, dimension(:,:), contiguous, pointer :: d_nih => null()
+    complex(dp), dimension(:,:), contiguous, pointer :: d_nih => null()
     type(MPI_WIN)                                :: wd_nih
-    complex*16, dimension(:,:), allocatable         :: d_tot
+    complex(dp), dimension(:,:), allocatable         :: d_tot
     logical                                      :: test_result
     integer                                      :: ierr
 
@@ -838,9 +838,9 @@ contains
     character(len=1024)                            :: test_name
     type(type_par_arr_info)                        :: pai
     integer                                        :: nz, nl
-    complex*16, dimension(:,:,:), contiguous, pointer :: d_nih => null()
+    complex(dp), dimension(:,:,:), contiguous, pointer :: d_nih => null()
     type(MPI_WIN)                                  :: wd_nih
-    complex*16, dimension(:,:,:), allocatable         :: d_tot
+    complex(dp), dimension(:,:,:), allocatable         :: d_tot
     logical                                        :: test_result
     integer                                        :: ierr
 

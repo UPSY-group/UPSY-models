@@ -20,12 +20,13 @@ module ct_create_test_meshes
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use mesh_disc_calc_matrix_operators_2D, only: calc_all_matrix_operators_mesh
   use netcdf_io_main
+  use basic_model_utilities, only: list_files_in_folder
 
   implicit none
 
   private
 
-  public :: create_all_test_meshes_and_grids
+  public :: create_all_test_meshes_and_grids, list_test_meshes_and_grids_in_folder
 
 contains
 
@@ -158,7 +159,7 @@ contains
     call init_routine( routine_name)
 
     ! Create a set of test meshes with a uniform resolution
-    do i = 1, size( uniform_resolutions)
+    do i = 1, size( uniform_resolutions)-2
       call create_test_mesh_uniform( foldername_test_meshes, test_mesh_filenames, &
         domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
         uniform_resolutions( i), alpha_min, nit_Lloyds_algorithm)
@@ -303,7 +304,6 @@ contains
     filename = trim( foldername_test_meshes)//'/'//trim( mesh_name)//'.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)
-    call write_matrix_operators_to_netcdf_file( filename, ncid, mesh)
     call close_netcdf_file( ncid)
 
     ! Add it to the list of test meshes
@@ -412,7 +412,6 @@ contains
     filename = trim( foldername_test_meshes)//'/'//trim( mesh_name)//'.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)
-    call write_matrix_operators_to_netcdf_file( filename, ncid, mesh)
     call close_netcdf_file( ncid)
 
     ! Add it to the list of test meshes
@@ -425,7 +424,7 @@ contains
 
   end subroutine create_test_mesh_gradient
 
-  !> Create a test mesh with a smileyface and the UFEMISM lettesr
+  !> Create a test mesh with a smileyface and the UFEMISM letters
   subroutine create_test_mesh_fun( foldername_test_meshes, test_mesh_filenames, &
     domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
     res_max, alpha_min, nit_Lloyds_algorithm)
@@ -441,14 +440,14 @@ contains
     integer,                                     intent(in)    :: nit_Lloyds_algorithm
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_test_mesh_fun'
-    type(type_mesh)                :: mesh
-    character(len=14)              :: res_max_str
-    character(len=3)               :: nit_Lloyds_algorithm_str
-    character(len=1024)            :: mesh_name
-    integer                        :: it_Lloyds_algorithm
-    integer                        :: ncid
-    character(len=1024)            :: filename
+    character(len=*), parameter :: routine_name = 'create_test_mesh_fun'
+    type(type_mesh)             :: mesh
+    character(len=14)           :: res_max_str
+    character(len=3)            :: nit_Lloyds_algorithm_str
+    character(len=1024)         :: mesh_name
+    integer                     :: it_Lloyds_algorithm
+    integer                     :: ncid
+    character(len=1024)         :: filename
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -488,7 +487,6 @@ contains
     filename = trim( foldername_test_meshes)//'/'//trim( mesh_name)//'.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)
-    call write_matrix_operators_to_netcdf_file( filename, ncid, mesh)
     call close_netcdf_file( ncid)
 
     ! Add it to the list of test meshes
@@ -524,5 +522,59 @@ contains
     end if
 
   end subroutine add_filename_to_list_of_filenames
+
+  !> Get the list of test meshes and grids from the folder
+  subroutine list_test_meshes_and_grids_in_folder( foldername, test_grid_filenames, test_mesh_filenames)
+
+    ! In/output variables
+    character(len=*),                            intent(in   ) :: foldername
+    character(len=*), dimension(:), allocatable, intent(inout) :: test_grid_filenames
+    character(len=*), dimension(:), allocatable, intent(inout) :: test_mesh_filenames
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'list_test_meshes_and_grids_in_folder'
+    character(len=len( test_grid_filenames)), dimension(:), allocatable :: list_of_filenames
+    integer                     :: i, n_grids, n_meshes, i_grid, i_mesh
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! List all files in the folder
+    call list_files_in_folder( foldername, list_of_filenames)
+
+    ! Count number of grid and mesh files
+    n_grids = 0
+    n_meshes = 0
+    do i = 1, size( list_of_filenames,1)
+      if     (UPSY%stru%startswith( list_of_filenames( i), 'grid_') .and. &
+              UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
+        n_grids = n_grids + 1
+      elseif (UPSY%stru%startswith( list_of_filenames( i), 'mesh_') .and. &
+              UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
+        n_meshes = n_meshes + 1
+      end if
+    end do
+
+    ! List grid and mesh files separately
+    allocate( test_grid_filenames( n_grids))
+    allocate( test_mesh_filenames( n_meshes))
+    i_grid = 0
+    i_mesh = 0
+    do i = 1, size( list_of_filenames,1)
+      if     (UPSY%stru%startswith( list_of_filenames( i), 'grid_') .and. &
+              UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
+        i_grid = i_grid + 1
+        test_grid_filenames( i_grid) = trim( foldername) // '/' // trim( list_of_filenames( i))
+      elseif (UPSY%stru%startswith( list_of_filenames( i), 'mesh_') .and. &
+              UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
+        i_mesh = i_mesh + 1
+        test_mesh_filenames( i_mesh) = trim( foldername) // '/' // trim( list_of_filenames( i))
+      end if
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine list_test_meshes_and_grids_in_folder
 
 end module ct_create_test_meshes

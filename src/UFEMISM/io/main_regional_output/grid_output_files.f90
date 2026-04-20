@@ -591,6 +591,9 @@ contains
       case ('R_shear')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%R_shear, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'R_shear', d_grid_vec_partial_2D)
+      case ('Qspill')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%Qspill, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'Qspill', d_grid_vec_partial_2D)
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -619,6 +622,54 @@ contains
       case ('pore_water_fraction')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%pore_water_fraction, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'pore_water_fraction', d_grid_vec_partial_2D)
+      case("basal_hydro_W")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%W, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_W", d_grid_vec_partial_2D)
+      case("basal_hydro_W_til")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%W_til, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_W_til", d_grid_vec_partial_2D)
+      case("basal_hydro_divQ")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%divQ, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_divQ", d_grid_vec_partial_2D)
+      case("basal_hydro_u")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%u, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_u", d_grid_vec_partial_2D)
+      case("basal_hydro_v")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%v, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_v", d_grid_vec_partial_2D)
+      case("basal_hydro_ub")
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%u_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_ub", d_grid_vec_partial_2D)
+      case("basal_hydro_vb")
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%v_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_vb", d_grid_vec_partial_2D)
+      case("basal_hydro_R")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%R, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_R", d_grid_vec_partial_2D)
+      case("basal_hydro_D")
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%D_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_D", d_grid_vec_partial_2D)
+      case("basal_hydro_K")
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%K_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_K", d_grid_vec_partial_2D)
+      case("basal_hydro_P")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%P, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_P", d_grid_vec_partial_2D)
+      case("basal_hydro_dr_dx_b")
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%dr_dx_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_dr_dx_b", d_grid_vec_partial_2D)
+      case("basal_hydro_dr_dy_b")
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%dr_dy_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_dr_dy_b", d_grid_vec_partial_2D)
+      case("basal_hydro_O")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%O, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_O", d_grid_vec_partial_2D)
+      case("basal_hydro_C")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%C, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_C", d_grid_vec_partial_2D)
+      case("basal_hydro_N_til")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%N_til, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_N_til", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================
@@ -863,6 +914,8 @@ contains
         ! Not implemented
       case ('HV_lad')
         ! Not implemented
+      case ('S_base')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%S_base, d_grid_vec_partial_2D, d_mesh_is_hybrid = .true.)
 
     ! == Lateral mass balance ==
     ! ==========================
@@ -1542,6 +1595,8 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal ice flux divergence', units = 'm yr^-1')
       case ('R_shear')
         call add_field_grid_dp_2D( filename, ncid, 'R_shear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Slide/shear ratio', units = '0-1')
+      case ('Qspill')
+        call add_field_grid_dp_2D( filename, ncid, 'Qspill', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Horizontal spill over flux', units = 'm yr^-1')
 
     ! == Ice P/C time stepping ==
     ! ===========================
@@ -1564,6 +1619,38 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'pore_water_likelihood', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till pore water likelihood', units = '0-1')
       case ('pore_water_fraction')
         call add_field_grid_dp_2D( filename, ncid, 'pore_water_fraction', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Fraction of overburden pressure reduced by pore water', units = '0-1')
+      case ("basal_hydro_W")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_W', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer thickness', units = 'm')
+      case("basal_hydro_W_til")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_W_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial till water layer thickness', units = 'm')
+      case("basal_hydro_divQ")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_divQ', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Divergence of subglacial water flux', units = 'm s^-1')
+      case("basal_hydro_u")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_u', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer velocity x-direction', units = 'm s^-1')
+      case("basal_hydro_v")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_v', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer velocity y-direction', units = 'm s^-1')
+      case("basal_hydro_ub")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_ub', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer velocity x-direction b-grid', units = 'm s^-1')
+      case("basal_hydro_vb")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_vb', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water layer velocity y-direction b-grid', units = 'm s^-1')
+      case("basal_hydro_R")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_R', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure', units = 'Pa')
+      case("basal_hydro_D")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_D', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water diffusivity', units = 'm^2 s^-1')
+      case("basal_hydro_K")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_K', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water effective conductivity', units = 'm s^-1')
+      case("basal_hydro_P")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_P', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Pressure', units = 'Pa')
+      case("basal_hydro_dr_dx_b")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_dr_dx_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure gradient x-direction b-grid', units = 'Pa m^-1')
+      case("basal_hydro_dr_dy_b")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_dr_dy_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Subglacial water pressure gradient y-direction b-grid', units = 'Pa m^-1')
+      case("basal_hydro_O")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_O', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity opening rate', units = 'm s^-1')
+      case("basal_hydro_C")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_C', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity closing rate', units = 'm s^-1')
+      case("basal_hydro_N_til")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_N_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till effective pressure', units = 'Pa')
 
     ! == Basal sliding ==
     ! ===================
@@ -1762,6 +1849,8 @@ contains
         ! not implemented
       case ('HV_lad')
         ! not implemented
+      case ('S_base')
+        call add_field_grid_dp_2D( filename, ncid, 'S_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salinity at ice shelf base', units = 'PSU')
 
 
     ! == Lateral mass balance ==
@@ -1864,7 +1953,7 @@ contains
       call init_routine( routine_name)
 
       ! if no NetCDF output should be created, do nothing
-      if (.not. C%do_create_ISMIP_output) then
+      if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
         call finalise_routine( routine_name)
         return
       end if
@@ -1936,7 +2025,7 @@ contains
       call init_routine( routine_name)
 
       ! if no NetCDF output should be created, do nothing
-      if (.not. C%do_create_ISMIP_output) then
+      if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
         call finalise_routine( routine_name)
         return
       end if
@@ -2002,7 +2091,7 @@ contains
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_ISMIP_output) then
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if
@@ -2072,7 +2161,7 @@ contains
     call init_routine( routine_name)
 
     ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_ISMIP_output) then
+    if (.not. C%do_create_ismip_output .OR. .not. C%do_create_netcdf_output) then
       call finalise_routine( routine_name)
       return
     end if

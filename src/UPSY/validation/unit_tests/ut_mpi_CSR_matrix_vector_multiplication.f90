@@ -394,6 +394,7 @@ contains
 
     end if
 
+    pai%n_loc  = pai%i2      + 1 - pai%i1
     pai%n_node = pai%i2_node + 1 - pai%i1_node
     pai%n_nih  = pai%i2_nih  + 1 - pai%i1_nih
     pai%n_hle  = pai%i2_hle  + 1 - pai%i1_hle

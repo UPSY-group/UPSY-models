@@ -21,7 +21,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    filename_loc = trim( output_dir) // 'restart_file_' // &
+    filename_loc = trim( output_dir) // '/restart_file_' // &
             trim( self%name_val) // '_' // trim( self%region_name_val) // '.nc'
 
     if (par%primary) write(0,'(A)') '   Writing to ' // trim (self%name_val) // ' restart file "' // &

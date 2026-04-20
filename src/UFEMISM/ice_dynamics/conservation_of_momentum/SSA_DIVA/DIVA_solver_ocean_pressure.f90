@@ -316,7 +316,7 @@ contains
     call allocate_dist_shared( DIVA%Hi_a                        , DIVA%wHi_a                        , [DIVA%graphs%graph_a%pai%i1_nih, DIVA%graphs%graph_a%pai%i2_nih])
     call allocate_dist_shared( DIVA%Hs_a                        , DIVA%wHs_a                        , [DIVA%graphs%graph_a%pai%i1_nih, DIVA%graphs%graph_a%pai%i2_nih])
     call allocate_dist_shared( DIVA%Ho_a                        , DIVA%wHo_a                        , [DIVA%graphs%graph_a%pai%i1_nih, DIVA%graphs%graph_a%pai%i2_nih])
-    call allocate_dist_shared( DIVA%A_flow_3D_a                 , DIVA%wA_flow_3D_a                 , [DIVA%graphs%graph_a%pai%i1_nih, DIVA%graphs%graph_a%pai%i2_nih], mesh%nz)
+    call allocate_dist_shared( DIVA%A_flow_3D_a                 , DIVA%wA_flow_3D_a                 , [DIVA%graphs%graph_a%pai%i1_nih, DIVA%graphs%graph_a%pai%i2_nih], [1, mesh%nz])
     call allocate_dist_shared( DIVA%basal_friction_coefficient_a, DIVA%wbasal_friction_coefficient_a, [DIVA%graphs%graph_a%pai%i1_nih, DIVA%graphs%graph_a%pai%i2_nih])
     call allocate_dist_shared( DIVA%fraction_gr_b               , DIVA%wfraction_gr_b               , [DIVA%graphs%graph_b%pai%i1_nih, DIVA%graphs%graph_b%pai%i2_nih])
 

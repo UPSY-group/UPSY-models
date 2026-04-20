@@ -2,19 +2,103 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Compile UPSY",
       "type": "shell",
-      "label": "compile_all",
-      "command": "./compile_all_mac.csh",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "command": "csh -f ./compile_UPSY.csh ${input:version} ${input:selection}",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$gcc"
     },
     {
+      "label": "Compile LADDIE",
       "type": "shell",
-      "label": "compile_clean",
-      "command": "./compile_clean_mac.csh",
+      "command": "csh -f ./compile_LADDIE.csh ${input:version} ${input:selection}",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Compile UFEMISM",
+      "type": "shell",
+      "command": "csh -f ./compile_UFEMISM.csh ${input:version} ${input:selection}",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Run UPSY unit tests",
+      "type": "shell",
+      "command": "mpiexec -n 2 ./build/src/UPSY/UPSY_unit_test_program",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run UPSY multinode unit tests",
+      "type": "shell",
+      "command": "mpiexec -n 7 ./build/src/UPSY/UPSY_multinode_unit_test_program",
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "version",
+      "type": "pickString",
+      "description": "Compilation version",
+      "options": [
+        {
+          "label": "dev  – debug flags, assertions, resource tracking (slow)",
+          "value": "dev"
+        },
+        {
+          "label": "perf – optimised, no assertions (fast)",
+          "value": "perf"
+        }
+      ],
+      "default": "dev"
+    },
+    {
+      "id": "selection",
+      "type": "pickString",
+      "description": "What to recompile",
+      "options": [
+        {
+          "label": "changed – recompile changed modules only (fast)",
+          "value": "changed"
+        },
+        {
+          "label": "clean   – recompile everything from scratch (safe)",
+          "value": "clean"
+        }
+      ],
+      "default": "changed"
     }
   ]
 }

@@ -104,12 +104,9 @@ contains
     ! =========================================================
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( f_ex_nih, wf_ex_nih, mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( f_nih   , wf_nih   , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( bb_nih  , wbb_nih  , mesh%pai_Tri%n_nih)
-    f_ex_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => f_ex_nih
-    f_nih   ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => f_nih
-    bb_nih  ( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih) => bb_nih
+    call allocate_dist_shared( f_ex_nih, wf_ex_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( f_nih   , wf_nih   , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( bb_nih  , wbb_nih  , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
 
     ! Calculate exact solution
     c  = -1e-9_dp

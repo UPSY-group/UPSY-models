@@ -132,13 +132,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%vi1 :mesh%vi2), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_V%n_nih)
-    d_mesh_nih_ex( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -227,13 +223,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%vi1 :mesh%vi2, 1:nz), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_V%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex      , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih , graph%pai%i2_nih ], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih , graph%pai%i2_nih ], [1,nz])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -328,13 +320,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%vi1 :mesh%vi2), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_V%n_nih)
-    d_mesh_nih_ex( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih , graph%pai%i2_nih ])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih , graph%pai%i2_nih ])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -423,13 +411,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%vi1 :mesh%vi2, 1:nz), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_V%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih , graph%pai%i2_nih ], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih , graph%pai%i2_nih ], [1,nz])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -524,13 +508,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%vi1 :mesh%vi2), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_V%n_nih)
-    d_mesh_nih_ex( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih , graph%pai%i2_nih ])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih , graph%pai%i2_nih ])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -619,13 +599,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%vi1 :mesh%vi2, 1:nz), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_V%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih , graph%pai%i2_nih ], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih , graph%pai%i2_nih ], [1,nz])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -753,13 +729,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ti1 :mesh%ti2), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_Tri%n_nih)
-    d_mesh_nih_ex( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -848,13 +820,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ti1 :mesh%ti2, 1:nz), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_Tri%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -949,13 +917,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ti1 :mesh%ti2), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_Tri%n_nih)
-    d_mesh_nih_ex( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -1044,13 +1008,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ti1 :mesh%ti2, 1:nz), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_Tri%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -1145,13 +1105,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ti1 :mesh%ti2), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_Tri%n_nih)
-    d_mesh_nih_ex( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -1240,13 +1196,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ti1 :mesh%ti2, 1:nz), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_Tri%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex     , wd_mesh_nih_ex     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -1374,13 +1326,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ei1 :mesh%ei2), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_E%n_nih)
-    d_mesh_nih_ex( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -1469,11 +1417,11 @@ contains
     allocate( d_mesh_loc_ex( mesh%ei1 :mesh%ei2, 1:nz), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_E%n_nih, nz)
+    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
     d_mesh_nih_ex( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_ex
 
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
     d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
     d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
 
@@ -1570,13 +1518,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ei1 :mesh%ei2), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_E%n_nih)
-    d_mesh_nih_ex( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -1665,13 +1609,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ei1 :mesh%ei2, 1:nz), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_E%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -1766,13 +1706,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ei1 :mesh%ei2), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_E%n_nih)
-    d_mesh_nih_ex( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -1861,13 +1797,9 @@ contains
     allocate( d_mesh_loc_ex( mesh%ei1 :mesh%ei2, 1:nz), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, mesh%pai_E%n_nih, nz)
-    d_mesh_nih_ex( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_ex
-
-    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , graph%pai%n_nih, nz)
-    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, graph%pai%n_nih, nz)
-    d_graph_nih_ex    ( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
-    d_graph_nih_mapped( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_mapped
+    call allocate_dist_shared( d_mesh_nih_ex, wd_mesh_nih_ex, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex    , wd_graph_nih_ex    , [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_mapped, wd_graph_nih_mapped, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -1996,13 +1928,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%vi1 :mesh%vi2), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_V%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_V%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -2092,13 +2020,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%vi1 :mesh%vi2, 1:nz), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_V%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_V%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -2194,13 +2118,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%vi1 :mesh%vi2), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_V%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_V%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -2290,13 +2210,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%vi1 :mesh%vi2, 1:nz), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_V%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_V%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -2392,13 +2308,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%vi1 :mesh%vi2), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_V%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_V%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -2488,13 +2400,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%vi1 :mesh%vi2, 1:nz), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_V%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_V%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_V%i1_nih: mesh%pai_V%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do vi = mesh%vi1, mesh%vi2
@@ -2623,13 +2531,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ti1 :mesh%ti2), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_Tri%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -2719,13 +2623,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ti1 :mesh%ti2, 1:nz), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_Tri%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_Tri%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -2821,13 +2721,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ti1 :mesh%ti2), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_Tri%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -2917,13 +2813,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ti1 :mesh%ti2, 1:nz), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_Tri%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_Tri%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -3019,13 +2911,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ti1 :mesh%ti2), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_Tri%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -3115,13 +3003,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ti1 :mesh%ti2, 1:nz), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_Tri%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_Tri%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_Tri%i1_nih: mesh%pai_Tri%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ti = mesh%ti1, mesh%ti2
@@ -3250,13 +3134,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ei1 :mesh%ei2), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_E%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_E%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -3346,13 +3226,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ei1 :mesh%ei2, 1:nz), source = .false.)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_E%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_E%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -3448,13 +3324,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ei1 :mesh%ei2), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_E%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_E%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -3544,13 +3416,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ei1 :mesh%ei2, 1:nz), source = 0)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_E%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_E%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -3646,13 +3514,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ei1 :mesh%ei2), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_E%n_nih)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_E%n_nih)
-    d_mesh_nih_ex    ( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2
@@ -3742,13 +3606,9 @@ contains
     allocate( d_mesh_loc_mapped( mesh%ei1 :mesh%ei2, 1:nz), source = 0._dp)
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , mesh%pai_E%n_nih, nz)
-    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, mesh%pai_E%n_nih, nz)
-    d_mesh_nih_ex    ( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_ex
-    d_mesh_nih_mapped( mesh%pai_E%i1_nih: mesh%pai_E%i2_nih, 1:nz) => d_mesh_nih_mapped
-
-    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, graph%pai%n_nih, nz)
-    d_graph_nih_ex( graph%pai%i1_nih: graph%pai%i2_nih, 1:nz) => d_graph_nih_ex
+    call allocate_dist_shared( d_mesh_nih_ex    , wd_mesh_nih_ex    , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_mesh_nih_mapped, wd_mesh_nih_mapped, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1,nz])
+    call allocate_dist_shared( d_graph_nih_ex, wd_graph_nih_ex, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! Fill in exact solutions
     do ei = mesh%ei1, mesh%ei2

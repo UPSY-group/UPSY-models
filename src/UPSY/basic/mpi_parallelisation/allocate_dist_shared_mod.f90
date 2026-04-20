@@ -46,7 +46,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND) :: windowsize
     integer                        :: disp_unit
     type(c_ptr)                    :: baseptr
-    logical, dimension(:), pointer :: p_raw
+    logical, dimension(:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -105,7 +105,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)   :: windowsize
     integer                          :: disp_unit
     type(c_ptr)                      :: baseptr
-    logical, dimension(:,:), pointer :: p_raw
+    logical, dimension(:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -165,7 +165,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)     :: windowsize
     integer                            :: disp_unit
     type(c_ptr)                        :: baseptr
-    logical, dimension(:,:,:), pointer :: p_raw
+    logical, dimension(:,:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -226,7 +226,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND) :: windowsize
     integer                        :: disp_unit
     type(c_ptr)                    :: baseptr
-    integer, dimension(:), pointer :: p_raw
+    integer, dimension(:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -285,7 +285,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)   :: windowsize
     integer                          :: disp_unit
     type(c_ptr)                      :: baseptr
-    integer, dimension(:,:), pointer :: p_raw
+    integer, dimension(:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -345,7 +345,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)     :: windowsize
     integer                            :: disp_unit
     type(c_ptr)                        :: baseptr
-    integer, dimension(:,:,:), pointer :: p_raw
+    integer, dimension(:,:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -406,7 +406,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)  :: windowsize
     integer                         :: disp_unit
     type(c_ptr)                     :: baseptr
-    real(dp), dimension(:), pointer :: p_raw
+    real(dp), dimension(:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -465,7 +465,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)    :: windowsize
     integer                           :: disp_unit
     type(c_ptr)                       :: baseptr
-    real(dp), dimension(:,:), pointer :: p_raw
+    real(dp), dimension(:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -525,7 +525,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)      :: windowsize
     integer                             :: disp_unit
     type(c_ptr)                         :: baseptr
-    real(dp), dimension(:,:,:), pointer :: p_raw
+    real(dp), dimension(:,:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -586,7 +586,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)     :: windowsize
     integer                            :: disp_unit
     type(c_ptr)                        :: baseptr
-    complex(dp), dimension(:), pointer :: p_raw
+    complex(dp), dimension(:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -645,7 +645,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)       :: windowsize
     integer                              :: disp_unit
     type(c_ptr)                          :: baseptr
-    complex(dp), dimension(:,:), pointer :: p_raw
+    complex(dp), dimension(:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -705,7 +705,7 @@ contains
     integer(kind=MPI_ADDRESS_KIND)         :: windowsize
     integer                                :: disp_unit
     type(c_ptr)                            :: baseptr
-    complex(dp), dimension(:,:,:), pointer :: p_raw
+    complex(dp), dimension(:,:,:), contiguous, pointer :: p_raw
 
     ! Add routine to path
     call init_routine( routine_name)

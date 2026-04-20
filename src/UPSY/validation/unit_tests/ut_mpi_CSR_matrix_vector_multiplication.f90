@@ -406,9 +406,9 @@ contains
     y_nih => null()
     y_correct_nih => null()
 
-    call allocate_dist_shared( x_nih        , wx_nih        , pai%n_nih)
-    call allocate_dist_shared( y_nih        , wy_nih        , pai%n_nih)
-    call allocate_dist_shared( y_correct_nih, wy_correct_nih, pai%n_nih)
+    call allocate_dist_shared( x_nih        , wx_nih        , [1, pai%n_nih])
+    call allocate_dist_shared( y_nih        , wy_nih        , [1, pai%n_nih])
+    call allocate_dist_shared( y_correct_nih, wy_correct_nih, [1, pai%n_nih])
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -64,7 +64,7 @@ contains
       if (present( buffer_xx_nih)) then
         xx_nih => buffer_xx_nih
       else
-        call allocate_dist_shared( xx_nih, wxx_nih, pai_x%n_nih)
+        call allocate_dist_shared( xx_nih, wxx_nih, [1, pai_x%n_nih])
       end if
       call dist_to_hybrid( pai_x, xx, xx_nih)
       call basic_halo_exchange( pai_x, xx_nih)
@@ -76,7 +76,7 @@ contains
       if (present( buffer_yy_nih)) then
         yy_nih => buffer_yy_nih
       else
-        call allocate_dist_shared( yy_nih, wyy_nih, pai_y%n_nih)
+        call allocate_dist_shared( yy_nih, wyy_nih, [1, pai_y%n_nih])
       end if
       call dist_to_hybrid( pai_y, yy, yy_nih)
     end if
@@ -151,7 +151,7 @@ contains
       if (present( buffer_xx_nih)) then
         xx_nih => buffer_xx_nih
       else
-        call allocate_dist_shared( xx_nih, wxx_nih, pai_x%n_nih, size( xx,2))
+        call allocate_dist_shared( xx_nih, wxx_nih, [1, pai_x%n_nih], [1, size( xx,2)])
       end if
       call dist_to_hybrid( pai_x, size( xx,2), xx, xx_nih)
       call basic_halo_exchange( pai_x, size( xx,2), xx_nih)
@@ -163,7 +163,7 @@ contains
       if (present( buffer_yy_nih)) then
         yy_nih => buffer_yy_nih
       else
-        call allocate_dist_shared( yy_nih, wyy_nih, pai_y%n_nih, size( xx,2))
+        call allocate_dist_shared( yy_nih, wyy_nih, [1, pai_y%n_nih], [1, size( xx,2)])
       end if
       call dist_to_hybrid( pai_y, size( xx,2), yy, yy_nih)
     end if
@@ -217,7 +217,7 @@ contains
     if (.not. AA%is_finalised) call crash('A is not finalised')
 
     if (AA%needs_x_tot == 1) then
-      call allocate_dist_shared( xx_tot, wxx_tot, AA%n)
+      call allocate_dist_shared( xx_tot, wxx_tot, [1, AA%n])
       call gather_dist_shared_to_all( pai_x, xx_nih, xx_tot)
       call multiply_CSR_matrix_with_vector_1D_x_tot( AA, pai_x, xx_tot, pai_y, yy_nih)
       call deallocate_dist_shared( xx_tot, wxx_tot)

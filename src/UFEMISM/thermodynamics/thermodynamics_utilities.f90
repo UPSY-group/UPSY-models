@@ -11,6 +11,7 @@ MODULE thermodynamics_utilities
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
+  USE BMB_model_types                                        , ONLY: type_BMB_model
   USE climate_model_types                                    , ONLY: type_climate_model
   use SMB_model, only: atype_SMB_model
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
@@ -432,5 +433,35 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE calc_upwind_heat_flux_derivatives
+
+  subroutine calc_grounded_basal_melt_rates(ice, mesh, BMB)
+    ! Computes basal melt under grounded ice (BMB_sheet), based on the same method as PISM
+
+    ! In- and output variables
+    TYPE(type_mesh),                     INTENT(IN)    :: mesh
+    TYPE(type_ice_model),                INTENT(IN)    :: ice
+    TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
+    
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER        :: routine_name = 'calc_grounded_basal_melt_rates'
+    real(dp)                             :: dz, L_base, hf_up
+    integer                              :: vi
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+        
+    DO vi = mesh%vi1, mesh%vi2    
+    if (ice%mask_grounded_ice(vi)) then
+        dz = (1._dp - mesh%zeta( C%nz)) * ice%Hi_eff( vi) - ((1._dp - mesh%zeta( C%nz-1)) * ice%Hi_eff( vi)) ! finds thickness of bottom ice layer
+        hf_up = ice%Ki( vi, C%nz) * (ice%Ti_pmp( vi, C%nz) - ice%Ti_pmp( vi, C%nz-1)) / dz                   ! computes upwards heat flux
+        L_base = L_fusion + (cp_water - cp_ice) * (ice%Ti_pmp(vi, C%nz) - 273.15_dp)                         ! computes latent heat of bottom ice layer
+        
+        BMB%BMB_sheet( vi) = (ice%frictional_heating( vi) + ice%geothermal_heat_flux( vi) - hf_up) / (ice_density * L_base)
+    end if
+    END DO
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+  end subroutine calc_grounded_basal_melt_rates
 
 END MODULE thermodynamics_utilities

@@ -34,6 +34,7 @@ MODULE BMB_main
   use netcdf_io_main
   use checksum_mod, only: checksum
   use mpi_distributed_shared_memory, only: reallocate_dist_shared
+  use thermodynamics_utilities                                , ONLY: calc_grounded_basal_melt_rates
 
   IMPLICIT NONE
 
@@ -207,6 +208,10 @@ CONTAINS
       END DO
     END IF
 
+    ! Add grounded ice mass balance to total BMB
+    call calc_grounded_basal_melt_rates(ice, mesh, BMB)
+    BMB%BMB = BMB%BMB_shelf + BMB%BMB_sheet
+
     ! Apply limits
     BMB%BMB = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB ))
 
@@ -262,6 +267,10 @@ CONTAINS
     ! Allocate shelf BMB
     ALLOCATE( BMB%BMB_shelf( mesh%vi1:mesh%vi2))
     BMB%BMB_shelf = 0._dp
+
+    ! Allocate sheet BMB
+    ALLOCATE( BMB%BMB_sheet( mesh%vi1:mesh%vi2))
+    BMB%BMB_sheet = 0._dp    
 
     ! Allocate inverted BMB
     ALLOCATE( BMB%BMB_inv( mesh%vi1:mesh%vi2))

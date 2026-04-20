@@ -116,7 +116,7 @@ module models_basic
   ! =================================================
 
   type, abstract :: atype_model_context_allocate
-    character(:), allocatable :: name
+    character(len=2048)       :: name
     character(len=3)          :: region_name
     type(type_mesh), pointer  :: mesh
   end type atype_model_context_allocate

@@ -61,13 +61,15 @@ CONTAINS
         dHTdt = -laddie%divQT( vi) &
                + laddie%melt( vi) * laddie%T_base( vi) &
                - laddie%gamma_T( vi) * (npx_ref%T( vi) - laddie%T_base( vi)) &
-               + laddie%entr( vi) * laddie%T_amb( vi) &
+               + max(0._dp, laddie%entr( vi)) * laddie%T_amb( vi) &
+               - max(0._dp, laddie%detr( vi)) * npx_ref%T( vi) &
                + laddie%entr_dmin( vi) * laddie%T_amb( vi) &
                + laddie%SGD( vi) * (freezing_lambda_2 + freezing_lambda_3*forcing%Hib( vi))
 
         ! Time-derivative salt equation
         dHSdt = -laddie%divQS( vi) &
-               + laddie%entr( vi) * laddie%S_amb( vi) &
+               + max(0._dp, laddie%entr( vi)) * laddie%S_amb( vi) &
+               - max(0._dp, laddie%detr( vi)) * npx_ref%S( vi) &
                + laddie%entr_dmin( vi) * laddie%S_amb( vi) &
                + laddie%SGD( vi) * 0._dp
 

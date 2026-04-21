@@ -43,7 +43,10 @@
     {
       "label": "Run UPSY unit tests",
       "type": "shell",
-      "command": "mpiexec -n 2 ./build/src/UPSY/UPSY_unit_test_program",
+      "command": "bash",
+      "args": [
+        "./.vscode/task-scripts/run_upsy_unit_tests.sh"
+      ],
       "group": "test",
       "presentation": {
         "echo": true,
@@ -54,14 +57,37 @@
       "problemMatcher": []
     },
     {
-      "label": "Run UPSY multinode unit tests",
+      "label": "[Ubuntu] UPSY compile (act)",
+      "detail": "Run the UPSY_compiling workflow on ubuntu-latest via act (requires Docker)",
       "type": "shell",
-      "command": "mpiexec -n 7 ./build/src/UPSY/UPSY_multinode_unit_test_program",
+      "command": "bash",
+      "args": [
+        "./.vscode/task-scripts/run_ubuntu_upsy_compile_act.sh",
+        "${input:version}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "[Ubuntu] UPSY unit tests (act)",
+      "detail": "Run the UPSY_unit_tests workflow on ubuntu-latest via act (requires Docker)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "./.vscode/task-scripts/run_ubuntu_upsy_unit_tests_act.sh",
+        "${input:version}"
+      ],
       "group": "test",
       "presentation": {
         "echo": true,
         "reveal": "always",
-        "panel": "shared",
+        "panel": "dedicated",
         "clear": true
       },
       "problemMatcher": []

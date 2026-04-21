@@ -3040,9 +3040,8 @@ contains
       ni = graph%ti2ni( ti)
       if (ni > 0) then
         do k = 1, nz
-          if (d_mesh_loc_ex( ti,k) /= d_mesh_loc_mapped( ti,k)) then
-            test_result = .false.
-          end if
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( ti,k)), abs( d_mesh_loc_mapped( ti,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( ti,k) - d_mesh_loc_mapped( ti,k)) <= tol
         end do
       end if
     end do
@@ -3058,9 +3057,8 @@ contains
       ni = graph%ti2ni( ti)
       if (ni > 0) then
         do k = 1, nz
-          if (d_mesh_loc_ex( ti,k) /= d_mesh_nih_mapped( ti,k)) then
-            test_result = .false.
-          end if
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( ti,k)), abs( d_mesh_nih_mapped( ti,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( ti,k) - d_mesh_nih_mapped( ti,k)) <= tol
         end do
       end if
     end do

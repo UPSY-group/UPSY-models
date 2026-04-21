@@ -1,7 +1,7 @@
 # The full UFEMISM Test Suite
 
-name: UFEMISM Test Suite
-run-name: ${{ github.actor }} - UFEMISM Test Suite
+name: UFEMISM Test Suite (new)
+run-name: ${{ github.actor }} - UFEMISM Test Suite (new)
 on:
   pull_request:
     branches:

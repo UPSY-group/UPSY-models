@@ -1,10 +1,10 @@
 #! /bin/csh -f
 
-set config_dir = automated_testing/UFEMISM/integrated_test_ISMIP_HOM/all_ISMIP_HOM_config_files
+set config_dir = automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/all_ISMIP_HOM_config_files
 
-set exp_output_dir_prefix = automated_testing/UFEMISM/integrated_test_ISMIP_HOM
+set exp_output_dir_prefix = automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small
 
-set shared_results_dir = automated_testing/UFEMISM/integrated_test_ISMIP_HOM/results
+set shared_results_dir = automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/results
 rm -rf $shared_results_dir
 mkdir  $shared_results_dir
 

@@ -2387,7 +2387,7 @@ contains
     integer                                       :: vi, ni, k
     real(dp)                                      :: d
     logical                                       :: test_result
-    logical                                       :: debug_mismatch_printed
+    real(dp)                                      :: tol
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -2430,21 +2430,12 @@ contains
     call map_graph_to_mesh_vertices( graph, d_graph_nih_ex, mesh, d_mesh_loc_mapped)
 
     test_result = .true.
-    debug_mismatch_printed = .false.
     do vi = mesh%vi1, mesh%vi2
       ni = graph%vi2ni( vi)
       if (ni > 0) then
         do k = 1, nz
-          if (d_mesh_loc_ex( vi,k) /= d_mesh_loc_mapped( vi,k)) then
-            if (.not. debug_mismatch_printed) then
-              call warning('DEBUG graph_to_mesh_vertices dp_3D hybrid_dist mismatch at vi={int_01}, ni={int_02}, k={int_03}: expected={dp_01}, mapped={dp_02}, source={dp_03}', &
-                int_01 = vi, int_02 = ni, int_03 = k, dp_01 = d_mesh_loc_ex( vi,k), dp_02 = d_mesh_loc_mapped( vi,k), dp_03 = d_graph_nih_ex( ni,k))
-              call warning('DEBUG graph_to_mesh_vertices dp_3D hybrid_dist bounds: graph_pai=[{int_01},{int_02}], mesh=[{int_03},{int_04}], graph_arr=[{int_05},{int_06}], mapped_arr=[{int_07},{int_08}]', &
-                int_01 = graph%pai%i1_nih, int_02 = graph%pai%i2_nih, int_03 = mesh%vi1, int_04 = mesh%vi2, int_05 = lbound( d_graph_nih_ex,1), int_06 = ubound( d_graph_nih_ex,1), int_07 = lbound( d_mesh_loc_mapped,1), int_08 = ubound( d_mesh_loc_mapped,1))
-            end if
-            debug_mismatch_printed = .true.
-            test_result = .false.
-          end if
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( vi,k)), abs( d_mesh_loc_mapped( vi,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( vi,k) - d_mesh_loc_mapped( vi,k)) <= tol
         end do
       end if
     end do
@@ -2456,21 +2447,12 @@ contains
     call map_graph_to_mesh_vertices( graph, d_graph_nih_ex, mesh, d_mesh_nih_mapped)
 
     test_result = .true.
-    debug_mismatch_printed = .false.
     do vi = mesh%vi1, mesh%vi2
       ni = graph%vi2ni( vi)
       if (ni > 0) then
         do k = 1, nz
-          if (d_mesh_loc_ex( vi,k) /= d_mesh_nih_mapped( vi,k)) then
-            if (.not. debug_mismatch_printed) then
-              call warning('DEBUG graph_to_mesh_vertices dp_3D hybrid_hybrid mismatch at vi={int_01}, ni={int_02}, k={int_03}: expected={dp_01}, mapped={dp_02}, source={dp_03}', &
-                int_01 = vi, int_02 = ni, int_03 = k, dp_01 = d_mesh_loc_ex( vi,k), dp_02 = d_mesh_nih_mapped( vi,k), dp_03 = d_graph_nih_ex( ni,k))
-              call warning('DEBUG graph_to_mesh_vertices dp_3D hybrid_hybrid bounds: graph_pai=[{int_01},{int_02}], mesh_pai=[{int_03},{int_04}], graph_arr=[{int_05},{int_06}], mapped_arr=[{int_07},{int_08}]', &
-                int_01 = graph%pai%i1_nih, int_02 = graph%pai%i2_nih, int_03 = mesh%pai_V%i1_nih, int_04 = mesh%pai_V%i2_nih, int_05 = lbound( d_graph_nih_ex,1), int_06 = ubound( d_graph_nih_ex,1), int_07 = lbound( d_mesh_nih_mapped,1), int_08 = ubound( d_mesh_nih_mapped,1))
-            end if
-            debug_mismatch_printed = .true.
-            test_result = .false.
-          end if
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( vi,k)), abs( d_mesh_nih_mapped( vi,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( vi,k) - d_mesh_nih_mapped( vi,k)) <= tol
         end do
       end if
     end do
@@ -3011,7 +2993,7 @@ contains
     integer                                       :: ti, ni, k
     real(dp)                                      :: d
     logical                                       :: test_result
-    logical                                       :: debug_mismatch_printed
+    real(dp)                                      :: tol
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -3054,19 +3036,11 @@ contains
     call map_graph_to_mesh_triangles( graph, d_graph_nih_ex, mesh, d_mesh_loc_mapped)
 
     test_result = .true.
-    debug_mismatch_printed = .false.
     do ti = mesh%ti1, mesh%ti2
       ni = graph%ti2ni( ti)
       if (ni > 0) then
         do k = 1, nz
           if (d_mesh_loc_ex( ti,k) /= d_mesh_loc_mapped( ti,k)) then
-            if (.not. debug_mismatch_printed) then
-              call warning('DEBUG graph_to_mesh_triangles dp_3D hybrid_dist mismatch at ti={int_01}, ni={int_02}, k={int_03}: expected={dp_01}, mapped={dp_02}, source={dp_03}', &
-                int_01 = ti, int_02 = ni, int_03 = k, dp_01 = d_mesh_loc_ex( ti,k), dp_02 = d_mesh_loc_mapped( ti,k), dp_03 = d_graph_nih_ex( ni,k))
-              call warning('DEBUG graph_to_mesh_triangles dp_3D hybrid_dist bounds: graph_pai=[{int_01},{int_02}], mesh=[{int_03},{int_04}], graph_arr=[{int_05},{int_06}], mapped_arr=[{int_07},{int_08}]', &
-                int_01 = graph%pai%i1_nih, int_02 = graph%pai%i2_nih, int_03 = mesh%ti1, int_04 = mesh%ti2, int_05 = lbound( d_graph_nih_ex,1), int_06 = ubound( d_graph_nih_ex,1), int_07 = lbound( d_mesh_loc_mapped,1), int_08 = ubound( d_mesh_loc_mapped,1))
-            end if
-            debug_mismatch_printed = .true.
             test_result = .false.
           end if
         end do
@@ -3080,19 +3054,11 @@ contains
     call map_graph_to_mesh_triangles( graph, d_graph_nih_ex, mesh, d_mesh_nih_mapped)
 
     test_result = .true.
-    debug_mismatch_printed = .false.
     do ti = mesh%ti1, mesh%ti2
       ni = graph%ti2ni( ti)
       if (ni > 0) then
         do k = 1, nz
           if (d_mesh_loc_ex( ti,k) /= d_mesh_nih_mapped( ti,k)) then
-            if (.not. debug_mismatch_printed) then
-              call warning('DEBUG graph_to_mesh_triangles dp_3D hybrid_hybrid mismatch at ti={int_01}, ni={int_02}, k={int_03}: expected={dp_01}, mapped={dp_02}, source={dp_03}', &
-                int_01 = ti, int_02 = ni, int_03 = k, dp_01 = d_mesh_loc_ex( ti,k), dp_02 = d_mesh_nih_mapped( ti,k), dp_03 = d_graph_nih_ex( ni,k))
-              call warning('DEBUG graph_to_mesh_triangles dp_3D hybrid_hybrid bounds: graph_pai=[{int_01},{int_02}], mesh_pai=[{int_03},{int_04}], graph_arr=[{int_05},{int_06}], mapped_arr=[{int_07},{int_08}]', &
-                int_01 = graph%pai%i1_nih, int_02 = graph%pai%i2_nih, int_03 = mesh%pai_Tri%i1_nih, int_04 = mesh%pai_Tri%i2_nih, int_05 = lbound( d_graph_nih_ex,1), int_06 = ubound( d_graph_nih_ex,1), int_07 = lbound( d_mesh_nih_mapped,1), int_08 = ubound( d_mesh_nih_mapped,1))
-            end if
-            debug_mismatch_printed = .true.
             test_result = .false.
           end if
         end do

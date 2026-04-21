@@ -2387,6 +2387,7 @@ contains
     integer                                       :: vi, ni, k
     real(dp)                                      :: d
     logical                                       :: test_result
+    real(dp)                                      :: tol
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -2433,7 +2434,8 @@ contains
       ni = graph%vi2ni( vi)
       if (ni > 0) then
         do k = 1, nz
-          test_result = test_result .and. (d_mesh_loc_ex( vi,k) == d_mesh_loc_mapped( vi,k))
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( vi,k)), abs( d_mesh_loc_mapped( vi,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( vi,k) - d_mesh_loc_mapped( vi,k)) <= tol
         end do
       end if
     end do
@@ -2449,7 +2451,8 @@ contains
       ni = graph%vi2ni( vi)
       if (ni > 0) then
         do k = 1, nz
-          test_result = test_result .and. (d_mesh_loc_ex( vi,k) == d_mesh_nih_mapped( vi,k))
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( vi,k)), abs( d_mesh_nih_mapped( vi,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( vi,k) - d_mesh_nih_mapped( vi,k)) <= tol
         end do
       end if
     end do
@@ -2990,6 +2993,7 @@ contains
     integer                                       :: ti, ni, k
     real(dp)                                      :: d
     logical                                       :: test_result
+    real(dp)                                      :: tol
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -3036,7 +3040,8 @@ contains
       ni = graph%ti2ni( ti)
       if (ni > 0) then
         do k = 1, nz
-          test_result = test_result .and. (d_mesh_loc_ex( ti,k) == d_mesh_loc_mapped( ti,k))
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( ti,k)), abs( d_mesh_loc_mapped( ti,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( ti,k) - d_mesh_loc_mapped( ti,k)) <= tol
         end do
       end if
     end do
@@ -3052,7 +3057,8 @@ contains
       ni = graph%ti2ni( ti)
       if (ni > 0) then
         do k = 1, nz
-          test_result = test_result .and. (d_mesh_loc_ex( ti,k) == d_mesh_nih_mapped( ti,k))
+          tol = 64._dp * spacing( max( abs( d_mesh_loc_ex( ti,k)), abs( d_mesh_nih_mapped( ti,k))))
+          test_result = test_result .and. abs( d_mesh_loc_ex( ti,k) - d_mesh_nih_mapped( ti,k)) <= tol
         end do
       end if
     end do

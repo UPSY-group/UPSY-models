@@ -22,6 +22,6 @@ jobs:
   # unit_tests:
   #   uses: ./.github/workflows/UFE_unit_tests.yml
 
-  # mesh_creation:
-  #   uses: ./.github/workflows/UFE_component_test_mesh_creation.yml
-  #   needs: setup_and_cache_Matlab
+  ISMIP_HOM_small:
+    uses: ./.github/workflows/UFE_integrated_test_ISMIP_HOM_small.yml
+    needs: setup_and_cache_Matlab

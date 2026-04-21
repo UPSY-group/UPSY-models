@@ -108,14 +108,14 @@ cd ..
 if ($version == 'dev') then
 
   rm -f UFEMISM_program_dev
-  mv build/src/UFEMISM/UFEMISM_program UFEMISM_program_dev
+  cp build/src/UFEMISM/UFEMISM_program UFEMISM_program_dev
   rm -f UFEMISM_program
   cp UFEMISM_program_dev UFEMISM_program
 
 else if ($version == 'perf') then
 
   rm -f UFEMISM_program_perf
-  mv build/src/UFEMISM/UFEMISM_program UFEMISM_program_perf
+  cp build/src/UFEMISM/UFEMISM_program UFEMISM_program_perf
   rm -f UFEMISM_program
   cp UFEMISM_program_perf UFEMISM_program
 

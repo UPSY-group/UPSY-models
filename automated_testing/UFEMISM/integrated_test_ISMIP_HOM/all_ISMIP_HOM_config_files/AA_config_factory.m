@@ -120,7 +120,7 @@ end
 
 
 function single_line = fixed_output_dir_config( opts)
-  single_line = ['fixed_output_dir_config = "automated_testing/UPSY/integrated_test_ISMIP_HOM/' ...
+  single_line = ['fixed_output_dir_config = "automated_testing/UFEMISM/integrated_test_ISMIP_HOM/' ...
     'results_ISMIP_HOM_' opts.experiment '_' opts.length_scale '_' opts.Stokes_approx '"'];
 end
 

@@ -14,7 +14,7 @@ module ct_discretisation_solve_Laplace_eq
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
   finalise_matrix_CSR_dist, deallocate_matrix_CSR_dist
-  use CSR_matrix_solving, only: solve_matrix_equation_CSR_Jacobi
+  use petsc_basic, only: solve_matrix_equation_csr_petsc
   use netcdf_io_main
 
   implicit none
@@ -63,26 +63,23 @@ contains
     character(len=*), intent(in) :: test_mesh_filename
 
     ! Local variables:
-    character(len=1024), parameter              :: routine_name = 'run_Laplace_eq_solving_test_on_mesh'
-    type(type_mesh)                             :: mesh
-    integer                                     :: ncid
-    real(dp), dimension(:), contiguous, pointer :: f_nih    => null()
-    real(dp), dimension(:), contiguous, pointer :: f_ex_nih => null()
-    type(MPI_WIN)                               :: wf_nih, wf_ex_nih
-    real(dp)                                    :: c, r0, x, y
-    integer                                     :: ti
-    integer                                     :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)             :: AA
-    real(dp), dimension(:), contiguous, pointer :: bb_nih => null()
-    type(MPI_WIN)                               :: wbb_nih
-    integer,  dimension(:), allocatable         :: single_row_ind
-    real(dp), dimension(:), allocatable         :: single_row_d2dx2_val
-    real(dp), dimension(:), allocatable         :: single_row_d2dy2_val
-    integer                                     :: single_row_nnz
-    integer                                     :: k, tj
-    real(dp)                                    :: A
-    integer                                     :: nit
-    real(dp)                                    :: tol
+    character(len=1024), parameter      :: routine_name = 'run_Laplace_eq_solving_test_on_mesh'
+    type(type_mesh)                     :: mesh
+    integer                             :: ncid
+    real(dp), dimension(:), allocatable :: f_ex, f_disc
+    real(dp)                            :: c, r0, x, y
+    integer                             :: ti
+    integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
+    type(type_sparse_matrix_CSR_dp)     :: AA
+    real(dp), dimension(:), allocatable :: bb
+    integer,  dimension(:), allocatable :: single_row_ind
+    real(dp), dimension(:), allocatable :: single_row_d2dx2_val
+    real(dp), dimension(:), allocatable :: single_row_d2dy2_val
+    integer                             :: single_row_nnz
+    integer                             :: k, tj
+    real(dp)                            :: A
+    real(dp)                            :: PETSc_rtol, PETSc_abstol
+    integer                             :: n_Axb_its
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -103,10 +100,9 @@ contains
     !       Solution: f = -c/4 r0^2 + c/4 (x^2 + y^2)
     ! =========================================================
 
-    ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( f_ex_nih, wf_ex_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
-    call allocate_dist_shared( f_nih   , wf_nih   , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
-    call allocate_dist_shared( bb_nih  , wbb_nih  , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    allocate( f_disc( mesh%ti1: mesh%ti2), source = 0._dp)
+    allocate( f_ex  ( mesh%ti1: mesh%ti2), source = 0._dp)
+    allocate( bb    ( mesh%ti1: mesh%ti2), source = 0._dp)
 
     ! Calculate exact solution
     c  = -1e-9_dp
@@ -114,7 +110,7 @@ contains
     do ti = mesh%ti1, mesh%ti2
       x = mesh%Trigc( ti,1)
       y = mesh%Trigc( ti,2)
-      f_ex_nih( ti) = -c/4._dp * r0**2 + c/4._dp * (x**2 + y**2)
+      f_ex( ti) = -c/4._dp * r0**2 + c/4._dp * (x**2 + y**2)
     end do
 
     ! Calculate stiffness matrix A
@@ -125,8 +121,7 @@ contains
     nrows_loc       = mesh%nTri_loc
     nnz_est_proc    = mesh%M2_ddx_b_b%nnz
 
-    call allocate_matrix_CSR_dist( AA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = mesh%pai_Tri, pai_y = mesh%pai_Tri)
+    call allocate_matrix_CSR_dist( AA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     allocate( single_row_ind      ( mesh%nC_mem*2))
     allocate( single_row_d2dx2_val( mesh%nC_mem*2))
@@ -142,7 +137,7 @@ contains
 
         call add_entry_CSR_dist( AA, ti, ti, 1._dp)
 
-        bb_nih( ti) = f_ex_nih( ti)
+        bb( ti) = f_ex( ti)
 
       else
         ! d2f/dx2 + d2f/dy2 = c
@@ -157,7 +152,7 @@ contains
           call add_entry_CSR_dist( AA, ti, tj, A)
         end do
 
-        bb_nih( ti) = c
+        bb( ti) = c
 
       end if
 
@@ -165,19 +160,16 @@ contains
 
     call finalise_matrix_CSR_dist( AA)
 
-    ! Solve matrix equation
-    nit = 5000
-    tol = 1e-9_dp
-    call solve_matrix_equation_CSR_Jacobi( AA, mesh%pai_Tri, f_nih, mesh%pai_Tri, bb_nih, nit, tol)
+    ! Use PETSc to solve the matrix equation
+    PETSc_rtol   = 1e-6_dp
+    PETSc_abstol = 1e-6_dp
+    call solve_matrix_equation_CSR_PETSc( AA, bb, f_disc, PETSc_rtol, PETSc_abstol, n_Axb_its)
 
     ! Write results to NetCDF output file
     call write_Laplace_eq_solving_test_results_to_file( &
-      output_dir, test_mesh_filename, mesh, f_ex_nih, f_nih)
+      output_dir, test_mesh_filename, mesh, f_ex, f_disc)
 
     ! Clean up after yourself
-    call deallocate_dist_shared( f_ex_nih, wf_ex_nih)
-    call deallocate_dist_shared( f_nih   , wf_nih   )
-    call deallocate_dist_shared( bb_nih  , wbb_nih  )
     call deallocate_matrix_CSR_dist( AA)
 
     ! Remove routine from call stack
@@ -187,13 +179,13 @@ contains
 
   !> Write the results of Laplace eq solving test, for a particular mesh with a particular test function, to a file.
   subroutine write_Laplace_eq_solving_test_results_to_file( &
-    output_dir, test_mesh_filename, mesh, f_ex_nih, f_nih)
+    output_dir, test_mesh_filename, mesh, f_ex, f_disc)
 
     ! In/output variables:
     character(len=*),       intent(in) :: output_dir
     character(len=*),       intent(in) :: test_mesh_filename
     type(type_mesh),        intent(in) :: mesh
-    real(dp), dimension(mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih), intent(in) :: f_ex_nih, f_nih
+    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in) :: f_ex, f_disc
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_Laplace_eq_solving_test_results_to_file'
@@ -216,11 +208,11 @@ contains
 
     ! ! Add all the variables
     call add_field_mesh_dp_2D_b_notime( filename, ncid, 'f_ex')
-    call add_field_mesh_dp_2D_b_notime( filename, ncid, 'f'   )
+    call add_field_mesh_dp_2D_b_notime( filename, ncid, 'f_disc')
 
     ! Write all the variables
-    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f_ex', f_ex_nih)
-    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f'   , f_nih   )
+    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f_ex', f_ex)
+    call write_to_field_multopt_mesh_dp_2D_b_notime( mesh, filename, ncid, 'f_disc', f_disc)
 
     ! Close the file
     call close_netcdf_file( ncid)

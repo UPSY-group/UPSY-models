@@ -931,7 +931,8 @@ contains
     ! In/output variables:
     type(type_graph),                 intent(in   ) :: graph
     real(dp), dimension(:,:), target, intent(  out) :: d_mesh
-    real(dp), dimension(:,:), target, intent(in   ) :: d_graph_nih
+    real(dp), dimension(graph%pai%i1_nih:graph%pai%i2_nih, &
+      1:size(d_mesh,2)),      target, intent(in   ) :: d_graph_nih
     type(type_mesh),                  intent(in   ) :: mesh
 
     ! Local variables:
@@ -943,8 +944,9 @@ contains
     call init_routine( routine_name)
 
     do k = 1, size( d_mesh,2)
-      d_mesh_k      => d_mesh     ( :,k)
-      d_graph_nih_k => d_graph_nih( :,k)
+      ! Explicitly preserve first-dimension bounds when slicing to 2D kernels.
+      d_mesh_k( lbound( d_mesh,1): ubound( d_mesh,1)) => d_mesh( :,k)
+      d_graph_nih_k( lbound( d_graph_nih,1): ubound( d_graph_nih,1)) => d_graph_nih( :,k)
       call map_graph_to_mesh_vertices_dp_2D( graph, d_graph_nih_k, mesh, d_mesh_k)
     end do
 
@@ -1161,7 +1163,8 @@ contains
     ! In/output variables:
     type(type_graph),                 intent(in   ) :: graph
     real(dp), dimension(:,:), target, intent(  out) :: d_mesh
-    real(dp), dimension(:,:), target, intent(in   ) :: d_graph_nih
+    real(dp), dimension(graph%pai%i1_nih:graph%pai%i2_nih, &
+      1:size(d_mesh,2)),      target, intent(in   ) :: d_graph_nih
     type(type_mesh),                  intent(in   ) :: mesh
 
     ! Local variables:
@@ -1173,8 +1176,9 @@ contains
     call init_routine( routine_name)
 
     do k = 1, size( d_mesh,2)
-      d_mesh_k      => d_mesh     ( :,k)
-      d_graph_nih_k => d_graph_nih( :,k)
+      ! Explicitly preserve first-dimension bounds when slicing to 2D kernels.
+      d_mesh_k( lbound( d_mesh,1): ubound( d_mesh,1)) => d_mesh( :,k)
+      d_graph_nih_k( lbound( d_graph_nih,1): ubound( d_graph_nih,1)) => d_graph_nih( :,k)
       call map_graph_to_mesh_triangles_dp_2D( graph, d_graph_nih_k, mesh, d_mesh_k)
     end do
 

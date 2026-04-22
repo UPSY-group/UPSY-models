@@ -224,6 +224,13 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
+    ! Buffer scalar output data
+    call buffer_scalar_output( region)
+
+    if (region%nROI > 0) then
+      call buffer_scalar_output_ROI( region)
+    end if
+
     ! Determine time of next output event
     t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next)
 

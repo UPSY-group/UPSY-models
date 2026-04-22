@@ -19,8 +19,8 @@ jobs:
   compile_UFEMISM:
     uses: ./.github/workflows/UFE_compiling.yml
 
-  # unit_tests:
-  #   uses: ./.github/workflows/UFE_unit_tests.yml
+  unit_tests:
+    uses: ./.github/workflows/UFE_unit_tests.yml
 
   ISMIP_HOM_small:
     uses: ./.github/workflows/UFE_integrated_test_ISMIP_HOM_small.yml

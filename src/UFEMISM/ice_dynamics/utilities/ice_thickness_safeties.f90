@@ -337,6 +337,8 @@ contains
         ! Find vertex index of strongest inflow cell
         vj = mesh%C( vi, cm)
 
+        if (vj == 0) cycle ! Skip if found a zero index [TODO: see how to properly address this]
+
         ! Skip if upstream cell is empty
         if (Hi_new_tot( vj) == 0._dp) cycle
 

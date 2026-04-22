@@ -2,7 +2,15 @@
 
 # Script to check unit test results and fail if any tests failed
 
-set output_file = "automated_testing/unit_tests/results/unit_tests_output.txt"
+# Usage:
+#   ./automated_testing/check_unit_tests.csh [output_file]
+
+if ($#argv == 1) then
+    set output_file = "$argv[1]"
+else
+    echo "Usage: $0 [output_file]"
+    exit 2
+endif
 
 # Check if the file exists
 if (! -e $output_file) then

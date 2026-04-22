@@ -22,6 +22,10 @@ jobs:
   unit_tests:
     uses: ./.github/workflows/UFE_unit_tests.yml
 
+  SSA_icestream_small:
+    uses: ./.github/workflows/UFE_integrated_test_SSA_icestream_small.yml
+    needs: setup_and_cache_Matlab
+
   ISMIP_HOM_small:
     uses: ./.github/workflows/UFE_integrated_test_ISMIP_HOM_small.yml
     needs: setup_and_cache_Matlab
@@ -30,6 +34,6 @@ jobs:
     uses: ./.github/workflows/UFE_integrated_test_MISMIP_mod_small.yml
     needs: setup_and_cache_Matlab
 
-  SSA_icestream_small:
-    uses: ./.github/workflows/UFE_integrated_test_SSA_icestream_small.yml
+  MISMIPplus_small:
+    uses: ./.github/workflows/UFE_integrated_test_MISMIPplus_small.yml
     needs: setup_and_cache_Matlab

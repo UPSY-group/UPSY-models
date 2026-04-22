@@ -11,6 +11,7 @@ program UPSY_component_test_program_mesh_creation
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
   use crash_mod, only: crash
 
+  use ct_basic, only: create_component_tests_output_folder
   use ct_create_test_meshes, only: create_all_test_meshes_and_grids
 
   implicit none
@@ -46,6 +47,7 @@ program UPSY_component_test_program_mesh_creation
     call crash('needs input argument foldername_output')
   end if
 
+  call create_component_tests_output_folder  ( foldername_output)
   call create_all_test_meshes_and_grids( foldername_output)
 
   ! Stop the clock

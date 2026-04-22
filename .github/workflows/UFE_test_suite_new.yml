@@ -1,0 +1,31 @@
+# The full UFEMISM Test Suite
+
+name: UFEMISM Test Suite (new)
+run-name: ${{ github.actor }} - UFEMISM Test Suite (new)
+on:
+  pull_request:
+    branches:
+      - main
+    paths:
+      - 'src/UFEMISM/**'
+  workflow_dispatch:
+
+jobs:
+
+  setup_and_cache_Matlab:
+    uses: ./.github/workflows/setup_and_cache_Matlab.yml
+
+  # Run the individual tests in parallel as separate workflows
+  compile_UFEMISM:
+    uses: ./.github/workflows/UFE_compiling.yml
+
+  unit_tests:
+    uses: ./.github/workflows/UFE_unit_tests.yml
+
+  ISMIP_HOM_small:
+    uses: ./.github/workflows/UFE_integrated_test_ISMIP_HOM_small.yml
+    needs: setup_and_cache_Matlab
+
+  MISMIP_mod_small:
+    uses: ./.github/workflows/UFE_integrated_test_MISMIP_mod_small.yml
+    needs: setup_and_cache_Matlab

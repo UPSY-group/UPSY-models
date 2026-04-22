@@ -22,7 +22,10 @@ module unit_tests
 contains
 
   !> Run all unit tests
-  subroutine run_all_unit_tests
+  subroutine run_all_unit_tests( output_dir)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: output_dir
 
     ! Local variables:
     character(len=256), parameter :: routine_name = 'run_all_unit_tests'
@@ -38,8 +41,8 @@ contains
     if (par%primary) write(0,'(a)') ' Running UFEMISM unit tests...'
 
     ! Create an output folder and output file
-    call create_unit_tests_output_folder('automated_testing/unit_tests/results')
-    C%output_dir = foldername_unit_tests_output
+    call create_unit_tests_output_folder( output_dir)
+    C%output_dir = output_dir
     call create_unit_tests_output_file
 
     ! Run all unit tests

@@ -32,7 +32,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_mesh_focussing_component_tests'
-    character(len=1024)            :: foldername_mesh_focussing
     integer                        :: i
     character(len=1024)            :: test_mesh_filename
 
@@ -42,11 +41,9 @@ contains
     if (par%primary) write(0,*) '  Running mesh_focussing component tests...'
     if (par%primary) write(0,*) ''
 
-    call create_mesh_focussing_component_tests_output_folder( output_dir, foldername_mesh_focussing)
-
     do i = 1, size(test_mesh_filenames)
       test_mesh_filename = trim(test_mesh_filenames( i))
-      call run_mesh_focussing_tests_on_mesh( foldername_mesh_focussing, test_mesh_filename)
+      call run_mesh_focussing_tests_on_mesh( output_dir, test_mesh_filename)
     end do
 
     ! Remove routine from call stack
@@ -54,56 +51,20 @@ contains
 
   end subroutine run_all_mesh_focussing_component_tests
 
-  !> Create the output folder for the mesh_focussing component tests
-  subroutine create_mesh_focussing_component_tests_output_folder( output_dir, foldername_mesh_focussing)
-
-    ! In/output variables:
-    character(len=*), intent(in   ) :: output_dir
-    character(len=*), intent(  out) :: foldername_mesh_focussing
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_mesh_focussing_component_tests_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_mesh_focussing = trim( output_dir) // '/mesh_focussing'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_mesh_focussing) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_mesh_focussing))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_mesh_focussing))
-
-    end if
-    call MPI_BCAST( foldername_mesh_focussing, len(foldername_mesh_focussing), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_mesh_focussing_component_tests_output_folder
-
   !> Run all the mapping/derivative tests on a particular mesh
-  subroutine run_mesh_focussing_tests_on_mesh( foldername_mesh_focussing, test_mesh_filename)
+  subroutine run_mesh_focussing_tests_on_mesh( output_dir, test_mesh_filename)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_mesh_focussing
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: test_mesh_filename
 
     ! Local variables:
-    character(len=1024), parameter     :: routine_name = 'run_mesh_focussing_tests_on_mesh'
+    character(len=*), parameter        :: routine_name = 'run_mesh_focussing_tests_on_mesh'
     type(type_mesh)                    :: mesh, mesh_focused
     integer                            :: ncid
     real(dp), parameter                :: rr_min = 0.25_dp
     real(dp), parameter                :: rr_max = 0.75_dp
-    integer,  parameter                :: nr     = 25
+    integer,  parameter                :: nr     = 10
     integer,  parameter                :: ntheta = 100
     integer                            :: ri, thetai
     real(dp)                           :: rr, r, theta, xmid, ymid, x, y
@@ -172,7 +133,7 @@ contains
       ! Save focused mesh to NetCDF
       write( i_str,'(I3.3)') ri
       write( r_str,'(E12.6)') r
-      filename = trim( foldername_mesh_focussing) // '/' // &
+      filename = trim( output_dir) // '/' // &
         mesh_raw_name( 1: len_trim( mesh_raw_name) - 3) // '_' // i_str // '_r' // r_str // '.nc'
       call save_mesh_as_netcdf( trim( filename), mesh_focused)
 

@@ -83,6 +83,28 @@ MODULE climate_model_types
     REAL(dp)                                  :: deltaT
 
   END TYPE type_climate_model_snapshot_plus_transient_dT
+
+  TYPE type_climate_model_snapshot_plus_anomalies
+
+    TYPE(type_climate_model_snapshot)         :: snapshot_baseline
+    character(len=1024)                       :: filename_climate_anomalies
+
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: T2m                             ! Monthly mean 2m air temperature anomaly (K)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: Precip                          ! Monthly mean precipitation anomaly (m)
+
+    ! anomalies
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly                   ! Monthly mean 2m air temperature anomaly (K)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly                ! Monthly mean precipitation anomaly (m)
+
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly_0                 ! Prev. timeframe of monthly mean 2m air temperature anomaly (K)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly_0              ! Prev. timeframe of monthly mean precipitation anomaly (m)
+
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly_1                 ! Next timeframe of monthly mean 2m air temperature anomaly (K)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly_1              ! Next timeframe of monthly mean precipitation anomaly (m)
+
+    REAL(dp)                                  :: anomaly_t0, anomaly_t1        ! times of each timeframe
+
+  END TYPE type_climate_model_snapshot_plus_anomalies
   
   TYPE type_climate_model_matrix
     ! The "matrix" climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
@@ -139,6 +161,7 @@ MODULE climate_model_types
     TYPE(type_climate_model_snapshot)                   :: snapshot
     TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
+    TYPE(type_climate_model_snapshot_plus_anomalies)    :: snapshot_p_anml
     TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
 
   END TYPE type_climate_model

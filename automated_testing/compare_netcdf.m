@@ -11,8 +11,6 @@ if ~strcmpi( filename_ref_short, filename_mod_short)
   return;
 end
 
-disp(['Comparing ' filename_ref_short])
-
 info_matches = compare_ncinfo( filename_ref, filename_mod);
 if info_matches
   files_match = compare_data( filename_ref, filename_mod);
@@ -123,6 +121,11 @@ end
       are_identical = false;
       disp(['  Mismatching attribute name: reference = "' ...
         [parent_name '/' att_ref.Name] '", model = "' [parent_name '/' att_mod.Name] '"'])
+      return
+    end
+
+    % git commit hashes are allowed to be different
+    if strcmpi( att_ref.Name, 'git commit hash')
       return
     end
 

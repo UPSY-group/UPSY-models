@@ -123,7 +123,7 @@ contains
     ! Hybrid distributed/shared data
     ! ==============================
 
-    call allocate_dist_shared( d_hybrid, wd_hybrid, mesh%pai_V%n_nih)
+    call allocate_dist_shared( d_hybrid, wd_hybrid, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
 
     call read_field_from_file_2D( filename, 'd', mesh, trim( foldername_unit_tests_output), d_hybrid)
 

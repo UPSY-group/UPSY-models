@@ -45,10 +45,72 @@ contains
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to ISMIP grid output files' // '...'
 
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%lithk)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine write_to_ISMIP_regional_output_files_grid
+
+  subroutine write_to_single_ISMIP_regional_output_file_grid( region, field)
+    !< Write to single ISMIP regional output NetCDF file - grid version
+
+    ! In/output variables:
+    type(type_model_region),           intent(in   ) :: region
+    type(type_ismip_gridded_field),    intent(in   ) :: field
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'write_to_single_ISMIP_regional_output_file_grid'
+    integer                        :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( field%filename, ncid)
+
+    ! write the time to the file
+    call write_time_to_file( field%filename, ncid, region%time)
+
+    ! write the data to the file
+    call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_single_ISMIP_regional_output_file_grid
+
+  subroutine write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
+    !< Write a single field to the ISMIP regional output NetCDF file - grid version
+
+    ! In/output variables:
+    type(type_model_region),           intent(in   ) :: region
+    type(type_ismip_gridded_field),    intent(in   ) :: field
+    integer,                           intent(in   ) :: ncid
+
+    ! Local variables:
+    character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
+    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Allocate memory
+    allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
+
+    ! Add the specified data field to the file
+    select case (field%name)
+      case default
+        call crash('unknown choice_output_field "' // trim( field%name) // '"')
+      case ('lithk')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hi, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_ISMIP_regional_output_file_grid_field
 
   subroutine create_ISMIP_regional_output_files_grid( region)
     ! MAIN creation

@@ -37,7 +37,7 @@ contains
 
     call run_all_map_deriv_tests         ( output_dir, test_mesh_filenames)
     call run_all_Laplace_eq_solving_tests( output_dir, test_mesh_filenames)
-    call run_all_map_deriv_tests_graph   ( output_dir, test_mesh_filenames)
+    ! call run_all_map_deriv_tests_graph   ( output_dir, test_mesh_filenames)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

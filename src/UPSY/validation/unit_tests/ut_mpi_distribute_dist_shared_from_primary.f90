@@ -91,8 +91,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -161,8 +160,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -232,8 +230,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz], [1,nl])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -300,8 +297,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -370,8 +366,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -441,8 +436,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz], [1,nl])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -509,8 +503,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -579,8 +572,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -650,8 +642,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz], [1,nl])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -718,8 +709,7 @@ contains
     call setup_simple_parallel_array_info( pai)
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih)
-    d_nih( pai%i1_nih:pai%i2_nih) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -788,8 +778,7 @@ contains
     nz = 3
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz])
 
     ! Let the primary write some data to the memory
     if (par%primary) then
@@ -859,8 +848,7 @@ contains
     nl = 5
 
     ! Allocate node-shared memory including halos
-    call allocate_dist_shared( d_nih, wd_nih, pai%n_nih, nz, nl)
-    d_nih( pai%i1_nih:pai%i2_nih, 1:nz, 1:nl) => d_nih
+    call allocate_dist_shared( d_nih, wd_nih, [pai%i1_nih, pai%i2_nih], [1,nz], [1,nl])
 
     ! Let the primary write some data to the memory
     if (par%primary) then

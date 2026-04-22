@@ -32,13 +32,13 @@ module reallocate_dist_shared_mod
 
 contains
 
-  subroutine reallocate_dist_shared_logical_1D( p, win, n1_new)
+  subroutine reallocate_dist_shared_logical_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                  intent(inout) :: win        !< Corresponding MPI window
-    integer,                        intent(in   ) :: n1_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'reallocate_dist_shared_logical_1D'
@@ -50,20 +50,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new)
+    call allocate_dist_shared( p, win, bounds_dim1)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_logical_1D
 
-  subroutine reallocate_dist_shared_logical_2D( p, win, n1_new, n2_new)
+  subroutine reallocate_dist_shared_logical_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                    intent(inout) :: win                !< Corresponding MPI window
-    integer,                          intent(in   ) :: n1_new, n2_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),            intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'reallocate_dist_shared_logical_2D'
@@ -75,20 +75,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_logical_2D
 
-  subroutine reallocate_dist_shared_logical_3D( p, win, n1_new, n2_new, n3_new)
+  subroutine reallocate_dist_shared_logical_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     logical, dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win                        !< Corresponding MPI window
-    integer,                            intent(in   ) :: n1_new, n2_new, n3_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter     :: routine_name = 'reallocate_dist_shared_logical_3D'
@@ -100,20 +100,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new, n3_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_logical_3D
 
-  subroutine reallocate_dist_shared_int_1D( p, win, n1_new)
+  subroutine reallocate_dist_shared_int_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                  intent(inout) :: win        !< Corresponding MPI window
-    integer,                        intent(in   ) :: n1_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),          intent(in   ) :: bounds_dim1 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'reallocate_dist_shared_int_1D'
@@ -125,20 +125,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new)
+    call allocate_dist_shared( p, win, bounds_dim1)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_int_1D
 
-  subroutine reallocate_dist_shared_int_2D( p, win, n1_new, n2_new)
+  subroutine reallocate_dist_shared_int_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                    intent(inout) :: win                !< Corresponding MPI window
-    integer,                          intent(in   ) :: n1_new, n2_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),            intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'reallocate_dist_shared_int_2D'
@@ -150,20 +150,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_int_2D
 
-  subroutine reallocate_dist_shared_int_3D( p, win, n1_new, n2_new, n3_new)
+  subroutine reallocate_dist_shared_int_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     integer, dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win                        !< Corresponding MPI window
-    integer,                            intent(in   ) :: n1_new, n2_new, n3_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter     :: routine_name = 'reallocate_dist_shared_int_3D'
@@ -175,20 +175,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new, n3_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_int_3D
 
-  subroutine reallocate_dist_shared_dp_1D( p, win, n1_new)
+  subroutine reallocate_dist_shared_dp_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                   intent(inout) :: win        !< Corresponding MPI window
-    integer,                         intent(in   ) :: n1_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),           intent(in   ) :: bounds_dim1 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter  :: routine_name = 'reallocate_dist_shared_dp_1D'
@@ -200,20 +200,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new)
+    call allocate_dist_shared( p, win, bounds_dim1)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_dp_1D
 
-  subroutine reallocate_dist_shared_dp_2D( p, win, n1_new, n2_new)
+  subroutine reallocate_dist_shared_dp_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                     intent(inout) :: win                !< Corresponding MPI window
-    integer,                           intent(in   ) :: n1_new, n2_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),             intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter    :: routine_name = 'reallocate_dist_shared_dp_2D'
@@ -225,20 +225,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_dp_2D
 
-  subroutine reallocate_dist_shared_dp_3D( p, win, n1_new, n2_new, n3_new)
+  subroutine reallocate_dist_shared_dp_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     real(dp), dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                       intent(inout) :: win                        !< Corresponding MPI window
-    integer,                             intent(in   ) :: n1_new, n2_new, n3_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter      :: routine_name = 'reallocate_dist_shared_dp_3D'
@@ -250,20 +250,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new, n3_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_dp_3D
 
-  subroutine reallocate_dist_shared_complex_1D( p, win, n1_new)
+  subroutine reallocate_dist_shared_complex_1D( p, win, bounds_dim1)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:), pointer, intent(inout) :: p          !< Pointer to memory
     type(MPI_WIN),                      intent(inout) :: win        !< Corresponding MPI window
-    integer,                            intent(in   ) :: n1_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter     :: routine_name = 'reallocate_dist_shared_complex_1D'
@@ -275,20 +275,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new)
+    call allocate_dist_shared( p, win, bounds_dim1)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_complex_1D
 
-  subroutine reallocate_dist_shared_complex_2D( p, win, n1_new, n2_new)
+  subroutine reallocate_dist_shared_complex_2D( p, win, bounds_dim1, bounds_dim2)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:,:), pointer, intent(inout) :: p                  !< Pointer to memory
     type(MPI_WIN),                        intent(inout) :: win                !< Corresponding MPI window
-    integer,                              intent(in   ) :: n1_new, n2_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),                intent(in   ) :: bounds_dim1, bounds_dim2 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter       :: routine_name = 'reallocate_dist_shared_complex_2D'
@@ -300,20 +300,20 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2)
 
     ! Add routine to path
     call finalise_routine( routine_name)
 
   end subroutine reallocate_dist_shared_complex_2D
 
-  subroutine reallocate_dist_shared_complex_3D( p, win, n1_new, n2_new, n3_new)
+  subroutine reallocate_dist_shared_complex_3D( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
     !< Reallocate hybrid distributed/shared memory, with an associated MPI window object
 
     ! In/output variables:
     complex(dp), dimension(:,:,:), pointer, intent(inout) :: p                          !< Pointer to memory
     type(MPI_WIN),                          intent(inout) :: win                        !< Corresponding MPI window
-    integer,                                intent(in   ) :: n1_new, n2_new, n3_new     !< Dimension(s) of memory to be allocated
+    integer, dimension(2),              intent(in   ) :: bounds_dim1, bounds_dim2, bounds_dim3 !< [lower bound, upper bound] of memory to be allocated
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'reallocate_dist_shared_complex_3D'
@@ -325,7 +325,7 @@ contains
     if (.not. associated(p)) call crash('pointer not associated with any memory')
 
     call deallocate_dist_shared( p, win)
-    call allocate_dist_shared( p, win, n1_new, n2_new, n3_new)
+    call allocate_dist_shared( p, win, bounds_dim1, bounds_dim2, bounds_dim3)
 
     ! Add routine to path
     call finalise_routine( routine_name)

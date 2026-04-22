@@ -12,19 +12,21 @@ module basal_hydrology_main
   use ice_model_types, only: type_ice_model
   use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg
   use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
+  use BMB_model_types, ONLY: type_BMB_model
   use crash_mod, only: crash
 
   implicit none
 
 contains
 
-  subroutine run_basal_hydrology_model( mesh, ice, time, basal_hydro)
+  subroutine run_basal_hydrology_model( mesh, ice, time, basal_hydro, BMB)
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
     type(type_ice_model),             intent(inout) :: ice
     real(dp),                         intent(in   ) :: time
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
+    type(type_BMB_model),             intent(in)    :: BMB
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_basal_hydrology_model'

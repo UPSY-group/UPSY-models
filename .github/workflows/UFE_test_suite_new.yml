@@ -45,3 +45,7 @@ jobs:
   Berends2023nudging_exp1_small:
     uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp1_small.yml
     needs: setup_and_cache_Matlab
+
+  Berends2023nudging_exp2_small:
+    uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp2_small.yml
+    needs: setup_and_cache_Matlab

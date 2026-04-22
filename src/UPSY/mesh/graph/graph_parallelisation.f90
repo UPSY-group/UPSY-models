@@ -51,14 +51,10 @@ contains
     if (associated( graph%buffer2_g_nih )) call deallocate_dist_shared( graph%buffer2_g_nih , graph%wbuffer2_g_nih )
     if (associated( graph%buffer1_gk_nih)) call deallocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih)
     if (associated( graph%buffer2_gk_nih)) call deallocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih)
-    call allocate_dist_shared( graph%buffer1_g_nih , graph%wbuffer1_g_nih , graph%pai%n_nih    )
-    call allocate_dist_shared( graph%buffer2_g_nih , graph%wbuffer2_g_nih , graph%pai%n_nih    )
-    call allocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih, graph%pai%n_nih, nz)
-    call allocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih, graph%pai%n_nih, nz)
-    graph%buffer1_g_nih(  graph%pai%i1_nih:graph%pai%i2_nih      ) => graph%buffer1_g_nih
-    graph%buffer2_g_nih(  graph%pai%i1_nih:graph%pai%i2_nih      ) => graph%buffer2_g_nih
-    graph%buffer1_gk_nih( graph%pai%i1_nih:graph%pai%i2_nih, 1:nz) => graph%buffer1_gk_nih
-    graph%buffer2_gk_nih( graph%pai%i1_nih:graph%pai%i2_nih, 1:nz) => graph%buffer2_gk_nih
+    call allocate_dist_shared( graph%buffer1_g_nih , graph%wbuffer1_g_nih , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( graph%buffer2_g_nih , graph%wbuffer2_g_nih , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( graph%buffer1_gk_nih, graph%wbuffer1_gk_nih, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
+    call allocate_dist_shared( graph%buffer2_gk_nih, graph%wbuffer2_gk_nih, [graph%pai%i1_nih, graph%pai%i2_nih], [1,nz])
 
     ! call print_parallelisation_info( graph)
 

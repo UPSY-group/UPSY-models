@@ -46,10 +46,10 @@ jobs:
           git submodule update --init --remote
 
       - name: Compile UPSY
-        run: ./compile_UPSY.csh  dev  clean
+        run: csh compile_UPSY.csh  dev  clean
 
       - name: Run component test
-        run: ./automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh/test_script.csh
+        run: csh automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh/test_script.csh
 
       - name: Check test result
         uses: matlab-actions/run-command@v3

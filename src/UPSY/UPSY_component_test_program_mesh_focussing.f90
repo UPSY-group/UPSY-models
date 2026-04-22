@@ -44,12 +44,12 @@ program UPSY_component_test_program_mesh_focussing
   ! Get the input arguments
   if (iargc() == 2) then
     call getarg( 1, foldername_test_meshes_and_grids)  ! path/to/UPSY-models/automated_testing/test_meshes_and_grids
-    call getarg( 2, foldername_output)                 ! path/to/UPSY-models/automated_testing/component_tests/results
+    call getarg( 2, foldername_output)                 ! path/to/UPSY-models/automated_testing/component_test_mesh_focussing/results
     if (par%primary) write(0,*) ''
     if (par%primary) write(0,*) '   Reading test meshes and grids from ' // trim( foldername_test_meshes_and_grids) // '...'
     if (par%primary) write(0,*) '   Writing component test results to  ' // trim( foldername_output) // '...'
   else
-    call crash('needs input argument foldername_test_meshes_and_grids')
+    call crash('needs input arguments foldername_test_meshes_and_grids and foldername_output')
   end if
 
   call list_test_meshes_and_grids_in_folder( foldername_test_meshes_and_grids, test_grid_filenames, test_mesh_filenames)

@@ -66,75 +66,64 @@ program UFEMISM_program
   ! Initialise the control and resource tracker
   call initialise_control_and_resource_tracker
 
-  ! Special cases
-  if (input_argument == 'unit_tests') then
-    call initialise_model_configuration_unit_tests
-    call run_all_unit_tests
-  elseif (input_argument == 'component_tests') then
-    call initialise_model_configuration_unit_tests
-    call run_all_component_tests
-  else ! An actual model simulation
+  ! == Initialisation ==
+  ! ====================
 
-    ! == Initialisation ==
-    ! ====================
+  ! Initialise the main model configuration
+  call initialise_model_configuration( input_argument)
 
-    ! Initialise the main model configuration
-    call initialise_model_configuration( input_argument)
+  ! Create the resource tracking output file
+  call create_resource_tracking_file( C%output_dir)
+  call create_checksum_logfile( C%output_dir)
 
-    ! Create the resource tracking output file
-    call create_resource_tracking_file( C%output_dir)
-    call create_checksum_logfile( C%output_dir)
+  ! Initialise surface elevations for the automated flow factor tuning in MISMIP+
+  Hs_cur = 1._dp
 
-    ! Initialise surface elevations for the automated flow factor tuning in MISMIP+
-    Hs_cur = 1._dp
+  ! Initialise global forcing timeseries
+  call initialise_global_forcings(forcing)
 
-    ! Initialise global forcing timeseries
-    call initialise_global_forcings(forcing)
+  ! Initialise the model regions
+  if (C%do_NAM) call initialise_model_region( NAM, 'NAM', forcing, C%start_time_of_run)
+  if (C%do_EAS) call initialise_model_region( EAS, 'EAS', forcing, C%start_time_of_run)
+  if (C%do_GRL) call initialise_model_region( GRL, 'GRL', forcing, C%start_time_of_run)
+  if (C%do_ANT) call initialise_model_region( ANT, 'ANT', forcing, C%start_time_of_run)
 
-    ! Initialise the model regions
-    if (C%do_NAM) call initialise_model_region( NAM, 'NAM', forcing, C%start_time_of_run)
-    if (C%do_EAS) call initialise_model_region( EAS, 'EAS', forcing, C%start_time_of_run)
-    if (C%do_GRL) call initialise_model_region( GRL, 'GRL', forcing, C%start_time_of_run)
-    if (C%do_ANT) call initialise_model_region( ANT, 'ANT', forcing, C%start_time_of_run)
+  ! == The coupling time loop ==
+  ! ============================
 
-    ! == The coupling time loop ==
-    ! ============================
+  t_coupling = C%start_time_of_run
 
-    t_coupling = C%start_time_of_run
+  do while (t_coupling < C%end_time_of_run)
 
-    do while (t_coupling < C%end_time_of_run)
+    ! Run all model regions forward in time for one coupling interval
+    t_end_models = MIN( C%end_time_of_run, t_coupling + C%dt_coupling)
 
-      ! Run all model regions forward in time for one coupling interval
-      t_end_models = MIN( C%end_time_of_run, t_coupling + C%dt_coupling)
+    call update_global_forcings(forcing, t_coupling)
 
-      call update_global_forcings(forcing, t_coupling)
+    if (C%do_NAM) call run_model_region( NAM, t_end_models, forcing)
+    if (C%do_EAS) call run_model_region( EAS, t_end_models, forcing)
+    if (C%do_GRL) call run_model_region( GRL, t_end_models, forcing)
+    if (C%do_ANT) call run_model_region( ANT, t_end_models, forcing)
 
-      if (C%do_NAM) call run_model_region( NAM, t_end_models, forcing)
-      if (C%do_EAS) call run_model_region( EAS, t_end_models, forcing)
-      if (C%do_GRL) call run_model_region( GRL, t_end_models, forcing)
-      if (C%do_ANT) call run_model_region( ANT, t_end_models, forcing)
+    ! Advance coupling time
+    t_coupling = t_end_models
 
-      ! Advance coupling time
-      t_coupling = t_end_models
-
-      ! MISMIP+ flow factor tuning for GL position
-      if (C%refgeo_idealised_MISMIPplus_tune_A) then
-        Hs_prev = Hs_cur
-        Hs_cur  = MAXVAL( ANT%ice%Hs)
-        call MPI_ALLREDUCE( MPI_IN_PLACE, Hs_cur, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
-        if (ABS( 1._dp - Hs_cur / Hs_prev) < 5.0E-3_dp) then
-          ! The model has converged to a steady state; adapt the flow factor
-          call MISMIPplus_adapt_flow_factor( ANT%mesh, ANT%ice)
-        end if
+    ! MISMIP+ flow factor tuning for GL position
+    if (C%refgeo_idealised_MISMIPplus_tune_A) then
+      Hs_prev = Hs_cur
+      Hs_cur  = MAXVAL( ANT%ice%Hs)
+      call MPI_ALLREDUCE( MPI_IN_PLACE, Hs_cur, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+      if (ABS( 1._dp - Hs_cur / Hs_prev) < 5.0E-3_dp) then
+        ! The model has converged to a steady state; adapt the flow factor
+        call MISMIPplus_adapt_flow_factor( ANT%mesh, ANT%ice)
       end if
+    end if
 
-      ! Write to resource tracking file
-      call write_to_resource_tracking_file( t_coupling)
-      call reset_resource_tracker
+    ! Write to resource tracking file
+    call write_to_resource_tracking_file( t_coupling)
+    call reset_resource_tracker
 
-    end do
-
-  end if
+  end do
 
   ! Stop the clock
   tstop = MPI_WTIME()

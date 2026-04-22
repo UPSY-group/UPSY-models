@@ -34,6 +34,10 @@ jobs:
           #brew install cmake                  # Not needed, already installed
           #brew install ninja
 
+      - name: Add Homebrew to PATH (ubuntu)             # act does not persist PATH from setup-homebrew into csh subprocesses
+        if: matrix.os == 'ubuntu-latest'
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+
       - name: Install packages with Homebrew (ubuntu)  # Packages end up in /opt/homebrew/Cellar
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -69,24 +73,15 @@ jobs:
           sudo apt-get update
           sudo apt-get install csh
 
-      - name: Compile UPSY (macos)
-        if: matrix.os == 'macos-latest'
-        run: ./compile_UPSY.csh ${{ matrix.build_type }} clean
-
-      - name: Compile UPSY (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Compile UPSY
         run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
 
       - name: Run unit tests
-        run: mpiexec  -n 2  build/src/UPSY/UPSY_unit_test_program
+        run: |
+          csh automated_testing/UPSY/unit_tests/test_script.csh
+          csh automated_testing/UPSY/unit_tests_multinode/test_script.csh
 
-      - name: Run multi-node unit tests
-        run: mpiexec  -n 7 --map-by :OVERSUBSCRIBE  build/src/UPSY/UPSY_multinode_unit_test_program
-
-      - name: Check unit tests (macos)
-        if: matrix.os == 'macos-latest'
-        run: ./automated_testing/check_unit_tests.csh
-
-      - name: Check unit tests (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: csh automated_testing/check_unit_tests.csh
+      - name: Check unit tests
+        run: |
+          csh automated_testing/check_unit_tests.csh   automated_testing/UPSY/unit_tests/results/unit_tests_output.txt
+          csh automated_testing/check_unit_tests.csh   automated_testing/UPSY/unit_tests_multinode/results/unit_tests_output.txt

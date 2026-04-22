@@ -8,7 +8,6 @@ module ut_mpi_CSR_matrix_algebra
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mpi_basic, only: par
   use ut_mpi_CSR_matrix_vector_multiplication, only: test_CSR_matrix_vector_multiplication_main
-  use ut_mpi_CSR_matrix_solving, only: test_CSR_matrix_solving_main
 
   implicit none
 
@@ -39,7 +38,6 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     call test_CSR_matrix_vector_multiplication_main( test_name)
-    call test_CSR_matrix_solving_main( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

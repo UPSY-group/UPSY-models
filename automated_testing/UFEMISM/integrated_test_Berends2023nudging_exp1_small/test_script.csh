@@ -2,14 +2,14 @@
 
 set test_dir = automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp1_small
 
-# rm -rf ${test_dir}/results*
+rm -rf ${test_dir}/results*
 
-# mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_01_exp_I_spinup_40km_part0.cfg
-# mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_02_exp_I_spinup_40km.cfg
-# mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_03_exp_I_spinup_10km.cfg
-# mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_05_exp_I_inversion_10km_H_dHdt_flowline.cfg
-# mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_06_exp_I_inversion_10km_H_dHdt_local.cfg
-# mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_07_exp_I_inversion_10km_H_u_flowline.cfg
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_01_exp_I_spinup_40km_part0.cfg
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_02_exp_I_spinup_40km.cfg
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_03_exp_I_spinup_10km.cfg
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_05_exp_I_inversion_10km_H_dHdt_flowline.cfg
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_06_exp_I_inversion_10km_H_dHdt_local.cfg
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_07_exp_I_inversion_10km_H_u_flowline.cfg
 
 mkdir ${test_dir}/results
 

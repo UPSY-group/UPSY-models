@@ -43,13 +43,10 @@ MODULE UFEMISM_main_model
   USE grid_basic                                             , ONLY: setup_square_grid
   USE mesh_output_files, only: create_main_regional_output_file_mesh, write_to_main_regional_output_file_mesh
   use grid_output_files, only: create_main_regional_output_file_grid, write_to_main_regional_output_file_grid, &
-    create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI, &
-    create_ISMIP_regional_output_file_grid, write_to_ISMIP_regional_output_file_grid, &
-    create_ISMIP_regional_output_file_grid_ROI, write_to_ISMIP_regional_output_file_grid_ROI
-  use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file, &
-                                 create_ISMIP_scalar_regional_output_file, buffer_ISMIP_scalar_output, write_to_ISMIP_scalar_regional_output_file
-  use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI, &
-                                     create_ISMIP_scalar_regional_output_file_ROI, buffer_ISMIP_scalar_output_ROI, write_to_ISMIP_scalar_regional_output_file_ROI
+    create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI
+  use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
+  use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI
+  use ismip_grid_output_files, only: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
   use apply_maps, only: clear_all_maps_involving_this_mesh
@@ -227,19 +224,6 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Buffer scalar output data
-    call buffer_scalar_output( region)
-    if (C%do_create_ismip_output) then
-      call buffer_ISMIP_scalar_output( region)
-    end if
-
-    if (region%nROI > 0) then
-      call buffer_scalar_output_ROI( region)
-      if (C%do_create_ismip_output) then
-        call buffer_ISMIP_scalar_output_ROI( region)
-      end if
-    end if
-
     ! Determine time of next output event
     t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next)
 
@@ -309,11 +293,11 @@ CONTAINS
 
       ! Write to the regional scalar output file
       call write_to_scalar_regional_output_file( region)
-      call write_to_ISMIP_scalar_regional_output_file( region)
+      ! call write_to_ISMIP_scalar_regional_output_file( region)
 
       if (region%nROI > 0) then
         call write_to_scalar_regional_output_file_ROI( region)
-        call write_to_ISMIP_scalar_regional_output_file_ROI( region)
+        ! call write_to_ISMIP_scalar_regional_output_file_ROI( region)
       end if
 
     END IF
@@ -332,12 +316,12 @@ CONTAINS
     IF (do_output_grid) THEN
       ! Write to the gridded regional output file
       CALL write_to_main_regional_output_file_grid( region)
-      CALL write_to_ISMIP_regional_output_file_grid( region)
+      CALL write_to_ISMIP_regional_output_files_grid( region)
 
       ! Write to the region-of-interest output files
       DO i = 1, region%nROI
         CALL write_to_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_grid_ROI( i))
-        CALL write_to_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_ismip_grid_ROI( i))
+        !CALL write_to_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_ismip_grid_ROI( i))
       END DO
     END IF
 
@@ -655,12 +639,9 @@ CONTAINS
        lambda_M = region%mesh%lambda_M, phi_M = region%mesh%phi_M, beta_stereo = region%mesh%beta_stereo)
 
     ! Create the main regional output files
-    if (C%do_create_ismip_output .AND. .not. C%do_create_netcdf_output) then
-       if (par%primary) call warning('NetCDF creation was set to False, but ISMIP creation was set to True. No ISMIP files will be created!')
-    end if
     CALL create_main_regional_output_file_mesh( region)
     CALL create_main_regional_output_file_grid( region)
-    CALL create_ISMIP_regional_output_file_grid( region)
+    CALL create_ISMIP_regional_output_files_grid( region)
 
     ! Create the main regional output files for the regions of interest
     CALL setup_ROI_grids_and_output_files( region)
@@ -678,12 +659,12 @@ CONTAINS
 
     ! Create the scalar regional output file
     CALL create_scalar_regional_output_file( region)
-    CALL create_ISMIP_scalar_regional_output_file( region)
+    !CALL create_ISMIP_scalar_regional_output_file( region)
     if (region%nROI > 0) then
       CALL create_scalar_regional_output_file_ROI( region)
-      if (C%do_create_ismip_output) then
-        CALL create_ISMIP_scalar_regional_output_file_ROI( region)
-      end if
+      !if (C%do_create_ismip_output) then
+      !  CALL create_ISMIP_scalar_regional_output_file_ROI( region)
+      !end if
     end if
 
     ! Set output writing time to start of run, so the initial state will be written to output
@@ -1177,7 +1158,7 @@ CONTAINS
       region%output_filenames_ismip_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'ismip_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
 
       CALL create_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_grid_ROI( region%nROI))
-      CALL create_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_ismip_grid_ROI( region%nROI))
+      !CALL create_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_ismip_grid_ROI( region%nROI))
 
       ! Generate file names for all scalar files
       filename_base = TRIM( C%output_dir) // 'scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)

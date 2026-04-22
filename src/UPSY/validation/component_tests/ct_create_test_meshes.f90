@@ -31,16 +31,15 @@ module ct_create_test_meshes
 contains
 
   !> Create the suite of test meshes for the component tests.
-  subroutine create_all_test_meshes_and_grids( output_dir, test_mesh_filenames, test_grid_filenames)
+  subroutine create_all_test_meshes_and_grids( foldername_output)
 
     ! In/output variables:
-    character(len=*),                            intent(in   ) :: output_dir
-    character(len=*), dimension(:), allocatable, intent(  out) :: test_mesh_filenames
-    character(len=*), dimension(:), allocatable, intent(  out) :: test_grid_filenames
+    character(len=*), intent(in   ) :: foldername_output
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_all_test_meshes_and_grids'
-    character(len=1024)            :: foldername_test_meshes
+    character(len=1024), parameter              :: routine_name = 'create_all_test_meshes_and_grids'
+    character(len=1024), dimension(:), allocatable :: test_mesh_filenames
+    character(len=1024), dimension(:), allocatable :: test_grid_filenames
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -48,11 +47,8 @@ contains
     if (par%primary) write(0,*) '  Creating suite of test meshes and grids for component tests...'
     if (par%primary) write(0,*) ''
 
-    ! Create output folder within the component tests folder to store the meshes
-    call create_component_tests_mesh_output_folder( output_dir, foldername_test_meshes)
-
     ! Create all the test meshes and grids for the Antarctica domain
-    call create_all_test_meshes_and_grids_Antarctica( foldername_test_meshes, &
+    call create_all_test_meshes_and_grids_Antarctica( foldername_output, &
       test_mesh_filenames, test_grid_filenames)
 
     if (par%primary) write(0,*) ''
@@ -62,48 +58,12 @@ contains
 
   end subroutine create_all_test_meshes_and_grids
 
-  !> Create the output folder for the mesh component tests
-  subroutine create_component_tests_mesh_output_folder( output_dir, foldername_test_meshes)
-
-    ! In/output variables:
-    character(len=*), intent(in   ) :: output_dir
-    character(len=*), intent(  out) :: foldername_test_meshes
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_component_tests_mesh_output_folder'
-    integer                        :: ierr
-    logical                        :: ex
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_test_meshes = trim(output_dir) // '/test_meshes_and_grids'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_test_meshes) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_test_meshes))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_test_meshes))
-
-    end if
-    call MPI_BCAST( foldername_test_meshes, len(foldername_test_meshes), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_component_tests_mesh_output_folder
-
   !> Create all the test meshes and grids for the Antarctica domain
-  subroutine create_all_test_meshes_and_grids_Antarctica( foldername_test_meshes, &
+  subroutine create_all_test_meshes_and_grids_Antarctica( foldername_output, &
     test_mesh_filenames, test_grid_filenames)
 
     ! In/output variables:
-    character(len=*),                            intent(in)  :: foldername_test_meshes
+    character(len=*),                            intent(in)  :: foldername_output
     character(len=*), dimension(:), allocatable, intent(out) :: test_mesh_filenames
     character(len=*), dimension(:), allocatable, intent(out) :: test_grid_filenames
 
@@ -121,10 +81,10 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call create_all_test_meshes( foldername_test_meshes, test_mesh_filenames, &
+    call create_all_test_meshes( foldername_output, test_mesh_filenames, &
       domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo)
 
-    call create_all_test_grids( foldername_test_meshes, test_grid_filenames, &
+    call create_all_test_grids( foldername_output, test_grid_filenames, &
       domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo)
 
     ! Remove routine from call stack
@@ -133,11 +93,11 @@ contains
   end subroutine create_all_test_meshes_and_grids_Antarctica
 
   !> Create all the test meshes for any particular domain
-  subroutine create_all_test_meshes( foldername_test_meshes, test_mesh_filenames, &
+  subroutine create_all_test_meshes( foldername_output, test_mesh_filenames, &
     domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo)
 
     ! In/output variables:
-    character(len=*),                            intent(in)  :: foldername_test_meshes
+    character(len=*),                            intent(in)  :: foldername_output
     character(len=*), dimension(:), allocatable, intent(out) :: test_mesh_filenames
     character(len=*),                            intent(in)  :: domain_name
     real(dp),                                    intent(in)  :: xmin, xmax, ymin, ymax
@@ -160,30 +120,30 @@ contains
 
     ! Create a set of test meshes with a uniform resolution
     do i = 1, size( uniform_resolutions)-2
-      call create_test_mesh_uniform( foldername_test_meshes, test_mesh_filenames, &
+      call create_test_mesh_uniform( foldername_output, test_mesh_filenames, &
         domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
         uniform_resolutions( i), alpha_min, nit_Lloyds_algorithm)
     end do
 
     ! Create a set of test meshes with a resolution gradient
     orientation          = 'x'
-    call create_test_mesh_gradient( foldername_test_meshes, test_mesh_filenames, &
+    call create_test_mesh_gradient( foldername_output, test_mesh_filenames, &
       domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
       res_min, res_max, alpha_min, nit_Lloyds_algorithm, orientation)
     orientation          = 'y'
-    call create_test_mesh_gradient( foldername_test_meshes, test_mesh_filenames, &
+    call create_test_mesh_gradient( foldername_output, test_mesh_filenames, &
       domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
       res_min, res_max, alpha_min, nit_Lloyds_algorithm, orientation)
 
     ! Create a set of otherwise identical test meshes with increasing smoothness
     do i = 1, size( nits_Lloyds_algorithm)
-      call create_test_mesh_uniform( foldername_test_meshes, test_mesh_filenames, &
+      call create_test_mesh_uniform( foldername_output, test_mesh_filenames, &
         domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
         uniform_resolution, alpha_min, nits_Lloyds_algorithm( i))
     end do
 
     ! Create a test mesh with some fun elements
-    call create_test_mesh_fun( foldername_test_meshes, test_mesh_filenames, &
+    call create_test_mesh_fun( foldername_output, test_mesh_filenames, &
       domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
       uniform_resolution / 5._dp, alpha_min, nit_Lloyds_algorithm)
 
@@ -193,11 +153,11 @@ contains
   end subroutine create_all_test_meshes
 
   !> Create all the test grids for any particular domain
-  subroutine create_all_test_grids( foldername_test_meshes, test_grid_filenames, &
+  subroutine create_all_test_grids( foldername_output, test_grid_filenames, &
     domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo)
 
     ! In/output variables:
-    character(len=*),                            intent(in)    :: foldername_test_meshes
+    character(len=*),                            intent(in)    :: foldername_output
     character(len=*), dimension(:), allocatable, intent(inout) :: test_grid_filenames
     character(len=*),                            intent(in)    :: domain_name
     real(dp),                                    intent(in)    :: xmin, xmax, ymin, ymax
@@ -228,7 +188,7 @@ contains
         grid, lambda_M = lambda_M, phi_M = phi_M, beta_stereo = beta_stereo)
 
       ! Write to NetCDF file
-      filename = trim( foldername_test_meshes)//'/'//trim( grid_name)//'.nc'
+      filename = trim( foldername_output)//'/'//trim( grid_name)//'.nc'
       call create_new_netcdf_file_for_writing( filename, ncid)
       call setup_xy_grid_in_netcdf_file( filename, ncid, grid)
       call close_netcdf_file( ncid)
@@ -246,12 +206,12 @@ contains
   end subroutine create_all_test_grids
 
   !> Create a test mesh with a uniform resolution
-  subroutine create_test_mesh_uniform( foldername_test_meshes, test_mesh_filenames, &
+  subroutine create_test_mesh_uniform( foldername_output, test_mesh_filenames, &
     domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
     res_max, alpha_min, nit_Lloyds_algorithm)
 
     ! In/output variables:
-    character(len=*),                            intent(in)    :: foldername_test_meshes
+    character(len=*),                            intent(in)    :: foldername_output
     character(len=*), dimension(:), allocatable, intent(inout) :: test_mesh_filenames
     character(len=*),                            intent(in)    :: domain_name
     real(dp),                                    intent(in)    :: xmin, xmax, ymin, ymax
@@ -301,7 +261,7 @@ contains
     call calc_all_matrix_operators_mesh( mesh)
 
     ! Write to NetCDF file
-    filename = trim( foldername_test_meshes)//'/'//trim( mesh_name)//'.nc'
+    filename = trim( foldername_output)//'/'//trim( mesh_name)//'.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)
     call close_netcdf_file( ncid)
@@ -317,12 +277,12 @@ contains
   end subroutine create_test_mesh_uniform
 
   !> Create a test mesh with a resolution gradient
-  subroutine create_test_mesh_gradient( foldername_test_meshes, test_mesh_filenames, &
+  subroutine create_test_mesh_gradient( foldername_output, test_mesh_filenames, &
     domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
     res_min, res_max, alpha_min, nit_Lloyds_algorithm, orientation)
 
     ! In/output variables:
-    character(len=*),                            intent(in)    :: foldername_test_meshes
+    character(len=*),                            intent(in)    :: foldername_output
     character(len=*), dimension(:), allocatable, intent(inout) :: test_mesh_filenames
     character(len=*),                            intent(in)    :: domain_name
     real(dp),                                    intent(in)    :: xmin, xmax, ymin, ymax
@@ -409,7 +369,7 @@ contains
     call calc_all_matrix_operators_mesh( mesh)
 
     ! Write to NetCDF file
-    filename = trim( foldername_test_meshes)//'/'//trim( mesh_name)//'.nc'
+    filename = trim( foldername_output)//'/'//trim( mesh_name)//'.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)
     call close_netcdf_file( ncid)
@@ -425,12 +385,12 @@ contains
   end subroutine create_test_mesh_gradient
 
   !> Create a test mesh with a smileyface and the UFEMISM letters
-  subroutine create_test_mesh_fun( foldername_test_meshes, test_mesh_filenames, &
+  subroutine create_test_mesh_fun( foldername_output, test_mesh_filenames, &
     domain_name, xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
     res_max, alpha_min, nit_Lloyds_algorithm)
 
     ! In/output variables:
-    character(len=*),                            intent(in)    :: foldername_test_meshes
+    character(len=*),                            intent(in)    :: foldername_output
     character(len=*), dimension(:), allocatable, intent(inout) :: test_mesh_filenames
     character(len=*),                            intent(in)    :: domain_name
     real(dp),                                    intent(in)    :: xmin, xmax, ymin, ymax
@@ -484,7 +444,7 @@ contains
     call calc_all_matrix_operators_mesh( mesh)
 
     ! Write to NetCDF file
-    filename = trim( foldername_test_meshes)//'/'//trim( mesh_name)//'.nc'
+    filename = trim( foldername_output)//'/'//trim( mesh_name)//'.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)
     call close_netcdf_file( ncid)

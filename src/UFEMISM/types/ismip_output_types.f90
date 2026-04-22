@@ -28,13 +28,19 @@ module ismip_output_types
     type(type_grid)                   :: grid         ! Output grid
     character(len=1024)               :: folder       ! Subfolder exp_RES
 
-    type(type_ismip_gridded_field)    :: lithk        ! [m]    land_ice_thickness
-    type(type_ismip_gridded_field)    :: orog         ! [m]    surface_altitude
-    type(type_ismip_gridded_field)    :: topg         ! [m]    bedrock_altitude
-    type(type_ismip_gridded_field)    :: xvelsurf     ! [m]    land_ice_surface_x_velocity
-    type(type_ismip_gridded_field)    :: yvelsurf     ! [m]    land_ice_surface_y_velocity
-    type(type_ismip_gridded_field)    :: zvelsurf     ! [m]    land_ice_surface_z_velocity
-
+    type(type_ismip_gridded_field)    :: lithk        ! [m]        land_ice_thickness
+    type(type_ismip_gridded_field)    :: orog         ! [m]        surface_altitude
+    type(type_ismip_gridded_field)    :: topg         ! [m]        bedrock_altitude
+    type(type_ismip_gridded_field)    :: base         ! [m]        base elevation
+    type(type_ismip_gridded_field)    :: xvelsurf     ! [m s-1]    land_ice_surface_x_velocity
+    type(type_ismip_gridded_field)    :: yvelsurf     ! [m s-1]    land_ice_surface_y_velocity
+    type(type_ismip_gridded_field)    :: zvelsurf     ! [m s-1]    land_ice_surface_upward_velocity
+    type(type_ismip_gridded_field)    :: xvelbase     ! [m s-1]    land_ice_basal_x_velocity
+    type(type_ismip_gridded_field)    :: yvelbase     ! [m s-1]    land_ice_basal_y_velocity
+    type(type_ismip_gridded_field)    :: zvelbase     ! [m s-1]    land_ice_basal_upward_velocity
+    type(type_ismip_gridded_field)    :: xvelmean     ! [m s-1]    land_ice_vertical_mean_x_velocity
+    type(type_ismip_gridded_field)    :: yvelmean     ! [m s-1]    land_ice_vertical_mean_y_velocity
+    type(type_ismip_gridded_field)    :: strbasemag   ! [Pa]       land_ice_basal_drag
 
   end type type_ismip_grid_output
 end module ismip_output_types

@@ -456,7 +456,7 @@ CONTAINS
         hf_up = ice%Ki( vi, C%nz) * (ice%Ti_pmp( vi, C%nz) - ice%Ti_pmp( vi, C%nz-1)) / dz                   ! computes upwards heat flux
         L_base = L_fusion + (cp_water - cp_ice) * (ice%Ti_pmp(vi, C%nz) - 273.15_dp)                         ! computes latent heat of bottom ice layer
         
-        BMB%BMB_sheet( vi) = (ice%frictional_heating( vi) + ice%geothermal_heat_flux( vi) - hf_up) / (ice_density * L_base)
+        BMB%BMB_sheet( vi) = -1._dp * (ice%frictional_heating( vi) + ice%geothermal_heat_flux( vi) - hf_up) / (ice_density * L_base) ! we reverse the sign to keep with the convention of negative = mass loss
     end if
     END DO
 

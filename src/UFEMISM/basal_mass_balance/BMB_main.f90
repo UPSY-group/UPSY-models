@@ -107,6 +107,8 @@ CONTAINS
           CASE ('laddie')
             ! No need to do anything
           CASE DEFAULT
+            ! Compute grounded ice mass balance
+            call calc_grounded_basal_melt_rates(ice, mesh, BMB)
             CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
         END SELECT
 
@@ -118,6 +120,9 @@ CONTAINS
       ! Synchronous coupling: calculate a new BMB in every model loop
       BMB%t_next = time + C%dt_BMB
     END IF
+
+    ! Compute grounded ice mass balance
+    call calc_grounded_basal_melt_rates(ice, mesh, BMB)
 
     ! Re-initialise BMB model if needed, only for LADDIE
     if (time > BMB%t_next_reinit) then
@@ -207,10 +212,6 @@ CONTAINS
         BMB%BMB_modelled( vi) = BMB%BMB( vi)
       END DO
     END IF
-
-    ! Add grounded ice mass balance to total BMB
-    call calc_grounded_basal_melt_rates(ice, mesh, BMB)
-    BMB%BMB = BMB%BMB_shelf + BMB%BMB_sheet
 
     ! Apply limits
     BMB%BMB = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB ))
@@ -715,16 +716,19 @@ CONTAINS
           IF     (C%choice_BMB_subgrid == 'FCMP') THEN
             ! Apply FCMP scheme
             IF (ice%mask_floating_ice( vi)) BMB%BMB( vi) = BMB%BMB_shelf( vi)
+            IF (ice%mask_grounded_ice( vi)) BMB%BMB( vi) = BMB%BMB_sheet( vi)
 
           ELSEIF (C%choice_BMB_subgrid == 'PMP') THEN
             ! Apply PMP scheme
-            IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+             IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+             IF (ice%mask_grounded_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi) + ice%fraction_gr( vi) * BMB%BMB_sheet( vi)
           ELSE
             CALL crash('unknown choice_BMB_subgrid "' // TRIM(C%choice_BMB_subgrid) // '"!')
           END IF
         ELSE
           ! Apply NMP scheme
           IF (ice%fraction_gr( vi) == 0._dp) BMB%BMB( vi) = BMB%BMB_shelf( vi)
+          IF (ice%fraction_gr( vi) == 1._dp) BMB%BMB( vi) = BMB%BMB_sheet( vi)
         END IF
 
   END SUBROUTINE compute_subgrid_BMB

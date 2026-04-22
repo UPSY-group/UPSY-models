@@ -3,6 +3,8 @@ program UPSY_unit_test_program
 
   use basic_program_info, only: program_name
   use precisions, only: dp
+  use mpi_basic, only: par
+  use crash_mod, only: crash
   use model_configuration, only: C
   use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
@@ -24,6 +26,7 @@ program UPSY_unit_test_program
   implicit none
 
   integer                        :: perr, ierr
+  character(len=1024)            :: foldername_output
   character(len=1024), parameter :: test_name = 'UPSY'
   real(dp)                       :: tstart, tstop, tcomp
 
@@ -45,10 +48,18 @@ program UPSY_unit_test_program
   ! Initialise the control and resource tracker
   call initialise_control_and_resource_tracker
 
+  ! Get the input arguments
+  if (iargc() == 1) then
+    call getarg( 1, foldername_output)                 ! path/to/UPSY-models/automated_testing/unit_tests/results
+    if (par%primary) write(0,*) ''
+    if (par%primary) write(0,*) '   Writing unit test results to  ' // trim( foldername_output) // '...'
+  else
+    call crash('needs input argument foldername_output')
+  end if
+
   ! Create the unit test output folder and file
-  foldername_unit_tests_output = 'automated_testing/unit_tests/results'
-  C%output_dir = trim( foldername_unit_tests_output)
-  call create_unit_tests_output_folder( foldername_unit_tests_output)
+  C%output_dir = trim( foldername_output)
+  call create_unit_tests_output_folder( foldername_output)
   call create_unit_tests_output_file
 
   ! Run all the unit tests

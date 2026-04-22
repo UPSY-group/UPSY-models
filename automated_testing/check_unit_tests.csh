@@ -2,7 +2,7 @@
 
 # Script to check unit test results and fail if any tests failed
 
-set output_file = "automated_testing/unit_tests/results/unit_tests_output.txt"
+set output_file = "automated_testing/UPSY/unit_tests/results/unit_tests_output.txt"
 
 # Check if the file exists
 if (! -e $output_file) then

@@ -3,12 +3,15 @@ program UPSY_multinode_unit_test_program
 
   use basic_program_info, only: program_name
   use precisions, only: dp
+  use mpi_basic, only: par
+  use crash_mod, only: crash
+  use model_configuration, only: C
   use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
   use mpi_basic, only: initialise_parallelisation_multinode_tests
   use parameters, only: initialise_constants
   use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker, crash
   use basic_model_utilities, only: print_model_start, print_model_end
-  use ut_basic, only: foldername_unit_tests_output, filename_unit_tests_output
+  use ut_basic, only: create_unit_tests_output_folder, create_unit_tests_output_file, foldername_unit_tests_output
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
 
   use ut_mpi_dist_shared_memory, only: unit_tests_mpi_hybrid_distributed_shared_memory_main
@@ -19,9 +22,9 @@ program UPSY_multinode_unit_test_program
   implicit none
 
   integer                        :: perr, ierr
+  character(len=1024)            :: foldername_output
   character(len=1024), parameter :: test_name = 'UPSY'
   real(dp)                       :: tstart, tstop, tcomp
-  logical                        :: ex
 
   program_name = 'UPSY_multinode_unit_tests'
 
@@ -41,11 +44,19 @@ program UPSY_multinode_unit_test_program
   ! Initialise the control and resource tracker
   call initialise_control_and_resource_tracker
 
-  ! Check if a unit tests output file exists (should have been created by UPSY_unit_test_program)
-  foldername_unit_tests_output = 'automated_testing/unit_tests/results'
-  filename_unit_tests_output = trim( foldername_unit_tests_output) // '/unit_tests_output.txt'
-  inquire( file = trim( filename_unit_tests_output), exist = ex)
-  if (.not. ex) call crash('Unit tests output file not found - run UPSY_unit_test_program first')
+  ! Get the input arguments
+  if (iargc() == 1) then
+    call getarg( 1, foldername_output)                 ! path/to/UPSY-models/automated_testing/unit_tests/results
+    if (par%primary) write(0,*) ''
+    if (par%primary) write(0,*) '   Writing unit test results to  ' // trim( foldername_output) // '...'
+  else
+    call crash('needs input argument foldername_output')
+  end if
+
+  ! Create the unit test output folder and file
+  C%output_dir = trim( foldername_output)
+  call create_unit_tests_output_folder( foldername_output)
+  call create_unit_tests_output_file
 
   ! Run all the multi-node unit tests
   call unit_tests_mpi_hybrid_distributed_shared_memory_main( test_name)

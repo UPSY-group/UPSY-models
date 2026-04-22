@@ -1,11 +1,11 @@
-name: UFEMISM integrated test - Berends2023_nudging_exp1 (small)
-run-name: ${{ github.actor }} - UFEMISM integrated test - Berends2023_nudging_exp1 (small)
+name: UFEMISM integrated test - Berends2023nudging_exp1 (small)
+run-name: ${{ github.actor }} - UFEMISM integrated test - Berends2023nudging_exp1 (small)
 on:
   workflow_call:
 
 jobs:
-  Berends2023_nudging_exp1_small:
-    name: Berends2023_nudging_exp1 (small)
+  Berends2023nudging_exp1_small:
+    name: Berends2023nudging_exp1 (small)
     runs-on: macos-latest
     steps:
 
@@ -56,5 +56,5 @@ jobs:
         with:
           command: |
             addpath('automated_testing')
-            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Berends2023_nudging_exp1_small/results')
-            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Berends2023_nudging_exp1_small')
+            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp1_small/results')
+            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp1_small')

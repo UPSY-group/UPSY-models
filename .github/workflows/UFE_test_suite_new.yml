@@ -29,3 +29,7 @@ jobs:
   MISMIP_mod_small:
     uses: ./.github/workflows/UFE_integrated_test_MISMIP_mod_small.yml
     needs: setup_and_cache_Matlab
+
+  SSA_icestream_small:
+    uses: ./.github/workflows/UFE_integrated_test_SSA_icestream_small.yml
+    needs: setup_and_cache_Matlab

@@ -12,7 +12,7 @@ program UPSY_component_test_program_mesh_creation
   use crash_mod, only: crash
 
   use ct_basic, only: create_component_tests_output_folder
-  use ct_create_test_meshes, only: create_all_test_meshes_and_grids
+  use ct_create_test_meshes, only: create_all_test_meshes_and_grids_Antarctica
 
   implicit none
 
@@ -48,7 +48,7 @@ program UPSY_component_test_program_mesh_creation
   end if
 
   call create_component_tests_output_folder  ( foldername_output)
-  call create_all_test_meshes_and_grids( foldername_output)
+  call create_all_test_meshes_and_grids_Antarctica( foldername_output)
 
   ! Stop the clock
   tstop = MPI_WTIME()

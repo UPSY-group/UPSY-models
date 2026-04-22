@@ -33,13 +33,7 @@ contains
     if (par%primary) write(0,'(a)') ''
     if (par%primary) write(0,'(a)') ' Running UFEMISM component tests...'
 
-    ! DENK DROM
-    call crash('fixme!')
-
-    ! output_dir = 'automated_testing/component_tests/results'
-    ! call create_component_tests_output_folder( output_dir)
-    ! call create_all_test_meshes_and_grids( output_dir, test_mesh_filenames, test_grid_filenames)
-    ! call run_all_mass_cons_component_tests( output_dir, test_mesh_filenames)
+    call warning('there are no component tests for UFEMISM!')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

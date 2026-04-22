@@ -3,6 +3,7 @@
 set test_dir = "build/src/UFEMISM"
 set expected_programs = ( \
     UFEMISM_program \
+    UFEMISM_unit_test_program \
 )
 
 set all_exist = 1

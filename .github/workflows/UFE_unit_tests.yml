@@ -1,10 +1,10 @@
-name: UPSY compiling
-run-name: ${{ github.actor }} - UPSY compiling
+name: UFEMISM unit tests
+run-name: ${{ github.actor }} - UFEMISM unit tests
 on:
   workflow_call:
 
 jobs:
-  compile_UPSY:
+  unit_tests:
     name: ${{ matrix.os }}-${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -73,8 +73,13 @@ jobs:
           sudo apt-get update
           sudo apt-get install csh
 
-      - name: Compile UPSY
-        run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
+      - name: Compile UFEMISM
+        run: csh compile_UFEMISM.csh  ${{ matrix.build_type }}  clean
 
-      - name: Verify compiling
-        run: csh automated_testing/check_if_UPSY_programs_exist.csh
+      - name: Run unit tests
+        run: |
+          csh automated_testing/UFEMISM/unit_tests/test_script.csh
+
+      - name: Check unit tests
+        run: |
+          csh automated_testing/check_unit_tests.csh   automated_testing/UFEMISM/unit_tests/results/unit_tests_output.txt

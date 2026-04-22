@@ -73,18 +73,8 @@ jobs:
           sudo apt-get update
           sudo apt-get install csh
 
-      - name: Compile UFEMISM (macos)
-        if: matrix.os == 'macos-latest'
-        run: ./compile_UFEMISM.csh ${{ matrix.build_type }} clean
-
-      - name: Compile UFEMISM (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Compile UFEMISM
         run: csh compile_UFEMISM.csh  ${{ matrix.build_type }}  clean
 
-      - name: Verify compiling (macos)
-        if: matrix.os == 'macos-latest'
-        run: ./automated_testing/check_if_UFEMISM_programs_exist.csh
-
-      - name: Verify compiling (ubuntu)
-        if: matrix.os == 'ubuntu-latest'
+      - name: Verify compiling
         run: csh automated_testing/check_if_UFEMISM_programs_exist.csh

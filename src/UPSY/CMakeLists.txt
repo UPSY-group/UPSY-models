@@ -37,3 +37,13 @@ foreach(prog IN LISTS all_programs)
     link_to_dependencies(${prog})
     add_compiler_flags(${prog})
 endforeach()
+
+# Print a green summary line once all UPSY programs built successfully.
+if(all_programs)
+	string(ASCII 27 ESC)
+	add_custom_target( UPSY_all_programs_build_success ALL
+		DEPENDS ${all_programs}
+		COMMAND ${CMAKE_COMMAND} -E echo "${ESC}[32mUPSY build success: all UPSY programs compiled and linked.${ESC}[0m"
+		COMMENT "Checking UPSY program build status"
+	)
+endif()

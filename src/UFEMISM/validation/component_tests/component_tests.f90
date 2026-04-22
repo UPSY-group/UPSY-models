@@ -6,9 +6,10 @@ module component_tests
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use model_configuration, only: C
-  use ct_basic, only: create_component_tests_output_folder
-  use ct_create_test_meshes, only: create_all_test_meshes_and_grids
-  use ct_mass_conservation, only: run_all_mass_cons_component_tests
+  ! use ct_basic, only: create_component_tests_output_folder
+  ! use ct_create_test_meshes, only: create_all_test_meshes_and_grids
+  ! use ct_mass_conservation, only: run_all_mass_cons_component_tests
+  use crash_mod, only: crash
 
   implicit none
 
@@ -32,10 +33,13 @@ contains
     if (par%primary) write(0,'(a)') ''
     if (par%primary) write(0,'(a)') ' Running UFEMISM component tests...'
 
-    output_dir = 'automated_testing/component_tests/results'
-    call create_component_tests_output_folder( output_dir)
-    call create_all_test_meshes_and_grids( output_dir, test_mesh_filenames, test_grid_filenames)
-    call run_all_mass_cons_component_tests( output_dir, test_mesh_filenames)
+    ! DENK DROM
+    call crash('fixme!')
+
+    ! output_dir = 'automated_testing/component_tests/results'
+    ! call create_component_tests_output_folder( output_dir)
+    ! call create_all_test_meshes_and_grids( output_dir, test_mesh_filenames, test_grid_filenames)
+    ! call run_all_mass_cons_component_tests( output_dir, test_mesh_filenames)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -67,10 +67,7 @@ program UFEMISM_program
   call initialise_control_and_resource_tracker
 
   ! Special cases
-  if (input_argument == 'unit_tests') then
-    call initialise_model_configuration_unit_tests
-    call run_all_unit_tests
-  elseif (input_argument == 'component_tests') then
+  if (input_argument == 'component_tests') then
     call initialise_model_configuration_unit_tests
     call run_all_component_tests
   else ! An actual model simulation

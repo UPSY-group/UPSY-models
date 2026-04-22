@@ -50,7 +50,7 @@ program UPSY_unit_test_program
 
   ! Get the input arguments
   if (iargc() == 1) then
-    call getarg( 1, foldername_output)                 ! path/to/UPSY-models/automated_testing/unit_tests/results
+    call getarg( 1, foldername_output)                 ! path/to/UPSY-models/automated_testing/UPSY/unit_tests/results
     if (par%primary) write(0,*) ''
     if (par%primary) write(0,*) '   Writing unit test results to  ' // trim( foldername_output) // '...'
   else

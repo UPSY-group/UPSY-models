@@ -28,6 +28,12 @@ module ismip_output_types
     type(type_grid)                   :: grid         ! Output grid
 
     type(type_ismip_gridded_field)    :: lithk        ! [m]    land_ice_thickness
+    type(type_ismip_gridded_field)    :: orog         ! [m]    surface_altitude
+    type(type_ismip_gridded_field)    :: topg         ! [m]    bedrock_altitude
+    type(type_ismip_gridded_field)    :: xvelsurf     ! [m]    land_ice_surface_x_velocity
+    type(type_ismip_gridded_field)    :: yvelsurf     ! [m]    land_ice_surface_y_velocity
+    type(type_ismip_gridded_field)    :: zvelsurf     ! [m]    land_ice_surface_z_velocity
+
 
   end type type_ismip_grid_output
 end module ismip_output_types

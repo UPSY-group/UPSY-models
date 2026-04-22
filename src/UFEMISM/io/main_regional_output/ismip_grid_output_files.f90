@@ -2,6 +2,7 @@ module ismip_grid_output_files
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_SUM
   use UPSY_main, only: UPSY
+  use parameters
   use precisions, only: dp 
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
@@ -46,6 +47,11 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP grid output files' // '...'
 
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%lithk)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%orog)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%topg)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelsurf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelsurf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelsurf)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -105,6 +111,21 @@ contains
       case ('lithk')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hi, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('orog')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hs, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('topg')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hb, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('xvelsurf')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_surf, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('yvelsurf')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_surf, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('zvelsurf')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_surf, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
     end select
 
     ! Finalise routine path
@@ -139,6 +160,11 @@ contains
 
     ! Create all grid files
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lithk)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%orog)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%topg)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelsurf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelsurf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelsurf)
     ! TODO add the rest
 
     ! Finalise routine path
@@ -218,6 +244,11 @@ contains
     region%ismip_grid_output%grid = region%output_grid
 
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%lithk, 'lithk', 'land_ice_thickness', 'm', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%orog,  'orog' , 'surface_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%topg,  'topg' , 'bedrock_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelsurf, 'xvelsurf' , 'land_ice_surface_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelsurf, 'yvelsurf' , 'land_ice_surface_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_z_velocity', 'm s-1', 'ST')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

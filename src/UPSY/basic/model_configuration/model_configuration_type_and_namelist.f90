@@ -1162,6 +1162,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ismip_exp_name_config                        = ''                              ! Experiment name for ISMIP output
     character(len=1024) :: ismip_folder_config                          = 'ismip'                         ! Subfolder in which ISMIP files are stored
     character(len=1024) :: ismip_group_name_config                      = 'IMAU'                          ! Group name included in ISMIP output files
+    character(len=1024) :: ismip_model_name_config                      = 'UFEMISM'                       ! Model name to which numbers can be added for variants
     real(dp)            :: dt_output_ismip_config                       = 1._dp                           ! Timestep for writing ISMIP output
 
     ! Transects
@@ -2365,6 +2366,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ismip_exp_name
     character(len=1024) :: ismip_folder
     character(len=1024) :: ismip_group_name
+    character(len=1024) :: ismip_model_name
     real(dp)            :: dt_output_ismip
 
     ! Transects
@@ -3192,6 +3194,7 @@ contains
       ismip_exp_name_config                                       , &
       ismip_folder_config                                         , &
       ismip_group_name_config                                     , &
+      ismip_model_name_config                                     , &
       dt_output_ismip_config                                      , &
       transects_NAM_config                                        , &
       transects_EAS_config                                        , &
@@ -4425,6 +4428,7 @@ contains
     C%ismip_exp_name                                         = ismip_exp_name_config
     C%ismip_folder                                           = ismip_folder_config
     C%ismip_group_name                                       = ismip_group_name_config
+    C%ismip_model_name                                       = ismip_model_name_config
     C%dt_output_ismip                                        = dt_output_ismip_config
 
     ! Transects

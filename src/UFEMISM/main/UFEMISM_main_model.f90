@@ -219,7 +219,7 @@ CONTAINS
     CHARACTER(LEN=256), PARAMETER                                      :: routine_name = 'write_to_regional_output_files'
     INTEGER                                                            :: i
     REAL(dp)                                                           :: t_closest
-    LOGICAL                                                            :: do_output_main, do_output_restart, do_output_grid
+    LOGICAL                                                            :: do_output_main, do_output_restart, do_output_grid, do_output_ismip
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -232,7 +232,7 @@ CONTAINS
     end if
 
     ! Determine time of next output event
-    t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next)
+    t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next, region%output_ismip_t_next)
 
     ! Determine actions
     IF     (region%time < t_closest) THEN
@@ -253,6 +253,7 @@ CONTAINS
     do_output_main    = .FALSE.
     do_output_restart = .FALSE.
     do_output_grid    = .FALSE.
+    do_output_ismip   = .false.
 
     ! Update time stamps
     IF (region%time == region%output_t_next) THEN
@@ -267,6 +268,10 @@ CONTAINS
       region%output_grid_t_next = region%output_grid_t_next + C%dt_output_grid
       do_output_grid = .TRUE.
     END IF
+    if (region%time == region%output_ismip_t_next) then
+      region%output_ismip_t_next = region%output_ismip_t_next + C%dt_output_ismip
+      do_output_ismip = .true.
+    end if
 
     ! If needed, create a new set of mesh output files for the current model mesh
     IF (.NOT. region%output_files_match_current_mesh) THEN
@@ -323,7 +328,6 @@ CONTAINS
     IF (do_output_grid) THEN
       ! Write to the gridded regional output file
       CALL write_to_main_regional_output_file_grid( region)
-      CALL write_to_ISMIP_regional_output_files_grid( region)
 
       ! Write to the region-of-interest output files
       DO i = 1, region%nROI
@@ -331,6 +335,10 @@ CONTAINS
         !CALL write_to_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_ismip_grid_ROI( i))
       END DO
     END IF
+
+    if (do_output_ismip) then
+      call write_to_ISMIP_regional_output_files_grid( region)
+    end if
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -411,6 +419,7 @@ CONTAINS
     time_of_next_action = MIN( time_of_next_action, region%output_t_next)
     time_of_next_action = MIN( time_of_next_action, region%output_restart_t_next)
     time_of_next_action = MIN( time_of_next_action, region%output_grid_t_next)
+    time_of_next_action = MIN( time_of_next_action, region%output_ismip_t_next)
 
     ! ===== Advance region time =====
     ! ===============================

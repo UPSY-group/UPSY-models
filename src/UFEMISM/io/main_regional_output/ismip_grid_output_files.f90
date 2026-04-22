@@ -156,7 +156,7 @@ contains
     call initialise_ismip_grid_output( region)
 
     ! Create folder
-    if (par%primary) call system('mkdir ' // trim(C%output_dir) // trim(C%ismip_folder))
+    if (par%primary) call system('mkdir ' // trim(C%output_dir) // trim(C%ismip_exp_name))
 
     ! Create all grid files
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lithk)
@@ -278,7 +278,7 @@ contains
     field%fieldtype = fieldtype
 
     ! Define the filename for this field
-    field%filename = trim( C%output_dir) // trim(C%ismip_folder) // '/' // trim(field%name) // '_' // &
+    field%filename = trim( C%output_dir) // trim(C%ismip_exp_name) // '/' // trim(field%name) // '_' // &
       trim(ismip_grid_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // trim(C%ismip_model_name) // & 
       '_' // trim(C%ismip_exp_name) // '.nc'
 

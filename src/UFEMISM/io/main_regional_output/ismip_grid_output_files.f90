@@ -49,7 +49,9 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%orog)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%topg)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%base)
+
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%strbasemag)
+
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelsurf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelsurf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelbase)
@@ -62,6 +64,10 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftflf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftgif)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftgrf)
+
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litemptop)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotfl)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotgr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -110,6 +116,7 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
+    integer                               :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -173,6 +180,32 @@ contains
       case ('sftgrf')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_gr, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('litemptop')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Ti( :,1), d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('litempbotfl')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_floating_ice( vi)) then
+            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
+          else
+            d_mesh_vec_partial_2D( vi) = NaN
+          end if
+        end do
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+      case ('litempbotgr')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%fraction_gr( vi) > 0._dp) then
+            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
+          else
+            d_mesh_vec_partial_2D( vi) = NaN
+          end if
+        end do
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
     end select
 
     ! Clean up memory
@@ -213,7 +246,9 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%orog)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%topg)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%base)
+
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%strbasemag)
+
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelsurf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelsurf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelbase)
@@ -222,10 +257,14 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelmean)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelsurf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelbase)
+
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftflf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftgif)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftgrf)
-    ! TODO add the rest
+
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litemptop)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotfl)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotgr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -307,7 +346,9 @@ contains
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%orog,  'orog' , 'surface_altitude', 'm', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%topg,  'topg' , 'bedrock_altitude', 'm', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%base,  'base' , 'base_altitude', 'm', 'ST')
+
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%strbasemag,  'strbasemag' , 'land_ice_basal_drag', 'Pa', 'ST')
+
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelsurf, 'xvelsurf' , 'land_ice_surface_x_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelsurf, 'yvelsurf' , 'land_ice_surface_y_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelbase, 'xvelbase' , 'land_ice_basal_x_velocity', 'm s-1', 'ST')
@@ -316,9 +357,16 @@ contains
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelmean, 'yvelmean' , 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
+
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%sftflf, 'sftflf' , 'floating_ice_shelf_area_fraction', '', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%sftgif, 'sftgif' , 'land_ice_area_fraction', '', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%sftgrf, 'sftgrf' , 'grounded_ice_sheet_area_fraction', '', 'ST')
+
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%litemptop, 'litemptop' , 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%litempbotfl, &
+      'litempbotfl' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%litempbotgr, &
+      'litempbotgr' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -330,9 +378,9 @@ contains
 
     type(type_ismip_grid_output),      intent(inout) :: ismip_grid_output
     type(type_ismip_gridded_field),    intent(inout) :: field
-    character(len=*),               intent(in   ) :: name
-    character(len=*),               intent(in   ) :: long_name
-    character(len=*),               intent(in   ) :: units
+    character(len=*),                  intent(in   ) :: name
+    character(len=*),                  intent(in   ) :: long_name
+    character(len=*),                  intent(in   ) :: units
     character(len=2),                  intent(in   ) :: fieldtype
 
     ! Local variables

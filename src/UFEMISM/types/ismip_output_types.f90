@@ -32,7 +32,9 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: orog         ! [m]        surface_altitude
     type(type_ismip_gridded_field)    :: topg         ! [m]        bedrock_altitude
     type(type_ismip_gridded_field)    :: base         ! [m]        base_altitude
+
     type(type_ismip_gridded_field)    :: strbasemag   ! [Pa]       land_ice_basal_drag
+
     type(type_ismip_gridded_field)    :: xvelsurf     ! [m s-1]    land_ice_surface_x_velocity
     type(type_ismip_gridded_field)    :: yvelsurf     ! [m s-1]    land_ice_surface_y_velocity
     type(type_ismip_gridded_field)    :: xvelbase     ! [m s-1]    land_ice_basal_x_velocity
@@ -45,6 +47,11 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: sftflf       ! []         floating_ice_shelf_area_fraction
     type(type_ismip_gridded_field)    :: sftgif       ! []         land_ice_area_fraction
     type(type_ismip_gridded_field)    :: sftgrf       ! []         grounded_ice_sheet_area_fraction
+
+    type(type_ismip_gridded_field)    :: litemptop    ! [K]        temperature_at_top_of_ice_sheet_model
+    type(type_ismip_gridded_field)    :: litempbotfl  ! [K]        temperature_at_base_of_ice_sheet_model (fl)
+    type(type_ismip_gridded_field)    :: litempbotgr  ! [K]        temperature_at_base_of_ice_sheet_model (gr)
+
 
   end type type_ismip_grid_output
 end module ismip_output_types

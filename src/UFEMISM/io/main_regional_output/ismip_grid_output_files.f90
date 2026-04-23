@@ -184,7 +184,7 @@ contains
     call initialise_ismip_grid_output( region)
 
     ! Create folder
-    if (par%primary) call system('mkdir ' // trim(region%ismip_grid_output%folder))
+    if (par%primary) call system('mkdir ' // trim(C%output_dir) // trim(C%ismip_exp_name))
 
     ! Create all grid files
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lithk)
@@ -309,8 +309,6 @@ contains
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field'
-    integer                        :: res_int
-    character(len=2)               :: res_str
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -321,17 +319,9 @@ contains
     field%units     = units
     field%fieldtype = fieldtype
 
-    ! Convert grid resolution to string
-    res_int = int(C%dx_output_grid_ANT / 1000._dp)
-    write(res_str, '(I2.2)') res_int
-
-    ! Define the name of the subfolder
-    ismip_grid_output%folder = trim( C%output_dir) // trim( C%ismip_exp_name) // '_' // trim(res_str) // '/'
-
     ! Define the filename for this field
-    field%filename = trim( ismip_grid_output%folder) // &
-      trim(field%name) // '_' // trim(ismip_grid_output%IS_name) // '_' // &
-      trim(C%ismip_group_name) // '_' // trim(C%ismip_model_name) // & 
+    field%filename = trim( C%output_dir) // trim(C%ismip_exp_name) // '/' // trim(field%name) // '_' // &
+      trim(ismip_grid_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // trim(C%ismip_model_name) // & 
       '_' // trim(C%ismip_exp_name) // '.nc'
 
     ! Print to terminal

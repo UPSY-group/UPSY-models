@@ -26,7 +26,6 @@ module ismip_output_types
 
     character(len=3)                  :: IS_name      ! Ice sheet name (AIS or GIS)
     type(type_grid)                   :: grid         ! Output grid
-    character(len=1024)               :: folder       ! Subfolder exp_RES
 
     type(type_ismip_gridded_field)    :: lithk        ! [m]        land_ice_thickness
     type(type_ismip_gridded_field)    :: orog         ! [m]        surface_altitude

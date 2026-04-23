@@ -49,3 +49,7 @@ jobs:
   Berends2023nudging_exp2_small:
     uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp2_small.yml
     needs: setup_and_cache_Matlab
+
+  Ant_init_small_01:
+    uses: ./.github/workflows/UFE_integrated_test_Ant_init_small_01.yml
+    needs: setup_and_cache_Matlab

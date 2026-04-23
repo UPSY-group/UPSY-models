@@ -42,5 +42,9 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: zvelsurf     ! [m s-1]    land_ice_surface_upward_velocity
     type(type_ismip_gridded_field)    :: zvelbase     ! [m s-1]    land_ice_base_upward_velocity
 
+    type(type_ismip_gridded_field)    :: sftflf       ! []         floating_ice_shelf_area_fraction
+    type(type_ismip_gridded_field)    :: sftgif       ! []         land_ice_area_fraction
+    type(type_ismip_gridded_field)    :: sftgrf       ! []         grounded_ice_sheet_area_fraction
+
   end type type_ismip_grid_output
 end module ismip_output_types

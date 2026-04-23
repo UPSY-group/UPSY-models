@@ -20,15 +20,84 @@ module ismip_grid_output_files
 
   private
 
-  public :: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid
+  public :: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid, &
+    accumulate_ISMIP_flux_fields
 
 contains
+
+  subroutine accumulate_ISMIP_flux_fields( region)
+    !< Write to ISMIP regional output NetCDF files - grid version
+
+    ! In/output variables:
+    type(type_model_region), intent(inout) :: region
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'accumulate_ISMIP_flux_fields'
+    real( dp)                      :: deltat     ! 
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! if no ISMIP output should be created, do nothing 
+    if (.not. C%do_create_ismip_output) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Get delta t since last current time
+    deltat = region%time - region%ismip_grid_output%t_curr
+
+    ! Accumulate all FL fields
+    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf, deltat)
+
+    ! Update current time
+    region%ismip_grid_output%t_curr = region%time
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine accumulate_ISMIP_flux_fields
+
+  subroutine accumulate_single_ISMIP_flux_field( region, field, deltat)
+    !< Write to ISMIP regional output NetCDF files - grid version
+
+    ! In/output variables:
+    type(type_model_region),           intent(inout) :: region
+    type(type_ismip_gridded_field),    intent(inout) :: field
+    real(dp),                          intent(in   ) :: deltat
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'accumulate_single_ISMIP_flux_field'
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
+    integer                        :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    select case (field%name)
+      case default
+        call crash('unknown ISMIP field name "' // trim( field%name) // '"')
+      case ('acabf')
+        ! For hybrid memory reasons, make a local copy (is this necessary?)
+        SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%Hi( vi) > 0) then
+            ! Accumulate values only where ice is present
+            field%accum( vi) = field%accum( vi) + SMB_loc( vi) * ice_density / sec_per_year * deltat
+          end if
+        end do
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine accumulate_single_ISMIP_flux_field
 
   subroutine write_to_ISMIP_regional_output_files_grid( region)
     !< Write to ISMIP regional output NetCDF files - grid version
 
     ! In/output variables:
-    type(type_model_region), intent(in   ) :: region
+    type(type_model_region), intent(inout) :: region
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_ISMIP_regional_output_files_grid'
@@ -69,6 +138,11 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotfl)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotgr)
 
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
+
+    ! Set previous time step to current
+    region%ismip_grid_output%t_prev = region%ismip_grid_output%t_curr
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -78,8 +152,8 @@ contains
     !< Write to single ISMIP regional output NetCDF file - grid version
 
     ! In/output variables:
-    type(type_model_region),           intent(in   ) :: region
-    type(type_ismip_gridded_field),    intent(in   ) :: field
+    type(type_model_region),           intent(inout) :: region
+    type(type_ismip_gridded_field),    intent(inout) :: field
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_single_ISMIP_regional_output_file_grid'
@@ -109,17 +183,22 @@ contains
     !< Write a single field to the ISMIP regional output NetCDF file - grid version
 
     ! In/output variables:
-    type(type_model_region),           intent(in   ) :: region
-    type(type_ismip_gridded_field),    intent(in   ) :: field
+    type(type_model_region),           intent(inout) :: region
+    type(type_ismip_gridded_field),    intent(inout) :: field
     integer,                           intent(in   ) :: ncid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
     integer                               :: vi
+    real(dp)                              :: deltat
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
+    deltat = region%ismip_grid_output%t_curr - region%ismip_grid_output%t_prev
 
     ! Allocate memory
     allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
@@ -206,6 +285,21 @@ contains
         end do
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+      case ('acabf')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        if (field%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+          SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
+          d_mesh_vec_partial_2D = SMB_loc * ice_density / sec_per_year
+          field%is_initial = .false.
+        else
+          d_mesh_vec_partial_2D = field%accum / deltat
+          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+        end if
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
     end select
 
     ! Clean up memory
@@ -266,6 +360,8 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotfl)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotgr)
 
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -318,8 +414,6 @@ contains
   subroutine initialise_ISMIP_grid_output( region)
     ! Initialise the ISMIP grid type
 
-    ! NOTE: should only be called by the primary (?)
-
     ! In/output variables:
     type(type_model_region), intent(inout) :: region
 
@@ -342,41 +436,47 @@ contains
     ! Copy the output grid
     region%ismip_grid_output%grid = region%output_grid
 
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%lithk, 'lithk', 'land_ice_thickness', 'm', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%orog,  'orog' , 'surface_altitude', 'm', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%topg,  'topg' , 'bedrock_altitude', 'm', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%base,  'base' , 'base_altitude', 'm', 'ST')
+    ! Initialise the time trackers
+    region%ismip_grid_output%t_prev = C%start_time_of_run
+    region%ismip_grid_output%t_curr = C%start_time_of_run
 
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%strbasemag,  'strbasemag' , 'land_ice_basal_drag', 'Pa', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%lithk, 'lithk', 'land_ice_thickness', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%orog,  'orog' , 'surface_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%topg,  'topg' , 'bedrock_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%base,  'base' , 'base_altitude', 'm', 'ST')
 
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelsurf, 'xvelsurf' , 'land_ice_surface_x_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelsurf, 'yvelsurf' , 'land_ice_surface_y_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelbase, 'xvelbase' , 'land_ice_basal_x_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelbase, 'yvelbase' , 'land_ice_basal_y_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelmean, 'xvelmean' , 'land_ice_vertical_mean_x_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelmean, 'yvelmean' , 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%strbasemag,  'strbasemag' , 'land_ice_basal_drag', 'Pa', 'ST')
 
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%sftflf, 'sftflf' , 'floating_ice_shelf_area_fraction', '', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%sftgif, 'sftgif' , 'land_ice_area_fraction', '', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%sftgrf, 'sftgrf' , 'grounded_ice_sheet_area_fraction', '', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelsurf, 'xvelsurf' , 'land_ice_surface_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelsurf, 'yvelsurf' , 'land_ice_surface_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelbase, 'xvelbase' , 'land_ice_basal_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelbase, 'yvelbase' , 'land_ice_basal_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelmean, 'xvelmean' , 'land_ice_vertical_mean_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelmean, 'yvelmean' , 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
 
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%litemptop, 'litemptop' , 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%litempbotfl, &
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftflf, 'sftflf' , 'floating_ice_shelf_area_fraction', '', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgif, 'sftgif' , 'land_ice_area_fraction', '', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgrf, 'sftgrf' , 'grounded_ice_sheet_area_fraction', '', 'ST')
+
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litemptop, 'litemptop' , 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotfl, &
       'litempbotfl' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
-    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%litempbotgr, &
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotgr, &
       'litempbotgr' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
+
+    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf, 'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_ISMIP_grid_output
 
-  subroutine initialise_ISMIP_field( ismip_grid_output, field, name, long_name, units, fieldtype)
+  subroutine initialise_ISMIP_field( region, field, name, long_name, units, fieldtype)
     ! Initialise a single field
 
-    type(type_ismip_grid_output),      intent(inout) :: ismip_grid_output
+    type(type_model_region),           intent(inout) :: region
     type(type_ismip_gridded_field),    intent(inout) :: field
     character(len=*),                  intent(in   ) :: name
     character(len=*),                  intent(in   ) :: long_name
@@ -402,21 +502,24 @@ contains
     write(res_str, '(I2.2)') res_int
 
     ! Define the name of the subfolder
-    ismip_grid_output%folder = trim( C%output_dir) // trim( C%ismip_exp_name) // '_' // trim(res_str) // '/'
+    region%ismip_grid_output%folder = trim( C%output_dir) // trim( C%ismip_exp_name) // '_' // trim(res_str) // '/'
 
     ! Define the filename for this field
-    field%filename = trim( ismip_grid_output%folder) // &
-      trim(field%name) // '_' // trim(ismip_grid_output%IS_name) // '_' // &
-      trim(C%ismip_group_name) // '_' // trim(C%ismip_model_name) // & 
-      '_' // trim(C%ismip_exp_name) // '.nc'
+    field%filename = trim( region%ismip_grid_output%folder) // trim(field%name) // '_' // &
+      trim(region%ismip_grid_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
+      trim(C%ismip_model_name) // '_' // trim(C%ismip_exp_name) // '.nc'
 
-    ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Defined name "' // &
-      UPSY%stru%colour_string( trim( name), 'light blue') // '"...'
+    ! Allocate fields for accumulation during each timestep for flux fields
+    if (field%fieldtype == 'FL') then
+      allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source=0._dp)
+      field%is_initial = .true.
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_ISMIP_field
+
+  ! TODO remap_ISMIP_fields -> reallocate_bounds
 
 end module ismip_grid_output_files

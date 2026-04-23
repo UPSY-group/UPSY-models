@@ -12,7 +12,9 @@ module ismip_output_types
   type type_ismip_gridded_field
     ! A gridded output field
 
-    !real(dp), dimension(:), allocatable :: val              ! The value of this field on the mesh
+    real(dp), dimension(:), allocatable :: accum             ! [..] Accumulation of values per timestep
+    logical                             :: is_initial        ! Whether this is the first time to write
+
     character(len=1024)                 :: name              ! Variable name
     character(len=1024)                 :: filename          ! Filename of output
     character(len=1024)                 :: long_name         ! Long name
@@ -27,6 +29,9 @@ module ismip_output_types
     character(len=3)                  :: IS_name      ! Ice sheet name (AIS or GIS)
     type(type_grid)                   :: grid         ! Output grid
     character(len=1024)               :: folder       ! Subfolder exp_RES
+
+    real(dp)                            :: t_prev            ! [yr] Time value at previous writing
+    real(dp)                            :: t_curr            ! [yr] Current time value
 
     type(type_ismip_gridded_field)    :: lithk        ! [m]        land_ice_thickness
     type(type_ismip_gridded_field)    :: orog         ! [m]        surface_altitude
@@ -52,6 +57,7 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: litempbotfl  ! [K]        temperature_at_base_of_ice_sheet_model (fl)
     type(type_ismip_gridded_field)    :: litempbotgr  ! [K]        temperature_at_base_of_ice_sheet_model (gr)
 
+    type(type_ismip_gridded_field)    :: acabf        ! [kg m-2 s-1] land_ice_surface_specific_mass_balance_flux
 
   end type type_ismip_grid_output
 end module ismip_output_types

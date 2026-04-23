@@ -46,7 +46,8 @@ MODULE UFEMISM_main_model
     create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI
   use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
   use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI
-  use ismip_grid_output_files, only: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid
+  use ismip_grid_output_files, only: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid, &
+    accumulate_ISMIP_flux_fields
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
   use apply_maps, only: clear_all_maps_involving_this_mesh
@@ -230,6 +231,9 @@ CONTAINS
     if (region%nROI > 0) then
       call buffer_scalar_output_ROI( region)
     end if
+
+    ! Accumulate ISMIP fields
+    call accumulate_ISMIP_flux_fields( region)
 
     ! Determine time of next output event
     t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next, region%output_ismip_t_next)

@@ -56,6 +56,8 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelbase)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelmean)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelmean)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelsurf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelbase)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -148,6 +150,12 @@ contains
       case ('yvelmean')
         call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_vav_b, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('zvelsurf')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_surf, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('zvelbase')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_base, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
     end select
 
     ! Clean up memory
@@ -195,6 +203,8 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelbase)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelmean)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelmean)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelsurf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelbase)
     ! TODO add the rest
 
     ! Finalise routine path
@@ -284,6 +294,8 @@ contains
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelbase, 'yvelbase' , 'land_ice_basal_y_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%xvelmean, 'xvelmean' , 'land_ice_vertical_mean_x_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%yvelmean, 'yvelmean' , 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region%ismip_grid_output, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

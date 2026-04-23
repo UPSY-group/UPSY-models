@@ -39,6 +39,8 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: yvelbase     ! [m s-1]    land_ice_basal_y_velocity
     type(type_ismip_gridded_field)    :: xvelmean     ! [m s-1]    land_ice_vertical_mean_x_velocity
     type(type_ismip_gridded_field)    :: yvelmean     ! [m s-1]    land_ice_vertical_mean_y_velocity
+    type(type_ismip_gridded_field)    :: zvelsurf     ! [m s-1]    land_ice_surface_upward_velocity
+    type(type_ismip_gridded_field)    :: zvelbase     ! [m s-1]    land_ice_base_upward_velocity
 
   end type type_ismip_grid_output
 end module ismip_output_types

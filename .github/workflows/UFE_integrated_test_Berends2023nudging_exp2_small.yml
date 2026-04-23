@@ -1,11 +1,11 @@
-name: UFEMISM integrated test - MISMIP_mod (small)
-run-name: ${{ github.actor }} - UFEMISM integrated test - MISMIP_mod (small)
+name: UFEMISM integrated test - Berends2023nudging_exp2 (small)
+run-name: ${{ github.actor }} - UFEMISM integrated test - Berends2023nudging_exp2 (small)
 on:
   workflow_call:
 
 jobs:
-  MISMIP_mod_small:
-    name: MISMIP_mod (small)
+  Berends2023nudging_exp2_small:
+    name: Berends2023nudging_exp2 (small)
     runs-on: macos-latest
     steps:
 
@@ -49,12 +49,12 @@ jobs:
         run: csh compile_UFEMISM.csh  dev  clean
 
       - name: Run integrated test
-        run: csh automated_testing/UFEMISM/integrated_test_MISMIP_mod_small/test_script.csh
+        run: csh automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp2_small/test_script.csh
 
       - name: Check test result
         uses: matlab-actions/run-command@v3
         with:
           command: |
             addpath('automated_testing')
-            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_MISMIP_mod_small/results')
-            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_MISMIP_mod_small')
+            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp2_small/results')
+            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp2_small')

@@ -58,6 +58,7 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: litempbotgr  ! [K]        temperature_at_base_of_ice_sheet_model (gr)
 
     type(type_ismip_gridded_field)    :: acabf        ! [kg m-2 s-1] land_ice_surface_specific_mass_balance_flux
+    type(type_ismip_gridded_field)    :: hfgeoubed    ! [W m-2]      upward_geothermal_heat_flux_in_land_ice
 
   end type type_ismip_grid_output
 end module ismip_output_types

@@ -47,7 +47,7 @@ contains
     ! Get delta t since last current time
     deltat = region%time - region%ismip_grid_output%t_curr
 
-    ! Accumulate all FL fields
+    ! Accumulate all FL fields (except non-varying such as geothermal heat flux)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf, deltat)
 
     ! Update current time
@@ -139,6 +139,7 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotgr)
 
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%hfgeoubed)
 
     ! Set previous time step to current
     region%ismip_grid_output%t_prev = region%ismip_grid_output%t_curr
@@ -162,11 +163,16 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Skip geothermal heat flux after the first time slice
+    if (field%name == 'hfgeoubed' .and. .not. field%is_initial) return
+
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( field%filename, ncid)
 
     ! write the time to the file
-    call write_time_to_file( field%filename, ncid, region%time)
+    if (.not. field%name == 'hfgeoubed') then
+      call write_time_to_file( field%filename, ncid, region%time)
+    end if
 
     ! write the data to the file
     call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
@@ -300,6 +306,18 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
+      case ('hfgeoubed')
+        if (field%is_initial) then
+          allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+          d_mesh_vec_partial_2D = region%ice%geothermal_heat_flux / sec_per_year
+          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+          call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+          deallocate( d_mesh_vec_partial_2D)
+          field%is_initial = .false.
+        else
+          ! Non-varying field, so don't write except for first time step
+        end if
     end select
 
     ! Clean up memory
@@ -361,6 +379,7 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotgr)
 
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%hfgeoubed)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -393,15 +412,22 @@ contains
     ! Set up the grid in the file
     call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_grid_output%grid)
 
-    ! Add time dimension to the file
-    ! TODO change to cftime
-    call add_time_dimension_to_file( field%filename, ncid)
+    if (field%name == 'hfgeoubed') then
+      ! Add the field
+      call add_field_grid_dp_2D_notime( field%filename, ncid, field%name, precision = iprecision, & 
+        do_compress = do_compress, long_name = field%long_name, units = field%units)
+    else
+      ! Add time dimension to the file
+      ! TODO change to cftime
+      call add_time_dimension_to_file( field%filename, ncid)
+      
+      ! TODO if fieldtype == 'FL', add_bnds_dimension_to_file
 
-    ! TODO if fieldtype == 'FL', add_bnds_dimension_to_file
+      ! Add the field
+      call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 
+        do_compress = do_compress, long_name = field%long_name, units = field%units)
 
-    ! Add the field
-    call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 
-      do_compress = do_compress, long_name = field%long_name, units = field%units)
+    end if
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -467,6 +493,7 @@ contains
       'litempbotgr' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
 
     call initialise_ISMIP_field( region, region%ismip_grid_output%acabf, 'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%hfgeoubed, 'hfgeoubed' , 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

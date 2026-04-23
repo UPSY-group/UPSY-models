@@ -35,8 +35,9 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: strbasemag   ! [Pa]       land_ice_basal_drag
     type(type_ismip_gridded_field)    :: xvelsurf     ! [m s-1]    land_ice_surface_x_velocity
     type(type_ismip_gridded_field)    :: yvelsurf     ! [m s-1]    land_ice_surface_y_velocity
-    type(type_ismip_gridded_field)    :: zvelsurf     ! [m s-1]    land_ice_surface_z_velocity
-
+    type(type_ismip_gridded_field)    :: zvelsurf     ! [m s-1]    land_ice_surface_upward_velocity
+    type(type_ismip_gridded_field)    :: xvelbase     ! [m s-1]    land_ice_basal_x_velocity
+    type(type_ismip_gridded_field)    :: yvelbase     ! [m s-1]    land_ice_basal_y_velocity
 
   end type type_ismip_grid_output
 end module ismip_output_types

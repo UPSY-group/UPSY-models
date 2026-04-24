@@ -33,6 +33,7 @@ MODULE BMB_model_types
     ! Main data fields
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB                         ! [m.i.e./yr] Basal mass balance
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_shelf                   ! [m.i.e./yr] Basal mass balance of floating ice, extrapolated below grounded ice
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_sheet                   ! [m.i.e./yr] Basal mass balance of grounded ice
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_inv                     ! [m.i.e./yr] Inverted basal mass balance
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_ref                     ! [m.i.e./yr] Reference basal mass balance (e.g. inverted or prescribed)
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_transition_phase        ! [m.i.e./yr] Basal mass balance transition phase, weighted average between inversion and modelled BMB

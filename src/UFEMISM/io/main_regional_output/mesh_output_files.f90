@@ -689,6 +689,10 @@ contains
       ! Main BMB variables
       case ('BMB')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'BMB', region%BMB%BMB)
+      case ('BMB_shelf')
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'BMB_shelf', region%BMB%BMB_shelf)
+      case ('BMB_sheet')
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'BMB_sheet', region%BMB%BMB_sheet)
       case ('BMB_inv')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'BMB_inv', region%BMB%BMB_inv)
       case ('BMB_transition_phase')
@@ -1441,6 +1445,10 @@ contains
       ! Main BMB variables
       case ('BMB')
         call add_field_mesh_dp_2D( filename, ncid, 'BMB', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance', units = 'm yr^-1')
+      case ('BMB_shelf')
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB_shelf', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance (floating ice)', units = 'm yr^-1')
+      case ('BMB_sheet')
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB_sheet', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance (grounded ice)', units = 'm yr^-1')        
       case ('BMB_inv')
         call add_field_mesh_dp_2D( filename, ncid, 'BMB_inv', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance - inverted', units = 'm yr^-1')
       case ('BMB_transition_phase')

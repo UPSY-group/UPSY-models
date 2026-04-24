@@ -34,6 +34,7 @@ MODULE BMB_main
   use netcdf_io_main
   use checksum_mod, only: checksum
   use mpi_distributed_shared_memory, only: reallocate_dist_shared
+  use thermodynamics_utilities                                , ONLY: calc_grounded_basal_melt_rates
 
   IMPLICIT NONE
 
@@ -106,6 +107,8 @@ CONTAINS
           CASE ('laddie')
             ! No need to do anything
           CASE DEFAULT
+            ! Compute grounded ice mass balance
+            call calc_grounded_basal_melt_rates(ice, mesh, BMB)
             CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
         END SELECT
 
@@ -117,6 +120,9 @@ CONTAINS
       ! Synchronous coupling: calculate a new BMB in every model loop
       BMB%t_next = time + C%dt_BMB
     END IF
+
+    ! Compute grounded ice mass balance
+    call calc_grounded_basal_melt_rates(ice, mesh, BMB)
 
     ! Re-initialise BMB model if needed, only for LADDIE
     if (time > BMB%t_next_reinit) then
@@ -262,6 +268,10 @@ CONTAINS
     ! Allocate shelf BMB
     ALLOCATE( BMB%BMB_shelf( mesh%vi1:mesh%vi2))
     BMB%BMB_shelf = 0._dp
+
+    ! Allocate sheet BMB
+    ALLOCATE( BMB%BMB_sheet( mesh%vi1:mesh%vi2))
+    BMB%BMB_sheet = 0._dp    
 
     ! Allocate inverted BMB
     ALLOCATE( BMB%BMB_inv( mesh%vi1:mesh%vi2))
@@ -706,16 +716,19 @@ CONTAINS
           IF     (C%choice_BMB_subgrid == 'FCMP') THEN
             ! Apply FCMP scheme
             IF (ice%mask_floating_ice( vi)) BMB%BMB( vi) = BMB%BMB_shelf( vi)
+            IF (ice%mask_grounded_ice( vi)) BMB%BMB( vi) = BMB%BMB_sheet( vi)
 
           ELSEIF (C%choice_BMB_subgrid == 'PMP') THEN
             ! Apply PMP scheme
-            IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+             IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+             IF (ice%mask_grounded_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi) + ice%fraction_gr( vi) * BMB%BMB_sheet( vi)
           ELSE
             CALL crash('unknown choice_BMB_subgrid "' // TRIM(C%choice_BMB_subgrid) // '"!')
           END IF
         ELSE
           ! Apply NMP scheme
           IF (ice%fraction_gr( vi) == 0._dp) BMB%BMB( vi) = BMB%BMB_shelf( vi)
+          IF (ice%fraction_gr( vi) == 1._dp) BMB%BMB( vi) = BMB%BMB_sheet( vi)
         END IF
 
   END SUBROUTINE compute_subgrid_BMB

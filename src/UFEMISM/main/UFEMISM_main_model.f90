@@ -135,7 +135,6 @@ CONTAINS
 
       ! Run the ice dynamics model to calculate ice geometry at the desired time, and update
       ! velocities, thinning rates, and predicted geometry if necessary
-      ! After a mesh update with Salle2025 enabled, it stops here.
       CALL run_ice_dynamics_model( region)
 
       ! Calculate ice temperature at the desired time, and update

@@ -208,7 +208,7 @@ CONTAINS
     allocate(basal_hydro%R(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dR_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%dR_dy_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
-    allocate(basal_hydro%t_next, source = 0.0_dp)
+    allocate(basal_hydro%t_next, source = C%start_time_of_run)
     allocate(basal_hydro%dt, source = 0.0_dp)
     allocate(basal_hydro%diff_time, source = 0.0_dp)
     allocate(basal_hydro%W_r(mesh%vi1:mesh%vi2), source = 0.1_dp) !Value used in basal hydrology paper (Bueler and Van Pelt 2015)

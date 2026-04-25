@@ -943,6 +943,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB_config                           = 0._dp
     real(dp)            :: uniform_BMB_ROI_config                       = 0._dp
+    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp                        ! [yr] Start time for transition phase of uniform BMB in ROI (only applied when choice_BMB_model_ROI_config = "uniform" and do_BMB_transition_phase_config = .true.)
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma_config                  = 99.32E-5
@@ -2151,6 +2152,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB
     real(dp)            :: uniform_BMB_ROI
+    real(dp)            :: uniform_BMB_t_start
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma
@@ -3063,6 +3065,7 @@ contains
       choice_BMB_model_parameterised_config                       , &
       uniform_BMB_config                                          , &
       uniform_BMB_ROI_config                                      , &
+      uniform_BMB_t_start_config                                  , &
       BMB_Favier2019_gamma_config                                 , &
       BMB_Holland_Cmelt_config                                    , &
       choice_BMB_laddie_system_config                             , &
@@ -4212,6 +4215,7 @@ contains
     ! "uniform"
     C%uniform_BMB                                            = uniform_BMB_config
     C%uniform_BMB_ROI                                        = uniform_BMB_ROI_config
+    C%uniform_BMB_t_start                                    = uniform_BMB_t_start_config
 
     ! "parameterised"
     C%BMB_Favier2019_gamma                                   = BMB_Favier2019_gamma_config

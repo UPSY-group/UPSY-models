@@ -130,8 +130,6 @@ contains
     call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ice_volume_PD,    1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ice_volume_af_PD, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
 
-    call checksum_mod
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 

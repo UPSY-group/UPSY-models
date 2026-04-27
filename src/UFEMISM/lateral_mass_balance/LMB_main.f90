@@ -80,6 +80,8 @@ CONTAINS
         CALL crash('unknown choice_LMB_model "' // TRIM( choice_LMB_model) // '"')
     END SELECT
 
+    call checksum( mesh%pai_V, LMB%LMB, 'LMB%LMB')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 

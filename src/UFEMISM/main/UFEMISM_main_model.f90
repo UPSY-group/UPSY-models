@@ -1545,6 +1545,8 @@ CONTAINS
       END DO
     END IF
 
+    call checksum( region%mesh%pai_V, region%ice%dHi_dt_target, 'region%ice%dHi_dt_target')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 

@@ -150,6 +150,17 @@ contains
 
     end do
 
+    call checksum( region%mesh%pai_V, region%ice%Hs     , 'region%ice%Hs')
+    call checksum( region%mesh%pai_V, region%ice%Hib    , 'region%ice%Hib')
+    call checksum( region%mesh%pai_V, region%ice%TAF    , 'region%ice%TAF')
+    call checksum( region%mesh%pai_V, region%ice%Ho     , 'region%ice%Ho')
+    call checksum( region%mesh%pai_V, region%ice%dHi    , 'region%ice%dHi')
+    call checksum( region%mesh%pai_V, region%ice%dHb    , 'region%ice%dHb')
+    call checksum( region%mesh%pai_V, region%ice%dHs    , 'region%ice%dHs')
+    call checksum( region%mesh%pai_V, region%ice%dHib   , 'region%ice%dHib')
+    call checksum( region%mesh%pai_V, region%ice%dHs_dt , 'region%ice%dHs_dt')
+    call checksum( region%mesh%pai_V, region%ice%dHib_dt, 'region%ice%dHib_dt')
+
     ! Update masks
     call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
@@ -164,6 +175,10 @@ contains
     call ddy_a_a_2D( region%mesh, region%ice%Hs, dHs_dy)
     region%ice%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
 
+    call checksum( region%mesh%pai_V, dHs_dx             , 'dHs_dx')
+    call checksum( region%mesh%pai_V, dHs_dy             , 'dHs_dy')
+    call checksum( region%mesh%pai_V, region%ice%Hs_slope, 'region%ice%Hs_slope')
+
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
     ! Calculate zeta gradients
@@ -171,6 +186,7 @@ contains
 
     ! Calculate sub-grid grounded-area fractions
     call calc_grounded_fractions( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

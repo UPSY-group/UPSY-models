@@ -1440,9 +1440,6 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Print to terminal
-    IF (par%primary)  WRITE(*,"(A)") '    Remapping basal hydrology model data to the new mesh...'
-
     ! Reallocate memory for main variables (Figure out what to calculate again and what to remap)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W_til)

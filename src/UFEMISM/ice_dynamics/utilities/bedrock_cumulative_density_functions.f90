@@ -51,6 +51,7 @@ module bedrock_cumulative_density_functions
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
   use mpi_distributed_memory, only: distribute_from_primary
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -93,6 +94,9 @@ contains
       ! Compute them from scratch
       call calc_bedrock_CDFs( mesh, refgeo, ice)
     end if
+
+    call checksum( mesh%pai_V, ice%bedrock_cdf  , 'ice%bedrock_cdf'  )
+    call checksum( mesh%pai_V, ice%bedrock_cdf_b, 'ice%bedrock_cdf_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

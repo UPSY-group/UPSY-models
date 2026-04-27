@@ -16,6 +16,7 @@ MODULE thermodynamics_utilities
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
   use plane_geometry, only: cross2
   use mpi_distributed_memory, only: gather_to_all
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -85,6 +86,8 @@ CONTAINS
     END DO
     END DO
 
+    call checksum( mesh%pai_V, ice%internal_heating, 'ice%internal_heating')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -121,6 +124,8 @@ CONTAINS
         ice%frictional_heating( vi) = 0._dp
       END IF
     END DO
+
+    call checksum( mesh%pai_V, ice%frictional_heating, 'ice%frictional_heating')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -159,6 +164,8 @@ CONTAINS
       CALL crash('unknown choice_ice_heat_capacity "' // TRIM( C%choice_ice_heat_capacity) // '"!')
     END IF
 
+    call checksum( mesh%pai_V, ice%Cpi, 'ice%Cpi')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -196,6 +203,8 @@ CONTAINS
       CALL crash('unknown choice_ice_thermal_conductivity "' // TRIM( C%choice_ice_thermal_conductivity) // '"!')
     END IF
 
+    call checksum( mesh%pai_V, ice%Ki, 'ice%Ki')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -223,6 +232,8 @@ CONTAINS
     END DO
     END DO
 
+    call checksum( mesh%pai_V, ice%Ti_pmp, 'ice%Ti_pmp')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -247,6 +258,8 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
       ice%Ti_hom( vi) = MIN( 0._dp, ice%Ti( vi,C%nz) - ice%Ti_pmp( vi,C%nz))
     END DO
+
+    call checksum( mesh%pai_V, ice%Ti_hom, 'ice%Ti_hom')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -427,6 +440,9 @@ CONTAINS
       END DO
 
     END DO
+
+    call checksum( mesh%pai_V, u_times_dTdxp_upwind, 'u_times_dTdxp_upwind')
+    call checksum( mesh%pai_V, v_times_dTdyp_upwind, 'v_times_dTdyp_upwind')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

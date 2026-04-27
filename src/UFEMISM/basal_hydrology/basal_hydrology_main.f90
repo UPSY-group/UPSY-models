@@ -10,7 +10,7 @@ module basal_hydrology_main
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg
+  use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg, allocate_basal_hydro, remap_basal_hydro_model_Salle2025
   use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
   use crash_mod, only: crash
 
@@ -37,7 +37,7 @@ contains
     ! ====================================================================
 
     ! Check if we need to calculate basal hydrology
-    IF (C%do_asynchronous_basal_hydro) THEN
+    IF (C%do_asynchronous_basal_hydro .and. C%choice_basal_hydrology_model == "Salle2025") THEN
       ! Asynchronous coupling: do not calculate new basal hydrology in
       ! every model loop, but only at its own separate time step
 
@@ -101,6 +101,87 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_basal_hydrology_model
+
+  subroutine initialise_basal_hydro_model( mesh, ice, basal_hydro)
+
+    ! In/output variables:
+    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_ice_model),             intent(inout) :: ice
+    type(type_basal_hydrology_model), intent(inout) :: basal_hydro
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_basal_hydro_model'
+    integer                        :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (par%primary) write(*,"(A)") '   Initialising basal hydrology model...'
+
+    select case (C%choice_basal_hydrology_model)
+    case default
+      call crash('unknown choice_basal_hydrology_model "' // trim( C%choice_basal_hydrology_model) // '"')
+    case ('none')
+      ! No need to do anything
+    case ('Martin2011')
+      ! No need to do anything
+    case ('Salle2025')
+      call allocate_basal_hydro( mesh, ice, basal_hydro)
+    case ('Leguy2014')
+      ! No need to do anything
+    case ('error_function_Martin2011')
+      ! No need to do anything
+    case ('error_function_constant')
+      ! No need to do anything
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_basal_hydro_model
+
+  subroutine remap_basal_hydro_model( mesh_old, mesh_new, ice, basal_hydro, time)
+    ! Remap the basal hydrology model
+
+    ! In- and output variables
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
+    type(type_ice_model),                   intent(in)    :: ice
+    TYPE(type_basal_hydrology_model),       INTENT(INOUT) :: basal_hydro
+    REAL(dp),                               INTENT(IN)    :: time
+
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model'
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Print to terminal
+    IF (par%primary)  WRITE(*,"(A)") '    Remapping basal hydrology data to the new mesh...'
+
+    ! Determine which climate model to remap
+    select case (C%choice_basal_hydrology_model)
+    case default
+      call crash('unknown choice_basal_hydrology_model "' // trim( C%choice_basal_hydrology_model) // '"')
+    case ('none')
+      ! No need to do anything
+    case ('Martin2011')
+      ! No need to do anything (these are all ice model variables)
+    case ('Salle2025')
+      call remap_basal_hydro_model_Salle2025( mesh_old, mesh_new, ice, basal_hydro, time)
+    case ('Leguy2014')
+      ! No need to do anything
+    case ('error_function_Martin2011')
+      ! No need to do anything
+    case ('error_function_constant')
+      ! No need to do anything
+    end select
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE remap_basal_hydro_model
 
   subroutine calc_pore_water_pressure_none( mesh, ice)
 

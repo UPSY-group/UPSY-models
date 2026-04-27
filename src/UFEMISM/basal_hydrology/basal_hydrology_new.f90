@@ -1421,7 +1421,7 @@ CONTAINS
 
 
 
-  SUBROUTINE remap_basal_hydro_model( mesh_old, mesh_new, ice, basal_hydro, time)
+  SUBROUTINE remap_basal_hydro_model_Salle2025( mesh_old, mesh_new, ice, basal_hydro, time)
     ! Remap the BMB model
 
     ! In- and output variables
@@ -1432,7 +1432,7 @@ CONTAINS
     REAL(dp),                               INTENT(IN)    :: time
 
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model'
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model_Salle2025'
     CHARACTER(LEN=256)                                    :: choice_basal_hydro_model
     integer                                               :: vi
     real(dp), parameter                                   :: rho_w = 1000.0_dp
@@ -1496,13 +1496,12 @@ CONTAINS
       basal_hydro%W_r( vi) = 0.1_dp
     end do
 
-    ! Use the latest basal hydro output for remapping? (Now because of reallocate_bounds everything is 0)
-    write(*,*) "Doing God's work"
+    !write(*,*) "Doing God's work"
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
-  END SUBROUTINE remap_basal_hydro_model
+  END SUBROUTINE remap_basal_hydro_model_Salle2025
 
 
 END MODULE basal_hydrology_new

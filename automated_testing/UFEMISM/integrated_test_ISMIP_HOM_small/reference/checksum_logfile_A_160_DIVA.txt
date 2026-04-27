@@ -196,7 +196,6 @@
  BMB%mask_gl_gr: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/run_model(ANT)/run_BMB_model]
  LMB%LMB: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_LMB_model]
  region%GIA%relative_surface_load_mesh: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
- region%GIA%relative_surface_load_grid: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
  region%GIA%dHb_prev: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
  region%GIA%dHb_next: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
  region%ice%dHb: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]

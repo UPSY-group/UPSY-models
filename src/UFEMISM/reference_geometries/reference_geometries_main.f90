@@ -20,6 +20,7 @@ module reference_geometries_main
   use remapping_main, only: map_from_xy_grid_to_mesh_2D, map_from_mesh_to_mesh_2D
   use preprocess_geometry, only: smooth_model_geometry, remove_Lake_Vostok, remove_Ellesmere, remove_tiny_islands
   use idealised_geometries, only: calc_idealised_geometry
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -211,6 +212,11 @@ contains
     do vi = mesh%vi1, mesh%vi2
       refgeo%Hs( vi) = ice_surface_elevation( refgeo%Hi( vi), refgeo%Hb( vi), refgeo%SL( vi))
     end do
+
+    call checksum( mesh%pai_V, refgeo%Hi, 'refgeo%Hi')
+    call checksum( mesh%pai_V, refgeo%Hb, 'refgeo%Hb')
+    call checksum( mesh%pai_V, refgeo%Hs, 'refgeo%Hs')
+    call checksum( mesh%pai_V, refgeo%SL, 'refgeo%SL')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -641,6 +647,10 @@ contains
     do n = refgeo%grid_raw%n1, refgeo%grid_raw%n2
       refgeo%Hs_grid_raw( n) = ice_surface_elevation( refgeo%Hi_grid_raw( n), refgeo%Hb_grid_raw( n), refgeo%SL_grid_raw( n))
     end do
+
+    call checksum( refgeo%grid_raw%pai, refgeo%Hi_grid_raw, 'refgeo%Hi_grid_raw')
+    call checksum( refgeo%grid_raw%pai, refgeo%Hb_grid_raw, 'refgeo%Hb_grid_raw')
+    call checksum( refgeo%grid_raw%pai, refgeo%Hs_grid_raw, 'refgeo%Hs_grid_raw')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

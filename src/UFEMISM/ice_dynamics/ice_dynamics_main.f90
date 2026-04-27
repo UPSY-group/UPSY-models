@@ -44,6 +44,7 @@ module ice_dynamics_main
   use global_forcings_main, only: update_sealevel_in_model
   use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use bed_roughness_model_types, only: type_bed_roughness_model
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -258,6 +259,11 @@ contains
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%Hb, ice%SL, ice%Hi)
 
+    call checksum( mesh%pai_V, ice%Hi, 'ice%Hi')
+    call checksum( mesh%pai_V, ice%Hb, 'ice%Hb')
+    call checksum( mesh%pai_V, ice%Hs, 'ice%Hs')
+    call checksum( mesh%pai_V, ice%SL, 'ice%SL')
+
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
@@ -279,6 +285,19 @@ contains
       ice%dHib_dt( vi) = 0._dp
 
     end do ! do vi = mesh%vi1, mesh%vi2
+
+    call checksum( mesh%pai_V, ice%Hs     , 'ice%Hs'     )
+    call checksum( mesh%pai_V, ice%Hib    , 'ice%Hib'    )
+    call checksum( mesh%pai_V, ice%TAF    , 'ice%TAF'    )
+    call checksum( mesh%pai_V, ice%HO     , 'ice%HO'     )
+    call checksum( mesh%pai_V, ice%dHi    , 'ice%dHi'    )
+    call checksum( mesh%pai_V, ice%dHb    , 'ice%dHb'    )
+    call checksum( mesh%pai_V, ice%dHs    , 'ice%dHs'    )
+    call checksum( mesh%pai_V, ice%dHib   , 'ice%dHib'   )
+    call checksum( mesh%pai_V, ice%dHi_dt , 'ice%dHi_dt' )
+    call checksum( mesh%pai_V, ice%dHb_dt , 'ice%dHb_dt' )
+    call checksum( mesh%pai_V, ice%dHs_dt , 'ice%dHs_dt' )
+    call checksum( mesh%pai_V, ice%dHib_dt, 'ice%dHib_dt')
 
     ! Calculate zeta gradients
     call calc_zeta_gradients( mesh, ice)
@@ -318,6 +337,10 @@ contains
     call ddx_a_a_2D( mesh, ice%Hs, dHs_dx)
     call ddy_a_a_2D( mesh, ice%Hs, dHs_dy)
     ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
+
+    call checksum( mesh%pai_V, dHs_dx      , 'dHs_dx'      )
+    call checksum( mesh%pai_V, dHs_dy      , 'dHs_dy'      )
+    call checksum( mesh%pai_V, ice%Hs_slope, 'ice%Hs_slope')
 
     ! Target thinning rates
     ! =====================

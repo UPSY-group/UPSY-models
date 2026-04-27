@@ -26,6 +26,7 @@ MODULE climate_main
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -105,7 +106,7 @@ CONTAINS
     CASE ('snapshot_plus_transient_deltaT')
       CALL run_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, time)
     CASE ('snapshot_plus_anomalies')
-      CALL run_climate_model_snp_p_anml( mesh, ice, climate, time)  
+      CALL run_climate_model_snp_p_anml( mesh, ice, climate, time)
     CASE ('matrix')
       call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
     case ('SMB_snapshot_plus_anomalies')
@@ -195,13 +196,16 @@ CONTAINS
     case ('snapshot_plus_transient_deltaT')
       call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, region_name, C%start_time_of_run)
     CASE ('snapshot_plus_anomalies')
-      CALL initialise_climate_model_snp_p_anml( mesh, ice, climate, region_name)    
+      CALL initialise_climate_model_snp_p_anml( mesh, ice, climate, region_name)
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
       call initialise_climate_matrix( mesh, grid, ice, climate, region_name, forcing)
     case ('SMB_snapshot_plus_anomalies')
       ! No need to do anything (initialisation is handled by the SMB model)
     end select
+
+    call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')
+    call checksum( mesh%pai_V, climate%Precip, 'climate%Precip')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -470,7 +474,7 @@ CONTAINS
     ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
       call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, ice, climate, region_name, time)
     ELSEIF (choice_climate_model == 'snapshot_plus_anomalies')  THEN
-      call remap_climate_snp_p_anml(mesh_old, mesh_new, ice, climate, region_name, time)  
+      call remap_climate_snp_p_anml(mesh_old, mesh_new, ice, climate, region_name, time)
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     ELSE

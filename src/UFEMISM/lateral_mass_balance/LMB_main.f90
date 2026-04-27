@@ -17,6 +17,7 @@ MODULE LMB_main
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use LMB_GlacialIndex
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -139,6 +140,8 @@ CONTAINS
       CASE DEFAULT
         CALL crash('unknown choice_LMB_model "' // TRIM( choice_LMB_model) // '"')
     END SELECT
+
+    call checksum( mesh%pai_V, LMB%LMB, 'LMB%LMB')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

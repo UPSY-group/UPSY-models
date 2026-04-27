@@ -18,8 +18,9 @@ all_files_match = true;
 henk = dir( foldername_ref);
 for i = 1: length( henk)
   filename_ref = [foldername_ref '/' henk(i).name];
+  if ~endsWith( filename_ref,'.nc'); continue; end
   if contains( filename_ref,'resource_tracking_checksum'); continue; end
-  disp(['Comparing file ' num2str(i) '/' num2str( length( henk)) ': ' filename_ref])
+  disp(['Comparing netcdf file ' num2str(i) '/' num2str( length( henk)) ': ' filename_ref])
   if endsWith( filename_ref,'_checksum.nc')
     filename_mod = [foldername_mod '/' henk(i).name];
     if ~exist( filename_mod,'file')

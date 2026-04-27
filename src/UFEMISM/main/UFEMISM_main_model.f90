@@ -57,6 +57,7 @@ MODULE UFEMISM_main_model
   use tracer_tracking_model_main, only: initialise_tracer_tracking_model, run_tracer_tracking_model, &
     remap_tracer_tracking_model
   use transects_main, only: initialise_transects, write_to_transect_netcdf_output_files
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -556,6 +557,8 @@ CONTAINS
 
     call region%SMB%allocate  ( region%SMB%ct_allocate( 'SMB_model', region%name, region%mesh))
     call region%SMB%initialise( region%SMB%ct_initialise( region%ice))
+
+    call checksum( region%mesh%pai_V, region%SMB%SMB, 'region%SMB%SMB')
 
     ! ===== Basal mass balance =====
     ! ==============================
@@ -1536,6 +1539,8 @@ CONTAINS
         END IF
       END DO
     END IF
+
+    call checksum( region%mesh%pai_V, region%ice%dHi_dt_target, 'region%ice%dHi_dt_target')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

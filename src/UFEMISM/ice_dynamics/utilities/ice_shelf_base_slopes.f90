@@ -5,6 +5,7 @@ module ice_shelf_base_slopes
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -29,6 +30,9 @@ contains
     ! Straightforward calculation everywhere
     call ddx_a_b_2D( mesh, ice%Hib, ice%dHib_dx_b)
     call ddy_a_b_2D( mesh, ice%Hib, ice%dHib_dy_b)
+
+    call checksum( mesh%pai_Tri, ice%dHib_dx_b, 'ice%dHib_dx_b')
+    call checksum( mesh%pai_Tri, ice%dHib_dy_b, 'ice%dHib_dy_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

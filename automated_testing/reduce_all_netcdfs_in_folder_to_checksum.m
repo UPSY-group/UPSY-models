@@ -4,8 +4,8 @@ henk = dir( foldername);
 
 for i = 1: length( henk)
   filename = [foldername '/' henk(i).name];
-  disp(['Reducing file ' num2str(i) '/' num2str(length(henk)) ': ' filename])
   if endsWith( filename,'.nc')
+    disp(['Reducing file ' num2str(i) '/' num2str(length(henk)) ': ' filename])
     reduce_netcdf_to_checksum( filename);
     delete( filename)
   end

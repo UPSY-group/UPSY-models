@@ -211,6 +211,16 @@ CONTAINS
     ! Apply limits
     BMB%BMB = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB ))
 
+    call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
+    call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
+    call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
+    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
+    call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
+    call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
+    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
+    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
+    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -331,7 +341,6 @@ CONTAINS
         CALL crash('unknown choice_BMB_model_ROI "' // TRIM( choice_BMB_model_ROI) // '"')
     END SELECT
 
-    ! Allocate memory for main variables
     call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
     call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
     call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')

@@ -109,6 +109,9 @@ CONTAINS
     CALL calc_ocean_temperature_at_shelf_base(    mesh, ice, ocean)
     CALL calc_ocean_freezing_point_at_shelf_base( mesh, ice, ocean)
 
+    call checksum( mesh%pai_V, ocean%T, 'ocean%T')
+    call checksum( mesh%pai_V, ocean%S, 'ocean%S')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 

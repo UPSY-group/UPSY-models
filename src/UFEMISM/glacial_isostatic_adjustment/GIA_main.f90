@@ -18,6 +18,7 @@ MODULE GIA_main
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use reference_geometry_types                               , only: type_reference_geometry
   USE GIA_ELRA                                               , only: run_ELRA_model, calculate_ELRA_bedrock_deformation_rate, initialise_ELRA_model, remap_ELRA_model
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -95,6 +96,12 @@ CONTAINS
   	  region%ice%Hb( vi) = region%refgeo_GIAeq%Hb( vi) + region%ice%dHb( vi)
 	END DO
 
+    call checksum( region%mesh%pai_V  , region%GIA%relative_surface_load_mesh, 'region%GIA%relative_surface_load_mesh')
+    call checksum( region%GIA%grid%pai, region%GIA%relative_surface_load_grid, 'region%GIA%relative_surface_load_grid')
+    call checksum( region%mesh%pai_V  , region%GIA%dHb_prev                  , 'region%GIA%dHb_prev')
+    call checksum( region%mesh%pai_V  , region%GIA%dHb_next                  , 'region%GIA%dHb_next')
+    call checksum( region%mesh%pai_V  , region%ice%dHb                       , 'region%ice%dHb')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -156,6 +163,11 @@ CONTAINS
     ELSE
       CALL crash('unknown choice_GIA_model "' // TRIM( C%choice_GIA_model) // '"')
     END IF
+
+    call checksum( mesh%pai_V  , GIA%relative_surface_load_mesh, 'GIA%relative_surface_load_mesh')
+    call checksum( GIA%grid%pai, GIA%relative_surface_load_grid, 'GIA%relative_surface_load_grid')
+    call checksum( mesh%pai_V  , GIA%dHb_prev                  , 'GIA%dHb_prev')
+    call checksum( mesh%pai_V  , GIA%dHb_next                  , 'GIA%dHb_next')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

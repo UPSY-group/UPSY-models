@@ -120,6 +120,9 @@ CONTAINS
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT
 
+    call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')
+    call checksum( mesh%pai_V, climate%Precip, 'climate%Precip')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 

@@ -13,24 +13,38 @@ if ~exist( foldername_mod,'dir')
   error(['couldnt find results for test "' foldername '"'])
 end
 
-all_files_match = true;
 
 henk = dir( foldername_ref);
-for i = 1: length( henk)
-  filename_ref = [foldername_ref '/' henk(i).name];
-  if ~endsWith( filename_ref,'.nc'); continue; end
-  if contains( filename_ref,'resource_tracking_checksum'); continue; end
-  disp(['Comparing netcdf file ' num2str(i) '/' num2str( length( henk)) ': ' filename_ref])
-  if endsWith( filename_ref,'_checksum.nc')
-    filename_mod = [foldername_mod '/' henk(i).name];
-    if ~exist( filename_mod,'file')
-      error(['file "' henk(i).name '" does not exist in results of test "' foldername '"'])
-    end
-    files_match = compare_netcdf( filename_ref, filename_mod);
-    if ~files_match
-      all_files_match = false;
-    end
+
+% Delete all items except checksum netcdf files from list
+i = 1;
+while i <= length( henk)
+  if endsWith( henk(i).name, '_checksum.nc')
+    i = i+1;
+  else
+    henk( i) = [];
   end
+end
+
+% Compare all checksum netcdf files
+all_files_match = true;
+for i = 1: length( henk)
+
+  disp(['Comparing netcdf file ' num2str(i) '/' num2str( length( henk)) ': ' henk(i).name])
+
+  filename_ref = [foldername_ref '/' henk(i).name];
+  filename_mod = [foldername_mod '/' henk(i).name];
+
+  if ~exist( filename_mod,'file')
+    error(['file "' henk(i).name '" does not exist in results of test "' foldername '"'])
+  end
+
+  files_match = compare_netcdf( filename_ref, filename_mod);
+
+  if ~files_match
+    all_files_match = false;
+  end
+  
 end
 
 if ~all_files_match

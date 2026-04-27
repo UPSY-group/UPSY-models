@@ -16,7 +16,7 @@ end
 % Reduce all non-checksum netcdf files
 for i = 1: length( henk)
 
-  disp(['Reducing file ' num2str(i) '/' num2str(length(henk)) ': ' filename])
+  disp(['Reducing file ' num2str(i) '/' num2str(length(henk)) ': ' henk(i).name])
 
   filename = [foldername '/' henk(i).name];
   reduce_netcdf_to_checksum( filename);

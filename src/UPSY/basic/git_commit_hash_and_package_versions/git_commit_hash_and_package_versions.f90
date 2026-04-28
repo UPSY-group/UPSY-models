@@ -14,6 +14,7 @@ module git_commit_hash_and_package_versions
   public :: petsc_version
   public :: netcdf_version
   public :: openmpi_version
+  public :: compiler_version
 
   ! These parameters will be set automatically when compiling the code!
   character(len=*), parameter :: git_commit_hash         = 'INVALID'
@@ -21,6 +22,7 @@ module git_commit_hash_and_package_versions
   character(len=*), parameter :: petsc_version           = 'INVALID'
   character(len=*), parameter :: netcdf_version          = 'INVALID'
   character(len=*), parameter :: openmpi_version         = 'INVALID'
+  character(len=*), parameter :: compiler_version        = 'INVALID'
 
 contains
 
@@ -31,6 +33,7 @@ contains
     if (petsc_version   == 'INVALID') call crash('Invalid PETSc version number - check the compile script!')
     if (netcdf_version  == 'INVALID') call crash('Invalid NetCDF version number - check the compile script!')
     if (openmpi_version == 'INVALID') call crash('Invalid OpenMPI version number - check the compile script!')
+    if (compiler_version == 'INVALID') call crash('Invalid compiler version - check the compile script!')
 
     if (par%primary) then
 
@@ -46,6 +49,7 @@ contains
       write(0,'(A)') colour_string( '  PETSc  ', 'pink') // ' - version: ' // colour_string( trim( petsc_version), 'pink')
       write(0,'(A)') colour_string( '  NetCDF ', 'pink') // ' - version: ' // colour_string( trim( netcdf_version), 'pink')
       write(0,'(A)') colour_string( '  OPenMPI', 'pink') // ' - version: ' // colour_string( trim( openmpi_version), 'pink')
+      write(0,'(A)') colour_string( '  Fortran compiler:', 'pink') // ' ' // colour_string( trim( compiler_version), 'pink')
 
     end if
 

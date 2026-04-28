@@ -20,6 +20,7 @@ sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: petsc_version[[:s
 sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: netcdf_version[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
 sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: openmpi_version[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
 sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: compiler_version[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
+sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: compiler_flags[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
 
 # Remove backup file
 rm -f "$fortran_file.bak"

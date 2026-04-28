@@ -17,6 +17,11 @@ sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: git_commit_hash[[
 # Reset has_uncommitted_changes back to .false.
 sed -E -i.bak "s/(logical,[[:space:]]*parameter :: has_uncommitted_changes[[:space:]]*=[[:space:]]*)\.(true|false)\./\1.false./" "$fortran_file"
 
+# Reset package versions back to INVALID.
+sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: petsc_version[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
+sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: netcdf_version[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
+sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: openmpi_version[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"
+
 # Remove backup file
 rm -f "$fortran_file.bak"
 

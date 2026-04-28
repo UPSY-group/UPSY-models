@@ -8,8 +8,6 @@ if (! -f "$fortran_file") then
   exit 1
 endif
 
-echo "Resetting git commit hash to INVALID"
-
 # Use sed to replace the actual commit hash back to INVALID
 # This pattern matches any quoted string in the git_commit_hash parameter
 sed -E -i.bak "s/(character\(len=\*\),[[:space:]]*parameter :: git_commit_hash[[:space:]]*=[[:space:]]*)'[^']*'/\1'INVALID'/" "$fortran_file"

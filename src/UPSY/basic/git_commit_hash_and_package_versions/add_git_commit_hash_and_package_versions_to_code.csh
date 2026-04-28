@@ -23,11 +23,6 @@ else
   set has_changes = ".true."
 endif
 
-echo "Adding git commit hash: $git_hash"
-if ($has_changes == ".true.") then
-  echo "WARNING: Repository has uncommitted changes"
-endif
-
 # Determine PETSc version
 set petsc_version = "UNKNOWN"
 which pkg-config >& /dev/null
@@ -63,9 +58,15 @@ else
   endif
 endif
 
-echo "PETSc version:   $petsc_version"
-echo "NetCDF version:  $netcdf_version"
-echo "OpenMPI version: $openmpi_version"
+printf "Compiling the code from git commit hash: \033[95m%s\033[0m\n" "$git_hash"
+if ($has_changes == ".true.") then
+  printf "  \033[33mWARNING: Repository has uncommitted changes\033[0m\n"
+endif
+printf "Using the following package versions:\n"
+printf "  PETSc version  : \033[95m%s\033[0m\n" "$petsc_version"
+printf "  NetCDF version : \033[95m%s\033[0m\n" "$netcdf_version"
+printf "  OpenMPI version: \033[95m%s\033[0m\n" "$openmpi_version"
+echo ""
 
 # Escape values for robust sed replacement
 set escaped_hash    = `echo "$git_hash" | sed 's/[&|\\]/\\&/g'`

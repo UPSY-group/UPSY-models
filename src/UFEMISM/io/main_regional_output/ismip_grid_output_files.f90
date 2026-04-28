@@ -114,32 +114,45 @@ contains
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to ISMIP grid output files' // '...'
 
+    ! Basic topography
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%lithk)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%orog)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%topg)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%base)
 
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%strbasemag)
+    ! Geothermal heat flux
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%hfgeoubed)
 
+    ! Surface and basal mass balance
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
+
+    ! Thickness tendency
+
+
+    ! Velocities
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelsurf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelsurf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelsurf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelbase)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelbase)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelbase)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelmean)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%yvelmean)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelsurf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%zvelbase)
 
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftflf)
+    ! Temperatures
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litemptop)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotgr)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotfl)
+
+    ! Basal drag
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%strbasemag)
+
+    ! Lateral mass balance
+
+    ! Area fractions
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftgif)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftgrf)
-
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litemptop)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotfl)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotgr)
-
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%hfgeoubed)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftflf)
 
     ! Set previous time step to current
     region%ismip_grid_output%t_prev = region%ismip_grid_output%t_curr
@@ -208,6 +221,8 @@ contains
     select case (field%name)
       case default
         call crash('unknown choice_output_field "' // trim( field%name) // '"')
+
+      ! Basic topography (ST)
       case ('lithk')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hi, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
@@ -220,73 +235,18 @@ contains
       case ('base')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hib, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('strbasemag')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('xvelsurf')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_surf_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('yvelsurf')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_surf_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('xvelbase')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_base_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('yvelbase')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_base_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('xvelmean')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_vav_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('yvelmean')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_vav_b, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('zvelsurf')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_surf, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('zvelbase')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_base, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
-      case ('sftflf')
+
+      ! Geothermal heat flux (FL)
+      case ('hfgeoubed')
+        ! This is always a snapshot
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        ! TODO check whether this is appropriate
-        d_mesh_vec_partial_2D = region%ice%fraction_margin( region%mesh%vi1: region%mesh%vi2) - region%ice%fraction_gr( region%mesh%vi1: region%mesh%vi2)
+        ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+        d_mesh_vec_partial_2D = region%ice%geothermal_heat_flux / sec_per_year
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
-      case ('sftgif')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('sftgrf')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_gr, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('litemptop')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Ti( :,1), d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('litempbotfl')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_floating_ice( vi)) then
-            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-      case ('litempbotgr')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%fraction_gr( vi) > 0._dp) then
-            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
+
+      ! Surface and basal mass balance (FL)
       case ('acabf')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         if (field%is_initial) then
@@ -301,11 +261,83 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
-      case ('hfgeoubed')
-        ! This is always a snapshot
+
+      ! Thickness tendency (FL)
+
+
+      ! Velocities (ST)
+      case ('xvelsurf')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_surf_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('yvelsurf')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_surf_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('zvelsurf')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_surf, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('xvelbase')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_base_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('yvelbase')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_base_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('zvelbase')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%w_base, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('xvelmean')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%u_vav_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+      case ('yvelmean')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%v_vav_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
+
+      ! Temperatures
+      case ('litemptop')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Ti( :,1), d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('litempbotgr')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-        d_mesh_vec_partial_2D = region%ice%geothermal_heat_flux / sec_per_year
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%fraction_gr( vi) > 0._dp) then
+            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
+          else
+            d_mesh_vec_partial_2D( vi) = NaN
+          end if
+        end do
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+      case ('litempbotfl')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_floating_ice( vi)) then
+            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
+          else
+            d_mesh_vec_partial_2D( vi) = NaN
+          end if
+        end do
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+
+      ! Basal drag
+      case ('strbasemag')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+
+      ! Lateral mass balance
+
+      ! Area fractions
+      case ('sftgif')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('sftgrf')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_gr, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+      case ('sftflf')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        ! TODO check whether this is appropriate
+        d_mesh_vec_partial_2D = region%ice%fraction_margin( region%mesh%vi1: region%mesh%vi2) - region%ice%fraction_gr( region%mesh%vi1: region%mesh%vi2)
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
@@ -345,32 +377,47 @@ contains
     if (par%primary) call system('mkdir ' // trim(region%ismip_grid_output%folder))
 
     ! Create all grid files
+
+    ! Basic topography
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lithk)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%orog)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%topg)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%base)
 
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%strbasemag)
+    ! Geothermal heat flux
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%hfgeoubed)
 
+    ! Surface and basal mass balance
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
+
+
+    ! Thickness tendency
+
+
+    ! Velocities
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelsurf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelsurf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelsurf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelbase)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelbase)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelbase)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelmean)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%yvelmean)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelsurf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%zvelbase)
 
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftflf)
+    ! Temperatures
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litemptop)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotgr)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotfl)
+
+    ! Basal drag
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%strbasemag)
+
+    ! Lateral mass balance
+
+    ! Area fractions
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftgif)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftgrf)
-
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litemptop)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotfl)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotgr)
-
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%hfgeoubed)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftflf)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -450,34 +497,46 @@ contains
     region%ismip_grid_output%t_prev = C%start_time_of_run
     region%ismip_grid_output%t_curr = C%start_time_of_run
 
+    ! Basic topography
     call initialise_ISMIP_field( region, region%ismip_grid_output%lithk, 'lithk', 'land_ice_thickness', 'm', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%orog,  'orog' , 'surface_altitude', 'm', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%topg,  'topg' , 'bedrock_altitude', 'm', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%base,  'base' , 'base_altitude', 'm', 'ST')
 
-    call initialise_ISMIP_field( region, region%ismip_grid_output%strbasemag,  'strbasemag' , 'land_ice_basal_drag', 'Pa', 'ST')
+    ! Geothermal heat flux
+    call initialise_ISMIP_field( region, region%ismip_grid_output%hfgeoubed, 'hfgeoubed' , 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
+    ! Surface and basal mass balances
+    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf, 'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+
+    ! Thickness tendency
+
+    ! Velocities
     call initialise_ISMIP_field( region, region%ismip_grid_output%xvelsurf, 'xvelsurf' , 'land_ice_surface_x_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%yvelsurf, 'yvelsurf' , 'land_ice_surface_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%xvelbase, 'xvelbase' , 'land_ice_basal_x_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%yvelbase, 'yvelbase' , 'land_ice_basal_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%xvelmean, 'xvelmean' , 'land_ice_vertical_mean_x_velocity', 'm s-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%yvelmean, 'yvelmean' , 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
 
-    call initialise_ISMIP_field( region, region%ismip_grid_output%sftflf, 'sftflf' , 'floating_ice_shelf_area_fraction', '', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgif, 'sftgif' , 'land_ice_area_fraction', '', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgrf, 'sftgrf' , 'grounded_ice_sheet_area_fraction', '', 'ST')
-
+    ! Temperatures
     call initialise_ISMIP_field( region, region%ismip_grid_output%litemptop, 'litemptop' , 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotfl, &
-      'litempbotfl' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotgr, &
       'litempbotgr' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotfl, &
+      'litempbotfl' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
 
-    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf, 'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%hfgeoubed, 'hfgeoubed' , 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
+    ! Basal drag
+    call initialise_ISMIP_field( region, region%ismip_grid_output%strbasemag,  'strbasemag' , 'land_ice_basal_drag', 'Pa', 'ST')
+
+    ! Lateral mass balance
+
+    ! Area fractions
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgif, 'sftgif' , 'land_ice_area_fraction', '', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgrf, 'sftgrf' , 'grounded_ice_sheet_area_fraction', '', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftflf, 'sftflf' , 'floating_ice_shelf_area_fraction', '', 'ST')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

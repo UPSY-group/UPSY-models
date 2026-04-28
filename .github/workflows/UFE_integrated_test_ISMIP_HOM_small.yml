@@ -57,4 +57,5 @@ jobs:
           command: |
             addpath('automated_testing')
             reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/results')
+            compare_all_texts_in_test_folder(  '${{github.workspace}}/automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small')
             compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small')

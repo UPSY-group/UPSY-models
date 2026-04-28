@@ -27,6 +27,7 @@ foreach experiment ($experiments)
 
       mv $exp_output_dir/main_output_ANT_00001.nc $shared_results_dir/results_ISMIP_HOM_${exp_name}_mesh.nc
       mv $exp_output_dir/main_output_ANT_grid.nc  $shared_results_dir/results_ISMIP_HOM_${exp_name}_grid.nc
+      mv $exp_output_dir/checksum_logfile.txt     $shared_results_dir/checksum_logfile_${exp_name}.txt
 
       rm -rf $exp_output_dir
 

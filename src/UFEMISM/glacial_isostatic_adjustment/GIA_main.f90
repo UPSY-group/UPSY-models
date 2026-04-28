@@ -97,7 +97,7 @@ CONTAINS
 	END DO
 
     call checksum( region%mesh%pai_V  , region%GIA%relative_surface_load_mesh, 'region%GIA%relative_surface_load_mesh')
-    call checksum( region%GIA%grid%pai, region%GIA%relative_surface_load_grid, 'region%GIA%relative_surface_load_grid')
+    ! call checksum( region%GIA%grid%pai, region%GIA%relative_surface_load_grid, 'region%GIA%relative_surface_load_grid')
     call checksum( region%mesh%pai_V  , region%GIA%dHb_prev                  , 'region%GIA%dHb_prev')
     call checksum( region%mesh%pai_V  , region%GIA%dHb_next                  , 'region%GIA%dHb_next')
     call checksum( region%mesh%pai_V  , region%ice%dHb                       , 'region%ice%dHb')

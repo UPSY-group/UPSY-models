@@ -8,8 +8,7 @@ module model_configuration
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, &
     warning, crash, colour_string
   use basic_model_utilities, only: generate_procedural_output_dir_name
-  use git_commit_hash_and_package_versions, only: get_git_commit_hash, git_commit_hash, &
-    check_for_uncommitted_changes, has_uncommitted_changes
+  use git_commit_hash_and_package_versions, only: git_commit_hash, has_uncommitted_changes
   use model_configuration_type_and_namelist, only: type_config, copy_config_variables_to_struct, &
     read_config_file
 
@@ -35,9 +34,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Figure out which git commit of the model we're running
-    call initialise_model_configuration_git_commit
-
     ! Initialise main config parameters
     call initialise_model_configuration_config( config_filename)
 
@@ -54,34 +50,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_model_configuration
-
-  subroutine initialise_model_configuration_git_commit
-    ! Figure out which git commit of the model we're running
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_model_configuration_git_commit'
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    if (par%primary) call get_git_commit_hash( git_commit_hash)
-    call mpi_bcast( git_commit_hash, len( git_commit_hash), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    if (par%primary) write(0,'(A)') ''
-    if (par%primary) write(0,'(A)') ' Running UFEMISM from git commit ' // colour_string( trim( git_commit_hash), 'pink')
-
-    if (par%primary) call check_for_uncommitted_changes
-    call mpi_bcast( has_uncommitted_changes, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-
-    if (par%primary .and. has_uncommitted_changes) then
-      write(0,'(A)') colour_string( ' WARNING: You have uncommitted changes; the current simulation might not be reproducible!', 'yellow')
-    end if
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_model_configuration_git_commit
 
   subroutine initialise_model_configuration_config( config_filename)
     ! Initialise main config parameters
@@ -171,20 +139,6 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! Figure out which git commit of the model we're running
-    if (par%primary) call get_git_commit_hash( git_commit_hash)
-    call mpi_bcast( git_commit_hash, len( git_commit_hash), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    if (par%primary) write(0,'(A)') ''
-    if (par%primary) write(0,'(A)') ' Running UFEMISM from git commit ' // colour_string( trim( git_commit_hash), 'pink')
-
-    if (par%primary) call check_for_uncommitted_changes
-    call mpi_bcast( has_uncommitted_changes, 1, MPI_LOGICAL, 0, MPI_COMM_WORLD, ierr)
-
-    if (par%primary .and. has_uncommitted_changes) then
-      write(0,'(A)') colour_string( ' WARNING: You have uncommitted changes; the current simulation might not be reproducible!', 'yellow')
-    end if
 
     ! Copy values from the XXX_config variables to the config structure
     call copy_config_variables_to_struct( C)

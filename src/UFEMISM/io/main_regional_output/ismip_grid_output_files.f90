@@ -48,7 +48,9 @@ contains
     deltat = region%time - region%ismip_grid_output%t_curr
 
     ! Accumulate all FL fields (except non-varying such as geothermal heat flux)
-    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf, deltat)
+    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf,       deltat)
+    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbfgr, deltat)
+    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbffl, deltat)
 
     ! Update current time
     region%ismip_grid_output%t_curr = region%time
@@ -84,6 +86,20 @@ contains
           if (region%ice%Hi( vi) > 0) then
             ! Accumulate values only where ice is present
             field%accum( vi) = field%accum( vi) + SMB_loc( vi) * ice_density / sec_per_year * deltat
+          end if
+        end do
+      case ('libmassbfgr')
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_grounded_ice( vi)) then
+            ! Accumulate values only for grounded ice
+            field%accum( vi) = field%accum( vi) + region%BMB%BMB( vi) * ice_density / sec_per_year * deltat
+          end if
+        end do
+      case ('libmassbffl')
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_floating_ice( vi)) then
+            ! Accumulate values only for floating ice
+            field%accum( vi) = field%accum( vi) + region%BMB%BMB( vi) * ice_density / sec_per_year * deltat
           end if
         end do
     end select
@@ -125,6 +141,8 @@ contains
 
     ! Surface and basal mass balance
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%libmassbfgr)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%libmassbffl)
 
     ! Thickness tendency
 
@@ -262,6 +280,46 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
 
+      case ('libmassbfgr')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        if (field%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+          do vi = region%mesh%vi1, region%mesh%vi2
+            if (region%ice%mask_grounded_ice( vi)) then
+              d_mesh_vec_partial_2D( vi) = region%BMB%BMB( vi) * ice_density / sec_per_year
+            else
+              d_mesh_vec_partial_2D( vi) = NaN
+            end if
+          end do 
+          field%is_initial = .false.
+        else
+          d_mesh_vec_partial_2D = field%accum / deltat
+          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+        end if
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+
+      case ('libmassbffl')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        if (field%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+          do vi = region%mesh%vi1, region%mesh%vi2
+            if (region%ice%mask_floating_ice( vi)) then
+              d_mesh_vec_partial_2D( vi) = region%BMB%BMB( vi) * ice_density / sec_per_year
+            else
+              d_mesh_vec_partial_2D( vi) = NaN
+            end if
+          end do 
+          field%is_initial = .false.
+        else
+          d_mesh_vec_partial_2D = field%accum / deltat
+          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+        end if
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+
       ! Thickness tendency (FL)
 
 
@@ -389,7 +447,8 @@ contains
 
     ! Surface and basal mass balance
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
-
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%libmassbfgr)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%libmassbffl)
 
     ! Thickness tendency
 
@@ -507,7 +566,11 @@ contains
     call initialise_ISMIP_field( region, region%ismip_grid_output%hfgeoubed, 'hfgeoubed' , 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
-    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf, 'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf,       'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%libmassbfgr, 'libmassbfgr' , &
+      'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%libmassbffl, 'libmassbffl' , &
+      'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     ! Thickness tendency
 

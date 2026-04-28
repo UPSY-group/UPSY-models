@@ -47,10 +47,11 @@ contains
     ! Get delta t since last current time
     deltat = region%time - region%ismip_grid_output%t_curr
 
-    ! Accumulate all FL fields (except non-varying such as geothermal heat flux)
+    ! Accumulate all FL fields (except non-varying such as geothermal heat flux, frontal melting)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf,       deltat)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbfgr, deltat)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbffl, deltat)
+    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%licalvf,     deltat)
 
     ! Update current time
     region%ismip_grid_output%t_curr = region%time
@@ -71,6 +72,7 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'accumulate_single_ISMIP_flux_field'
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
     integer                        :: vi
 
     ! Add routine to path
@@ -101,6 +103,11 @@ contains
             ! Accumulate values only for floating ice
             field%accum( vi) = field%accum( vi) + region%BMB%BMB( vi) * ice_density / sec_per_year * deltat
           end if
+        end do
+      case ('licalvf')
+        call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
+        do vi = region%mesh%vi1, region%mesh%vi2
+          field%accum( vi) = field%accum( vi) + calving_flux( vi) * ice_density / sec_per_year * deltat
         end do
     end select
 
@@ -143,6 +150,8 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%libmassbfgr)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%libmassbffl)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%licalvf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%lifmassbf)
 
     ! Thickness tendency
 
@@ -222,7 +231,7 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux
     integer                               :: vi
     real(dp)                              :: deltat
 
@@ -320,6 +329,26 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
 
+      case ('licalvf')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        if (field%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+          call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
+          d_mesh_vec_partial_2D = calving_flux * ice_density / sec_per_year
+          field%is_initial = .false.
+        else
+          d_mesh_vec_partial_2D = field%accum / deltat
+          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+        end if
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+
+      case ('lifmassbf')
+        ! Undefined, so just write out zeros
+        d_grid_vec_partial_2D( :) = 0._dp
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+ 
       ! Thickness tendency (FL)
 
 
@@ -449,6 +478,8 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%libmassbfgr)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%libmassbffl)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%licalvf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lifmassbf)
 
     ! Thickness tendency
 
@@ -571,6 +602,10 @@ contains
       'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_grid_output%libmassbffl, 'libmassbffl' , &
       'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%licalvf,     'licalvf' , &
+      'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%lifmassbf,   'lifmassbf' , &
+      'frontal_melting', 'kg m-2 s-1', 'FL')
 
     ! Thickness tendency
 

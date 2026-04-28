@@ -7,8 +7,9 @@ module model_configuration
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, &
     warning, crash, colour_string
-  use basic_model_utilities, only: get_git_commit_hash, git_commit_hash, &
-    check_for_uncommitted_changes, has_uncommitted_changes, generate_procedural_output_dir_name
+  use basic_model_utilities, only: generate_procedural_output_dir_name
+  use git_commit_hash_and_package_versions, only: get_git_commit_hash, git_commit_hash, &
+    check_for_uncommitted_changes, has_uncommitted_changes
   use model_configuration_type_and_namelist, only: type_config, copy_config_variables_to_struct, &
     read_config_file
 

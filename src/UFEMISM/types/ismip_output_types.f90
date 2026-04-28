@@ -73,7 +73,7 @@ module ismip_output_types
 
     ! Lateral mass balance
     type(type_ismip_gridded_field)    :: licalvf      ! [kg m-2 s-1] land_ice_specific_mass_flux_due_to_calving
-    type(type_ismip_gridded_field)    :: limassbf     ! [kg m-2 s-1] Loss if ice mass resulting from ice front melting
+    type(type_ismip_gridded_field)    :: lifmassbf    ! [kg m-2 s-1] Loss if ice mass resulting from ice front melting
 
     ! Area fractions
     type(type_ismip_gridded_field)    :: sftgif       ! []         land_ice_area_fraction

@@ -2,6 +2,7 @@ module git_commit_hash_and_package_versions
 
   use mpi_basic, only: par
   use string_module, only: colour_string
+  use crash_mod, only: crash
 
   implicit none
 
@@ -11,12 +12,16 @@ module git_commit_hash_and_package_versions
   public :: git_commit_hash
   public :: has_uncommitted_changes
 
-  character(len=*), parameter :: git_commit_hash         = '0d64f4389e2eb643fb84af3e08abe0142cd9d0d8'
+  ! These parameters will be set automatically when compiling the code!
+  character(len=*), parameter :: git_commit_hash         = 'INVALID'
   logical,          parameter :: has_uncommitted_changes = .false.
 
 contains
 
   subroutine print_git_commit_hash_and_package_versions
+
+    ! Safety
+    if (git_commit_hash == 'INVALID') call crash('Invalid git commit hash - check the compile script!')
 
     if (par%primary) then
 

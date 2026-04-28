@@ -37,27 +37,29 @@ contains
     ! ====================================================================
 
     ! Check if we need to calculate basal hydrology
-    IF (C%do_asynchronous_basal_hydro .and. C%choice_basal_hydrology_model == "Salle2025") THEN
-      ! Asynchronous coupling: do not calculate new basal hydrology in
-      ! every model loop, but only at its own separate time step
+    if (C%choice_basal_hydrology_model == "Salle2025") then
+      IF (C%do_asynchronous_basal_hydro) THEN
+        ! Asynchronous coupling: do not calculate new basal hydrology in
+        ! every model loop, but only at its own separate time step
 
-      ! Check if this is the next basal hydrology time step
-      IF (time == basal_hydro%t_next) THEN
-        ! Go on to calculate a new basal hydrology
+        ! Check if this is the next basal hydrology time step
+        IF (time == basal_hydro%t_next) THEN
+          ! Go on to calculate a new basal hydrology
+          basal_hydro%t_next = time + C%dt_basal_hydro
+        ELSEIF (time > basal_hydro%t_next) THEN
+          ! This should not be possible
+          CALL crash('overshot the basal hydro time step')
+        ELSE
+          ! It is not yet time to calculate a new basal hydrology
+          CALL finalise_routine( routine_name)
+          RETURN
+        END IF
+      
+      ELSE ! IF (C%do_asynchronous_basal_hydro) THEN
+        ! Synchronous coupling: calculate a new basal hydrology in every model loop
         basal_hydro%t_next = time + C%dt_basal_hydro
-      ELSEIF (time > basal_hydro%t_next) THEN
-        ! This should not be possible
-        CALL crash('overshot the basal hydro time step')
-      ELSE
-        ! It is not yet time to calculate a new basal hydrology
-        CALL finalise_routine( routine_name)
-        RETURN
       END IF
-    
-    ELSE ! IF (C%do_asynchronous_basal_hydro) THEN
-      ! Synchronous coupling: calculate a new basal hydrology in every model loop
-      basal_hydro%t_next = time + C%dt_basal_hydro
-    END IF
+    end if ! IF (C%choice_basal_hydrology_model == "Salle2025") THEN
 
     select case (C%choice_basal_hydrology_model)
     case default

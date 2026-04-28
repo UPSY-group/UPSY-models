@@ -95,8 +95,8 @@ contains
       call calc_bedrock_CDFs( mesh, refgeo, ice)
     end if
 
-    call checksum( mesh%pai_V, ice%bedrock_cdf  , 'ice%bedrock_cdf'  )
-    call checksum( mesh%pai_V, ice%bedrock_cdf_b, 'ice%bedrock_cdf_b')
+    call checksum( mesh%pai_V  , ice%bedrock_cdf  , 'ice%bedrock_cdf'  )
+    call checksum( mesh%pai_Tri, ice%bedrock_cdf_b, 'ice%bedrock_cdf_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

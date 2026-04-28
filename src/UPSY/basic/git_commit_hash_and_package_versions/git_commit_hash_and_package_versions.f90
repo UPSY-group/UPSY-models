@@ -28,18 +28,24 @@ contains
 
     ! Safety
     if (git_commit_hash == 'INVALID') call crash('Invalid git commit hash - check the compile script!')
+    if (petsc_version   == 'INVALID') call crash('Invalid PETSc version number - check the compile script!')
+    if (netcdf_version  == 'INVALID') call crash('Invalid NetCDF version number - check the compile script!')
+    if (openmpi_version == 'INVALID') call crash('Invalid OpenMPI version number - check the compile script!')
 
     if (par%primary) then
 
       write(0,'(A)') ''
-      write(0,'(A)') ' Running UFEMISM from git commit ' // colour_string( trim( git_commit_hash), 'pink')
-      write(0,'(A)') ' PETSc version:   ' // trim( petsc_version)
-      write(0,'(A)') ' NetCDF version:  ' // trim( netcdf_version)
-      write(0,'(A)') ' OpenMPI version: ' // trim( openmpi_version)
+      write(0,'(A)') ' This program was compiled from git commit ' // colour_string( trim( git_commit_hash), 'pink')
+
       if (has_uncommitted_changes) then
         write(0,'(A)') colour_string( ' WARNING: You have uncommitted changes; the current simulation might not be reproducible!', &
           'yellow')
       end if
+
+      write(0,'(A)') ' The following package versions were used:'
+      write(0,'(A)') colour_string( '  PETSc  ', 'pink') // ' - version: ' // colour_string( trim( petsc_version), 'pink')
+      write(0,'(A)') colour_string( '  NetCDF ', 'pink') // ' - version: ' // colour_string( trim( netcdf_version), 'pink')
+      write(0,'(A)') colour_string( '  OPenMPI', 'pink') // ' - version: ' // colour_string( trim( openmpi_version), 'pink')
 
     end if
 

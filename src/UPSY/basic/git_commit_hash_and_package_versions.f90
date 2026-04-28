@@ -1,97 +1,34 @@
 module git_commit_hash_and_package_versions
 
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use crash_mod, only: crash
+  use mpi_basic, only: par
+  use string_module, only: colour_string
 
   implicit none
 
   private
 
-  public :: get_git_commit_hash, git_commit_hash
-  public :: check_for_uncommitted_changes, has_uncommitted_changes
+  public :: print_git_commit_hash_and_package_versions
+  public :: git_commit_hash
+  public :: has_uncommitted_changes
 
-  ! The hash of the current git commit
-  character(len=1024) :: git_commit_hash
-  logical             :: has_uncommitted_changes = .false.
+  character(len=*), parameter :: git_commit_hash         = '0d64f4389e2eb643fb84af3e08abe0142cd9d0d8'
+  logical,          parameter :: has_uncommitted_changes = .false.
 
 contains
 
-  subroutine get_git_commit_hash( git_commit_hash)
+  subroutine print_git_commit_hash_and_package_versions
 
-    ! In/output variables:
-    character(len=*), intent(out) :: git_commit_hash
+    if (par%primary) then
 
-    ! Local variables:
-    character(len=256), parameter :: routine_name = 'get_git_commit_hash'
-    character(len=256), parameter :: filename_git_commit_hash = 'git_commit_hash.txt'
-    integer                       :: ierr, ios
-    integer, parameter            :: git_commit_hash_file_unit = 1847
+      write(0,'(A)') ''
+      write(0,'(A)') ' Running UFEMISM from git commit ' // colour_string( trim( git_commit_hash), 'pink')
+      if (has_uncommitted_changes) then
+        write(0,'(A)') colour_string( ' WARNING: You have uncommitted changes; the current simulation might not be reproducible!', &
+          'yellow')
+      end if
 
-    ! Add routine to path
-    call init_routine( routine_name)
+    end if
 
-    ! Create a text file containing the hash of the current git commit
-    call system( 'git rev-parse HEAD > ' // trim(filename_git_commit_hash), ierr)
-    if (ierr /= 0) call crash('failed to obtain hash of current git commit')
-
-    ! Read the hash from the temporary commit hash file
-    open( unit = git_commit_hash_file_unit, file = filename_git_commit_hash, iostat = ios)
-    if (ios /= 0) call crash('couldnt open temporary commit hash file "' // trim( filename_git_commit_hash) // '"!')
-    read( unit = git_commit_hash_file_unit, fmt = '(A)', iostat = ios) git_commit_hash
-    if (ios < 0) call crash('couldnt read commit hash from the temporary commit hash file')
-    close( unit = git_commit_hash_file_unit)
-
-    ! Delete the temporary commit hash file
-    call system( 'rm -f ' // trim( filename_git_commit_hash), ierr)
-    if (ierr /= 0) call crash('failed to delete temporary commit hash file')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine get_git_commit_hash
-
-  subroutine check_for_uncommitted_changes
-
-    ! Local variables:
-    character(len=256), parameter :: routine_name = 'check_for_uncommitted_changes'
-    character(len=256), parameter :: filename_git_status = 'git_status.txt'
-    integer                       :: ierr, ios
-    integer, parameter            :: git_status_file_unit = 1847
-    character(len=1024)           :: single_line
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Create a text file containing the output of git status
-    call system( 'git status > ' // trim( filename_git_status), ierr)
-    if (ierr /= 0) call crash('failed to write git status to text file')
-
-    ! Check the temporary git status file for uncommitted changes
-    open( unit = git_status_file_unit, file = filename_git_status, iostat = ios)
-    if (ios /= 0) call crash('couldnt open temporary git status file "' // trim( filename_git_status) // '"!')
-
-    do while (.true.)
-        ! Read a single line from the temporary git status file
-        read( unit = git_status_file_unit, fmt = '(A)', iostat = ios) single_line
-        ! If we've reached the end of the file, stop reading.
-        if (ios < 0) exit
-        ! Check if the temporary git status file mentions any uncommitted changes
-        if (single_line == 'Changes not staged for commit:') has_uncommitted_changes = .true.
-    end do
-
-    close( unit = git_status_file_unit)
-
-    ! Mention uncommitted changes in the commit hash (done after writing the commit hash to the terminal,
-    ! but still useful for the version that ends up in the NetCDF output files)
-    if (has_uncommitted_changes) git_commit_hash = trim( git_commit_hash) // ' (with uncommitted changes!)'
-
-    ! Delete the temporary git status file
-    call system( 'rm -f ' // trim( filename_git_status), ierr)
-    if (ierr /= 0) call crash('failed to delete temporary git status file')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine check_for_uncommitted_changes
+  end subroutine print_git_commit_hash_and_package_versions
 
 end module git_commit_hash_and_package_versions

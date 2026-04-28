@@ -29,6 +29,7 @@ program UFEMISM_program
   use unit_tests, only: run_all_unit_tests
   use component_tests, only: run_all_component_tests
   use checksum_mod, only: create_checksum_logfile
+  use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
   implicit none
 
@@ -53,6 +54,8 @@ program UFEMISM_program
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
   call PetscInitialize( PETSC_NULL_CHARACTER, perr)
+
+  call print_git_commit_hash_and_package_versions
 
   ! Initialise constants (pi, NaN, ...)
   call initialise_constants

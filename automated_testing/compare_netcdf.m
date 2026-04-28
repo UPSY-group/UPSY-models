@@ -126,22 +126,41 @@ end
       return
     end
 
-    % git commit hashes are allowed to be different
-    if strcmpi( att_ref.Name, 'git commit hash')
-      return
+    % Differences in program info are allowed, but are still shown
+    is_program_info = false;
+    if strcmpi( att_ref.Name, 'git commit hash') || ...
+       strcmpi( att_ref.Name, 'has uncommitted changes') || ...
+       strcmpi( att_ref.Name, 'PETSc version') || ...
+       strcmpi( att_ref.Name, 'NetCDF version') || ...
+       strcmpi( att_ref.Name, 'OpenMPI version') || ...
+       strcmpi( att_ref.Name, 'compiler version') || ...
+       strcmpi( att_ref.Name, 'compiler flags')
+      is_program_info = true;
     end
 
     if ischar( att_ref.Value) && ischar( att_mod.Value)
       if ~strcmpi( att_ref.Value, att_mod.Value)
-        are_identical = false;
-        disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '" value: reference = "' ...
-          att_ref.Value '", model = "' att_mod.Value '"'])
+        if is_program_info
+          are_identical = true;
+          disp(['  Mismatching program info "' [parent_name '/' att_ref.Name] '": reference = "' ...
+            att_ref.Value '", model = "' att_mod.Value '"'])
+        else
+          are_identical = false;
+          disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = "' ...
+            att_ref.Value '", model = "' att_mod.Value '"'])
+        end
       end
     else
       if att_ref.Value ~= att_mod.Value
-        are_identical = false;
-        disp(['  Mismatching attribute "' att_ref.Name '" value: reference = ' ...
-          num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
+        if is_program_info
+          are_identical = true;
+          disp(['  Mismatching program info "' [parent_name '/' att_ref.Name] '": reference = ' ...
+            num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
+        else
+          are_identical = false;
+          disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = ' ...
+            num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
+        end
       end
     end
 

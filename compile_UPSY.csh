@@ -61,6 +61,13 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
+# Add git commit hash and package versions to the source code
+csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh
+if ($status != 0) then
+  echo "Error: Failed to add git commit hash to the code"
+  exit 1
+endif
+
 # Use CMake to build UPSY, with Ninja to determine module dependencies;
 # use different compiler flags for the development/performance build
 cd build
@@ -104,7 +111,19 @@ else if ($version == 'perf') then
 endif
 
 ninja -v
+if ($status != 0) then
+  echo "Error: Ninja build failed"
+  exit 1
+endif
+
 cd ..
+
+# Delete git commit hash and package versions from the source code (restore to INVALID)
+csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/delete_git_commit_hash_and_package_versions_from_code.csh
+if ($status != 0) then
+  echo "Error: Failed to delete git commit hash from the code"
+  exit 1
+endif
 
 exit 0
 

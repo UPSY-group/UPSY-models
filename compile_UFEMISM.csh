@@ -57,16 +57,21 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
+set compile_exit_code = 0
+set in_build_dir = 0
+
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh
 if ($status != 0) then
   echo "Error: Failed to add git commit hash to the code"
-  exit 1
+  set compile_exit_code = 1
+  goto cleanup
 endif
 
 # Use CMake to build UFEMISM, with Ninja to determine module dependencies;
 # use different compiler flags for the development/performance build
 cd build
+set in_build_dir = 1
 
 if ($version == 'dev') then
 
@@ -108,23 +113,33 @@ else if ($version == 'perf') then
 
 endif
 
+if ($status != 0) then
+  echo "Error: CMake configuration failed"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
 ninja -v
 if ($status != 0) then
   echo "Error: Ninja build failed"
-  exit 1
+  set compile_exit_code = 1
 endif
 
-cd ..
+cleanup:
+
+if ($in_build_dir == 1) then
+  cd ..
+endif
 
 # Copy compiled program
-if ($version == 'dev') then
+if ($compile_exit_code == 0 && $version == 'dev') then
 
   rm -f UFEMISM_program_dev
   cp build/src/UFEMISM/UFEMISM_program UFEMISM_program_dev
   rm -f UFEMISM_program
   cp UFEMISM_program_dev UFEMISM_program
 
-else if ($version == 'perf') then
+else if ($compile_exit_code == 0 && $version == 'perf') then
 
   rm -f UFEMISM_program_perf
   cp build/src/UFEMISM/UFEMISM_program UFEMISM_program_perf
@@ -137,10 +152,10 @@ endif
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/delete_git_commit_hash_and_package_versions_from_code.csh
 if ($status != 0) then
   echo "Error: Failed to delete git commit hash from the code"
-  exit 1
+  set compile_exit_code = 1
 endif
 
-exit 0
+exit $compile_exit_code
 
 usage:
 

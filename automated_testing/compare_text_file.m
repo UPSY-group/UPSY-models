@@ -53,12 +53,35 @@ end
 
 function lines_match = compare_lines( line_ref, line_mod, filename)
 
-  lines_match = strcmp( line_ref, line_mod);
+  % Exceptions for the header lines showing the program info:
+  %   show any differences, but do not fail the test
+  if  startsWith( strtrim( line_ref), 'Git commit hash') || ...
+      startsWith( strtrim( line_ref), 'has uncommitted changes') || ...
+      startsWith( strtrim( line_ref), 'PETSc version') || ...
+      startsWith( strtrim( line_ref), 'NetCDF version') || ...
+      startsWith( strtrim( line_ref), 'OpenMPI version') || ...
+      startsWith( strtrim( line_ref), 'Compiler') || ...
+      startsWith( strtrim( line_ref), 'Compiler flags')
 
-  if ~lines_match
-    disp(['Mismatching lines in ' filename])
-    disp(['  Ref: ' line_ref])
-    disp(['  Mod: ' line_mod])
+    lines_match = true;
+
+    if ~strcmp( line_ref, line_mod)
+      disp(['Mismatching program info in ' filename])
+      disp(['  Ref: ' line_ref])
+      disp(['  Mod: ' line_mod])
+    end
+
+  % Default line comparison
+  else
+
+    lines_match = strcmp( line_ref, line_mod);
+  
+    if ~lines_match
+      disp(['Mismatching lines in ' filename])
+      disp(['  Ref: ' line_ref])
+      disp(['  Mod: ' line_mod])
+    end
+
   end
 
 end

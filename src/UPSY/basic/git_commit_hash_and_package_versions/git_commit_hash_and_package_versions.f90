@@ -52,8 +52,8 @@ contains
       write(0,'(A)') colour_string( '  PETSc  ', 'pink') // ' - version: ' // colour_string( trim( petsc_version), 'pink')
       write(0,'(A)') colour_string( '  NetCDF ', 'pink') // ' - version: ' // colour_string( trim( netcdf_version), 'pink')
       write(0,'(A)') colour_string( '  OPenMPI', 'pink') // ' - version: ' // colour_string( trim( openmpi_version), 'pink')
-      write(0,'(A)') colour_string( '  Fortran compiler:', 'pink') // ' ' // colour_string( trim( compiler_version), 'pink')
-      write(0,'(A)') colour_string( '  Compiler flags:', 'pink') // ' ' // colour_string( trim( compiler_flags), 'pink')
+      write(0,'(A)') '  Fortran compiler:' // ' ' // colour_string( trim( compiler_version), 'pink')
+      write(0,'(A)') '  Compiler flags  :' // ' ' // colour_string( trim( compiler_flags), 'pink')
 
     end if
 

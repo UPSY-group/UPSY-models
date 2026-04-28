@@ -163,16 +163,11 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Skip geothermal heat flux after the first time slice
-    if (field%name == 'hfgeoubed' .and. .not. field%is_initial) return
-
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( field%filename, ncid)
 
     ! write the time to the file
-    if (.not. field%name == 'hfgeoubed') then
-      call write_time_to_file( field%filename, ncid, region%time)
-    end if
+    call write_time_to_file( field%filename, ncid, region%time)
 
     ! write the data to the file
     call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
@@ -307,17 +302,13 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
       case ('hfgeoubed')
-        if (field%is_initial) then
-          allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-          d_mesh_vec_partial_2D = region%ice%geothermal_heat_flux / sec_per_year
-          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-          call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-          deallocate( d_mesh_vec_partial_2D)
-          field%is_initial = .false.
-        else
-          ! Non-varying field, so don't write except for first time step
-        end if
+        ! This is always a snapshot
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+        d_mesh_vec_partial_2D = region%ice%geothermal_heat_flux / sec_per_year
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
     end select
 
     ! Clean up memory
@@ -412,22 +403,15 @@ contains
     ! Set up the grid in the file
     call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_grid_output%grid)
 
-    if (field%name == 'hfgeoubed') then
-      ! Add the field
-      call add_field_grid_dp_2D_notime( field%filename, ncid, field%name, precision = iprecision, & 
-        do_compress = do_compress, long_name = field%long_name, units = field%units)
-    else
-      ! Add time dimension to the file
-      ! TODO change to cftime
-      call add_time_dimension_to_file( field%filename, ncid)
-      
-      ! TODO if fieldtype == 'FL', add_bnds_dimension_to_file
+    ! Add time dimension to the file
+    ! TODO change to cftime
+    call add_time_dimension_to_file( field%filename, ncid)
+    
+    ! TODO if fieldtype == 'FL', add_bnds_dimension_to_file
 
-      ! Add the field
-      call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 
-        do_compress = do_compress, long_name = field%long_name, units = field%units)
-
-    end if
+    ! Add the field
+    call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 
+      do_compress = do_compress, long_name = field%long_name, units = field%units)
 
     ! Close the file
     call close_netcdf_file( ncid)

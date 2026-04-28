@@ -6,7 +6,8 @@ module netcdf_basic_wrappers
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_basic, only: par, sync
-  use git_commit_hash_and_package_versions, only: git_commit_hash
+  use git_commit_hash_and_package_versions, only: git_commit_hash, has_uncommitted_changes, &
+    petsc_version, netcdf_version, openmpi_version, compiler_version, compiler_flags
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
     NF90_MAX_VAR_DIMS, NF90_PUT_ATT, NF90_OPEN, NF90_NOWRITE, NF90_WRITE, NF90_SHARE, &
@@ -203,8 +204,14 @@ contains
     end if
     call MPI_BCAST( ncid, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
 
-    ! Add some very basic info about the current simulation to the header
-    call add_attribute_char( filename, ncid, NF90_GLOBAL, 'git commit hash', git_commit_hash)
+    ! Add the git commit hash and package versions that were used to compile the program
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git commit hash'        , git_commit_hash)
+    call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has uncommitted changes', has_uncommitted_changes)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc version'          , petsc_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'NetCDF version'         , netcdf_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'OpenMPI version'        , openmpi_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler version'       , compiler_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler flags'         , compiler_flags)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -336,6 +343,34 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine create_scalar_variable
+
+  subroutine add_attribute_logical( filename, ncid, id_var, att_name, att_val)
+    !< Add a logical-valued attributes to a variable.
+    ! ...well, actually an integer, but still!
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    integer,          intent(in   ) :: id_var
+    character(len=*), intent(in   ) :: att_name
+    logical,          intent(in   ) :: att_val
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_attribute_logical'
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    if (att_val) then
+      call add_attribute_int( filename, ncid, id_var, att_name, 1)
+    else
+      call add_attribute_int( filename, ncid, id_var, att_name, 0)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_attribute_logical
 
   subroutine add_attribute_int( filename, ncid, id_var, att_name, att_val)
     !< Add an integer-valued attributes to a variable.

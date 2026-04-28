@@ -18,6 +18,7 @@ module bed_roughness_main
   use netcdf_io_main
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -64,6 +65,10 @@ contains
     else
       call crash('unknown choice_bed_roughness "' // trim( C%choice_bed_roughness) // '"')
     end if
+
+    call checksum( mesh%pai_V, bed_roughness%till_friction_angle, 'bed_roughness%till_friction_angle')
+    call checksum( mesh%pai_V, bed_roughness%alpha_sq           , 'bed_roughness%alpha_sq')
+    call checksum( mesh%pai_V, bed_roughness%beta_sq            , 'bed_roughness%beta_sq')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

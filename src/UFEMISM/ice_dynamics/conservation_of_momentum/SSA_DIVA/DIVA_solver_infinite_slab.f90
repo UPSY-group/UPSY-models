@@ -35,6 +35,7 @@ module DIVA_solver_infinite_slab
   use mpi_f08, only: MPI_WIN
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
     multiply_CSR_matrix_with_vector_2D_wrapper
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -220,6 +221,9 @@ contains
 
     ! Stability info
     n_visc_its = viscosity_iteration_i
+
+    call checksum( mesh%pai_Tri, DIVA%u_vav_b, 'DIVA%u_vav_b')
+    call checksum( mesh%pai_Tri, DIVA%v_vav_b, 'DIVA%v_vav_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -12,9 +12,6 @@ on:
 
 jobs:
 
-  setup_and_cache_Matlab:
-    uses: ./.github/workflows/setup_and_cache_Matlab.yml
-
   # Run the individual tests in parallel as separate workflows
   compile_UFEMISM:
     uses: ./.github/workflows/UFE_compiling.yml
@@ -24,32 +21,24 @@ jobs:
 
   SSA_icestream_small:
     uses: ./.github/workflows/UFE_integrated_test_SSA_icestream_small.yml
-    needs: setup_and_cache_Matlab
 
   ISMIP_HOM_small:
     uses: ./.github/workflows/UFE_integrated_test_ISMIP_HOM_small.yml
-    needs: setup_and_cache_Matlab
 
   Halfar_dome_small:
     uses: ./.github/workflows/UFE_integrated_test_Halfar_dome_small.yml
-    needs: setup_and_cache_Matlab
 
   MISMIP_mod_small:
     uses: ./.github/workflows/UFE_integrated_test_MISMIP_mod_small.yml
-    needs: setup_and_cache_Matlab
 
   MISMIPplus_small:
     uses: ./.github/workflows/UFE_integrated_test_MISMIPplus_small.yml
-    needs: setup_and_cache_Matlab
 
   Berends2023nudging_exp1_small:
     uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp1_small.yml
-    needs: setup_and_cache_Matlab
 
   Berends2023nudging_exp2_small:
     uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp2_small.yml
-    needs: setup_and_cache_Matlab
 
   Ant_init_small_01:
     uses: ./.github/workflows/UFE_integrated_test_Ant_init_small_01.yml
-    needs: setup_and_cache_Matlab

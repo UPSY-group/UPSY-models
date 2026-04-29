@@ -340,7 +340,7 @@ contains
           d_mesh_vec_partial_2D( :) = 0._dp
           field%is_initial = .false.
         else
-          d_mesh_vec_partial_2D = (region%ice%Hi - field%accum) / deltat / sec_per_year
+          d_mesh_vec_partial_2D = (region%ice%Hi - field%accum) / (region%time - region%ismip_grid_output%t_prev) / sec_per_year
           field%accum = region%ice%Hi
         end if
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)

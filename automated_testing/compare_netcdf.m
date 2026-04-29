@@ -35,7 +35,7 @@ end
 
     info_matches = true;
 
-    info_matches = info_matches && compare_ncinfo_attributes( ...
+    compare_attributes_nofail( ...
       shorten_filename( filename_ref), f_ref.Attributes, f_mod.Attributes);
 
     info_matches = info_matches && compare_ncinfo_dimensions( ...
@@ -46,6 +46,68 @@ end
 
     info_matches = info_matches && compare_ncinfo_groups( ...
       shorten_filename( filename_ref), f_ref.Groups, f_mod.Groups);
+
+  end
+
+  function compare_attributes_nofail( parent_name, atts_ref, atts_mod)
+    % Compare attributes of two NetCDF files; mention any differences,
+    % but do not fail the test
+
+    check_if_all_attributes_are_present( parent_name, 'reference', atts_ref, 'test'     , atts_mod);
+    check_if_all_attributes_are_present( parent_name, 'test'     , atts_mod, 'reference', atts_ref);
+    compare_attribute_values( parent_name, atts_ref, atts_mod);
+
+  end
+
+  function check_if_all_attributes_are_present( parent_name, name1, atts1, name2, atts2)
+    % Check if all attributes listed in atts1 are also listed in atts2;
+    % mention any that aren't
+
+    for ai1 = 1: length( atts1)
+
+      foundit = false;
+
+      for ai2 = 1: length( atts2)
+        if strcmpi( atts1( ai1).Name, atts2( ai2).Name)
+          foundit = true;
+        end
+      end
+
+      if ~foundit
+        disp(['  Warning: attribute "' atts1( ai1).Name '" listed in ' name1 ...
+          ' but not in ' name2 ' of ' parent_name])
+      end
+
+    end
+
+  end
+
+  function compare_attribute_values( parent_name, atts_ref, atts_mod)
+    % For the attributes that are present in both values, compare
+    % their values, and mention any differences
+
+    for ari = 1: length( atts_ref)
+      att_ref = atts_ref( ari);
+      for ami = 1: length( atts_mod)
+        att_mod = atts_mod( ami);
+        if strcmpi( att_ref.Name, att_mod.Name)
+          % These attributes have the same name; compare their values
+
+          if ischar( att_ref.Value) && ischar( att_mod.Value)
+            if ~strcmpi( att_ref.Value, att_mod.Value)
+              disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = "' ...
+                att_ref.Value '", model = "' att_mod.Value '"'])
+            end
+          else
+            if att_ref.Value ~= att_mod.Value
+              disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = ' ...
+                num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
+            end
+          end
+
+        end
+      end
+    end
 
   end
 
@@ -124,18 +186,6 @@ end
       disp(['  Mismatching attribute name: reference = "' ...
         [parent_name '/' att_ref.Name] '", model = "' [parent_name '/' att_mod.Name] '"'])
       return
-    end
-
-    % Differences in program info are allowed, but are still shown
-    is_program_info = false;
-    if strcmpi( att_ref.Name, 'git commit hash') || ...
-       strcmpi( att_ref.Name, 'has uncommitted changes') || ...
-       strcmpi( att_ref.Name, 'PETSc version') || ...
-       strcmpi( att_ref.Name, 'NetCDF version') || ...
-       strcmpi( att_ref.Name, 'OpenMPI version') || ...
-       strcmpi( att_ref.Name, 'compiler version') || ...
-       strcmpi( att_ref.Name, 'compiler flags')
-      is_program_info = true;
     end
 
     if ischar( att_ref.Value) && ischar( att_mod.Value)

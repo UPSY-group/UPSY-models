@@ -34,8 +34,6 @@ module ismip_output_types
     real(dp)                          :: t_prev       ! [yr] Time value at previous writing
     real(dp)                          :: t_curr       ! [yr] Current time value
 
-    real(dp), dimension(:), allocatable :: H_prev     ! [m] Thickness during previous write 
-
     ! Basic topography
     type(type_ismip_gridded_field)    :: lithk        ! [m]        land_ice_thickness
     type(type_ismip_gridded_field)    :: orog         ! [m]        surface_altitude

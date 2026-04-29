@@ -47,7 +47,10 @@ contains
     ! Get delta t since last current time
     deltat = region%time - region%ismip_grid_output%t_curr
 
-    ! Accumulate all FL fields (except non-varying such as geothermal heat flux, frontal melting)
+    ! Accumulate FL fields. Exceptions:
+    ! - dlithkdt (accumulation is used to store the previous written thickness
+    ! - hfgeoubed (doesn't vary, so just writing out the initial snapshot)
+    ! - lifmassbf (not computed yet, so just spitting out zeros)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf,       deltat)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbfgr, deltat)
     call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbffl, deltat)
@@ -80,7 +83,7 @@ contains
 
     select case (field%name)
       case default
-        call crash('unknown ISMIP field name "' // trim( field%name) // '"')
+        call crash('invalid ISMIP field name for accumulation "' // trim( field%name) // '"')
       case ('acabf')
         ! For hybrid memory reasons, make a local copy (is this necessary?)
         SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
@@ -150,11 +153,9 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%acabf)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%libmassbfgr)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%libmassbffl)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%licalvf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%lifmassbf)
 
     ! Thickness tendency
-
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%dlithkdt)
 
     ! Velocities
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%xvelsurf)
@@ -175,6 +176,8 @@ contains
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%strbasemag)
 
     ! Lateral mass balance
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%licalvf)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%lifmassbf)
 
     ! Area fractions
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%sftgif)
@@ -329,28 +332,20 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
 
-      case ('licalvf')
+      ! Thickness tendency (FL)
+      case ('dlithkdt')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         if (field%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-          call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
-          d_mesh_vec_partial_2D = calving_flux * ice_density / sec_per_year
+          ! First timeframe, spit out 0
+          d_mesh_vec_partial_2D( :) = 0._dp
           field%is_initial = .false.
         else
-          d_mesh_vec_partial_2D = field%accum / deltat
-          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+          d_mesh_vec_partial_2D = (region%ice%Hi - field%accum) / deltat / sec_per_year
+          field%accum = region%ice%Hi
         end if
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
-
-      case ('lifmassbf')
-        ! Undefined, so just write out zeros
-        d_grid_vec_partial_2D( :) = 0._dp
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
- 
-      ! Thickness tendency (FL)
-
 
       ! Velocities (ST)
       case ('xvelsurf')
@@ -413,6 +408,25 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
       ! Lateral mass balance
+      case ('licalvf')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        if (field%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+          call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
+          d_mesh_vec_partial_2D = calving_flux * ice_density / sec_per_year
+          field%is_initial = .false.
+        else
+          d_mesh_vec_partial_2D = field%accum / deltat
+          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+        end if
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+
+      case ('lifmassbf')
+        ! Undefined, so just write out zeros
+        d_grid_vec_partial_2D( :) = 0._dp
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
       ! Area fractions
       case ('sftgif')
@@ -478,11 +492,9 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%acabf)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%libmassbfgr)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%libmassbffl)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%licalvf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lifmassbf)
 
     ! Thickness tendency
-
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%dlithkdt)
 
     ! Velocities
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%xvelsurf)
@@ -503,6 +515,8 @@ contains
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%strbasemag)
 
     ! Lateral mass balance
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%licalvf)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%lifmassbf)
 
     ! Area fractions
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%sftgif)
@@ -609,6 +623,8 @@ contains
     ! Thickness tendency
     call initialise_ISMIP_field( region, region%ismip_grid_output%dlithkdt, 'dlithkdt' , &
       'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL')
+    ! Use accum of thickness tendency to store previous ice thickness
+    region%ismip_grid_output%dlithkdt%accum = region%ice%Hi
 
     ! Velocities
     call initialise_ISMIP_field( region, region%ismip_grid_output%xvelsurf, 'xvelsurf' , &
@@ -698,7 +714,7 @@ contains
       trim(C%ismip_model_name) // '_' // trim(C%ismip_exp_name) // '.nc'
 
     ! Allocate fields for accumulation during each timestep for flux fields
-    if (field%fieldtype == 'FL') then
+    if ((field%fieldtype == 'FL') .and. (field%name /= 'hfgeoubed')) then
       allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source=0._dp)
       field%is_initial = .true.
     end if

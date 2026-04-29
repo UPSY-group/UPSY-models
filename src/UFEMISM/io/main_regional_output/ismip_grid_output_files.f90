@@ -16,6 +16,7 @@ module ismip_grid_output_files
   use mpi_distributed_memory, only: gather_to_all
   use ismip_output_types, only: type_ismip_grid_output, type_ismip_gridded_field
   use mesh_zeta, only: vertical_average
+  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
 
   implicit none
 
@@ -171,6 +172,8 @@ contains
     ! Temperatures
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litemptop)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempavg)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempgradgr)
+    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempgradfl)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotgr)
     call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_grid_output%litempbotfl)
 
@@ -236,6 +239,7 @@ contains
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
+    real(dp), dimension(:),   allocatable :: dTdzeta
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux
     integer                               :: vi
     real(dp)                              :: deltat
@@ -393,10 +397,42 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
 
+      case ('litempgradgr')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        allocate( dTdzeta( 1:region%mesh%nz))
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_grounded_ice( vi)) then
+            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
+            d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
+          else
+            d_mesh_vec_partial_2D( vi) = NaN
+          end if
+        end do
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+        deallocate( dTdzeta)
+
+      case ('litempgradfl')
+        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+        allocate( dTdzeta( 1:region%mesh%nz))
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_floating_ice( vi)) then
+            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
+            d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
+          else
+            d_mesh_vec_partial_2D( vi) = NaN
+          end if
+        end do
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        deallocate( d_mesh_vec_partial_2D)
+        deallocate( dTdzeta)
+
       case ('litempbotgr')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%fraction_gr( vi) > 0._dp) then
+          if (region%ice%mask_grounded_ice( vi)) then
             d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
           else
             d_mesh_vec_partial_2D( vi) = NaN
@@ -526,6 +562,8 @@ contains
     ! Temperatures
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litemptop)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempavg)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempgradgr)
+    call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempgradfl)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotgr)
     call create_single_ISMIP_regional_output_file_grid( region%ismip_grid_output, region%ismip_grid_output%litempbotfl)
 
@@ -667,6 +705,12 @@ contains
       'Surface temperature', 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%litempavg, 'litempavg' , &
       'Depth average temperature', 'land_ice_temperature', 'K', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempgradgr, 'litempgradgr' , &
+      'Vertical Basal temperature gradient beneath grounded ice sheet', & 
+      'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempgradfl, 'litempgradfl' , &
+      'Vertical Basal temperature gradient beneath floating ice sheet', & 
+      'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotgr, 'litempbotgr' , &
       'Basal temperature beneath grounded ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotfl, 'litempbotfl' , &

@@ -208,7 +208,7 @@ CONTAINS
     allocate(basal_hydro%R(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dR_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%dR_dy_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
-    allocate(basal_hydro%t_next, source = 0.0_dp)
+    allocate(basal_hydro%t_next, source = C%start_time_of_run)
     allocate(basal_hydro%dt, source = 0.0_dp)
     allocate(basal_hydro%diff_time, source = 0.0_dp)
     allocate(basal_hydro%W_r(mesh%vi1:mesh%vi2), source = 0.1_dp) !Value used in basal hydrology paper (Bueler and Van Pelt 2015)
@@ -1421,7 +1421,7 @@ CONTAINS
 
 
 
-  SUBROUTINE remap_basal_hydro_model( mesh_old, mesh_new, ice, basal_hydro, time)
+  SUBROUTINE remap_basal_hydro_model_Salle2025( mesh_old, mesh_new, ice, basal_hydro, time)
     ! Remap the BMB model
 
     ! In- and output variables
@@ -1432,16 +1432,13 @@ CONTAINS
     REAL(dp),                               INTENT(IN)    :: time
 
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model'
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_basal_hydro_model_Salle2025'
     CHARACTER(LEN=256)                                    :: choice_basal_hydro_model
     integer                                               :: vi
     real(dp), parameter                                   :: rho_w = 1000.0_dp
 
     ! Add routine to path
     CALL init_routine( routine_name)
-
-    ! Print to terminal
-    IF (par%primary)  WRITE(*,"(A)") '    Remapping basal hydrology model data to the new mesh...'
 
     ! Reallocate memory for main variables (Figure out what to calculate again and what to remap)
     call map_from_mesh_to_mesh_with_reallocation_2D(mesh_old, mesh_new, C%output_dir, basal_hydro%W)
@@ -1496,13 +1493,12 @@ CONTAINS
       basal_hydro%W_r( vi) = 0.1_dp
     end do
 
-    ! Use the latest basal hydro output for remapping? (Now because of reallocate_bounds everything is 0)
-    write(*,*) "Doing God's work"
+    !write(*,*) "Doing God's work"
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
-  END SUBROUTINE remap_basal_hydro_model
+  END SUBROUTINE remap_basal_hydro_model_Salle2025
 
 
 END MODULE basal_hydrology_new

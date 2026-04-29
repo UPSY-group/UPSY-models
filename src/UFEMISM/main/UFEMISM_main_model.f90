@@ -20,8 +20,7 @@ MODULE UFEMISM_main_model
   use reference_geometries_main, only: initialise_reference_geometries_raw, initialise_reference_geometries_on_model_mesh
   use ice_dynamics_main, only: initialise_ice_dynamics_model, run_ice_dynamics_model, remap_ice_dynamics_model, &
     create_restart_files_ice_model, write_to_restart_files_ice_model, apply_geometry_relaxation
-  use basal_hydrology_main, only: run_basal_hydrology_model
-  use basal_hydrology_new, only: allocate_basal_hydro, remap_basal_hydro_model
+  use basal_hydrology_main, only: run_basal_hydrology_model, initialise_basal_hydro_model, remap_basal_hydro_model
   use bed_roughness_main, only: initialise_bed_roughness_model
   USE thermodynamics_main                                    , ONLY: initialise_thermodynamics_model, run_thermodynamics_model, &
                                                                      create_restart_file_thermo, write_to_restart_file_thermo
@@ -136,7 +135,6 @@ CONTAINS
 
       ! Run the ice dynamics model to calculate ice geometry at the desired time, and update
       ! velocities, thinning rates, and predicted geometry if necessary
-      ! After a mesh update with Salle2025 enabled, it stops here.
       CALL run_ice_dynamics_model( region)
 
       ! Calculate ice temperature at the desired time, and update
@@ -527,7 +525,7 @@ CONTAINS
 
     CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
-    call allocate_basal_hydro( region%mesh, region%ice, region%ice%hydro_Salle2025)
+    call initialise_basal_hydro_model( region%mesh, region%ice, region%ice%hydro_Salle2025)
 
     call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
 
@@ -1315,9 +1313,7 @@ CONTAINS
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )
     CALL remap_GIA_model(             region%mesh, mesh_new,             region%GIA    , region%refgeo_GIAeq, region%ELRA)
-    if (C%choice_basal_hydrology_model == 'Salle2025') then
-      call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice, region%ice%hydro_Salle2025,                region%time)
-    end if
+    call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice, region%ice%hydro_Salle2025,                region%time)
 
     call remap_tracer_tracking_model( region%mesh, mesh_new, region%tracer_tracking, region%time)
 

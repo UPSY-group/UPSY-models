@@ -10,6 +10,7 @@ module subgrid_grounded_fractions_main
   use subgrid_grounded_fractions_bedrock_CDF
   use subgrid_grounded_fractions_bilin_TAF
   use ice_geometry_basics, only: thickness_above_floatation
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -110,6 +111,9 @@ contains
       end do
 
     end select
+
+    call checksum( mesh%pai_V  , fraction_gr  , 'fraction_gr'  )
+    call checksum( mesh%pai_Tri, fraction_gr_b, 'fraction_gr_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

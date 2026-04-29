@@ -6,6 +6,7 @@ module subgrid_ice_margin
   use ice_model_types, only: type_ice_model
   use mpi_distributed_memory, only: gather_to_all
   use ice_geometry_basics, only: is_floating
+  use checksum_mod
 
   implicit none
 
@@ -144,6 +145,9 @@ contains
       end if
 
     end do
+
+    call checksum( mesh%pai_V, Hi_eff         , 'Hi_eff')
+    call checksum( mesh%pai_V, fraction_margin, 'fraction_margin')
 
     ! === Finalisation ===
     ! ====================

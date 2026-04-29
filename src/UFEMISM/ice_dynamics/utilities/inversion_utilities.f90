@@ -19,6 +19,7 @@ module inversion_utilities
   use conservation_of_mass_main, only: calc_dHi_dt
   use mpi_distributed_memory, only: gather_to_all
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -80,6 +81,8 @@ contains
       ! Assume the file has a time dimension, and read the specified timeframe
       call read_field_from_file_2D( filename_dHi_dt_target, 'dHdt||dHi_dt', mesh, C%output_dir, ice%dHi_dt_target, time_to_read = timeframe_dHi_dt_target)
     end if
+
+    call checksum( mesh%pai_V, ice%dHi_dt_target, 'ice%dHi_dt_target')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -15,6 +15,7 @@ module bed_roughness_nudging_main
   use bed_roughness_nudging_H_dHdt_flowline, only: initialise_bed_roughness_nudging_H_dHdt_flowline, run_bed_roughness_nudging_H_dHdt_flowline
   use bed_roughness_nudging_H_dHdt_local, only: initialise_bed_roughness_nudging_H_dHdt_local, run_bed_roughness_nudging_H_dHdt_local
   use bed_roughness_nudging_H_u_flowline, only: initialise_bed_roughness_nudging_H_u_flowline, run_bed_roughness_nudging_H_u_flowline
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -157,6 +158,10 @@ contains
       region%bed_roughness%till_friction_angle = region%bed_roughness%generic_bed_roughness
     end select
 
+    call checksum( region%mesh%pai_V, region%bed_roughness%generic_bed_roughness     , 'region%bed_roughness%generic_bed_roughness')
+    call checksum( region%mesh%pai_V, region%bed_roughness%generic_bed_roughness_prev, 'region%bed_roughness%generic_bed_roughness_prev')
+    call checksum( region%mesh%pai_V, region%bed_roughness%generic_bed_roughness_next, 'region%bed_roughness%generic_bed_roughness_next')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -246,6 +251,10 @@ contains
     case ('H_u_flowline')
       call initialise_bed_roughness_nudging_H_u_flowline( mesh, bed_roughness%nudging_H_u_flowline)
     end select
+
+    call checksum( mesh%pai_V, bed_roughness%generic_bed_roughness     , 'bed_roughness%generic_bed_roughness')
+    call checksum( mesh%pai_V, bed_roughness%generic_bed_roughness_prev, 'bed_roughness%generic_bed_roughness_prev')
+    call checksum( mesh%pai_V, bed_roughness%generic_bed_roughness_next, 'bed_roughness%generic_bed_roughness_next')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

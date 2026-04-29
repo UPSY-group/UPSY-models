@@ -46,10 +46,10 @@ jobs:
           git submodule update --init --remote
 
       - name: Compile UFEMISM
-        run: ./compile_UFEMISM.csh  dev  clean
+        run: csh compile_UFEMISM.csh  dev  clean
 
       - name: Run integrated test
-        run: ./automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/test_script.csh
+        run: csh automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/test_script.csh
 
       - name: Check test result
         uses: matlab-actions/run-command@v3
@@ -57,4 +57,5 @@ jobs:
           command: |
             addpath('automated_testing')
             reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/results')
+            compare_all_texts_in_test_folder(  '${{github.workspace}}/automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small')
             compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small')

@@ -63,7 +63,8 @@ end
     for dimi = 1: length( dims_ref)
       dim_ref = dims_ref( dimi);
       dim_mod = dims_mod( dimi);
-      info_matches = info_matches && compare_dimensions( parent_name, dim_ref, dim_mod);
+      info_matches_dim = compare_dimensions( parent_name, dim_ref, dim_mod);
+      info_matches = info_matches && info_matches_dim;
     end
 
   end
@@ -107,7 +108,8 @@ end
     for atti = 1: length( atts_ref)
       att_ref = atts_ref( atti);
       att_mod = atts_mod( atti);
-      info_matches = info_matches && compare_attributes( parent_name, att_ref, att_mod);
+      info_matches_att = compare_attributes( parent_name, att_ref, att_mod);
+      info_matches = info_matches && info_matches_att;
     end
 
   end
@@ -159,7 +161,8 @@ end
     for vari = 1: length( vars_ref)
       var_ref = vars_ref( vari);
       var_mod = vars_mod( vari);
-      info_matches = info_matches && compare_variables( parent_name, var_ref, var_mod);
+      info_matches_var = compare_variables( parent_name, var_ref, var_mod);
+      info_matches = info_matches && info_matches_var;
     end
 
   end
@@ -253,7 +256,8 @@ end
     for grpi = 1: length( grps_ref)
       grp_ref = grps_ref( grpi);
       grp_mod = grps_mod( grpi);
-      info_matches = info_matches && compare_groups( parent_name, grp_ref, grp_mod);
+      info_matches_grp = compare_groups( parent_name, grp_ref, grp_mod);
+      info_matches = info_matches && info_matches_grp;
     end
 
   end
@@ -297,14 +301,16 @@ end
 
     for vari = 1: length( f_ref.Variables)
       var_name = f_ref.Variables( vari).Name;
-      data_matches = data_matches && compare_data_variable( filename_ref, filename_mod, var_name);
+      data_matches_var = compare_data_variable( filename_ref, filename_mod, var_name);
+      data_matches = data_matches && data_matches_var;
     end
 
     for grpi = 1: length( f_ref.Groups)
       grp = f_ref.Groups( grpi);
       for vari = 1: length( grp.Variables)
         var_name = [grp.Name '/' grp.Variables( vari).Name];
-        data_matches = data_matches && compare_data_variable( filename_ref, filename_mod, var_name);
+        data_matches_var = compare_data_variable( filename_ref, filename_mod, var_name);
+        data_matches = data_matches && data_matches_var
       end
     end
 

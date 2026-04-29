@@ -24,6 +24,7 @@ MODULE ocean_main
   use reference_geometry_types, only: type_reference_geometry
   use ocean_snapshot_plus_anomalies, only: initialise_ocean_model_snapshot_plus_anomalies, &
     run_ocean_model_snapshot_plus_anomalies
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -108,6 +109,9 @@ CONTAINS
     CALL calc_ocean_temperature_at_shelf_base(    mesh, ice, ocean)
     CALL calc_ocean_freezing_point_at_shelf_base( mesh, ice, ocean)
 
+    call checksum( mesh%pai_V, ocean%T, 'ocean%T')
+    call checksum( mesh%pai_V, ocean%S, 'ocean%S')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -180,6 +184,9 @@ CONTAINS
     case( 'snapshot_plus_anomalies')
       call initialise_ocean_model_snapshot_plus_anomalies( mesh, ocean%snapshot_plus_anomalies)
     end select
+
+    call checksum( mesh%pai_V, ocean%T, 'ocean%T')
+    call checksum( mesh%pai_V, ocean%S, 'ocean%S')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

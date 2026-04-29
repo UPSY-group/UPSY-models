@@ -548,7 +548,8 @@ contains
 
     ! Add the field
     call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 
-      do_compress = do_compress, long_name = field%long_name, units = field%units)
+      do_compress = do_compress, long_name = field%long_name, units = field%units, &
+      standard_name = field%standard_name)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -588,66 +589,84 @@ contains
     region%ismip_grid_output%t_curr = C%start_time_of_run
 
     ! Basic topography
-    call initialise_ISMIP_field( region, region%ismip_grid_output%lithk, 'lithk', 'land_ice_thickness', 'm', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%orog,  'orog' , 'surface_altitude', 'm', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%topg,  'topg' , 'bedrock_altitude', 'm', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%base,  'base' , 'base_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%lithk, 'lithk', 'Ice thickness', 'land_ice_thickness', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%orog,  'orog' , 'Surface elevation', 'surface_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%topg,  'topg' , 'Bedrock elevation', 'bedrock_altitude', 'm', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%base,  'base' , 'Ice base elevation', 'base_altitude', 'm', 'ST')
 
     ! Geothermal heat flux
-    call initialise_ISMIP_field( region, region%ismip_grid_output%hfgeoubed, 'hfgeoubed' , 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%hfgeoubed, 'hfgeoubed' , &
+      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
-    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf,       'acabf' , 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%acabf, 'acabf' , &
+      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_grid_output%libmassbfgr, 'libmassbfgr' , &
-      'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+      'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_grid_output%libmassbffl, 'libmassbffl' , &
-      'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%licalvf,     'licalvf' , &
-      'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%lifmassbf,   'lifmassbf' , &
-      'frontal_melting', 'kg m-2 s-1', 'FL')
+      'Basal mass balance flux beneath floating ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     ! Thickness tendency
+    call initialise_ISMIP_field( region, region%ismip_grid_output%dlithkdt, 'dlithkdt' , &
+      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL')
 
     ! Velocities
-    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelsurf, 'xvelsurf' , 'land_ice_surface_x_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelsurf, 'yvelsurf' , 'land_ice_surface_y_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelsurf, 'zvelsurf' , 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelbase, 'xvelbase' , 'land_ice_basal_x_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelbase, 'yvelbase' , 'land_ice_basal_y_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelbase, 'zvelbase' , 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelmean, 'xvelmean' , 'land_ice_vertical_mean_x_velocity', 'm s-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelmean, 'yvelmean' , 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelsurf, 'xvelsurf' , &
+      'Surface velocity in x', 'land_ice_surface_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelsurf, 'yvelsurf' , &
+      'Surface velocity in y', 'land_ice_surface_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelsurf, 'zvelsurf' , &
+      'Surface velocity in z', 'land_ice_surface_upward_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelbase, 'xvelbase' , &
+      'Basal velocity in x', 'land_ice_basal_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelbase, 'yvelbase' , &
+      'Basal velocity in y', 'land_ice_basal_y_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%zvelbase, 'zvelbase' , &
+      'Basal velocity in z', 'land_ice_basal_upward_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%xvelmean, 'xvelmean' , &
+      'Mean velocity in x', 'land_ice_vertical_mean_x_velocity', 'm s-1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%yvelmean, 'yvelmean' , &
+      'Mean velocity in y', 'land_ice_vertical_mean_y_velocity', 'm s-1', 'ST')
 
     ! Temperatures
-    call initialise_ISMIP_field( region, region%ismip_grid_output%litemptop, 'litemptop' , 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotgr, &
-      'litempbotgr' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotfl, &
-      'litempbotfl' , 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litemptop, 'litemptop' , &
+      'Surface temperature', 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotgr, 'litempbotgr' , &
+      'Basal temperature beneath grounded ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%litempbotfl, 'litempbotfl' , &
+      'Basal temperature beneath floating ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
 
     ! Basal drag
-    call initialise_ISMIP_field( region, region%ismip_grid_output%strbasemag,  'strbasemag' , 'land_ice_basal_drag', 'Pa', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%strbasemag, 'strbasemag' , &
+      'Basal drag', 'land_ice_basal_drag', 'Pa', 'ST')
 
     ! Lateral mass balance
+    call initialise_ISMIP_field( region, region%ismip_grid_output%licalvf, 'licalvf' , &
+      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%lifmassbf,   'lifmassbf' , &
+      'Ice front melt flux', 'land_ice_specific_mass_flux_due_to_ice_front_melting', 'kg m-2 s-1', 'FL')
 
     ! Area fractions
-    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgif, 'sftgif' , 'land_ice_area_fraction', '', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgrf, 'sftgrf' , 'grounded_ice_sheet_area_fraction', '', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_grid_output%sftflf, 'sftflf' , 'floating_ice_shelf_area_fraction', '', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgif, 'sftgif' , &
+      'Land ice area fraction', 'land_ice_area_fraction', '1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftgrf, 'sftgrf' , &
+      'Grounded ice sheet area fraction', 'grounded_ice_sheet_area_fraction', '1', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_grid_output%sftflf, 'sftflf' , &
+      'Floating ice sheet area fraction', 'floating_ice_shelf_area_fraction', '1', 'ST')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_ISMIP_grid_output
 
-  subroutine initialise_ISMIP_field( region, field, name, long_name, units, fieldtype)
+  subroutine initialise_ISMIP_field( region, field, name, long_name, standard_name, units, fieldtype)
     ! Initialise a single field
 
     type(type_model_region),           intent(inout) :: region
     type(type_ismip_gridded_field),    intent(inout) :: field
     character(len=*),                  intent(in   ) :: name
     character(len=*),                  intent(in   ) :: long_name
+    character(len=*),                  intent(in   ) :: standard_name
     character(len=*),                  intent(in   ) :: units
     character(len=2),                  intent(in   ) :: fieldtype
 
@@ -660,10 +679,11 @@ contains
     call init_routine( routine_name)
 
     ! Inherit metadata
-    field%name      = name
-    field%long_name = long_name
-    field%units     = units
-    field%fieldtype = fieldtype
+    field%name          = name
+    field%long_name     = long_name
+    field%standard_name = standard_name
+    field%units         = units
+    field%fieldtype     = fieldtype
 
     ! Convert grid resolution to string
     res_int = int(C%dx_output_grid_ANT / 1000._dp)

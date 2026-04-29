@@ -19,7 +19,7 @@ contains
 
   ! Add fields with a time dimension
 
-  subroutine add_field_grid_int_2D( filename, ncid, var_name, long_name, units, do_compress)
+  subroutine add_field_grid_int_2D( filename, ncid, var_name, long_name, units, do_compress, standard_name)
     !< Add a 2-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -29,6 +29,7 @@ contains
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_int_2D'
@@ -59,8 +60,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -72,7 +74,7 @@ contains
 
   end subroutine add_field_grid_int_2D
 
-  subroutine add_field_grid_int_3D( filename, ncid, var_name, long_name, units, do_compress)
+  subroutine add_field_grid_int_3D( filename, ncid, var_name, long_name, units, do_compress, standard_name)
     !< Add a 3-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -82,6 +84,7 @@ contains
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_int_3D'
@@ -115,8 +118,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -128,7 +132,7 @@ contains
 
   end subroutine add_field_grid_int_3D
 
-  subroutine add_field_grid_dp_2D( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_2D( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 2-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -139,6 +143,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_2D'
@@ -169,8 +174,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -182,7 +188,7 @@ contains
 
   end subroutine add_field_grid_dp_2D
 
-  subroutine add_field_grid_dp_2D_monthly( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_2D_monthly( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 2-D monthly variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -193,6 +199,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_2D_monthly'
@@ -226,8 +233,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -239,7 +247,7 @@ contains
 
   end subroutine add_field_grid_dp_2D_monthly
 
-  subroutine add_field_grid_dp_3D( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_3D( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 3-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -250,6 +258,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_3D'
@@ -283,8 +292,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -296,7 +306,7 @@ contains
 
   end subroutine add_field_grid_dp_3D
 
-  subroutine add_field_grid_dp_3D_ocean( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_3D_ocean( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 3-D ocean variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -307,6 +317,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_3D_ocean'
@@ -340,8 +351,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -355,7 +367,7 @@ contains
 
   ! Add fields without a time dimension
 
-  subroutine add_field_grid_int_2D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_int_2D_notime( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 2-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -366,6 +378,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_int_2D_notime'
@@ -393,8 +406,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -406,7 +420,7 @@ contains
 
   end subroutine add_field_grid_int_2D_notime
 
-  subroutine add_field_grid_int_3D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_int_3D_notime( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 3-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -417,6 +431,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_int_3D_notime'
@@ -447,8 +462,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -460,7 +476,7 @@ contains
 
   end subroutine add_field_grid_int_3D_notime
 
-  subroutine add_field_grid_dp_2D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_2D_notime( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 2-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -471,6 +487,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_2D_notime'
@@ -498,8 +515,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -511,7 +529,7 @@ contains
 
   end subroutine add_field_grid_dp_2D_notime
 
-  subroutine add_field_grid_dp_2D_monthly_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_2D_monthly_notime( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 2-D monthly variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -522,6 +540,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_2D_monthly_notime'
@@ -552,8 +571,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -565,7 +585,7 @@ contains
 
   end subroutine add_field_grid_dp_2D_monthly_notime
 
-  subroutine add_field_grid_dp_3D_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_3D_notime( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 3-D variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -576,6 +596,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_3D_notime'
@@ -606,8 +627,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check
@@ -619,7 +641,7 @@ contains
 
   end subroutine add_field_grid_dp_3D_notime
 
-  subroutine add_field_grid_dp_3D_ocean_notime( filename, ncid, var_name, long_name, units, precision, do_compress)
+  subroutine add_field_grid_dp_3D_ocean_notime( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 3-D ocean variable to an existing NetCDF file with an x/y-grid
 
     ! In/output variables:
@@ -630,6 +652,7 @@ contains
     character(len=*), optional, intent(in   ) :: units
     character(len=*), optional, intent(in   ) :: precision
     logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_grid_dp_3D_ocean_notime'
@@ -660,8 +683,9 @@ contains
 
     ! Add attributes
     call add_fillvalue( filename, ncid, id_var)
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
 #if (DO_ASSERTIONS)
     ! Final safety check

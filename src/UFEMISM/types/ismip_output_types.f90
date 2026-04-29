@@ -18,6 +18,7 @@ module ismip_output_types
     character(len=1024)                 :: name              ! Variable name
     character(len=1024)                 :: filename          ! Filename of output
     character(len=1024)                 :: long_name         ! Long name
+    character(len=1024)                 :: standard_name     ! Standard name
     character(len=1024)                 :: units             ! Units
     character(len=2)                    :: fieldtype         ! ST or FL      
 
@@ -30,8 +31,10 @@ module ismip_output_types
     type(type_grid)                   :: grid         ! Output grid
     character(len=1024)               :: folder       ! Subfolder exp_RES
 
-    real(dp)                          :: t_prev            ! [yr] Time value at previous writing
-    real(dp)                          :: t_curr            ! [yr] Current time value
+    real(dp)                          :: t_prev       ! [yr] Time value at previous writing
+    real(dp)                          :: t_curr       ! [yr] Current time value
+
+    real(dp), dimension(:), allocatable :: H_prev     ! [m] Thickness during previous write 
 
     ! Basic topography
     type(type_ismip_gridded_field)    :: lithk        ! [m]        land_ice_thickness

@@ -48,6 +48,16 @@ endif
 
 echo ""
 
+# Define compiler flags based on version
+if ($version == 'dev') then
+  set compiler_flags = "-fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -march=native -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33"
+else if ($version == 'perf') then
+  set compiler_flags = "-fdiagnostics-color=always -O3 -Wall -ffree-line-length-none -cpp -fimplicit-none -g -march=native"
+endif
+
+# Convert spaces to semicolons for CMake list format
+set cmake_flags = `echo "$compiler_flags" | sed 's/ /;/g'`
+
 # If no build directory exists, create it
 if (! -d build) mkdir build
 
@@ -57,9 +67,21 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
+set compile_exit_code = 0
+set in_build_dir = 0
+
+# Add git commit hash and package versions to the source code
+csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
+if ($status != 0) then
+  echo "Error: Failed to add git commit hash to the code"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
 # Use CMake to build LADDIE, with Ninja to determine module dependencies;
 # use different compiler flags for the development/performance build
 cd build
+set in_build_dir = 1
 
 if ($version == 'dev') then
 
@@ -67,21 +89,7 @@ if ($version == 'dev') then
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
-    -DEXTRA_Fortran_FLAGS="\
-      -fdiagnostics-color=always;\
-      -Og;\
-      -Wall;\
-      -ffree-line-length-none;\
-      -cpp;\
-      -Werror=implicit-interface;\
-      -fimplicit-none;\
-      -g;\
-      -march=native;\
-      -fcheck=all;\
-      -fbacktrace;\
-      -finit-real=nan;\
-      -finit-integer=-42;\
-      -finit-character=33" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
 
 else if ($version == 'perf') then
 
@@ -89,30 +97,37 @@ else if ($version == 'perf') then
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \
-    -DEXTRA_Fortran_FLAGS="\
-      -fdiagnostics-color=always;\
-      -O3;\
-      -Wall;\
-      -ffree-line-length-none;\
-      -cpp;\
-      -fimplicit-none;\
-      -g;\
-      -march=native" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
 
 endif
 
+if ($status != 0) then
+  echo "Error: CMake configuration failed"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
 ninja -v
-cd ..
+if ($status != 0) then
+  echo "Error: Ninja build failed"
+  set compile_exit_code = 1
+endif
+
+cleanup:
+
+if ($in_build_dir == 1) then
+  cd ..
+endif
 
 # Copy compiled program
-if ($version == 'dev') then
+if ($compile_exit_code == 0 && $version == 'dev') then
 
   rm -f LADDIE_program_dev
   mv build/src/LADDIE/LADDIE_program LADDIE_program_dev
   rm -f LADDIE_program
   cp LADDIE_program_dev LADDIE_program
 
-else if ($version == 'perf') then
+else if ($compile_exit_code == 0 && $version == 'perf') then
 
   rm -f LADDIE_program_perf
   mv build/src/LADDIE/LADDIE_program LADDIE_program_perf
@@ -121,7 +136,14 @@ else if ($version == 'perf') then
 
 endif
 
-exit 0
+# Delete git commit hash and package versions from the source code (restore to INVALID)
+csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/delete_git_commit_hash_and_package_versions_from_code.csh
+if ($status != 0) then
+  echo "Error: Failed to delete git commit hash from the code"
+  set compile_exit_code = 1
+endif
+
+exit $compile_exit_code
 
 usage:
 

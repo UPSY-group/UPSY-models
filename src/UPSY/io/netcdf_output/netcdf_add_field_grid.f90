@@ -58,6 +58,7 @@ contains
     call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_x, id_dim_y, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -113,6 +114,7 @@ contains
     call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_x, id_dim_y, id_dim_zeta, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -166,6 +168,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -222,6 +225,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_month, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -278,6 +282,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_zeta, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -334,6 +339,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_depth, id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -386,6 +392,7 @@ contains
     call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_x, id_dim_y /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -439,6 +446,7 @@ contains
     call create_variable( filename, ncid, var_name, NF90_INT, (/ id_dim_x, id_dim_y, id_dim_zeta /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -489,6 +497,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -542,6 +551,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_month /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -595,6 +605,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_zeta /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 
@@ -648,6 +659,7 @@ contains
     call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_x, id_dim_y, id_dim_depth /), id_var, do_compress = do_compress)
 
     ! Add attributes
+    call add_fillvalue( filename, ncid, id_var)
     if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
     if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
 

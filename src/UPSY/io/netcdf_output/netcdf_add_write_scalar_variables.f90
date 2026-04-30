@@ -6,6 +6,7 @@ module netcdf_add_write_scalar_variables
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_basic
   use netcdf, only: NF90_MAX_VAR_DIMS, NF90_INT, NF90_DOUBLE
+  use calendar, only: convert_time_to_days
 
   implicit none
 
@@ -243,6 +244,7 @@ contains
     integer                        :: nt
     real(dp)                       :: days
     real(dp), dimension(2)         :: days_bnds
+    real(dp), dimension(2,1)       :: days_bnds_with_time
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -257,18 +259,31 @@ contains
     nt = nt + 1
 
     ! Convert time to cftime
-    ! TODO write functions for different calendars
-    days = 360._dp * (time - 1850._dp)
-    days_bnds(0) = days - 180._dp
-    days_bnds(0) = days + 180._dp
-
-    ! Write time
-    call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
-
-    ! Write time bnds
     if (with_bounds) then
+      ! Days centered at 1 July of last year, days_bnds span full last year from 1 Jan to 1 Jan
+
+      ! Convert time
+      call convert_time_to_days( time, days, days_bnds)
+
+      ! Write time
+      call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
+
+      ! Add "pretend" time dimension to days_bnds
+      days_bnds_with_time( :,1) = days_bnds
+
+      ! Write time bounds
       call inquire_var_multopt( filename, ncid, 'time_bnds', id_var_time_bnds)
-      call write_var_primary( filename, ncid, id_var_time_bnds, days_bnds, start = (/ 1, nt /), count = (/ 2, 1 /) )
+      call write_var_primary( filename, ncid, id_var_time_bnds, days_bnds_with_time, start = (/ 1, nt /), count = (/ 2, 1 /) )
+
+    else
+      ! Days centered at 1 January, no bounds
+
+      ! Convert time
+      call convert_time_to_days( time, days)
+
+      ! Write time
+      call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
+
     end if
 
     ! Finalise routine path

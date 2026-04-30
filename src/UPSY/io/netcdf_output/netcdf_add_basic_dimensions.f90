@@ -66,7 +66,7 @@ contains
     call create_variable(  filename, ncid, get_first_option_from_list( field_name_options_time), NF90_DOUBLE, (/ id_dim_time /), id_var_time)
     call add_attribute_char( filename, ncid, id_var_time, 'long_name', 'Time')
     call add_attribute_char( filename, ncid, id_var_time, 'units', 'days since 1850-01-01')
-    call add_attribute_char( filename, ncid, id_var_time, 'calendar', '360_day')
+    call add_attribute_char( filename, ncid, id_var_time, 'calendar', 'standard')
 
     ! Add bounds if required
     if (with_bounds) then

@@ -7,15 +7,15 @@ This script is the Python equivalent of:
 - reduce_netcdf_to_checksum.m
 
 Usage:
-    python3 reduce_all_netcdfs_in_folder_to_checksum.py <foldername>
+        python3 reduce_all_netcdfs_in_folder_to_checksum.py <test_folder>
 
 Behavior:
-- Finds all *.nc files in <foldername>
+- Reads all *.nc files from <test_folder>/results
 - Excludes *_checksum.nc and resource_tracking.nc
+- Creates <test_folder>/results_checksum if needed
 - For each file:
-  - Creates <name>_checksum.nc containing one 4-value checksum variable per
+    - Creates results_checksum/<name>_checksum.nc containing one 4-value checksum variable per
     original variable (including variables in groups)
-  - Deletes the original file
 """
 
 import os
@@ -63,12 +63,17 @@ def _collect_variables(group, parent_name: str = "") -> List[Tuple[str, object, 
     return found
 
 
-def reduce_netcdf_to_checksum(filename: str) -> str:
+def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
     """Reduce data in a NetCDF file to checksums. Returns checksum filename."""
     if not os.path.isfile(filename):
         raise FileNotFoundError(f'Could not find file "{filename}"')
 
-    filename_redux = f"{filename[:-3]}_checksum.nc" if filename.endswith(".nc") else f"{filename}_checksum.nc"
+    basename = os.path.basename(filename)
+    if basename.endswith(".nc"):
+        basename_redux = f"{basename[:-3]}_checksum.nc"
+    else:
+        basename_redux = f"{basename}_checksum.nc"
+    filename_redux = os.path.join(output_dir, basename_redux)
 
     if os.path.isfile(filename_redux):
         os.remove(filename_redux)
@@ -140,14 +145,21 @@ def reduce_netcdf_to_checksum(filename: str) -> str:
     return filename_redux
 
 
-def reduce_all_netcdfs_in_folder_to_checksum(foldername: str) -> None:
-    """Reduce all non-checksum NetCDF files in a folder and delete originals."""
-    if not os.path.isdir(foldername):
-        raise FileNotFoundError(f'Could not find folder "{foldername}"')
+def reduce_all_netcdfs_in_folder_to_checksum(test_folder: str) -> None:
+    """Reduce all non-checksum NetCDF files in test_folder/results to test_folder/results_checksum."""
+    if not os.path.isdir(test_folder):
+        raise FileNotFoundError(f'Could not find test folder "{test_folder}"')
+
+    results_dir = os.path.join(test_folder, "results")
+    if not os.path.isdir(results_dir):
+        raise FileNotFoundError(f'Could not find results folder "{results_dir}"')
+
+    results_checksum_dir = os.path.join(test_folder, "results_checksum")
+    os.makedirs(results_checksum_dir, exist_ok=True)
 
     files = sorted(
         name
-        for name in os.listdir(foldername)
+        for name in os.listdir(results_dir)
         if name.endswith(".nc")
         and not name.endswith("_checksum.nc")
         and name.lower() != "resource_tracking.nc"
@@ -156,9 +168,8 @@ def reduce_all_netcdfs_in_folder_to_checksum(foldername: str) -> None:
     for i, name in enumerate(files, start=1):
         print(f"Reducing file {i}/{len(files)}: {name}")
 
-        filename = os.path.join(foldername, name)
-        reduce_netcdf_to_checksum(filename)
-        os.remove(filename)
+        filename = os.path.join(results_dir, name)
+        reduce_netcdf_to_checksum(filename, results_checksum_dir)
 
 
 if __name__ == "__main__":

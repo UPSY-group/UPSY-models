@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Compare all checksum NetCDF files in a test folder's reference/ vs results/ sub-directories.
+Compare all checksum NetCDF files in a test folder's reference/ vs results_checksum/ sub-directories.
 
 Usage:
     python compare_all_netcdfs_in_test_folder.py <foldername>
@@ -328,7 +328,7 @@ def _compare_data_variable(var_path: str, d_ref: np.ndarray,
 # ---------------------------------------------------------------------------
 
 def compare_all_netcdfs_in_test_folder(foldername: str) -> bool:
-    """Compare all *_checksum.nc files in reference/ vs results/. Returns True if all match."""
+    """Compare all *_checksum.nc files in reference/ vs results_checksum/. Returns True if all match."""
 
     if not os.path.isdir(foldername):
         print(f'ERROR: Could not find test "{foldername}"')
@@ -339,9 +339,9 @@ def compare_all_netcdfs_in_test_folder(foldername: str) -> bool:
         print(f'ERROR: Could not find reference for test "{foldername}"')
         return False
 
-    foldername_mod = os.path.join(foldername, 'results')
+    foldername_mod = os.path.join(foldername, 'results_checksum')
     if not os.path.isdir(foldername_mod):
-        print(f'ERROR: Could not find results for test "{foldername}"')
+        print(f'ERROR: Could not find results_checksum for test "{foldername}"')
         return False
 
     checksum_files = sorted(
@@ -358,7 +358,7 @@ def compare_all_netcdfs_in_test_folder(foldername: str) -> bool:
         filename_mod = os.path.join(foldername_mod, fname)
 
         if not os.path.isfile(filename_mod):
-            print(f'ERROR: File "{fname}" does not exist in results of test "{foldername}"')
+            print(f'ERROR: File "{fname}" does not exist in results_checksum of test "{foldername}"')
             all_match = False
             continue
 

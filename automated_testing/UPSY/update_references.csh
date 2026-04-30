@@ -9,9 +9,9 @@ set all_tests = ( \
 
 foreach test_name ($all_tests)
 
-  # csh automated_testing/UPSY/${test_name}/test_script.csh
-  # rm -rf automated_testing/UPSY/${test_name}/reference
-  # mv automated_testing/UPSY/${test_name}/results_checksum   automated_testing/UPSY/${test_name}/reference
+  csh automated_testing/UPSY/${test_name}/test_script.csh
+  rm -rf automated_testing/UPSY/${test_name}/reference
+  mv automated_testing/UPSY/${test_name}/results_checksum   automated_testing/UPSY/${test_name}/reference
   cp automated_testing/UPSY/${test_name}/results/*.txt      automated_testing/UPSY/${test_name}/reference
 
 end

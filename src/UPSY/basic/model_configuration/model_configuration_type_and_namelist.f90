@@ -1162,7 +1162,15 @@ module model_configuration_type_and_namelist
     logical             :: do_create_ismip_output_config                = .false.                         ! Whether or not ISMIP-specific output files should be created at all
     character(len=1024) :: ismip_exp_name_config                        = 'ctrl'                          ! Experiment name for ISMIP output
     character(len=1024) :: ismip_group_name_config                      = 'IMAU'                          ! Group name included in ISMIP output files
-    character(len=1024) :: ismip_model_name_config                      = 'UFEMISM'                       ! Model name to which numbers can be added for variants
+    character(len=1024) :: ismip_model_name_config                      = 'UFEMISM1'                      ! Model name to which numbers can be added for variants
+    character(len=4)    :: ismip_member_id_config                       = 'm001'                          ! ISM member id
+    character(len=4)    :: ismip_forcing_member_id_config               = 'f001'                          ! Forcing member id
+    character(len=4)    :: ismip_counter_config                         = 'C001'                          ! Counter
+    character(len=1024) :: ismip_esm_name_config                        = 'CESM2-WACCM'                   ! ESM forcing
+    character(len=1024) :: ismip_contact_name_config                    = ''                              ! Contact name for metadata
+    character(len=1024) :: ismip_contact_email_config                   = ''                              ! Contact email for metadata
+    character(len=1024) :: ismip_conventions_config                     = 'CF-1.7'                        ! CF conventions for metadata
+
     real(dp)            :: dt_output_ismip_config                       = 1._dp                           ! Timestep for writing ISMIP output
 
     ! Transects
@@ -2367,6 +2375,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ismip_exp_name
     character(len=1024) :: ismip_group_name
     character(len=1024) :: ismip_model_name
+    character(len=4)    :: ismip_member_id
+    character(len=4)    :: ismip_forcing_member_id
+    character(len=4)    :: ismip_counter
+    character(len=1024) :: ismip_esm_name
+    character(len=1024) :: ismip_contact_name
+    character(len=1024) :: ismip_contact_email
+    character(len=1024) :: ismip_conventions
     real(dp)            :: dt_output_ismip
 
     ! Transects
@@ -3195,6 +3210,13 @@ contains
       ismip_exp_name_config                                       , &
       ismip_group_name_config                                     , &
       ismip_model_name_config                                     , &
+      ismip_member_id_config                                      , &
+      ismip_forcing_member_id_config                              , &
+      ismip_counter_config                                        , &
+      ismip_esm_name_config                                       , &
+      ismip_contact_name_config                                   , &
+      ismip_contact_email_config                                  , &
+      ismip_conventions_config                                    , &
       dt_output_ismip_config                                      , &
       transects_NAM_config                                        , &
       transects_EAS_config                                        , &
@@ -4429,6 +4451,13 @@ contains
     C%ismip_exp_name                                         = ismip_exp_name_config
     C%ismip_group_name                                       = ismip_group_name_config
     C%ismip_model_name                                       = ismip_model_name_config
+    C%ismip_member_id                                        = ismip_member_id_config
+    C%ismip_forcing_member_id                                = ismip_forcing_member_id_config
+    C%ismip_counter                                          = ismip_counter_config
+    C%ismip_esm_name                                         = ismip_esm_name_config
+    C%ismip_contact_name                                     = ismip_contact_name_config
+    C%ismip_contact_email                                    = ismip_contact_email_config
+    C%ismip_conventions                                      = ismip_conventions_config
     C%dt_output_ismip                                        = dt_output_ismip_config
 
     ! Transects

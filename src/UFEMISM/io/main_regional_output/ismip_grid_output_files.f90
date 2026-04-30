@@ -765,6 +765,8 @@ contains
     character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field'
     integer                        :: res_int
     character(len=2)               :: res_str
+    character(len=4)               :: start_year, end_year
+
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -776,17 +778,22 @@ contains
     field%units         = units
     field%fieldtype     = fieldtype
 
-    ! Convert grid resolution to string
+    ! Convert grid resolution and start/end times to string
     res_int = int(C%dx_output_grid_ANT / 1000._dp)
     write(res_str, '(I2.2)') res_int
+    write(start_year, '(I4)') int(C%start_time_of_run)
+    write(end_year, '(I4)') int(C%end_time_of_run)
 
     ! Define the name of the subfolder
-    region%ismip_grid_output%folder = trim( C%output_dir) // trim( C%ismip_exp_name) // '_' // trim(res_str) // '/'
+    region%ismip_grid_output%folder = trim( C%output_dir) // 'CORE' // '/'
 
     ! Define the filename for this field
     field%filename = trim( region%ismip_grid_output%folder) // trim(field%name) // '_' // &
       trim(region%ismip_grid_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
-      trim(C%ismip_model_name) // '_' // trim(C%ismip_exp_name) // '.nc'
+      trim(C%ismip_model_name) // '_' // trim(C%ismip_member_id) // '_' // &
+      trim(C%ismip_esm_name) // '_' // trim(C%ismip_forcing_member_id) // '_' // &
+      trim(C%ismip_exp_name) // '_' // trim(C%ismip_counter) // '_' // &
+      trim(start_year) // '-' // trim(end_year) // '.nc'
 
     ! Allocate fields for accumulation during each timestep for flux fields
     if ((field%fieldtype == 'FL') .and. (field%name /= 'hfgeoubed')) then

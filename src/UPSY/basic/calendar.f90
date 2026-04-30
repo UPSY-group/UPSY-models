@@ -69,11 +69,11 @@ module calendar
       ! Add routine to path
       call init_routine( routine_name)
 
-      ! Initialise
-      days = 0._dp
+      ! Initialise to align with ISMIP example output
+      days = -1._dp
 
       ! Count days for full years from 1850 to full year
-      do i = 1850, full_year -1._dp
+      do i = 1850, full_year
         if (is_leap_year(i)) then
           days = days + 366._dp
         else
@@ -101,11 +101,11 @@ module calendar
       ! Add routine to path
       call init_routine( routine_name)
 
-      ! Initialise
+      ! Initialise to align with ISMIP example output
       days_start = 0._dp
 
       ! Count days for full years from 1850 to start of last year
-      do i = 1850, full_year-2
+      do i = 1850, full_year- 1._dp
         if (is_leap_year(i)) then
           days_start = days_start + 366._dp
         else
@@ -114,7 +114,7 @@ module calendar
       end do
 
       ! Add days of current year to year end
-      if (is_leap_year( full_year-1)) then
+      if (is_leap_year( full_year)) then
         days_end = days_start + 366._dp
       else
         days_end = days_start + 365._dp

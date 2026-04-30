@@ -51,10 +51,14 @@ jobs:
       - name: Run integrated test
         run: csh automated_testing/UFEMISM/integrated_test_Ant_init_small_01/test_script.csh
 
+      - name: Show checksum logfile diff
+        run: csh automated_testing/show_checksum_logfile_diff.csh  automated_testing/UFEMISM/integrated_test_Ant_init_small_01
+
       - name: Check test result
         uses: matlab-actions/run-command@v3
         with:
           command: |
             addpath('automated_testing')
             reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Ant_init_small_01/results')
-            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Ant_init_small_01')
+            compare_program_info(                    '${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Ant_init_small_01')
+            compare_all_netcdfs_in_test_folder(      '${{github.workspace}}/automated_testing/UFEMISM/integrated_test_Ant_init_small_01')

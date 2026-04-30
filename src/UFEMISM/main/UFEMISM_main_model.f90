@@ -693,10 +693,12 @@ CONTAINS
       region%output_t_next = C%start_time_of_run
       region%output_restart_t_next = C%start_time_of_run
       region%output_grid_t_next = C%start_time_of_run
+      region%output_ismip_t_next = C%start_time_of_run
     ELSE
       region%output_t_next = C%end_time_of_run
       region%output_restart_t_next = C%end_time_of_run
       region%output_grid_t_next = C%end_time_of_run
+      region%output_ismip_t_next = C%end_time_of_run
     END IF
 
     ! Confirm that the current set of mesh output files match the current model mesh
@@ -1501,7 +1503,8 @@ CONTAINS
     END IF
     IF (region%time == region%output_t_next .OR. &
         region%time == region%output_restart_t_next .OR. &
-        region%time == region%output_grid_t_next) THEN
+        region%time == region%output_grid_t_next .OR. &
+        region%time == region%output_ismip_t_next) THEN
       r_adv = "yes"
       WRITE( *,"(A)", ADVANCE = TRIM( r_adv)) c_carriage_return
     END IF

@@ -22,3 +22,5 @@ foreach subtest ($subtests)
 
   rm -rf ${test_dir}/${subtest}
 end
+
+.venv/bin/python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

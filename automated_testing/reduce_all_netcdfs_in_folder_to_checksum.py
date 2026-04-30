@@ -14,8 +14,12 @@ Behavior:
 - Excludes *_checksum.nc and resource_tracking.nc
 - Creates <test_folder>/results_checksum if needed
 - For each file:
-    - Creates results_checksum/<name>_checksum.nc containing one 4-value checksum variable per
-    original variable (including variables in groups)
+    - Creates results_checksum/<name>_checksum.nc containing:
+        - one 4-value stats checksum variable per original variable
+            [sum_finite, sum_abs_finite, min_finite, max_finite]
+        - one 3-value integer count checksum variable per original variable
+            [n_NaN, n_Inf, n_mInf]
+        Original variables in groups are flattened with underscores in the name.
 """
 
 import os
@@ -33,6 +37,8 @@ except ImportError:
 
 CHECKSUM_DIM_NAME = "checksum"
 CHECKSUM_DIM_LEN = 4
+CHECKSUM_COUNT_DIM_NAME = "checksum_count"
+CHECKSUM_COUNT_DIM_LEN = 3
 FILL_VALUE = 9e9
 
 
@@ -43,7 +49,7 @@ def _collect_variables(group, parent_name: str = "") -> List[Tuple[str, object, 
     Returns tuples of:
     - original_name: original path used for reading, e.g. "grp/subgrp/var"
     - var_obj: netCDF4.Variable object from source file
-    - new_name: flattened checksum variable name, e.g. "grp_subgrp_var"
+    - new_name: flattened checksum variable base name, e.g. "grp_subgrp_var"
     """
     found = []
 
@@ -83,18 +89,31 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
         for dim_name, dim in src.dimensions.items():
             dst.createDimension(dim_name, None if dim.isunlimited() else len(dim))
         dst.createDimension(CHECKSUM_DIM_NAME, CHECKSUM_DIM_LEN)
+        dst.createDimension(CHECKSUM_COUNT_DIM_NAME, CHECKSUM_COUNT_DIM_LEN)
 
         variables = _collect_variables(src)
 
         for original_name, src_var, new_name in variables:
+            is_integer_source = np.issubdtype(src_var.dtype, np.integer)
+
+            stats_dtype = "i8" if is_integer_source else "f8"
             dst_var = dst.createVariable(
                 new_name,
-                "f8",
+                stats_dtype,
                 (CHECKSUM_DIM_NAME,),
                 fill_value=FILL_VALUE,
                 zlib=False,
                 shuffle=False,
                 chunksizes=(CHECKSUM_DIM_LEN,),
+            )
+
+            counts_var = dst.createVariable(
+                f"{new_name}_counts",
+                "i8",
+                (CHECKSUM_COUNT_DIM_NAME,),
+                zlib=False,
+                shuffle=False,
+                chunksizes=(CHECKSUM_COUNT_DIM_LEN,),
             )
 
             # Copy original variable attributes to preserve metadata.
@@ -106,27 +125,26 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
             data = np.ma.filled(src[original_name][:], fill_value=0.0)
             flat = np.asarray(data).reshape(-1)
 
-            has_non_finite = np.any(~np.isfinite(flat))
-            if has_non_finite:
-                checksum_sum = FILL_VALUE
-                checksum_sum_abs = FILL_VALUE
-                finite_flat = flat[np.isfinite(flat)]
-                if finite_flat.size > 0:
-                    checksum_min = np.min(finite_flat)
-                    checksum_max = np.max(finite_flat)
-                else:
-                    checksum_min = np.nan
-                    checksum_max = np.nan
-            else:
-                checksum_sum = np.sum(flat)
-                checksum_sum_abs = np.sum(np.abs(flat))
-                checksum_min = np.min(flat)
-                checksum_max = np.max(flat)
+            finite_flat = flat[np.isfinite(flat)]
 
-            # Keep min/max behavior, but avoid noisy warnings for non-finite
-            # reductions like +inf + -inf.
+            # Existing checksums, all computed over finite values only.
+            checksum_sum = np.sum(finite_flat)
+            checksum_sum_abs = np.sum(np.abs(finite_flat))
+            if finite_flat.size > 0:
+                checksum_min = np.min(finite_flat)
+                checksum_max = np.max(finite_flat)
+            else:
+                checksum_min = np.nan
+                checksum_max = np.nan
+
+            # Additional checksums that track non-finite values in original data.
+            checksum_n_nan = np.sum(np.isnan(flat))
+            checksum_n_inf = np.sum(np.isposinf(flat))
+            checksum_n_minf = np.sum(np.isneginf(flat))
+
+            # Guard against warning noise if upstream arrays contain non-finite values.
             with np.errstate(invalid="ignore", over="ignore"):
-                checksum_data = np.array(
+                stats_data = np.array(
                     [
                         checksum_sum,
                         checksum_sum_abs,
@@ -136,11 +154,19 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
                     dtype=np.float64,
                 )
 
-            if has_non_finite:
-                checksum = np.ma.array(checksum_data, mask=[True, True, False, False])
-                dst_var[:] = checksum
+            counts_data = np.array(
+                [checksum_n_nan, checksum_n_inf, checksum_n_minf],
+                dtype=np.int64,
+            )
+
+            if is_integer_source:
+                # Integer source variables get integer-typed sum/sum_abs/min/max.
+                stats_out = np.array(np.rint(stats_data), dtype=np.int64)
             else:
-                dst_var[:] = checksum_data
+                stats_out = stats_data
+
+            dst_var[:] = stats_out
+            counts_var[:] = counts_data
 
     return filename_redux
 

@@ -244,6 +244,7 @@ def _compare_data_group(filename_ref: str, filename_mod: str,
 def _compare_data_variable(var_path: str, d_ref: np.ndarray,
                             d_mod: np.ndarray, filename_ref: str) -> bool:
     is_checksum = '_checksum' in os.path.basename(filename_ref)
+    is_count_checksum = var_path.endswith('_counts')
 
     def _both_nan(a: float, b: float) -> bool:
         return np.isnan(a) and np.isnan(b)
@@ -253,10 +254,30 @@ def _compare_data_variable(var_path: str, d_ref: np.ndarray,
             return np.nan
         return float(x)
 
-    if is_checksum and len(d_ref) == 4:
-        # Values are: sum, sum_abs, min, max
-        ref_sum, ref_sum_abs, ref_min, ref_max = [_scalar_or_nan(v) for v in d_ref]
-        mod_sum, mod_sum_abs, mod_min, mod_max = [_scalar_or_nan(v) for v in d_mod]
+    def _scalar_int_or_none(x):
+        y = _scalar_or_nan(x)
+        if np.isnan(y):
+            return None
+        return int(round(y))
+
+    if is_checksum and is_count_checksum and len(d_ref) == 3:
+        vals_ref = [_scalar_int_or_none(v) for v in d_ref]
+        vals_mod = [_scalar_int_or_none(v) for v in d_mod]
+
+        if vals_ref != vals_mod:
+            print(f'  Mismatching data in {var_path}')
+            print(f'    Reference: {vals_ref}')
+            print(f'    Model    : {vals_mod}')
+            return False
+        return True
+
+    if is_checksum and (not is_count_checksum) and len(d_ref) == 4:
+        # Values are: [sum_finite, sum_abs_finite, min_finite, max_finite]
+        vals_ref = [_scalar_or_nan(v) for v in d_ref]
+        vals_mod = [_scalar_or_nan(v) for v in d_mod]
+
+        ref_sum, ref_sum_abs, ref_min, ref_max = vals_ref
+        mod_sum, mod_sum_abs, mod_min, mod_max = vals_mod
 
         ref_min_max_abs = max(abs(ref_min), abs(ref_max))
 

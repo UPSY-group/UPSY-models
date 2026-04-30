@@ -17,6 +17,7 @@ module ismip_grid_output_files
   use ismip_output_types, only: type_ismip_grid_output, type_ismip_gridded_field
   use mesh_zeta, only: vertical_average
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
+  use netcdf, only: NF90_GLOBAL
 
   implicit none
 
@@ -207,6 +208,7 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_single_ISMIP_regional_output_file_grid'
     integer                        :: ncid
+    character(len=16)              :: nt_str
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -223,6 +225,13 @@ contains
       case ('ST') 
         call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .false.)
     end select 
+
+    ! Update the time counter attribute
+    field%nt = field%nt + 1
+    ! Convert counter to string
+    write(nt_str, '(I16)') field%nt
+    nt_str = adjustl(nt_str)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
 
     ! write the data to the file
     call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
@@ -603,6 +612,8 @@ contains
     integer                        :: ncid
     character(len=*), parameter    :: iprecision = 'single'
     logical, parameter             :: do_compress = .true.
+    integer                        :: res_int
+    character(len=16)              :: res_str
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -632,6 +643,22 @@ contains
       do_compress = do_compress, long_name = field%long_name, units = field%units, &
       standard_name = field%standard_name)
 
+    ! Convert grid resolution and start/end times to string
+    res_int = int(C%dx_output_grid_ANT)
+    write(res_str, '(I16)') res_int
+    res_str = adjustl(res_str)
+
+    ! Add attributes
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', C%ismip_conventions)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', ismip_grid_output%IS_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_resolution', trim(res_str) // 'm')
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'group', C%ismip_group_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'model', C%ismip_model_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'scenario', C%ismip_scenario_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_name', C%ismip_contact_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_email', C%ismip_contact_email)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'crs', trim(ismip_grid_output%crs))
+
     ! Close the file
     call close_netcdf_file( ncid)
 
@@ -658,8 +685,10 @@ contains
         call crash('invalid region name for ISMIP output "' // trim( region%name) // '"')
       case ('ANT')
         region%ismip_grid_output%IS_name = 'AIS'
+        region%ismip_grid_output%crs = 'EPSG:3031'
       case ('GRL')
         region%ismip_grid_output%IS_name = 'GIS'
+        region%ismip_grid_output%crs = 'EPSG:3413'
     end select
 
     ! Copy the output grid
@@ -763,10 +792,7 @@ contains
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field'
-    integer                        :: res_int
-    character(len=2)               :: res_str
     character(len=4)               :: start_year, end_year
-
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -779,8 +805,6 @@ contains
     field%fieldtype     = fieldtype
 
     ! Convert grid resolution and start/end times to string
-    res_int = int(C%dx_output_grid_ANT / 1000._dp)
-    write(res_str, '(I2.2)') res_int
     write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run)
 
@@ -792,7 +816,7 @@ contains
       trim(region%ismip_grid_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
       trim(C%ismip_model_name) // '_' // trim(C%ismip_member_id) // '_' // &
       trim(C%ismip_esm_name) // '_' // trim(C%ismip_forcing_member_id) // '_' // &
-      trim(C%ismip_exp_name) // '_' // trim(C%ismip_counter) // '_' // &
+      trim(C%ismip_scenario_name) // '_' // trim(C%ismip_counter) // '_' // &
       trim(start_year) // '-' // trim(end_year) // '.nc'
 
     ! Allocate fields for accumulation during each timestep for flux fields
@@ -800,6 +824,9 @@ contains
       allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source=0._dp)
       field%is_initial = .true.
     end if
+
+    ! Initialise the counter for number of time values
+    field%nt = 0
 
     ! Finalise routine path
     call finalise_routine( routine_name)

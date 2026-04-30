@@ -22,12 +22,15 @@ module ismip_output_types
     character(len=1024)                 :: units             ! Units
     character(len=2)                    :: fieldtype         ! ST or FL      
 
+    integer                             :: nt                ! Counter for number of time values written
+
   end type type_ismip_gridded_field
 
   type type_ismip_grid_output
     ! Data fields for storing the regional ISMIP data
 
     character(len=3)                  :: IS_name      ! Ice sheet name (AIS or GIS)
+    character(len=126)                :: crs          ! Associated crs (EPSG)
     type(type_grid)                   :: grid         ! Output grid
     character(len=1024)               :: folder       ! Subfolder exp_RES
 

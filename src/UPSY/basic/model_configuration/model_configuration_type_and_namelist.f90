@@ -1160,7 +1160,7 @@ module model_configuration_type_and_namelist
 
     ! ISMIP
     logical             :: do_create_ismip_output_config                = .false.                         ! Whether or not ISMIP-specific output files should be created at all
-    character(len=1024) :: ismip_exp_name_config                        = 'ctrl'                          ! Experiment name for ISMIP output
+    character(len=1024) :: ismip_scenario_name_config                   = 'ctrl'                          ! Scenario name for ISMIP output
     character(len=1024) :: ismip_group_name_config                      = 'IMAU'                          ! Group name included in ISMIP output files
     character(len=1024) :: ismip_model_name_config                      = 'UFEMISM1'                      ! Model name to which numbers can be added for variants
     character(len=4)    :: ismip_member_id_config                       = 'm001'                          ! ISM member id
@@ -2372,7 +2372,7 @@ module model_configuration_type_and_namelist
 
     ! ISMIP
     logical             :: do_create_ismip_output
-    character(len=1024) :: ismip_exp_name
+    character(len=1024) :: ismip_scenario_name
     character(len=1024) :: ismip_group_name
     character(len=1024) :: ismip_model_name
     character(len=4)    :: ismip_member_id
@@ -3207,7 +3207,7 @@ contains
       dx_output_grid_ROI_GRL_config                               , &
       dx_output_grid_ROI_ANT_config                               , &
       do_create_ismip_output_config                               , &
-      ismip_exp_name_config                                       , &
+      ismip_scenario_name_config                                  , &
       ismip_group_name_config                                     , &
       ismip_model_name_config                                     , &
       ismip_member_id_config                                      , &
@@ -4448,7 +4448,7 @@ contains
 
     ! ISMIP
     C%do_create_ismip_output                                 = do_create_ismip_output_config
-    C%ismip_exp_name                                         = ismip_exp_name_config
+    C%ismip_scenario_name                                    = ismip_scenario_name_config
     C%ismip_group_name                                       = ismip_group_name_config
     C%ismip_model_name                                       = ismip_model_name_config
     C%ismip_member_id                                        = ismip_member_id_config

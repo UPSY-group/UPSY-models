@@ -48,6 +48,12 @@ jobs:
       - name: Compile UFEMISM
         run: csh compile_UFEMISM.csh  dev  clean
 
+      - name: Set up Python environment for checksum tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python3 -m pip install --upgrade pip
+          .venv/bin/python3 -m pip install numpy netCDF4
+
     # Run the test and check its results against the reference
     # ========================================================
 

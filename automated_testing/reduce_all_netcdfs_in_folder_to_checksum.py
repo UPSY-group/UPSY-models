@@ -91,6 +91,9 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
         dst.createDimension(CHECKSUM_DIM_NAME, CHECKSUM_DIM_LEN)
         dst.createDimension(CHECKSUM_COUNT_DIM_NAME, CHECKSUM_COUNT_DIM_LEN)
 
+        for attr_name in src.ncattrs():
+            dst.setncattr(attr_name, src.getncattr(attr_name))
+
         variables = _collect_variables(src)
 
         for original_name, src_var, new_name in variables:

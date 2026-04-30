@@ -227,13 +227,14 @@ contains
 
   end subroutine write_time_to_file
 
-  subroutine write_cftime_to_file( filename, ncid, time)
+  subroutine write_cftime_to_file( filename, ncid, time, with_bounds)
     ! Write new CFtime value to file
 
     ! In/output variables:
     character(len=*), intent(in   ) :: filename
     integer,          intent(in   ) :: ncid
     real(dp),         intent(in   ) :: time
+    logical,          intent(in   ) :: with_bounds
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_cftime_to_file'
@@ -251,7 +252,6 @@ contains
 
     ! Inquire variable ids
     call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time)
-    call inquire_var_multopt( filename, ncid, 'time_bnds', id_var_time_bnds)
 
     ! Determine next time index
     nt = nt + 1
@@ -266,7 +266,10 @@ contains
     call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
 
     ! Write time bnds
-    call write_var_primary( filename, ncid, id_var_time_bnds, days_bnds, start = (/ 1, nt /), count = (/ 2, 1 /) )
+    if (with_bounds) then
+      call inquire_var_multopt( filename, ncid, 'time_bnds', id_var_time_bnds)
+      call write_var_primary( filename, ncid, id_var_time_bnds, days_bnds, start = (/ 1, nt /), count = (/ 2, 1 /) )
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

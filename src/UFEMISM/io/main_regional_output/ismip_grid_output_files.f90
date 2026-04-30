@@ -215,7 +215,14 @@ contains
     call open_existing_netcdf_file_for_writing( field%filename, ncid)
 
     ! write the time to the file
-    call write_cftime_to_file( field%filename, ncid, region%time)
+    select case (field%fieldtype)
+      case default
+        call crash('invalid fieldtype for CFtime writing "' // trim(field%fieldtype) //  '"')
+      case ('FL') 
+        call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .true.)
+      case ('ST') 
+        call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .false.)
+    end select 
 
     ! write the data to the file
     call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
@@ -611,9 +618,14 @@ contains
     call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_grid_output%grid)
 
     ! Add time dimension to the file
-    call add_cftime_dimension_to_file( field%filename, ncid)
-    
-    ! TODO if fieldtype == 'FL', add_bnds_dimension_to_file
+    select case (field%fieldtype)
+      case default
+        call crash('invalid fieldtype for CFtime writing "' // trim(field%fieldtype) //  '"')
+      case ('FL') 
+        call add_cftime_dimension_to_file( field%filename, ncid, with_bounds = .true.)
+      case ('ST') 
+        call add_cftime_dimension_to_file( field%filename, ncid, with_bounds = .false.)
+    end select 
 
     ! Add the field
     call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 

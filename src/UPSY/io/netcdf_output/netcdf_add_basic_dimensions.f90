@@ -43,12 +43,13 @@ contains
 
   end subroutine add_time_dimension_to_file
 
-  subroutine add_cftime_dimension_to_file( filename, ncid)
+  subroutine add_cftime_dimension_to_file( filename, ncid, with_bounds)
     !< Add a CF time dimension and variable to an existing NetCDF file
 
     ! In/output variables:
     character(len=*), intent(in   ) :: filename
     integer,          intent(in   ) :: ncid
+    logical,          intent(in   ) :: with_bounds
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_cftime_dimension_to_file'
@@ -60,15 +61,18 @@ contains
 
     ! Create time dimension
     call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_time), NF90_UNLIMITED, id_dim_time)
-    call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_bnds), 2, id_dim_bnds)
 
     ! Create time variable
     call create_variable(  filename, ncid, get_first_option_from_list( field_name_options_time), NF90_DOUBLE, (/ id_dim_time /), id_var_time)
     call add_attribute_char( filename, ncid, id_var_time, 'long_name', 'Time')
     call add_attribute_char( filename, ncid, id_var_time, 'units', 'days since 1850-01-01')
 
-    ! Create time_bnds variable
-    call create_variable(  filename, ncid, 'time_bnds', NF90_DOUBLE, (/ id_dim_bnds, id_dim_time /), id_var_time_bnds)
+    ! Add bounds if required
+    if (with_bounds) then
+      call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_bnds), 2, id_dim_bnds)
+      call add_attribute_char( filename, ncid, id_var_time, 'bounds', 'time_bnds')
+      call create_variable(  filename, ncid, 'time_bnds', NF90_DOUBLE, (/ id_dim_bnds, id_dim_time /), id_var_time_bnds)
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

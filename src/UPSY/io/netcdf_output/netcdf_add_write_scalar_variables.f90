@@ -241,8 +241,8 @@ contains
     integer                        :: id_dim_time
     integer                        :: id_var_time, id_var_time_bnds
     integer                        :: nt
-    integer                        :: days
-    integer, dimension(2)          :: days_bnds
+    real(dp)                       :: days
+    real(dp), dimension(2)         :: days_bnds
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -258,9 +258,9 @@ contains
 
     ! Convert time to cftime
     ! TODO write functions for different calendars
-    days = int(360._dp * (time - 1850._dp))
-    days_bnds(0) = days - 180
-    days_bnds(0) = days + 180
+    days = 360._dp * (time - 1850._dp)
+    days_bnds(0) = days - 180._dp
+    days_bnds(0) = days + 180._dp
 
     ! Write time
     call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )

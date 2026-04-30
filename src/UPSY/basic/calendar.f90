@@ -69,8 +69,8 @@ module calendar
       ! Add routine to path
       call init_routine( routine_name)
 
-      ! Initialise
-      days = 0._dp
+      ! Initialise to align with compliance checker
+      days = -1._dp
 
       ! Count days for full years from 1850 to full year
       do i = 1850, full_year

@@ -17,11 +17,6 @@ jobs:
     # Install all required packages and compile the code
     # ==================================================
 
-      - name: Install MATLAB
-        uses: matlab-actions/setup-matlab@v3
-        with:
-          cache: true
-
       - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
         run: |
           #brew install gcc                    # Not needed on GitHub server, already installed
@@ -53,6 +48,9 @@ jobs:
       - name: Compile UFEMISM
         run: csh compile_UFEMISM.csh  dev  clean
 
+    # Run the test and check its results against the reference
+    # ========================================================
+
       - name: Run integrated test
         run: csh ${{ inputs.test_path }}/test_script.csh
 
@@ -61,5 +59,5 @@ jobs:
 
       - name: Check test result
         run: |
-          .venv/bin/python3 automated_testing/compare_program_info.py ${{ github.workspace }}/${{ inputs.test_path }}
-          .venv/bin/python3 automated_testing/compare_all_netcdfs_in_test_folder.py ${{ github.workspace }}/${{ inputs.test_path }}
+          .venv/bin/python3 automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
+          .venv/bin/python3 automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}

@@ -125,27 +125,15 @@ end
 
     if ischar( att_ref.Value) && ischar( att_mod.Value)
       if ~strcmpi( att_ref.Value, att_mod.Value)
-        if is_program_info
-          are_identical = true;
-          disp(['  Mismatching program info "' [parent_name '/' att_ref.Name] '": reference = "' ...
-            att_ref.Value '", model = "' att_mod.Value '"'])
-        else
-          are_identical = false;
-          disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = "' ...
-            att_ref.Value '", model = "' att_mod.Value '"'])
-        end
+        are_identical = false;
+        disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = "' ...
+          att_ref.Value '", model = "' att_mod.Value '"'])
       end
     else
       if att_ref.Value ~= att_mod.Value
-        if is_program_info
-          are_identical = true;
-          disp(['  Mismatching program info "' [parent_name '/' att_ref.Name] '": reference = ' ...
-            num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
-        else
-          are_identical = false;
-          disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = ' ...
-            num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
-        end
+        are_identical = false;
+        disp(['  Mismatching attribute "' [parent_name '/' att_ref.Name] '": reference = ' ...
+          num2str( att_ref.Value) ', model = ' num2str( att_mod.Value)])
       end
     end
 

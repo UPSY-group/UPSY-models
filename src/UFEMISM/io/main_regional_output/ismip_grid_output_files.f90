@@ -215,7 +215,7 @@ contains
     call open_existing_netcdf_file_for_writing( field%filename, ncid)
 
     ! write the time to the file
-    call write_time_to_file( field%filename, ncid, region%time)
+    call write_cftime_to_file( field%filename, ncid, region%time)
 
     ! write the data to the file
     call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
@@ -611,8 +611,7 @@ contains
     call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_grid_output%grid)
 
     ! Add time dimension to the file
-    ! TODO change to cftime
-    call add_time_dimension_to_file( field%filename, ncid)
+    call add_cftime_dimension_to_file( field%filename, ncid)
     
     ! TODO if fieldtype == 'FL', add_bnds_dimension_to_file
 

@@ -10,7 +10,7 @@ module netcdf_add_basic_dimensions
 
   private
 
-  public :: add_time_dimension_to_file, add_month_dimension_to_file, add_zeta_dimension_to_file, &
+  public :: add_time_dimension_to_file, add_cftime_dimension_to_file, add_month_dimension_to_file, add_zeta_dimension_to_file, &
     add_depth_dimension_to_file
 
 contains
@@ -42,6 +42,38 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine add_time_dimension_to_file
+
+  subroutine add_cftime_dimension_to_file( filename, ncid)
+    !< Add a CF time dimension and variable to an existing NetCDF file
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_cftime_dimension_to_file'
+    integer                        :: id_dim_time, id_dim_bnds
+    integer                        :: id_var_time, id_var_time_bnds
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Create time dimension
+    call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_time), NF90_UNLIMITED, id_dim_time)
+    call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_bnds), 2, id_dim_bnds)
+
+    ! Create time variable
+    call create_variable(  filename, ncid, get_first_option_from_list( field_name_options_time), NF90_DOUBLE, (/ id_dim_time /), id_var_time)
+    call add_attribute_char( filename, ncid, id_var_time, 'long_name', 'Time')
+    call add_attribute_char( filename, ncid, id_var_time, 'units', 'days since 1850-01-01')
+
+    ! Create time_bnds variable
+    call create_variable(  filename, ncid, 'time_bnds', NF90_DOUBLE, (/ id_dim_bnds, id_dim_time /), id_var_time_bnds)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_cftime_dimension_to_file
 
   subroutine add_month_dimension_to_file( filename, ncid)
     !< Add a month dimension and variable to an existing NetCDF file

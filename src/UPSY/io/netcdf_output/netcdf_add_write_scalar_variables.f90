@@ -12,7 +12,7 @@ module netcdf_add_write_scalar_variables
   private
 
   public :: add_field_dp_0D, add_field_int_0D, write_to_field_multopt_int_0D, &
-    write_to_field_multopt_dp_0D, write_time_to_file
+    write_to_field_multopt_dp_0D, write_time_to_file, write_cftime_to_file
 
 contains
 
@@ -226,5 +226,51 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_time_to_file
+
+  subroutine write_cftime_to_file( filename, ncid, time)
+    ! Write new CFtime value to file
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    real(dp),         intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'write_cftime_to_file'
+    integer                        :: id_dim_time
+    integer                        :: id_var_time, id_var_time_bnds
+    integer                        :: nt
+    integer                        :: days
+    integer, dimension(2)          :: days_bnds
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Determine current length of time dimension in file
+    call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = nt)
+
+    ! Inquire variable ids
+    call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time)
+    call inquire_var_multopt( filename, ncid, 'time_bnds', id_var_time_bnds)
+
+    ! Determine next time index
+    nt = nt + 1
+
+    ! Convert time to cftime
+    ! TODO write functions for different calendars
+    days = int(360._dp * (time - 1850._dp))
+    days_bnds(0) = days - 180
+    days_bnds(0) = days + 180
+
+    ! Write time
+    call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
+
+    ! Write time bnds
+    call write_var_primary( filename, ncid, id_var_time_bnds, days_bnds, start = (/ 1, nt /), count = (/ 2, 1 /) )
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_cftime_to_file
 
 end module netcdf_add_write_scalar_variables

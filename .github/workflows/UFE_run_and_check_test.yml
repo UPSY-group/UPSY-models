@@ -60,10 +60,6 @@ jobs:
         run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result
-        uses: matlab-actions/run-command@v3
-        with:
-          command: |
-            addpath('automated_testing')
-            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/${{ inputs.test_path }}/results')
-            compare_program_info(                    '${{github.workspace}}/${{ inputs.test_path }}')
-            compare_all_netcdfs_in_test_folder(      '${{github.workspace}}/${{ inputs.test_path }}')
+        run: |
+          .venv/bin/python3 automated_testing/compare_program_info.py ${{ github.workspace }}/${{ inputs.test_path }}
+          .venv/bin/python3 automated_testing/compare_all_netcdfs_in_test_folder.py ${{ github.workspace }}/${{ inputs.test_path }}

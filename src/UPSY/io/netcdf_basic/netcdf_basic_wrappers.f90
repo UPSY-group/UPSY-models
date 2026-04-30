@@ -207,6 +207,7 @@ contains
     call MPI_BCAST( ncid, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
 
     ! Add the git commit hash and package versions that were used to compile the program
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'history', 'Generated on ' // get_current_date_time_str())
     call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git commit hash'        , git_commit_hash)
     call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has uncommitted changes', has_uncommitted_changes)
     call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc version'          , petsc_version)
@@ -615,6 +616,21 @@ contains
     end select
 
   end function parse_netcdf_precision
+
+  function get_current_date_time_str() result( datetime_str)
+    character(len=8)               :: date_str
+    character(len=10)              :: time_str
+    character(len=5)               :: zone_str
+    character(len=19)              :: datetime_str
+    integer, dimension(8)          :: values
+
+    ! Get date and time
+    call date_and_time(date=date_str, time=time_str, zone=zone_str, values=values)
+    ! Using internal write to format nicely
+    write(datetime_str, '(I4.4, "-", I2.2, "-", I2.2, "T", I2.2, ":", I2.2, ":", I2.2)') &
+         values(1), values(2), values(3), values(5), values(6), values(7)
+
+  end function get_current_date_time_str
 
   subroutine add_fillvalue( filename, ncid, id_var)
     !< Add the fill value as attribute to a variable.

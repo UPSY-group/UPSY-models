@@ -1,11 +1,16 @@
-name: UFEMISM integrated test - SSA_icestream (small)
-run-name: ${{ github.actor }} - UFEMISM integrated test - SSA_icestream (small)
+name: Run and check test
+run-name: ${{ github.actor }} - Run and check test
 on:
   workflow_call:
+    inputs:
+      test_path:
+        description: Path to the integrated test directory
+        required: true
+        type: string
 
 jobs:
-  SSA_icestream_small:
-    name: SSA_icestream (small)
+  run_and_check_test:
+    name: Run and check test
     runs-on: macos-latest
     steps:
 
@@ -49,12 +54,16 @@ jobs:
         run: csh compile_UFEMISM.csh  dev  clean
 
       - name: Run integrated test
-        run: csh automated_testing/UFEMISM/integrated_test_SSA_icestream_small/test_script.csh
+        run: csh ${{ inputs.test_path }}/test_script.csh
+
+      - name: Show checksum logfile diff
+        run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result
         uses: matlab-actions/run-command@v3
         with:
           command: |
             addpath('automated_testing')
-            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_SSA_icestream_small/results')
-            compare_all_netcdfs_in_test_folder('${{github.workspace}}/automated_testing/UFEMISM/integrated_test_SSA_icestream_small')
+            reduce_all_netcdfs_in_folder_to_checksum('${{github.workspace}}/${{ inputs.test_path }}/results')
+            compare_program_info(                    '${{github.workspace}}/${{ inputs.test_path }}')
+            compare_all_netcdfs_in_test_folder(      '${{github.workspace}}/${{ inputs.test_path }}')

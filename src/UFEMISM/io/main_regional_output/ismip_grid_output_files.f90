@@ -9,6 +9,8 @@ module ismip_grid_output_files
   use model_configuration, only: C
   use region_types, only: type_model_region
   use grid_types, only: type_grid
+  use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use netcdf_io_main
   use ice_mass_and_fluxes, only: calc_ice_margin_fluxes
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, &
@@ -18,13 +20,14 @@ module ismip_grid_output_files
   use mesh_zeta, only: vertical_average
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
   use netcdf, only: NF90_GLOBAL
+  use reallocate_mod, only: reallocate_bounds
 
   implicit none
 
   private
 
   public :: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid, &
-    accumulate_ISMIP_flux_fields
+    accumulate_ISMIP_flux_fields, remap_ISMIP_grid_output
 
 contains
 
@@ -838,6 +841,33 @@ contains
 
   end subroutine initialise_ISMIP_field
 
-  ! TODO remap_ISMIP_fields -> reallocate_bounds
+  subroutine remap_ISMIP_grid_output( mesh_old, mesh_new, ice, ismip_grid_output)
+    ! Reallocate the accumulated fields and redefine Hi_prev
+
+    type(type_mesh),                   intent(in   ) :: mesh_old
+    type(type_mesh),                   intent(in   ) :: mesh_new
+    type(type_ice_model),              intent(in   ) :: ice
+    type(type_ismip_grid_output),      intent(inout) :: ismip_grid_output
+
+    ! Local variables
+    character(len=1024), parameter :: routine_name = 'remap_ISMIP_grid_output'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call reallocate_bounds( ismip_grid_output%acabf%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_grid_output%libmassbfgr%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_grid_output%libmassbffl%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_grid_output%licalvf%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_grid_output%lifmassbf%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_grid_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
+
+    ! Use accum to store current Hi for dHidt
+    ismip_grid_output%dlithkdt%accum = ice%Hi
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_ISMIP_grid_output
 
 end module ismip_grid_output_files

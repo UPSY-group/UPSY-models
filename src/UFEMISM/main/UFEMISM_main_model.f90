@@ -46,7 +46,7 @@ MODULE UFEMISM_main_model
   use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
   use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI
   use ismip_grid_output_files, only: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid, &
-    accumulate_ISMIP_flux_fields
+    accumulate_ISMIP_flux_fields, remap_ISMIP_grid_output
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
   use apply_maps, only: clear_all_maps_involving_this_mesh
@@ -1319,6 +1319,8 @@ CONTAINS
     call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice, region%ice%hydro_Salle2025,                region%time)
 
     call remap_tracer_tracking_model( region%mesh, mesh_new, region%tracer_tracking, region%time)
+
+    call remap_ISMIP_grid_output( region%mesh, mesh_new, region%ice, region%ismip_grid_output)
 
     ! Set all model component timers so that they will all be run right after the mesh update
     region%ice%t_Hi_next  = region%time

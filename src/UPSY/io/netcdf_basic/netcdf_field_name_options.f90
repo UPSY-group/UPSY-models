@@ -100,44 +100,6 @@ module netcdf_field_name_options
   character(len=1024), parameter :: field_name_options_GI             = 'GI||gi||Glacial_Index||glacial_index||GlacialIndex'
   character(len=1024), parameter :: field_name_options_CO2            = 'CO2||co2'
 
-  ! ISMIP variables
-  character(len=1024), parameter :: field_name_options_lithk          = 'lithk'
-  character(len=1024), parameter :: field_name_options_orog           = 'orog'
-  character(len=1024), parameter :: field_name_options_topg           = 'topg'
-  character(len=1024), parameter :: field_name_options_hfgeoubed      = 'hfgeoubed'
-  character(len=1024), parameter :: field_name_options_acabf          = 'acabf'
-  character(len=1024), parameter :: field_name_options_libmassbfgr    = 'libmassbfgr'
-  character(len=1024), parameter :: field_name_options_libmassbffl    = 'libmassbffl'
-  character(len=1024), parameter :: field_name_options_dlithkdt       = 'dlithkdt'
-  character(len=1024), parameter :: field_name_options_xvelsurf       = 'xvelsurf'
-  character(len=1024), parameter :: field_name_options_yvelsurf       = 'yvelsurf'
-  character(len=1024), parameter :: field_name_options_zvelsurf       = 'zvelsurf'
-  character(len=1024), parameter :: field_name_options_xvelbase       = 'xvelbase'
-  character(len=1024), parameter :: field_name_options_yvelbase       = 'yvelbase'
-  character(len=1024), parameter :: field_name_options_zvelbase       = 'zvelbase'
-  character(len=1024), parameter :: field_name_options_xvelmean       = 'xvelmean'
-  character(len=1024), parameter :: field_name_options_yvelmean       = 'yvelmean'
-  character(len=1024), parameter :: field_name_options_litemptop      = 'litemptop'
-  character(len=1024), parameter :: field_name_options_litempbotgr    = 'litempbotgr'
-  character(len=1024), parameter :: field_name_options_strbasemag     = 'strbasemag'
-  character(len=1024), parameter :: field_name_options_licalvf        = 'licalvf'
-  character(len=1024), parameter :: field_name_options_lifmassbf      = 'lifmassbf'
-  character(len=1024), parameter :: field_name_options_sftgif         = 'sftgif'
-  character(len=1024), parameter :: field_name_options_sftgrf         = 'sftgrf'
-  character(len=1024), parameter :: field_name_options_sftflf         = 'sftflf'
-
-  character(len=1024), parameter :: field_name_options_lim            = 'lim'
-  character(len=1024), parameter :: field_name_options_limnsw         = 'limnsw'
-  character(len=1024), parameter :: field_name_options_iareagr        = 'iareagr'
-  character(len=1024), parameter :: field_name_options_iareafl        = 'iareafl'
-
-  character(len=1024), parameter :: field_name_options_tendacabf      = 'tendacabf'
-  character(len=1024), parameter :: field_name_options_tendlibmassbf  = 'tendlibmassbf'
-  character(len=1024), parameter :: field_name_options_tendlibmassbffl= 'tendlibmassbffl'
-  character(len=1024), parameter :: field_name_options_tendlicalvf    = 'tendlicalvf'
-  character(len=1024), parameter :: field_name_options_tendlifmassbf  = 'tendlifmassbf'
-
-
 contains
 
   subroutine inquire_dim_multopt( filename, ncid, dim_name_options, id_dim, dim_length, dim_name)

@@ -1169,7 +1169,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ismip_esm_name_config                        = 'CESM2-WACCM'                   ! ESM forcing
     character(len=1024) :: ismip_contact_name_config                    = ''                              ! Contact name for metadata
     character(len=1024) :: ismip_contact_email_config                   = ''                              ! Contact email for metadata
-    character(len=1024) :: ismip_conventions_config                     = 'CF-1.7'                        ! CF conventions for metadata
+    character(len=1024) :: ismip_conventions_config                     = 'CF-1.10'                        ! CF conventions for metadata
 
     real(dp)            :: dt_output_ismip_config                       = 1._dp                           ! Timestep for writing ISMIP output
 

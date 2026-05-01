@@ -208,13 +208,13 @@ contains
 
     ! Add the git commit hash and package versions that were used to compile the program
     call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'history', 'Generated on ' // get_current_date_time_str())
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git commit hash'        , git_commit_hash)
-    call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has uncommitted changes', has_uncommitted_changes)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc version'          , petsc_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'NetCDF version'         , netcdf_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'OpenMPI version'        , openmpi_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler version'       , compiler_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler flags'         , compiler_flags)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git_commit_hash'        , git_commit_hash)
+    call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has_uncommitted_changes', has_uncommitted_changes)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc_version'          , petsc_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'NetCDF_version'         , netcdf_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'OpenMPI_version'        , openmpi_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler_version'       , compiler_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler_flags'         , compiler_flags)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

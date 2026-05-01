@@ -280,9 +280,13 @@ contains
       ! Basic topography (ST)
       case ('lithk')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hi, d_grid_vec_partial_2D)
+        ! Prevent negative values due to rounding errors
+        d_grid_vec_partial_2D = max(0._dp, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
       case ('orog')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hs, d_grid_vec_partial_2D)
+        ! Prevent negative values due to rounding errors
+        d_grid_vec_partial_2D = max(0._dp, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
       case ('topg')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hb, d_grid_vec_partial_2D)
@@ -503,15 +507,21 @@ contains
       ! Area fractions
       case ('sftgif')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, d_grid_vec_partial_2D)
+        ! Prevent values outside [0,1] due to rounding errors
+        d_grid_vec_partial_2D = min(1._dp,max(0._dp, d_grid_vec_partial_2D))
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
       case ('sftgrf')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_gr, d_grid_vec_partial_2D)
+        ! Prevent values outside [0,1] due to rounding errors
+        d_grid_vec_partial_2D = min(1._dp,max(0._dp, d_grid_vec_partial_2D))
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
       case ('sftflf')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         ! TODO check whether this is appropriate
         d_mesh_vec_partial_2D = region%ice%fraction_margin( region%mesh%vi1: region%mesh%vi2) - region%ice%fraction_gr( region%mesh%vi1: region%mesh%vi2)
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+        ! Prevent values outside [0,1] due to rounding errors
+        d_grid_vec_partial_2D = min(1._dp,max(0._dp, d_grid_vec_partial_2D))
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
     end select

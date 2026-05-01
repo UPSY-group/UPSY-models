@@ -614,6 +614,7 @@ contains
     logical, parameter             :: do_compress = .true.
     integer                        :: res_int
     character(len=16)              :: res_str
+    character(len=1024)            :: title
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -648,7 +649,11 @@ contains
     write(res_str, '(I16)') res_int
     res_str = adjustl(res_str)
 
+    ! Make a title
+    title = 'ISMIP7 output by UFEMISM - ' // trim(field%name) 
+
     ! Add attributes
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'title', trim(title)) 
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', C%ismip_conventions)
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', ismip_grid_output%IS_name)
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_resolution', trim(res_str) // 'm')

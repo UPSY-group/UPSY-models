@@ -62,6 +62,7 @@ def _collect_variables(group, parent_name: str = "") -> List[Tuple[str, object, 
             new_name = var_name
         found.append((original_name, var, new_name))
 
+    # Intentional recursion: NetCDF groups can be nested arbitrarily deep.
     for grp_name, grp in group.groups.items():
         group_path = f"{parent_name}_{grp_name}" if parent_name else grp_name
         found.extend(_collect_variables(grp, group_path))
@@ -125,8 +126,15 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
                     continue
                 dst_var.setncattr(attr_name, src_var.getncattr(attr_name))
 
-            data = np.ma.filled(src[original_name][:], fill_value=0.0)
+            data = src[original_name][:]
             flat = np.asarray(data).reshape(-1)
+
+            # Masked entries should not contribute to checksums; map them to NaN.
+            if np.ma.isMaskedArray(data):
+                mask = np.ma.getmaskarray(data).reshape(-1)
+                if np.any(mask):
+                    flat = flat.astype(np.float64, copy=False)
+                    flat[mask] = np.nan
 
             finite_flat = flat[np.isfinite(flat)]
 
@@ -184,7 +192,9 @@ def reduce_all_netcdfs_in_folder_to_checksum(test_folder: str) -> None:
         raise FileNotFoundError(f'Could not find results folder "{results_dir}"')
 
     results_checksum_dir = os.path.join(test_folder, "results_checksum")
-    os.makedirs(results_checksum_dir, exist_ok=True)
+    if os.path.exists(results_checksum_dir):
+        raise FileExistsError(f'Folder already exists: "{results_checksum_dir}"')
+    os.makedirs(results_checksum_dir)
 
     files = sorted(
         name

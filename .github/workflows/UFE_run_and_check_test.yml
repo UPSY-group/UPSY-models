@@ -10,7 +10,7 @@ on:
 
 jobs:
   run_and_check_test:
-    name: Run and check test
+    name: run
     runs-on: macos-latest
     steps:
 

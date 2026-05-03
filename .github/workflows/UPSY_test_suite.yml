@@ -23,8 +23,9 @@ jobs:
     uses: ./.github/workflows/UPSY_unit_tests.yml
 
   mesh_creation:
-    uses: ./.github/workflows/UPSY_component_test_mesh_creation.yml
-    needs: setup_and_cache_Matlab
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_creation
 
   mesh_focussing:
     uses: ./.github/workflows/UPSY_component_test_mesh_focussing.yml

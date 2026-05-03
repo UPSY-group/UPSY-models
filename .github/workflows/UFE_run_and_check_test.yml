@@ -4,7 +4,7 @@ on:
   workflow_call:
     inputs:
       test_path:
-        description: Path to the integrated test directory
+        description: Path to test directory
         required: true
         type: string
 
@@ -57,7 +57,7 @@ jobs:
     # Run the test and check its results against the reference
     # ========================================================
 
-      - name: Run integrated test
+      - name: Run test
         run: csh ${{ inputs.test_path }}/test_script.csh
 
       - name: Show checksum logfile diff

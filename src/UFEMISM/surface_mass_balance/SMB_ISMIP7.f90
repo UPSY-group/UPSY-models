@@ -652,7 +652,8 @@ contains
 
     ! Read all 12 months individually
     do ti = 1, 12
-      call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d_month, time_to_read = time_from_file( ti))
+      call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d_month, &
+      time_to_read = time_from_file( ti), extrapolate_fillvalues = .true.)
       d( mesh%vi1:mesh%vi2, ti) = d_month( mesh%vi1:mesh%vi2)
     end do
 
@@ -680,7 +681,8 @@ contains
     call read_time_from_file( filename, time_from_file)
     if (size( time_from_file,1) /= 1) call crash('file "' // trim( filename) // '" doesnt have 1 timeframe')
 
-    call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d, time_to_read = time_from_file( 1))
+    call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d, &
+      time_to_read = time_from_file( 1), extrapolate_fillvalues = .true.)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

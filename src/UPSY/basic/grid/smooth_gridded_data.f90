@@ -6,17 +6,24 @@ module smooth_gridded_data
   use grid_types, only: type_grid
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
   use mpi_basic, only: par
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use crash_mod, only: crash
 
   implicit none
 
   private
 
-  public :: smooth_Gaussian_grid
+  public :: smooth_Gaussian_grid, extrapolate_fillvalue_Gaussian_grid
 
   interface smooth_Gaussian_grid
     procedure smooth_Gaussian_grid_2D
     procedure smooth_Gaussian_grid_3D
   end interface smooth_Gaussian_grid
+
+  interface extrapolate_fillvalue_Gaussian_grid
+    procedure extrapolate_fillvalue_Gaussian_grid_2D
+    procedure extrapolate_fillvalue_Gaussian_grid_3D
+  end interface extrapolate_fillvalue_Gaussian_grid
 
 contains
 
@@ -35,6 +42,9 @@ subroutine smooth_Gaussian_grid_2D( grid, d_grid_vec_partial, r)
   real(dp), dimension(:,:), allocatable :: d_grid_tot_smoothed
   real(dp), dimension(:),   allocatable :: f
   integer                               :: i,j,k,ii,jj
+
+  ! Add routine to path
+  call init_routine( routine_name)
 
   ! Number of cells to extend the data by (3 standard deviations is enough to capture the tails of the normal distribution)
   n = ceiling( r / grid%dx) * 3
@@ -83,6 +93,9 @@ subroutine smooth_Gaussian_grid_2D( grid, d_grid_vec_partial, r)
 
   end if
 
+  ! Add routine to path
+  call finalise_routine( routine_name)
+
   ! Distributed smoothed data back from the primary
   call distribute_gridded_data_from_primary( grid, d_grid_vec_partial, d_grid_tot)
 
@@ -103,6 +116,9 @@ subroutine smooth_Gaussian_grid_3D( grid, d_grid_vec_partial, r)
   real(dp), dimension(:,:,:), allocatable :: d_grid_tot_smoothed
   real(dp), dimension(:    ), allocatable :: f
   integer                                 :: i,j,k,ii,jj
+
+  ! Add routine to path
+  call init_routine( routine_name)
 
   ! Number of cells to extend the data by (3 standard deviations is enough to capture the tails of the normal distribution)
   n = ceiling( r / grid%dx) * 3
@@ -151,9 +167,65 @@ subroutine smooth_Gaussian_grid_3D( grid, d_grid_vec_partial, r)
 
   end if
 
+  ! Add routine to path
+  call finalise_routine( routine_name)
+
   ! Distributed smoothed data back from the primary
   call distribute_gridded_data_from_primary( grid, d_grid_vec_partial, d_grid_tot)
 
 end subroutine smooth_Gaussian_grid_3D
+
+subroutine extrapolate_fillvalue_Gaussian_grid_2D( grid, d_grid_vec_partial, sigma, fill_value)
+  ! Replace fillvalues by Gaussian extrapolation (with radius sigma) of the rest of the data
+
+  ! In/output variables:
+  type(type_grid),        intent(in   ) :: grid
+  real(dp), dimension(:), intent(  out) :: d_grid_vec_partial
+  real(dp),               intent(in   ) :: sigma
+  real(dp),               intent(in   ) :: fill_value
+
+  ! Local variables:
+  character(len=*), parameter           :: routine_name = 'extrapolate_fillvalue_Gaussian_grid_2D'
+  real(dp), dimension(:,:), allocatable :: d_grid_vec_partial_3D
+  integer                               :: n
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  allocate( d_grid_vec_partial_3D( grid%n1: grid%n2, 1))
+  do n = grid%n1, grid%n2
+    d_grid_vec_partial_3D( n,1) = d_grid_vec_partial( n)
+  end do
+  call extrapolate_fillvalue_Gaussian_grid_3D( grid, d_grid_vec_partial_3D, sigma, fill_value)
+  do n = grid%n1, grid%n2
+    d_grid_vec_partial( n) = d_grid_vec_partial_3D( n,1)
+  end do
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine extrapolate_fillvalue_Gaussian_grid_2D
+
+subroutine extrapolate_fillvalue_Gaussian_grid_3D( grid, d_grid_vec_partial, sigma, fill_value)
+  ! Replace fillvalues by Gaussian extrapolation (with radius sigma) of the rest of the data
+
+  ! In/output variables:
+  type(type_grid),          intent(in   ) :: grid
+  real(dp), dimension(:,:), intent(  out) :: d_grid_vec_partial
+  real(dp),                 intent(in   ) :: sigma
+  real(dp),                 intent(in   ) :: fill_value
+
+  ! Local variables:
+  character(len=*), parameter :: routine_name = 'extrapolate_fillvalue_Gaussian_grid_3D'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  call crash('whoopsiedaisy')
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine extrapolate_fillvalue_Gaussian_grid_3D
 
 end module smooth_gridded_data

@@ -227,7 +227,6 @@ contains
     call init_routine( routine_name)
 
     ! Open the NetCDF file
-    if (par%primary) WRITE(0,*) '     Opening file to read time...'
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
     ! inquire size of time dimension

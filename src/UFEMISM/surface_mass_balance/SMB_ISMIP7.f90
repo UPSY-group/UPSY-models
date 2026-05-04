@@ -50,7 +50,7 @@ module SMB_ISMIP7
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
+  use netcdf_io_main, only: read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
 
   implicit none
@@ -60,10 +60,10 @@ module SMB_ISMIP7
   public :: type_SMB_model_ISMIP7
 
   type type_SMB_ISMIP7_timeframe
-    real(dp)                                    :: time
-    real(dp), dimension(:), contiguous, pointer :: acabf         => null()
-    real(dp), dimension(:), contiguous, pointer :: acabf_anomaly => null()
-    real(dp), dimension(:), contiguous, pointer :: dacabfdz      => null()
+    real(dp)                                      :: time
+    real(dp), dimension(:,:), contiguous, pointer :: acabf         => null()   !< [kg m^-2 s^-1]      monthly surface mass balance flux
+    real(dp), dimension(:,:), contiguous, pointer :: acabf_anomaly => null()   !< [kg m^-2 s^-1]      monthly surface mass balance flux anomaly
+    real(dp), dimension(:  ), contiguous, pointer :: dacabfdz      => null()   !< [kg m^-2 s^-1 m^-1]         surface mass balance flux gradient
     type(MPI_WIN) :: wacabf, wacabf_anomaly, wdacabfdz
   end type type_SMB_ISMIP7_timeframe
 
@@ -78,9 +78,7 @@ module SMB_ISMIP7
       character(len=1024), dimension(:), allocatable :: filenames_acabf
       character(len=1024), dimension(:), allocatable :: filenames_acabf_anomaly
       character(len=1024), dimension(:), allocatable :: filenames_dacabfdz
-      real(dp),            dimension(:), allocatable :: timestamps_acabf
-      real(dp),            dimension(:), allocatable :: timestamps_acabf_anomaly
-      real(dp),            dimension(:), allocatable :: timestamps_dacabfdz
+      real(dp),            dimension(:), allocatable :: timestamps
 
       ! Timeframes of forcng fields enveloping the current model time
       type(type_SMB_ISMIP7_timeframe) :: timeframe_before
@@ -105,6 +103,8 @@ module SMB_ISMIP7
       procedure, private :: initialise_Hs_baseline
       procedure, private :: initialise_lists_of_files_and_timestamps
       procedure, private :: initialise_list_of_files_and_timestamps
+      procedure, private :: update_timeframes
+      procedure, private :: update_timeframe
 
   end type type_SMB_model_ISMIP7
 
@@ -178,7 +178,7 @@ contains
     call init_routine( routine_name)
 
     ! Retrieve input variables from context object
-    call self%run_SMB_model_ISMIP7( self%mesh, context%ice, self%region_name())
+    call self%run_SMB_model_ISMIP7( self%mesh, context%ice, context%time)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -258,21 +258,21 @@ contains
     call init_routine( routine_name)
 
     call self%create_field( timeframe%acabf, timeframe%wacabf, &
-      self%mesh, Arakawa_grid%a(), &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'acabf_' // trim( name_postfix), &
-      long_name = 'raw SMB', &
+      long_name = 'monthly surface mass balance flux', &
       units     = 'kg m^-2 s^-1')
 
     call self%create_field( timeframe%acabf_anomaly, timeframe%wacabf_anomaly, &
-      self%mesh, Arakawa_grid%a(), &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'acabf_anomaly_' // trim( name_postfix), &
-      long_name = 'raw SMB anomaly', &
+      long_name = 'monthly surface mass balance flux anomaly', &
       units     = 'kg m^-2 s^-1')
 
     call self%create_field( timeframe%dacabfdz, timeframe%wdacabfdz, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'dacabfdz_' // trim( name_postfix), &
-      long_name = 'raw SMB gradient', &
+      long_name = 'monthly surface mass balance flux gradient', &
       units     = 'kg m^-2 s^-1 m^-1')
 
     ! Finalise routine path
@@ -322,8 +322,8 @@ contains
 
     ! Set the timestamps of the two timeframes so that the first time the model is run,
     ! it will automatically read and update them
-    self%timeframe_before = C%start_time_of_run - 2._dp
-    self%timeframe_after  = C%start_time_of_run - 1._dp
+    self%timeframe_before%time = C%start_time_of_run - 2._dp
+    self%timeframe_after%time  = C%start_time_of_run - 1._dp
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -383,9 +383,9 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call self%initialise_list_of_files_and_timestamps( self%filenames_acabf        , self%timestamps_acabf        , 'acabf')
-    call self%initialise_list_of_files_and_timestamps( self%filenames_acabf_anomaly, self%timestamps_acabf_anomaly, 'acabf-anomaly')
-    call self%initialise_list_of_files_and_timestamps( self%filenames_dacabfdz     , self%timestamps_dacabfdz     , 'dacabfdz')
+    call self%initialise_list_of_files_and_timestamps( self%filenames_acabf        , self%timestamps, 'acabf')
+    call self%initialise_list_of_files_and_timestamps( self%filenames_acabf_anomaly, self%timestamps, 'acabf-anomaly')
+    call self%initialise_list_of_files_and_timestamps( self%filenames_dacabfdz     , self%timestamps, 'dacabfdz')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -420,11 +420,17 @@ contains
     call take_only_valid_netcdf_files_from_list( list_of_filenames, filenames, var_name)
     if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')
 
+    ! Read timestamps
     allocate( timestamps( size( filenames,1)))
     do i = 1, size( filenames,1)
       call read_year_from_netcdf_filename( filenames( i), year)
       ! Add half a year, so that we have the timestamp at the middle of the year rather than the start
       timestamps( i) = year + 0.5_dp
+    end do
+
+    ! Append foldername to filenames
+    do i = 1, size( filenames,1)
+      filenames( i) = trim( foldername) // '/' // trim( filenames( i))
     end do
 
     ! Finalise routine path
@@ -501,19 +507,24 @@ contains
 
   end subroutine read_year_from_netcdf_filename
 
-  subroutine run_SMB_model_ISMIP7( self, mesh, ice, region_name)
+  subroutine run_SMB_model_ISMIP7( self, mesh, ice, time)
 
     ! In/output variables:
     class(type_SMB_model_ISMIP7), intent(inout) :: self
     type(type_mesh),              intent(in   ) :: mesh
     type(type_ice_model),         intent(in   ) :: ice
-    character(len=3),             intent(in   ) :: region_name
+    real(dp),                     intent(in   ) :: time
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_SMB_model_ISMIP7'
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Update timeframes if necessary
+    if (time < self%timeframe_before%time .or. time > self%timeframe_after%time) then
+      call self%update_timeframes( mesh, time)
+    end if
 
     ! DENK DROM
     call self%write_to_restart_file( C%output_dir)
@@ -523,6 +534,158 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_SMB_model_ISMIP7
+
+  subroutine update_timeframes( self, mesh, time)
+
+    ! In/output variables:
+    class(type_SMB_model_ISMIP7), intent(inout) :: self
+    type(type_mesh),              intent(in   ) :: mesh
+    real(dp),                     intent(in   ) :: time
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'update_timeframes'
+    real(dp)                    :: forcing_time_min, forcing_time_max
+    integer                     :: ti0, ti1
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    forcing_time_min = minval( self%timestamps)
+    forcing_time_max = maxval( self%timestamps)
+
+    if (time < forcing_time_min) then
+      ! Set forcing equal to the first timeframe
+
+      call self%update_timeframe( mesh, self%timeframe_before, 1)
+      call self%update_timeframe( mesh, self%timeframe_after , 1)
+      self%timeframe_before%time = C%start_time_of_run
+      self%timeframe_after%time  = forcing_time_min
+
+    elseif (time > forcing_time_max) then
+      ! Set forcing equal to the last timeframe
+
+      call self%update_timeframe( mesh, self%timeframe_before, size( self%timestamps))
+      call self%update_timeframe( mesh, self%timeframe_after , size( self%timestamps))
+      self%timeframe_before%time = forcing_time_max
+      self%timeframe_after%time  = C%end_time_of_run
+
+    else
+      ! Read both timeframes
+
+      ti1 = 2
+      do while (self%timestamps( ti1) < time)
+        ti1 = ti1 + 1
+      end do
+      ti0 = ti1 - 1
+
+      call self%update_timeframe( mesh, self%timeframe_before, ti0)
+      call self%update_timeframe( mesh, self%timeframe_after , ti1)
+      self%timeframe_before%time = self%timestamps( ti0)
+      self%timeframe_after%time  = self%timestamps( ti1)
+
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine update_timeframes
+
+  subroutine update_timeframe( self, mesh, timeframe, ti)
+    ! Read data from the ti'th NetCDF files to this timeframe
+
+    ! In/output variables:
+    class(type_SMB_model_ISMIP7),    intent(in   ) :: self
+    type(type_mesh),                 intent(in   ) :: mesh
+    type(type_SMB_ISMIP7_timeframe), intent(inout) :: timeframe
+    integer,                         intent(in   ) :: ti
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'update_timeframe'
+    character(len=:), allocatable :: filename_acabf
+    character(len=:), allocatable :: filename_acabf_anomaly
+    character(len=:), allocatable :: filename_dacabfdz
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    filename_acabf         = self%filenames_acabf        ( ti)
+    filename_acabf_anomaly = self%filenames_acabf_anomaly( ti)
+    filename_dacabfdz      = self%filenames_dacabfdz     ( ti)
+
+    if (par%primary) then
+      write(0,*) '   Reading ISMIP7 SMB forcing data from files:'
+      write(0,*) '    ', UPSY%stru%colour_string( trim( filename_acabf)        , 'light blue')
+      write(0,*) '    ', UPSY%stru%colour_string( trim( filename_acabf_anomaly), 'light blue')
+      write(0,*) '    ', UPSY%stru%colour_string( trim( filename_dacabfdz)     , 'light blue')
+    end if
+
+    call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf        , 'acabf'        , timeframe%acabf)
+    call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf_anomaly, 'acabf-anomaly', timeframe%acabf_anomaly)
+    call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine update_timeframe
+
+  subroutine read_monthly_data_from_ISMIP7_forcing_file( mesh, filename, var_name, d)
+    ! Since these files don't have an UPSY-style month dimension,
+    ! we have to work around this a little bit...
+
+    ! In/output variables:
+    type(type_mesh),          intent(in   ) :: mesh
+    character(len=*),         intent(in   ) :: filename, var_name
+    real(dp), dimension(:,:), intent(  out) :: d
+
+    ! Local variables:
+    character(len=*), parameter            :: routine_name = 'update_timeframe'
+    real(dp), dimension(:), allocatable    :: time_from_file
+    integer                                :: ti
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: d_month
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Read time dimension from file
+    call read_time_from_file( filename, time_from_file)
+    if (size( time_from_file,1) /= 12) call crash('file "' // trim( filename) // '" doesnt have 12 months')
+
+    ! Read all 12 months individually
+    do ti = 1, 12
+      call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d_month, time_to_read = time_from_file( ti))
+      d( mesh%vi1:mesh%vi2, ti) = d_month( mesh%vi1:mesh%vi2)
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine read_monthly_data_from_ISMIP7_forcing_file
+
+  subroutine read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename, var_name, d)
+    ! Even though it's a file with only one frame, it still has a time dimension...
+
+    ! In/output variables:
+    type(type_mesh),        intent(in   ) :: mesh
+    character(len=*),       intent(in   ) :: filename, var_name
+    real(dp), dimension(:), intent(  out) :: d
+
+    ! Local variables:
+    character(len=*), parameter         :: routine_name = 'update_timeframe'
+    real(dp), dimension(:), allocatable :: time_from_file
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Read time dimension from file
+    call read_time_from_file( filename, time_from_file)
+    if (size( time_from_file,1) /= 1) call crash('file "' // trim( filename) // '" doesnt have 1 timeframe')
+
+    call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d, time_to_read = time_from_file( 1))
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine read_annual_mean_data_from_ISMIP7_forcing_file
 
   subroutine remap_SMB_model_ISMIP7( self, mesh_new)
 

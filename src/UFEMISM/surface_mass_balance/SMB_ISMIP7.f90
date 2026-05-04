@@ -49,6 +49,7 @@ module SMB_ISMIP7
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
+  use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
 
   implicit none
@@ -60,8 +61,8 @@ module SMB_ISMIP7
   type, extends(atype_SMB_model) :: type_SMB_model_ISMIP7
 
       ! Main data fields
-      real(dp), dimension(:  ), contiguous, pointer :: SMB_baseline => null()   !< Baseline SMB               [m.i.e./yr]
-      real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline  => null()   !< Baseline surface elevation [m w.r.t. PD sea level]
+      real(dp), dimension(:), contiguous, pointer :: SMB_baseline => null()   !< Baseline annual mean SMB   [m.i.e./yr]
+      real(dp), dimension(:), contiguous, pointer :: Hs_baseline  => null()   !< Baseline surface elevation [m w.r.t. PD sea level]
       type(MPI_WIN) :: wSMB_baseline, wHs_baseline
 
     contains
@@ -129,7 +130,7 @@ contains
     call init_routine( routine_name)
 
     ! Retrieve input variables from context object
-    call self%initialise_SMB_model_ISMIP7( self%mesh, context%ice, self%region_name())
+    call self%initialise_SMB_model_ISMIP7( self%mesh, context%ice, context%refgeo_init, context%refgeo_PD, self%region_name())
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -205,16 +206,19 @@ contains
 
   end subroutine allocate_SMB_model_ISMIP7
 
-  subroutine initialise_SMB_model_ISMIP7( self, mesh, ice, region_name)
+  subroutine initialise_SMB_model_ISMIP7( self, mesh, ice, refgeo_init, refgeo_PD, region_name)
 
     ! In/output variables
-    class(type_SMB_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),              intent(in   ) :: mesh
-    type(type_ice_model),         intent(in   ) :: ice
-    character(len=3),             intent(in   ) :: region_name
+    class(type_SMB_model_ISMIP7),  intent(inout) :: self
+    type(type_mesh),               intent(in   ) :: mesh
+    type(type_ice_model),          intent(in   ) :: ice
+    type(type_reference_geometry), intent(in   ) :: refgeo_init, refgeo_PD
+    character(len=3),              intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_SMB_model_ISMIP7'
+    character(len=*), parameter            :: routine_name = 'initialise_SMB_model_ISMIP7'
+    type(type_reference_geometry), pointer :: refgeo
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: dummy
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -224,8 +228,19 @@ contains
     case default
       call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
     case ('yearly')
+      ! No need to do anything
     case ('fixed')
-      call initialise_SMB_model_ISMIP7_fixed( self, mesh, ice, region_name)
+      call initialise_SMB_baseline_fixed( self, mesh, ice, region_name)
+    end select
+
+    ! Initialise the baseline surface elevation
+    select case (C%SMB_ISMIP7_choice_refgeo)
+    case default
+      call crash('invalid SMB_ISMIP7_choice_refgeo "' // trim( C%SMB_ISMIP7_choice_refgeo) // '"')
+    case ('init')
+      call initialise_Hs_baseline( self, mesh, refgeo_init)
+    case ('PD')
+      call initialise_Hs_baseline( self, mesh, refgeo_PD)
     end select
 
     ! Finalise routine path
@@ -233,7 +248,7 @@ contains
 
   end subroutine initialise_SMB_model_ISMIP7
 
-  subroutine initialise_SMB_model_ISMIP7_yearly( self, mesh, ice, region_name)
+  subroutine initialise_SMB_baseline_fixed( self, mesh, ice, region_name)
 
     ! In/output variables
     class(type_SMB_model_ISMIP7), intent(inout) :: self
@@ -242,38 +257,38 @@ contains
     character(len=3),             intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_SMB_model_ISMIP7_yearly'
+    character(len=*), parameter :: routine_name = 'initialise_SMB_baseline_fixed'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call crash('whoopsiedaisy')
+    call read_field_from_file_2D( trim( C%SMB_ISMIP7_filename_SMB_baseline_fixed), 'SMB||surface_mass_balance', &
+      mesh, C%output_dir, self%SMB_baseline)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_ISMIP7_yearly
+  end subroutine initialise_SMB_baseline_fixed
 
-  subroutine initialise_SMB_model_ISMIP7_fixed( self, mesh, ice, region_name)
+  subroutine initialise_Hs_baseline( self, mesh, refgeo)
 
     ! In/output variables
-    class(type_SMB_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),              intent(in   ) :: mesh
-    type(type_ice_model),         intent(in   ) :: ice
-    character(len=3),             intent(in   ) :: region_name
+    class(type_SMB_model_ISMIP7),  intent(inout) :: self
+    type(type_mesh),               intent(in   ) :: mesh
+    type(type_reference_geometry), intent(in   ) :: refgeo
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_SMB_model_ISMIP7_fixed'
+    character(len=*), parameter :: routine_name = 'initialise_Hs_baseline'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call crash('whoopsiedaisy')
+    self%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo%Hs( mesh%vi1: mesh%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_ISMIP7_fixed
+  end subroutine initialise_Hs_baseline
 
   subroutine run_SMB_model_ISMIP7( self, mesh, ice, region_name)
 
@@ -289,6 +304,9 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+
+    ! DENK DROM
+    call self%write_to_restart_file( C%output_dir)
     call crash('whoopsiedaisy')
 
     ! Remove routine from call stack

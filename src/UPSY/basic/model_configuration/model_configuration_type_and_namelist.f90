@@ -800,6 +800,9 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot_config    = ''                               ! File containing the ocean snapshot (e.g. World Ocean Atlas)
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies_config   = ''                               ! File containing the ocean anomalies (e.g. from a GCM projection)
 
+    ! Settings for the ISMIP ocean model
+    character(len=1024) :: foldername_ocean_ismip_config                = ''
+
   ! == Surface mass balance
   ! =======================
 
@@ -2016,6 +2019,9 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies
 
+    ! Settings for the ISMIP ocean model
+    character(len=1024) :: foldername_ocean_ismip
+
   ! == Surface mass balance
   ! =======================
 
@@ -2990,6 +2996,7 @@ contains
       filename_ocean_GI_ANT_config                                , &
       ocean_snp_p_anml_filename_snapshot_config                   , &
       ocean_snp_p_anml_filename_anomalies_config                  , &
+      foldername_ocean_ismip_config                               , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -4093,6 +4100,9 @@ contains
     ! Settings for the snapshot_plus_anomalies ocean model
     C%ocean_snp_p_anml_filename_snapshot                     = ocean_snp_p_anml_filename_snapshot_config
     C%ocean_snp_p_anml_filename_anomalies                    = ocean_snp_p_anml_filename_anomalies_config
+
+    ! Settings for the ISMIP ocean model
+    C%foldername_ocean_ismip                                 = foldername_ocean_ismip_config
 
     ! == Surface mass balance
     ! =======================

@@ -98,12 +98,14 @@ MODULE ocean_model_types
     ! for thetao and so, of varying lengths
 
     ! Filenames
-    character(len=1024), dimension(:), allocatable :: T_filenames     !           Filenames containing temperatures
-    character(len=1024), dimension(:), allocatable :: S_filenames     !           Filenames containing salinities
+    character(len=1024), dimension(:), allocatable :: filenames_T     !           Filenames containing temperatures
+    character(len=1024), dimension(:), allocatable :: filenames_S     !           Filenames containing salinities
 
-    ! Time info
-    real(dp), dimension(:),   allocatable :: time_min                 ! [days]    Start time of each file
-    real(dp), dimension(:),   allocatable :: time_max                 ! [days]    End time of each file
+    ! Time info of all filenames
+    real(dp), dimension(:,:), allocatable :: time_bnds_T              ! [days]    Time bounds of each T file
+    real(dp), dimension(:,:), allocatable :: time_bnds_S              ! [days]    Time bounds of each S file
+
+    ! Time info of currently opened filename
     real(dp), dimension(:),   allocatable :: time_file                ! [days]    Time array of current file
     real(dp), dimension(:,:), allocatable :: time_bnds_file           ! [days]    Time bounds of current file
 

@@ -421,6 +421,7 @@ contains
         allocate( dTdzeta( 1:region%mesh%nz))
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%mask_grounded_ice( vi)) then
+            ! TODO replace matrix with first-order once available
             call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
             d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
           else
@@ -437,6 +438,7 @@ contains
         allocate( dTdzeta( 1:region%mesh%nz))
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%mask_floating_ice( vi)) then
+            ! TODO replace matrix with first-order once available
             call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
             d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
           else

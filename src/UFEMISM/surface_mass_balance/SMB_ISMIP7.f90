@@ -51,6 +51,7 @@ module SMB_ISMIP7
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
+  use basic_model_utilities, only: list_files_in_folder
 
   implicit none
 
@@ -65,6 +66,14 @@ module SMB_ISMIP7
       real(dp), dimension(:), contiguous, pointer :: Hs_baseline  => null()   !< Baseline surface elevation [m w.r.t. PD sea level]
       type(MPI_WIN) :: wSMB_baseline, wHs_baseline
 
+      ! List of forcing files and their timestamps
+      character(len=1024), dimension(:), allocatable :: filenames_acabf
+      character(len=1024), dimension(:), allocatable :: filenames_acabf_anomaly
+      character(len=1024), dimension(:), allocatable :: filenames_dacabfdz
+      real(dp),            dimension(:), allocatable :: timestamps_acabf
+      real(dp),            dimension(:), allocatable :: timestamps_acabf_anomaly
+      real(dp),            dimension(:), allocatable :: timestamps_dacabfdz
+
     contains
 
       procedure, public :: allocate_SMB_model   => allocate_SMB_model_ISMIP7_abs
@@ -77,6 +86,11 @@ module SMB_ISMIP7
       procedure, private :: initialise_SMB_model_ISMIP7
       procedure, private :: run_SMB_model_ISMIP7
       procedure, private :: remap_SMB_model_ISMIP7
+
+      procedure, private :: initialise_SMB_baseline_fixed
+      procedure, private :: initialise_Hs_baseline
+      procedure, private :: initialise_lists_of_files_and_timestamps
+      procedure, private :: initialise_list_of_files_and_timestamps
 
   end type type_SMB_model_ISMIP7
 
@@ -230,7 +244,7 @@ contains
     case ('yearly')
       ! No need to do anything
     case ('fixed')
-      call initialise_SMB_baseline_fixed( self, mesh, ice, region_name)
+      call self%initialise_SMB_baseline_fixed( mesh, ice, region_name)
     end select
 
     ! Initialise the baseline surface elevation
@@ -238,10 +252,13 @@ contains
     case default
       call crash('invalid SMB_ISMIP7_choice_refgeo "' // trim( C%SMB_ISMIP7_choice_refgeo) // '"')
     case ('init')
-      call initialise_Hs_baseline( self, mesh, refgeo_init)
+      call self%initialise_Hs_baseline( mesh, refgeo_init)
     case ('PD')
-      call initialise_Hs_baseline( self, mesh, refgeo_PD)
+      call self%initialise_Hs_baseline( mesh, refgeo_PD)
     end select
+
+    ! Initialise lists of forcing files and their timestamps
+    call self%initialise_lists_of_files_and_timestamps
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -290,6 +307,135 @@ contains
 
   end subroutine initialise_Hs_baseline
 
+  subroutine initialise_lists_of_files_and_timestamps( self)
+
+    ! In/output variables
+    class(type_SMB_model_ISMIP7), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_lists_of_files_and_timestamps'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%initialise_list_of_files_and_timestamps( self%filenames_acabf        , self%timestamps_acabf        , 'acabf')
+    call self%initialise_list_of_files_and_timestamps( self%filenames_acabf_anomaly, self%timestamps_acabf_anomaly, 'acabf-anomaly')
+    call self%initialise_list_of_files_and_timestamps( self%filenames_dacabfdz     , self%timestamps_dacabfdz     , 'dacabfdz')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_lists_of_files_and_timestamps
+
+  subroutine initialise_list_of_files_and_timestamps( self, filenames, timestamps, var_name)
+
+    ! In/output variables
+    class(type_SMB_model_ISMIP7),                   intent(inout) :: self
+    character(len=1024), dimension(:), allocatable, intent(inout) :: filenames
+    real(dp),            dimension(:), allocatable, intent(inout) :: timestamps
+    character(len=*),                               intent(in   ) :: var_name
+
+    ! Local variables:
+    character(len=*), parameter                    :: routine_name = 'initialise_list_of_files_and_timestamps'
+    character(len=:), allocatable                  :: foldername
+    character(len=1024), dimension(:), allocatable :: list_of_filenames
+    integer                                        :: i
+    real(dp)                                       :: year
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (allocated( filenames )) deallocate( filenames)
+    if (allocated( timestamps)) deallocate( timestamps)
+
+    ! Construct foldernames
+    foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // var_name // '/' // trim( C%SMB_ISMIP7_forcing_version)
+
+    call list_files_in_folder( foldername, list_of_filenames)
+    call take_only_valid_netcdf_files_from_list( list_of_filenames, filenames, var_name)
+    if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')
+
+    allocate( timestamps( size( filenames,1)))
+    do i = 1, size( filenames,1)
+      call read_year_from_netcdf_filename( filenames( i), year)
+      ! Add half a year, so that we have the timestamp at the middle of the year rather than the start
+      timestamps( i) = year + 0.5_dp
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_list_of_files_and_timestamps
+
+  subroutine take_only_valid_netcdf_files_from_list( filenames_all, filenames, var_name)
+
+    ! In/output variables
+    character(len=1024), dimension(:),              intent(in   ) :: filenames_all
+    character(len=1024), dimension(:), allocatable, intent(inout) :: filenames
+    character(len=*),                               intent(in   ) :: var_name
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'take_only_valid_netcdf_files_from_list'
+    character(len=:), allocatable :: filename
+    integer                       :: i, n_valid_netcdf_files, j
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    n_valid_netcdf_files = 0
+    do i = 1, size( filenames_all)
+      filename = filenames_all( i)
+      if (UPSY%stru%startswith( trim( filename), trim( var_name), case_sensitive = .false.)) then
+        n_valid_netcdf_files = n_valid_netcdf_files + 1
+      end if
+    end do
+
+    allocate( filenames( n_valid_netcdf_files))
+
+    j = 0
+    do i = 1, size( filenames_all)
+      filename = filenames_all( i)
+      if (UPSY%stru%startswith( trim( filename), trim( var_name), case_sensitive = .false.)) then
+        j = j + 1
+        filenames( j) = filename
+      end if
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine take_only_valid_netcdf_files_from_list
+
+  subroutine read_year_from_netcdf_filename( filename, year)
+    ! Rather than trying to read from the file's time dimension, which would mean
+    ! dealing with whatever calendar it uses, just read it from the filename
+
+    ! In/output variables
+    character(len=*), intent(in   ) :: filename
+    real(dp),         intent(  out) :: year
+
+    ! Local variables
+    character(len=*), parameter :: routine_name = 'read_year_from_netcdf_filename'
+    character(len=4) :: year_str
+    integer          :: year_int, stat
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Since the files are called e.g. 'acabf_AIS_CESM2-WACCM_ssp585_SDBN1-8000m_v2_2015.nc',
+    ! just assumed that the last few characters spell out the year
+
+    year_str = filename( len_trim( filename) - 6 : len_trim( filename) - 3)
+    year_int = UPSY%stru%str2int( year_str, stat)
+    if (stat /= 0) call crash('could not read year from filename "' // trim( filename) // '"')
+
+    year = real( year_int,dp)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_year_from_netcdf_filename
+
   subroutine run_SMB_model_ISMIP7( self, mesh, ice, region_name)
 
     ! In/output variables:
@@ -303,7 +449,6 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
 
     ! DENK DROM
     call self%write_to_restart_file( C%output_dir)

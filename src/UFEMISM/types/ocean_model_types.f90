@@ -93,6 +93,30 @@ MODULE ocean_model_types
 
   end type type_ocean_model_snapshot_plus_anomalies
 
+  type type_ocean_model_ismip
+    ! Model to read in ISMIP7-style forcing fields with separate files
+    ! for thetao and so, of varying lengths
+
+    ! Filenames
+    character(len=1024), dimension(:), allocatable :: T_filenames     !           Filenames containing temperatures
+    character(len=1024), dimension(:), allocatable :: S_filenames     !           Filenames containing salinities
+
+    ! Time info
+    real(dp), dimension(:),   allocatable :: time_min                 ! [days]    Start time of each file
+    real(dp), dimension(:),   allocatable :: time_max                 ! [days]    End time of each file
+    real(dp), dimension(:),   allocatable :: time_file                ! [days]    Time array of current file
+    real(dp), dimension(:,:), allocatable :: time_bnds_file           ! [days]    Time bounds of current file
+
+    ! Previous time
+    real(dp), dimension(:,:), allocatable :: T_t0                     ! [deg C]   Temperature at timestep before current time
+    real(dp), dimension(:,:), allocatable :: S_t0                     ! [PSU]     Salinity
+
+    ! Next time
+    real(dp), dimension(:,:), allocatable :: T_t1                     ! [deg C]   Temperature at timestep after current time
+    real(dp), dimension(:,:), allocatable :: S_t1                     ! [PSU]     Salinity
+
+  end type type_ocean_model_ismip
+
   TYPE type_ocean_model
     ! The ocean model data structure.
 
@@ -110,6 +134,7 @@ MODULE ocean_model_types
     TYPE(type_ocean_model_deltaT)                  :: deltaT
     type(type_ocean_model_snapshot_nudge2D)        :: snapshot_nudge2D
     type(type_ocean_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
+    type(type_ocean_model_ismip)                   :: ismip
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

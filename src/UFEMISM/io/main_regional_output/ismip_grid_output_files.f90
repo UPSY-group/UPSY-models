@@ -80,7 +80,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'accumulate_single_ISMIP_flux_field'
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
     integer                        :: vi
 
@@ -91,12 +90,10 @@ contains
       case default
         call crash('invalid ISMIP field name for accumulation "' // trim( field%name) // '"')
       case ('acabf')
-        ! For hybrid memory reasons, make a local copy (is this necessary?)
-        SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%Hi( vi) > 0) then
             ! Accumulate values only where ice is present
-            field%accum( vi) = field%accum( vi) + SMB_loc( vi) * ice_density / sec_per_year * deltat
+            field%accum( vi) = field%accum( vi) + region%SMB%SMB( vi) * ice_density / sec_per_year * deltat
           end if
         end do
       case ('libmassbfgr')

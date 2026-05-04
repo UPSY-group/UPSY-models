@@ -665,14 +665,14 @@ contains
 
     ! Add attributes
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'title', trim(title)) 
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', C%ismip_conventions)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', ismip_grid_output%IS_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', trim(C%ismip_conventions))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', trim(ismip_grid_output%IS_name))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_resolution', trim(res_str) // 'm')
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'group', C%ismip_group_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'model', C%ismip_model_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'scenario', C%ismip_scenario_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_name', C%ismip_contact_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_email', C%ismip_contact_email)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'group', trim(C%ismip_group_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'model', trim(C%ismip_model_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'scenario', trim(C%ismip_scenario_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_name', trim(C%ismip_contact_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_email', trim(C%ismip_contact_email))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'crs', trim(ismip_grid_output%crs))
 
     ! Close the file

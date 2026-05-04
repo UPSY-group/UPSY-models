@@ -59,6 +59,14 @@ module SMB_ISMIP7
 
   public :: type_SMB_model_ISMIP7
 
+  type type_SMB_ISMIP7_timeframe
+    real(dp)                                    :: time
+    real(dp), dimension(:), contiguous, pointer :: acabf         => null()
+    real(dp), dimension(:), contiguous, pointer :: acabf_anomaly => null()
+    real(dp), dimension(:), contiguous, pointer :: dacabfdz      => null()
+    type(MPI_WIN) :: wacabf, wacabf_anomaly, wdacabfdz
+  end type type_SMB_ISMIP7_timeframe
+
   type, extends(atype_SMB_model) :: type_SMB_model_ISMIP7
 
       ! Main data fields
@@ -74,6 +82,11 @@ module SMB_ISMIP7
       real(dp),            dimension(:), allocatable :: timestamps_acabf_anomaly
       real(dp),            dimension(:), allocatable :: timestamps_dacabfdz
 
+      ! Timeframes of forcng fields enveloping the current model time
+      type(type_SMB_ISMIP7_timeframe) :: timeframe_before
+      type(type_SMB_ISMIP7_timeframe) :: timeframe_after
+      type(type_SMB_ISMIP7_timeframe) :: timeframe_interp
+
     contains
 
       procedure, public :: allocate_SMB_model   => allocate_SMB_model_ISMIP7_abs
@@ -87,6 +100,7 @@ module SMB_ISMIP7
       procedure, private :: run_SMB_model_ISMIP7
       procedure, private :: remap_SMB_model_ISMIP7
 
+      procedure, private :: allocate_SMB_model_ISMIP7_timeframe
       procedure, private :: initialise_SMB_baseline_fixed
       procedure, private :: initialise_Hs_baseline
       procedure, private :: initialise_lists_of_files_and_timestamps
@@ -203,6 +217,9 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Baseline
+    ! ========
+
     call self%create_field( self%SMB_baseline, self%wSMB_baseline, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'SMB_baseline', &
@@ -215,10 +232,53 @@ contains
       long_name = 'Baseline surface elevation', &
       units     = 'm')
 
+    ! Timeframes
+    ! ==========
+
+    call self%allocate_SMB_model_ISMIP7_timeframe( self%timeframe_before, 'before')
+    call self%allocate_SMB_model_ISMIP7_timeframe( self%timeframe_after , 'after')
+    call self%allocate_SMB_model_ISMIP7_timeframe( self%timeframe_interp, 'interp')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine allocate_SMB_model_ISMIP7
+
+  subroutine allocate_SMB_model_ISMIP7_timeframe( self, timeframe, name_postfix)
+
+    ! In/output variables
+    class(type_SMB_model_ISMIP7),    intent(inout) :: self
+    type(type_SMB_ISMIP7_timeframe), intent(inout) :: timeframe
+    character(len=*),                intent(in   ) :: name_postfix
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'allocate_SMB_model_ISMIP7_timeframe'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call self%create_field( timeframe%acabf, timeframe%wacabf, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'acabf_' // trim( name_postfix), &
+      long_name = 'raw SMB', &
+      units     = 'kg m^-2 s^-1')
+
+    call self%create_field( timeframe%acabf_anomaly, timeframe%wacabf_anomaly, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'acabf_anomaly_' // trim( name_postfix), &
+      long_name = 'raw SMB anomaly', &
+      units     = 'kg m^-2 s^-1')
+
+    call self%create_field( timeframe%dacabfdz, timeframe%wdacabfdz, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'dacabfdz_' // trim( name_postfix), &
+      long_name = 'raw SMB gradient', &
+      units     = 'kg m^-2 s^-1 m^-1')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_SMB_model_ISMIP7_timeframe
 
   subroutine initialise_SMB_model_ISMIP7( self, mesh, ice, refgeo_init, refgeo_PD, region_name)
 
@@ -259,6 +319,11 @@ contains
 
     ! Initialise lists of forcing files and their timestamps
     call self%initialise_lists_of_files_and_timestamps
+
+    ! Set the timestamps of the two timeframes so that the first time the model is run,
+    ! it will automatically read and update them
+    self%timeframe_before = C%start_time_of_run - 2._dp
+    self%timeframe_after  = C%start_time_of_run - 1._dp
 
     ! Finalise routine path
     call finalise_routine( routine_name)

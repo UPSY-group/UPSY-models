@@ -52,6 +52,7 @@ module SMB_ISMIP7
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
+  use parameters, only: sec_per_year, ice_density
 
   implicit none
 
@@ -61,17 +62,17 @@ module SMB_ISMIP7
 
   type type_SMB_ISMIP7_timeframe
     real(dp)                                      :: time
-    real(dp), dimension(:,:), contiguous, pointer :: acabf         => null()   !< [kg m^-2 s^-1]      monthly surface mass balance flux
-    real(dp), dimension(:,:), contiguous, pointer :: acabf_anomaly => null()   !< [kg m^-2 s^-1]      monthly surface mass balance flux anomaly
-    real(dp), dimension(:  ), contiguous, pointer :: dacabfdz      => null()   !< [kg m^-2 s^-1 m^-1]         surface mass balance flux gradient
+    real(dp), dimension(:,:), contiguous, pointer :: acabf         => null()   !< [m yr^-1]      monthly surface mass balance flux          (scaled from SI units to ice model units upon reading)
+    real(dp), dimension(:,:), contiguous, pointer :: acabf_anomaly => null()   !< [m yr^-1]      monthly surface mass balance flux anomaly  (scaled from SI units to ice model units upon reading)
+    real(dp), dimension(:  ), contiguous, pointer :: dacabfdz      => null()   !< [m yr^-1 m^-1]         surface mass balance flux gradient (scaled from SI units to ice model units upon reading)
     type(MPI_WIN) :: wacabf, wacabf_anomaly, wdacabfdz
   end type type_SMB_ISMIP7_timeframe
 
   type, extends(atype_SMB_model) :: type_SMB_model_ISMIP7
 
-      ! Main data fields
-      real(dp), dimension(:), contiguous, pointer :: SMB_baseline => null()   !< Baseline annual mean SMB   [m.i.e./yr]
-      real(dp), dimension(:), contiguous, pointer :: Hs_baseline  => null()   !< Baseline surface elevation [m w.r.t. PD sea level]
+      ! Baseline SMB and surface elevation
+      real(dp), dimension(:), contiguous, pointer :: SMB_baseline => null()   !< [m.i.e./yr]             baseline annual mean SMB
+      real(dp), dimension(:), contiguous, pointer :: Hs_baseline  => null()   !< [m w.r.t. PD sea level] baseline surface elevation
       type(MPI_WIN) :: wSMB_baseline, wHs_baseline
 
       ! List of forcing files and their timestamps
@@ -84,6 +85,15 @@ module SMB_ISMIP7
       type(type_SMB_ISMIP7_timeframe) :: timeframe_before
       type(type_SMB_ISMIP7_timeframe) :: timeframe_after
       type(type_SMB_ISMIP7_timeframe) :: timeframe_interp
+
+      ! Elevation-induced SMB change
+      real(dp), dimension(:), contiguous, pointer :: delta_z    => null()   !< [m]       surface elevation change w.r.t. baseline
+      real(dp), dimension(:), contiguous, pointer :: delta_SMB  => null()   !< [m yr^-1] elevation-induced change in SMB w.r.t. baseline
+      type(MPI_WIN) :: wdelta_z, wdelta_SMB
+
+      ! Monthly SMB
+      real(dp), dimension(:,:), contiguous, pointer :: SMB_monthly => null()   !< [m yr^-1] monthly surface mass balance
+      type(MPI_WIN) :: wSMB_monthly
 
     contains
 
@@ -239,6 +249,30 @@ contains
     call self%allocate_SMB_model_ISMIP7_timeframe( self%timeframe_after , 'after')
     call self%allocate_SMB_model_ISMIP7_timeframe( self%timeframe_interp, 'interp')
 
+    ! Elevation-induced SMB change
+    ! ============================
+
+    call self%create_field( self%delta_z, self%wdelta_z, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'delta_z', &
+      long_name = 'Surface elevation change w.r.t. baseline', &
+      units     = 'm')
+
+    call self%create_field( self%delta_SMB, self%wdelta_SMB, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'delta_SMB', &
+      long_name = 'elevation-induced change in SMB w.r.t. baseline', &
+      units     = 'm yr^-1')
+
+    ! Monthly SMB
+    ! ===========
+
+    call self%create_field( self%SMB_monthly, self%wSMB_monthly, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'SMB_monthly', &
+      long_name = 'monthly surface mass balance', &
+      units     = 'm yr^-1')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -261,19 +295,19 @@ contains
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'acabf_' // trim( name_postfix), &
       long_name = 'monthly surface mass balance flux', &
-      units     = 'kg m^-2 s^-1')
+      units     = 'm yr^-1')
 
     call self%create_field( timeframe%acabf_anomaly, timeframe%wacabf_anomaly, &
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'acabf_anomaly_' // trim( name_postfix), &
       long_name = 'monthly surface mass balance flux anomaly', &
-      units     = 'kg m^-2 s^-1')
+      units     = 'm yr^-1')
 
     call self%create_field( timeframe%dacabfdz, timeframe%wdacabfdz, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'dacabfdz_' // trim( name_postfix), &
       long_name = 'monthly surface mass balance flux gradient', &
-      units     = 'kg m^-2 s^-1 m^-1')
+      units     = 'm yr^-1 m^-1')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -517,6 +551,8 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_SMB_model_ISMIP7'
+    real(dp)                    :: w_before, w_after, delta_z
+    integer                     :: vi, mi
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -526,9 +562,56 @@ contains
       call self%update_timeframes( mesh, time)
     end if
 
-    ! DENK DROM
-    call self%write_to_restart_file( C%output_dir)
-    call crash('whoopsiedaisy')
+    ! Interpolate timeframes
+    w_before = (self%timeframe_after%time - time) / (self%timeframe_after%time - self%timeframe_before%time)
+    w_after  = 1._dp - w_before
+
+    do vi = mesh%vi1, mesh%vi2
+      self%timeframe_interp%acabf( vi,:) = &
+        w_before * self%timeframe_before%acabf( vi,:) + &
+        w_after  * self%timeframe_after%acabf ( vi,:)
+
+      self%timeframe_interp%acabf_anomaly( vi,:) = &
+        w_before * self%timeframe_before%acabf_anomaly( vi,:) + &
+        w_after  * self%timeframe_after%acabf_anomaly ( vi,:)
+
+      self%timeframe_interp%dacabfdz( vi) = &
+        w_before * self%timeframe_before%dacabfdz( vi) + &
+        w_after  * self%timeframe_after%dacabfdz ( vi)
+    end do
+
+    ! Calculate elevation-based SMB correction
+    do vi = mesh%vi1, mesh%vi2
+      self%delta_z( vi) = ice%Hs( vi) - self%Hs_baseline( vi)
+      self%delta_SMB( vi) = self%delta_z( vi) * self%timeframe_interp%dacabfdz( vi)
+    end do
+
+    ! Calculate monthly SMB
+    select case (C%SMB_ISMIP7_choice_SMB_baseline)
+    case default
+      call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
+    case ('yearly')
+      do vi = mesh%vi1, mesh%vi2
+        do mi = 1, 12
+          self%SMB_monthly( vi,mi) = self%timeframe_interp%acabf( vi,mi) + self%delta_SMB( vi)
+        end do
+      end do
+    case ('fixed')
+      do vi = mesh%vi1, mesh%vi2
+        do mi = 1, 12
+          self%SMB_monthly( vi,mi) = self%SMB_baseline( vi) + self%timeframe_interp%acabf_anomaly( vi,mi) + self%delta_SMB( vi)
+        end do
+      end do
+    end select
+
+    ! Calculate applied SMB
+    do vi = mesh%vi1, mesh%vi2
+      self%SMB( vi) = sum( self%SMB_monthly( vi,:)) / 12._dp
+    end do
+
+    ! ! DENK DROM
+    ! call self%write_to_restart_file( C%output_dir)
+    ! call crash('whoopsiedaisy')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -622,6 +705,11 @@ contains
     call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf        , 'acabf'        , timeframe%acabf)
     call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf_anomaly, 'acabf-anomaly', timeframe%acabf_anomaly)
     call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+
+    ! Convert from SI units (kg m^-2 s^-1) to ice model units (m yr^-1)
+    timeframe%acabf        ( mesh%vi1: mesh%vi2,:) = timeframe%acabf        ( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
+    timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) = timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
+    timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) = timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) * sec_per_year / ice_density
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

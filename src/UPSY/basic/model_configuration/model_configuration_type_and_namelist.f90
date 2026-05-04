@@ -882,6 +882,10 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB_config  = ''                               ! File containing the SMB snapshot (e.g. from a RACMO historical simulation)
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies_config     = ''                               ! File containing the SMB+T2m anomalies (e.g. from a GCM projection)
 
+    ! Settings for the ISMIP7 SMB model
+    character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline_config        = ''                               ! How to define the baseline SMB for the anomalies: 'yearly' (i.e. use the provided yearly acabf fields) or 'fixed' (i.e. use a separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation)
+    character(len=1024) :: SMB_ISMIP7_choice_refgeo_config              = ''                               ! Which reference geometry to use as the baseline for calculating delta_SMB = dSMB/dz * delta_s: 'init', 'PD'
+
   ! == Basal mass balance
   ! =====================
 
@@ -2085,6 +2089,10 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies
 
+    ! Settings for the ISMIP7 SMB model
+    character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline
+    character(len=1024) :: SMB_ISMIP7_choice_refgeo
+
   ! == Basal mass balance
   ! =====================
 
@@ -3019,6 +3027,8 @@ contains
       SMB_snp_p_anml_filename_snapshot_T2m_config                 , &
       SMB_snp_p_anml_filename_snapshot_SMB_config                 , &
       SMB_snp_p_anml_filename_anomalies_config                    , &
+      SMB_ISMIP7_choice_SMB_baseline_config                       , &
+      SMB_ISMIP7_choice_refgeo_config                             , &
       do_asynchronous_BMB_config                                  , &
       dt_BMB_config                                               , &
       dt_BMB_reinit_config                                        , &
@@ -3731,8 +3741,8 @@ contains
     ! ==================
 
     ! Time step
-    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config             
-    C%dt_basal_hydro                                         = dt_basal_hydro_config                   
+    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config
+    C%dt_basal_hydro                                         = dt_basal_hydro_config
 
     ! Basal hydrology
     C%choice_basal_hydrology_model                           = choice_basal_hydrology_model_config
@@ -4138,6 +4148,10 @@ contains
     C%SMB_snp_p_anml_filename_snapshot_T2m                   = SMB_snp_p_anml_filename_snapshot_T2m_config
     C%SMB_snp_p_anml_filename_snapshot_SMB                   = SMB_snp_p_anml_filename_snapshot_SMB_config
     C%SMB_snp_p_anml_filename_anomalies                      = SMB_snp_p_anml_filename_anomalies_config
+
+    ! Settings for the ISMIP7 SMB model
+    C%SMB_ISMIP7_choice_SMB_baseline                         = SMB_ISMIP7_choice_SMB_baseline_config
+    C%SMB_ISMIP7_choice_refgeo                               = SMB_ISMIP7_choice_refgeo_config
 
     ! == Basal mass balance
     ! =====================

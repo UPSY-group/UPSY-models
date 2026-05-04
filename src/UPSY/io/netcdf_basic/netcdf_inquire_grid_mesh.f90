@@ -11,7 +11,8 @@ module netcdf_inquire_grid_mesh
 
   private
 
-  public :: inquire_xy_grid, inquire_lonlat_grid, inquire_lat_grid, inquire_mesh
+  public :: inquire_xy_grid, inquire_lonlat_grid, inquire_lat_grid, inquire_mesh, &
+    inquire_depth, inquire_height
 
 contains
 
@@ -197,5 +198,79 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine inquire_mesh
+
+  subroutine inquire_depth( filename, has_depth)
+    !< Inquire if a NetCDF file contains the dimensions and variables
+    !< describing depth.
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    logical,          intent(  out) :: has_depth
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'inquire_depth'
+    integer                        :: ncid
+    integer                        :: id_dim_depth
+    integer                        :: id_var_depth
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_reading( filename, ncid)
+
+    ! Look for x and y dimensions and variables
+    call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth)
+    call inquire_var_multopt( filename, ncid, field_name_options_depth, id_var_depth)
+
+    ! Check if everything is there
+    has_depth = (&
+      id_dim_depth /= -1 .and. &
+      id_var_depth /= -1)
+
+    ! Close the NetCDF file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine inquire_depth
+
+  subroutine inquire_height( filename, has_height)
+    !< Inquire if a NetCDF file contains the dimensions and variables
+    !< describing height.
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    logical,          intent(  out) :: has_height
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'inquire_height'
+    integer                        :: ncid
+    integer                        :: id_dim_height
+    integer                        :: id_var_height
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_reading( filename, ncid)
+
+    ! Look for x and y dimensions and variables
+    call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim_height)
+    call inquire_var_multopt( filename, ncid, field_name_options_height, id_var_height)
+
+    ! Check if everything is there
+    has_height = (&
+      id_dim_height /= -1 .and. &
+      id_var_height /= -1)
+
+    ! Close the NetCDF file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine inquire_height
 
 end module netcdf_inquire_grid_mesh

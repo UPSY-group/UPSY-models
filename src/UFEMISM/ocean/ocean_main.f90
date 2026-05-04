@@ -232,7 +232,7 @@ CONTAINS
     select case(choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies', 'ismip')
       ! No need to do anything
     case( 'realistic')
       call write_to_restart_file_ocean_model_region( mesh, ocean, region_name, time)
@@ -320,7 +320,7 @@ CONTAINS
     select case(choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies', 'ismip')
       ! No need to do anything
     case( 'realistic')
       call create_restart_file_ocean_model_region( mesh, ocean, region_name)

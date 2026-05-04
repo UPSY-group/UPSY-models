@@ -12,9 +12,6 @@ on:
 
 jobs:
 
-  setup_and_cache_Matlab:
-    uses: ./.github/workflows/setup_and_cache_Matlab.yml
-
   # Run the individual tests in parallel as separate workflows
   compile_UPSY:
     uses: ./.github/workflows/UPSY_compiling.yml
@@ -23,22 +20,26 @@ jobs:
     uses: ./.github/workflows/UPSY_unit_tests.yml
 
   mesh_creation:
-    uses: ./.github/workflows/UPSY_component_test_mesh_creation.yml
-    needs: setup_and_cache_Matlab
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_creation
 
   mesh_focussing:
-    uses: ./.github/workflows/UPSY_component_test_mesh_focussing.yml
-    needs: setup_and_cache_Matlab
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_focussing
 
   mesh_discretisation:
-    uses: ./.github/workflows/UPSY_component_test_mesh_discretisation.yml
-    needs: setup_and_cache_Matlab
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_discretisation
 
   mesh_remapping_mesh_grid:
-    uses: ./.github/workflows/UPSY_component_test_mesh_remapping_mesh_grid.yml
-    needs: setup_and_cache_Matlab
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_grid
 
   mesh_remapping_mesh_mesh:
-    uses: ./.github/workflows/UPSY_component_test_mesh_remapping_mesh_mesh.yml
-    needs: setup_and_cache_Matlab
-
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh

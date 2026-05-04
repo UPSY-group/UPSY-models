@@ -38,8 +38,12 @@ contains
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'accumulate_ISMIP_flux_fields'
-    real( dp)                      :: deltat     ! 
+    character(len=1024), parameter                       :: routine_name = 'accumulate_ISMIP_flux_fields'
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
+    logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
+    real( dp)                                            :: deltat 
+    integer                                              :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -50,6 +54,21 @@ contains
       return
     end if
 
+    ! Compute the calving flux
+    call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
+
+    ! Copy SMB for hybrid memory reasons
+    SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
+
+    ! Determine the mask where ice is present
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (region%ice%Hi( vi) > 0._dp) then
+        mask_ice( vi) = .true.
+      else
+        mask_ice( vi) = .false.
+      end if
+    end do
+
     ! Get delta t since last current time
     deltat = region%time - region%ismip_grid_output%t_curr
 
@@ -57,10 +76,14 @@ contains
     ! - dlithkdt (accumulation is used to store the previous written thickness
     ! - hfgeoubed (doesn't vary, so just writing out the initial snapshot)
     ! - lifmassbf (not computed yet, so just spitting out zeros)
-    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%acabf,       deltat)
-    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbfgr, deltat)
-    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%libmassbffl, deltat)
-    call accumulate_single_ISMIP_flux_field( region, region%ismip_grid_output%licalvf,     deltat)
+    call accumulate_single_ISMIP_flux_field( region, &
+      region%ismip_grid_output%acabf, SMB_loc, mask_ice, deltat)
+    call accumulate_single_ISMIP_flux_field( region, &
+      region%ismip_grid_output%libmassbfgr, region%BMB%BMB, region%ice%mask_grounded_ice, deltat)
+    call accumulate_single_ISMIP_flux_field( region, &
+      region%ismip_grid_output%libmassbffl, region%BMB%BMB, region%ice%mask_floating_ice,  deltat)
+    call accumulate_single_ISMIP_flux_field( region, &
+      region%ismip_grid_output%licalvf, calving_flux, mask_ice, deltat)
 
     ! Update current time
     region%ismip_grid_output%t_curr = region%time
@@ -70,55 +93,28 @@ contains
 
   end subroutine accumulate_ISMIP_flux_fields
 
-  subroutine accumulate_single_ISMIP_flux_field( region, field, deltat)
+  subroutine accumulate_single_ISMIP_flux_field( region, field, d_partial, mask, deltat)
     !< Write to ISMIP regional output NetCDF files - grid version
 
     ! In/output variables:
-    type(type_model_region),           intent(inout) :: region
-    type(type_ismip_gridded_field),    intent(inout) :: field
-    real(dp),                          intent(in   ) :: deltat
+    type(type_model_region),                              intent(inout) :: region
+    type(type_ismip_gridded_field),                       intent(inout) :: field
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), intent(in   ) :: d_partial
+    logical,  dimension(region%mesh%vi1:region%mesh%vi2), intent(in   ) :: mask
+    real(dp),                                             intent(in   ) :: deltat
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'accumulate_single_ISMIP_flux_field'
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
     integer                        :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    select case (field%name)
-      case default
-        call crash('invalid ISMIP field name for accumulation "' // trim( field%name) // '"')
-      case ('acabf')
-        ! For hybrid memory reasons, make a local copy (is this necessary?)
-        SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%Hi( vi) > 0) then
-            ! Accumulate values only where ice is present
-            field%accum( vi) = field%accum( vi) + SMB_loc( vi) * ice_density / sec_per_year * deltat
-          end if
-        end do
-      case ('libmassbfgr')
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_grounded_ice( vi)) then
-            ! Accumulate values only for grounded ice
-            field%accum( vi) = field%accum( vi) + region%BMB%BMB( vi) * ice_density / sec_per_year * deltat
-          end if
-        end do
-      case ('libmassbffl')
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_floating_ice( vi)) then
-            ! Accumulate values only for floating ice
-            field%accum( vi) = field%accum( vi) + region%BMB%BMB( vi) * ice_density / sec_per_year * deltat
-          end if
-        end do
-      case ('licalvf')
-        call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
-        do vi = region%mesh%vi1, region%mesh%vi2
-          field%accum( vi) = field%accum( vi) + calving_flux( vi) * ice_density / sec_per_year * deltat
-        end do
-    end select
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (mask( vi)) then
+        field%accum( vi) = field%accum( vi) + d_partial( vi) * ice_density / sec_per_year * deltat
+      end if
+    end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -667,14 +663,14 @@ contains
 
     ! Add attributes
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'title', trim(title)) 
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', C%ismip_conventions)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', ismip_grid_output%IS_name)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', trim(C%ismip_conventions))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', trim(ismip_grid_output%IS_name))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_resolution', trim(res_str) // 'm')
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'group', C%ismip_group_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'model', C%ismip_model_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'scenario', C%ismip_scenario_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_name', C%ismip_contact_name)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_email', C%ismip_contact_email)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'group', trim(C%ismip_group_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'model', trim(C%ismip_model_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'scenario', trim(C%ismip_scenario_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_name', trim(C%ismip_contact_name))
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'contact_email', trim(C%ismip_contact_email))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'crs', trim(ismip_grid_output%crs))
 
     ! Close the file

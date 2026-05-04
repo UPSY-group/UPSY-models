@@ -16,6 +16,7 @@ module basic_model_utilities
   public :: print_model_start
   public :: print_model_end
   public :: list_files_in_folder
+  public :: get_current_date_time_str
 
 contains
 
@@ -376,5 +377,20 @@ contains
     end do
 
   end subroutine list_files_in_folder
+
+  function get_current_date_time_str() result( datetime_str)
+    character(len=8)               :: date_str
+    character(len=10)              :: time_str
+    character(len=5)               :: zone_str
+    character(len=19)              :: datetime_str
+    integer, dimension(8)          :: values
+
+    ! Get date and time
+    call date_and_time(date=date_str, time=time_str, zone=zone_str, values=values)
+    ! Using internal write to format nicely
+    write(datetime_str, '(I4.4, "-", I2.2, "-", I2.2, "T", I2.2, ":", I2.2, ":", I2.2)') &
+         values(1), values(2), values(3), values(5), values(6), values(7)
+
+  end function get_current_date_time_str
 
 end module basic_model_utilities

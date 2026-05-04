@@ -21,6 +21,7 @@ MODULE region_types
   USE scalar_types                                           , ONLY: type_regional_scalars
   use tracer_tracking_model_types, only: type_tracer_tracking_model
   use transect_types, only: type_transect
+  use ismip_output_types, only: type_ismip_grid_output
 
   IMPLICIT NONE
 
@@ -82,6 +83,9 @@ MODULE region_types
     ! The tracer tracking model
     type(type_tracer_tracking_model)        :: tracer_tracking
 
+    ! ISMIP output data
+    type(type_ismip_grid_output)            :: ismip_grid_output
+
     ! Scalar data
     TYPE(type_regional_scalars)             :: scalars                 ! Scalar data (e.g. total area, volume, mass balance)
 
@@ -95,6 +99,7 @@ MODULE region_types
     REAL(dp)                                :: output_t_next                ! Time when we should next write to main output
     REAL(dp)                                :: output_restart_t_next        ! Time when we should next write to restart output
     REAL(dp)                                :: output_grid_t_next           ! Time when we should next write to gridded output
+    real(dp)                                :: output_ismip_t_next          ! Time when we should next write to ismip output
 
     ! Region-of-interest output
     INTEGER                                     :: nROI                              ! Number of regions of interest for this model region

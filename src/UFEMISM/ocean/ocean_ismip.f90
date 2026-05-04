@@ -11,6 +11,7 @@ module ocean_ismip
   use netcdf_io_main
   use mpi_f08, only: MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use basic_model_utilities, only: list_files_in_folder
+  use calendar, only: convert_time_to_days
 
   implicit none
 
@@ -30,9 +31,18 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_ocean_model_ismip'
     real(dp)                       :: w0, w1
+    real(dp)                       :: days
+    character(len=1024)            :: filename_to_read_T, filename_to_read_S
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Convert model time (years) to days_since_1850
+    call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
+
+    ! Find filename which contains model time
+    call find_filename_to_read( ocean%ismip%filenames_T, ocean%ismip%time_bnds_T, days, filename_to_read_T)
+    call find_filename_to_read( ocean%ismip%filenames_S, ocean%ismip%time_bnds_S, days, filename_to_read_S)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -68,6 +78,42 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_ocean_model_ismip
+
+  subroutine find_filename_to_read( filenames, time_bnds, days, filename_to_read)
+
+    ! In/output variables:
+    character(len=*), dimension(:),      intent(in   ) :: filenames
+    real(dp), dimension(:, :),           intent(in   ) :: time_bnds
+    real(dp),                            intent(in   ) :: days
+    character(len=1024),                 intent(  out) :: filename_to_read
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'find_filename_to_read'
+    integer                        :: fidx
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (days < time_bnds( 1, 1)) then
+      ! Model time before forcing time period, use first filename
+      fidx = 1
+    elseif (days > time_bnds( size(filenames), 2)) then
+      ! Model time beyond forcing time period, use last filename
+      fidx = size(filenames)
+    else
+      fidx = 1
+      do while (days > time_bnds( fidx, 2))
+        fidx = fidx + 1
+      end do
+    end if
+
+    filename_to_read = filenames( fidx)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine find_filename_to_read
+
 
   subroutine gather_filenames( subfolder, filenames, time_bnds)
 

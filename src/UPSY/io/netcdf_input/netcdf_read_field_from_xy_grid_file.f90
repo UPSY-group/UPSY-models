@@ -344,7 +344,7 @@ contains
     real(dp), dimension(:,:,:), allocatable :: d_grid_with_time
     integer                                 :: ti
     logical                                 :: extrapolate_fillvalues_loc
-    real(dp)                                :: fill_value
+    real(dp)                                :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -473,7 +473,8 @@ contains
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call inquire_fill_value( filename, ncid, var_name, fill_value)
       call close_netcdf_file( ncid)
-      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, grid_loc%dx, fill_value)
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
     end if
 
     ! Clean up after yourself
@@ -509,7 +510,7 @@ contains
     real(dp), dimension(:,:,:,:), allocatable :: d_grid_with_time
     integer                                   :: ti
     logical                                   :: extrapolate_fillvalues_loc
-    real(dp)                                  :: fill_value
+    real(dp)                                  :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -633,7 +634,9 @@ contains
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call inquire_fill_value( filename, ncid, var_name, fill_value)
       call close_netcdf_file( ncid)
-      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, grid_loc%dx, fill_value)
+
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
     end if
 
     ! Clean up after yourself
@@ -671,7 +674,7 @@ contains
     real(dp), dimension(:,:,:,:), allocatable :: d_grid_with_time
     integer                                   :: ti
     logical                                   :: extrapolate_fillvalues_loc
-    real(dp)                                  :: fill_value
+    real(dp)                                  :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -795,7 +798,9 @@ contains
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call inquire_fill_value( filename, ncid, var_name, fill_value)
       call close_netcdf_file( ncid)
-      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, grid_loc%dx, fill_value)
+
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
     end if
 
     ! Clean up after yourself
@@ -833,7 +838,7 @@ contains
     real(dp), dimension(:,:,:,:), allocatable :: d_grid_with_time
     integer                                   :: ti
     logical                                   :: extrapolate_fillvalues_loc
-    real(dp)                                  :: fill_value
+    real(dp)                                  :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -957,7 +962,9 @@ contains
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call inquire_fill_value( filename, ncid, var_name, fill_value)
       call close_netcdf_file( ncid)
-      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, grid_loc%dx, fill_value)
+
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
     end if
 
     ! Clean up after yourself

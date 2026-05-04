@@ -179,10 +179,10 @@ subroutine extrapolate_fillvalue_Gaussian_grid_2D( grid, d_grid_vec_partial, sig
   ! Replace fillvalues by Gaussian extrapolation (with radius sigma) of the rest of the data
 
   ! In/output variables:
-  type(type_grid),        intent(in   ) :: grid
-  real(dp), dimension(:), intent(  out) :: d_grid_vec_partial
-  real(dp),               intent(in   ) :: sigma
-  real(dp),               intent(in   ) :: fill_value
+  type(type_grid),                      intent(in   ) :: grid
+  real(dp), dimension(grid%n1:grid%n2), intent(inout) :: d_grid_vec_partial
+  real(dp),                             intent(in   ) :: sigma
+  real(dp),                             intent(in   ) :: fill_value
 
   ! Local variables:
   character(len=*), parameter           :: routine_name = 'extrapolate_fillvalue_Gaussian_grid_2D'
@@ -211,21 +211,63 @@ subroutine extrapolate_fillvalue_Gaussian_grid_3D( grid, d_grid_vec_partial, sig
 
   ! In/output variables:
   type(type_grid),          intent(in   ) :: grid
-  real(dp), dimension(:,:), intent(  out) :: d_grid_vec_partial
+  real(dp), dimension(:,:), intent(inout) :: d_grid_vec_partial
   real(dp),                 intent(in   ) :: sigma
   real(dp),                 intent(in   ) :: fill_value
 
   ! Local variables:
-  character(len=*), parameter :: routine_name = 'extrapolate_fillvalue_Gaussian_grid_3D'
+  character(len=*), parameter             :: routine_name = 'extrapolate_fillvalue_Gaussian_grid_3D'
+  real(dp), dimension(:,:,:), allocatable :: d_grid
 
   ! Add routine to path
   call init_routine( routine_name)
 
-  call crash('whoopsiedaisy')
+  ! Not feasibly parallelisable, just let the primary do all the work
+  if (par%primary) allocate( d_grid( grid%nx, grid%ny, size( d_grid_vec_partial,2)))
+  call gather_gridded_data_to_primary( grid, d_grid_vec_partial, d_grid)
+  if (par%primary) call extrapolate_fillvalue_Gaussian_grid_3D_primary( grid, d_grid, sigma, fill_value)
+  call distribute_gridded_data_from_primary( grid, d_grid_vec_partial, d_grid)
 
   ! Finalise routine path
   call finalise_routine( routine_name)
 
 end subroutine extrapolate_fillvalue_Gaussian_grid_3D
+
+subroutine extrapolate_fillvalue_Gaussian_grid_3D_primary( grid, d_grid, sigma, fill_value)
+  ! Replace fillvalues by Gaussian extrapolation (with radius sigma) of the rest of the data
+
+  ! In/output variables:
+  type(type_grid),            intent(in   ) :: grid
+  real(dp), dimension(:,:,:), intent(inout) :: d_grid
+  real(dp),                   intent(in   ) :: sigma
+  real(dp),                   intent(in   ) :: fill_value
+
+  ! Local variables:
+  character(len=*), parameter :: routine_name = 'extrapolate_fillvalue_Gaussian_grid_3D_primary'
+  integer                     :: nz
+  integer                     :: i,j,k
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  if (.not. par%primary) call crash('should only be called from the primary')
+  if (size( d_grid,1) /= grid%nx .or. size( d_grid,2) /= grid%ny) call crash('array size does not match grid')
+
+  nz = size( d_grid,3)
+
+  do i = 1, grid%nx
+    do j = 1, grid%ny
+      do k = 1, nz
+        if (d_grid( i,j,k) == fill_value) d_grid( i,j,k) = 0._dp
+      end do
+    end do
+  end do
+
+  ! call crash('whoopsiedaisy')
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine extrapolate_fillvalue_Gaussian_grid_3D_primary
 
 end module smooth_gridded_data

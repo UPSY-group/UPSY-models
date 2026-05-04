@@ -627,9 +627,9 @@ contains
 
 
       ! In/output variables:
-      type(type_mesh),              intent(in   ) :: mesh
-      type(type_ice_model),         intent(in   ) :: ice
-      real(dp), dimension(mesh%nV), intent(  out) :: calving_flux
+      type(type_mesh),                         intent(in   ) :: mesh
+      type(type_ice_model),                    intent(in   ) :: ice
+      real(dp), dimension(mesh%vi1: mesh%vi2), intent(  out) :: calving_flux
       ! real(dp), dimension(mesh%nV), intent(  out) :: calving_and_front_melt_flux ! TODO: when front melt is computed
 
       ! Local variables:
@@ -656,7 +656,6 @@ contains
 
       ! Initialise
       calving_flux                = 0._dp
-      ! calving_and_front_melt_flux = 0._dp ! TODO: when front melt is computed
 
       do vi = mesh%vi1, mesh%vi2
 
@@ -681,31 +680,13 @@ contains
           ! For the other zones, u_perp < 0 would come from an area with no ice, so
           ! that case adds 0 anyway. Thus, only consider positive velocities.
 
-          ! Floating calving front
-          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-            ! calving_and_front_melt_flux( vi) = calving_flux( vi) ! TODO: when front melt is computed
-          end if
-
-          ! Land-terminating ice (grounded or floating)
-          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-            ! calving_and_front_melt_flux( vi) = calving_flux( vi) ! TODO: when front melt is computed
-          end if
-
-          ! Marine-terminating ice (grounded or floating)
-          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-            ! calving_and_front_melt_flux( vi) = calving_flux( vi) ! TODO: when front melt is computed
+          if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
           end if
 
         end do ! do ci = 1, mesh%nC( vi)
 
       end do ! do vi = mesh%vi1, mesh%vi2
-
-      ! Add together values from each process - is that necessary when not integrating over the entire domain?
-      ! call MPI_ALLREDUCE( MPI_IN_PLACE, calving_flux,                1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-      ! call MPI_ALLREDUCE( MPI_IN_PLACE, calving_and_front_melt_flux, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr) ! TODO: when front melt is computed
 
       ! Finalise routine path
       call finalise_routine( routine_name)

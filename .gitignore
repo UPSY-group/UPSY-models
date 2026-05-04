@@ -71,3 +71,6 @@ linting_mods/*
 
 # Ignore vscode task logs
 .vscode/task-logs/*
+
+# Ignore local test folder
+test

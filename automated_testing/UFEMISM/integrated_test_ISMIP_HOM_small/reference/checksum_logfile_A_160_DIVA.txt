@@ -1,5 +1,5 @@
  -= Checksum logfile =-
-  Git commit hash        : 11fb9f9b2b8e51afcb31021ef542f2b902cdec74
+  Git commit hash        : 6373bccb8b93b2752b778f969656d30827d26b40
   has uncommitted changes:  F
   PETSc version          : 3.24.6
   NetCDF version         : 4.10.0

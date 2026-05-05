@@ -14,6 +14,7 @@ module SMB_model_basic
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
+  use reference_geometry_types, only: type_reference_geometry
 
   implicit none
 
@@ -62,13 +63,15 @@ module SMB_model_basic
   end type type_SMB_model_context_allocate
 
   type, extends(atype_model_context_initialise) :: type_SMB_model_context_initialise
-    type(type_ice_model), pointer :: ice
+    type(type_ice_model),          pointer :: ice
+    type(type_reference_geometry), pointer :: refgeo_init
+    type(type_reference_geometry), pointer :: refgeo_PD
   end type type_SMB_model_context_initialise
 
   type, extends(atype_model_context_run) :: type_SMB_model_context_run
-    type(type_ice_model),     pointer :: ice
-    type(type_climate_model), pointer :: climate
-    type(type_grid),          pointer :: grid_smooth
+    type(type_ice_model),          pointer :: ice
+    type(type_climate_model),      pointer :: climate
+    type(type_grid),               pointer :: grid_smooth
   end type type_SMB_model_context_run
 
   type, extends(atype_model_context_remap) :: type_SMB_model_context_remap
@@ -147,8 +150,9 @@ module SMB_model_basic
       type(type_SMB_model_context_allocate) :: context
     end function ct_allocate
 
-    module function ct_initialise( ice) result( context)
-      type(type_ice_model), target, intent(in) :: ice
+    module function ct_initialise( ice, refgeo_init, refgeo_PD) result( context)
+      type(type_ice_model),          target, intent(in) :: ice
+      type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
       type(type_SMB_model_context_initialise)  :: context
     end function ct_initialise
 

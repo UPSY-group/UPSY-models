@@ -2,11 +2,14 @@ submodule(SMB_model_basic) SMB_model_initialise
 
 contains
 
-  function ct_initialise( ice) result( context)
+  function ct_initialise( ice, refgeo_init, refgeo_PD) result( context)
     !< Create a contect object for SMB_model%initialise
-    type(type_ice_model), target, intent(in) :: ice
+    type(type_ice_model),          target, intent(in) :: ice
+    type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
     type(type_SMB_model_context_initialise)  :: context
-    context%ice => ice
+    context%ice         => ice
+    context%refgeo_init => refgeo_init
+    context%refgeo_PD   => refgeo_PD
   end function ct_initialise
 
   subroutine initialise_model_abs( self, context)

@@ -105,9 +105,6 @@ MODULE ocean_model_types
     real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
     real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
 
-    real(dp)                                       :: time0         ! [days]    Time at timeslice before current time
-    real(dp)                                       :: time1         ! [days]    Time at timeslice after current time
-
     integer                                        :: ti0           !           Time index before current time
     integer                                        :: ti1           !           Time index after current time
 

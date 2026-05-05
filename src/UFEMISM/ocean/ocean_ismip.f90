@@ -42,9 +42,6 @@ contains
     call interpolate_single_field( ocean%ismip%T, ocean%T, time)
     call interpolate_single_field( ocean%ismip%S, ocean%S, time)
 
-    ! TODO
-    if (par%primary) print *, time, ocean%ismip%T%val0( 100,8), ocean%ismip%T%val1( 100, 8), ocean%T( 100, 8)
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 

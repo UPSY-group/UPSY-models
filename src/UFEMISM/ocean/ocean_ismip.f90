@@ -31,7 +31,6 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_ocean_model_ismip'
     real(dp)                       :: w0, w1
-    real(dp)                       :: days
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -40,10 +39,7 @@ contains
     call update_timeframes( mesh, ocean%ismip%T, time)
     call update_timeframes( mesh, ocean%ismip%S, time)
 
-    ! TODO remove
-    call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
-    if (par%primary) print *, time, days, ocean%ismip%T%alltimes(ocean%ismip%T%ti0)
-
+    if (par%primary) print *, time, ocean%ismip%T%val0( 100,8), ocean%ismip%T%val1( 100, 8)
     ! Interpolate
 
     ! Remove routine from call stack
@@ -97,9 +93,14 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_timeframes'
     real(dp)                       :: days
+    integer                        :: ti0_old, ti1_old
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Get current bracket indices
+    ti0_old = field%ti0
+    ti1_old = field%ti1
 
     ! Convert model time (years) to days_since_1850
     call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
@@ -107,8 +108,14 @@ contains
     ! Update the indices of time slices before and after current time
     call update_bracket_indices( field, days)
 
-    ! Read timeframes
+    ! Update timeframes if necessary
+    if (field%ti0 /= ti0_old) then
+      call update_single_timeframe( mesh, field, field%ti0, field%val0)
+    end if
 
+    if (field%ti1 /= ti1_old) then
+      call update_single_timeframe( mesh, field, field%ti1, field%val1)
+    end if
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -156,6 +163,41 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine update_bracket_indices
+
+  subroutine update_single_timeframe( mesh, field, ti, val)
+
+    ! In/output variables:
+    type(type_mesh),              intent(in   ) :: mesh
+    type(type_ocean_field_ismip), intent(in   ) :: field
+    integer,                      intent(in   ) :: ti
+    real(dp), dimension(:,:),     intent(inout) :: val
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'update_single_timeframe'
+    character(len=1024)            :: foldername, filename
+    integer                        :: fi
+    integer                        :: ncid, id_dim_time, nt, id_var_time, ierr
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Get full folder name
+    foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name)
+
+    ! Determine file index from time index
+    fi = field%allfi(ti)
+
+    ! Define filename containing required timeframe
+    filename = trim(foldername) // '/' // trim(field%filenames(fi))
+
+    ! Read ocean field
+    call read_field_from_file_3D_ocean( filename, trim(field%name), mesh, C%output_dir, C%z_ocean, val, &
+        time_to_read = field%alltimes( ti))
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine update_single_timeframe
 
 
   !subroutine interpolate_timeframes( mesh, varname, filename, days, ocean_field)

@@ -30,7 +30,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_ocean_model_ismip'
-    real(dp)                       :: w0, w1
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -39,8 +38,12 @@ contains
     call update_timeframes( mesh, ocean%ismip%T, time)
     call update_timeframes( mesh, ocean%ismip%S, time)
 
-    if (par%primary) print *, time, ocean%ismip%T%val0( 100,8), ocean%ismip%T%val1( 100, 8)
     ! Interpolate
+    call interpolate_single_field( ocean%ismip%T, ocean%T, time)
+    call interpolate_single_field( ocean%ismip%S, ocean%S, time)
+
+    ! TODO
+    if (par%primary) print *, time, ocean%ismip%T%val0( 100,8), ocean%ismip%T%val1( 100, 8), ocean%T( 100, 8)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -199,6 +202,42 @@ contains
 
   end subroutine update_single_timeframe
 
+  subroutine interpolate_single_field( field, val_out, time)
+
+    ! In/output variables:
+    type(type_ocean_field_ismip), intent(in   ) :: field
+    real(dp), dimension(:,:),     intent(inout) :: val_out
+    real(dp),                     intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'interpolate_single_field'
+    real(dp)                       :: w0, w1
+    real(dp)                       :: days
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Convert model time (years) to days_since_1850
+    call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
+
+    ! Get weights
+    if (days < field%alltimes( field%ti0)) then
+      w0 = 1._dp
+    elseif (days > field%alltimes( field%ti1)) then
+      w0 = 0._dp
+    else
+      w0 = (field%alltimes( field%ti1) - days) / (field%alltimes( field%ti1) - field%alltimes( field%ti0))
+    end if
+
+    w1 = 1._dp - w0
+
+    ! Apply interpolation
+    val_out = w0 * field%val0 + w1 * field%val1
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine interpolate_single_field
 
   !subroutine interpolate_timeframes( mesh, varname, filename, days, ocean_field)
 

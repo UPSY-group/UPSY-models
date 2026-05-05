@@ -93,29 +93,33 @@ MODULE ocean_model_types
 
   end type type_ocean_model_snapshot_plus_anomalies
 
+  type type_ocean_field_ismip
+    ! Data and metadata of T/S fields
+
+    character(len=1024)                            :: name          !           'thetao' or 'so'
+    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
+
+    real(dp), dimension(:), allocatable            :: alltimes      ! [days]    All time values in combined files
+    integer, dimension(:), allocatable             :: allfi         ! []        All file indices
+
+    real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
+    real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
+
+    real(dp)                                       :: time0         ! [days]    Time at timeslice before current time
+    real(dp)                                       :: time1         ! [days]    Time at timeslice after current time
+
+    integer                                        :: ti0           !           Time index before current time
+    integer                                        :: ti1           !           Time index after current time
+
+  end type type_ocean_field_ismip
+
   type type_ocean_model_ismip
     ! Model to read in ISMIP7-style forcing fields with separate files
     ! for thetao and so, of varying lengths
 
-    ! Filenames
-    character(len=1024), dimension(:), allocatable :: filenames_T     !           Filenames containing temperatures
-    character(len=1024), dimension(:), allocatable :: filenames_S     !           Filenames containing salinities
-
-    ! Time info of all filenames
-    real(dp), dimension(:,:), allocatable :: time_bnds_T              ! [days]    Time bounds of each T file
-    real(dp), dimension(:,:), allocatable :: time_bnds_S              ! [days]    Time bounds of each S file
-
-    ! Time info of currently opened filename
-    real(dp), dimension(:),   allocatable :: time_file                ! [days]    Time array of current file
-    real(dp), dimension(:,:), allocatable :: time_bnds_file           ! [days]    Time bounds of current file
-
-    ! Previous time
-    real(dp), dimension(:,:), allocatable :: T_t0                     ! [deg C]   Temperature at timestep before current time
-    real(dp), dimension(:,:), allocatable :: S_t0                     ! [PSU]     Salinity
-
-    ! Next time
-    real(dp), dimension(:,:), allocatable :: T_t1                     ! [deg C]   Temperature at timestep after current time
-    real(dp), dimension(:,:), allocatable :: S_t1                     ! [PSU]     Salinity
+    ! Fields
+    type(type_ocean_field_ismip)                   :: T
+    type(type_ocean_field_ismip)                   :: S
 
   end type type_ocean_model_ismip
 

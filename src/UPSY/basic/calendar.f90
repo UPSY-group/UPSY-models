@@ -29,7 +29,8 @@ module calendar
       ! Local variables:
       character(len=1024), parameter :: routine_name = 'convert_time_to_days'
       real(dp)                       :: frac_year
-      integer                        :: full_year, res
+      integer                        :: full_year
+      real(dp)                       :: res
       integer                        :: i
       real(dp), parameter            :: eps = 1.e-8
       character(len=1024)            :: calendar_applied
@@ -52,14 +53,13 @@ module calendar
         residual_allowed = .false.
       end if
 
-      ! Convert time to full_year integer
-      full_year = nint(time)
-
-      ! Determine residual
+      ! Determine full_year integer and optional residual
       if (residual_allowed) then
-        res = max(0,nint(time-full_year))
+        full_year = int(time) ! Rounded down
+        res = time - full_year
       else
-        res = 0
+        full_year = nint(time) ! Closest full year
+        res = 0._dp
       end if
 
       if (present(days_bounds)) then
@@ -87,7 +87,7 @@ module calendar
 
       ! In/output variables:
       integer,                 intent(in   ) :: full_year
-      integer,                 intent(in   ) :: res
+      real(dp),                intent(in   ) :: res
       character(len=*),        intent(in   ) :: calendar
       real(dp),                intent(  out) :: days
 
@@ -118,18 +118,24 @@ module calendar
             end if
           end do
 
+          ! Add approximate residual
+          days = days + res * 365.24_dp
+
         case ('noleap', '365_day')
           ! Determine days according to years of 365 days without leap years
           days = (full_year-1850) * 365._dp
+
+          ! Add residual
+          days = days + res * 365._dp
 
         case ('360_day')
           ! Determine days according to years of 360 days (each month 30 days)
           days = (full_year-1850) * 360._dp
 
-      end select
+          ! Add residual
+          days = days + res * 360._dp
 
-      ! Add residual
-      days = days + 1._dp*res
+      end select
 
       ! Finalise routine path
       call finalise_routine( routine_name)

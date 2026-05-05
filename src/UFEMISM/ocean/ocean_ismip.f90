@@ -31,6 +31,7 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_ocean_model_ismip'
     real(dp)                       :: w0, w1
+    real(dp)                       :: days
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -38,6 +39,10 @@ contains
     ! Update timeframes if necessary
     call update_timeframes( mesh, ocean%ismip%T, time)
     call update_timeframes( mesh, ocean%ismip%S, time)
+
+    ! TODO remove
+    call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
+    if (par%primary) print *, time, days, ocean%ismip%T%alltimes(ocean%ismip%T%ti0)
 
     ! Interpolate
 
@@ -101,8 +106,6 @@ contains
 
     ! Update the indices of time slices before and after current time
     call update_bracket_indices( field, days)
-
-    if (par%primary) print *, trim(field%name), days, field%alltimes(field%ti0), field%alltimes(field%ti1)
 
     ! Read timeframes
 

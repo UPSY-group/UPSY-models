@@ -24,6 +24,7 @@ MODULE ocean_main
   use reference_geometry_types, only: type_reference_geometry
   use ocean_snapshot_plus_anomalies, only: initialise_ocean_model_snapshot_plus_anomalies, &
     run_ocean_model_snapshot_plus_anomalies
+  use ocean_ismip, only: initialise_ocean_model_ismip, run_ocean_model_ismip
   use checksum_mod, only: checksum
 
   IMPLICIT NONE
@@ -92,17 +93,19 @@ CONTAINS
     select case( choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none')
+    case ('none')
       ! No need to do anything
-    case( 'idealised')
+    case ('idealised')
       call run_ocean_model_idealised( mesh, ice, ocean)
-    case( 'realistic')
+    case ('realistic')
       call limit_ocean_supercooling( mesh, ice, ocean)
       call run_ocean_model_realistic( mesh, ice, ocean, time)
-    case( 'snapshot+nudge2D')
+    case ('snapshot+nudge2D')
       call run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, ocean, time)
-    case( 'snapshot_plus_anomalies')
+    case ('snapshot_plus_anomalies')
       call run_ocean_model_snapshot_plus_anomalies( mesh, ocean, time)
+    case ('ismip')
+      call run_ocean_model_ismip( mesh, ocean, time)
     end select
 
     ! Compute secondary variables
@@ -174,15 +177,17 @@ CONTAINS
     select case( choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none')
-    case( 'idealised')
+    case ('none')
+    case ('idealised')
       call initialise_ocean_model_idealised( mesh, ocean)
-    case( 'realistic')
+    case ('realistic')
       call initialise_ocean_model_realistic( mesh, ice, ocean, region_name, start_time_of_run)
-    case( 'snapshot+nudge2D')
+    case ('snapshot+nudge2D')
       call initialise_ocean_model_snapshot_nudge2D( mesh, ocean%snapshot_nudge2D, region_name, refgeo_PD, refgeo_init)
-    case( 'snapshot_plus_anomalies')
+    case ('snapshot_plus_anomalies')
       call initialise_ocean_model_snapshot_plus_anomalies( mesh, ocean%snapshot_plus_anomalies)
+    case ('ismip')
+      call initialise_ocean_model_ismip( mesh, ocean%ismip)
     end select
 
     call checksum( mesh%pai_V, ocean%T, 'ocean%T')
@@ -227,7 +232,7 @@ CONTAINS
     select case(choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies', 'ismip')
       ! No need to do anything
     case( 'realistic')
       call write_to_restart_file_ocean_model_region( mesh, ocean, region_name, time)
@@ -315,7 +320,7 @@ CONTAINS
     select case(choice_ocean_model)
     case default
       call crash('unknown choice_ocean_model "' // trim( choice_ocean_model) // '"')
-    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies')
+    case( 'none', 'idealised', 'snapshot+nudge2D', 'snapshot_plus_anomalies', 'ismip')
       ! No need to do anything
     case( 'realistic')
       call create_restart_file_ocean_model_region( mesh, ocean, region_name)
@@ -434,6 +439,8 @@ CONTAINS
       call initialise_ocean_model_idealised( mesh_new, ocean)
     case ('realistic')
       call remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
+    case ('ismip')
+      call initialise_ocean_model_ismip( mesh_new, ocean%ismip)
     end select
 
     ! Finalise routine path

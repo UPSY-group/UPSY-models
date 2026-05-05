@@ -538,6 +538,8 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'check_xy_grid_field_dp_3D_ocean'
+    logical                                :: has_depth, has_height
+    integer                                :: id_dim_height
     integer                                :: id_dim_x, id_dim_y, id_dim_depth, id_dim_time, id_var
     integer                                :: var_type
     integer                                :: ndims_of_var
@@ -550,12 +552,39 @@ contains
     ! Check if the file has valid x and y dimensions and variables
     call check_x(     filename, ncid)
     call check_y(     filename, ncid)
-    call check_depth( filename, ncid)
 
-    ! inquire x,y,depth dimensions
+    ! inquire x,y dimensions
     call inquire_dim_multopt( filename, ncid, field_name_options_x    , id_dim_x   )
     call inquire_dim_multopt( filename, ncid, field_name_options_y    , id_dim_y   )
-    call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth)
+
+    ! Find out on what kind of vertical grid the file is defined
+    call inquire_dim_multopt( filename, ncid, field_name_options_depth , id_dim_depth )
+    call inquire_dim_multopt( filename, ncid, field_name_options_height , id_dim_height )
+
+    if (id_dim_depth == -1) then
+      has_depth = .false.
+    else
+      has_depth = .true.
+    end if
+
+    if (id_dim_height == -1) then
+      has_height = .false.
+    else
+      has_height = .true.
+    end if
+
+    ! Files with more than one grid are not recognised
+    if (has_depth .and. has_height) call crash('file "' // trim( filename) // '" contains both depth and height!')
+
+    if (has_depth) then
+      call check_depth( filename, ncid)
+      call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth)
+    elseif (has_height) then
+      call check_height( filename, ncid)
+      call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim_height)
+    else
+      call crash( 'file "' // trim( filename) // '" does not contain either depth or height!')
+    end if
 
     ! inquire variable
     call inquire_var( filename, ncid, var_name, id_var)
@@ -572,7 +601,7 @@ contains
     ! Check x,y dimensions
     if (.not. any( dims_of_var == id_dim_x    )) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have x as a dimension!')
     if (.not. any( dims_of_var == id_dim_y    )) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have y as a dimension!')
-    if (.not. any( dims_of_var == id_dim_depth)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have depth as a dimension!')
+    if (.not. any( dims_of_var == id_dim_depth) .and. .not. any( dims_of_var == id_dim_height)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have depth or height as a dimension!')
 
     if (.not. present( should_have_time)) then
       ! This variable is allowed to either have or not have a time dimension
@@ -588,7 +617,7 @@ contains
       if (file_has_time) then
         ! Check if the variable has time as a dimension
         if (ndims_of_var == 3) then
-          ! The variable only has x,y,depth as dimensions.
+          ! The variable only has x,y,depth/height as dimensions.
         else
           if (ndims_of_var == 4) then
             if (.not. any( dims_of_var == id_dim_time)) call crash('variable "' // trim( var_name) // '" in file "' &
@@ -598,7 +627,7 @@ contains
           end if
         end if
       else ! if (file_has_time) then
-        ! The file does not have a time dimension; the variable should only have x,y,depth as dimensions
+        ! The file does not have a time dimension; the variable should only have x,y,depth/height as dimensions
         if (ndims_of_var /= 3) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
       end if ! if (file_has_time) then
 
@@ -617,7 +646,7 @@ contains
         if (.not. any( dims_of_var == id_dim_time)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have time as a dimension!')
 
       else ! if (should_have_time) then
-        ! This variable should not have a time dimension; the variable should only have x,y,depth as dimensions
+        ! This variable should not have a time dimension; the variable should only have x,y,depth/height as dimensions
 
         if (ndims_of_var /= 3) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
 
@@ -1142,6 +1171,8 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'check_lonlat_grid_field_dp_3D_ocean'
+    logical                                :: has_depth, has_height
+    integer                                :: id_dim_height
     integer                                :: id_dim_lon, id_dim_lat, id_dim_depth, id_dim_time, id_var
     integer                                :: var_type
     integer                                :: ndims_of_var
@@ -1154,12 +1185,39 @@ contains
     ! Check if the file has valid lon and lat dimensions and variables
     call check_lon(   filename, ncid)
     call check_lat(   filename, ncid)
-    call check_depth( filename, ncid)
 
     ! inquire lon,lat,depth dimensions
     call inquire_dim_multopt( filename, ncid, field_name_options_lon  , id_dim_lon )
     call inquire_dim_multopt( filename, ncid, field_name_options_lat  , id_dim_lat )
-    call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth)
+
+    ! Find out on what kind of vertical grid the file is defined
+    call inquire_dim_multopt( filename, ncid, field_name_options_depth , id_dim_depth )
+    call inquire_dim_multopt( filename, ncid, field_name_options_height , id_dim_height )
+
+    if (id_dim_depth == -1) then
+      has_depth = .false.
+    else
+      has_depth = .true.
+    end if
+
+    if (id_dim_height == -1) then
+      has_height = .false.
+    else
+      has_height = .true.
+    end if
+
+    ! Files with more than one grid are not recognised
+    if (has_depth .and. has_height) call crash('file "' // trim( filename) // '" contains both depth and height!')
+
+    if (has_depth) then
+      call check_depth( filename, ncid)
+      call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth)
+    elseif (has_height) then
+      call check_height( filename, ncid)
+      call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim_height)
+    else
+      call crash( 'file "' // trim( filename) // '" does not contain either depth or height!')
+    end if
 
     ! inquire variable
     call inquire_var( filename, ncid, var_name, id_var)
@@ -1176,7 +1234,8 @@ contains
     ! Check lon,lat dimensions
     if (.not. any( dims_of_var == id_dim_lon  )) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have longitude as a dimension!')
     if (.not. any( dims_of_var == id_dim_lat  )) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have latitude as a dimension!')
-    if (.not. any( dims_of_var == id_dim_depth)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have depth as a dimension!')
+    if (.not. any( dims_of_var == id_dim_depth) .and. .not. any( dims_of_var == id_dim_height)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have depth or height as a dimension!')
+
 
     if (.not. present( should_have_time)) then
       ! This variable is allowed to either have or not have a time dimension
@@ -1192,7 +1251,7 @@ contains
       if (file_has_time) then
         ! Check if the variable has time as a dimension
         if (ndims_of_var == 3) then
-          ! The variable only has lon,lat,depth as dimensions.
+          ! The variable only has lon,lat,depth/height as dimensions.
         else
           if (ndims_of_var == 4) then
             if (.not. any( dims_of_var == id_dim_time)) call crash('variable "' // trim( var_name) // '" in file "' &
@@ -1202,7 +1261,7 @@ contains
           end if
         end if
       else ! if (file_has_time) then
-        ! The file does not have a time dimension; the variable should only have lon,lat,depth as dimensions
+        ! The file does not have a time dimension; the variable should only have lon,lat,depth/height as dimensions
         if (ndims_of_var /= 3) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
       end if ! if (file_has_time) then
 
@@ -1221,7 +1280,7 @@ contains
         if (.not. any( dims_of_var == id_dim_time)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have time as a dimension!')
 
       else ! if (should_have_time) then
-        ! This variable should not have a time dimension; the variable should only have lon,lat,depth as dimensions
+        ! This variable should not have a time dimension; the variable should only have lon,lat,depth/height as dimensions
 
         if (ndims_of_var /= 3) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
 
@@ -2138,6 +2197,8 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'check_mesh_field_dp_3D_ocean'
+    logical                                :: has_depth, has_height
+    integer                                :: id_dim_height
     integer                                :: id_dim_vi, id_dim_depth, id_dim_time, id_var
     integer                                :: var_type
     integer                                :: ndims_of_var
@@ -2149,11 +2210,38 @@ contains
 
     ! Check if the file has valid mesh dimensions and variables
     call check_mesh_dimensions( filename, ncid)
-    call check_depth(           filename, ncid)
 
     ! inquire mesh dimensions
     call inquire_dim_multopt( filename, ncid, field_name_options_dim_nV, id_dim_vi   )
-    call inquire_dim_multopt( filename, ncid, field_name_options_depth , id_dim_depth)
+
+    ! Find out on what kind of vertical grid the file is defined
+    call inquire_dim_multopt( filename, ncid, field_name_options_depth , id_dim_depth )
+    call inquire_dim_multopt( filename, ncid, field_name_options_height , id_dim_height )
+
+    if (id_dim_depth == -1) then
+      has_depth = .false.
+    else
+      has_depth = .true.
+    end if
+
+    if (id_dim_height == -1) then
+      has_height = .false.
+    else
+      has_height = .true.
+    end if
+
+    ! Files with more than one grid are not recognised
+    if (has_depth .and. has_height) call crash('file "' // trim( filename) // '" contains both depth and height!')
+
+    if (has_depth) then
+      call check_depth( filename, ncid)
+      call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth)
+    elseif (has_height) then
+      call check_height( filename, ncid)
+      call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim_height)
+    else
+      call crash( 'file "' // trim( filename) // '" does not contain either depth or height!')
+    end if
 
     ! inquire variable
     call inquire_var( filename, ncid, var_name, id_var)
@@ -2169,7 +2257,7 @@ contains
 
     ! Check mesh dimensions
     if (.not. any( dims_of_var == id_dim_vi   )) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have vi as a dimension!')
-    if (.not. any( dims_of_var == id_dim_depth)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have depth as a dimension!')
+    if (.not. any( dims_of_var == id_dim_depth) .and. .not. any( dims_of_var == id_dim_height)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have depth or height as a dimension!')
 
     if (.not. present( should_have_time)) then
       ! This variable is allowed to either have or not have a time dimension
@@ -2185,7 +2273,7 @@ contains
       if (file_has_time) then
         ! Check if the variable has time as a dimension
         if (ndims_of_var == 2) then
-          ! The variable only has vi,depth as dimensions
+          ! The variable only has vi,depth/height as dimensions
         else
           if (ndims_of_var == 3) then
             if (.not. any( dims_of_var == id_dim_time)) call crash('variable "' // trim( var_name) // '" in file "' &
@@ -2195,7 +2283,7 @@ contains
           end if
         end if
       else ! if (file_has_time) then
-        ! The file does not have a time dimension; the variable should only have vi,depth as dimensions
+        ! The file does not have a time dimension; the variable should only have vi,depth/height as dimensions
         if (ndims_of_var /= 2) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
       end if ! if (file_has_time) then
 
@@ -2214,7 +2302,7 @@ contains
         if (.not. any( dims_of_var == id_dim_time)) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" does not have time as a dimension!')
 
       else ! if (should_have_time) then
-        ! This variable should not have a time dimension; the variable should only have vi,depth as dimensions
+        ! This variable should not have a time dimension; the variable should only have vi,depth/height as dimensions
 
         if (ndims_of_var /= 2) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
 

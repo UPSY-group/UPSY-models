@@ -14,7 +14,7 @@ module netcdf_check_dimensions
   private
 
   public :: check_x, check_y, check_lon, check_lat, check_mesh_dimensions, check_zeta, &
-    check_month, check_time, check_depth
+    check_month, check_time, check_depth, check_height
 
 contains
 
@@ -729,5 +729,68 @@ subroutine check_depth( filename, ncid)
   call finalise_routine( routine_name)
 
 end subroutine check_depth
+
+subroutine check_height( filename, ncid)
+  !< Check if this file contains a valid height dimension and variable
+
+  ! In/output variables:
+  character(len=*), intent(in   ) :: filename
+  integer,          intent(in   ) :: ncid
+
+  ! Local variables:
+  character(len=1024), parameter          :: routine_name = 'check_height'
+  integer                                 :: id_dim
+  integer                                 :: n
+  character(len=1024)                     :: dim_name
+  integer                                 :: id_var
+  character(len=1024)                     :: var_name
+  integer                                 :: var_type
+  integer                                 :: ndims_of_var
+  integer,  dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
+  real(dp), dimension(:), allocatable     :: height
+  integer                                 :: k
+
+  ! Add routine to path
+  call init_routine( routine_name, do_track_resource_use = .false.)
+
+  ! inquire dimension
+  call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim, dim_length = n, dim_name = dim_name)
+
+  ! Safety checks on dimension
+  if (id_dim == -1) call crash('no valid height dimension could be found in file "' // trim( filename) // '"!')
+  if (n == NF90_UNLIMITED) call crash('height dimension in file "' // trim( filename) // '" is unlimited!')
+  if (n < 1) call crash('height dimension in file "' // trim( filename) // '" has length n = {int_01}!', int_01  = n)
+
+  ! inquire variable
+  call inquire_var_multopt( filename, ncid, field_name_options_height, id_var, &
+    var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
+  if (id_var == -1) call crash('no valid height variable could be found in file "' // trim( filename) // '"!')
+  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) call crash('height variable in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE!')
+  if (ndims_of_var /= 1) call crash('height variable in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
+  if (dims_of_var( 1) /= id_dim) call crash('height variable in file "' // trim( filename) // '" does not have height as a dimension!')
+
+  ! allocate memory
+  allocate( height( n))
+
+  ! Read variable
+  call read_var_primary( filename, ncid, id_var, height)
+
+  ! Check validity
+  if (par%primary) then
+    call assert( (.not. any( isnan( height))), 'found NaNs in height')
+
+    do k = 2, n
+      if (height( k) >= height( k-1)) call crash('height in file "' // trim( filename) // '" does not decrease monotonously!')
+    end do
+  end if
+  call sync
+
+  ! Clean up after yourself
+  deallocate( height)
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine check_height
 
 end module netcdf_check_dimensions

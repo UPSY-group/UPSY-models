@@ -291,29 +291,68 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_depth_from_file'
+    logical                        :: has_depth, has_height
     integer                        :: id_dim_depth, id_var_depth
+    integer                        :: id_dim_height, id_var_height
     integer                        :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Check depth dimension and variable for validity
-    call check_depth( filename, ncid)
+    ! Find out on what kind of grid the file is defined
+    call inquire_depth(  filename, has_depth)
+    call inquire_height( filename, has_height)
 
-    ! Inquire depth dimension
-    call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth, dim_length = ndepth)
+    ! Files with more than one grid are not recognised
+    if (has_depth .and. has_height) call crash('file "' // trim( filename) // '" contains both depth and height!')
 
-    ! Inquire depth variable
-    call inquire_var_multopt( filename, ncid, field_name_options_depth, id_var_depth)
+    if (has_depth) then
+      ! Check depth dimension and variable for validity
+      call check_depth( filename, ncid)
 
-    ! allocate memory
-    allocate( depth( ndepth))
+      ! Inquire depth dimension
+      call inquire_dim_multopt( filename, ncid, field_name_options_depth, id_dim_depth, dim_length = ndepth)
 
-    ! Read depth from file
-    call read_var_primary( filename, ncid, id_var_depth, depth)
+      ! Inquire depth variable
+      call inquire_var_multopt( filename, ncid, field_name_options_depth, id_var_depth)
 
-    ! Broadcast depth from primary to all other processes
-    call MPI_BCAST( depth(:), ndepth, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+      ! allocate memory
+      allocate( depth( ndepth))
+
+      ! Read depth from file
+      call read_var_primary( filename, ncid, id_var_depth, depth)
+
+      ! Broadcast depth from primary to all other processes
+      call MPI_BCAST( depth(:), ndepth, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+
+    elseif (has_height) then
+
+      ! Check height dimension and variable for validity
+      call check_height( filename, ncid)
+
+      ! Inquire height dimension
+      call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim_height, dim_length = ndepth)
+
+      ! Inquire height variable
+      call inquire_var_multopt( filename, ncid, field_name_options_height, id_var_height)
+
+      ! allocate memory
+      allocate( depth( ndepth))
+
+      ! Read height from file
+      call read_var_primary( filename, ncid, id_var_height, depth)
+
+      ! Broadcast depth from primary to all other processes
+      call MPI_BCAST( depth(:), ndepth, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+
+      ! Change sign to convert height to depth
+      depth(:) = -depth
+
+    else
+
+      call crash( 'file "' // trim( filename) // '" does not contain either depth or height!')
+
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

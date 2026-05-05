@@ -38,7 +38,7 @@ contains
     call update_timeframes( mesh, ocean%ismip%T, time)
     call update_timeframes( mesh, ocean%ismip%S, time)
 
-    ! Interpolate
+    ! Interpolate T and S between timeframes
     call interpolate_single_field( ocean%ismip%T, ocean%T, time)
     call interpolate_single_field( ocean%ismip%S, ocean%S, time)
 
@@ -60,7 +60,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Define fields
+    ! Define field names
     ismip%T%name = 'thetao'
     ismip%S%name = 'so'
 
@@ -68,13 +68,13 @@ contains
     call gather_fileinfo( ismip%T)
     call gather_fileinfo( ismip%S)
 
-    ! Allocate memory
+    ! Allocate memory for timeframes
     allocate (ismip%T%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
     allocate (ismip%S%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
     allocate (ismip%T%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
     allocate (ismip%S%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
 
-    ! Update timeframes
+    ! Update timeframes to the current model time
     call update_timeframes( mesh, ismip%T, C%start_time_of_run)
     call update_timeframes( mesh, ismip%S, C%start_time_of_run)     
 
@@ -135,6 +135,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Determine total numer of timeframes available for this field
     n = size(field%alltimes)
 
     ! Model time before first available time value, return first two indices
@@ -181,16 +182,16 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Get full folder name
+    ! Get full folder name for this field (ending with thetao or so)
     foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name)
 
     ! Determine file index from time index
     fi = field%allfi(ti)
 
-    ! Define filename containing required timeframe
+    ! Define the full filename of the file that contains the required timeframe
     filename = trim(foldername) // '/' // trim(field%filenames(fi))
 
-    ! Read ocean field
+    ! Read ocean field from that timeframe
     call read_field_from_file_3D_ocean( filename, trim(field%name), mesh, C%output_dir, C%z_ocean, val, &
         time_to_read = field%alltimes( ti))
 
@@ -219,16 +220,19 @@ contains
 
     ! Get weights
     if (days < field%alltimes( field%ti0)) then
+      ! Model time before bracket times, put full weight on the first timeframe
       w0 = 1._dp
     elseif (days > field%alltimes( field%ti1)) then
+      ! Model time after bracket times, put full weight on the last timeframe
       w0 = 0._dp
     else
+      ! Model time between bracket times, determine interpolated weight
       w0 = (field%alltimes( field%ti1) - days) / (field%alltimes( field%ti1) - field%alltimes( field%ti0))
     end if
 
     w1 = 1._dp - w0
 
-    ! Apply interpolation
+    ! Apply interpolation to values (T or S) of both timeframes, and write to main ocean%T or ocean%S
     val_out = w0 * field%val0 + w1 * field%val1
 
     ! Remove routine from call stack
@@ -257,32 +261,38 @@ contains
     ! Get full folder name
     foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name)
 
-    ! Get filenames
+    ! Get all filenames in this folder, assuming this folder only contains files for this specific field (thetao or so)
     call list_files_in_folder( foldername, field%filenames)
 
+    ! Initialise counter for timeframes
     cnt = 1
 
+    ! Loop over all files of this field
     do i = 1, size(field%filenames)
 
       ! Construct the full filename
       filename = trim(foldername) // '/' // trim(field%filenames( i))
 
-      ! Open, get time length, and time_bnds dimension
+      ! Open file and extract time variable
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = nt)
       call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time)
 
-      ! Allocate and read timebounds
+      ! Copy time variable into a temporary array and close netcdf
       allocate( time_tmp( nt))
       call read_var_primary( filename, ncid, id_var_time, time_tmp)
       call close_netcdf_file( ncid)
 
-      ! Copy time_tmptbnds into time_bounds
+      ! Copy temporary time array to all processes
       call MPI_BCAST( time_tmp(:), nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
+      ! Loop over time array
       do t = 1, nt
+        ! Add time value to buffer
         time_buff( cnt) = time_tmp( t)
+        ! Add file index to buffer
         fi_buff( cnt) = i
+        ! Increase count
         cnt = cnt + 1
       end do
 
@@ -290,10 +300,11 @@ contains
 
     end do
 
+    ! Allocate arrays for times and file indices, combined for all available files in this folder
     allocate( field%alltimes( cnt-1))
     allocate( field%allfi   ( cnt-1))
 
-    ! Copy all valid values from buffer
+    ! Copy all valid values from buffer, so the length of these arrays is equal to the actual amount of timeframes
     field%alltimes = time_buff( 1:cnt-1)
     field%allfi    = fi_buff( 1:cnt-1)
 

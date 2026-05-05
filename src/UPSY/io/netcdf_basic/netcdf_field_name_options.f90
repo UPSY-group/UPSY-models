@@ -11,6 +11,7 @@ module netcdf_field_name_options
 
   public :: field_name_options_x, field_name_options_y, field_name_options_zeta, field_name_options_lon, &
     field_name_options_lat, field_name_options_time, field_name_options_month, field_name_options_depth, &
+    field_name_options_bnds, &
     field_name_options_dim_nV, field_name_options_dim_nTri, field_name_options_dim_nC_mem, &
     field_name_options_dim_nE, field_name_options_dim_nVor, field_name_options_dim_two, field_name_options_dim_three, &
     field_name_options_dim_four, field_name_options_V, field_name_options_Tri, field_name_options_nC, &
@@ -36,6 +37,7 @@ module netcdf_field_name_options
   character(len=1024), parameter :: field_name_options_time           = 'time||Time||t||nt'
   character(len=1024), parameter :: field_name_options_month          = 'month||Month'
   character(len=1024), parameter :: field_name_options_depth          = 'depth||Depth'
+  character(len=1024), parameter :: field_name_options_bnds           = 'bnds'
 
   ! Mesh data
   character(len=1024), parameter :: field_name_options_dim_nV         = 'vi'
@@ -97,44 +99,6 @@ module netcdf_field_name_options
   character(len=1024), parameter :: field_name_options_sealevel       = 'SL||sea_level||sl'
   character(len=1024), parameter :: field_name_options_GI             = 'GI||gi||Glacial_Index||glacial_index||GlacialIndex'
   character(len=1024), parameter :: field_name_options_CO2            = 'CO2||co2'
-
-  ! ISMIP variables
-  character(len=1024), parameter :: field_name_options_lithk          = 'lithk'
-  character(len=1024), parameter :: field_name_options_orog           = 'orog'
-  character(len=1024), parameter :: field_name_options_topg           = 'topg'
-  character(len=1024), parameter :: field_name_options_hfgeoubed      = 'hfgeoubed'
-  character(len=1024), parameter :: field_name_options_acabf          = 'acabf'
-  character(len=1024), parameter :: field_name_options_libmassbfgr    = 'libmassbfgr'
-  character(len=1024), parameter :: field_name_options_libmassbffl    = 'libmassbffl'
-  character(len=1024), parameter :: field_name_options_dlithkdt       = 'dlithkdt'
-  character(len=1024), parameter :: field_name_options_xvelsurf       = 'xvelsurf'
-  character(len=1024), parameter :: field_name_options_yvelsurf       = 'yvelsurf'
-  character(len=1024), parameter :: field_name_options_zvelsurf       = 'zvelsurf'
-  character(len=1024), parameter :: field_name_options_xvelbase       = 'xvelbase'
-  character(len=1024), parameter :: field_name_options_yvelbase       = 'yvelbase'
-  character(len=1024), parameter :: field_name_options_zvelbase       = 'zvelbase'
-  character(len=1024), parameter :: field_name_options_xvelmean       = 'xvelmean'
-  character(len=1024), parameter :: field_name_options_yvelmean       = 'yvelmean'
-  character(len=1024), parameter :: field_name_options_litemptop      = 'litemptop'
-  character(len=1024), parameter :: field_name_options_litempbotgr    = 'litempbotgr'
-  character(len=1024), parameter :: field_name_options_strbasemag     = 'strbasemag'
-  character(len=1024), parameter :: field_name_options_licalvf        = 'licalvf'
-  character(len=1024), parameter :: field_name_options_lifmassbf      = 'lifmassbf'
-  character(len=1024), parameter :: field_name_options_sftgif         = 'sftgif'
-  character(len=1024), parameter :: field_name_options_sftgrf         = 'sftgrf'
-  character(len=1024), parameter :: field_name_options_sftflf         = 'sftflf'
-
-  character(len=1024), parameter :: field_name_options_lim            = 'lim'
-  character(len=1024), parameter :: field_name_options_limnsw         = 'limnsw'
-  character(len=1024), parameter :: field_name_options_iareagr        = 'iareagr'
-  character(len=1024), parameter :: field_name_options_iareafl        = 'iareafl'
-
-  character(len=1024), parameter :: field_name_options_tendacabf      = 'tendacabf'
-  character(len=1024), parameter :: field_name_options_tendlibmassbf  = 'tendlibmassbf'
-  character(len=1024), parameter :: field_name_options_tendlibmassbffl= 'tendlibmassbffl'
-  character(len=1024), parameter :: field_name_options_tendlicalvf    = 'tendlicalvf'
-  character(len=1024), parameter :: field_name_options_tendlifmassbf  = 'tendlifmassbf'
-
 
 contains
 

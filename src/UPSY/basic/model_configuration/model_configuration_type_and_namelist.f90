@@ -1144,7 +1144,6 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output_config               = .true.                          !     Whether or not NetCDF output files should be created at all
-    logical             :: do_create_ismip_output_config                = .false.                          !     Whether or not ISMIP-specific output files should be created at all
     CHARACTER(LEN=1024) :: output_precision_config                      = 'double'                        !     Precision of floating-point output fields ('single' [32-bit], 'double' [64-bit])
     logical             :: do_compress_output_config                    = .false.                         !     Whether or not to use the NetCDF 'shuffle' and 'deflate' options to (losslessly) compress output
     real(dp)            :: dt_output_config                             = 1000._dp                        !     Time step for writing output
@@ -1158,6 +1157,21 @@ module model_configuration_type_and_namelist
     real(dp)            :: dx_output_grid_ROI_EAS_config                = 5E3_dp                          ! [m] Horizontal resolution for the square grid used for output for the region of interest for Eurasia
     real(dp)            :: dx_output_grid_ROI_GRL_config                = 5E3_dp                          ! [m] Horizontal resolution for the square grid used for output for the region of interest for Greenland
     real(dp)            :: dx_output_grid_ROI_ANT_config                = 5E3_dp                          ! [m] Horizontal resolution for the square grid used for output for the region of interest for Antarctica
+
+    ! ISMIP
+    logical             :: do_create_ismip_output_config                = .false.                         ! Whether or not ISMIP-specific output files should be created at all
+    character(len=1024) :: ismip_scenario_name_config                   = 'ctrl'                          ! Scenario name for ISMIP output
+    character(len=1024) :: ismip_group_name_config                      = 'IMAU'                          ! Group name included in ISMIP output files
+    character(len=1024) :: ismip_model_name_config                      = 'UFEMISM1'                      ! Model name to which numbers can be added for variants
+    character(len=4)    :: ismip_member_id_config                       = 'm001'                          ! ISM member id
+    character(len=4)    :: ismip_forcing_member_id_config               = 'f001'                          ! Forcing member id
+    character(len=4)    :: ismip_counter_config                         = 'C001'                          ! Counter
+    character(len=1024) :: ismip_esm_name_config                        = 'CESM2-WACCM'                   ! ESM forcing
+    character(len=1024) :: ismip_contact_name_config                    = ''                              ! Contact name for metadata
+    character(len=1024) :: ismip_contact_email_config                   = ''                              ! Contact email for metadata
+    character(len=1024) :: ismip_conventions_config                     = 'CF-1.10'                        ! CF conventions for metadata
+
+    real(dp)            :: dt_output_ismip_config                       = 1._dp                           ! Timestep for writing ISMIP output
 
     ! Transects
     character(len=1024) :: transects_NAM_config                         = ''                              ! List of transects to use for North America
@@ -2342,7 +2356,6 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output
-    logical             :: do_create_ismip_output
     CHARACTER(LEN=1024) :: output_precision
     logical             :: do_compress_output
     real(dp)            :: dt_output
@@ -2356,6 +2369,20 @@ module model_configuration_type_and_namelist
     real(dp)            :: dx_output_grid_ROI_EAS
     real(dp)            :: dx_output_grid_ROI_GRL
     real(dp)            :: dx_output_grid_ROI_ANT
+
+    ! ISMIP
+    logical             :: do_create_ismip_output
+    character(len=1024) :: ismip_scenario_name
+    character(len=1024) :: ismip_group_name
+    character(len=1024) :: ismip_model_name
+    character(len=4)    :: ismip_member_id
+    character(len=4)    :: ismip_forcing_member_id
+    character(len=4)    :: ismip_counter
+    character(len=1024) :: ismip_esm_name
+    character(len=1024) :: ismip_contact_name
+    character(len=1024) :: ismip_contact_email
+    character(len=1024) :: ismip_conventions
+    real(dp)            :: dt_output_ismip
 
     ! Transects
     character(len=1024) :: transects_NAM
@@ -3166,7 +3193,6 @@ contains
       tractrackpart_write_raw_output_config                       , &
       tractrackpart_dt_raw_output_config                          , &
       do_create_netcdf_output_config                              , &
-      do_create_ismip_output_config                               , &
       output_precision_config                                     , &
       do_compress_output_config                                   , &
       dt_output_config                                            , &
@@ -3180,6 +3206,18 @@ contains
       dx_output_grid_ROI_EAS_config                               , &
       dx_output_grid_ROI_GRL_config                               , &
       dx_output_grid_ROI_ANT_config                               , &
+      do_create_ismip_output_config                               , &
+      ismip_scenario_name_config                                  , &
+      ismip_group_name_config                                     , &
+      ismip_model_name_config                                     , &
+      ismip_member_id_config                                      , &
+      ismip_forcing_member_id_config                              , &
+      ismip_counter_config                                        , &
+      ismip_esm_name_config                                       , &
+      ismip_contact_name_config                                   , &
+      ismip_contact_email_config                                  , &
+      ismip_conventions_config                                    , &
+      dt_output_ismip_config                                      , &
       transects_NAM_config                                        , &
       transects_EAS_config                                        , &
       transects_GRL_config                                        , &
@@ -4394,7 +4432,6 @@ contains
 
     ! Basic settings
     C%do_create_netcdf_output                                = do_create_netcdf_output_config
-    C%do_create_ismip_output                                 = do_create_ismip_output_config
     C%output_precision                                       = output_precision_config
     C%do_compress_output                                     = do_compress_output_config
     C%dt_output                                              = dt_output_config
@@ -4408,6 +4445,20 @@ contains
     C%dx_output_grid_ROI_EAS                                 = dx_output_grid_ROI_EAS_config
     C%dx_output_grid_ROI_GRL                                 = dx_output_grid_ROI_GRL_config
     C%dx_output_grid_ROI_ANT                                 = dx_output_grid_ROI_ANT_config
+
+    ! ISMIP
+    C%do_create_ismip_output                                 = do_create_ismip_output_config
+    C%ismip_scenario_name                                    = ismip_scenario_name_config
+    C%ismip_group_name                                       = ismip_group_name_config
+    C%ismip_model_name                                       = ismip_model_name_config
+    C%ismip_member_id                                        = ismip_member_id_config
+    C%ismip_forcing_member_id                                = ismip_forcing_member_id_config
+    C%ismip_counter                                          = ismip_counter_config
+    C%ismip_esm_name                                         = ismip_esm_name_config
+    C%ismip_contact_name                                     = ismip_contact_name_config
+    C%ismip_contact_email                                    = ismip_contact_email_config
+    C%ismip_conventions                                      = ismip_conventions_config
+    C%dt_output_ismip                                        = dt_output_ismip_config
 
     ! Transects
     C%transects_NAM                                          = transects_NAM_config

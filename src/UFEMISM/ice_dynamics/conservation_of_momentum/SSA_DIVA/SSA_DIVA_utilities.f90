@@ -8,6 +8,7 @@ module SSA_DIVA_utilities
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, ddx_b_a_2D, ddy_b_a_2D
+  use checksum_mod, only: checksum
 
   use netcdf_io_main
 
@@ -53,6 +54,9 @@ contains
       tau_dy_b( ti) = -ice_density * grav * Hi_b( ti) * dHs_dy_b( ti)
     end do
 
+    call checksum( mesh%pai_Tri, tau_dx_b, 'tau_dx_b')
+    call checksum( mesh%pai_Tri, tau_dy_b, 'tau_dy_b')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -79,6 +83,11 @@ contains
     call ddx_b_a_2D( mesh, v_b, dv_dx_a)
     call ddy_b_a_2D( mesh, v_b, dv_dy_a)
 
+    call checksum( mesh%pai_V, du_dx_a, 'du_dx_a')
+    call checksum( mesh%pai_V, du_dy_a, 'du_dy_a')
+    call checksum( mesh%pai_V, dv_dx_a, 'dv_dx_a')
+    call checksum( mesh%pai_V, dv_dy_a, 'dv_dy_a')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -104,6 +113,9 @@ contains
       u_b( ti) = (visc_it_relax * u_b( ti)) + ((1._dp - visc_it_relax) * u_b_prev( ti))
       v_b( ti) = (visc_it_relax * v_b( ti)) + ((1._dp - visc_it_relax) * v_b_prev( ti))
     end do
+
+    call checksum( mesh%pai_Tri, u_b, 'u_b')
+    call checksum( mesh%pai_Tri, v_b, 'v_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -137,6 +149,9 @@ contains
       end if
 
     end do
+
+    call checksum( mesh%pai_Tri, u_b, 'u_b')
+    call checksum( mesh%pai_Tri, v_b, 'v_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

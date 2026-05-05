@@ -1,0 +1,69 @@
+name: Run and check test
+run-name: ${{ github.actor }} - Run and check test
+on:
+  workflow_call:
+    inputs:
+      test_path:
+        description: Path to test directory
+        required: true
+        type: string
+
+jobs:
+  run_and_check_test:
+    name: run
+    runs-on: macos-latest
+    steps:
+
+    # Install all required packages and compile the code
+    # ==================================================
+
+      - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
+        run: |
+          #brew install gcc                    # Not needed on GitHub server, already installed
+          brew install open-mpi
+          brew install petsc
+          brew unlink hdf5-mpi                 # To fix the following conflict: "hdf5-mpi: because hdf5-mpi is a variant of hdf5, one can only use one or the other"
+          brew install netcdf
+          brew install netcdf-fortran
+          #brew install cmake                  # Not needed, already installed
+          #brew install ninja
+
+      - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
+        uses: fortran-lang/setup-fortran@v1
+        id: setup-fortran
+        with:
+          compiler: gcc
+          version: 15
+
+      - name: Verify compiler setup
+        run: gfortran --version
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update submodules
+        run: |
+          git submodule update --init --remote
+
+      - name: Compile UFEMISM
+        run: csh compile_UFEMISM.csh  dev  clean
+
+      - name: Set up Python environment for checksum tools
+        run: |
+          python3 -m venv .venv
+          .venv/bin/python3 -m pip install --upgrade pip
+          .venv/bin/python3 -m pip install numpy netCDF4
+
+    # Run the test and check its results against the reference
+    # ========================================================
+
+      - name: Run test
+        run: csh ${{ inputs.test_path }}/test_script.csh
+
+      - name: Show checksum logfile diff
+        run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
+
+      - name: Check test result
+        run: |
+          .venv/bin/python3 automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
+          .venv/bin/python3 automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}

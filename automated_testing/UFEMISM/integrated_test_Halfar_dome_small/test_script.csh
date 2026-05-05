@@ -1,20 +1,24 @@
 #! /bin/csh -f
 
-rm -rf automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results*
+set test_dir = automated_testing/UFEMISM/integrated_test_Halfar_dome_small
 
-mpiexec  -n 2 UFEMISM_program  automated_testing/UFEMISM/integrated_test_Halfar_dome_small/config_Halfar_40km.cfg
-mpiexec  -n 2 UFEMISM_program  automated_testing/UFEMISM/integrated_test_Halfar_dome_small/config_Halfar_static_40km.cfg
+rm -rf ${test_dir}/results*
 
-mkdir automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results
+mpiexec  -n 2 UFEMISM_program  ${test_dir}/config_Halfar_40km.cfg
+mpiexec  -n 2 UFEMISM_program  ${test_dir}/config_Halfar_static_40km.cfg
 
-mv automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_40km/main_output_ANT_00001.nc          automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results/main_output_ANT_Halfar_40km_00001.nc
-mv automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_40km/main_output_ANT_grid.nc           automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results/main_output_ANT_Halfar_40km_grid.nc
-mv automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_40km/checksum_logfile.txt              automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results/checksum_logfile_Halfar_40km_grid.txt
+mkdir ${test_dir}/results
 
-rm -rf automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_40km
+mv ${test_dir}/results_Halfar_40km/main_output_ANT_00001.nc          ${test_dir}/results/main_output_ANT_Halfar_40km_00001.nc
+mv ${test_dir}/results_Halfar_40km/main_output_ANT_grid.nc           ${test_dir}/results/main_output_ANT_Halfar_40km_grid.nc
+mv ${test_dir}/results_Halfar_40km/checksum_logfile.txt              ${test_dir}/results/checksum_logfile_Halfar_40km_grid.txt
 
-mv automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_static_40km/main_output_ANT_00001.nc   automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results/main_output_ANT_Halfar_static_40km_00001.nc
-mv automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_static_40km/main_output_ANT_grid.nc    automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results/main_output_ANT_Halfar_static_40km_grid.nc
-mv automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_static_40km/checksum_logfile.txt       automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results/checksum_logfile_Halfar_static_40km_grid.txt
+rm -rf ${test_dir}/results_Halfar_40km
 
-rm -rf automated_testing/UFEMISM/integrated_test_Halfar_dome_small/results_Halfar_static_40km
+mv ${test_dir}/results_Halfar_static_40km/main_output_ANT_00001.nc   ${test_dir}/results/main_output_ANT_Halfar_static_40km_00001.nc
+mv ${test_dir}/results_Halfar_static_40km/main_output_ANT_grid.nc    ${test_dir}/results/main_output_ANT_Halfar_static_40km_grid.nc
+mv ${test_dir}/results_Halfar_static_40km/checksum_logfile.txt       ${test_dir}/results/checksum_logfile_Halfar_static_40km_grid.txt
+
+rm -rf ${test_dir}/results_Halfar_static_40km
+
+.venv/bin/python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

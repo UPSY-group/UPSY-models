@@ -31,19 +31,15 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_ocean_model_ismip'
     real(dp)                       :: w0, w1
-    real(dp)                       :: days
-    character(len=1024)            :: filename_to_read_T, filename_to_read_S
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Find filename which contains model time
-    !call find_filename_to_read( ocean%ismip%filenames_T, ocean%ismip%time_bnds_T, days, filename_to_read_T)
-    !call find_filename_to_read( ocean%ismip%filenames_S, ocean%ismip%time_bnds_S, days, filename_to_read_S)
+    ! Update timeframes if necessary
+    call update_timeframes( mesh, ocean%ismip%T, time)
+    call update_timeframes( mesh, ocean%ismip%S, time)
 
-    ! Interpolate timeframes
-    !call interpolate_timeframes( mesh, 'thetao', filename_to_read_T, days, ocean%T)
-    !call interpolate_timeframes( mesh, 'so'    , filename_to_read_S, days, ocean%S)
+    ! Interpolate
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -72,14 +68,12 @@ contains
     call gather_fileinfo( ismip%S)
 
     ! Allocate memory
-
     allocate (ismip%T%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
     allocate (ismip%S%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
-
     allocate (ismip%T%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
     allocate (ismip%S%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
 
-    ! Update time slices
+    ! Update timeframes
     call update_timeframes( mesh, ismip%T, C%start_time_of_run)
     call update_timeframes( mesh, ismip%S, C%start_time_of_run)     
 
@@ -105,10 +99,60 @@ contains
     ! Convert model time (years) to days_since_1850
     call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
 
+    ! Update the indices of time slices before and after current time
+    call update_bracket_indices( field, days)
+
+    if (par%primary) print *, trim(field%name), days, field%alltimes(field%ti0), field%alltimes(field%ti1)
+
+    ! Read timeframes
+
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine update_timeframes
+
+  subroutine update_bracket_indices( field, days)
+
+    ! In/output variables:
+    type(type_ocean_field_ismip), intent(inout) :: field
+    real(dp),                     intent(in   ) :: days
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'update_bracket_indices'
+    integer                        :: i, n
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    n = size(field%alltimes)
+
+    ! Model time before first available time value, return first two indices
+    if (days <= field%alltimes(1)) then
+      field%ti0 = 1
+      field%ti1 = 2
+      return
+    end if
+
+    ! Model time after last available time value, return last two indices
+    if (days >= field%alltimes(n)) then
+      field%ti0 = n-1
+      field%ti1 = n
+      return
+    end if
+
+    ! Model time within array, return bracketing indices
+    do i = 1, n
+      if (field%alltimes(i) <= days) then
+        field%ti0 = i
+        field%ti1 = i+1
+      end if
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine update_bracket_indices
 
 
   !subroutine interpolate_timeframes( mesh, varname, filename, days, ocean_field)

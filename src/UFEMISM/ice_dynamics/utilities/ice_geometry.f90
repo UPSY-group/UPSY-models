@@ -89,9 +89,9 @@ module ice_geometry_calculations
        call calc_grounded_fractions( self%mesh, self%Hi, self%Hb, self%SL, self%dHb, self%fraction_gr, self%fraction_gr_b, self%mask_floating_ice, self%bedrock_cdf,self%bedrock_cdf_b)
 
         ! Fraction margin and effective thickness 
-        call calc_effective_thickness(self%mesh, self%Hi, self%Hb, self%SL, self%Hi_eff, self%fraction_margin)
+       call calc_effective_thickness(self%mesh, self%Hi, self%Hb, self%SL, self%Hi_eff, self%fraction_margin)
 
-        call finalise_routine( routine_name)
+       call finalise_routine( routine_name)
 
     end subroutine calc_ice_geometry
 
@@ -122,13 +122,6 @@ module ice_geometry_calculations
         call init_routine( routine_name)
 
         self%mesh => mesh
-
-        ! Check if config value is valid
-        ! if (C%subgrid_bedrock_cdf_nbins <= 0) then
-            ! Use a default value or print error
-            ! print *, "WARNING: C%subgrid_bedrock_cdf_nbins not set, using default 11", C%subgrid_bedrock_cdf_nbins
-          
-        ! end if
 
         ! Primary input fields 
         if (.not. allocated(self%Hi)) allocate(self%Hi(self%mesh%vi1:self%mesh%vi2)) 

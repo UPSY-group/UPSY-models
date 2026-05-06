@@ -1,4 +1,4 @@
-module ocean_ismip
+module ocean_ISMIP7
 
   use precisions, only: dp
   use UPSY_main, only: UPSY
@@ -7,7 +7,7 @@ module ocean_ismip
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ocean_model_types, only: type_ocean_model, type_ocean_model_ismip, type_ocean_field_ismip
+  use ocean_model_types, only: type_ocean_model, type_ocean_model_ISMIP7, type_ocean_field_ISMIP7
   use netcdf_io_main
   use mpi_f08, only: MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use basic_model_utilities, only: list_files_in_folder
@@ -17,11 +17,11 @@ module ocean_ismip
 
   private
 
-  public :: initialise_ocean_model_ismip, run_ocean_model_ismip
+  public :: initialise_ocean_model_ISMIP7, run_ocean_model_ISMIP7
 
 contains
 
-  subroutine run_ocean_model_ismip( mesh, ocean, time)
+  subroutine run_ocean_model_ISMIP7( mesh, ocean, time)
 
     ! In/output variables:
     type(type_mesh),        intent(in   ) :: mesh
@@ -29,66 +29,66 @@ contains
     real(dp),               intent(in   ) :: time
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_ocean_model_ismip'
+    character(len=1024), parameter :: routine_name = 'run_ocean_model_ISMIP7'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
     ! Update timeframes if necessary
-    call update_timeframes( mesh, ocean%ismip%T, time)
-    call update_timeframes( mesh, ocean%ismip%S, time)
+    call update_timeframes( mesh, ocean%ISMIP7%T, time)
+    call update_timeframes( mesh, ocean%ISMIP7%S, time)
 
     ! Interpolate T and S between timeframes
-    call interpolate_single_field( ocean%ismip%T, ocean%T, time)
-    call interpolate_single_field( ocean%ismip%S, ocean%S, time)
+    call interpolate_single_field( ocean%ISMIP7%T, ocean%T, time)
+    call interpolate_single_field( ocean%ISMIP7%S, ocean%S, time)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_ocean_model_ismip
+  end subroutine run_ocean_model_ISMIP7
 
-  subroutine initialise_ocean_model_ismip( mesh, ismip)
+  subroutine initialise_ocean_model_ISMIP7( mesh, ISMIP7)
 
     ! In/output variables:
-    type(type_mesh),              intent(in   ) :: mesh
-    type(type_ocean_model_ismip), intent(inout) :: ismip
+    type(type_mesh),               intent(in   ) :: mesh
+    type(type_ocean_model_ISMIP7), intent(inout) :: ISMIP7
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_ocean_model_ismip'
+    character(len=1024), parameter :: routine_name = 'initialise_ocean_model_ISMIP7'
     character(len=1024)            :: filename
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
     ! Define field names
-    ismip%T%name = 'thetao'
-    ismip%S%name = 'so'
+    ISMIP7%T%name = 'thetao'
+    ISMIP7%S%name = 'so'
 
     ! Get info from files
-    call gather_fileinfo( ismip%T)
-    call gather_fileinfo( ismip%S)
+    call gather_fileinfo( ISMIP7%T)
+    call gather_fileinfo( ISMIP7%S)
 
     ! Allocate memory for timeframes
-    allocate (ismip%T%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
-    allocate (ismip%S%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
-    allocate (ismip%T%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
-    allocate (ismip%S%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
+    allocate (ISMIP7%T%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
+    allocate (ISMIP7%S%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
+    allocate (ISMIP7%T%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
+    allocate (ISMIP7%S%val1( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
 
     ! Update timeframes to the current model time
-    call update_timeframes( mesh, ismip%T, C%start_time_of_run)
-    call update_timeframes( mesh, ismip%S, C%start_time_of_run)     
+    call update_timeframes( mesh, ISMIP7%T, C%start_time_of_run)
+    call update_timeframes( mesh, ISMIP7%S, C%start_time_of_run)     
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_ocean_model_ismip
+  end subroutine initialise_ocean_model_ISMIP7
 
   subroutine update_timeframes( mesh, field, time)
 
     ! In/output variables:
-    type(type_mesh),              intent(in   ) :: mesh
-    type(type_ocean_field_ismip), intent(inout) :: field
-    real(dp),                     intent(in   ) :: time
+    type(type_mesh),               intent(in   ) :: mesh
+    type(type_ocean_field_ISMIP7), intent(inout) :: field
+    real(dp),                      intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_timeframes'
@@ -125,8 +125,8 @@ contains
   subroutine update_bracket_indices( field, days)
 
     ! In/output variables:
-    type(type_ocean_field_ismip), intent(inout) :: field
-    real(dp),                     intent(in   ) :: days
+    type(type_ocean_field_ISMIP7), intent(inout) :: field
+    real(dp),                      intent(in   ) :: days
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_bracket_indices'
@@ -168,10 +168,10 @@ contains
   subroutine update_single_timeframe( mesh, field, ti, val)
 
     ! In/output variables:
-    type(type_mesh),              intent(in   ) :: mesh
-    type(type_ocean_field_ismip), intent(in   ) :: field
-    integer,                      intent(in   ) :: ti
-    real(dp), dimension(:,:),     intent(inout) :: val
+    type(type_mesh),               intent(in   ) :: mesh
+    type(type_ocean_field_ISMIP7), intent(in   ) :: field
+    integer,                       intent(in   ) :: ti
+    real(dp), dimension(:,:),      intent(inout) :: val
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_single_timeframe'
@@ -200,9 +200,9 @@ contains
   subroutine interpolate_single_field( field, val_out, time)
 
     ! In/output variables:
-    type(type_ocean_field_ismip), intent(in   ) :: field
-    real(dp), dimension(:,:),     intent(inout) :: val_out
-    real(dp),                     intent(in   ) :: time
+    type(type_ocean_field_ISMIP7), intent(in   ) :: field
+    real(dp), dimension(:,:),      intent(inout) :: val_out
+    real(dp),                      intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'interpolate_single_field'
@@ -240,7 +240,7 @@ contains
   subroutine gather_fileinfo( field)
 
     ! In/output variables:
-    type(type_ocean_field_ismip), intent(inout) :: field
+    type(type_ocean_field_ISMIP7), intent(inout) :: field
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'gather_fileinfo'
@@ -256,7 +256,8 @@ contains
     call init_routine( routine_name)
 
     ! Get full folder name
-    field%foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name) // '/' // 'v3'
+    field%foldername = trim(C%ocean_ISMIP7_forcing_foldername) // '/' // trim(field%name) // &
+      '/' // trim(C%ocean_ISMIP7_forcing_version)
 
     ! Get all filenames in this folder, assuming this folder only contains files for this specific field (thetao or so)
     call list_files_in_folder( field%foldername, field%filenames)
@@ -310,4 +311,4 @@ contains
 
   end subroutine gather_fileinfo
 
-end module ocean_ismip
+end module ocean_ISMIP7

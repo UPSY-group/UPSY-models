@@ -800,8 +800,9 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot_config    = ''                               ! File containing the ocean snapshot (e.g. World Ocean Atlas)
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies_config   = ''                               ! File containing the ocean anomalies (e.g. from a GCM projection)
 
-    ! Settings for the ISMIP ocean model
-    character(len=1024) :: foldername_ocean_ismip_config                = ''
+    ! Settings for the ISMIP7 ocean model
+    character(len=1024) :: ocean_ISMIP7_forcing_foldername_config       = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the ocean files are located in /path/to/base/folder/thetao/version)
+    character(len=1024) :: ocean_ISMIP7_forcing_version_config          = ''
 
   ! == Surface mass balance
   ! =======================
@@ -2019,8 +2020,9 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies
 
-    ! Settings for the ISMIP ocean model
-    character(len=1024) :: foldername_ocean_ismip
+    ! Settings for the ISMIP7 ocean model
+    character(len=1024) :: ocean_ISMIP7_forcing_foldername
+    character(len=1024) :: ocean_ISMIP7_forcing_version
 
   ! == Surface mass balance
   ! =======================
@@ -2996,7 +2998,8 @@ contains
       filename_ocean_GI_ANT_config                                , &
       ocean_snp_p_anml_filename_snapshot_config                   , &
       ocean_snp_p_anml_filename_anomalies_config                  , &
-      foldername_ocean_ismip_config                               , &
+      ocean_ISMIP7_forcing_foldername_config                      , &
+      ocean_ISMIP7_forcing_version_config                         , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -4101,8 +4104,9 @@ contains
     C%ocean_snp_p_anml_filename_snapshot                     = ocean_snp_p_anml_filename_snapshot_config
     C%ocean_snp_p_anml_filename_anomalies                    = ocean_snp_p_anml_filename_anomalies_config
 
-    ! Settings for the ISMIP ocean model
-    C%foldername_ocean_ismip                                 = foldername_ocean_ismip_config
+    ! Settings for the ISMIP7 ocean model
+    C%ocean_ISMIP7_forcing_foldername                        = ocean_ISMIP7_forcing_foldername_config
+    C%ocean_ISMIP7_forcing_version                           = ocean_ISMIP7_forcing_version_config
 
     ! == Surface mass balance
     ! =======================

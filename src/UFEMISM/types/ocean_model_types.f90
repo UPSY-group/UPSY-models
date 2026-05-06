@@ -93,7 +93,7 @@ MODULE ocean_model_types
 
   end type type_ocean_model_snapshot_plus_anomalies
 
-  type type_ocean_field_ismip
+  type type_ocean_field_ISMIP7
     ! Data and metadata of T/S fields
 
     character(len=1024)                            :: name          !           'thetao' or 'so'
@@ -109,17 +109,17 @@ MODULE ocean_model_types
     integer                                        :: ti0           !           Time index before current time
     integer                                        :: ti1           !           Time index after current time
 
-  end type type_ocean_field_ismip
+  end type type_ocean_field_ISMIP7
 
-  type type_ocean_model_ismip
+  type type_ocean_model_ISMIP7
     ! Model to read in ISMIP7-style forcing fields with separate files
     ! for thetao and so, of varying lengths
 
     ! Fields
-    type(type_ocean_field_ismip)                   :: T
-    type(type_ocean_field_ismip)                   :: S
+    type(type_ocean_field_ISMIP7)                   :: T
+    type(type_ocean_field_ISMIP7)                   :: S
 
-  end type type_ocean_model_ismip
+  end type type_ocean_model_ISMIP7
 
   TYPE type_ocean_model
     ! The ocean model data structure.
@@ -138,7 +138,7 @@ MODULE ocean_model_types
     TYPE(type_ocean_model_deltaT)                  :: deltaT
     type(type_ocean_model_snapshot_nudge2D)        :: snapshot_nudge2D
     type(type_ocean_model_snapshot_plus_anomalies) :: snapshot_plus_anomalies
-    type(type_ocean_model_ismip)                   :: ismip
+    type(type_ocean_model_ISMIP7)                  :: ISMIP7
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

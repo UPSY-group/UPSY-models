@@ -138,27 +138,26 @@ contains
     ! Determine total numer of timeframes available for this field
     n = size(field%alltimes)
 
-    ! Model time before first available time value, return first two indices
     if (days <= field%alltimes(1)) then
+      ! Model time before first available time value, return first two indices
       field%ti0 = 1
       field%ti1 = 2
-      return
-    end if
 
-    ! Model time after last available time value, return last two indices
-    if (days >= field%alltimes(n)) then
+    elseif (days >= field%alltimes(n)) then
+      ! Model time after last available time value, return last two indices
       field%ti0 = n-1
       field%ti1 = n
-      return
-    end if
 
-    ! Model time within array, return bracketing indices
-    do i = 1, n
-      if (field%alltimes(i) <= days) then
-        field%ti0 = i
-        field%ti1 = i+1
-      end if
-    end do
+    else
+      ! Model time within array, return bracketing indices
+      do i = 1, n
+        if (field%alltimes(i) <= days) then
+          field%ti0 = i
+          field%ti1 = i+1
+        end if
+      end do
+
+    end if
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

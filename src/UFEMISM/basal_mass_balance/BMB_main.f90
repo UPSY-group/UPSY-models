@@ -148,7 +148,9 @@ CONTAINS
       CASE ('prescribed_fixed')
         ! No need to do anything
       CASE ('idealised')
-        CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        if (time > C%uniform_BMB_t_start) then
+          CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        end if
       CASE ('parameterised')
         CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
       CASE ('inverted')

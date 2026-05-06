@@ -175,21 +175,18 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_single_timeframe'
-    character(len=1024)            :: foldername, filename
+    character(len=1024)            :: filename
     integer                        :: fi
     integer                        :: ncid, id_dim_time, nt, id_var_time, ierr
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Get full folder name for this field (ending with thetao or so)
-    foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name)
-
     ! Determine file index from time index
     fi = field%allfi(ti)
 
     ! Define the full filename of the file that contains the required timeframe
-    filename = trim(foldername) // '/' // trim(field%filenames(fi))
+    filename = trim(field%foldername) // '/' // trim(field%filenames(fi))
 
     ! Read ocean field from that timeframe
     call read_field_from_file_3D_ocean( filename, trim(field%name), mesh, C%output_dir, C%z_ocean, val, &
@@ -247,7 +244,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'gather_fileinfo'
-    character(len=1024)            :: foldername, filename
+    character(len=1024)            :: filename
     integer                        :: i, ncid, id_dim_time, nt, id_var_time
     integer                        :: ierr
     real(dp), dimension(:), allocatable :: time_tmp
@@ -259,10 +256,10 @@ contains
     call init_routine( routine_name)
 
     ! Get full folder name
-    foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name)
+    field%foldername = trim(C%foldername_ocean_ismip) // '/' // trim(field%name) // '/' // 'v3'
 
     ! Get all filenames in this folder, assuming this folder only contains files for this specific field (thetao or so)
-    call list_files_in_folder( foldername, field%filenames)
+    call list_files_in_folder( field%foldername, field%filenames)
 
     ! Initialise counter for timeframes
     cnt = 1
@@ -271,7 +268,7 @@ contains
     do i = 1, size(field%filenames)
 
       ! Construct the full filename
-      filename = trim(foldername) // '/' // trim(field%filenames( i))
+      filename = trim(field%foldername) // '/' // trim(field%filenames( i))
 
       ! Open file and extract time variable
       call open_existing_netcdf_file_for_reading( filename, ncid)

@@ -97,6 +97,7 @@ MODULE ocean_model_types
     ! Data and metadata of T/S fields
 
     character(len=1024)                            :: name          !           'thetao' or 'so'
+    character(len=1024)                            :: foldername    !           Foldername that contains all files
     character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
 
     real(dp), dimension(:), allocatable            :: alltimes      ! [days]    All time values in combined files

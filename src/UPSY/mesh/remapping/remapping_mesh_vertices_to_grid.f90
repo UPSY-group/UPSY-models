@@ -47,6 +47,7 @@ contains
     type(type_sparse_matrix_CSR_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                             :: w0, w1x, w1y
     character(len=1024)                    :: filename_grid, filename_mesh
+    integer                                :: perr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -75,6 +76,10 @@ contains
     call check_remapping_matrix_validity( mesh, grid, map%M)
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
+
+    call MatDestroy( w0, perr)
+    call MatDestroy( w1x, perr)
+    call MatDestroy( w1y, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -516,6 +521,12 @@ contains
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
     call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
     call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+
+    call MatDestroy( M_map_a_b, perr)
+    call MatDestroy( M_ddx_a_b, perr)
+    call MatDestroy( M_ddy_a_b, perr)
+    call MatDestroy( M1, perr)
+    call MatDestroy( M2, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -11,7 +11,9 @@ module netcdf_basic_wrappers
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
     NF90_MAX_VAR_DIMS, NF90_PUT_ATT, NF90_OPEN, NF90_NOWRITE, NF90_WRITE, NF90_SHARE, &
-    NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_FLOAT, NF90_DOUBLE
+    NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_INT, NF90_FLOAT, NF90_DOUBLE, &
+    NF90_FILL_INT, NF90_FILL_FLOAT, NF90_FILL_DOUBLE
+  use basic_model_utilities, only: get_current_date_time_str
 
   implicit none
 
@@ -21,7 +23,8 @@ module netcdf_basic_wrappers
     create_new_netcdf_file_for_writing, create_dimension, create_variable, &
     create_scalar_variable, add_attribute_int, add_attribute_dp, add_attribute_char, &
     open_existing_netcdf_file_for_reading, open_existing_netcdf_file_for_writing, &
-    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, delete_existing_file
+    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, add_fillvalue, &
+    delete_existing_file
 
 contains
 
@@ -205,13 +208,14 @@ contains
     call MPI_BCAST( ncid, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
 
     ! Add the git commit hash and package versions that were used to compile the program
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git commit hash'        , git_commit_hash)
-    call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has uncommitted changes', has_uncommitted_changes)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc version'          , petsc_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'NetCDF version'         , netcdf_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'OpenMPI version'        , openmpi_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler version'       , compiler_version)
-    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler flags'         , compiler_flags)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'history', 'Generated on ' // get_current_date_time_str())
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git_commit_hash'        , git_commit_hash)
+    call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has_uncommitted_changes', has_uncommitted_changes)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc_version'          , petsc_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'NetCDF_version'         , netcdf_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'OpenMPI_version'        , openmpi_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler_version'       , compiler_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler_flags'         , compiler_flags)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -426,6 +430,33 @@ contains
 
   end subroutine add_attribute_dp
 
+  subroutine add_attribute_real( filename, ncid, id_var, att_name, att_val)
+    !< Add a single-precision-valued attributes to a variable.
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    integer,          intent(in   ) :: id_var
+    character(len=*), intent(in   ) :: att_name
+    real,             intent(in   ) :: att_val
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_attribute_real'
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Add the attribute
+    if (par%primary) then
+      call handle_netcdf_error( NF90_PUT_ATT( ncid, id_var, att_name, att_val), &
+        filename = filename)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_attribute_real
+
   subroutine add_attribute_char( filename, ncid, id_var, att_name, att_val)
     !< Add a character-valued attributes to a variable.
 
@@ -586,6 +617,40 @@ contains
     end select
 
   end function parse_netcdf_precision
+
+  subroutine add_fillvalue( filename, ncid, id_var)
+    !< Add the fill value as attribute to a variable.
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    integer,          intent(in   ) :: id_var
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_fillvalue'
+    integer                        :: var_type
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Get the variable type
+    call inquire_var_info( filename, ncid, id_var, var_type = var_type)
+
+    select case (var_type)
+      case default
+        ! No integer, real, or dp, don't do anything
+      case (NF90_INT)
+        call add_attribute_int( filename, ncid, id_var, '_FillValue', NF90_FILL_INT)
+      case (NF90_FLOAT)
+        call add_attribute_real( filename, ncid, id_var, '_FillValue', NF90_FILL_FLOAT)
+      case (NF90_DOUBLE)
+        call add_attribute_dp( filename, ncid, id_var, '_FillValue', NF90_FILL_DOUBLE)
+    end select 
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_fillvalue
 
   subroutine delete_existing_file( filename)
 

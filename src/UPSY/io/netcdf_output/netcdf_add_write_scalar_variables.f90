@@ -6,13 +6,14 @@ module netcdf_add_write_scalar_variables
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_basic
   use netcdf, only: NF90_MAX_VAR_DIMS, NF90_INT, NF90_DOUBLE
+  use calendar, only: convert_time_to_days
 
   implicit none
 
   private
 
   public :: add_field_dp_0D, add_field_int_0D, write_to_field_multopt_int_0D, &
-    write_to_field_multopt_dp_0D, write_time_to_file
+    write_to_field_multopt_dp_0D, write_time_to_file, write_cftime_to_file
 
 contains
 
@@ -226,5 +227,68 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_time_to_file
+
+  subroutine write_cftime_to_file( filename, ncid, time, with_bounds)
+    ! Write new CFtime value to file
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    real(dp),         intent(in   ) :: time
+    logical,          intent(in   ) :: with_bounds
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'write_cftime_to_file'
+    integer                        :: id_dim_time
+    integer                        :: id_var_time, id_var_time_bnds
+    integer                        :: nt
+    real(dp)                       :: days
+    real(dp), dimension(2)         :: days_bnds
+    real(dp), dimension(2,1)       :: days_bnds_with_time
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Determine current length of time dimension in file
+    call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = nt)
+
+    ! Inquire variable ids
+    call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time)
+
+    ! Determine next time index
+    nt = nt + 1
+
+    ! Convert time to cftime
+    if (with_bounds) then
+      ! Days centered at 1 July of last year, days_bnds span full last year from 1 Jan to 1 Jan
+
+      ! Convert time
+      call convert_time_to_days( time, days, days_bnds)
+
+      ! Write time
+      call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
+
+      ! Add "pretend" time dimension to days_bnds
+      days_bnds_with_time( :,1) = days_bnds
+
+      ! Write time bounds
+      call inquire_var_multopt( filename, ncid, 'time_bnds', id_var_time_bnds)
+      call write_var_primary( filename, ncid, id_var_time_bnds, days_bnds_with_time, start = (/ 1, nt /), count = (/ 2, 1 /) )
+
+    else
+      ! Days centered at 1 January, no bounds
+
+      ! Convert time
+      call convert_time_to_days( time, days)
+
+      ! Write time
+      call write_var_primary( filename, ncid, id_var_time, (/ days /), start = (/ nt /), count = (/ 1 /) )
+
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_cftime_to_file
 
 end module netcdf_add_write_scalar_variables

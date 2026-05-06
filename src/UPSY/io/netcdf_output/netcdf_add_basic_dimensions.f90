@@ -4,13 +4,13 @@ module netcdf_add_basic_dimensions
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_basic
-  use netcdf, only: NF90_INT, NF90_DOUBLE, NF90_UNLIMITED
+  use netcdf, only: NF90_INT, NF90_FLOAT, NF90_DOUBLE, NF90_UNLIMITED
 
   implicit none
 
   private
 
-  public :: add_time_dimension_to_file, add_month_dimension_to_file, add_zeta_dimension_to_file, &
+  public :: add_time_dimension_to_file, add_cftime_dimension_to_file, add_month_dimension_to_file, add_zeta_dimension_to_file, &
     add_depth_dimension_to_file
 
 contains
@@ -42,6 +42,43 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine add_time_dimension_to_file
+
+  subroutine add_cftime_dimension_to_file( filename, ncid, with_bounds)
+    !< Add a CF time dimension and variable to an existing NetCDF file
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    logical,          intent(in   ) :: with_bounds
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_cftime_dimension_to_file'
+    integer                        :: id_dim_time, id_dim_bnds
+    integer                        :: id_var_time, id_var_time_bnds
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Create time dimension
+    call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_time), NF90_UNLIMITED, id_dim_time)
+
+    ! Create time variable
+    call create_variable(  filename, ncid, get_first_option_from_list( field_name_options_time), NF90_FLOAT, (/ id_dim_time /), id_var_time)
+    call add_attribute_char( filename, ncid, id_var_time, 'long_name', 'Time')
+    call add_attribute_char( filename, ncid, id_var_time, 'units', 'days since 1850-01-01')
+    call add_attribute_char( filename, ncid, id_var_time, 'calendar', 'standard')
+
+    ! Add bounds if required
+    if (with_bounds) then
+      call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_bnds), 2, id_dim_bnds)
+      call add_attribute_char( filename, ncid, id_var_time, 'bounds', 'time_bnds')
+      call create_variable(  filename, ncid, 'time_bnds', NF90_FLOAT, (/ id_dim_bnds, id_dim_time /), id_var_time_bnds)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_cftime_dimension_to_file
 
   subroutine add_month_dimension_to_file( filename, ncid)
     !< Add a month dimension and variable to an existing NetCDF file

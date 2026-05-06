@@ -830,7 +830,7 @@ contains
 
     if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .or. C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
       ! Set up bedrock CDF in the file
-      call setup_bedrock_CDF_in_netcdf_file( region%output_filename_mesh, ncid, region%ice)
+      call setup_bedrock_CDF_in_netcdf_file( region%mesh, region%output_filename_mesh, ncid, region%ice)
     end if
 
     ! Add time, zeta, and month dimensions+variables to the file

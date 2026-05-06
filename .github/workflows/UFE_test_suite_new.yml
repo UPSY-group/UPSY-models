@@ -20,25 +20,41 @@ jobs:
     uses: ./.github/workflows/UFE_unit_tests.yml
 
   SSA_icestream_small:
-    uses: ./.github/workflows/UFE_integrated_test_SSA_icestream_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_SSA_icestream_small
 
   ISMIP_HOM_small:
-    uses: ./.github/workflows/UFE_integrated_test_ISMIP_HOM_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small
 
   Halfar_dome_small:
-    uses: ./.github/workflows/UFE_integrated_test_Halfar_dome_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Halfar_dome_small
 
   MISMIP_mod_small:
-    uses: ./.github/workflows/UFE_integrated_test_MISMIP_mod_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_MISMIP_mod_small
 
   MISMIPplus_small:
-    uses: ./.github/workflows/UFE_integrated_test_MISMIPplus_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_MISMIPplus_small
 
   Berends2023nudging_exp1_small:
-    uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp1_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp1_small
 
   Berends2023nudging_exp2_small:
-    uses: ./.github/workflows/UFE_integrated_test_Berends2023nudging_exp2_small.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp2_small
 
   Ant_init_small_01:
-    uses: ./.github/workflows/UFE_integrated_test_Ant_init_small_01.yml
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Ant_init_small_01

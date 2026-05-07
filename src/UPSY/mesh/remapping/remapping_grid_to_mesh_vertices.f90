@@ -98,8 +98,12 @@ contains
         call crash('unknown method for grid_to_mesh remapping "' // trim( map%method) // '"')
       case ('1st_order_conservative')
         map%M = M_cons_1st_order
+        ! Clean up the unused matrix
+        call MatDestroy( M_cons_2nd_order, perr)
       case ('2nd_order_conservative')
         map%M = M_cons_2nd_order
+        ! Clean up the unused matrix
+        call MatDestroy( M_cons_1st_order, perr)
     end select
 
     call MatDestroy( w0, perr)

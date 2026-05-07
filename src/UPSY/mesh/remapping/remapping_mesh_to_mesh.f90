@@ -261,7 +261,6 @@ contains
     call MatDestroy( w0, perr)
     call MatDestroy( w1x, perr)
     call MatDestroy( w1y, perr)
-    call MatDestroy( M_cons_1st_order, perr)
 
     call correct_mesh_to_mesh_map( mesh_src, mesh_dst, output_dir, M_cons_1st_order, map%M)
 

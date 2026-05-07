@@ -105,6 +105,8 @@ contains
     call MatDestroy( w0, perr)
     call MatDestroy( w1x, perr)
     call MatDestroy( w1y, perr)
+    call MatDestroy( M_cons_1st_order, perr)
+    call MatDestroy( M_cons_2nd_order, perr)
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 

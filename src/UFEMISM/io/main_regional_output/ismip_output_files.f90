@@ -659,7 +659,7 @@ contains
       case ('tendacabf')
         if (scalar%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = (region%scalars%SMB_gr + region%scalars%SMB_fl) * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar_loc = (region%scalars%SMB_gr + region%scalars%SMB_fl) * 1.e12_dp / sec_per_year
           scalar%is_initial = .false.
         else
           scalar_loc = scalar%accum / deltat
@@ -671,7 +671,7 @@ contains
       case ('tendlibmassbfgr')
         if (scalar%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%BMB_gr * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar_loc = region%scalars%BMB_gr * 1.e12_dp / sec_per_year
           scalar%is_initial = .false.
         else
           scalar_loc = scalar%accum / deltat
@@ -683,7 +683,7 @@ contains
       case ('tendlibmassbffl')
         if (scalar%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%BMB_fl * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar_loc = region%scalars%BMB_fl * 1.e12_dp / sec_per_year
           scalar%is_initial = .false.
         else
           scalar_loc = scalar%accum / deltat
@@ -695,7 +695,7 @@ contains
       case ('tendlicalvf')
         if (scalar%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%margin_ocean_flux * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar_loc = region%scalars%margin_ocean_flux * 1.e12_dp / sec_per_year
           scalar%is_initial = .false.
         else
           scalar_loc = scalar%accum / deltat
@@ -713,7 +713,7 @@ contains
       case ('tendligroundf')
         if (scalar%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%gl_flux * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar_loc = region%scalars%gl_flux * 1.e12_dp / sec_per_year
           scalar%is_initial = .false.
         else
           scalar_loc = scalar%accum / deltat

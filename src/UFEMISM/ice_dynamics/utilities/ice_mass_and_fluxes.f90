@@ -223,34 +223,34 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Over whole domain
-      scalars%SMB_total = scalars%SMB_total + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+      scalars%SMB_total = scalars%SMB_total + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+      scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+      scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
 
       ! Over grounded ice
       if (ice%mask_grounded_ice( vi)) then
-        scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over floating ice
       if (ice%mask_floating_ice( vi)) then
-        scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free land
       if (ice%mask_icefree_land( vi)) then
-        scalars%SMB_land = scalars%SMB_land + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_land = scalars%BMB_land + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_land = scalars%SMB_land + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_land = scalars%BMB_land + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free ocean
       if (ice%mask_icefree_ocean( vi)) then
-        scalars%SMB_ocean = scalars%SMB_ocean + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_ocean = scalars%BMB_ocean + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_ocean = scalars%SMB_ocean + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_ocean = scalars%BMB_ocean + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
     end do
@@ -294,26 +294,26 @@ contains
       ! DENK DROM : Add here other sources if implemented in the future
       total_amb = - ice%dHi_dt_target( vi) - ice%dHi_dt_residual( vi)
 
-      scalars%AMB_total = scalars%AMB_total + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+      scalars%AMB_total = scalars%AMB_total + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
 
       ! Over grounded ice
       if (ice%mask_grounded_ice( vi)) then
-        scalars%AMB_gr = scalars%AMB_gr + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_gr = scalars%AMB_gr + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over floating ice
       if (ice%mask_floating_ice( vi)) then
-        scalars%AMB_fl = scalars%AMB_fl + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_fl = scalars%AMB_fl + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free land
       if (ice%mask_icefree_land( vi)) then
-        scalars%AMB_land = scalars%AMB_land + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_land = scalars%AMB_land + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free ocean
       if (ice%mask_icefree_ocean( vi)) then
-        scalars%AMB_ocean = scalars%AMB_ocean + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_ocean = scalars%AMB_ocean + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
     end do
@@ -402,30 +402,30 @@ contains
         ! Grounding line (grounded side)
         if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
           elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) * 1.0E-09_dp ! [Gt/yr]
+            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) * ice_density * 1.0E-12_dp ! [Gt/yr]
           end if
         end if
 
         ! Grounded marine front
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
+          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Floating calving front
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Land-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
+          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Marine-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
       end do ! do ci = 1, mesh%nC( vi)

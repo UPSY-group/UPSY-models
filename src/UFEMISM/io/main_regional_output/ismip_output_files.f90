@@ -134,7 +134,7 @@ contains
     if (present( field)) then
       do vi = region%mesh%vi1, region%mesh%vi2
         if (mask( vi)) then
-          field%accum = field%accum + d_partial( vi) * ice_density / sec_per_year * deltat
+          field%accum( vi) = field%accum( vi) + d_partial( vi) * ice_density / sec_per_year * deltat
         end if
       end do
     end if
@@ -412,7 +412,7 @@ contains
           field%is_initial = .false.
         else
           d_mesh_vec_partial_2D = field%accum / deltat
-          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+          field%accum = 0._dp
         end if
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)

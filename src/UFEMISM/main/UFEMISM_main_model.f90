@@ -45,7 +45,7 @@ MODULE UFEMISM_main_model
     create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI
   use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
   use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI
-  use ismip_output_files, only: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid, &
+  use ismip_output_files, only: create_ISMIP_regional_output_files, write_to_ISMIP_regional_output_files, &
     accumulate_ISMIP_flux_fields, remap_ISMIP_output
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
@@ -340,7 +340,7 @@ CONTAINS
     END IF
 
     if (do_output_ismip) then
-      call write_to_ISMIP_regional_output_files_grid( region)
+      call write_to_ISMIP_regional_output_files( region)
     end if
 
     ! Finalise routine path
@@ -662,7 +662,7 @@ CONTAINS
     ! Create the main regional output files
     CALL create_main_regional_output_file_mesh( region)
     CALL create_main_regional_output_file_grid( region)
-    CALL create_ISMIP_regional_output_files_grid( region)
+    CALL create_ISMIP_regional_output_files( region)
 
     ! Create the main regional output files for the regions of interest
     CALL setup_ROI_grids_and_output_files( region)

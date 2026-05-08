@@ -17,7 +17,7 @@ module netcdf_add_write_scalar_variables
 
 contains
 
-  subroutine add_field_dp_0D( filename, ncid, var_name, long_name, units)
+  subroutine add_field_dp_0D( filename, ncid, var_name, long_name, units, precision, do_compress, standard_name)
     !< Add a 0-D variable to an existing NetCDF file
 
     ! In/output variables:
@@ -26,6 +26,9 @@ contains
     character(len=*),           intent(in   ) :: var_name
     character(len=*), optional, intent(in   ) :: long_name
     character(len=*), optional, intent(in   ) :: units
+    character(len=*), optional, intent(in   ) :: precision
+    logical,          optional, intent(in   ) :: do_compress
+    character(len=*), optional, intent(in   ) :: standard_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'add_field_dp_0D'
@@ -41,11 +44,13 @@ contains
     if (id_dim_time == -1) call crash('no time dimension could be found in file "' // trim( filename) // '"!')
 
     ! Create variable
-    call create_variable( filename, ncid, var_name, NF90_DOUBLE, (/ id_dim_time /), id_var)
+    call create_variable( filename, ncid, var_name, parse_netcdf_precision( precision), (/ id_dim_time /), id_var, do_compress = do_compress)
 
     ! Add attributes
-    if (present( long_name)) call add_attribute_char( filename, ncid, id_var, 'long_name', long_name)
-    if (present( units    )) call add_attribute_char( filename, ncid, id_var, 'units'    , units    )
+    call add_fillvalue( filename, ncid, id_var)
+    if (present( long_name    )) call add_attribute_char( filename, ncid, id_var, 'long_name'    , long_name    )
+    if (present( standard_name)) call add_attribute_char( filename, ncid, id_var, 'standard_name', standard_name)
+    if (present( units        )) call add_attribute_char( filename, ncid, id_var, 'units'        , units        )
 
     ! Finalise routine path
     call finalise_routine( routine_name)

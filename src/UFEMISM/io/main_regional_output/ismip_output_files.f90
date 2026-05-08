@@ -26,8 +26,23 @@ module ismip_output_files
 
   private
 
-  public :: create_ISMIP_regional_output_files_grid, write_to_ISMIP_regional_output_files_grid, &
+  public :: create_ISMIP_regional_output_files, write_to_ISMIP_regional_output_files, &
     accumulate_ISMIP_flux_fields, remap_ISMIP_output
+
+  interface create_single_ISMIP_regional_output_file
+    module procedure create_single_ISMIP_regional_output_file_grid
+    module procedure create_single_ISMIP_regional_output_file_scalar
+  end interface
+
+  interface write_to_single_ISMIP_regional_output_file
+    module procedure write_to_single_ISMIP_regional_output_file_grid
+    module procedure write_to_single_ISMIP_regional_output_file_scalar
+  end interface
+
+  interface initialise_ISMIP_field
+    module procedure initialise_ISMIP_field_grid
+    module procedure initialise_ISMIP_field_scalar
+  end interface
 
 contains
 
@@ -145,14 +160,14 @@ contains
 
   end subroutine accumulate_single_ISMIP_flux_field
 
-  subroutine write_to_ISMIP_regional_output_files_grid( region)
-    !< Write to ISMIP regional output NetCDF files - grid version
+  subroutine write_to_ISMIP_regional_output_files( region)
+    !< Write to ISMIP regional output NetCDF files
 
     ! In/output variables:
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'write_to_ISMIP_regional_output_files_grid'
+    character(len=1024), parameter :: routine_name = 'write_to_ISMIP_regional_output_files'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -164,54 +179,59 @@ contains
     end if
 
     ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to ISMIP grid output files' // '...'
+    if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%lithk)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%orog)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%topg)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%base)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lithk)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%orog)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%topg)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%base)
 
     ! Geothermal heat flux
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%hfgeoubed)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%hfgeoubed)
 
     ! Surface and basal mass balance
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%acabf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%libmassbfgr)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%libmassbffl)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%acabf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%libmassbfgr)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%libmassbffl)
 
     ! Thickness tendency
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%dlithkdt)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%dlithkdt)
 
     ! Velocities
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%xvelsurf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%yvelsurf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%zvelsurf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%xvelbase)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%yvelbase)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%zvelbase)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%xvelmean)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%yvelmean)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%xvelsurf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%yvelsurf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%zvelsurf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%xvelbase)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%yvelbase)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%zvelbase)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%xvelmean)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%yvelmean)
 
     ! Temperatures
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%litemptop)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%litempavg)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%litempgradgr)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%litempgradfl)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%litempbotgr)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%litempbotfl)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litemptop)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempavg)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradgr)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradfl)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempbotgr)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempbotfl)
 
     ! Basal drag
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%strbasemag)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%strbasemag)
 
     ! Lateral mass balance
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%licalvf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%lifmassbf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%licalvf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%sftgif)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%sftgrf)
-    call write_to_single_ISMIP_regional_output_file_grid( region, region%ismip_output%sftflf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%sftgif)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%sftgrf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%sftflf)
+
+    ! === Scalars ===
+
+    ! TODO add the rest
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendacabf)
 
     ! Set previous time step to current
     region%ismip_output%t_prev = region%ismip_output%t_curr
@@ -219,10 +239,10 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine write_to_ISMIP_regional_output_files_grid
+  end subroutine write_to_ISMIP_regional_output_files
 
   subroutine write_to_single_ISMIP_regional_output_file_grid( region, field)
-    !< Write to single ISMIP regional output NetCDF file - grid version
+    !< Write to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),           intent(inout) :: region
@@ -243,11 +263,11 @@ contains
     select case (field%fieldtype)
       case default
         call crash('invalid fieldtype for CFtime writing "' // trim(field%fieldtype) //  '"')
-      case ('FL') 
+      case ('FL')
         call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .true.)
-      case ('ST') 
+      case ('ST')
         call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .false.)
-    end select 
+    end select
 
     ! Update the time counter attribute
     field%nt = field%nt + 1
@@ -257,7 +277,7 @@ contains
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
 
     ! write the data to the file
-    call write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
+    call write_to_ISMIP_regional_output_file_field_grid( region, field, ncid)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -267,8 +287,54 @@ contains
 
   end subroutine write_to_single_ISMIP_regional_output_file_grid
 
-  subroutine write_to_ISMIP_regional_output_file_grid_field( region, field, ncid)
-    !< Write a single field to the ISMIP regional output NetCDF file - grid version
+  subroutine write_to_single_ISMIP_regional_output_file_scalar( region, scalar)
+    !< Write to single ISMIP regional output NetCDF file
+
+    ! In/output variables:
+    type(type_model_region),           intent(inout) :: region
+    type(type_ismip_scalar),           intent(inout) :: scalar
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'write_to_single_ISMIP_regional_output_file_scalar'
+    integer                        :: ncid
+    character(len=16)              :: nt_str
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( scalar%filename, ncid)
+
+    ! write the time to the file
+    select case (scalar%fieldtype)
+      case default
+        call crash('invalid fieldtype for CFtime writing "' // trim(scalar%fieldtype) //  '"')
+      case ('FL')
+        call write_cftime_to_file( scalar%filename, ncid, region%time, with_bounds = .true.)
+      case ('ST')
+        call write_cftime_to_file( scalar%filename, ncid, region%time, with_bounds = .false.)
+    end select
+
+    ! Update the time counter attribute
+    scalar%nt = scalar%nt + 1
+    ! Convert counter to string
+    write(nt_str, '(I16)') scalar%nt
+    nt_str = adjustl(nt_str)
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
+
+    ! write the data to the file
+    call write_to_ISMIP_regional_output_file_field_scalar( region, scalar, ncid)
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_single_ISMIP_regional_output_file_scalar
+
+  subroutine write_to_ISMIP_regional_output_file_field_grid( region, field, ncid)
+    !< Write a single field to the ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),           intent(inout) :: region
@@ -276,7 +342,7 @@ contains
     integer,                           intent(in   ) :: ncid
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
+    character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_grid'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
     real(dp), dimension(:),   allocatable :: dTdzeta
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux, gl_flux
@@ -552,17 +618,60 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine write_to_ISMIP_regional_output_file_grid_field
+  end subroutine write_to_ISMIP_regional_output_file_field_grid
 
-  subroutine create_ISMIP_regional_output_files_grid( region)
+  subroutine write_to_ISMIP_regional_output_file_field_scalar( region, scalar, ncid)
+    !< Write a single field to the ISMIP regional output NetCDF file
+
+    ! In/output variables:
+    type(type_model_region),           intent(inout) :: region
+    type(type_ismip_scalar),           intent(inout) :: scalar
+    integer,                           intent(in   ) :: ncid
+
+    ! Local variables:
+    character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_scalar'
+    real(dp)                              :: deltat
+    real(dp)                              :: scalar_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
+    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
+
+    ! Add the specified data field to the file
+    select case (scalar%name)
+      case default
+        call crash('unknown choice_output_field "' // trim( scalar%name) // '"')
+
+      ! TODO fill in
+      case ('tendacabf')
+        if (scalar%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
+          scalar_loc = (region%scalars%SMB_gr + region%scalars%SMB_fl) * ice_density / sec_per_year
+          scalar%is_initial = .false.
+        else
+          scalar_loc = scalar%accum / deltat
+          scalar_loc = 0._dp
+        end if
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_ISMIP_regional_output_file_field_scalar
+
+  subroutine create_ISMIP_regional_output_files( region)
     ! MAIN creation
-    !< Create all ISMIP regional output NetCDF files - grid version
+    !< Create all ISMIP regional output NetCDF files
 
     ! In/output variables:
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_ISMIP_regional_output_files_grid'
+    character(len=1024), parameter :: routine_name = 'create_ISMIP_regional_output_files'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -582,56 +691,59 @@ contains
     ! Create all grid files
 
     ! Basic topography
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%lithk)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%orog)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%topg)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%base)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%lithk)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%orog)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%topg)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%base)
 
     ! Geothermal heat flux
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%hfgeoubed)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%hfgeoubed)
 
     ! Surface and basal mass balance
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%acabf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%libmassbfgr)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%libmassbffl)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%acabf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%libmassbfgr)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%libmassbffl)
 
     ! Thickness tendency
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%dlithkdt)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%dlithkdt)
 
     ! Velocities
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%xvelsurf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%yvelsurf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%zvelsurf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%xvelbase)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%yvelbase)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%zvelbase)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%xvelmean)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%yvelmean)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%xvelsurf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%yvelsurf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%zvelsurf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%xvelbase)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%yvelbase)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%zvelbase)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%xvelmean)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%yvelmean)
 
     ! Temperatures
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%litemptop)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%litempavg)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%litempgradgr)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%litempgradfl)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%litempbotgr)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%litempbotfl)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litemptop)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempavg)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempgradgr)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempgradfl)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempbotgr)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempbotfl)
 
     ! Basal drag
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%strbasemag)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%strbasemag)
 
     ! Lateral mass balance
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%licalvf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%lifmassbf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%licalvf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%lifmassbf)
 
     ! Area fractions
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%sftgif)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%sftgrf)
-    call create_single_ISMIP_regional_output_file_grid( region%ismip_output, region%ismip_output%sftflf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftgif)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftgrf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftflf)
+
+    ! === Scalars ===
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendacabf)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine create_ISMIP_regional_output_files_grid
+  end subroutine create_ISMIP_regional_output_files
 
   subroutine create_single_ISMIP_regional_output_file_grid( ismip_output, field)
     !< Create a single ISMIP regional output NetCDF file - grid version
@@ -666,14 +778,14 @@ contains
     select case (field%fieldtype)
       case default
         call crash('invalid fieldtype for CFtime writing "' // trim(field%fieldtype) //  '"')
-      case ('FL') 
+      case ('FL')
         call add_cftime_dimension_to_file( field%filename, ncid, with_bounds = .true.)
-      case ('ST') 
+      case ('ST')
         call add_cftime_dimension_to_file( field%filename, ncid, with_bounds = .false.)
-    end select 
+    end select
 
     ! Add the field
-    call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, & 
+    call add_field_grid_dp_2D( field%filename, ncid, field%name, precision = iprecision, &
       do_compress = do_compress, long_name = field%long_name, units = field%units, &
       standard_name = field%standard_name)
 
@@ -683,10 +795,10 @@ contains
     res_str = adjustl(res_str)
 
     ! Make a title
-    title = 'ISMIP7 output by UFEMISM - ' // trim(field%name) 
+    title = 'ISMIP7 output by UFEMISM - ' // trim(field%name)
 
     ! Add attributes
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'title', trim(title)) 
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'title', trim(title))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'Conventions', trim(C%ismip_conventions))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_type', trim(ismip_output%IS_name))
     call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'grid_resolution', trim(res_str) // 'm')
@@ -704,6 +816,74 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine create_single_ISMIP_regional_output_file_grid
+
+  subroutine create_single_ISMIP_regional_output_file_scalar( ismip_output, scalar)
+    !< Create a single ISMIP regional output NetCDF file - grid version
+
+    ! In/output variables:
+    type(type_ismip_output),      intent(inout) :: ismip_output
+    type(type_ismip_scalar),      intent(in   ) :: scalar
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'create_single_ISMIP_regional_output_file_scalar'
+    integer                        :: ncid
+    character(len=*), parameter    :: iprecision = 'single'
+    logical, parameter             :: do_compress = .true.
+    integer                        :: res_int
+    character(len=16)              :: res_str
+    character(len=1024)            :: title
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Print to terminal
+    if (par%primary) write(0,'(A)') '   Creating ISMIP grid output file "' // &
+      UPSY%stru%colour_string( trim( scalar%filename), 'light blue') // '"...'
+
+    ! Create the NetCDF file
+    call create_new_netcdf_file_for_writing( scalar%filename, ncid)
+
+    ! Add time dimension to the file
+    select case (scalar%fieldtype)
+      case default
+        call crash('invalid fieldtype for CFtime writing "' // trim(scalar%fieldtype) //  '"')
+      case ('FL')
+        call add_cftime_dimension_to_file( scalar%filename, ncid, with_bounds = .true.)
+      case ('ST')
+        call add_cftime_dimension_to_file( scalar%filename, ncid, with_bounds = .false.)
+    end select
+
+    ! Add the field
+    call add_field_dp_0D( scalar%filename, ncid, scalar%name, precision = iprecision, &
+      do_compress = do_compress, long_name = scalar%long_name, units = scalar%units, &
+      standard_name = scalar%standard_name)
+
+    ! Convert grid resolution and start/end times to string
+    res_int = int(C%dx_output_grid_ANT)
+    write(res_str, '(I16)') res_int
+    res_str = adjustl(res_str)
+
+    ! Make a title
+    title = 'ISMIP7 output by UFEMISM - ' // trim(scalar%name)
+
+    ! Add attributes
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'title', trim(title))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'Conventions', trim(C%ismip_conventions))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'grid_type', trim(ismip_output%IS_name))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'grid_resolution', trim(res_str) // 'm')
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'group', trim(C%ismip_group_name))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'model', trim(C%ismip_model_name))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'scenario', trim(C%ismip_scenario_name))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'contact_name', trim(C%ismip_contact_name))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'contact_email', trim(C%ismip_contact_email))
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine create_single_ISMIP_regional_output_file_scalar
 
   subroutine initialise_ISMIP_output( region)
     ! Initialise the ISMIP grid type
@@ -812,12 +992,16 @@ contains
     call initialise_ISMIP_field( region, region%ismip_output%sftflf, 'sftflf' , &
       'Floating ice sheet area fraction', 'floating_ice_shelf_area_fraction', '1', 'ST')
 
+    ! === Scalars ===
+    call initialise_ISMIP_field( region, region%ismip_output%tendacabf, 'tendacabf', &
+      'Total SMB flux', 'tendency_of_land_ice_mass_due_to_surface_mass_balance', 'kg s^-1', 'FL')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_ISMIP_output
 
-  subroutine initialise_ISMIP_field( region, field, name, long_name, standard_name, units, fieldtype)
+  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype)
     ! Initialise a single field
 
     type(type_model_region),           intent(inout) :: region
@@ -829,7 +1013,7 @@ contains
     character(len=2),                  intent(in   ) :: fieldtype
 
     ! Local variables
-    character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field'
+    character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field_grid'
     character(len=4)               :: start_year, end_year
 
     ! Add routine to path
@@ -869,7 +1053,61 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_ISMIP_field
+  end subroutine initialise_ISMIP_field_grid
+
+  subroutine initialise_ISMIP_field_scalar( region, scalar, name, long_name, standard_name, units, fieldtype)
+    ! Initialise a single field
+
+    type(type_model_region),           intent(inout) :: region
+    type(type_ismip_scalar),           intent(inout) :: scalar
+    character(len=*),                  intent(in   ) :: name
+    character(len=*),                  intent(in   ) :: long_name
+    character(len=*),                  intent(in   ) :: standard_name
+    character(len=*),                  intent(in   ) :: units
+    character(len=2),                  intent(in   ) :: fieldtype
+
+    ! Local variables
+    character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field_scalar'
+    character(len=4)               :: start_year, end_year
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Inherit metadata
+    scalar%name          = name
+    scalar%long_name     = long_name
+    scalar%standard_name = standard_name
+    scalar%units         = units
+    scalar%fieldtype     = fieldtype
+
+    ! Convert start/end times to string
+    write(start_year, '(I4)') int(C%start_time_of_run)
+    write(end_year, '(I4)') int(C%end_time_of_run)
+
+    ! Define the name of the subfolder
+    region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'
+
+    ! Define the filename for this field
+    scalar%filename = trim( region%ismip_output%folder) // trim(scalar%name) // '_' // &
+      trim(region%ismip_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
+      trim(C%ismip_model_name) // '_' // trim(C%ismip_member_id) // '_' // &
+      trim(C%ismip_esm_name) // '_' // trim(C%ismip_forcing_member_id) // '_' // &
+      trim(C%ismip_scenario_name) // '_' // trim(C%ismip_counter) // '_' // &
+      trim(start_year) // '-' // trim(end_year) // '.nc'
+
+    ! Initialise
+    if ((scalar%fieldtype == 'FL')) then
+      scalar%accum = 0._dp
+      scalar%is_initial = .true.
+    end if
+
+    ! Initialise the counter for number of time values
+    scalar%nt = 0
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_ISMIP_field_scalar
 
   subroutine remap_ISMIP_output( mesh_old, mesh_new, ice, ismip_output)
     ! Reallocate the accumulated fields and redefine Hi_prev

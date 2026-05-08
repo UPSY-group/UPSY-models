@@ -21,7 +21,7 @@ module ice_mass_and_fluxes
 
   private
 
-  public :: calc_ice_mass_and_fluxes, calc_ice_margin_fluxes
+  public :: calc_ice_mass_and_fluxes, calc_ISMIP_fluxes
 
 contains
 
@@ -618,22 +618,21 @@ contains
 
   end subroutine calc_ISMIP_scalars
 
-  subroutine calc_ice_margin_fluxes( mesh, ice, calving_flux)
-      !< Calculate the ice flux through the ice margin using an upwind scheme
+  subroutine calc_ISMIP_fluxes( mesh, ice, calving_flux, gl_flux)
+      !< Calculate the calving flux and grounding line flux using an upwind scheme
 
       ! This is the same routine as calc_ice_transitional_fluxes,
       ! but does not integrate over all vertices, so the results are given
       ! in the mesh, with fluxes per cell
 
-
       ! In/output variables:
       type(type_mesh),                         intent(in   ) :: mesh
       type(type_ice_model),                    intent(in   ) :: ice
-      real(dp), dimension(mesh%vi1: mesh%vi2), intent(  out) :: calving_flux
-      ! real(dp), dimension(mesh%nV), intent(  out) :: calving_and_front_melt_flux ! TODO: when front melt is computed
+      real(dp), dimension(mesh%vi1: mesh%vi2), intent(inout) :: calving_flux
+      real(dp), dimension(mesh%vi1: mesh%vi2), intent(inout) :: gl_flux
 
       ! Local variables:
-      character(len=1024), parameter         :: routine_name = 'calc_ice_margin_fluxes'
+      character(len=1024), parameter         :: routine_name = 'calc_ISMIP_fluxes'
       real(dp), dimension(mesh%nV)           :: Hi_tot
       real(dp), dimension(mesh%nV)           :: fraction_margin_tot
       logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
@@ -656,6 +655,7 @@ contains
 
       ! Initialise
       calving_flux                = 0._dp
+      gl_flux                     = 0._dp
 
       do vi = mesh%vi1, mesh%vi2
 
@@ -680,8 +680,18 @@ contains
           ! For the other zones, u_perp < 0 would come from an area with no ice, so
           ! that case adds 0 anyway. Thus, only consider positive velocities.
 
-          if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+          ! Calving flux
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
             calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
+          end if
+
+          ! Grounding line (grounded side)
+          if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
+            if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) / A_i ! [m/yr]
+            elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) / A_i ! [m/yr]
+            end if
           end if
 
         end do ! do ci = 1, mesh%nC( vi)
@@ -691,7 +701,7 @@ contains
       ! Finalise routine path
       call finalise_routine( routine_name)
 
-  end subroutine calc_ice_margin_fluxes
+  end subroutine calc_ISMIP_fluxes
 
 
 end module ice_mass_and_fluxes

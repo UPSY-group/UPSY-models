@@ -12,7 +12,7 @@ module ismip_grid_output_files
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use netcdf_io_main
-  use ice_mass_and_fluxes, only: calc_ice_margin_fluxes
+  use ice_mass_and_fluxes, only: calc_ISMIP_fluxes
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, &
     map_from_mesh_triangles_to_xy_grid_2D
   use mpi_distributed_memory, only: gather_to_all
@@ -40,6 +40,7 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'accumulate_ISMIP_flux_fields'
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: gl_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
     logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
     real( dp)                                            :: deltat 
@@ -55,7 +56,7 @@ contains
     end if
 
     ! Compute the calving flux
-    call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
+    call calc_ISMIP_fluxes( region%mesh, region%ice, calving_flux, gl_flux)
 
     ! Copy SMB for hybrid memory reasons
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
@@ -255,7 +256,7 @@ contains
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_grid_field'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
     real(dp), dimension(:),   allocatable :: dTdzeta
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux, gl_flux
     integer                               :: vi
     real(dp)                              :: deltat
 
@@ -484,7 +485,7 @@ contains
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         if (field%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-          call calc_ice_margin_fluxes( region%mesh, region%ice, calving_flux)
+          call calc_ISMIP_fluxes( region%mesh, region%ice, calving_flux, gl_flux)
           d_mesh_vec_partial_2D = calving_flux * ice_density / sec_per_year
           field%is_initial = .false.
         else

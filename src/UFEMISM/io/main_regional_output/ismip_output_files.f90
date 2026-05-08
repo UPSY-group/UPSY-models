@@ -230,9 +230,11 @@ contains
 
     ! === Scalars ===
 
-    ! TODO add state variables
     ! State
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lim)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%limnsw)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%iareagr)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%iareafl)
 
     ! Fluxes
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendacabf)
@@ -659,6 +661,34 @@ contains
         scalar_loc = 0._dp
         do vi = region%mesh%vi1, region%mesh%vi2
           scalar_loc = scalar_loc + region%ice%Hi( vi) * region%mesh%A( vi) * ice_density
+        end do
+        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      case ('limnsw')
+        scalar_loc = 0._dp
+        do vi = region%mesh%vi1, region%mesh%vi2
+          scalar_loc = scalar_loc + region%ice%TAF( vi) * region%mesh%A( vi) * ice_density
+        end do
+        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      case ('iareagr')
+        scalar_loc = 0._dp
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%Hi( vi) > 0._dp) then
+            scalar_loc = scalar_loc + region%mesh%A( vi) * (region%ice%fraction_gr( vi))
+          end if
+        end do
+        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      case ('iareafl')
+        scalar_loc = 0._dp
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%Hi( vi) > 0._dp) then
+            scalar_loc = scalar_loc + region%mesh%A( vi) * (1._dp - region%ice%fraction_gr( vi))
+          end if
         end do
         call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
         call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)

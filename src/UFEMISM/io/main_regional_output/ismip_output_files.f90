@@ -231,6 +231,8 @@ contains
     ! === Scalars ===
 
     ! TODO add state variables
+    ! State
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lim)
 
     ! Fluxes
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendacabf)
@@ -372,10 +374,10 @@ contains
 
       ! Basic topography (ST)
       case ('lithk')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hi, d_grid_vec_partial_2D)
-        ! Prevent negative values due to rounding errors
-        d_grid_vec_partial_2D = max(0._dp, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+        call map_from_mesh_vertices_to_xy_grid_2d( region%mesh, region%output_grid, c%output_dir, region%ice%hi, d_grid_vec_partial_2d)
+        ! prevent negative values due to rounding errors
+        d_grid_vec_partial_2d = max(0._dp, d_grid_vec_partial_2d)
+        call write_to_field_multopt_grid_dp_2d( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2d)
       case ('orog')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hs, d_grid_vec_partial_2D)
         ! Prevent negative values due to rounding errors
@@ -639,6 +641,7 @@ contains
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_scalar'
     real(dp)                              :: deltat
     real(dp)                              :: scalar_loc
+    integer                               :: vi, ierr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -651,7 +654,14 @@ contains
       case default
         call crash('unknown choice_output_field "' // trim( scalar%name) // '"')
 
-      ! TODO fill in
+      ! === State variables ===
+      case ('lim')
+        scalar_loc = 0._dp
+        do vi = region%mesh%vi1, region%mesh%vi2
+          scalar_loc = scalar_loc + region%ice%Hi( vi) * region%mesh%A( vi) * ice_density
+        end do
+        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
 
       ! === Flux variables ===
 
@@ -803,6 +813,14 @@ contains
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftflf)
 
     ! === Scalars ===
+
+    ! State
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%lim)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%limnsw)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%iareagr)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%iareafl)
+
+    ! Fluxes
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendacabf)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendlibmassbfgr)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendlibmassbffl)
@@ -1063,6 +1081,18 @@ contains
       'Floating ice sheet area fraction', 'floating_ice_shelf_area_fraction', '1', 'ST')
 
     ! === Scalars ===
+
+    ! State
+    call initialise_ISMIP_field( region, region%ismip_output%lim, 'lim', &
+      'Total ice mass', 'land_ice_mass', 'kg', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_output%limnsw, 'limnsw', &
+      'Mass above floatation', 'land_ice_mass_not_displacing_sea_water', 'kg', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_output%iareagr, 'iareagr', &
+      'Grounded ice area', 'grounded_ice_sheet_area', 'm^2', 'ST')
+    call initialise_ISMIP_field( region, region%ismip_output%iareafl, 'iareafl', &
+      'Floating ice area', 'floating_ice_shelf_area', 'm^2', 'ST')
+
+    ! Fluxes
     call initialise_ISMIP_field( region, region%ismip_output%tendacabf, 'tendacabf', &
       'Total SMB flux', 'tendency_of_land_ice_mass_due_to_surface_mass_balance', 'kg s^-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendlibmassbfgr, 'tendlibmassbfgr', &

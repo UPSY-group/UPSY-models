@@ -308,11 +308,9 @@ CONTAINS
 
       ! Write to the regional scalar output file
       call write_to_scalar_regional_output_file( region)
-      ! call write_to_ISMIP_scalar_regional_output_file( region)
 
       if (region%nROI > 0) then
         call write_to_scalar_regional_output_file_ROI( region)
-        ! call write_to_ISMIP_scalar_regional_output_file_ROI( region)
       end if
 
     END IF
@@ -335,7 +333,6 @@ CONTAINS
       ! Write to the region-of-interest output files
       DO i = 1, region%nROI
         CALL write_to_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_grid_ROI( i))
-        !CALL write_to_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_ismip_grid_ROI( i))
       END DO
     END IF
 
@@ -683,9 +680,6 @@ CONTAINS
     !CALL create_ISMIP_scalar_regional_output_file( region)
     if (region%nROI > 0) then
       CALL create_scalar_regional_output_file_ROI( region)
-      !if (C%do_create_ismip_output) then
-      !  CALL create_ISMIP_scalar_regional_output_file_ROI( region)
-      !end if
     end if
 
     ! Set output writing time to start of run, so the initial state will be written to output
@@ -1178,19 +1172,13 @@ CONTAINS
 
       ! Create an output file for this region of interest
       region%output_filenames_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'main_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
-      region%output_filenames_ismip_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'ismip_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
 
       CALL create_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_grid_ROI( region%nROI))
-      !CALL create_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_ismip_grid_ROI( region%nROI))
 
       ! Generate file names for all scalar files
       filename_base = TRIM( C%output_dir) // 'scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
       call generate_filename_XXXXXdotnc(filename_base, filename)
       region%output_filenames_scalar_ROI(region%nROI) = filename
-
-      filename_base = TRIM( C%output_dir) // 'ismip_scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
-      call generate_filename_XXXXXdotnc(filename_base, filename)
-      region%output_filenames_ismip_scalar_ROI(region%nROI) = filename
 
       ! Clean up after yourself
       DEALLOCATE( poly_ROI)

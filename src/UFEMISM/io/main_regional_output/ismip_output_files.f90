@@ -230,8 +230,15 @@ contains
 
     ! === Scalars ===
 
-    ! TODO add the rest
+    ! TODO add state variables
+
+    ! Fluxes
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendacabf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlibmassbfgr)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlibmassbffl)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlicalvf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlifmassbf)
+    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendligroundf)
 
     ! Set previous time step to current
     region%ismip_output%t_prev = region%ismip_output%t_curr
@@ -645,14 +652,72 @@ contains
         call crash('unknown choice_output_field "' // trim( scalar%name) // '"')
 
       ! TODO fill in
+
+      ! === Flux variables ===
+
+      ! SMB
       case ('tendacabf')
         if (scalar%is_initial) then
           ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = (region%scalars%SMB_gr + region%scalars%SMB_fl) * ice_density / sec_per_year
+          scalar_loc = (region%scalars%SMB_gr + region%scalars%SMB_fl) * ice_density / 1000._dp * 1.e12_dp / sec_per_year
           scalar%is_initial = .false.
         else
           scalar_loc = scalar%accum / deltat
-          scalar_loc = 0._dp
+          scalar%accum = 0._dp
+        end if
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      ! BMB_gr
+      case ('tendlibmassbfgr')
+        if (scalar%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
+          scalar_loc = region%scalars%BMB_gr * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar%is_initial = .false.
+        else
+          scalar_loc = scalar%accum / deltat
+          scalar%accum = 0._dp
+        end if
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      ! BMB_fl
+      case ('tendlibmassbffl')
+        if (scalar%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
+          scalar_loc = region%scalars%BMB_fl * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar%is_initial = .false.
+        else
+          scalar_loc = scalar%accum / deltat
+          scalar%accum = 0._dp
+        end if
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      ! Calv
+      case ('tendlicalvf')
+        if (scalar%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
+          scalar_loc = region%scalars%margin_ocean_flux * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar%is_initial = .false.
+        else
+          scalar_loc = scalar%accum / deltat
+          scalar%accum = 0._dp
+        end if
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      ! Frontal melting
+      case ('tendlifmassbf')
+        ! Undefined, so just spit out zero
+        scalar_loc = 0._dp
+        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+      ! GL flux
+      case ('tendligroundf')
+        if (scalar%is_initial) then
+          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
+          scalar_loc = region%scalars%gl_flux * ice_density / 1000._dp * 1.e12_dp / sec_per_year
+          scalar%is_initial = .false.
+        else
+          scalar_loc = scalar%accum / deltat
+          scalar%accum = 0._dp
         end if
         call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
 
@@ -739,6 +804,11 @@ contains
 
     ! === Scalars ===
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendacabf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendlibmassbfgr)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendlibmassbffl)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendlicalvf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendlifmassbf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tendligroundf)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -995,6 +1065,16 @@ contains
     ! === Scalars ===
     call initialise_ISMIP_field( region, region%ismip_output%tendacabf, 'tendacabf', &
       'Total SMB flux', 'tendency_of_land_ice_mass_due_to_surface_mass_balance', 'kg s^-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%tendlibmassbfgr, 'tendlibmassbfgr', &
+      'Total BMB flux beneath grounded ice', 'tendency_of_land_ice_mass_due_to_basal_mass_balance', 'kg s^-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%tendlibmassbffl, 'tendlibmassbffl', &
+      'Total BMB flux beneath floating ice', 'tendency_of_land_ice_mass_due_to_basal_mass_balance', 'kg s^-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%tendlicalvf, 'tendlicalvf', &
+      'Total calving flux', 'tendency_of_land_ice_mass_due_to_calving', 'kg s^-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%tendlifmassbf, 'tendlifmassbf', &
+      'Total ice front melting flux', 'tendency_of_land_ice_mass_due_to_ice_front_melting', 'kg s^-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%tendligroundf, 'tendligroundf', &
+      'Total grounding line flux', 'tbd', 'kg s^-1', 'FL')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

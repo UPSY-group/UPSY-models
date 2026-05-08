@@ -21,7 +21,7 @@ MODULE region_types
   USE scalar_types                                           , ONLY: type_regional_scalars
   use tracer_tracking_model_types, only: type_tracer_tracking_model
   use transect_types, only: type_transect
-  use ismip_output_types, only: type_ismip_grid_output
+  use ismip_output_types, only: type_ismip_output
 
   IMPLICIT NONE
 
@@ -84,7 +84,7 @@ MODULE region_types
     type(type_tracer_tracking_model)        :: tracer_tracking
 
     ! ISMIP output data
-    type(type_ismip_grid_output)            :: ismip_grid_output
+    type(type_ismip_output)                 :: ismip_output
 
     ! Scalar data
     TYPE(type_regional_scalars)             :: scalars                 ! Scalar data (e.g. total area, volume, mass balance)

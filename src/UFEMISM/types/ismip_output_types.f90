@@ -7,7 +7,7 @@ module ismip_output_types
 
   private
 
-  public :: type_ismip_grid_output, type_ismip_gridded_field
+  public :: type_ismip_output, type_ismip_gridded_field, type_ismip_scalar
 
   type type_ismip_gridded_field
     ! A gridded output field
@@ -26,7 +26,24 @@ module ismip_output_types
 
   end type type_ismip_gridded_field
 
-  type type_ismip_grid_output
+  type type_ismip_scalar
+    ! A gridded output field
+
+    real(dp), allocatable               :: accum             ! [..] Accumulation of values per timestep
+    logical                             :: is_initial        ! Whether this is the first time to write
+
+    character(len=1024)                 :: name              ! Variable name
+    character(len=1024)                 :: filename          ! Filename of output
+    character(len=1024)                 :: long_name         ! Long name
+    character(len=1024)                 :: standard_name     ! Standard name
+    character(len=1024)                 :: units             ! Units
+    character(len=2)                    :: fieldtype         ! ST or FL      
+
+    integer                             :: nt                ! Counter for number of time values written
+
+  end type type_ismip_scalar
+
+  type type_ismip_output
     ! Data fields for storing the regional ISMIP data
 
     character(len=3)                  :: IS_name      ! Ice sheet name (AIS or GIS)
@@ -36,6 +53,8 @@ module ismip_output_types
 
     real(dp)                          :: t_prev       ! [yr] Time value at previous writing
     real(dp)                          :: t_curr       ! [yr] Current time value
+
+    ! === Gridded fields ===
 
     ! Basic topography
     type(type_ismip_gridded_field)    :: lithk        ! [m]        land_ice_thickness
@@ -84,50 +103,22 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: sftgrf       ! []         grounded_ice_sheet_area_fraction
     type(type_ismip_gridded_field)    :: sftflf       ! []         floating_ice_shelf_area_fraction
 
-  end type type_ismip_grid_output
-
-  type type_ismip_scalar_field
-    ! A gridded output field
-
-    real(dp), allocatable               :: accum             ! [..] Accumulation of values per timestep
-    logical                             :: is_initial        ! Whether this is the first time to write
-
-    character(len=1024)                 :: name              ! Variable name
-    character(len=1024)                 :: filename          ! Filename of output
-    character(len=1024)                 :: long_name         ! Long name
-    character(len=1024)                 :: standard_name     ! Standard name
-    character(len=1024)                 :: units             ! Units
-    character(len=2)                    :: fieldtype         ! ST or FL      
-
-    integer                             :: nt                ! Counter for number of time values written
-
-  end type type_ismip_scalar_field
-
-  type type_ismip_scalar_output
-    ! Data fields for storing the regional ISMIP scalars
-
-    character(len=3)                  :: IS_name      ! Ice sheet name (AIS or GIS)
-    character(len=126)                :: crs          ! Associated crs (EPSG)
-    type(type_grid)                   :: grid         ! Output grid
-    character(len=1024)               :: folder       ! Subfolder exp_RES
-
-    real(dp)                          :: t_prev       ! [yr] Time value at previous writing
-    real(dp)                          :: t_curr       ! [yr] Current time value
+    ! === Scalars ===
 
     ! State variables
-    type(type_ismip_scalar_field)     :: lim          ! [kg]       land_ice_mass
-    type(type_ismip_scalar_field)     :: limnsw       ! [kg]       land_ice_mass_not_displacing_sea_water
-    type(type_ismip_scalar_field)     :: iareagr      ! [m^2]      grounded_ice_sheet_area
-    type(type_ismip_scalar_field)     :: iareafl      ! [m^2]      floating_ice_shelf_area
+    type(type_ismip_scalar)           :: lim          ! [kg]       land_ice_mass
+    type(type_ismip_scalar)           :: limnsw       ! [kg]       land_ice_mass_not_displacing_sea_water
+    type(type_ismip_scalar)           :: iareagr      ! [m^2]      grounded_ice_sheet_area
+    type(type_ismip_scalar)           :: iareafl      ! [m^2]      floating_ice_shelf_area
 
     ! Flux variables
-    type(type_ismip_scalar_field)     :: tendacabf       ! [kg s-1]   tendency_of_land_ice_mass_due_to_surface_mass_balance
-    type(type_ismip_scalar_field)     :: tendlibmassbfgr ! [kg s-1]   tendency_of_land_ice_mass_due_to_basal_mass_balance
-    type(type_ismip_scalar_field)     :: tendlibmassbffl ! [kg s-1]   tendency_of_land_ice_mass_due_to_basal_mass_balance
-    type(type_ismip_scalar_field)     :: tendlicalvf     ! [kg s-1]   tendency_of_land_ice_mass_due_to_calving
-    type(type_ismip_scalar_field)     :: tendlifmassbf   ! [kg s-1]   tendency_of_land_ice_mass_due_to_ice_front_melting
-    type(type_ismip_scalar_field)     :: tendligroundf   ! [kg s-1]   grounding line flux
+    type(type_ismip_scalar)           :: tendacabf       ! [kg s-1]   tendency_of_land_ice_mass_due_to_surface_mass_balance
+    type(type_ismip_scalar)           :: tendlibmassbfgr ! [kg s-1]   tendency_of_land_ice_mass_due_to_basal_mass_balance
+    type(type_ismip_scalar)           :: tendlibmassbffl ! [kg s-1]   tendency_of_land_ice_mass_due_to_basal_mass_balance
+    type(type_ismip_scalar)           :: tendlicalvf     ! [kg s-1]   tendency_of_land_ice_mass_due_to_calving
+    type(type_ismip_scalar)           :: tendlifmassbf   ! [kg s-1]   tendency_of_land_ice_mass_due_to_ice_front_melting
+    type(type_ismip_scalar)           :: tendligroundf   ! [kg s-1]   grounding line flux
 
-  end type type_ismip_scalar_output
+  end type type_ismip_output
 
 end module ismip_output_types

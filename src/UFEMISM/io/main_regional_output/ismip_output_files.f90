@@ -356,6 +356,7 @@ contains
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_grid'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
     real(dp), dimension(:),   allocatable :: dTdzeta
+    real(dp), dimension(C%nz)             :: d_zeta_temp
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux, gl_flux
     integer                               :: vi
     real(dp)                              :: deltat
@@ -508,7 +509,8 @@ contains
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%Hi( vi) > 0._dp) then
-            d_mesh_vec_partial_2D( vi) = vertical_average( region%mesh%zeta, region%ice%Ti( vi, :))
+            d_zeta_temp = region%ice%Ti( vi, :)
+            d_mesh_vec_partial_2D( vi) = vertical_average( region%mesh%zeta, d_zeta_temp)
           else
             d_mesh_vec_partial_2D( vi) = NaN
           end if
@@ -522,7 +524,8 @@ contains
         allocate( dTdzeta( 1:region%mesh%nz))
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%mask_grounded_ice( vi)) then
-            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
+            d_zeta_temp = region%ice%Ti( vi, :)
+            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
             d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
           else
             d_mesh_vec_partial_2D( vi) = NaN

@@ -164,7 +164,9 @@ CONTAINS
         CALL run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, is_initial, .FALSE.)
 
         DO vi = mesh%vi1, mesh%vi2
-          BMB%BMB( vi) = -BMB%laddie%melt( vi) * sec_per_year
+          IF (ice%mask_floating_ice( vi)) THEN
+            BMB%BMB( vi) = -BMB%laddie%melt( vi) * sec_per_year
+          END IF
         END DO
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
@@ -869,26 +871,34 @@ CONTAINS
     ! Local variables
     character(len=*), parameter :: routine_name = 'keep_polynyas_closed'
     integer                     :: vi
+    integer                     :: count
 
     call init_routine(routine_name)
     ! write(*,*) 'Enter keep_polynyas_closed routines'
 
+    count = 0 ! initialise at zero
+
     do vi = mesh%vi1, mesh%vi2
-      ! Condition: Ice exists in reference geometry, but Hib indicates open ocean
-      if (refgeo%Hi(vi) > 0._dp .and. abs(forcing%Hib(vi)) < 0.1_dp) then
+      ! Condition: Ice exists in reference geometry, but Hib indicates open ocean --> i.e. melt-through
+      if (refgeo%Hi(vi) > 0._dp .and. abs(forcing%Hib(vi)) < 1.0_dp) then
 
         ! Enforce minimum draft depth (negative Hib convention)
-        forcing%Hib(vi) = min(forcing%Hib(vi), -C%Hi_min * 0.9_dp)
+        forcing%Hib(vi) = min(forcing%Hib(vi), -1.0_dp)
         forcing%Hi(vi)  = max(forcing%Hi(vi), C%Hi_min)
 
         ! Update masks:
         forcing%mask_icefree_ocean(vi) = .false.
         forcing%mask_floating_ice(vi)  = .true.
 
+        count = count + 1 
         ! print*, 'Warning: Melt-through detected at vi =', vi, ' -> forcing kept as ice shelf.'
         ! print*, 'Set Hib to', forcing%Hib(vi)
       end if
     end do
+
+    if (count > 0) then
+      print*, 'Number of vis kept closed =', count
+    end if 
 
     call finalise_routine(routine_name)
 

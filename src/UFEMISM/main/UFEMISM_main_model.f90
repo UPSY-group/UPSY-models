@@ -557,7 +557,7 @@ CONTAINS
     end select
 
     call region%SMB%allocate  ( region%SMB%ct_allocate( 'SMB_model', region%name, region%mesh))
-    call region%SMB%initialise( region%SMB%ct_initialise( region%ice))
+    call region%SMB%initialise( region%SMB%ct_initialise( region%ice, region%refgeo_init, region%refgeo_PD))
 
     call checksum( region%mesh%pai_V, region%SMB%SMB, 'region%SMB%SMB')
 
@@ -1299,7 +1299,7 @@ CONTAINS
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
     CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%grid_smooth, region%ice, forcing)
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
-    call region%SMB%remap( region%SMB%ct_remap( mesh_new, region%time))
+    call region%SMB%remap( region%SMB%ct_remap( mesh_new, region%time, region%name, region%refgeo_init, region%refgeo_PD, region%ice))
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )

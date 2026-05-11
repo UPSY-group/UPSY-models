@@ -14,6 +14,7 @@ module ut_SMB
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use mesh_disc_calc_matrix_operators_2D, only: calc_all_matrix_operators_mesh
   use ice_model_types, only: type_ice_model
+  use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
   use Halfar_SIA_solution, only: Halfar
@@ -85,18 +86,19 @@ contains
     type(type_mesh),  intent(in) :: mesh
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'test_SMB_idealised'
-    character(len=1024), parameter      :: test_name_local = 'idealised'
-    character(len=1024)                 :: test_name
-    class(atype_SMB_model), allocatable :: SMB
-    type(type_ice_model)     , target   :: ice
-    type(type_climate_model) , target   :: climate
-    type(type_grid)          , target   :: grid_smooth
-    real(dp)                            :: time
-    integer                             :: vi
-    real(dp)                            :: dH_dt
-    logical                             :: test_result
-    integer                             :: ierr
+    character(len=1024), parameter        :: routine_name = 'test_SMB_idealised'
+    character(len=1024), parameter        :: test_name_local = 'idealised'
+    character(len=1024)                   :: test_name
+    class(atype_SMB_model), allocatable   :: SMB
+    type(type_ice_model)         , target :: ice
+    type(type_reference_geometry), target :: refgeo_init, refgeo_PD
+    type(type_climate_model)     , target :: climate
+    type(type_grid)              , target :: grid_smooth
+    real(dp)                              :: time
+    integer                               :: vi
+    real(dp)                              :: dH_dt
+    logical                               :: test_result
+    integer                               :: ierr
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -107,7 +109,7 @@ contains
     ! Create idealised SMB model
     call create_SMB_model( SMB, 'idealised')
     call SMB%allocate  ( SMB%ct_allocate( 'SMB_idealised', 'ANT', mesh))
-    call SMB%initialise( SMB%ct_initialise( ice))
+    call SMB%initialise( SMB%ct_initialise( ice, refgeo_init, refgeo_PD))
 
     ! Run idealised SMB model for static Halfar solution
     C%choice_SMB_model_idealised = 'Halfar_static'
@@ -155,9 +157,10 @@ contains
     character(:), allocatable                   :: filename
     integer                                     :: ncid
     class(atype_SMB_model), allocatable         :: SMB
-    type(type_ice_model)     , target           :: ice
-    type(type_climate_model) , target           :: climate
-    type(type_grid)          , target           :: grid_smooth
+    type(type_ice_model)         , target       :: ice
+    type(type_reference_geometry), target       :: refgeo_init, refgeo_PD
+    type(type_climate_model)     , target       :: climate
+    type(type_grid)              , target       :: grid_smooth
     real(dp)                                    :: time
     logical                                     :: test_result
     integer                                     :: ierr
@@ -189,7 +192,7 @@ contains
 
     call create_SMB_model( SMB, 'prescribed')
     call SMB%allocate  ( SMB%ct_allocate( 'SMB_prescribed', 'ANT', mesh))
-    call SMB%initialise( SMB%ct_initialise( ice))
+    call SMB%initialise( SMB%ct_initialise( ice, refgeo_init, refgeo_PD))
 
     ! Verify that it worked
     test_result = .true.
@@ -215,17 +218,18 @@ contains
     type(type_mesh),  intent(in) :: mesh
 
     ! Local variables:
-    character(len=1024), parameter              :: routine_name = 'test_SMB_IMAU_ITM'
-    character(len=1024), parameter              :: test_name_local = 'IMAU_ITM'
-    character(len=1024)                         :: test_name
-    integer                                     :: vi, m
-    real(dp)                                    :: rp
-    class(atype_SMB_model), allocatable         :: SMB
-    type(type_ice_model)     , target           :: ice
-    type(type_climate_model) , target           :: climate
-    type(type_grid)          , target           :: grid_smooth
-    real(dp)                                    :: SMB_min, SMB_max
-    integer                                     :: ierr
+    character(len=1024), parameter        :: routine_name = 'test_SMB_IMAU_ITM'
+    character(len=1024), parameter        :: test_name_local = 'IMAU_ITM'
+    character(len=1024)                   :: test_name
+    integer                               :: vi, m
+    real(dp)                              :: rp
+    class(atype_SMB_model), allocatable   :: SMB
+    type(type_ice_model)         , target :: ice
+    type(type_reference_geometry), target :: refgeo_init, refgeo_PD
+    type(type_climate_model)     , target :: climate
+    type(type_grid)              , target :: grid_smooth
+    real(dp)                              :: SMB_min, SMB_max
+    integer                               :: ierr
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -268,7 +272,7 @@ contains
     ! Create and run IMAU-ITM SMB model
     call create_SMB_model( SMB, 'IMAU-ITM')
     call SMB%allocate  ( SMB%ct_allocate( 'SMB_IMAU_ITM', 'ANT', mesh))
-    call SMB%initialise( SMB%ct_initialise( ice))
+    call SMB%initialise( SMB%ct_initialise( ice, refgeo_init, refgeo_PD))
     call SMB%run       ( SMB%ct_run( 0._dp, ice, climate, grid_smooth))
 
     ! Verify that it worked

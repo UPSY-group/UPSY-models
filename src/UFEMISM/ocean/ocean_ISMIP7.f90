@@ -39,8 +39,8 @@ contains
     call update_timeframes( mesh, ocean%ISMIP7%S, time)
 
     ! Interpolate T and S between timeframes
-    call interpolate_single_field( ocean%ISMIP7%T, ocean%T, time)
-    call interpolate_single_field( ocean%ISMIP7%S, ocean%S, time)
+    call interpolate_single_field( mesh, ocean%ISMIP7%T, ocean%T, time)
+    call interpolate_single_field( mesh, ocean%ISMIP7%S, ocean%S, time)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -196,12 +196,13 @@ contains
 
   end subroutine update_single_timeframe
 
-  subroutine interpolate_single_field( field, val_out, time)
+  subroutine interpolate_single_field( mesh, field, val_out, time)
 
     ! In/output variables:
-    type(type_ocean_field_ISMIP7), intent(in   ) :: field
-    real(dp), dimension(:,:),      intent(inout) :: val_out
-    real(dp),                      intent(in   ) :: time
+    type(type_mesh),                                       intent(in   ) :: mesh
+    type(type_ocean_field_ISMIP7),                         intent(in   ) :: field
+    real(dp), dimension( mesh%vi1:mesh%vi2, 1:C%nz_ocean), intent(inout) :: val_out
+    real(dp),                                              intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'interpolate_single_field'
@@ -229,7 +230,7 @@ contains
     w1 = 1._dp - w0
 
     ! Apply interpolation to values (T or S) of both timeframes, and write to main ocean%T or ocean%S
-    val_out = w0 * field%val0 + w1 * field%val1
+    val_out( mesh%vi1:mesh%vi2, :) = w0 * field%val0( mesh%vi1:mesh%vi2, :) + w1 * field%val1( mesh%vi1:mesh%vi2, :)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -15,6 +15,6 @@ foreach test_name ($all_tests)
   csh automated_testing/UFEMISM/${test_name}/test_script.csh
   rm -rf automated_testing/UFEMISM/${test_name}/reference
   mv automated_testing/UFEMISM/${test_name}/results_checksum   automated_testing/UFEMISM/${test_name}/reference
-  cp automated_testing/UFEMISM/${test_name}/results/*.txt      automated_testing/UFEMISM/${test_name}/reference
+  find automated_testing/UFEMISM/${test_name}/results -type f -name '*.txt' -exec cp {} automated_testing/UFEMISM/${test_name}/reference \;
 
 end

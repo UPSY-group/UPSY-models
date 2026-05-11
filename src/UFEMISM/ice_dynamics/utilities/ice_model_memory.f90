@@ -214,7 +214,7 @@ contains
     ! Basal friction and shear stress
     allocate( ice%till_yield_stress         ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%basal_friction_coefficient( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%basal_shear_stress        ( mesh%vi1:mesh%vi2), source = 0._dp)
+    allocate( ice%basal_shear_stress        ( mesh%ti1:mesh%ti2), source = 0._dp)
 
     ! == Geothermal heat ==
     ! =====================

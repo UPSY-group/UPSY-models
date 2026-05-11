@@ -3,7 +3,7 @@ module ismip_output_files
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_SUM
   use UPSY_main, only: UPSY
   use parameters
-  use precisions, only: dp 
+  use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
@@ -58,13 +58,13 @@ contains
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: gl_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
     logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
-    real( dp)                                            :: deltat 
+    real( dp)                                            :: deltat
     integer                                              :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! if no ISMIP output should be created, do nothing 
+    ! if no ISMIP output should be created, do nothing
     if (.not. C%do_create_ismip_output) then
       call finalise_routine( routine_name)
       return
@@ -172,7 +172,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! if no ISMIP output should be created, do nothing 
+    ! if no ISMIP output should be created, do nothing
     if (.not. C%do_create_ismip_output) then
       call finalise_routine( routine_name)
       return
@@ -428,7 +428,7 @@ contains
             else
               d_mesh_vec_partial_2D( vi) = NaN
             end if
-          end do 
+          end do
           field%is_initial = .false.
         else
           d_mesh_vec_partial_2D = field%accum / deltat
@@ -448,7 +448,7 @@ contains
             else
               d_mesh_vec_partial_2D( vi) = NaN
             end if
-          end do 
+          end do
           field%is_initial = .false.
         else
           d_mesh_vec_partial_2D = field%accum / deltat
@@ -577,7 +577,7 @@ contains
 
       ! Basal drag
       case ('strbasemag')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
       ! Lateral mass balance
@@ -1084,10 +1084,10 @@ contains
     call initialise_ISMIP_field( region, region%ismip_output%litempavg, 'litempavg' , &
       'Depth average temperature', 'land_ice_temperature', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempgradgr, 'litempgradgr' , &
-      'Vertical Basal temperature gradient beneath grounded ice sheet', & 
+      'Vertical Basal temperature gradient beneath grounded ice sheet', &
       'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempgradfl, 'litempgradfl' , &
-      'Vertical Basal temperature gradient beneath floating ice sheet', & 
+      'Vertical Basal temperature gradient beneath floating ice sheet', &
       'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempbotgr, 'litempbotgr' , &
       'Basal temperature beneath grounded ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')

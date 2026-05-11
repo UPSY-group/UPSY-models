@@ -97,9 +97,9 @@ contains
       case default
         call crash('unknown method for grid_to_mesh remapping "' // trim( map%method) // '"')
       case ('1st_order_conservative')
-        map%M = M_cons_1st_order
+        call MatDuplicate( M_cons_1st_order, MAT_COPY_VALUES, map%M, perr)
       case ('2nd_order_conservative')
-        map%M = M_cons_2nd_order
+        call MatDuplicate( M_cons_2nd_order, MAT_COPY_VALUES, map%M, perr)
     end select
 
     call MatDestroy( w0, perr)

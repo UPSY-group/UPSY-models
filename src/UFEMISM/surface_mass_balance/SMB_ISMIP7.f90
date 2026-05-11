@@ -571,19 +571,28 @@ contains
     w_before = (self%timeframe_after%time - time) / (self%timeframe_after%time - self%timeframe_before%time)
     w_after  = 1._dp - w_before
 
-    do vi = mesh%vi1, mesh%vi2
-      self%timeframe_interp%acabf( vi,:) = &
-        w_before * self%timeframe_before%acabf( vi,:) + &
-        w_after  * self%timeframe_after%acabf ( vi,:)
-
-      self%timeframe_interp%acabf_anomaly( vi,:) = &
-        w_before * self%timeframe_before%acabf_anomaly( vi,:) + &
-        w_after  * self%timeframe_after%acabf_anomaly ( vi,:)
-
-      self%timeframe_interp%dacabfdz( vi) = &
-        w_before * self%timeframe_before%dacabfdz( vi) + &
-        w_after  * self%timeframe_after%dacabfdz ( vi)
-    end do
+    select case (C%SMB_ISMIP7_choice_SMB_baseline)
+    case default
+      call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
+    case ('yearly')
+      do vi = mesh%vi1, mesh%vi2
+        self%timeframe_interp%acabf( vi,:) = &
+          w_before * self%timeframe_before%acabf( vi,:) + &
+          w_after  * self%timeframe_after%acabf ( vi,:)
+        self%timeframe_interp%dacabfdz( vi) = &
+          w_before * self%timeframe_before%dacabfdz( vi) + &
+          w_after  * self%timeframe_after%dacabfdz ( vi)
+      end do
+    case ('fixed')
+      do vi = mesh%vi1, mesh%vi2
+        self%timeframe_interp%acabf_anomaly( vi,:) = &
+          w_before * self%timeframe_before%acabf_anomaly( vi,:) + &
+          w_after  * self%timeframe_after%acabf_anomaly ( vi,:)
+        self%timeframe_interp%dacabfdz( vi) = &
+          w_before * self%timeframe_before%dacabfdz( vi) + &
+          w_after  * self%timeframe_after%dacabfdz ( vi)
+      end do
+    end select
 
     ! Calculate elevation-based SMB correction
     do vi = mesh%vi1, mesh%vi2

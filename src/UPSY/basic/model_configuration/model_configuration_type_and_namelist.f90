@@ -738,7 +738,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: choice_ocean_model_ANT_config                = 'none'
 
     ! Choice of idealised ocean model
-    character(len=1024) :: choice_ocean_model_idealised_config          = ''                               ! Choice of idealised ocean forcing: 'ISOMIP', 'TANH', 'LINEAR'
+    character(len=1024) :: choice_ocean_model_idealised_config          = ''                               ! Choice of idealised ocean forcing: 'ISOMIP', 'TANH', 'LINEAR', 'uniform'
     character(len=1024) :: choice_ocean_isomip_scenario_config          = ''                               ! Scenario when using 'ISOMIP' forcing: 'WARM' or 'COLD'
     real(dp)            :: ocean_tanh_deep_temperature_config           = 1.0_dp                           ! [degC] Deep ocean temperature when using 'TANH' forcing
     real(dp)            :: ocean_tanh_thermocline_depth_config          = 100.0_dp                         ! [m]    Depth of thermocline when using 'TANH' forcing
@@ -752,6 +752,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_lin_therm_deep_temperature_config      = 1.2_dp                           ! [degC] Deep temperature when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_thermocline_top_config       = 200.0_dp                         ! [m] Top of thermocline depth when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_thermocline_bottom_config    = 600.0_dp                         ! [m] Bottom of thermocline depth when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_uniform_T_config                       = 0.0_dp                           ! [degC] Uniform ocean temperature when using 'uniform' forcing
+    real(dp)            :: ocean_uniform_S_config                       = 33.8_dp                          ! [psu] Uniform ocean salinity when using 'uniform' forcing
 
     ! Choice of realistic ocean model
     character(len=1024) :: choice_ocean_model_realistic_config          = ''
@@ -886,6 +888,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB_config  = ''                               ! File containing the SMB snapshot (e.g. from a RACMO historical simulation)
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies_config     = ''                               ! File containing the SMB+T2m anomalies (e.g. from a GCM projection)
 
+    ! Settings for the ISMIP7 SMB model
+    character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline_config         = ''                               ! How to define the baseline SMB for the anomalies: 'yearly' (i.e. use the provided yearly acabf fields) or 'fixed' (i.e. use a separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation)
+    character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed_config = ''                               ! Path to the separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation
+    character(len=1024) :: SMB_ISMIP7_choice_refgeo_config               = ''                               ! Which reference geometry to use as the baseline for calculating delta_SMB = dSMB/dz * delta_s: 'init', 'PD'
+    character(len=1024) :: SMB_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the SMB files are located in /path/to/base/folder/acabf/version)
+    character(len=1024) :: SMB_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the SMB files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
+
   ! == Basal mass balance
   ! =====================
 
@@ -947,7 +956,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB_config                           = 0._dp
     real(dp)            :: uniform_BMB_ROI_config                       = 0._dp
-    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp                        ! [yr] Start time for transition phase of uniform BMB in ROI (only applied when choice_BMB_model_ROI_config = "uniform" and do_BMB_transition_phase_config = .true.)
+    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp               
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma_config                  = 99.32E-5
@@ -1972,6 +1981,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_lin_therm_deep_temperature
     real(dp)            :: ocean_lin_therm_thermocline_top
     real(dp)            :: ocean_lin_therm_thermocline_bottom
+    real(dp)            :: ocean_uniform_T
+    real(dp)            :: ocean_uniform_S
 
     ! Choice of realistic ocean model
     character(len=1024) :: choice_ocean_model_realistic
@@ -2106,6 +2117,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_T2m
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies
+
+    ! Settings for the ISMIP7 SMB model
+    character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline
+    character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed
+    character(len=1024) :: SMB_ISMIP7_choice_refgeo
+    character(len=1024) :: SMB_ISMIP7_forcing_foldername
+    character(len=1024) :: SMB_ISMIP7_forcing_version
 
   ! == Basal mass balance
   ! =====================
@@ -2969,6 +2987,8 @@ contains
       ocean_lin_therm_deep_temperature_config                     , &
       ocean_lin_therm_thermocline_top_config                      , &
       ocean_lin_therm_thermocline_bottom_config                   , &
+      ocean_uniform_T_config                                      , &
+      ocean_uniform_S_config                                      , &
       choice_ocean_model_realistic_config                         , &
       filename_ocean_snapshot_NAM_config                          , &
       filename_ocean_snapshot_EAS_config                          , &
@@ -3056,6 +3076,11 @@ contains
       SMB_snp_p_anml_filename_snapshot_T2m_config                 , &
       SMB_snp_p_anml_filename_snapshot_SMB_config                 , &
       SMB_snp_p_anml_filename_anomalies_config                    , &
+      SMB_ISMIP7_choice_SMB_baseline_config                       , &
+      SMB_ISMIP7_forcing_foldername_config                        , &
+      SMB_ISMIP7_forcing_version_config                           , &
+      SMB_ISMIP7_filename_SMB_baseline_fixed_config               , &
+      SMB_ISMIP7_choice_refgeo_config                             , &
       do_asynchronous_BMB_config                                  , &
       dt_BMB_config                                               , &
       dt_BMB_reinit_config                                        , &
@@ -3779,8 +3804,8 @@ contains
     ! ==================
 
     ! Time step
-    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config             
-    C%dt_basal_hydro                                         = dt_basal_hydro_config                   
+    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config
+    C%dt_basal_hydro                                         = dt_basal_hydro_config
 
     ! Basal hydrology
     C%choice_basal_hydrology_model                           = choice_basal_hydrology_model_config
@@ -4056,6 +4081,8 @@ contains
     C%ocean_lin_therm_deep_temperature                       = ocean_lin_therm_deep_temperature_config
     C%ocean_lin_therm_thermocline_top                        = ocean_lin_therm_thermocline_top_config
     C%ocean_lin_therm_thermocline_bottom                     = ocean_lin_therm_thermocline_bottom_config
+    C%ocean_uniform_T                                        = ocean_uniform_T_config
+    C%ocean_uniform_S                                        = ocean_uniform_S_config
 
     ! Choice of realistic ocean model
     C%choice_ocean_model_realistic                           = choice_ocean_model_realistic_config
@@ -4190,6 +4217,13 @@ contains
     C%SMB_snp_p_anml_filename_snapshot_T2m                   = SMB_snp_p_anml_filename_snapshot_T2m_config
     C%SMB_snp_p_anml_filename_snapshot_SMB                   = SMB_snp_p_anml_filename_snapshot_SMB_config
     C%SMB_snp_p_anml_filename_anomalies                      = SMB_snp_p_anml_filename_anomalies_config
+
+    ! Settings for the ISMIP7 SMB model
+    C%SMB_ISMIP7_choice_SMB_baseline                         = SMB_ISMIP7_choice_SMB_baseline_config
+    C%SMB_ISMIP7_filename_SMB_baseline_fixed                 = SMB_ISMIP7_filename_SMB_baseline_fixed_config
+    C%SMB_ISMIP7_choice_refgeo                               = SMB_ISMIP7_choice_refgeo_config
+    C%SMB_ISMIP7_forcing_foldername                          = SMB_ISMIP7_forcing_foldername_config
+    C%SMB_ISMIP7_forcing_version                             = SMB_ISMIP7_forcing_version_config
 
     ! == Basal mass balance
     ! =====================

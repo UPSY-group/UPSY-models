@@ -1053,6 +1053,9 @@ module model_configuration_type_and_namelist
     character(len=1024) :: transects_SGD_config                         = ''                               ! List of transects to use for applying SGD. Format: [file:file_path1,F=10 || file:file_path2,F=20]
     character(len=1024) :: distribute_SGD_config                        = 'single_cell'                    ! How to apply SGD from transect; single cell ('single_cell'), or distribute over 2 neighbours ('distribute_2neighbours')
 
+    ! Flow extension beneath regions of melt-through
+    logical             :: laddie_extend_flow_melt_through_config       = .false.                          ! Whether or not to solve for U, V, T, S, H in regions of melt-through, default = false
+
   ! == Lateral mass balance
   ! =======================
 
@@ -2283,6 +2286,9 @@ module model_configuration_type_and_namelist
     character(len=1024) :: transects_SGD
     character(len=1024) :: distribute_SGD
 
+    ! Flow extension beneath regions of melt-through
+    logical             :: laddie_extend_flow_melt_through
+
   ! == Lateral mass balance
   ! =======================
 
@@ -3168,6 +3174,7 @@ contains
       start_time_of_applying_SGD_config                           , &
       transects_SGD_config                                        , &
       distribute_SGD_config                                       , &
+      laddie_extend_flow_melt_through_config                      , &
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
       dt_LMB_config                                               , &
@@ -4380,6 +4387,9 @@ contains
     C%start_time_of_applying_SGD                             = start_time_of_applying_SGD_config
     C%transects_SGD                                          = transects_SGD_config
     C%distribute_SGD                                         = distribute_SGD_config
+
+    ! Flow extension beneath regions of melt-through
+    C%laddie_extend_flow_melt_through                        = laddie_extend_flow_melt_through_config
 
     ! == Lateral mass balance
     ! =======================

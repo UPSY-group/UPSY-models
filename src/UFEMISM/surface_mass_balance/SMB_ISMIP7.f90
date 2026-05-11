@@ -115,6 +115,7 @@ module SMB_ISMIP7
       procedure, private :: initialise_list_of_files_and_timestamps
       procedure, private :: update_timeframes
       procedure, private :: update_timeframe
+      procedure, private :: reallocate_timeframe
 
   end type type_SMB_model_ISMIP7
 
@@ -168,7 +169,7 @@ contains
     call init_routine( routine_name)
 
     ! Retrieve input variables from context object
-    call self%initialise_SMB_model_ISMIP7( self%mesh, context%ice, context%refgeo_init, context%refgeo_PD, self%region_name())
+    call self%initialise_SMB_model_ISMIP7( self%mesh, context%refgeo_init, context%refgeo_PD, self%region_name())
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -207,7 +208,8 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call self%remap_SMB_model_ISMIP7( context%mesh_new)
+    call self%remap_SMB_model_ISMIP7( context%mesh_new, context%time, &
+      context%region_name, context%refgeo_init, context%refgeo_PD, context%ice)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -291,17 +293,22 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call self%create_field( timeframe%acabf, timeframe%wacabf, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'acabf_' // trim( name_postfix), &
-      long_name = 'monthly surface mass balance flux', &
-      units     = 'm yr^-1')
-
-    call self%create_field( timeframe%acabf_anomaly, timeframe%wacabf_anomaly, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'acabf_anomaly_' // trim( name_postfix), &
-      long_name = 'monthly surface mass balance flux anomaly', &
-      units     = 'm yr^-1')
+    select case (C%SMB_ISMIP7_choice_SMB_baseline)
+    case default
+      call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
+    case ('yearly')
+      call self%create_field( timeframe%acabf, timeframe%wacabf, &
+        self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+        name      = 'acabf_' // trim( name_postfix), &
+        long_name = 'monthly surface mass balance flux', &
+        units     = 'm yr^-1')
+    case ('fixed')
+      call self%create_field( timeframe%acabf_anomaly, timeframe%wacabf_anomaly, &
+        self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+        name      = 'acabf_anomaly_' // trim( name_postfix), &
+        long_name = 'monthly surface mass balance flux anomaly', &
+        units     = 'm yr^-1')
+    end select
 
     call self%create_field( timeframe%dacabfdz, timeframe%wdacabfdz, &
       self%mesh, Arakawa_grid%a(), &
@@ -314,12 +321,11 @@ contains
 
   end subroutine allocate_SMB_model_ISMIP7_timeframe
 
-  subroutine initialise_SMB_model_ISMIP7( self, mesh, ice, refgeo_init, refgeo_PD, region_name)
+  subroutine initialise_SMB_model_ISMIP7( self, mesh, refgeo_init, refgeo_PD, region_name)
 
     ! In/output variables
     class(type_SMB_model_ISMIP7),  intent(inout) :: self
     type(type_mesh),               intent(in   ) :: mesh
-    type(type_ice_model),          intent(in   ) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init, refgeo_PD
     character(len=3),              intent(in   ) :: region_name
 
@@ -338,7 +344,7 @@ contains
     case ('yearly')
       ! No need to do anything
     case ('fixed')
-      call self%initialise_SMB_baseline_fixed( mesh, ice, region_name)
+      call self%initialise_SMB_baseline_fixed( mesh, region_name)
     end select
 
     ! Initialise the baseline surface elevation
@@ -364,12 +370,11 @@ contains
 
   end subroutine initialise_SMB_model_ISMIP7
 
-  subroutine initialise_SMB_baseline_fixed( self, mesh, ice, region_name)
+  subroutine initialise_SMB_baseline_fixed( self, mesh, region_name)
 
     ! In/output variables
     class(type_SMB_model_ISMIP7), intent(inout) :: self
     type(type_mesh),              intent(in   ) :: mesh
-    type(type_ice_model),         intent(in   ) :: ice
     character(len=3),             intent(in   ) :: region_name
 
     ! Local variables:
@@ -609,10 +614,6 @@ contains
       self%SMB( vi) = sum( self%SMB_monthly( vi,:)) / 12._dp
     end do
 
-    ! ! DENK DROM
-    ! call self%write_to_restart_file( C%output_dir)
-    ! call crash('whoopsiedaisy')
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -691,25 +692,46 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    filename_acabf         = self%filenames_acabf        ( ti)
-    filename_acabf_anomaly = self%filenames_acabf_anomaly( ti)
-    filename_dacabfdz      = self%filenames_dacabfdz     ( ti)
+    select case (C%SMB_ISMIP7_choice_SMB_baseline)
+    case default
+      call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
+    case ('yearly')
 
-    if (par%primary) then
-      write(0,*) '   Reading ISMIP7 SMB forcing data from files:'
-      write(0,*) '    ', UPSY%stru%colour_string( trim( filename_acabf)        , 'light blue')
-      write(0,*) '    ', UPSY%stru%colour_string( trim( filename_acabf_anomaly), 'light blue')
-      write(0,*) '    ', UPSY%stru%colour_string( trim( filename_dacabfdz)     , 'light blue')
-    end if
+      filename_acabf         = self%filenames_acabf        ( ti)
+      filename_dacabfdz      = self%filenames_dacabfdz     ( ti)
 
-    call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf        , 'acabf'        , timeframe%acabf)
-    call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf_anomaly, 'acabf-anomaly', timeframe%acabf_anomaly)
-    call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+      if (par%primary) then
+        write(0,*) '   Reading ISMIP7 SMB forcing data from files:'
+        write(0,*) '    ', UPSY%stru%colour_string( trim( filename_acabf)        , 'light blue')
+        write(0,*) '    ', UPSY%stru%colour_string( trim( filename_dacabfdz)     , 'light blue')
+      end if
 
-    ! Convert from SI units (kg m^-2 s^-1) to ice model units (m yr^-1)
-    timeframe%acabf        ( mesh%vi1: mesh%vi2,:) = timeframe%acabf        ( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
-    timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) = timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
-    timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) = timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) * sec_per_year / ice_density
+      call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf        , 'acabf'        , timeframe%acabf)
+      call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+
+      ! Convert from SI units (kg m^-2 s^-1) to ice model units (m yr^-1)
+      timeframe%acabf        ( mesh%vi1: mesh%vi2,:) = timeframe%acabf        ( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
+      timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) = timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) * sec_per_year / ice_density
+
+    case ('fixed')
+
+      filename_acabf_anomaly = self%filenames_acabf_anomaly( ti)
+      filename_dacabfdz      = self%filenames_dacabfdz     ( ti)
+
+      if (par%primary) then
+        write(0,*) '   Reading ISMIP7 SMB forcing data from files:'
+        write(0,*) '    ', UPSY%stru%colour_string( trim( filename_acabf_anomaly), 'light blue')
+        write(0,*) '    ', UPSY%stru%colour_string( trim( filename_dacabfdz)     , 'light blue')
+      end if
+
+      call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf_anomaly, 'acabf-anomaly', timeframe%acabf_anomaly)
+      call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+
+      ! Convert from SI units (kg m^-2 s^-1) to ice model units (m yr^-1)
+      timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) = timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
+      timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) = timeframe%dacabfdz     ( mesh%vi1: mesh%vi2  ) * sec_per_year / ice_density
+
+    end select
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -777,11 +799,15 @@ contains
 
   end subroutine read_annual_mean_data_from_ISMIP7_forcing_file
 
-  subroutine remap_SMB_model_ISMIP7( self, mesh_new)
+  subroutine remap_SMB_model_ISMIP7( self, mesh_new, time, region_name, refgeo_init, refgeo_PD, ice)
 
     ! In/output variables
-    class(type_SMB_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),              intent(in   ) :: mesh_new
+    class(type_SMB_model_ISMIP7),  intent(inout) :: self
+    type(type_mesh),               intent(in   ) :: mesh_new
+    real(dp),                      intent(in   ) :: time
+    character(len=3),              intent(in   ) :: region_name
+    type(type_reference_geometry), intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'remap_SMB_model_ISMIP7'
@@ -789,14 +815,68 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call self%remap_field( mesh_new, 'SMB_baseline', self%SMB_baseline)
-    call self%remap_field( mesh_new, 'Hs_baseline' , self%Hs_baseline )
+    ! Reallocate all the fields
+    ! =========================
 
-    call crash('whoopsiedaisy')
+    ! Baseline SMB and surface elevation
+    call self%reallocate_field( mesh_new, 'SMB_baseline', self%SMB_baseline)
+    call self%reallocate_field( mesh_new, 'Hs_baseline' , self%Hs_baseline )
+
+    ! Timeframes of forcng fields enveloping the current model time
+    call self%reallocate_timeframe( self%timeframe_before, 'before', mesh_new)
+    call self%reallocate_timeframe( self%timeframe_after , 'after' , mesh_new)
+    call self%reallocate_timeframe( self%timeframe_interp, 'interp', mesh_new)
+
+      ! ! Elevation-induced SMB change
+    call self%reallocate_field( mesh_new, 'delta_z'  , self%delta_z)
+    call self%reallocate_field( mesh_new, 'delta_SMB', self%delta_SMB)
+
+      ! ! Monthly SMB
+    call self%reallocate_field( mesh_new, 'SMB_monthly'  , self%SMB_monthly)
+
+    ! Re-initialise and run the SMB model to fill in all the fields
+    ! =============================================================
+
+    call self%initialise_SMB_model_ISMIP7( mesh_new, refgeo_init, refgeo_PD, region_name)
+    call self%run_SMB_model_ISMIP7( mesh_new, ice, time)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine remap_SMB_model_ISMIP7
+
+  subroutine reallocate_timeframe( self, timeframe, name_postfix, mesh_new)
+
+    ! In/output variables
+    class(type_SMB_model_ISMIP7),    intent(inout) :: self
+    type(type_SMB_ISMIP7_timeframe), intent(inout) :: timeframe
+    character(len=*),                intent(in   ) :: name_postfix
+    type(type_mesh),                 intent(in   ) :: mesh_new
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'reallocate_timeframe'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    select case (C%SMB_ISMIP7_choice_SMB_baseline)
+    case default
+      call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
+    case ('yearly')
+
+      call self%reallocate_field( mesh_new, 'acabf_'         // trim( name_postfix), timeframe%acabf)
+      call self%reallocate_field( mesh_new, 'dacabfdz_'      // trim( name_postfix), timeframe%dacabfdz)
+
+    case ('fixed')
+
+      call self%reallocate_field( mesh_new, 'acabf_anomaly_' // trim( name_postfix), timeframe%acabf_anomaly)
+      call self%reallocate_field( mesh_new, 'dacabfdz_'      // trim( name_postfix), timeframe%dacabfdz)
+
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine reallocate_timeframe
 
 end module SMB_ISMIP7

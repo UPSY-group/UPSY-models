@@ -75,7 +75,11 @@ module SMB_model_basic
   end type type_SMB_model_context_run
 
   type, extends(atype_model_context_remap) :: type_SMB_model_context_remap
-    real(dp) :: time
+    real(dp)                               :: time
+    character(len=3)                       :: region_name
+    type(type_reference_geometry), pointer :: refgeo_init
+    type(type_reference_geometry), pointer :: refgeo_PD
+    type(type_ice_model),          pointer :: ice
   end type type_SMB_model_context_remap
 
   ! Abstract interfaces for deferred procedures
@@ -144,30 +148,33 @@ module SMB_model_basic
     end subroutine remap_model_abs
 
     module function ct_allocate( name, region_name, mesh) result( context)
-      character(len=*),           intent(in) :: name
-      character(len=*),           intent(in) :: region_name
-      type(type_mesh), target,    intent(in) :: mesh
+      character(len=*),          intent(in) :: name
+      character(len=*),          intent(in) :: region_name
+      type(type_mesh), target,   intent(in) :: mesh
       type(type_SMB_model_context_allocate) :: context
     end function ct_allocate
 
     module function ct_initialise( ice, refgeo_init, refgeo_PD) result( context)
       type(type_ice_model),          target, intent(in) :: ice
       type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
-      type(type_SMB_model_context_initialise)  :: context
+      type(type_SMB_model_context_initialise)           :: context
     end function ct_initialise
 
     module function ct_run( time, ice, climate, grid_smooth) result( context)
-      real(dp),                          intent(in) :: time
-      type(type_ice_model),     pointer, intent(in) :: ice
-      type(type_climate_model), pointer, intent(in) :: climate
-      type(type_grid),          pointer, intent(in) :: grid_smooth
-      type(type_SMB_model_context_run)              :: context
+      real(dp),                         intent(in) :: time
+      type(type_ice_model),     target, intent(in) :: ice
+      type(type_climate_model), target, intent(in) :: climate
+      type(type_grid),          target, intent(in) :: grid_smooth
+      type(type_SMB_model_context_run)             :: context
     end function ct_run
 
-    module function ct_remap( mesh_new, time) result( context)
-      type(type_mesh), target, intent(in) :: mesh_new
-      real(dp),                intent(in) :: time
-      type(type_SMB_model_context_remap) :: context
+    module function ct_remap( mesh_new, time, region_name, refgeo_init, refgeo_PD, ice) result( context)
+      type(type_mesh),               target, intent(in) :: mesh_new
+      real(dp),                              intent(in) :: time
+      character(len=3),                      intent(in) :: region_name
+      type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
+      type(type_ice_model),          target, intent(in) :: ice
+      type(type_SMB_model_context_remap)                :: context
     end function ct_remap
 
   end interface

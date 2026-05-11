@@ -21,7 +21,7 @@ module ice_mass_and_fluxes
 
   private
 
-  public :: calc_ice_mass_and_fluxes, calc_ice_margin_fluxes
+  public :: calc_ice_mass_and_fluxes, calc_ISMIP_fluxes
 
 contains
 
@@ -66,11 +66,6 @@ contains
 
     ! Compute area- and transitional-lines-integrated fluxes
     call calc_icesheet_integrated_fluxes( mesh, ice, SMB, BMB, LMB, scalars)
-
-    ! ISMIP quantities
-    if (C%do_create_ismip_output) then
-      call calc_ISMIP_scalars( mesh, ice, SMB, BMB, scalars)
-    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -223,34 +218,34 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Over whole domain
-      scalars%SMB_total = scalars%SMB_total + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-      scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+      scalars%SMB_total = scalars%SMB_total + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+      scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+      scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
 
       ! Over grounded ice
       if (ice%mask_grounded_ice( vi)) then
-        scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over floating ice
       if (ice%mask_floating_ice( vi)) then
-        scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free land
       if (ice%mask_icefree_land( vi)) then
-        scalars%SMB_land = scalars%SMB_land + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_land = scalars%BMB_land + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_land = scalars%SMB_land + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_land = scalars%BMB_land + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free ocean
       if (ice%mask_icefree_ocean( vi)) then
-        scalars%SMB_ocean = scalars%SMB_ocean + SMB%SMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
-        scalars%BMB_ocean = scalars%BMB_ocean + BMB%BMB( vi) * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%SMB_ocean = scalars%SMB_ocean + SMB%SMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_ocean = scalars%BMB_ocean + BMB%BMB( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
     end do
@@ -294,26 +289,26 @@ contains
       ! DENK DROM : Add here other sources if implemented in the future
       total_amb = - ice%dHi_dt_target( vi) - ice%dHi_dt_residual( vi)
 
-      scalars%AMB_total = scalars%AMB_total + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+      scalars%AMB_total = scalars%AMB_total + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
 
       ! Over grounded ice
       if (ice%mask_grounded_ice( vi)) then
-        scalars%AMB_gr = scalars%AMB_gr + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_gr = scalars%AMB_gr + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over floating ice
       if (ice%mask_floating_ice( vi)) then
-        scalars%AMB_fl = scalars%AMB_fl + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_fl = scalars%AMB_fl + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free land
       if (ice%mask_icefree_land( vi)) then
-        scalars%AMB_land = scalars%AMB_land + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_land = scalars%AMB_land + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
       ! Over ice-free ocean
       if (ice%mask_icefree_ocean( vi)) then
-        scalars%AMB_ocean = scalars%AMB_ocean + total_amb * mesh%A( vi) * 1.0E-09_dp ! [Gt/yr]
+        scalars%AMB_ocean = scalars%AMB_ocean + total_amb * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
       end if
 
     end do
@@ -402,30 +397,30 @@ contains
         ! Grounding line (grounded side)
         if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
           elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) * 1.0E-09_dp ! [Gt/yr]
+            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) * ice_density * 1.0E-12_dp ! [Gt/yr]
           end if
         end if
 
         ! Grounded marine front
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
+          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Floating calving front
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Land-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
+          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Marine-terminating ice (grounded or floating)
-        if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
+        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
       end do ! do ci = 1, mesh%nC( vi)
@@ -444,202 +439,27 @@ contains
 
   end subroutine calc_ice_transitional_fluxes
 
-  subroutine calc_ISMIP_scalars( mesh, ice, SMB, BMB, scalars)
-    !< Calculate all scalars in ISMIP format
-
-    ! In/output variables:
-    type(type_mesh),             intent(in   ) :: mesh
-    type(type_ice_model),        intent(in   ) :: ice
-    class(atype_SMB_model),      intent(in   ) :: SMB
-    type(type_BMB_model),        intent(in   ) :: BMB
-    type(type_regional_scalars), intent(inout) :: scalars
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_ISMIP_scalars'
-
-    real(dp), dimension(mesh%nV)           :: Hi_tot, TAF_tot
-    real(dp), dimension(mesh%nV)           :: fraction_margin_tot
-    logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
-    logical,  dimension(mesh%nV)           :: mask_icefree_land_tot
-    logical,  dimension(mesh%nV)           :: mask_icefree_ocean_tot
-    real(dp), dimension( :), allocatable   :: calving_flux
-    real(dp), dimension( :), allocatable   :: calving_and_front_melt_flux
-    real(dp), dimension( :), allocatable   :: land_ice_area_fraction
-    real(dp), dimension( :), allocatable   :: floating_ice_shelf_area_fraction
-    integer                                :: vi, ci, vj, ierr
-    real(dp)                               :: A_i, L_c
-
-    REAL(dp)                               :: land_ice_mass
-    REAL(dp)                               :: mass_above_floatation
-    REAL(dp)                               :: grounded_ice_sheet_area
-    REAL(dp)                               :: floating_ice_sheet_area
-    REAL(dp)                               :: total_SMB
-    REAL(dp)                               :: total_BMB
-    REAL(dp)                               :: total_BMB_shelf
-    REAL(dp)                               :: total_calving_flux
-    REAL(dp)                               :: total_calving_and_front_melt_flux
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Gather ice thickness from all processes
-    call gather_to_all( ice%Hi, Hi_tot)
-    call gather_to_all( ice%TAF, TAF_tot)
-    call gather_to_all( ice%fraction_margin, fraction_margin_tot)
-
-    ! Gather basic masks to all processes
-    call gather_to_all( ice%mask_floating_ice , mask_floating_ice_tot )
-    call gather_to_all( ice%mask_icefree_land , mask_icefree_land_tot )
-    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
-
-    allocate( land_ice_area_fraction          ( mesh%vi1:mesh%vi2))
-    allocate( floating_ice_shelf_area_fraction( mesh%vi1:mesh%vi2))
-    allocate( calving_flux                    ( mesh%vi1:mesh%vi2))
-    allocate( calving_and_front_melt_flux     ( mesh%vi1:mesh%vi2))
-
-    ! Initialise
-    land_ice_mass                     = 0._dp
-    mass_above_floatation             = 0._dp
-    grounded_ice_sheet_area           = 0._dp
-    floating_ice_sheet_area           = 0._dp
-    total_SMB                         = 0._dp
-    total_BMB                         = 0._dp
-    total_BMB_shelf                   = 0._dp
-    total_calving_flux                = 0._dp
-    total_calving_and_front_melt_flux = 0._dp
-
-    DO vi = mesh%vi1, mesh%vi2
-
-      ! Calving and front melting fluxes
-      ! ================================
-      ! Loop over all connections of vertex vi
-      do ci = 1, mesh%nC( vi)
-
-        ! Connection ci from vertex vi leads to vertex vj
-        vj = mesh%C(  vi,ci)
-
-        ! The Voronoi cell of vertex vi has area A_i
-        A_i = mesh%A( vi)
-
-        ! The shared Voronoi cell boundary section between the
-        ! Voronoi cells of vertices vi and vj has length L_c
-        L_c = mesh%Cw( vi,ci)
-
-        ! Calculate the flux: if u_perp > 0, that means that this mass is
-        ! flowing out from our transitional vertex. If so, add it its (negative) total.
-        ! A negative velocity u_perp < 0 means that the ice is flowing _into_ this
-        ! transitional zone. That might happen if there is an ice shelf flowing into
-        ! grounded ice. Account for that as well to get a perfect mass tracking.
-        ! For the other zones, u_perp < 0 would come from an area with no ice, so
-        ! that case adds 0 anyway. Thus, only consider positive velocities.
-
-        ! Grounded marine front
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        end if
-
-        ! Floating calving front
-        if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        end if
-
-        ! ! Land-terminating ice (grounded or floating)
-        ! if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-        !   calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        ! end if
-
-        ! ! Marine-terminating ice (grounded or floating)
-        ! if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-        !   calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * 1.0E-09_dp ! [Gt/yr]
-        ! end if
-
-      end do ! do ci = 1, mesh%nC( vi)
-
-      ! Ice fractions
-      ! =============
-
-      if (ice%mask_cf_gr( vi) .eqv. .FALSE.) then
-        if (ice%mask_grounded_ice( vi) .OR. ice%mask_floating_ice( vi)) then
-          land_ice_area_fraction( vi) = 1._dp
-        else
-          land_ice_area_fraction( vi) = 0._dp
-        end if
-      else
-        land_ice_area_fraction( vi) = ice%fraction_margin( vi)
-      end if
-
-      if (ice%mask_cf_fl( vi) .eqv. .FALSE.) then
-        if (ice%mask_floating_ice( vi) .eqv. .TRUE.) then
-          floating_ice_shelf_area_fraction( vi) = 1._dp
-        else
-          floating_ice_shelf_area_fraction( vi) = 0._dp
-        end if
-      else
-        floating_ice_shelf_area_fraction( vi) = ice%fraction_margin( vi)
-      end if
-
-      ! Integrated values
-      ! =================
-      land_ice_mass                     = land_ice_mass                     + (Hi_tot(                  vi) * mesh%A( vi) * ice_density)    ! kg
-      mass_above_floatation             = mass_above_floatation             + MAX( 0._dp, TAF_tot(      vi) * mesh%A( vi) * ice_density)    ! kg
-      grounded_ice_sheet_area           = grounded_ice_sheet_area           + (ice%fraction_gr( vi)  * mesh%A( vi))                  ! m2
-      floating_ice_sheet_area           = floating_ice_sheet_area           + (floating_ice_shelf_area_fraction( vi) * mesh%A( vi))                  ! m2
-      total_SMB                         = total_SMB                         + (land_ice_area_fraction( vi) * SMB%SMB(  vi) * mesh%A( vi) * ice_density / sec_per_year) ! kg s-1
-      total_BMB                         = total_BMB                         + (land_ice_area_fraction( vi) * BMB%BMB(       vi) * mesh%A( vi) * ice_density / sec_per_year) ! kg s-1
-      total_BMB_shelf                   = total_BMB_shelf                   + (land_ice_area_fraction( vi) * BMB%BMB_shelf( vi) * mesh%A( vi) * ice_density / sec_per_year) ! kg s-1
-      total_calving_flux                = total_calving_flux                + (calving_flux( vi)                                       * mesh%A( vi) * ice_density / sec_per_year) ! kg s-1
-      total_calving_and_front_melt_flux = total_calving_and_front_melt_flux + (calving_and_front_melt_flux( vi)                        * mesh%A( vi) * ice_density / sec_per_year) ! kg s-1
-
-    END DO ! vi = mesh%vi1, mesh%vi2
-
-    scalars%ismip%lim             = land_ice_mass
-    scalars%ismip%limnsw          = mass_above_floatation
-    scalars%ismip%iareagr         = grounded_ice_sheet_area
-    scalars%ismip%iareafl         = floating_ice_sheet_area
-    scalars%ismip%tendacabf       = total_SMB
-    scalars%ismip%tendlibmassbf   = total_BMB
-    scalars%ismip%tendlibmassbffl = total_BMB_shelf
-    scalars%ismip%tendlicalvf     = total_calving_flux
-    scalars%ismip%tendlifmassbf   = total_calving_and_front_melt_flux
-
-    ! Add together values from each process
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%lim,             1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%limnsw,          1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%iareagr,         1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%iareafl,         1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%tendacabf,       1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%tendlibmassbf,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%tendlibmassbffl, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%tendlicalvf,     1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, scalars%ismip%tendlifmassbf,   1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine calc_ISMIP_scalars
-
-  subroutine calc_ice_margin_fluxes( mesh, ice, calving_flux)
-      !< Calculate the ice flux through the ice margin using an upwind scheme
+  subroutine calc_ISMIP_fluxes( mesh, ice, calving_flux, gl_flux)
+      !< Calculate the calving flux and grounding line flux using an upwind scheme
 
       ! This is the same routine as calc_ice_transitional_fluxes,
       ! but does not integrate over all vertices, so the results are given
       ! in the mesh, with fluxes per cell
 
-
       ! In/output variables:
       type(type_mesh),                         intent(in   ) :: mesh
       type(type_ice_model),                    intent(in   ) :: ice
-      real(dp), dimension(mesh%vi1: mesh%vi2), intent(  out) :: calving_flux
-      ! real(dp), dimension(mesh%nV), intent(  out) :: calving_and_front_melt_flux ! TODO: when front melt is computed
+      real(dp), dimension(mesh%vi1: mesh%vi2), intent(inout) :: calving_flux
+      real(dp), dimension(mesh%vi1: mesh%vi2), intent(inout) :: gl_flux
 
       ! Local variables:
-      character(len=1024), parameter         :: routine_name = 'calc_ice_margin_fluxes'
+      character(len=1024), parameter         :: routine_name = 'calc_ISMIP_fluxes'
       real(dp), dimension(mesh%nV)           :: Hi_tot
       real(dp), dimension(mesh%nV)           :: fraction_margin_tot
       logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
       logical,  dimension(mesh%nV)           :: mask_icefree_land_tot
       logical,  dimension(mesh%nV)           :: mask_icefree_ocean_tot
-      integer                                :: vi, ci, vj, ierr
+      integer                                :: vi, ci, vj
       real(dp)                               :: A_i, L_c
 
       ! Add routine to path
@@ -656,6 +476,7 @@ contains
 
       ! Initialise
       calving_flux                = 0._dp
+      gl_flux                     = 0._dp
 
       do vi = mesh%vi1, mesh%vi2
 
@@ -680,8 +501,18 @@ contains
           ! For the other zones, u_perp < 0 would come from an area with no ice, so
           ! that case adds 0 anyway. Thus, only consider positive velocities.
 
-          if (fraction_margin_tot( vi) > 0._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
+          ! Calving flux
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
             calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
+          end if
+
+          ! Grounding line (grounded side)
+          if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
+            if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) / A_i ! [m/yr]
+            elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) / A_i ! [m/yr]
+            end if
           end if
 
         end do ! do ci = 1, mesh%nC( vi)
@@ -691,7 +522,6 @@ contains
       ! Finalise routine path
       call finalise_routine( routine_name)
 
-  end subroutine calc_ice_margin_fluxes
-
+  end subroutine calc_ISMIP_fluxes
 
 end module ice_mass_and_fluxes

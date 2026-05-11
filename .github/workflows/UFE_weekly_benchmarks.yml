@@ -3,12 +3,9 @@
 name: UFEMISM Weekly Benchmarks
 run-name: ${{ github.actor }} - UFEMISM Weekly Benchmarks
 on:
-  pull_request:
-    branches:
-      - main
-    paths:
-      - 'src/UFEMISM/**'
   workflow_dispatch:
+  schedule:
+    - cron: '23 3 * * 1'
 
 jobs:
 

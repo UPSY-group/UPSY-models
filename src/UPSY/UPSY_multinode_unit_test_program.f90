@@ -13,6 +13,7 @@ program UPSY_multinode_unit_test_program
   use basic_model_utilities, only: print_model_start, print_model_end
   use ut_basic, only: create_unit_tests_output_folder, create_unit_tests_output_file, foldername_unit_tests_output
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
+  use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
   use ut_mpi_dist_shared_memory, only: unit_tests_mpi_hybrid_distributed_shared_memory_main
   use ut_halo_exchange, only: test_halo_exchange_main
@@ -31,6 +32,8 @@ program UPSY_multinode_unit_test_program
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation_multinode_tests
   call PetscInitialize( PETSC_NULL_CHARACTER, perr)
+
+  call print_git_commit_hash_and_package_versions
 
   ! Initialise constants (pi, NaN, ...)
   call initialise_constants

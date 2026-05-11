@@ -20,6 +20,7 @@ module predictor_corrector_scheme
   use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use conservation_of_momentum_main, only: solve_stress_balance
   use subgrid_ice_margin, only: calc_effective_thickness
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -138,16 +139,18 @@ contains
       ! Calculate predicted ice thickness (Robinson et al., 2020, Eq. 30)
       region%ice%pc%Hi_star_np1 = region%ice%Hi_prev + region%ice%pc%dt_np1 * ((1._dp + region%ice%pc%zeta_t / 2._dp) * &
         region%ice%pc%dHi_dt_Hi_n_u_n - (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
+      call checksum( region%mesh%pai_V, region%ice%pc%Hi_star_np1, 'region%ice%pc%Hi_star_np1')
 
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
-      
+
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 30 above rearranged to retrieve
       ! an updated dHi_dt_Hi_n_u_n from the modified Hi_star_np1. if no ice
       ! thickness modifications were applied, then there will be not change.
       region%ice%pc%dHi_dt_Hi_n_u_n = ((region%ice%pc%Hi_star_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1 + (region%ice%pc%zeta_t / 2._dp) * region%ice%pc%dHi_dt_Hi_nm1_u_nm1) / (1._dp + region%ice%pc%zeta_t / 2._dp)
+      call checksum( region%mesh%pai_V, region%ice%pc%dHi_dt_Hi_n_u_n, 'region%ice%pc%dHi_dt_Hi_n_u_n')
 
       ! == Update step ==
       ! =================
@@ -221,6 +224,7 @@ contains
 
       ! Calculate corrected ice thickness (Robinson et al. (2020), Eq. 31)
       region%ice%pc%Hi_np1 = region%ice%Hi_prev + (region%ice%pc%dt_np1 / 2._dp) * (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
+      call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')
 
       ! Save "raw" thinning rates, as applied after the corrector step
       region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
@@ -233,10 +237,12 @@ contains
       ! an updated dHi_dt_Hi_star_np1_u_np1 from the modified Hi_np1. if no ice
       ! thickness modifications were applied, then there will be not change.
       region%ice%pc%dHi_dt_Hi_star_np1_u_np1 = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / (region%ice%pc%dt_np1 / 2._dp) - region%ice%pc%dHi_dt_Hi_n_u_n
+      call checksum( region%mesh%pai_V, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, 'region%ice%pc%dHi_dt_Hi_star_np1_u_np1')
 
       ! Add difference between raw and applied dHi_dt to residual tracker
       region%ice%dHi_dt_residual = region%ice%dHi_dt_raw - &  ! Raw change
                                   (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1  ! Minus applied change
+      call checksum( region%mesh%pai_V, region%ice%dHi_dt_residual, 'region%ice%dHi_dt_residual')
 
       ! == Truncation error ==
       ! ======================
@@ -348,6 +354,8 @@ contains
       end if
     end do
     call MPI_ALLREDUCE( MPI_IN_PLACE, pc%eta_np1, 1, MPI_doUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call checksum( mesh%pai_V, pc%tau_np1, 'pc%tau_np1')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

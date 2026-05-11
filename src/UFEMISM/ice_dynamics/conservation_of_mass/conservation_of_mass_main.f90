@@ -13,6 +13,7 @@ module conservation_of_mass_main
   use conservation_of_mass_semiimplicit, only: calc_dHi_dt_semiimplicit
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD
   use ice_thickness_safeties, only: calc_and_apply_spill_over_flux
+  use checksum_mod
 
   implicit none
 
@@ -108,6 +109,9 @@ contains
 
     ! Recalculate dH/dt with adjusted values of H
     dHi_dt = (Hi_tplusdt - Hi) / dt
+
+    call checksum( mesh%pai_V, dHi_dt, 'dHi_dt')
+    call checksum( mesh%pai_V, AMB   , 'AMB')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

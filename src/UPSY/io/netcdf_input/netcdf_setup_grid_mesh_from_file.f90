@@ -2,7 +2,7 @@ module netcdf_setup_grid_mesh_from_file
   !< Set up grids/mesh from a NetCDF file
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
-  use precisions, only: dp
+  use precisions, only: dp, int8
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid, type_grid_lonlat, type_grid_lat
@@ -15,6 +15,7 @@ module netcdf_setup_grid_mesh_from_file
   use grid_basic, only: calc_secondary_grid_data
   use netcdf_basic
   use tests_main
+  use netcdf, only: NF90_FLOAT, NF90_DOUBLE, NF90_INT64
 
   implicit none
 
@@ -36,9 +37,10 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_xy_grid_from_file'
     real(dp), parameter            :: tol = 1E-9_dp
-    integer                        :: id_dim_x, id_dim_y
-    integer                        :: id_var_x, id_var_y
+    integer                        :: id_dim_x, id_dim_y, var_type_x
+    integer                        :: id_var_x, id_var_y, var_type_y
     integer                        :: ierr
+    integer(int8), dimension(:), allocatable :: x_int8, y_int8
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -59,12 +61,31 @@ contains
     allocate( grid%y( grid%ny))
 
     ! Inquire x and y variables
-    call inquire_var_multopt( filename, ncid, field_name_options_x, id_var_x)
-    call inquire_var_multopt( filename, ncid, field_name_options_y, id_var_y)
+    call inquire_var_multopt( filename, ncid, field_name_options_x, id_var_x, var_type = var_type_x)
+    call inquire_var_multopt( filename, ncid, field_name_options_y, id_var_y, var_type = var_type_y)
 
     ! Read x and y
-    call read_var_primary(  filename, ncid, id_var_x, grid%x)
-    call read_var_primary(  filename, ncid, id_var_y, grid%y)
+    select case (var_type_x)
+    case default
+      call crash('invalid variable type for variable x in file ' // trim( filename))
+    case (NF90_FLOAT, NF90_DOUBLE)
+      call read_var_primary(  filename, ncid, id_var_x, grid%x)
+    case (NF90_INT64)
+      allocate( x_int8( grid%nx))
+      call read_var_primary(  filename, ncid, id_var_x, x_int8)
+      grid%x = real( x_int8, dp)
+    end select
+
+    select case (var_type_y)
+    case default
+      call crash('invalid variable type for variable y in file ' // trim( filename))
+    case (NF90_FLOAT, NF90_DOUBLE)
+      call read_var_primary(  filename, ncid, id_var_y, grid%y)
+    case (NF90_INT64)
+      allocate( y_int8( grid%ny))
+      call read_var_primary(  filename, ncid, id_var_y, y_int8)
+      grid%y = real( y_int8, dp)
+    end select
 
     ! Broadcast x and y from the primary to the other processes
     call MPI_BCAST( grid%x(:), grid%nx, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)

@@ -22,6 +22,7 @@ module climate_matrix
   use mesh_data_smoothing, only: smooth_Gaussian
   use climate_model_utilities                                , only: allocate_climate_snapshot, read_climate_snapshot, adapt_precip_CC, adapt_precip_Roe, get_insolation_at_time
   use assertions_basic, only: assert
+  use reference_geometry_types, only: type_reference_geometry
 
  implicit none
 
@@ -746,13 +747,14 @@ contains
     type(type_ice_model),                 intent(in)    :: ice
 
     ! Local variables:
-    character(LEN=256), parameter                       :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
-    integer                                             :: vi,m,i
-    type(type_ice_model)      , target                  :: ice_dummy
-    type(type_climate_model)  , target                  :: climate_dummy
-    type(type_grid)           , target                  :: grid_dummy
-    type(type_SMB_model_IMAU_ITM)                       :: SMB_dummy
-    character(LEN=256)                                  :: choice_SMB_IMAUITM_init_firn_dummy
+    character(LEN=256), parameter         :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
+    integer                               :: vi,m,i
+    type(type_ice_model)      ,    target :: ice_dummy
+    type(type_climate_model)  ,    target :: climate_dummy
+    type(type_reference_geometry), target :: refgeo_init_dummy, refgeo_PD_dummy
+    type(type_grid)           ,    target :: grid_dummy
+    type(type_SMB_model_IMAU_ITM)         :: SMB_dummy
+    character(LEN=256)                    :: choice_SMB_IMAUITM_init_firn_dummy
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -823,7 +825,7 @@ contains
     ! SMB
     ! ===
     call SMB_dummy%allocate  ( SMB_dummy%ct_allocate( 'SMB_IMAU_ITM_dummy', region_name, mesh))
-    call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy))
+    call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy, refgeo_init_dummy, refgeo_PD_dummy))
 
     ! Initialisation choice
     if     (region_name == 'NAM') then

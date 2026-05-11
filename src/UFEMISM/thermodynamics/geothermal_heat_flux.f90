@@ -14,6 +14,7 @@ MODULE geothermal_heat_flux
   USE ice_model_types                                        , ONLY: type_ice_model
   use netcdf_io_main
   USE parameters                                             , ONLY: sec_per_year
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -61,6 +62,8 @@ CONTAINS
         CALL crash('unknown choice_geothermal_heat_flux "' // TRIM( C%choice_geothermal_heat_flux) // '"')
 
     END SELECT
+
+    call checksum( mesh%pai_V, ice%geothermal_heat_flux, 'ice%geothermal_heat_flux')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

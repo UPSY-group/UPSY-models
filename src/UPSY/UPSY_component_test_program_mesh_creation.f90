@@ -10,6 +10,7 @@ program UPSY_component_test_program_mesh_creation
   use basic_model_utilities, only: print_model_start, print_model_end
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
   use crash_mod, only: crash
+  use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
   use ct_basic, only: create_component_tests_output_folder
   use ct_create_test_meshes, only: create_all_test_meshes_and_grids_Antarctica
@@ -25,6 +26,8 @@ program UPSY_component_test_program_mesh_creation
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
   call PetscInitialize( PETSC_NULL_CHARACTER, perr)
+
+  call print_git_commit_hash_and_package_versions
 
   ! Initialise constants (pi, NaN, ...)
   call initialise_constants

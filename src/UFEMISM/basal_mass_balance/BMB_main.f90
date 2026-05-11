@@ -34,6 +34,7 @@ MODULE BMB_main
   use netcdf_io_main
   use checksum_mod, only: checksum
   use mpi_distributed_shared_memory, only: reallocate_dist_shared
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -138,17 +139,21 @@ CONTAINS
     SELECT CASE (choice_BMB_model)
       CASE ('uniform')
         BMB%BMB_shelf = 0._dp
-        DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
-            BMB%BMB_shelf( vi) = C%uniform_BMB
-          END IF
-        END DO
+        if (time > C%uniform_BMB_t_start) then
+          DO vi = mesh%vi1, mesh%vi2
+            IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
+              BMB%BMB_shelf( vi) = C%uniform_BMB
+            END IF
+          END DO
+        end if
       CASE ('prescribed')
         CALL run_BMB_model_prescribed( mesh, ice, BMB, region_name, time)
       CASE ('prescribed_fixed')
         ! No need to do anything
       CASE ('idealised')
-        CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        if (time > C%uniform_BMB_t_start) then
+          CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        end if
       CASE ('parameterised')
         CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
       CASE ('inverted')
@@ -217,6 +222,16 @@ CONTAINS
 
     ! Apply limits
     BMB%BMB = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB ))
+
+    call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
+    call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
+    call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
+    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
+    call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
+    call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
+    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
+    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
+    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -340,6 +355,16 @@ CONTAINS
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model_ROI "' // TRIM( choice_BMB_model_ROI) // '"')
     END SELECT
+
+    call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
+    call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
+    call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
+    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
+    call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
+    call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
+    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
+    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
+    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

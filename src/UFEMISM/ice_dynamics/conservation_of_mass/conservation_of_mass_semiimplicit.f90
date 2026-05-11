@@ -12,6 +12,7 @@ module conservation_of_mass_semiimplicit
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind
   use conservation_of_mass_explicit, only: calc_dHi_dt_explicit, apply_ice_thickness_BC_explicit
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -169,6 +170,11 @@ contains
     ! the component of the original dH/dt that was removed.
     ! The negative of this we call artificial mass balance.
     AMB = dHi_dt - AMB
+
+    call checksum( mesh%pai_V, AMB       , 'AMB')
+    call checksum( mesh%pai_V, dHi_dt    , 'dHi_dt')
+    call checksum( mesh%pai_V, Hi_tplusdt, 'Hi_tplusdt')
+    call checksum( mesh%pai_V, divQ      , 'divQ')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

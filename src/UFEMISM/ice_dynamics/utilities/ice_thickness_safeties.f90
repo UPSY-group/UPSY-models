@@ -298,7 +298,7 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
     integer                                              :: vi, ci, vj, cj, cm, ierr
-    real(dp)                                             :: Q_max, Q_min, Q_dsttot, Q_srctot
+    real(dp)                                             :: u_perp_min, Q_max, Q_min, Q_dsttot, Q_srctot
     real(dp), dimension(mesh%nC_mem)                     :: weight        ! [m2/y] Perpendicular outflow to ocean
     real(dp), dimension(mesh%vi1: mesh%vi2, mesh%nC_mem) :: relweight     ! [0-1] Relative outflow weight
     real(dp), dimension(mesh%nV, mesh%nC_mem)            :: relweight_tot ! [0-1] Relative outflow weight
@@ -326,7 +326,14 @@ contains
       if (ice%mask_cf_fl( vi) .or. ice%mask_cf_gr( vi)) then
 
         ! Find connection with the strongest inflow into this cell
-        cm = minloc(ice%u_perp( vi, :), dim=1)
+        cm = 0
+        u_perp_min = huge( u_perp_min)
+        do ci = 1, mesh%nC( vi)
+          if (ice%u_perp( vi,ci) < u_perp_min) then
+            u_perp_min = ice%u_perp( vi,ci)
+            cm = ci
+          end if
+        end do
 
         ! If there is no inflow at all, for example during initialisation,
         ! use effective thickness

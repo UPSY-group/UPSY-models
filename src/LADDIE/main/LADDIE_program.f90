@@ -42,6 +42,7 @@ program LADDIE_program
   use LADDIE_main_model, only: run_laddie_model, initialise_laddie_model
   use laddie_unit_tests, only: run_laddie_unit_tests
   use laddie_hydrology, only: initialise_transects_SGD
+  use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
   implicit none
 
@@ -82,6 +83,8 @@ program LADDIE_program
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
   call PetscInitialize( PETSC_NULL_CHARACTER, perr)
+
+  call print_git_commit_hash_and_package_versions
 
   ! Initialise constants (pi, NaN, ...)
   call initialise_constants

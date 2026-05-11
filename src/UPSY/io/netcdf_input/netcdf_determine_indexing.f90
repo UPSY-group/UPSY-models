@@ -2,10 +2,10 @@ module netcdf_determine_indexing
   !< Determine dimension indexing and directions in a NetCDF file
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
-  use precisions, only: dp
+  use precisions, only: dp, int8
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_basic
-  use netcdf, only: NF90_MAX_VAR_DIMS
+  use netcdf, only: NF90_MAX_VAR_DIMS, NF90_FLOAT, NF90_DOUBLE, NF90_INT64
 
   implicit none
 
@@ -28,9 +28,10 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'determine_xy_indexing'
-    integer                                :: id_dim_x, id_dim_y
+    integer                                :: id_dim_x, id_dim_y, var_type_x, var_type_y
     integer                                :: nx, ny
     real(dp), dimension(:), allocatable    :: x, y
+    integer(int8), dimension(:), allocatable :: x_int8, y_int8
     integer                                :: ierr
     integer                                :: id_var_x, id_var_y, id_var
     integer, dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
@@ -51,13 +52,32 @@ contains
     allocate( y( ny))
 
     ! Inquire x and y variables
-    call inquire_var_multopt( filename, ncid, field_name_options_x, id_var_x)
-    call inquire_var_multopt( filename, ncid, field_name_options_y, id_var_y)
+    call inquire_var_multopt( filename, ncid, field_name_options_x, id_var_x, var_type = var_type_x)
+    call inquire_var_multopt( filename, ncid, field_name_options_y, id_var_y, var_type = var_type_y)
 
     ! Read x and y
-    call read_var_primary(  filename, ncid, id_var_x, x)
-    call read_var_primary(  filename, ncid, id_var_y, y)
+    select case (var_type_x)
+    case default
+      call crash('invalid variable type for variable x in file ' // trim( filename))
+    case (NF90_FLOAT, NF90_DOUBLE)
+      call read_var_primary( filename, ncid, id_var_x, x)
+    case (NF90_INT64)
+      allocate( x_int8( nx))
+      call read_var_primary( filename, ncid, id_var_x, x_int8)
+      x = real( x_int8, dp)
+    end select
     call MPI_BCAST( x(:), nx, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+
+    select case (var_type_y)
+    case default
+      call crash('invalid variable type for variable y in file ' // trim( filename))
+    case (NF90_FLOAT, NF90_DOUBLE)
+      call read_var_primary( filename, ncid, id_var_y, y)
+    case (NF90_INT64)
+      allocate( y_int8( ny))
+      call read_var_primary( filename, ncid, id_var_y, y_int8)
+      y = real( y_int8, dp)
+    end select
     call MPI_BCAST( y(:), ny, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
     ! Determine directions of x and y

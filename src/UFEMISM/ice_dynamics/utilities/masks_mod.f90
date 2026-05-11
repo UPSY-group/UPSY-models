@@ -12,6 +12,7 @@ module masks_mod
   use plane_geometry, only: is_in_polygon
   use mesh_ROI_polygons
   use netcdf_io_main
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -107,6 +108,12 @@ contains
 
     end do
 
+    call checksum( mesh%pai_V, mask_icefree_land , 'mask_icefree_land')
+    call checksum( mesh%pai_V, mask_icefree_ocean, 'mask_icefree_ocean')
+    call checksum( mesh%pai_V, mask_grounded_ice , 'mask_grounded_ice')
+    call checksum( mesh%pai_V, mask_floating_ice , 'mask_floating_ice')
+    call checksum( mesh%pai_V, mask              , 'mask')
+
     ! === Transitional masks ===
     ! ==========================
 
@@ -193,6 +200,13 @@ contains
       end if
 
     end do ! do vi = mesh%vi1, mesh%vi2
+
+    call checksum( mesh%pai_V, mask_margin   , 'mask_margin')
+    call checksum( mesh%pai_V, mask_gl_gr    , 'mask_gl_gr')
+    call checksum( mesh%pai_V, mask_gl_fl    , 'mask_gl_fl')
+    call checksum( mesh%pai_V, mask_cf_gr    , 'mask_cf_gr')
+    call checksum( mesh%pai_V, mask_cf_fl    , 'mask_cf_fl')
+    call checksum( mesh%pai_V, mask_coastline, 'mask_coastline')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

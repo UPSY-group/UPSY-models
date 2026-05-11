@@ -11,7 +11,7 @@ module netcdf_field_name_options
 
   public :: field_name_options_x, field_name_options_y, field_name_options_zeta, field_name_options_lon, &
     field_name_options_lat, field_name_options_time, field_name_options_month, field_name_options_depth, &
-    field_name_options_bnds, &
+    field_name_options_height, field_name_options_bnds, &
     field_name_options_dim_nV, field_name_options_dim_nTri, field_name_options_dim_nC_mem, &
     field_name_options_dim_nE, field_name_options_dim_nVor, field_name_options_dim_two, field_name_options_dim_three, &
     field_name_options_dim_four, field_name_options_V, field_name_options_Tri, field_name_options_nC, &
@@ -37,6 +37,7 @@ module netcdf_field_name_options
   character(len=1024), parameter :: field_name_options_time           = 'time||Time||t||nt'
   character(len=1024), parameter :: field_name_options_month          = 'month||Month'
   character(len=1024), parameter :: field_name_options_depth          = 'depth||Depth'
+  character(len=1024), parameter :: field_name_options_height         = 'z||Z||height||Height'
   character(len=1024), parameter :: field_name_options_bnds           = 'bnds'
 
   ! Mesh data

@@ -254,15 +254,16 @@ contains
 
     call calc_remapping_matrix( mesh_src, w0, w1x, w1y, M_cons_1st_order, map%M)
 
+    call correct_mesh_to_mesh_map( mesh_src, mesh_dst, output_dir, M_cons_1st_order, map%M)
+
+    ! Clean up after yourself
     call MatDestroy( A_xdy_a_b, perr)
     call MatDestroy( A_mxydx_a_b, perr)
     call MatDestroy( A_xydy_a_b, perr)
-
     call MatDestroy( w0, perr)
     call MatDestroy( w1x, perr)
     call MatDestroy( w1y, perr)
-
-    call correct_mesh_to_mesh_map( mesh_src, mesh_dst, output_dir, M_cons_1st_order, map%M)
+    call MatDestroy( M_cons_1st_order, perr)
 
     ! Delete mesh netcdf dumps
     if (par%primary) then
@@ -317,15 +318,14 @@ contains
 
     call calc_remapping_matrix_tri( mesh_src, w0, w1x, w1y, M_cons_1st_order, map%M)
 
+    ! Clean up after yourself
     call MatDestroy( A_xdy, perr)
     call MatDestroy( A_mxydx, perr)
     call MatDestroy( A_xydy, perr)
-
     call MatDestroy( w0, perr)
     call MatDestroy( w1x, perr)
     call MatDestroy( w1y, perr)
-
-    ! call correct_mesh_to_mesh_map( mesh_src, mesh_dst, M_cons_1st_order, map%M)
+    call MatDestroy( M_cons_1st_order, perr)
 
     ! Delete mesh netcdf dumps
     if (par%primary) then

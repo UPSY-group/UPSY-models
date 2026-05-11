@@ -5,7 +5,6 @@ MODULE ice_model_types
 ! ===== Preamble =====
 ! ====================
 
-  USE petscksp                                               , ONLY: tMat
   USE precisions                                             , ONLY: dp
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
@@ -474,7 +473,7 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: divQ                        ! [m yr^-1] Horizontal ice flux divergence
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: R_shear                     ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
     real(dp), dimension(:    ), allocatable :: Qspill                      ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
-    real(dp), dimension(:,:  ), allocatable :: u_perp                      ! [m yr^-1] Perpendicular ice velocity to to edge. 
+    real(dp), dimension(:,:  ), allocatable :: u_perp                      ! [m yr^-1] Perpendicular ice velocity to to edge.
 
   ! == Basal hydrology ==
   ! =====================

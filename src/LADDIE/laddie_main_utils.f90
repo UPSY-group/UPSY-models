@@ -51,33 +51,76 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Mask on a-grid
-    do vi = mesh%vi1, mesh%vi2
-      ! Check whether vertex on border
-      if (mesh%VBI( vi) > 0) then
-        laddie%mask_a( vi)    = .false.
-        laddie%mask_gr_a( vi) = .true.
-      ! Check whether ice is too thin
-      else if (forcing%mask_floating_ice( vi) .and. &
-        (C%choice_calving_law == 'threshold_thickness' &
-        .and. forcing%Hi( vi) < C%calving_threshold_thickness_shelf) &
-        .or. forcing%Hi( vi) < 1.0) then
-        laddie%mask_a( vi)    = .false.
-        laddie%mask_oc_a( vi) = .true.
-      else
-        ! Inherit regular masks
-        laddie%mask_a( vi)    = forcing%mask_floating_ice( vi)
-        laddie%mask_gr_a( vi) = forcing%mask_grounded_ice( vi) .or. forcing%mask_icefree_land( vi)
-        laddie%mask_oc_a( vi) = forcing%mask_icefree_ocean( vi)
-      end if
+    IF (C%laddie_extend_flow_melt_through) THEN
 
-      ! Define domain for area integration
-      if (laddie%mask_a( vi)) then
-        laddie%domain_a( vi) = 1.0_dp
-      else
-        laddie%domain_a( vi) = 0.0_dp
-      end if
-    end do
+      ! Mask on a-grid
+      do vi = mesh%vi1, mesh%vi2
+        ! Check whether vertex on border
+        if (mesh%VBI( vi) > 0) then
+          laddie%mask_a( vi)    = .false.
+          laddie%mask_gr_a( vi) = .true.
+        ! Check whether ice is too thin
+        else if (forcing%mask_floating_ice( vi) .and. &
+          (C%choice_calving_law == 'threshold_thickness' &
+          .and. forcing%Hi( vi) < C%calving_threshold_thickness_shelf)) then
+          laddie%mask_a( vi)    = .false.
+          laddie%mask_oc_a( vi) = .true.
+        ! Check whether there was ice in the refgeo: if so melt-through occurred, pretend as if it is still in mask_a, but at the end you dont want melt for these cells!
+        else if (forcing%mask_icefree_ocean( vi) .and. forcing%refgeo_Hi( vi) > 0._dp) then
+          laddie%mask_a( vi)    = .true.
+          laddie%mask_oc_a( vi) = .false.
+          if (C%laddie_extend_flow_melt_through_allow_melt) then
+            laddie%mask_a_no_melt( vi) = .false.
+          else
+            laddie%mask_a_no_melt( vi) = .true.
+          end if 
+        else
+          ! Inherit regular masks
+          laddie%mask_a( vi)    = forcing%mask_floating_ice( vi)
+          laddie%mask_gr_a( vi) = forcing%mask_grounded_ice( vi) .or. forcing%mask_icefree_land( vi)
+          laddie%mask_oc_a( vi) = forcing%mask_icefree_ocean( vi)
+        end if
+
+        ! Define domain for area integration
+        if (laddie%mask_a( vi)) then
+          laddie%domain_a( vi) = 1.0_dp
+        else
+          laddie%domain_a( vi) = 0.0_dp
+        end if
+      end do
+
+    ELSE 
+
+      ! Mask on a-grid
+      do vi = mesh%vi1, mesh%vi2
+        ! Check whether vertex on border
+        if (mesh%VBI( vi) > 0) then
+          laddie%mask_a( vi)    = .false.
+          laddie%mask_gr_a( vi) = .true.
+        ! Check whether ice is too thin
+        else if (forcing%mask_floating_ice( vi) .and. &
+          (C%choice_calving_law == 'threshold_thickness' &
+          .and. forcing%Hi( vi) < C%calving_threshold_thickness_shelf) &
+          .or. forcing%Hi( vi) < 1.0) then
+          laddie%mask_a( vi)    = .false.
+          laddie%mask_oc_a( vi) = .true.
+        else
+          ! Inherit regular masks
+          laddie%mask_a( vi)    = forcing%mask_floating_ice( vi)
+          laddie%mask_gr_a( vi) = forcing%mask_grounded_ice( vi) .or. forcing%mask_icefree_land( vi)
+          laddie%mask_oc_a( vi) = forcing%mask_icefree_ocean( vi)
+        end if
+
+        ! Define domain for area integration
+        if (laddie%mask_a( vi)) then
+          laddie%domain_a( vi) = 1.0_dp
+        else
+          laddie%domain_a( vi) = 0.0_dp
+        end if
+      end do
+
+    END IF 
+    
 
     call exchange_halos( mesh, laddie%mask_a)
     call exchange_halos( mesh, laddie%mask_gr_a)

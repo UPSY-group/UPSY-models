@@ -324,6 +324,9 @@ CONTAINS
         CALL initialise_BMB_model_laddie( mesh, BMB)
       CASE ('laddie')
         call allocate_laddie_forcing( mesh, BMB%forcing)
+        if (C%laddie_extend_flow_melt_through) then
+          BMB%forcing%refgeo_Hi( mesh%vi1:mesh%vi2  ) = refgeo_PD%Hi( mesh%vi1:mesh%vi2  )
+        end if
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
         call initialise_transects_SGD( mesh, BMB%forcing)
         CALL initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .FALSE.)
@@ -861,6 +864,7 @@ CONTAINS
     call reallocate_dist_shared( forcing%Ti                , forcing%wTi                , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ], [1,mesh_new%nz])
     call reallocate_dist_shared( forcing%T_ocean           , forcing%wT_ocean           , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ], [1,C%nz_ocean])
     call reallocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ], [1,C%nz_ocean])
+    call reallocate_dist_shared( forcing%refgeo_Hi         , forcing%wrefgeo_Hi         , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
     call reallocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
 
     ! Finalise routine path

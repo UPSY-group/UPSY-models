@@ -83,6 +83,14 @@ CONTAINS
     ! Loop over vertices
     DO vi = mesh%vi1, mesh%vi2
        IF (laddie%mask_a( vi)) THEN
+
+         ! If flag extend flow melt-through true and this vertice is in melt-through region: asign zero melt
+         IF (C%laddie_extend_flow_melt_through .AND. laddie%mask_a_no_melt( vi)) THEN
+           laddie%melt( vi) = 0.0
+           laddie%T_base( vi) = 0.0
+           CYCLE
+         END IF
+
          ! Solve three equations
          That = freezing_lambda_2 + freezing_lambda_3*forcing%Hib( vi)
          IF (time == C%start_time_of_run .OR. C%choice_thermo_model == 'none') THEN

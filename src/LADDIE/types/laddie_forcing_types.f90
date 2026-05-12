@@ -48,9 +48,11 @@ module laddie_forcing_types
     real(dp), dimension(:,:), contiguous, pointer :: T_ocean            => null()  ! [degrees Celsius] 3-D ocean temperature
     real(dp), dimension(:,:), contiguous, pointer :: S_ocean            => null()  ! [PSU]             3-D ocean salinity
 
+    real(dp), dimension(:),   contiguous, pointer :: refgeo_Hi          => null()  ! [m]               Ice thickness in refgeo_PD
+
     real(dp), dimension(:),   contiguous, pointer :: f_coriolis         => null()  ! [s^-1]            Coriolis parameter f
 
-    type(MPI_WIN) :: wHi, wHs, wHb, wHib, wTAF, wdHib_dx_b, wdHib_dy_b
+    type(MPI_WIN) :: wHi, wHs, wHb, wHib, wTAF, wdHib_dx_b, wdHib_dy_b, wrefgeo_Hi
     type(MPI_WIN) :: wmask_icefree_land, wmask_icefree_ocean, wmask_grounded_ice, wmask_floating_ice, wmask_gl_fl, wmask_SGD, wmask
     type(MPI_WIN) :: wTi, wT_ocean, wS_ocean
     type(MPI_WIN) :: wf_coriolis

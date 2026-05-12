@@ -48,6 +48,18 @@ endif
 
 echo ""
 
+set compile_exit_code = 0
+set in_build_dir = 0
+
+# Define compiler flags based on version
+if ($version == 'dev') then
+  set compiler_flags = "-fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -march=native -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33"
+else if ($version == 'perf') then
+  set compiler_flags = "-fdiagnostics-color=always -O3 -Wall -ffree-line-length-none -cpp -fimplicit-none -g -march=native"
+endif
+
+# Convert spaces to semicolons for CMake list format
+set cmake_flags = `echo "$compiler_flags" | sed 's/ /;/g'`
 
 # If no include directory exists, create it
 if (! -d include) mkdir include
@@ -61,92 +73,61 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
+# Add git commit hash and package versions to the source code
+csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
+if ($status != 0) then
+  echo "Error: Failed to add git commit hash to the code"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
 # Use CMake to build UPSY, with Ninja to determine module dependencies;
 # use different compiler flags for the development/performance build
 cd build
+set in_build_dir = 1
 
 if ($version == 'dev') then
 
   cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
-    -DEXTRA_Fortran_FLAGS="\
-      -fdiagnostics-color=always;\
-      -Og;\
-      -Wall;\
-      -ffree-line-length-none;\
-      -cpp;\
-      -Werror=implicit-interface;\
-      -fimplicit-none;\
-      -g;\
-      -march=native;\
-      -fcheck=all;\
-      -fbacktrace;\
-      -finit-real=nan;\
-      -finit-integer=-42;\
-      -finit-character=33" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
 
 else if ($version == 'perf') then
 
   cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \
-    -DEXTRA_Fortran_FLAGS="\
-      -fdiagnostics-color=always;\
-      -O3;\
-      -Wall;\
-      -ffree-line-length-none;\
-      -cpp;\
-      -fimplicit-none;\
-      -g;\
-      -march=native" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
 
+endif
+
+if ($status != 0) then
+  echo "Error: CMake configuration failed"
+  set compile_exit_code = 1
+  goto cleanup
 endif
 
 ninja -v
-cd ..
-
-# Copy compiled program
-if ($version == 'dev') then
-
-  rm -f UPSY_unit_test_program_dev
-  rm -f UPSY_multinode_unit_test_program_dev
-  rm -f UPSY_component_test_program_dev
-  rm -f UPSY_component_test_program_mesh_creation_dev
-  mv build/src/UPSY/UPSY_unit_test_program UPSY_unit_test_program_dev
-  mv build/src/UPSY/UPSY_multinode_unit_test_program UPSY_multinode_unit_test_program_dev
-  mv build/src/UPSY/UPSY_component_test_program UPSY_component_test_program_dev
-  mv build/src/UPSY/UPSY_component_test_program_mesh_creation UPSY_component_test_program_mesh_creation_dev
-  rm -f UPSY_unit_test_program
-  rm -f UPSY_multinode_unit_test_program
-  rm -f UPSY_component_test_program
-  cp UPSY_unit_test_program_dev UPSY_unit_test_program
-  cp UPSY_multinode_unit_test_program_dev UPSY_multinode_unit_test_program
-  cp UPSY_component_test_program_dev UPSY_component_test_program
-  cp UPSY_component_test_program_mesh_creation_dev UPSY_component_test_program_mesh_creation
-
-else if ($version == 'perf') then
-
-  rm -f UPSY_unit_test_program_perf
-  rm -f UPSY_multinode_unit_test_program_perf
-  rm -f UPSY_component_test_program_perf
-  rm -f UPSY_component_test_program_mesh_creation_perf
-  mv build/src/UPSY/UPSY_unit_test_program UPSY_unit_test_program_perf
-  mv build/src/UPSY/UPSY_multinode_unit_test_program UPSY_multinode_unit_test_program_perf
-  mv build/src/UPSY/UPSY_component_test_program UPSY_component_test_program_perf
-  mv build/src/UPSY/UPSY_component_test_program_mesh_creation UPSY_component_test_program_mesh_creation_perf
-  rm -f UPSY_unit_test_program
-  rm -f UPSY_multinode_unit_test_program
-  rm -f UPSY_component_test_program
-  rm -f UPSY_component_test_program_mesh_creation
-  cp UPSY_unit_test_program_perf UPSY_unit_test_program
-  cp UPSY_multinode_unit_test_program_perf UPSY_multinode_unit_test_program
-  cp UPSY_component_test_program_perf UPSY_component_test_program
-  cp UPSY_component_test_program_mesh_creation_perf UPSY_component_test_program_mesh_creation
-
+if ($status != 0) then
+  echo "Error: Ninja build failed"
+  set compile_exit_code = 1
 endif
 
-exit 0
+cleanup:
+
+if ($in_build_dir == 1) then
+  cd ..
+endif
+
+# Delete git commit hash and package versions from the source code (restore to INVALID)
+csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/delete_git_commit_hash_and_package_versions_from_code.csh
+if ($status != 0) then
+  echo "Error: Failed to delete git commit hash from the code"
+  set compile_exit_code = 1
+endif
+
+exit $compile_exit_code
 
 usage:
 

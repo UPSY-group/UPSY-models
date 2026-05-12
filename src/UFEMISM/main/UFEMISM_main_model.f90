@@ -9,7 +9,7 @@ MODULE UFEMISM_main_model
   use UPSY_main, only: UPSY
   USE precisions                                             , ONLY: dp
   USE mpi_basic                                              , ONLY: par, sync
-  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine, warning
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
@@ -20,7 +20,7 @@ MODULE UFEMISM_main_model
   use reference_geometries_main, only: initialise_reference_geometries_raw, initialise_reference_geometries_on_model_mesh
   use ice_dynamics_main, only: initialise_ice_dynamics_model, run_ice_dynamics_model, remap_ice_dynamics_model, &
     create_restart_files_ice_model, write_to_restart_files_ice_model, apply_geometry_relaxation
-  use basal_hydrology_main, only: run_basal_hydrology_model
+  use basal_hydrology_main, only: run_basal_hydrology_model, initialise_basal_hydro_model, remap_basal_hydro_model
   use bed_roughness_main, only: initialise_bed_roughness_model
   USE thermodynamics_main                                    , ONLY: initialise_thermodynamics_model, run_thermodynamics_model, &
                                                                      create_restart_file_thermo, write_to_restart_file_thermo
@@ -42,13 +42,11 @@ MODULE UFEMISM_main_model
   USE grid_basic                                             , ONLY: setup_square_grid
   USE mesh_output_files, only: create_main_regional_output_file_mesh, write_to_main_regional_output_file_mesh
   use grid_output_files, only: create_main_regional_output_file_grid, write_to_main_regional_output_file_grid, &
-    create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI, &
-    create_ISMIP_regional_output_file_grid, write_to_ISMIP_regional_output_file_grid, &
-    create_ISMIP_regional_output_file_grid_ROI, write_to_ISMIP_regional_output_file_grid_ROI
-  use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file, &
-                                 create_ISMIP_scalar_regional_output_file, buffer_ISMIP_scalar_output, write_to_ISMIP_scalar_regional_output_file
-  use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI, &
-                                     create_ISMIP_scalar_regional_output_file_ROI, buffer_ISMIP_scalar_output_ROI, write_to_ISMIP_scalar_regional_output_file_ROI
+    create_main_regional_output_file_grid_ROI, write_to_main_regional_output_file_grid_ROI
+  use scalar_output_files, only: create_scalar_regional_output_file, buffer_scalar_output, write_to_scalar_regional_output_file
+  use scalar_output_files_ROI, only: create_scalar_regional_output_file_ROI, buffer_scalar_output_ROI, write_to_scalar_regional_output_file_ROI
+  use ismip_output_files, only: create_ISMIP_regional_output_files, write_to_ISMIP_regional_output_files, &
+    accumulate_ISMIP_flux_fields, remap_ISMIP_output
   use mesh_ROI_polygons
   use plane_geometry, only: longest_triangle_leg
   use apply_maps, only: clear_all_maps_involving_this_mesh
@@ -57,6 +55,7 @@ MODULE UFEMISM_main_model
   use tracer_tracking_model_main, only: initialise_tracer_tracking_model, run_tracer_tracking_model, &
     remap_tracer_tracking_model
   use transects_main, only: initialise_transects, write_to_transect_netcdf_output_files
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -81,6 +80,7 @@ CONTAINS
     REAL(dp)                                                           :: dt_av
     REAL(dp)                                                           :: mesh_fitness_coefficient
     TYPE(type_global_forcing)                                          :: regional_forcing
+    real(dp)                                                           :: time_hydro
 
     ! Add routine to path
     routine_name = 'run_model('  //  region%name  //  ')'
@@ -118,7 +118,7 @@ CONTAINS
       END IF ! IF (C%allow_mesh_updates) THEN
 
       ! Run the subglacial hydrology model
-      CALL run_basal_hydrology_model( region%mesh, region%ice)
+      call run_basal_hydrology_model( region%mesh, region%ice, region%time, region%ice%hydro_Salle2025)
 
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN
@@ -219,22 +219,23 @@ CONTAINS
     CHARACTER(LEN=256), PARAMETER                                      :: routine_name = 'write_to_regional_output_files'
     INTEGER                                                            :: i
     REAL(dp)                                                           :: t_closest
-    LOGICAL                                                            :: do_output_main, do_output_restart, do_output_grid
+    LOGICAL                                                            :: do_output_main, do_output_restart, do_output_grid, do_output_ismip
 
     ! Add routine to path
     CALL init_routine( routine_name)
 
     ! Buffer scalar output data
     call buffer_scalar_output( region)
-    call buffer_ISMIP_scalar_output( region)
 
     if (region%nROI > 0) then
       call buffer_scalar_output_ROI( region)
-      call buffer_ISMIP_scalar_output_ROI( region)
     end if
 
+    ! Accumulate ISMIP fields
+    call accumulate_ISMIP_flux_fields( region)
+
     ! Determine time of next output event
-    t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next)
+    t_closest = MIN( region%output_t_next, region%output_restart_t_next, region%output_grid_t_next, region%output_ismip_t_next)
 
     ! Determine actions
     IF     (region%time < t_closest) THEN
@@ -255,6 +256,7 @@ CONTAINS
     do_output_main    = .FALSE.
     do_output_restart = .FALSE.
     do_output_grid    = .FALSE.
+    do_output_ismip   = .false.
 
     ! Update time stamps
     IF (region%time == region%output_t_next) THEN
@@ -269,6 +271,10 @@ CONTAINS
       region%output_grid_t_next = region%output_grid_t_next + C%dt_output_grid
       do_output_grid = .TRUE.
     END IF
+    if (region%time == region%output_ismip_t_next) then
+      region%output_ismip_t_next = region%output_ismip_t_next + C%dt_output_ismip
+      do_output_ismip = .true.
+    end if
 
     ! If needed, create a new set of mesh output files for the current model mesh
     IF (.NOT. region%output_files_match_current_mesh) THEN
@@ -302,11 +308,9 @@ CONTAINS
 
       ! Write to the regional scalar output file
       call write_to_scalar_regional_output_file( region)
-      call write_to_ISMIP_scalar_regional_output_file( region)
 
       if (region%nROI > 0) then
         call write_to_scalar_regional_output_file_ROI( region)
-        call write_to_ISMIP_scalar_regional_output_file_ROI( region)
       end if
 
     END IF
@@ -325,14 +329,16 @@ CONTAINS
     IF (do_output_grid) THEN
       ! Write to the gridded regional output file
       CALL write_to_main_regional_output_file_grid( region)
-      CALL write_to_ISMIP_regional_output_file_grid( region)
 
       ! Write to the region-of-interest output files
       DO i = 1, region%nROI
         CALL write_to_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_grid_ROI( i))
-        CALL write_to_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( i), region%output_filenames_ismip_grid_ROI( i))
       END DO
     END IF
+
+    if (do_output_ismip) then
+      call write_to_ISMIP_regional_output_files( region)
+    end if
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -413,6 +419,7 @@ CONTAINS
     time_of_next_action = MIN( time_of_next_action, region%output_t_next)
     time_of_next_action = MIN( time_of_next_action, region%output_restart_t_next)
     time_of_next_action = MIN( time_of_next_action, region%output_grid_t_next)
+    time_of_next_action = MIN( time_of_next_action, region%output_ismip_t_next)
 
     ! ===== Advance region time =====
     ! ===============================
@@ -519,6 +526,8 @@ CONTAINS
 
     CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
+    call initialise_basal_hydro_model( region%mesh, region%ice, region%ice%hydro_Salle2025)
+
     call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
 
     ! ===== Climate =====
@@ -548,7 +557,9 @@ CONTAINS
     end select
 
     call region%SMB%allocate  ( region%SMB%ct_allocate( 'SMB_model', region%name, region%mesh))
-    call region%SMB%initialise( region%SMB%ct_initialise( region%ice))
+    call region%SMB%initialise( region%SMB%ct_initialise( region%ice, region%refgeo_init, region%refgeo_PD))
+
+    call checksum( region%mesh%pai_V, region%SMB%SMB, 'region%SMB%SMB')
 
     ! ===== Basal mass balance =====
     ! ==============================
@@ -648,7 +659,7 @@ CONTAINS
     ! Create the main regional output files
     CALL create_main_regional_output_file_mesh( region)
     CALL create_main_regional_output_file_grid( region)
-    CALL create_ISMIP_regional_output_file_grid( region)
+    CALL create_ISMIP_regional_output_files( region)
 
     ! Create the main regional output files for the regions of interest
     CALL setup_ROI_grids_and_output_files( region)
@@ -666,10 +677,9 @@ CONTAINS
 
     ! Create the scalar regional output file
     CALL create_scalar_regional_output_file( region)
-    CALL create_ISMIP_scalar_regional_output_file( region)
+    !CALL create_ISMIP_scalar_regional_output_file( region)
     if (region%nROI > 0) then
       CALL create_scalar_regional_output_file_ROI( region)
-      CALL create_ISMIP_scalar_regional_output_file_ROI( region)
     end if
 
     ! Set output writing time to start of run, so the initial state will be written to output
@@ -677,10 +687,12 @@ CONTAINS
       region%output_t_next = C%start_time_of_run
       region%output_restart_t_next = C%start_time_of_run
       region%output_grid_t_next = C%start_time_of_run
+      region%output_ismip_t_next = C%start_time_of_run
     ELSE
       region%output_t_next = C%end_time_of_run
       region%output_restart_t_next = C%end_time_of_run
       region%output_grid_t_next = C%end_time_of_run
+      region%output_ismip_t_next = C%end_time_of_run
     END IF
 
     ! Confirm that the current set of mesh output files match the current model mesh
@@ -1160,19 +1172,13 @@ CONTAINS
 
       ! Create an output file for this region of interest
       region%output_filenames_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'main_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
-      region%output_filenames_ismip_grid_ROI( region%nROI) = TRIM( C%output_dir) // 'ismip_output_' // region%name // '_grid_ROI_' // TRIM( name_ROI) // '.nc'
 
       CALL create_main_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_grid_ROI( region%nROI))
-      CALL create_ISMIP_regional_output_file_grid_ROI( region, region%output_grids_ROI( region%nROI), region%output_filenames_ismip_grid_ROI( region%nROI))
 
       ! Generate file names for all scalar files
       filename_base = TRIM( C%output_dir) // 'scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
       call generate_filename_XXXXXdotnc(filename_base, filename)
       region%output_filenames_scalar_ROI(region%nROI) = filename
-
-      filename_base = TRIM( C%output_dir) // 'ismip_scalar_output_' // region%name // '_ROI_' // TRIM( name_ROI)
-      call generate_filename_XXXXXdotnc(filename_base, filename)
-      region%output_filenames_ismip_scalar_ROI(region%nROI) = filename
 
       ! Clean up after yourself
       DEALLOCATE( poly_ROI)
@@ -1293,13 +1299,16 @@ CONTAINS
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
     CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%grid_smooth, region%ice, forcing)
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
-    call region%SMB%remap( region%SMB%ct_remap( mesh_new, region%time))
+    call region%SMB%remap( region%SMB%ct_remap( mesh_new, region%time, region%name, region%refgeo_init, region%refgeo_PD, region%ice))
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )
     CALL remap_GIA_model(             region%mesh, mesh_new,             region%GIA    , region%refgeo_GIAeq, region%ELRA)
+    call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice, region%ice%hydro_Salle2025,                region%time)
 
     call remap_tracer_tracking_model( region%mesh, mesh_new, region%tracer_tracking, region%time)
+
+    call remap_ISMIP_output( region%mesh, mesh_new, region%ice, region%ismip_output)
 
     ! Set all model component timers so that they will all be run right after the mesh update
     region%ice%t_Hi_next  = region%time
@@ -1310,6 +1319,7 @@ CONTAINS
     region%BMB%t_next     = region%time
     region%LMB%t_next     = region%time
     region%GIA%t_next     = region%time
+    region%ice%hydro_Salle2025%t_next = region%time
 
     ! Throw away the mapping operators involving the old mesh
     CALL clear_all_maps_involving_this_mesh( region%mesh)
@@ -1483,7 +1493,8 @@ CONTAINS
     END IF
     IF (region%time == region%output_t_next .OR. &
         region%time == region%output_restart_t_next .OR. &
-        region%time == region%output_grid_t_next) THEN
+        region%time == region%output_grid_t_next .OR. &
+        region%time == region%output_ismip_t_next) THEN
       r_adv = "yes"
       WRITE( *,"(A)", ADVANCE = TRIM( r_adv)) c_carriage_return
     END IF
@@ -1522,6 +1533,8 @@ CONTAINS
         END IF
       END DO
     END IF
+
+    call checksum( region%mesh%pai_V, region%ice%dHi_dt_target, 'region%ice%dHi_dt_target')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

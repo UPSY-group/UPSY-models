@@ -1,6 +1,6 @@
 module ct_discretisation_mapping_derivatives_graph
 
-  ! Test the mesh matrix operators for mapping and derivatives
+  ! Test the mesh matrix operators for mapping and derivatives on graphs
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR
   use UPSY_main, only: UPSY
@@ -34,15 +34,14 @@ module ct_discretisation_mapping_derivatives_graph
 contains
 
   !> Run all mapping/derivative tests.
-  subroutine run_all_map_deriv_tests_graph( foldername_discretisation, test_mesh_filenames)
+  subroutine run_all_map_deriv_tests_graph( output_dir, test_mesh_filenames)
 
     ! In/output variables:
-    character(len=*),               intent(in) :: foldername_discretisation
+    character(len=*),               intent(in) :: output_dir
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_map_deriv_tests_graph'
-    character(len=1024)            :: foldername_map_deriv
     character(len=1024)            :: test_mesh_filename
     integer                        :: i
 
@@ -52,11 +51,9 @@ contains
     if (par%primary) write(0,*) '    Running graph mapping/derivative tests...'
     if (par%primary) write(0,*) ''
 
-    call create_graph_map_deriv_tests_output_folder( foldername_discretisation, foldername_map_deriv)
-
     do i = 1, size(test_mesh_filenames)
-      test_mesh_filename = trim(test_mesh_filenames( i))
-      call run_all_map_deriv_tests_on_graphs( foldername_map_deriv, test_mesh_filename)
+      test_mesh_filename = trim( test_mesh_filenames( i))
+      call run_all_map_deriv_tests_on_graphs( output_dir, test_mesh_filename)
     end do
 
     if (par%primary) write(0,*) ''
@@ -66,47 +63,11 @@ contains
 
   end subroutine run_all_map_deriv_tests_graph
 
-  !> Create the output folder for the mappoing/derivative tests
-  subroutine create_graph_map_deriv_tests_output_folder( foldername_discretisation, foldername_map_deriv)
-
-    ! In/output variables:
-    character(len=*), intent(in)  :: foldername_discretisation
-    character(len=*), intent(out) :: foldername_map_deriv
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_graph_map_deriv_tests_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_map_deriv = trim(foldername_discretisation) // '/mapping_derivatives_graph'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_map_deriv) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_map_deriv))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_map_deriv))
-
-    end if
-    call MPI_BCAST( foldername_map_deriv, len(foldername_map_deriv), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_graph_map_deriv_tests_output_folder
-
   !> Run all the mapping/derivative tests on a particular graph
-  subroutine run_all_map_deriv_tests_on_graphs( foldername_discretisation, test_mesh_filename)
+  subroutine run_all_map_deriv_tests_on_graphs( output_dir, test_mesh_filename)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_discretisation
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: test_mesh_filename
 
     ! Local variables:
@@ -152,7 +113,7 @@ contains
     call create_graph_from_masked_mesh_a( mesh, mask_a, nz, graph_a)
     call create_graph_from_masked_mesh_b( mesh, mask_a, nz, graph_b)
 
-    call test_2nd_order_operators_on_regular_nodes( foldername_discretisation, mesh, graph_b)
+    call test_2nd_order_operators_on_regular_nodes( output_dir, mesh, graph_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -160,10 +121,10 @@ contains
   end subroutine run_all_map_deriv_tests_on_graphs
 
   !> Test 2nd-order operators on the regular nodes of the graph from the mesh triangles
-  subroutine test_2nd_order_operators_on_regular_nodes( foldername_discretisation, mesh, graph)
+  subroutine test_2nd_order_operators_on_regular_nodes( output_dir, mesh, graph)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_discretisation
+    character(len=*), intent(in) :: output_dir
     type(type_mesh),  intent(in) :: mesh
     type(type_graph), intent(in) :: graph
 
@@ -191,17 +152,17 @@ contains
 
     test_function_ptr => test_function_linear
     function_name = 'linear'
-    call test_2nd_order_operators_on_regular_nodes_with_function( foldername_discretisation, &
+    call test_2nd_order_operators_on_regular_nodes_with_function( output_dir, &
       mesh, graph, M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2, test_function_ptr, function_name)
 
     test_function_ptr => test_function_quadratic
     function_name = 'quadratic'
-    call test_2nd_order_operators_on_regular_nodes_with_function( foldername_discretisation, &
+    call test_2nd_order_operators_on_regular_nodes_with_function( output_dir, &
       mesh, graph, M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2, test_function_ptr, function_name)
 
     test_function_ptr => test_function_periodic
     function_name = 'periodic'
-    call test_2nd_order_operators_on_regular_nodes_with_function( foldername_discretisation, &
+    call test_2nd_order_operators_on_regular_nodes_with_function( output_dir, &
       mesh, graph, M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2, test_function_ptr, function_name)
 
     ! Remove routine from call stack
@@ -209,11 +170,11 @@ contains
 
   end subroutine test_2nd_order_operators_on_regular_nodes
 
-  subroutine test_2nd_order_operators_on_regular_nodes_with_function( foldername_discretisation, &
+  subroutine test_2nd_order_operators_on_regular_nodes_with_function( output_dir, &
     mesh, graph, M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2, test_function_ptr, function_name)
 
     ! In/output variables:
-    character(len=*),                intent(in) :: foldername_discretisation
+    character(len=*),                intent(in) :: output_dir
     type(type_mesh),                 intent(in) :: mesh
     type(type_graph),                intent(in) :: graph
     type(type_sparse_matrix_CSR_dp), intent(in) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
@@ -248,18 +209,18 @@ contains
       UPSY%stru%colour_string( trim( function_name),'light blue'), '...'
 
     ! Allocate hybrid distributed/shared memory
-    call allocate_dist_shared( d_ex       , wd_ex       , graph%pai%n_nih)
-    call allocate_dist_shared( ddx_ex     , wddx_ex     , graph%pai%n_nih)
-    call allocate_dist_shared( ddy_ex     , wddy_ex     , graph%pai%n_nih)
-    call allocate_dist_shared( d2dx2_ex   , wd2dx2_ex   , graph%pai%n_nih)
-    call allocate_dist_shared( d2dxdy_ex  , wd2dxdy_ex  , graph%pai%n_nih)
-    call allocate_dist_shared( d2dy2_ex   , wd2dy2_ex   , graph%pai%n_nih)
+    call allocate_dist_shared( d_ex       , wd_ex       , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( ddx_ex     , wddx_ex     , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( ddy_ex     , wddy_ex     , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dx2_ex   , wd2dx2_ex   , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dxdy_ex  , wd2dxdy_ex  , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dy2_ex   , wd2dy2_ex   , [graph%pai%i1_nih, graph%pai%i2_nih])
 
-    call allocate_dist_shared( ddx_disc   , wddx_disc   , graph%pai%n_nih)
-    call allocate_dist_shared( ddy_disc   , wddy_disc   , graph%pai%n_nih)
-    call allocate_dist_shared( d2dx2_disc , wd2dx2_disc , graph%pai%n_nih)
-    call allocate_dist_shared( d2dxdy_disc, wd2dxdy_disc, graph%pai%n_nih)
-    call allocate_dist_shared( d2dy2_disc , wd2dy2_disc , graph%pai%n_nih)
+    call allocate_dist_shared( ddx_disc   , wddx_disc   , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( ddy_disc   , wddy_disc   , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dx2_disc , wd2dx2_disc , [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dxdy_disc, wd2dxdy_disc, [graph%pai%i1_nih, graph%pai%i2_nih])
+    call allocate_dist_shared( d2dy2_disc , wd2dy2_disc , [graph%pai%i1_nih, graph%pai%i2_nih])
 
     ! Calculate exact solutions
     do ni = graph%ni1, graph%ni2
@@ -306,7 +267,7 @@ contains
 
     ! Write results to NetCDF
     call test_2nd_or_op_on_reg_nod_w_func_write_to_file( &
-      foldername_discretisation, graph, function_name, &
+      output_dir, graph, function_name, &
       d_ex, ddx_ex, ddy_ex, d2dx2_ex, d2dxdy_ex, d2dy2_ex, &
       ddx_disc, ddy_disc, d2dx2_disc, d2dxdy_disc, d2dy2_disc)
 
@@ -330,12 +291,12 @@ contains
   end subroutine test_2nd_order_operators_on_regular_nodes_with_function
 
   subroutine test_2nd_or_op_on_reg_nod_w_func_write_to_file( &
-    foldername_discretisation, graph, function_name, &
+    output_dir, graph, function_name, &
     d_ex, ddx_ex, ddy_ex, d2dx2_ex, d2dxdy_ex, d2dy2_ex, &
     ddx_disc, ddy_disc, d2dx2_disc, d2dxdy_disc, d2dy2_disc)
 
     ! In/output variables:
-    character(len=*),       intent(in) :: foldername_discretisation
+    character(len=*),       intent(in) :: output_dir
     type(type_graph),       intent(in) :: graph
     character(len=1024),    intent(in) :: function_name
     real(dp), dimension(graph%pai%i1_nih:graph%pai%i2_nih), target, intent(in) :: d_ex
@@ -375,7 +336,7 @@ contains
     graph_name = strrep( graph_name, '.nc"', '')
     i = index( graph_name, '/', back = .true.)
     graph_name = graph_name( i+1:len_trim( graph_name))
-    filename = trim( foldername_discretisation) // '/res_' // &
+    filename = trim( output_dir) // '/res_map_deriv_graph_' // &
       trim( graph_name) // '_2nd_order_' // trim( function_name) // '_graph.nc'
 
     call save_graph_as_netcdf( filename, graph)
@@ -396,27 +357,27 @@ contains
     d2dy2_disc_loc  => d2dy2_disc ( graph%pai%i1: graph%pai%i2)
 
     ! Save data
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d_ex_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d_ex_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d_ex')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), ddx_ex_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), ddx_ex_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_ddx_ex')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), ddy_ex_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), ddy_ex_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_ddy_ex')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d2dx2_ex_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d2dx2_ex_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d2dx2_ex')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d2dxdy_ex_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d2dxdy_ex_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d2dxdy_ex')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d2dy2_ex_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d2dy2_ex_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d2dy2_ex')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), ddx_disc_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), ddx_disc_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_ddx_disc')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), ddy_disc_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), ddy_disc_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_ddy_disc')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d2dx2_disc_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d2dx2_disc_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d2dx2_disc')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d2dxdy_disc_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d2dxdy_disc_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d2dxdy_disc')
-    call save_variable_as_netcdf_dp_1D( trim( foldername_discretisation), d2dy2_disc_loc, &
+    call save_variable_as_netcdf_dp_1D( trim( output_dir), d2dy2_disc_loc, &
       'res_' // trim( graph_name) // '_2nd_order_' // trim( function_name) // '_d2dy2_disc')
 
     ! Remove routine from call stack

@@ -3,9 +3,9 @@ module netcdf_check_dimensions
 
   use assertions_basic
   use mpi_basic, only: par, sync
-  use precisions, only: dp
+  use precisions, only: dp, int8
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use netcdf, only: NF90_MAX_VAR_DIMS, NF90_DOUBLE, NF90_FLOAT, NF90_UNLIMITED, NF90_INT
+  use netcdf, only: NF90_MAX_VAR_DIMS, NF90_DOUBLE, NF90_FLOAT, NF90_UNLIMITED, NF90_INT, NF90_INT64
   use netcdf_field_name_options
   use netcdf_read_var_primary
 
@@ -14,7 +14,7 @@ module netcdf_check_dimensions
   private
 
   public :: check_x, check_y, check_lon, check_lat, check_mesh_dimensions, check_zeta, &
-    check_month, check_time, check_depth
+    check_month, check_time, check_depth, check_height
 
 contains
 
@@ -35,7 +35,8 @@ subroutine check_x( filename, ncid)
   integer                                 :: var_type
   integer                                 :: ndims_of_var
   integer,  dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
-  real(dp), dimension(:), allocatable     :: x
+  real(dp),      dimension(:), allocatable :: x
+  integer(int8), dimension(:), allocatable :: x_int8
   real(dp)                                :: dx, dxp
   integer                                 :: i
 
@@ -56,8 +57,9 @@ subroutine check_x( filename, ncid)
   if (id_var == -1) call crash('no valid x variable could be found in file "' // trim( filename) // '"!')
 
   ! Check variable type
-  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) call crash('variable "' // trim( var_name) // &
-    '" in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE!')
+  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE .or. var_type == NF90_INT64)) &
+    call crash('variable "' // trim( var_name) // &
+      '" in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE or NF90_INT64!')
 
   ! Check variable dimension
   if (ndims_of_var /= 1) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -68,7 +70,16 @@ subroutine check_x( filename, ncid)
   allocate( x( n))
 
   ! Read variable
-  call read_var_primary( filename, ncid, id_var, x)
+  select case (var_type)
+  case default
+    call crash('invalid variable type for variable x in file ' // trim( filename))
+  case (NF90_FLOAT, NF90_DOUBLE)
+    call read_var_primary( filename, ncid, id_var, x)
+  case (NF90_INT64)
+    allocate( x_int8( n))
+    call read_var_primary( filename, ncid, id_var, x_int8)
+    x = real( x_int8, dp)
+  end select
 
   if (par%primary) call assert( (.not. any( isnan( x))), 'found NaNs in x')
 
@@ -107,7 +118,8 @@ subroutine check_y( filename, ncid)
   integer                                 :: var_type
   integer                                 :: ndims_of_var
   integer,  dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
-  real(dp), dimension(:), allocatable     :: y
+  real(dp),      dimension(:), allocatable :: y
+  integer(int8), dimension(:), allocatable :: y_int8
   real(dp)                                :: dy, dyp
   integer                                 :: i
 
@@ -128,8 +140,9 @@ subroutine check_y( filename, ncid)
   if (id_var == -1) call crash('no valid y variable could be found in file "' // trim( filename) // '"!')
 
   ! Check variable type
-  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) call crash('variable "' // trim( var_name) // &
-    '" in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE!')
+  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE .or. var_type == NF90_INT64)) &
+    call crash('variable "' // trim( var_name) // &
+      '" in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE or NF90_INT64!')
 
   ! Check variable dimension
   if (ndims_of_var /= 1) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -140,7 +153,16 @@ subroutine check_y( filename, ncid)
   allocate( y( n))
 
   ! Read variable
-  call read_var_primary( filename, ncid, id_var, y)
+  select case (var_type)
+  case default
+    call crash('invalid variable type for variable x in file ' // trim( filename))
+  case (NF90_FLOAT, NF90_DOUBLE)
+    call read_var_primary( filename, ncid, id_var, y)
+  case (NF90_INT64)
+    allocate( y_int8( n))
+    call read_var_primary( filename, ncid, id_var, y_int8)
+    y = real( y_int8, dp)
+  end select
 
   if (par%primary) call assert( (.not. any( isnan( y))), 'found NaNs in y')
 
@@ -626,6 +648,7 @@ subroutine check_time( filename, ncid)
   integer                                 :: ndims_of_var
   integer,  dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
   real(dp), dimension(:), allocatable     :: time
+  integer(int8), dimension(:), allocatable :: time_int8
 
   ! Add routine to path
   call init_routine( routine_name, do_track_resource_use = .false.)
@@ -641,7 +664,8 @@ subroutine check_time( filename, ncid)
   call inquire_var_multopt( filename, ncid, field_name_options_time, id_var, &
     var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
   if (id_var == -1) call crash('no valid time variable could be found in file "' // trim( filename) // '"!')
-  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) call crash('time variable in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE!')
+  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE .or. var_type == NF90_INT64)) &
+    call crash('time variable in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE or NF90_INT64!')
   if (ndims_of_var /= 1) call crash('time variable in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
   if (dims_of_var( 1) /= id_dim) call crash('time variable in file "' // trim( filename) // '" does not have time as a dimension!')
 
@@ -652,7 +676,16 @@ subroutine check_time( filename, ncid)
     allocate( time( n))
 
     ! Read variable
-    call read_var_primary( filename, ncid, id_var, time)
+    select case (var_type)
+    case default
+      call crash('invalid variable type for variable time in file ' // trim( filename))
+    case (NF90_FLOAT, NF90_DOUBLE)
+      call read_var_primary( filename, ncid, id_var, time)
+    case (NF90_INT64)
+      allocate( time_int8( n))
+      call read_var_primary( filename, ncid, id_var, time_int8)
+      time = real( time_int8, dp)
+    end select
 
     ! Check validity
     if (par%primary) call assert( (.not. any( isnan( time))), 'found NaN in time')
@@ -729,5 +762,68 @@ subroutine check_depth( filename, ncid)
   call finalise_routine( routine_name)
 
 end subroutine check_depth
+
+subroutine check_height( filename, ncid)
+  !< Check if this file contains a valid height dimension and variable
+
+  ! In/output variables:
+  character(len=*), intent(in   ) :: filename
+  integer,          intent(in   ) :: ncid
+
+  ! Local variables:
+  character(len=1024), parameter          :: routine_name = 'check_height'
+  integer                                 :: id_dim
+  integer                                 :: n
+  character(len=1024)                     :: dim_name
+  integer                                 :: id_var
+  character(len=1024)                     :: var_name
+  integer                                 :: var_type
+  integer                                 :: ndims_of_var
+  integer,  dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
+  real(dp), dimension(:), allocatable     :: height
+  integer                                 :: k
+
+  ! Add routine to path
+  call init_routine( routine_name, do_track_resource_use = .false.)
+
+  ! inquire dimension
+  call inquire_dim_multopt( filename, ncid, field_name_options_height, id_dim, dim_length = n, dim_name = dim_name)
+
+  ! Safety checks on dimension
+  if (id_dim == -1) call crash('no valid height dimension could be found in file "' // trim( filename) // '"!')
+  if (n == NF90_UNLIMITED) call crash('height dimension in file "' // trim( filename) // '" is unlimited!')
+  if (n < 1) call crash('height dimension in file "' // trim( filename) // '" has length n = {int_01}!', int_01  = n)
+
+  ! inquire variable
+  call inquire_var_multopt( filename, ncid, field_name_options_height, id_var, &
+    var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
+  if (id_var == -1) call crash('no valid height variable could be found in file "' // trim( filename) // '"!')
+  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) call crash('height variable in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE!')
+  if (ndims_of_var /= 1) call crash('height variable in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
+  if (dims_of_var( 1) /= id_dim) call crash('height variable in file "' // trim( filename) // '" does not have height as a dimension!')
+
+  ! allocate memory
+  allocate( height( n))
+
+  ! Read variable
+  call read_var_primary( filename, ncid, id_var, height)
+
+  ! Check validity
+  if (par%primary) then
+    call assert( (.not. any( isnan( height))), 'found NaNs in height')
+
+    do k = 2, n
+      if (height( k) >= height( k-1)) call crash('height in file "' // trim( filename) // '" does not decrease monotonously!')
+    end do
+  end if
+  call sync
+
+  ! Clean up after yourself
+  deallocate( height)
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine check_height
 
 end module netcdf_check_dimensions

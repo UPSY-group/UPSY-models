@@ -35,6 +35,7 @@ MODULE BMB_main
   use netcdf_io_main
   use checksum_mod, only: checksum
   use mpi_distributed_shared_memory, only: reallocate_dist_shared
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -137,17 +138,21 @@ CONTAINS
     SELECT CASE (choice_BMB_model)
       CASE ('uniform')
         BMB%BMB_shelf = 0._dp
-        DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
-            BMB%BMB_shelf( vi) = C%uniform_BMB
-          END IF
-        END DO
+        if (time > C%uniform_BMB_t_start) then
+          DO vi = mesh%vi1, mesh%vi2
+            IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
+              BMB%BMB_shelf( vi) = C%uniform_BMB
+            END IF
+          END DO
+        end if
       CASE ('prescribed')
         CALL run_BMB_model_prescribed( mesh, ice, BMB, region_name, time)
       CASE ('prescribed_fixed')
         ! No need to do anything
       CASE ('idealised')
-        CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        if (time > C%uniform_BMB_t_start) then
+          CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        end if
       CASE ('parameterised')
         CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
       CASE ('inverted')
@@ -226,6 +231,16 @@ CONTAINS
 
     ! Apply limits
     BMB%BMB = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB ))
+
+    call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
+    call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
+    call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
+    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
+    call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
+    call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
+    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
+    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
+    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -346,6 +361,16 @@ CONTAINS
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model_ROI "' // TRIM( choice_BMB_model_ROI) // '"')
     END SELECT
+
+    call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
+    call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
+    call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
+    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
+    call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
+    call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
+    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
+    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
+    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -797,24 +822,24 @@ CONTAINS
 
     call calculate_coriolis_parameter( mesh, forcing, lambda_M, phi_M, beta_stereo)
 
-    call checksum( forcing%Hi                , 'forcing%Hi'                , mesh%pai_V)
-    call checksum( forcing%Hs                , 'forcing%Hs'                , mesh%pai_V)
-    call checksum( forcing%Hb                , 'forcing%Hb'                , mesh%pai_V)
-    call checksum( forcing%Hib               , 'forcing%Hib'               , mesh%pai_V)
-    call checksum( forcing%TAF               , 'forcing%TAF'               , mesh%pai_V)
-    call checksum( forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         , mesh%pai_Tri)
-    call checksum( forcing%dHib_dy_b         , 'forcing%dHib_dy_b'         , mesh%pai_Tri)
-    call checksum( forcing%mask_icefree_land , 'forcing%mask_icefree_land' , mesh%pai_V)
-    call checksum( forcing%mask_icefree_ocean, 'forcing%mask_icefree_ocean', mesh%pai_V)
-    call checksum( forcing%mask_grounded_ice , 'forcing%mask_grounded_ice' , mesh%pai_V)
-    call checksum( forcing%mask_floating_ice , 'forcing%mask_floating_ice' , mesh%pai_V)
-    call checksum( forcing%mask_gl_fl        , 'forcing%mask_gl_fl'        , mesh%pai_V)
-    call checksum( forcing%mask_SGD          , 'forcing%mask_SGD'          , mesh%pai_V)
-    call checksum( forcing%mask              , 'forcing%mask'              , mesh%pai_V)
-    call checksum( forcing%Ti                , 'forcing%Ti'                , mesh%pai_V)
-    call checksum( forcing%T_ocean           , 'forcing%T_ocean'           , mesh%pai_V)
-    call checksum( forcing%S_ocean           , 'forcing%S_ocean'           , mesh%pai_V)
-    call checksum( forcing%f_coriolis        , 'forcing%f_coriolis'        , mesh%pai_V)
+    call checksum( mesh%pai_V  , forcing%Hi                , 'forcing%Hi'                )
+    call checksum( mesh%pai_V  , forcing%Hs                , 'forcing%Hs'                )
+    call checksum( mesh%pai_V  , forcing%Hb                , 'forcing%Hb'                )
+    call checksum( mesh%pai_V  , forcing%Hib               , 'forcing%Hib'               )
+    call checksum( mesh%pai_V  , forcing%TAF               , 'forcing%TAF'               )
+    call checksum( mesh%pai_Tri, forcing%dHib_dx_b         , 'forcing%dHib_dx_b'         )
+    call checksum( mesh%pai_Tri, forcing%dHib_dy_b         , 'forcing%dHib_dy_b'         )
+    call checksum( mesh%pai_V  , forcing%mask_icefree_land , 'forcing%mask_icefree_land' )
+    call checksum( mesh%pai_V  , forcing%mask_icefree_ocean, 'forcing%mask_icefree_ocean')
+    call checksum( mesh%pai_V  , forcing%mask_grounded_ice , 'forcing%mask_grounded_ice' )
+    call checksum( mesh%pai_V  , forcing%mask_floating_ice , 'forcing%mask_floating_ice' )
+    call checksum( mesh%pai_V  , forcing%mask_gl_fl        , 'forcing%mask_gl_fl'        )
+    call checksum( mesh%pai_V  , forcing%mask_SGD          , 'forcing%mask_SGD'          )
+    call checksum( mesh%pai_V  , forcing%mask              , 'forcing%mask'              )
+    call checksum( mesh%pai_V  , forcing%Ti                , 'forcing%Ti'                )
+    call checksum( mesh%pai_V  , forcing%T_ocean           , 'forcing%T_ocean'           )
+    call checksum( mesh%pai_V  , forcing%S_ocean           , 'forcing%S_ocean'           )
+    call checksum( mesh%pai_V  , forcing%f_coriolis        , 'forcing%f_coriolis'        )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -836,42 +861,24 @@ CONTAINS
     call init_routine( routine_name)
 
     ! Forcing
-    call reallocate_dist_shared( forcing%Hi                , forcing%wHi                , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%Hs                , forcing%wHs                , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%Hb                , forcing%wHb                , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%Hib               , forcing%wHib               , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%TAF               , forcing%wTAF               , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , mesh_new%pai_Tri%n_nih)
-    call reallocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , mesh_new%pai_Tri%n_nih)
-    call reallocate_dist_shared( forcing%mask_icefree_land , forcing%wmask_icefree_land , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%mask_icefree_ocean, forcing%wmask_icefree_ocean, mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%mask_grounded_ice , forcing%wmask_grounded_ice , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%mask_floating_ice , forcing%wmask_floating_ice , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%mask_gl_fl        , forcing%wmask_gl_fl        , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%mask_SGD          , forcing%wmask_SGD          , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%mask              , forcing%wmask              , mesh_new%pai_V%n_nih)
-    call reallocate_dist_shared( forcing%Ti                , forcing%wTi                , mesh_new%pai_V%n_nih, mesh_new%nz)
-    call reallocate_dist_shared( forcing%T_ocean           , forcing%wT_ocean           , mesh_new%pai_V%n_nih, C%nz_ocean)
-    call reallocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , mesh_new%pai_V%n_nih, C%nz_ocean)
-    call reallocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , mesh_new%pai_Tri%n_nih)
-    forcing%Hi                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hi
-    forcing%Hs                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hs
-    forcing%Hb                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hb
-    forcing%Hib               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%Hib
-    forcing%TAF               ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%TAF
-    forcing%dHib_dx_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dx_b
-    forcing%dHib_dy_b         ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%dHib_dy_b
-    forcing%mask_icefree_land ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_icefree_land
-    forcing%mask_icefree_ocean( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_icefree_ocean
-    forcing%mask_grounded_ice ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_grounded_ice
-    forcing%mask_floating_ice ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_floating_ice
-    forcing%mask_gl_fl        ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_gl_fl
-    forcing%mask_SGD          ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask_SGD
-    forcing%mask              ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih               ) => forcing%mask
-    forcing%Ti                ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih, 1:mesh_new%nz) => forcing%Ti
-    forcing%T_ocean           ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih, 1:C%nz_ocean ) => forcing%T_ocean
-    forcing%S_ocean           ( mesh_new%pai_V%i1_nih  :mesh_new%pai_V%i2_nih, 1:C%nz_ocean ) => forcing%S_ocean
-    forcing%f_coriolis        ( mesh_new%pai_Tri%i1_nih:mesh_new%pai_Tri%i2_nih             ) => forcing%f_coriolis
+    call reallocate_dist_shared( forcing%Hi                , forcing%wHi                , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%Hs                , forcing%wHs                , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%Hb                , forcing%wHb                , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%Hib               , forcing%wHib               , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%TAF               , forcing%wTAF               , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%dHib_dx_b         , forcing%wdHib_dx_b         , [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( forcing%dHib_dy_b         , forcing%wdHib_dy_b         , [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
+    call reallocate_dist_shared( forcing%mask_icefree_land , forcing%wmask_icefree_land , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%mask_icefree_ocean, forcing%wmask_icefree_ocean, [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%mask_grounded_ice , forcing%wmask_grounded_ice , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%mask_floating_ice , forcing%wmask_floating_ice , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%mask_gl_fl        , forcing%wmask_gl_fl        , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%mask_SGD          , forcing%wmask_SGD          , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%mask              , forcing%wmask              , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ])
+    call reallocate_dist_shared( forcing%Ti                , forcing%wTi                , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ], [1,mesh_new%nz])
+    call reallocate_dist_shared( forcing%T_ocean           , forcing%wT_ocean           , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ], [1,C%nz_ocean])
+    call reallocate_dist_shared( forcing%S_ocean           , forcing%wS_ocean           , [mesh_new%pai_V%i1_nih  , mesh_new%pai_V%i2_nih  ], [1,C%nz_ocean])
+    call reallocate_dist_shared( forcing%f_coriolis        , forcing%wf_coriolis        , [mesh_new%pai_Tri%i1_nih, mesh_new%pai_Tri%i2_nih])
 
     ! Finalise routine path
     call finalise_routine( routine_name)

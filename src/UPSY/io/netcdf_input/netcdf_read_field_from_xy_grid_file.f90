@@ -13,6 +13,7 @@ module netcdf_read_field_from_xy_grid_file
   use netcdf_basic
   use netcdf_setup_grid_mesh_from_file
   use netcdf_determine_indexing
+  use smooth_gridded_data, only: extrapolate_fillvalue_Gaussian_grid
 
   implicit none
 
@@ -320,7 +321,7 @@ contains
   end subroutine read_field_from_xy_file_int_3D
 
   subroutine read_field_from_xy_file_dp_2D( filename, field_name_options, &
-    d_grid_vec_partial, time_to_read)
+    d_grid_vec_partial, time_to_read, extrapolate_fillvalues)
     !< Read a 2-D data field from a NetCDF file on an x/y-grid
 
     ! NOTE: the grid should be read before, and memory allocated for d_grid_vec_partial!
@@ -330,6 +331,7 @@ contains
     character(len=*),                 intent(in   ) :: field_name_options
     real(dp), dimension(:),           intent(  out) :: d_grid_vec_partial
     real(dp),               optional, intent(in   ) :: time_to_read
+    logical,                optional, intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'read_field_from_xy_file_dp_2D'
@@ -341,9 +343,17 @@ contains
     real(dp), dimension(:,:  ), allocatable :: d_grid
     real(dp), dimension(:,:,:), allocatable :: d_grid_with_time
     integer                                 :: ti
+    logical                                 :: extrapolate_fillvalues_loc
+    real(dp)                                :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (present( extrapolate_fillvalues)) then
+      extrapolate_fillvalues_loc = extrapolate_fillvalues
+    else
+      extrapolate_fillvalues_loc = .false.
+    end if
 
     ! == Read grid and data from file
     ! ===============================
@@ -459,6 +469,14 @@ contains
     ! Distribute data
     call distribute_gridded_data_from_primary( grid_loc, d_grid_vec_partial, d_grid)
 
+    if (extrapolate_fillvalues_loc) then
+      call open_existing_netcdf_file_for_reading( filename, ncid)
+      call inquire_fill_value( filename, ncid, var_name, fill_value)
+      call close_netcdf_file( ncid)
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
+    end if
+
     ! Clean up after yourself
     call deallocate_grid( grid_loc)
     deallocate( d_grid)
@@ -469,7 +487,7 @@ contains
   end subroutine read_field_from_xy_file_dp_2D
 
   subroutine read_field_from_xy_file_dp_2D_monthly( filename, field_name_options, &
-    d_grid_vec_partial, time_to_read)
+    d_grid_vec_partial, time_to_read, extrapolate_fillvalues)
     !< Read a 2-D monthly data field from a NetCDF file on an x/y-grid
 
     ! NOTE: the grid should be read before, and memory allocated for d_grid_vec_partial!
@@ -479,6 +497,7 @@ contains
     character(len=*),                   intent(in   ) :: field_name_options
     real(dp), dimension(:,:),           intent(  out) :: d_grid_vec_partial
     real(dp),                 optional, intent(in   ) :: time_to_read
+    logical,                  optional, intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter            :: routine_name = 'read_field_from_xy_file_dp_2D_monthly'
@@ -490,9 +509,17 @@ contains
     real(dp), dimension(:,:,:  ), allocatable :: d_grid
     real(dp), dimension(:,:,:,:), allocatable :: d_grid_with_time
     integer                                   :: ti
+    logical                                   :: extrapolate_fillvalues_loc
+    real(dp)                                  :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (present( extrapolate_fillvalues)) then
+      extrapolate_fillvalues_loc = extrapolate_fillvalues
+    else
+      extrapolate_fillvalues_loc = .false.
+    end if
 
     ! == Read grid and data from file
     ! ===============================
@@ -603,6 +630,15 @@ contains
     ! Distribute data
     call distribute_gridded_data_from_primary( grid_loc, d_grid_vec_partial, d_grid)
 
+    if (extrapolate_fillvalues_loc) then
+      call open_existing_netcdf_file_for_reading( filename, ncid)
+      call inquire_fill_value( filename, ncid, var_name, fill_value)
+      call close_netcdf_file( ncid)
+
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
+    end if
+
     ! Clean up after yourself
     if (par%primary) deallocate( d_grid)
     call deallocate_grid( grid_loc)
@@ -613,7 +649,7 @@ contains
   end subroutine read_field_from_xy_file_dp_2D_monthly
 
   subroutine read_field_from_xy_file_dp_3D( filename, field_name_options, &
-    d_grid_vec_partial, time_to_read)
+    d_grid_vec_partial, time_to_read, extrapolate_fillvalues)
     !< Read a 3-D data field from a NetCDF file on an x/y-grid
 
     ! NOTE: the grid should be read before, and memory allocated for d_grid_vec_partial!
@@ -623,6 +659,7 @@ contains
     character(len=*),                   intent(in   ) :: field_name_options
     real(dp), dimension(:,:),           intent(  out) :: d_grid_vec_partial
     real(dp),                 optional, intent(in   ) :: time_to_read
+    logical,                  optional, intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter            :: routine_name = 'read_field_from_xy_file_dp_3D'
@@ -636,9 +673,17 @@ contains
     real(dp), dimension(:,:,:  ), allocatable :: d_grid
     real(dp), dimension(:,:,:,:), allocatable :: d_grid_with_time
     integer                                   :: ti
+    logical                                   :: extrapolate_fillvalues_loc
+    real(dp)                                  :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (present( extrapolate_fillvalues)) then
+      extrapolate_fillvalues_loc = extrapolate_fillvalues
+    else
+      extrapolate_fillvalues_loc = .false.
+    end if
 
     ! == Read grid and data from file
     ! ===============================
@@ -749,6 +794,15 @@ contains
     ! Distribute data
     call distribute_gridded_data_from_primary( grid_loc, d_grid_vec_partial, d_grid)
 
+    if (extrapolate_fillvalues_loc) then
+      call open_existing_netcdf_file_for_reading( filename, ncid)
+      call inquire_fill_value( filename, ncid, var_name, fill_value)
+      call close_netcdf_file( ncid)
+
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
+    end if
+
     ! Clean up after yourself
     if (par%primary) deallocate( d_grid)
     call deallocate_grid( grid_loc)
@@ -759,7 +813,7 @@ contains
   end subroutine read_field_from_xy_file_dp_3D
 
   subroutine read_field_from_xy_file_dp_3D_ocean( filename, field_name_options, &
-    d_grid_vec_partial, time_to_read)
+    d_grid_vec_partial, time_to_read, extrapolate_fillvalues)
     ! Read a 3-D data ocean field from a NetCDF file on an x/y-grid
     !
     ! NOTE: the grid should be read before, and memory allocated for d_grid_vec_partial!
@@ -769,6 +823,7 @@ contains
     character(len=*),                   intent(in   ) :: field_name_options
     real(dp), dimension(:,:),           intent(  out) :: d_grid_vec_partial
     real(dp),                 optional, intent(in   ) :: time_to_read
+    logical,                  optional, intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter            :: routine_name = 'read_field_from_xy_file_dp_3D_ocean'
@@ -782,9 +837,17 @@ contains
     real(dp), dimension(:,:,:  ), allocatable :: d_grid
     real(dp), dimension(:,:,:,:), allocatable :: d_grid_with_time
     integer                                   :: ti
+    logical                                   :: extrapolate_fillvalues_loc
+    real(dp)                                  :: sigma, fill_value
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (present( extrapolate_fillvalues)) then
+      extrapolate_fillvalues_loc = extrapolate_fillvalues
+    else
+      extrapolate_fillvalues_loc = .false.
+    end if
 
     ! == Read grid and data from file
     ! ===============================
@@ -894,6 +957,15 @@ contains
 
     ! Distribute data
     call distribute_gridded_data_from_primary( grid_loc, d_grid_vec_partial, d_grid)
+
+    if (extrapolate_fillvalues_loc) then
+      call open_existing_netcdf_file_for_reading( filename, ncid)
+      call inquire_fill_value( filename, ncid, var_name, fill_value)
+      call close_netcdf_file( ncid)
+
+      sigma = grid_loc%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( grid_loc, d_grid_vec_partial, sigma, fill_value)
+    end if
 
     ! Clean up after yourself
     if (par%primary) deallocate( d_grid)

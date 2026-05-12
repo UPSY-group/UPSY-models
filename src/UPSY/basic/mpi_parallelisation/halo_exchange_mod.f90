@@ -559,17 +559,17 @@ end subroutine exchange_halos_dp_3D
 subroutine exchange_halos_complex_1D( pai, d_nih)
 
   ! In/output variables:
-  type(type_par_arr_info),                              intent(in   ) :: pai
-  complex*16, dimension(pai%i1_nih:pai%i2_nih), target, intent(inout) :: d_nih
+  type(type_par_arr_info),                               intent(in   ) :: pai
+  complex(dp), dimension(pai%i1_nih:pai%i2_nih), target, intent(inout) :: d_nih
 
   ! Local variables:
-  character(len=1024), parameter    :: routine_name = 'exchange_halos_complex_1D'
-  integer                           :: node_ID_left, node_ID_right
-  complex*16, dimension(:), pointer :: d_hle, d_hli, d_hre, d_hri
-  integer, dimension(2)             :: range_send, range_recv
-  type(MPI_REQUEST)                 :: req
-  type(MPI_REQUEST), dimension(2)   :: reqs
-  integer                           :: ierr
+  character(len=1024), parameter     :: routine_name = 'exchange_halos_complex_1D'
+  integer                            :: node_ID_left, node_ID_right
+  complex(dp), dimension(:), pointer :: d_hle, d_hli, d_hre, d_hri
+  integer, dimension(2)              :: range_send, range_recv
+  type(MPI_REQUEST)                  :: req
+  type(MPI_REQUEST), dimension(2)    :: reqs
+  integer                            :: ierr
 
   ! Add routine to path
   call init_routine( routine_name)
@@ -670,14 +670,14 @@ end subroutine exchange_halos_complex_1D
 subroutine exchange_halos_complex_2D( pai, nz, d_nih)
 
   ! In/output variables:
-  type(type_par_arr_info),                                   intent(in   ) :: pai
-  integer,                                                   intent(in   ) :: nz
-  complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz), target, intent(inout) :: d_nih
+  type(type_par_arr_info),                                    intent(in   ) :: pai
+  integer,                                                    intent(in   ) :: nz
+  complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz), target, intent(inout) :: d_nih
 
   ! Local variables:
-  character(len=1024), parameter    :: routine_name = 'exchange_halos_complex_2D'
-  integer                           :: k
-  complex*16, dimension(:), pointer :: d_nih_1D
+  character(len=1024), parameter     :: routine_name = 'exchange_halos_complex_2D'
+  integer                            :: k
+  complex(dp), dimension(:), pointer :: d_nih_1D
 
   ! Add routine to path
   call init_routine( routine_name)
@@ -701,14 +701,14 @@ end subroutine exchange_halos_complex_2D
 subroutine exchange_halos_complex_3D( pai, nz, nl, d_nih)
 
   ! In/output variables:
-  type(type_par_arr_info),                                        intent(in   ) :: pai
-  integer,                                                        intent(in   ) :: nz, nl
-  complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), target, intent(inout) :: d_nih
+  type(type_par_arr_info),                                         intent(in   ) :: pai
+  integer,                                                         intent(in   ) :: nz, nl
+  complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), target, intent(inout) :: d_nih
 
   ! Local variables:
-  character(len=1024), parameter    :: routine_name = 'exchange_halos_complex_3D'
-  integer                           :: k,l
-  complex*16, dimension(:), pointer :: d_nih_1D
+  character(len=1024), parameter     :: routine_name = 'exchange_halos_complex_3D'
+  integer                            :: k,l
+  complex(dp), dimension(:), pointer :: d_nih_1D
 
   ! Add routine to path
   call init_routine( routine_name)

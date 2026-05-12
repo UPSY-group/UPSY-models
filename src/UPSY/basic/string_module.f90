@@ -25,6 +25,8 @@ module string_module
       procedure, public, nopass :: str2int
       procedure, public, nopass :: int2str_with_leading_zeros
       procedure, public, nopass :: strrep
+      procedure, public, nopass :: startswith
+      procedure, public, nopass :: endswith
   end type type_string_utilities
 
   logical :: do_colour_strings = .true.
@@ -272,5 +274,81 @@ contains
     end do
 
   end function strrep
+
+  pure function startswith( str, pattern, case_sensitive) result( isso)
+    !< Check if [str] starts with [pattern]
+
+    ! In/output variables:
+    character(len=*),  intent(in) :: str
+    character(len=*),  intent(in) :: pattern
+    logical, optional, intent(in) :: case_sensitive
+    logical                       :: isso
+
+    ! Local variables:
+    logical                       :: case_sensitive_
+    character(len=:), allocatable :: str_, pattern_
+
+    isso = .false.
+
+    ! Safety
+    if (len_trim( pattern) > len_trim( str)) return
+
+    ! If not specified, default to a case-sensitive check
+    if (.not. present(  case_sensitive)) then
+      case_sensitive_ = .true.
+    else
+      case_sensitive_ = case_sensitive
+    end if
+
+    ! If not case-sensitive, just capitalise both strings
+    if (case_sensitive_) then
+      str_     = str
+      pattern_ = pattern
+    else
+      str_     = capitalise_string( str)
+      pattern_ = capitalise_string( pattern)
+    end if
+
+    isso = str_( 1:len_trim( pattern)) == pattern_( 1:len_trim( pattern))
+
+  end function startswith
+
+  pure function endswith( str, pattern, case_sensitive) result( isso)
+    !< Check if [str] starts with [pattern]
+
+    ! In/output variables:
+    character(len=*),  intent(in) :: str
+    character(len=*),  intent(in) :: pattern
+    logical, optional, intent(in) :: case_sensitive
+    logical                       :: isso
+
+    ! Local variables:
+    logical                       :: case_sensitive_
+    character(len=:), allocatable :: str_, pattern_
+
+    isso = .false.
+
+    ! Safety
+    if (len_trim( pattern) > len_trim( str)) return
+
+    ! If not specified, default to a case-sensitive check
+    if (.not. present(  case_sensitive)) then
+      case_sensitive_ = .true.
+    else
+      case_sensitive_ = case_sensitive
+    end if
+
+    ! If not case-sensitive, just capitalise both strings
+    if (case_sensitive_) then
+      str_     = str
+      pattern_ = pattern
+    else
+      str_     = capitalise_string( str)
+      pattern_ = capitalise_string( pattern)
+    end if
+
+    isso = str_( len_trim( str_)-len_trim( pattern_)+1: len_trim( str)) == pattern_( 1:len_trim( pattern))
+
+  end function endswith
 
 end module string_module

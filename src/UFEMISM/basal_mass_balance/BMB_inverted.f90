@@ -52,7 +52,7 @@ contains
 
     do vi = mesh%vi1, mesh% vi2
       if (mask_cf_fl_tot( vi)) then
-        w_sum  = 0._dp
+        w_sum = 0._dp
         wH_sum = 0._dp
         do ci = 1, mesh%nC( vi)
           vj = mesh%C( vi,ci)
@@ -63,6 +63,9 @@ contains
         end do
         if (w_sum > 0._dp) then
           Hi_target_tot( vi) = wH_sum / w_sum
+        else
+          ! No available surrounding shelf values, assume ice thickness here is fine
+          Hi_target_tot( vi) = ice%Hi( vi)
         end if
       end if
     end do
@@ -86,7 +89,16 @@ contains
 
           dBMBdt = c_H * deltaH + c_dHdt * dHdt
 
-          BMB_inv%BMB( vi) = BMB_inv%BMB( vi) + C%dt_BMB * dBMBdt
+          if (abs(deltaH) > 0._dp) then
+            BMB_inv%BMB( vi) = BMB_inv%BMB( vi) + C%dt_BMB * dBMBdt
+          else
+            ! no deltaH, so don't apply BMB here
+            BMB_inv%BMB( vi) = 0._dp
+          end if
+
+        else
+          ! Set BMB to zero to prevent melting or refreezing of grounded ice
+          BMB_inv%BMB( vi) = 0._dp
 
         end if
       end do

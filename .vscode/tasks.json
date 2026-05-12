@@ -2,19 +2,129 @@
   "version": "2.0.0",
   "tasks": [
     {
+      "label": "Compile UPSY",
       "type": "shell",
-      "label": "compile_all",
-      "command": "./compile_all_mac.csh",
-      "problemMatcher": [],
-      "group": {
-        "kind": "build",
-        "isDefault": true
-      }
+      "command": "csh -f ./compile_UPSY.csh ${input:version} ${input:selection}",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$gcc"
     },
     {
+      "label": "Compile LADDIE",
       "type": "shell",
-      "label": "compile_clean",
-      "command": "./compile_clean_mac.csh",
+      "command": "csh -f ./compile_LADDIE.csh ${input:version} ${input:selection}",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Compile UFEMISM",
+      "type": "shell",
+      "command": "csh -f ./compile_UFEMISM.csh ${input:version} ${input:selection}",
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": "$gcc"
+    },
+    {
+      "label": "Run UPSY unit tests",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "./.vscode/task-scripts/run_upsy_unit_tests.sh"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "shared",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "[Ubuntu] UPSY compile (act)",
+      "detail": "Run the UPSY_compiling workflow on ubuntu-latest via act (requires Docker)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "./.vscode/task-scripts/run_ubuntu_upsy_compile_act.sh",
+        "${input:version}"
+      ],
+      "group": "build",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "[Ubuntu] UPSY unit tests (act)",
+      "detail": "Run the UPSY_unit_tests workflow on ubuntu-latest via act (requires Docker)",
+      "type": "shell",
+      "command": "bash",
+      "args": [
+        "./.vscode/task-scripts/run_ubuntu_upsy_unit_tests_act.sh",
+        "${input:version}"
+      ],
+      "group": "test",
+      "presentation": {
+        "echo": true,
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "version",
+      "type": "pickString",
+      "description": "Compilation version",
+      "options": [
+        {
+          "label": "dev  – debug flags, assertions, resource tracking (slow)",
+          "value": "dev"
+        },
+        {
+          "label": "perf – optimised, no assertions (fast)",
+          "value": "perf"
+        }
+      ],
+      "default": "dev"
+    },
+    {
+      "id": "selection",
+      "type": "pickString",
+      "description": "What to recompile",
+      "options": [
+        {
+          "label": "changed – recompile changed modules only (fast)",
+          "value": "changed"
+        },
+        {
+          "label": "clean   – recompile everything from scratch (safe)",
+          "value": "clean"
+        }
+      ],
+      "default": "changed"
     }
   ]
 }

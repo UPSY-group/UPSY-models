@@ -42,8 +42,9 @@ module ice_dynamics_main
   use ice_model_memory, only: allocate_ice_model
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D
   use global_forcings_main, only: update_sealevel_in_model
-  use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
+  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use bed_roughness_model_types, only: type_bed_roughness_model
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -149,6 +150,17 @@ contains
 
     end do
 
+    call checksum( region%mesh%pai_V, region%ice%Hs     , 'region%ice%Hs')
+    call checksum( region%mesh%pai_V, region%ice%Hib    , 'region%ice%Hib')
+    call checksum( region%mesh%pai_V, region%ice%TAF    , 'region%ice%TAF')
+    call checksum( region%mesh%pai_V, region%ice%Ho     , 'region%ice%Ho')
+    call checksum( region%mesh%pai_V, region%ice%dHi    , 'region%ice%dHi')
+    call checksum( region%mesh%pai_V, region%ice%dHb    , 'region%ice%dHb')
+    call checksum( region%mesh%pai_V, region%ice%dHs    , 'region%ice%dHs')
+    call checksum( region%mesh%pai_V, region%ice%dHib   , 'region%ice%dHib')
+    call checksum( region%mesh%pai_V, region%ice%dHs_dt , 'region%ice%dHs_dt')
+    call checksum( region%mesh%pai_V, region%ice%dHib_dt, 'region%ice%dHib_dt')
+
     ! Update masks
     call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
@@ -156,12 +168,16 @@ contains
     call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes_onesided( region%mesh, region%ice)
+    call calc_ice_shelf_base_slopes( region%mesh, region%ice)
 
     ! Calculate absolute surface gradient
     call ddx_a_a_2D( region%mesh, region%ice%Hs, dHs_dx)
     call ddy_a_a_2D( region%mesh, region%ice%Hs, dHs_dy)
     region%ice%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
+
+    call checksum( region%mesh%pai_V, dHs_dx             , 'dHs_dx')
+    call checksum( region%mesh%pai_V, dHs_dy             , 'dHs_dy')
+    call checksum( region%mesh%pai_V, region%ice%Hs_slope, 'region%ice%Hs_slope')
 
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
@@ -170,6 +186,7 @@ contains
 
     ! Calculate sub-grid grounded-area fractions
     call calc_grounded_fractions( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -258,6 +275,11 @@ contains
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%Hb, ice%SL, ice%Hi)
 
+    call checksum( mesh%pai_V, ice%Hi, 'ice%Hi')
+    call checksum( mesh%pai_V, ice%Hb, 'ice%Hb')
+    call checksum( mesh%pai_V, ice%Hs, 'ice%Hs')
+    call checksum( mesh%pai_V, ice%SL, 'ice%SL')
+
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
@@ -279,6 +301,19 @@ contains
       ice%dHib_dt( vi) = 0._dp
 
     end do ! do vi = mesh%vi1, mesh%vi2
+
+    call checksum( mesh%pai_V, ice%Hs     , 'ice%Hs'     )
+    call checksum( mesh%pai_V, ice%Hib    , 'ice%Hib'    )
+    call checksum( mesh%pai_V, ice%TAF    , 'ice%TAF'    )
+    call checksum( mesh%pai_V, ice%HO     , 'ice%HO'     )
+    call checksum( mesh%pai_V, ice%dHi    , 'ice%dHi'    )
+    call checksum( mesh%pai_V, ice%dHb    , 'ice%dHb'    )
+    call checksum( mesh%pai_V, ice%dHs    , 'ice%dHs'    )
+    call checksum( mesh%pai_V, ice%dHib   , 'ice%dHib'   )
+    call checksum( mesh%pai_V, ice%dHi_dt , 'ice%dHi_dt' )
+    call checksum( mesh%pai_V, ice%dHb_dt , 'ice%dHb_dt' )
+    call checksum( mesh%pai_V, ice%dHs_dt , 'ice%dHs_dt' )
+    call checksum( mesh%pai_V, ice%dHib_dt, 'ice%dHib_dt')
 
     ! Calculate zeta gradients
     call calc_zeta_gradients( mesh, ice)
@@ -309,7 +344,7 @@ contains
      call calc_effective_thickness( mesh, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes_onesided( mesh, ice)
+    call calc_ice_shelf_base_slopes( mesh, ice)
 
     ! Surface gradients
     ! =================
@@ -318,6 +353,10 @@ contains
     call ddx_a_a_2D( mesh, ice%Hs, dHs_dx)
     call ddy_a_a_2D( mesh, ice%Hs, dHs_dy)
     ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
+
+    call checksum( mesh%pai_V, dHs_dx      , 'dHs_dx'      )
+    call checksum( mesh%pai_V, dHs_dy      , 'dHs_dy'      )
+    call checksum( mesh%pai_V, ice%Hs_slope, 'ice%Hs_slope')
 
     ! Target thinning rates
     ! =====================
@@ -671,6 +710,8 @@ contains
 
     call reallocate_bounds( ice%divQ   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux divergence
     call reallocate_bounds( ice%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
+    call reallocate_bounds( ice%Qspill , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
+    call reallocate_bounds( ice%u_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
 
     ! == Basal hydrology ==
     ! =====================
@@ -688,7 +729,7 @@ contains
     ! Basal friction and shear stress
     call reallocate_bounds( ice%till_yield_stress         , mesh_new%vi1, mesh_new%vi2)  ! [Pa]               Till yield stress (used when choice_sliding_law = "Coloumb", "Budd", or "Zoet-Iverson")
     call reallocate_bounds( ice%basal_friction_coefficient, mesh_new%vi1, mesh_new%vi2)  ! [Pa yr m^-1]       Effective basal friction coefficient (basal_shear_stress = u_base * basal_friction_coefficient)
-    call reallocate_bounds( ice%basal_shear_stress        , mesh_new%vi1, mesh_new%vi2)  ! [Pa]               Basal shear stress
+    call reallocate_bounds( ice%basal_shear_stress        , mesh_new%ti1, mesh_new%ti2)  ! [Pa]               Basal shear stress
 
     ! == Geothermal heat ==
     ! =====================
@@ -733,7 +774,7 @@ contains
     end do ! do vi = mesh_new%vi1, mesh_new%vi2
 
     ! Horizontal derivatives
-    call calc_ice_shelf_base_slopes_onesided( mesh_new, ice)
+    call calc_ice_shelf_base_slopes( mesh_new, ice)
 
     ! Calculate zeta gradients
     call calc_zeta_gradients( mesh_new, ice)
@@ -1261,7 +1302,7 @@ contains
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
       ! Calculate dH/dt around the calving front
-      call calc_dHi_dt( mesh, ice%Hi, ice%Hb, ice%SL, ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%fraction_margin, ice%mask_noice, C%dt_ice_min, &
+      call calc_dHi_dt( mesh, ice, ice%Hi, ice%Hb, ice%SL, ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%fraction_margin, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1372,7 +1413,7 @@ contains
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%fraction_margin, &
                         region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy)
 
       ! Set ice model ice thickness to relaxed field

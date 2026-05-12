@@ -75,9 +75,10 @@ def get_cmap(varname):
         cmap = mpl.colors.LinearSegmentedColormap.from_list('my_colormap', colors,68)
         norm = mpl.colors.SymLogNorm(linthresh, vmin=vmin, vmax=vmax, linscale=linscale)
         
-    elif varname == 'Hi':
+    elif varname in ['Hi', 'Hi_eff']:
         cmap = copy(plt.get_cmap('cmo.ice'))
-        norm = mpl.colors.Normalize(vmin=0,vmax=3000,clip=True)
+        #norm = mpl.colors.Normalize(vmin=0,vmax=3000,clip=True)
+        norm = mpl.colors.LogNorm(vmin=100,vmax=1000,clip=True)
 
     elif varname == 'dHi':
         colors1 = plt.get_cmap('afmhot')(np.linspace(0,1,128))
@@ -164,11 +165,23 @@ def get_cmap(varname):
 
     elif varname == 'dHi_dt':
         cmap = copy(plt.get_cmap('cmo.balance_r'))
-        norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
+        norm = mpl.colors.Normalize(vmin=-10,vmax=10,clip=True)
 
     elif varname == 'divQ':
         cmap = copy(plt.get_cmap('cmo.diff'))
-        norm = mpl.colors.Normalize(vmin=-1,vmax=1,clip=True)
+        norm = mpl.colors.Normalize(vmin=-30,vmax=30,clip=True)
+
+    elif varname == 'Qspill':
+        cmap = copy(plt.get_cmap('cmo.diff_r'))
+        norm = mpl.colors.Normalize(vmin=-30,vmax=30,clip=True)
+
+    elif varname == 'fraction_margin':
+        cmap = copy(plt.get_cmap('cmo.ice'))
+        norm = mpl.colors.Normalize(vmin=0,vmax=1.1,clip=True)
+
+    elif varname == 'dHi_eff':
+        cmap = copy(plt.get_cmap('cmo.balance'))
+        norm = mpl.colors.SymLogNorm(.01, vmin=-100, vmax=100, linscale=.01)
 
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')

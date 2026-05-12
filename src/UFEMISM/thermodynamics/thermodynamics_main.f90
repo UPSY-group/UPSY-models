@@ -21,6 +21,7 @@ MODULE thermodynamics_main
   USE thermodynamics_3D_heat_equation                        , ONLY: solve_3D_heat_equation, create_restart_file_thermo_3D_heat_equation, &
                                                                      write_to_restart_file_thermo_3D_heat_equation
   USE thermodynamics_utilities                               , ONLY: calc_pressure_melting_point, replace_Ti_with_robin_solution, calc_homologous_temperature
+  use checksum_mod, only: checksum
 
   IMPLICIT NONE
 
@@ -93,6 +94,8 @@ CONTAINS
     ! Calculate Ti_hom
     CALL calc_homologous_temperature( region%mesh, region%ice)
 
+    call checksum( region%mesh%pai_V, region%ice%Ti, 'region%ice%Ti')
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -120,6 +123,8 @@ CONTAINS
     region%ice%t_Ti_next = C%start_time_of_run
     region%ice%Ti_prev   = region%ice%Ti
     region%ice%Ti_next   = region%ice%Ti
+
+    call checksum( region%mesh%pai_V, region%ice%Ti, 'region%ice%Ti')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

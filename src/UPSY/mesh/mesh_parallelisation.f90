@@ -141,40 +141,28 @@ contains
     if (associated( mesh%buffer2_d_a_nih )) call deallocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih )
     if (associated( mesh%buffer1_d_ak_nih)) call deallocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih)
     if (associated( mesh%buffer2_d_ak_nih)) call deallocate_dist_shared( mesh%buffer2_d_ak_nih, mesh%wbuffer2_d_ak_nih)
-    call allocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih , mesh%pai_V%n_nih)
-    call allocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih , mesh%pai_V%n_nih)
-    call allocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih, mesh%pai_V%n_nih,   mesh%nz)
-    call allocate_dist_shared( mesh%buffer2_d_ak_nih, mesh%wbuffer2_d_ak_nih, mesh%pai_V%n_nih,   mesh%nz)
-    mesh%buffer1_d_a_nih(  mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih             ) => mesh%buffer1_d_a_nih
-    mesh%buffer2_d_a_nih(  mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih             ) => mesh%buffer2_d_a_nih
-    mesh%buffer1_d_ak_nih( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  , 1:mesh%nz) => mesh%buffer1_d_ak_nih
-    mesh%buffer2_d_ak_nih( mesh%pai_V%i1_nih  :mesh%pai_V%i2_nih  , 1:mesh%nz) => mesh%buffer2_d_ak_nih
+    call allocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih , [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
+    call allocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, mesh%nz])
+    call allocate_dist_shared( mesh%buffer2_d_ak_nih, mesh%wbuffer2_d_ak_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, mesh%nz])
 
     if (associated( mesh%buffer1_d_b_nih )) call deallocate_dist_shared( mesh%buffer1_d_b_nih , mesh%wbuffer1_d_b_nih )
     if (associated( mesh%buffer2_d_b_nih )) call deallocate_dist_shared( mesh%buffer2_d_b_nih , mesh%wbuffer2_d_b_nih )
     if (associated( mesh%buffer1_d_bk_nih)) call deallocate_dist_shared( mesh%buffer1_d_bk_nih, mesh%wbuffer1_d_bk_nih)
     if (associated( mesh%buffer2_d_bk_nih)) call deallocate_dist_shared( mesh%buffer2_d_bk_nih, mesh%wbuffer2_d_bk_nih)
-    call allocate_dist_shared( mesh%buffer1_d_b_nih , mesh%wbuffer1_d_b_nih , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( mesh%buffer2_d_b_nih , mesh%wbuffer2_d_b_nih , mesh%pai_Tri%n_nih)
-    call allocate_dist_shared( mesh%buffer1_d_bk_nih, mesh%wbuffer1_d_bk_nih, mesh%pai_Tri%n_nih, mesh%nz)
-    call allocate_dist_shared( mesh%buffer2_d_bk_nih, mesh%wbuffer2_d_bk_nih, mesh%pai_Tri%n_nih, mesh%nz)
-    mesh%buffer1_d_b_nih(  mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih           ) => mesh%buffer1_d_b_nih
-    mesh%buffer2_d_b_nih(  mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih           ) => mesh%buffer2_d_b_nih
-    mesh%buffer1_d_bk_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih, 1:mesh%nz) => mesh%buffer1_d_bk_nih
-    mesh%buffer2_d_bk_nih( mesh%pai_Tri%i1_nih:mesh%pai_Tri%i2_nih, 1:mesh%nz) => mesh%buffer2_d_bk_nih
+    call allocate_dist_shared( mesh%buffer1_d_b_nih , mesh%wbuffer1_d_b_nih , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( mesh%buffer2_d_b_nih , mesh%wbuffer2_d_b_nih , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
+    call allocate_dist_shared( mesh%buffer1_d_bk_nih, mesh%wbuffer1_d_bk_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1, mesh%nz])
+    call allocate_dist_shared( mesh%buffer2_d_bk_nih, mesh%wbuffer2_d_bk_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1, mesh%nz])
 
     if (associated( mesh%buffer1_d_c_nih )) call deallocate_dist_shared( mesh%buffer1_d_c_nih , mesh%wbuffer1_d_c_nih )
     if (associated( mesh%buffer2_d_c_nih )) call deallocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih )
     if (associated( mesh%buffer1_d_ck_nih)) call deallocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih)
     if (associated( mesh%buffer2_d_ck_nih)) call deallocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih)
-    call allocate_dist_shared( mesh%buffer1_d_c_nih , mesh%wbuffer1_d_c_nih , mesh%pai_E%n_nih)
-    call allocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih , mesh%pai_E%n_nih)
-    call allocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih, mesh%pai_E%n_nih,   mesh%nz)
-    call allocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih, mesh%pai_E%n_nih,   mesh%nz)
-    mesh%buffer1_d_c_nih(  mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih             ) => mesh%buffer1_d_c_nih
-    mesh%buffer2_d_c_nih(  mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih             ) => mesh%buffer2_d_c_nih
-    mesh%buffer1_d_ck_nih( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  , 1:mesh%nz) => mesh%buffer1_d_ck_nih
-    mesh%buffer2_d_ck_nih( mesh%pai_E%i1_nih  :mesh%pai_E%i2_nih  , 1:mesh%nz) => mesh%buffer2_d_ck_nih
+    call allocate_dist_shared( mesh%buffer1_d_c_nih , mesh%wbuffer1_d_c_nih , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih , [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
+    call allocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1, mesh%nz])
+    call allocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih], [1, mesh%nz])
 
     ! call print_parallelisation_info( mesh)
 

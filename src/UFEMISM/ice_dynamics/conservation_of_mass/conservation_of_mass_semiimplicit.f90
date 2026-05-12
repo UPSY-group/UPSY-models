@@ -4,6 +4,7 @@ module conservation_of_mass_semiimplicit
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: duplicate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
      set_diagonal_to_one_and_rest_of_row_to_zero
@@ -11,6 +12,7 @@ module conservation_of_mass_semiimplicit
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind
   use conservation_of_mass_explicit, only: calc_dHi_dt_explicit, apply_ice_thickness_BC_explicit
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -20,7 +22,7 @@ module conservation_of_mass_semiimplicit
 
 contains
 
-  subroutine calc_dHi_dt_semiimplicit( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+  subroutine calc_dHi_dt_semiimplicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
     fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a semi-implicit time discretisation scheme for the ice fluxes
@@ -69,6 +71,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )           :: mesh                  ! [-]       The model mesh
+    type(type_ice_model),                   intent(inout)           :: ice                   ! [-]       The ice model
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hi                    ! [m]       Ice thickness at time t
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hb                    ! [m]       Bedrock elevation at time t
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
@@ -105,13 +108,13 @@ contains
     ! First calculate the explicit solution (used to estimate the time step,
     ! and to apply boundary conditions at the domain border)
     dt_ex = dt
-    call calc_dHi_dt_explicit( mesh, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB_ex, &
+    call calc_dHi_dt_explicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB_ex, &
       fraction_margin, mask_noice, dt_ex, dHi_dt_ex, Hi_tplusdt_ex, divQ_ex, &
       dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     dt_max = dt_ex
 
     ! Calculate the ice flux divergence matrix M_divQ using an upwind scheme
-    call calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_b, v_vav_b, fraction_margin, M_divQ)
+    call calc_ice_flux_divergence_matrix_upwind( mesh, ice, u_vav_b, v_vav_b, fraction_margin, M_divQ)
 
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &
@@ -167,6 +170,11 @@ contains
     ! the component of the original dH/dt that was removed.
     ! The negative of this we call artificial mass balance.
     AMB = dHi_dt - AMB
+
+    call checksum( mesh%pai_V, AMB       , 'AMB')
+    call checksum( mesh%pai_V, dHi_dt    , 'dHi_dt')
+    call checksum( mesh%pai_V, Hi_tplusdt, 'Hi_tplusdt')
+    call checksum( mesh%pai_V, divQ      , 'divQ')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

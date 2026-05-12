@@ -4,6 +4,7 @@ module conservation_of_mass_utilities
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
@@ -19,7 +20,7 @@ module conservation_of_mass_utilities
 
 contains
 
-  subroutine calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_b, v_vav_b, fraction_margin, M_divQ)
+  subroutine calc_ice_flux_divergence_matrix_upwind( mesh, ice, u_vav_b, v_vav_b, fraction_margin, M_divQ)
     !< Calculate the ice flux divergence matrix M_divQ using an upwind scheme
 
     ! The vertically averaged ice flux divergence represents the net ice volume (which,
@@ -33,6 +34,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
+    type(type_ice_model),                   intent(inout) :: ice
     real(dp), dimension(mesh%ti1:mesh%ti1), intent(in   ) :: u_vav_b
     real(dp), dimension(mesh%ti1:mesh%ti1), intent(in   ) :: v_vav_b
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: fraction_margin
@@ -46,7 +48,6 @@ contains
     integer                                :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
     integer                                :: vi, ci, ei, vj
     real(dp)                               :: A_i, L_c
-    real(dp)                               :: u_perp
     real(dp), dimension(0:mesh%nC_mem)     :: cM_divQ
 
     ! Add routine to path
@@ -74,6 +75,8 @@ contains
     ! == Calculate coefficients
     ! =========================
 
+    ice%u_perp = 0._dp
+
     do vi = mesh%vi1, mesh%vi2
 
       ! Initialise
@@ -94,21 +97,21 @@ contains
         L_c = mesh%Cw( vi,ci)
 
         ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
-        u_perp = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
+        ice%u_perp( vi, ci) = u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
         ! Calculate matrix coefficients
         ! =============================
 
         ! u_perp > 0: flow is exiting this vertex into vertex vj
         if (fraction_margin_tot( vi) >= 1._dp) then
-          cM_divQ( 0) = cM_divQ( 0) + L_c * max( 0._dp, u_perp) / A_i
+          cM_divQ( 0) = cM_divQ( 0) + L_c * max( 0._dp, ice%u_perp( vi, ci)) / A_i
         else
           ! if this vertex is not completely covering its assigned area, then don't let ice out of it yet.
         end if
 
         ! u_perp < 0: flow is entering this vertex from vertex vj
         if (fraction_margin_tot( vj) >= 1._dp) then
-          cM_divQ( ci) = L_c * MIN( 0._dp, u_perp) / A_i
+          cM_divQ( ci) = L_c * MIN( 0._dp, ice%u_perp( vi, ci)) / A_i
         else
           ! if that vertex is not completely covering its assigned area, then don't let ice out of it yet.
         end if
@@ -211,7 +214,7 @@ contains
     integer, dimension(mesh%vi1:mesh%vi2), intent(  out) :: n_interior_neighbours
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_flux_limited_timestep'
+    character(len=1024), parameter :: routine_name = 'calc_n_interior_neighbours'
     logical,  dimension(mesh%nV)   :: mask_noice_tot
     integer                        :: vi, ci, vj
 

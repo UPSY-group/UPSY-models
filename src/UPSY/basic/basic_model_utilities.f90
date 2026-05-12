@@ -6,100 +6,19 @@ module basic_model_utilities
   use basic_program_info, only: program_name
   use string_module, only: colour_string, insert_val_into_string_dp, insert_val_into_string_int
   use crash_mod, only: crash
+  use mpi_f08, only: MPI_BCAST, MPI_INTEGER, MPI_CHAR, MPI_COMM_WORLD
 
   implicit none
 
   private
 
-  public :: get_git_commit_hash, git_commit_hash
-  public :: check_for_uncommitted_changes, has_uncommitted_changes
   public :: generate_procedural_output_dir_name
   public :: print_model_start
   public :: print_model_end
-
-  ! The hash of the current git commit
-  character(len=1024) :: git_commit_hash
-  logical             :: has_uncommitted_changes = .false.
+  public :: list_files_in_folder
+  public :: get_current_date_time_str
 
 contains
-
-  subroutine get_git_commit_hash( git_commit_hash)
-
-    ! In/output variables:
-    character(len=*), intent(out) :: git_commit_hash
-
-    ! Local variables:
-    character(len=256), parameter :: routine_name = 'get_git_commit_hash'
-    character(len=256), parameter :: filename_git_commit_hash = 'git_commit_hash.txt'
-    integer                       :: ierr, ios
-    integer, parameter            :: git_commit_hash_file_unit = 1847
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Create a text file containing the hash of the current git commit
-    call system( 'git rev-parse HEAD > ' // trim(filename_git_commit_hash), ierr)
-    if (ierr /= 0) call crash('failed to obtain hash of current git commit')
-
-    ! Read the hash from the temporary commit hash file
-    open( unit = git_commit_hash_file_unit, file = filename_git_commit_hash, iostat = ios)
-    if (ios /= 0) call crash('couldnt open temporary commit hash file "' // trim( filename_git_commit_hash) // '"!')
-    read( unit = git_commit_hash_file_unit, fmt = '(A)', iostat = ios) git_commit_hash
-    if (ios < 0) call crash('couldnt read commit hash from the temporary commit hash file')
-    close( unit = git_commit_hash_file_unit)
-
-    ! Delete the temporary commit hash file
-    call system( 'rm -f ' // trim( filename_git_commit_hash), ierr)
-    if (ierr /= 0) call crash('failed to delete temporary commit hash file')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine get_git_commit_hash
-
-  subroutine check_for_uncommitted_changes
-
-    ! Local variables:
-    character(len=256), parameter :: routine_name = 'check_for_uncommitted_changes'
-    character(len=256), parameter :: filename_git_status = 'git_status.txt'
-    integer                       :: ierr, ios
-    integer, parameter            :: git_status_file_unit = 1847
-    character(len=1024)           :: single_line
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Create a text file containing the output of git status
-    call system( 'git status > ' // trim( filename_git_status), ierr)
-    if (ierr /= 0) call crash('failed to write git status to text file')
-
-    ! Check the temporary git status file for uncommitted changes
-    open( unit = git_status_file_unit, file = filename_git_status, iostat = ios)
-    if (ios /= 0) call crash('couldnt open temporary git status file "' // trim( filename_git_status) // '"!')
-
-    do while (.true.)
-        ! Read a single line from the temporary git status file
-        read( unit = git_status_file_unit, fmt = '(A)', iostat = ios) single_line
-        ! If we've reached the end of the file, stop reading.
-        if (ios < 0) exit
-        ! Check if the temporary git status file mentions any uncommitted changes
-        if (single_line == 'Changes not staged for commit:') has_uncommitted_changes = .true.
-    end do
-
-    close( unit = git_status_file_unit)
-
-    ! Mention uncommitted changes in the commit hash (done after writing the commit hash to the terminal,
-    ! but still useful for the version that ends up in the NetCDF output files)
-    if (has_uncommitted_changes) git_commit_hash = trim( git_commit_hash) // ' (with uncommitted changes!)'
-
-    ! Delete the temporary git status file
-    call system( 'rm -f ' // trim( filename_git_status), ierr)
-    if (ierr /= 0) call crash('failed to delete temporary git status file')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine check_for_uncommitted_changes
 
   subroutine generate_procedural_output_dir_name( output_dir)
     ! Generate a procedural output directory for the current date (e.g. results_20210721_001)
@@ -402,5 +321,76 @@ contains
     call sync
 
   end subroutine print_model_end
+
+  subroutine list_files_in_folder( foldername, list_of_filenames)
+
+    ! In/output variables:
+    character(len=*),                            intent(in   ) :: foldername
+    character(len=*), dimension(:), allocatable, intent(inout) :: list_of_filenames
+
+    ! Local variables:
+    integer             :: funit, n_files, ios, i, ierr
+    character(len=1024) :: str
+
+    if (par%primary) then
+
+      ! Create a small text file listing all the files in the directory
+      call system('ls ' // trim( foldername) // ' > ' // trim( foldername) // '/list_of_files.txt')
+
+      ! Count how many there are
+      open( newunit = funit, file = trim( foldername) // '/list_of_files.txt', action = 'read')
+      n_files = 0
+      do while (.true.)
+        read( funit, fmt = '(a)', iostat = ios) str
+        if (ios /= 0) exit
+        if (str /= 'list_of_files.txt') n_files = n_files+1
+      end do
+      close( funit)
+
+    end if
+    call MPI_BCAST( n_files, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
+
+    allocate( list_of_filenames( n_files))
+
+    if (par%primary) then
+
+      ! List all the files
+      open( newunit = funit, file = trim( foldername) // '/list_of_files.txt', action = 'read')
+      i = 0
+      do while (.true.)
+        read( funit, fmt = '(a)', iostat = ios) str
+        if (ios /= 0) exit
+        if (str /= 'list_of_files.txt') then
+          i = i+1
+          list_of_filenames( i) = trim( str)
+        end if
+      end do
+      close( funit)
+
+      ! Delete list_of_files.txt
+      call system('rm -f ' // trim( foldername) // '/list_of_files.txt')
+
+    end if
+
+    do i = 1, n_files
+      call MPI_BCAST( list_of_filenames( i), len( list_of_filenames( i)), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
+    end do
+
+  end subroutine list_files_in_folder
+
+  function get_current_date_time_str() result( datetime_str)
+    character(len=8)               :: date_str
+    character(len=10)              :: time_str
+    character(len=5)               :: zone_str
+    character(len=19)              :: datetime_str
+    integer, dimension(8)          :: values
+
+    ! Get date and time
+    call date_and_time(date=date_str, time=time_str, zone=zone_str, values=values)
+    ! Using internal write to format nicely
+    write(datetime_str, '(I4.4, "-", I2.2, "-", I2.2, "T", I2.2, ":", I2.2, ":", I2.2)') &
+         values(1), values(2), values(3), values(5), values(6), values(7)
+
+  end function get_current_date_time_str
 
 end module basic_model_utilities

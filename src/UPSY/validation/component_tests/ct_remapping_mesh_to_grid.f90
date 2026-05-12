@@ -25,17 +25,15 @@ module ct_remapping_mesh_to_grid
 contains
 
   !> Run all the mesh-to-grid remapping tests
-  subroutine run_all_mesh_to_grid_remapping_tests( foldername_remapping, test_mesh_filenames, test_grid_filenames)
+  subroutine run_all_mesh_to_grid_remapping_tests( output_dir, test_mesh_filenames, test_grid_filenames)
 
     ! In/output variables:
-    character(len=1024)           , intent(in) :: foldername_remapping
+    character(len=1024)           , intent(in) :: output_dir
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
     character(len=*), dimension(:), intent(in) :: test_grid_filenames
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_mesh_to_grid_remapping_tests'
-    character(len=1024)            :: foldername_mesh_vertices_to_grid
-    character(len=1024)            :: foldername_mesh_triangles_to_grid
     integer                        :: i_mesh, i_grid
     character(len=1024)            :: filename_mesh, filename_grid
 
@@ -45,17 +43,12 @@ contains
     if (par%primary) write(0,*) '    Running mesh-to-grid remapping component tests...'
     if (par%primary) write(0,*) ''
 
-    call create_mesh_to_grid_remapping_output_folders( foldername_remapping, &
-      foldername_mesh_vertices_to_grid, foldername_mesh_triangles_to_grid)
-
     do i_mesh = 1, size( test_mesh_filenames)
       filename_mesh = test_mesh_filenames( i_mesh)
       do i_grid = 1, size( test_grid_filenames)
         filename_grid = test_grid_filenames( i_grid)
-        call run_mesh_vertices_to_grid_remapping_tests_on_mesh_grid_combo ( &
-          foldername_mesh_vertices_to_grid, filename_mesh, filename_grid)
-        call run_mesh_triangles_to_grid_remapping_tests_on_mesh_grid_combo( &
-          foldername_mesh_triangles_to_grid, filename_mesh, filename_grid)
+        call run_mesh_vertices_to_grid_remapping_tests_on_mesh_grid_combo ( output_dir, filename_mesh, filename_grid)
+        call run_mesh_triangles_to_grid_remapping_tests_on_mesh_grid_combo( output_dir, filename_mesh, filename_grid)
       end do
     end do
 
@@ -66,56 +59,11 @@ contains
 
   end subroutine run_all_mesh_to_grid_remapping_tests
 
-  !> Create the output folder for the mesh-to-grid remapping component tests
-  subroutine create_mesh_to_grid_remapping_output_folders( foldername_remapping, &
-    foldername_mesh_vertices_to_grid, foldername_mesh_triangles_to_grid)
-
-    ! In/output variables:
-    character(len=*), intent(in)  :: foldername_remapping
-    character(len=*), intent(out) :: foldername_mesh_vertices_to_grid, foldername_mesh_triangles_to_grid
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_mesh_to_grid_remapping_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_mesh_vertices_to_grid  = trim(foldername_remapping) // '/mesh_vertices_to_grid'
-    foldername_mesh_triangles_to_grid = trim(foldername_remapping) // '/mesh_triangles_to_grid'
-
-    if (par%primary) then
-
-      ! Remove existing folders if necessary
-      inquire( file = trim( foldername_mesh_vertices_to_grid) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_mesh_vertices_to_grid))
-      end if
-
-      inquire( file = trim( foldername_mesh_triangles_to_grid) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_mesh_triangles_to_grid))
-      end if
-
-      ! Create the directories
-      call system('mkdir ' // trim( foldername_mesh_vertices_to_grid))
-      call system('mkdir ' // trim( foldername_mesh_triangles_to_grid))
-
-    end if
-    call MPI_BCAST( foldername_mesh_vertices_to_grid , len(foldername_mesh_vertices_to_grid ), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-    call MPI_BCAST( foldername_mesh_triangles_to_grid, len(foldername_mesh_triangles_to_grid), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_mesh_to_grid_remapping_output_folders
-
   !> Run all the mesh-to-grid remapping tests on one mesh/grid combination
-  subroutine run_mesh_vertices_to_grid_remapping_tests_on_mesh_grid_combo( foldername_mesh_to_grid, filename_mesh, filename_grid)
+  subroutine run_mesh_vertices_to_grid_remapping_tests_on_mesh_grid_combo( output_dir, filename_mesh, filename_grid)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_mesh_to_grid
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: filename_mesh
     character(len=*), intent(in) :: filename_grid
 
@@ -133,8 +81,8 @@ contains
 
     mesh_name = filename_mesh( index( filename_mesh, '/', back = .true.)+1 : len_trim( filename_mesh)-3)
     grid_name = filename_grid( index( filename_grid, '/', back = .true.)+1 : len_trim( filename_grid)-3)
-    filename = trim( foldername_mesh_to_grid) // '/res_' // &
-      trim( mesh_name) // '_TO_' // trim( grid_name) // '.nc'
+    filename = trim( output_dir) // '/res_' // &
+      trim( mesh_name) // '_vertices_TO_' // trim( grid_name) // '.nc'
 
     if (par%primary) write(0,*) '      Running mesh-vertices-to-grid remapping tests on mesh-grid combination:'
     if (par%primary) write(0,*) '        mesh: ', UPSY%stru%colour_string( trim( mesh_name),'light blue')
@@ -155,7 +103,7 @@ contains
 
     ! Map gridded data to the mesh
     allocate( d_grid( grid%n_loc))
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, foldername_mesh_to_grid, d_mesh_ex, d_grid)
+    call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, output_dir, d_mesh_ex, d_grid)
 
     ! Write results to NetCDF
     call create_new_netcdf_file_for_writing( filename, ncid)
@@ -180,10 +128,10 @@ contains
 
   end subroutine run_mesh_vertices_to_grid_remapping_tests_on_mesh_grid_combo
 
-  subroutine run_mesh_triangles_to_grid_remapping_tests_on_mesh_grid_combo( foldername_mesh_to_grid, filename_mesh, filename_grid)
+  subroutine run_mesh_triangles_to_grid_remapping_tests_on_mesh_grid_combo( output_dir, filename_mesh, filename_grid)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_mesh_to_grid
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: filename_mesh
     character(len=*), intent(in) :: filename_grid
 
@@ -201,8 +149,8 @@ contains
 
     mesh_name = filename_mesh( index( filename_mesh, '/', back = .true.)+1 : len_trim( filename_mesh)-3)
     grid_name = filename_grid( index( filename_grid, '/', back = .true.)+1 : len_trim( filename_grid)-3)
-    filename = trim( foldername_mesh_to_grid) // '/res_' // &
-      trim( mesh_name) // '_TO_' // trim( grid_name) // '.nc'
+    filename = trim( output_dir) // '/res_' // &
+      trim( mesh_name) // '_triangles_TO_' // trim( grid_name) // '.nc'
 
     if (par%primary) write(0,*) '      Running mesh-triangles-to-grid remapping tests on mesh-grid combination:'
     if (par%primary) write(0,*) '        mesh: ', UPSY%stru%colour_string( trim( mesh_name),'light blue')
@@ -223,7 +171,7 @@ contains
 
     ! Map gridded data to the mesh
     allocate( d_grid( grid%n_loc))
-    call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, foldername_mesh_to_grid, d_mesh_ex, d_grid)
+    call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, output_dir, d_mesh_ex, d_grid)
 
     ! Write results to NetCDF
     call create_new_netcdf_file_for_writing( filename, ncid)

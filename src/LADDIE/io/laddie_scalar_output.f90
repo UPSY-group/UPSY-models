@@ -292,8 +292,12 @@ contains
     call MPI_ALLREDUCE( MPI_IN_PLACE, T_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
 
     ! Salinity scalars
-    call integrate_over_domain( mesh, laddie%now%S, S_int, max_d = S_max, min_d = S_min)
+    call integrate_over_domain( mesh, laddie%now%S, S_int)
     S_mean = S_int / laddie%area_a
+    S_max = maxval( laddie%now%S, laddie%mask_a)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, S_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+    S_min = minval( laddie%now%S, laddie%mask_a)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, S_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
 
     ! Volume fluxes
     call integrate_over_domain( mesh, laddie%entr, entr_tot)

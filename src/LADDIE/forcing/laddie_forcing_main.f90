@@ -27,7 +27,7 @@ module laddie_forcing_main
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
   use subgrid_ice_margin, only: calc_effective_thickness
-  use ice_shelf_base_slopes_onesided, only: calc_ice_shelf_base_slopes_onesided
+  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection
 
@@ -128,7 +128,7 @@ contains
      call calc_effective_thickness( mesh, ice%Hi,ice%Hb,ice%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes_onesided( mesh, ice)
+    call calc_ice_shelf_base_slopes( mesh, ice)
 
     ! Ice temperature
     ! ===============

@@ -2,15 +2,19 @@ module netcdf_basic_wrappers
   !< UFEMISM wrappers for the most basic NetCDF functionality
   !< (needed to deal with parallelisation and extended error messaging)
 
-  use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_INTEGER
+  use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_INTEGER, MPI_DOUBLE_PRECISION
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_basic, only: par, sync
-  use basic_model_utilities, only: git_commit_hash
+  use git_commit_hash_and_package_versions, only: git_commit_hash, has_uncommitted_changes, &
+    petsc_version, netcdf_version, openmpi_version, compiler_version, compiler_flags
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
     NF90_MAX_VAR_DIMS, NF90_PUT_ATT, NF90_OPEN, NF90_NOWRITE, NF90_WRITE, NF90_SHARE, &
-    NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_FLOAT, NF90_DOUBLE
+    NF90_INQUIRE_ATTRIBUTE, NF90_GET_ATT, &
+    NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_INT, NF90_FLOAT, NF90_DOUBLE, &
+    NF90_FILL_INT, NF90_FILL_FLOAT, NF90_FILL_DOUBLE
+  use basic_model_utilities, only: get_current_date_time_str
 
   implicit none
 
@@ -20,7 +24,9 @@ module netcdf_basic_wrappers
     create_new_netcdf_file_for_writing, create_dimension, create_variable, &
     create_scalar_variable, add_attribute_int, add_attribute_dp, add_attribute_char, &
     open_existing_netcdf_file_for_reading, open_existing_netcdf_file_for_writing, &
-    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, delete_existing_file
+    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, delete_existing_file, &
+    add_fillvalue, inquire_fill_value
+
 
 contains
 
@@ -174,6 +180,46 @@ contains
 
   end subroutine inquire_var_info
 
+  subroutine inquire_fill_value( filename, ncid, var_name, fill_value)
+    !< Inquire the fill value of a variable
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    character(len=*), intent(in   ) :: var_name
+    real(dp),         intent(  out) :: fill_value
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'inquire_fill_value'
+    integer                     :: id_var, var_type, att_type, ierr
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Check that the variable is floating-point
+    call inquire_var( filename, ncid, trim( var_name), id_var)
+    call inquire_var_info( filename, ncid, id_var, var_type = var_type)
+    if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) &
+      call crash('variable ' // trim( var_name) // ' in file ' // trim( filename) // ' is not ' // &
+        'of type NF90_FLOAT or NF90_DOUBLE')
+
+    ! Check that the _FillValue attribute exists and is floating-point
+    if (par%primary) then
+      call handle_netcdf_error( NF90_INQUIRE_ATTRIBUTE( ncid, id_var, '_FillValue', att_type))
+      if (.not. (att_type == NF90_FLOAT .or. att_type == NF90_DOUBLE)) &
+        call crash('_FillValue of variable ' // trim( var_name) // ' in file ' // trim( filename) // ' is not ' // &
+          'of type NF90_FLOAT or NF90_DOUBLE')
+    end if
+
+    ! Read its value
+    if (par%primary) call handle_netcdf_error( NF90_GET_ATT( ncid, id_var, '_FillValue', fill_value))
+    call MPI_BCAST( fill_value, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine inquire_fill_value
+
   ! Create new NetCDF file
   subroutine create_new_netcdf_file_for_writing( filename, ncid)
     !< Create a new NetCDF file in the specified location for writing.
@@ -203,8 +249,15 @@ contains
     end if
     call MPI_BCAST( ncid, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
 
-    ! Add some very basic info about the current simulation to the header
-    call add_attribute_char( filename, ncid, NF90_GLOBAL, 'git commit hash', git_commit_hash)
+    ! Add the git commit hash and package versions that were used to compile the program
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'history', 'Generated on ' // get_current_date_time_str())
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'git_commit_hash'        , git_commit_hash)
+    call add_attribute_logical( filename, ncid, NF90_GLOBAL, 'has_uncommitted_changes', has_uncommitted_changes)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'PETSc_version'          , petsc_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'NetCDF_version'         , netcdf_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'OpenMPI_version'        , openmpi_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler_version'       , compiler_version)
+    call add_attribute_char   ( filename, ncid, NF90_GLOBAL, 'compiler_flags'         , compiler_flags)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -337,6 +390,34 @@ contains
 
   end subroutine create_scalar_variable
 
+  subroutine add_attribute_logical( filename, ncid, id_var, att_name, att_val)
+    !< Add a logical-valued attributes to a variable.
+    ! ...well, actually an integer, but still!
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    integer,          intent(in   ) :: id_var
+    character(len=*), intent(in   ) :: att_name
+    logical,          intent(in   ) :: att_val
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_attribute_logical'
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    if (att_val) then
+      call add_attribute_int( filename, ncid, id_var, att_name, 1)
+    else
+      call add_attribute_int( filename, ncid, id_var, att_name, 0)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_attribute_logical
+
   subroutine add_attribute_int( filename, ncid, id_var, att_name, att_val)
     !< Add an integer-valued attributes to a variable.
 
@@ -390,6 +471,33 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine add_attribute_dp
+
+  subroutine add_attribute_real( filename, ncid, id_var, att_name, att_val)
+    !< Add a single-precision-valued attributes to a variable.
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    integer,          intent(in   ) :: id_var
+    character(len=*), intent(in   ) :: att_name
+    real,             intent(in   ) :: att_val
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_attribute_real'
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Add the attribute
+    if (par%primary) then
+      call handle_netcdf_error( NF90_PUT_ATT( ncid, id_var, att_name, att_val), &
+        filename = filename)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_attribute_real
 
   subroutine add_attribute_char( filename, ncid, id_var, att_name, att_val)
     !< Add a character-valued attributes to a variable.
@@ -551,6 +659,40 @@ contains
     end select
 
   end function parse_netcdf_precision
+
+  subroutine add_fillvalue( filename, ncid, id_var)
+    !< Add the fill value as attribute to a variable.
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    integer,          intent(in   ) :: id_var
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'add_fillvalue'
+    integer                        :: var_type
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Get the variable type
+    call inquire_var_info( filename, ncid, id_var, var_type = var_type)
+
+    select case (var_type)
+      case default
+        ! No integer, real, or dp, don't do anything
+      case (NF90_INT)
+        call add_attribute_int( filename, ncid, id_var, '_FillValue', NF90_FILL_INT)
+      case (NF90_FLOAT)
+        call add_attribute_real( filename, ncid, id_var, '_FillValue', NF90_FILL_FLOAT)
+      case (NF90_DOUBLE)
+        call add_attribute_dp( filename, ncid, id_var, '_FillValue', NF90_FILL_DOUBLE)
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine add_fillvalue
 
   subroutine delete_existing_file( filename)
 

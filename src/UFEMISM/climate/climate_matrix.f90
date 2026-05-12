@@ -22,6 +22,7 @@ module climate_matrix
   use mesh_data_smoothing, only: smooth_Gaussian
   use climate_model_utilities                                , only: allocate_climate_snapshot, read_climate_snapshot, adapt_precip_CC, adapt_precip_Roe, get_insolation_at_time
   use assertions_basic, only: assert
+  use reference_geometry_types, only: type_reference_geometry
 
  implicit none
 
@@ -502,7 +503,6 @@ contains
     call initialise_insolation_forcing( climate%snapshot, mesh) ! this will initialise climate%snapshot%Q_TOA
 
     ! Initialise applied climate with present-day observations
-
     do vi = mesh%vi1, mesh%vi2
     do m = 1, 12
       climate%T2m(     vi,m) = climate%matrix%PD_obs%T2m(     vi,m)
@@ -747,13 +747,14 @@ contains
     type(type_ice_model),                 intent(in)    :: ice
 
     ! Local variables:
-    character(LEN=256), parameter                       :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
-    integer                                             :: vi,m,i
-    type(type_ice_model)      , target                  :: ice_dummy
-    type(type_climate_model)  , target                  :: climate_dummy
-    type(type_grid)           , target                  :: grid_dummy
-    type(type_SMB_model_IMAU_ITM)                       :: SMB_dummy
-    character(LEN=256)                                  :: choice_SMB_IMAUITM_init_firn_dummy
+    character(LEN=256), parameter         :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
+    integer                               :: vi,m,i
+    type(type_ice_model)      ,    target :: ice_dummy
+    type(type_climate_model)  ,    target :: climate_dummy
+    type(type_reference_geometry), target :: refgeo_init_dummy, refgeo_PD_dummy
+    type(type_grid)           ,    target :: grid_dummy
+    type(type_SMB_model_IMAU_ITM)         :: SMB_dummy
+    character(LEN=256)                    :: choice_SMB_IMAUITM_init_firn_dummy
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -786,6 +787,8 @@ contains
 
     ! Ice
     ! ===
+    allocate( ice_dummy%Hi( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%Hb( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_icefree_ocean( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_grounded_ice(   mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_floating_ice( mesh%vi1:mesh%vi2))
@@ -797,6 +800,8 @@ contains
    ! In IMAU-ICE SMB it uses region%mask_noice in UFE2 is ice%mask_noice, I will keep the masks from above for ice_dummy
    ! and make ice_dummy%mask_noice = ice%mask_noice to run the SMB using the dummy, following IMAU-ICE code..
       ice_dummy%mask_noice( vi) = ice%mask_noice( vi)
+      ice_dummy%Hi( vi) = ice%Hi( vi)
+      ice_dummy%Hb( vi) = ice%Hb( vi)
 
       if (snapshot%Hs( vi) == MINVAL(snapshot%Hs)) then
         ice_dummy%mask_icefree_ocean( vi) = .true.
@@ -820,7 +825,7 @@ contains
     ! SMB
     ! ===
     call SMB_dummy%allocate  ( SMB_dummy%ct_allocate( 'SMB_IMAU_ITM_dummy', region_name, mesh))
-    call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy))
+    call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy, refgeo_init_dummy, refgeo_PD_dummy))
 
     ! Initialisation choice
     if     (region_name == 'NAM') then

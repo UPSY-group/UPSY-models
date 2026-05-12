@@ -153,14 +153,9 @@ contains
 
 
     ! Allocate mask_int
-    call allocate_dist_shared( mask_int, wmask_int, mesh%pai_V%n_nih)
-    mask_int( mesh%pai_V%i1_nih : mesh%pai_V%i2_nih) => mask_int
-
-    call allocate_dist_shared( d_partial_a, wd_partial_a, mesh%pai_V%n_nih)
-    d_partial_a( mesh%pai_V%i1_nih : mesh%pai_V%i2_nih) => d_partial_a
-
-    call allocate_dist_shared( d_partial_b, wd_partial_b, mesh%pai_Tri%n_nih)
-    d_partial_b( mesh%pai_Tri%i1_nih : mesh%pai_Tri%i2_nih) => d_partial_b
+    call allocate_dist_shared( mask_int   , wmask_int   , [mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  ])
+    call allocate_dist_shared( d_partial_a, wd_partial_a, [mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  ])
+    call allocate_dist_shared( d_partial_b, wd_partial_b, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
 
     ! Add the specified data field to the file
     select case (choice_output_field)
@@ -296,8 +291,12 @@ contains
         call write_to_field_multopt_mesh_dp_2D_b( mesh, laddie%output_mesh_filename, ncid, 'viscV', laddie%viscV)
       case ('T_base')
         call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'T_base', laddie%T_base)
+      case ('S_base')
+        call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'S_base', laddie%S_base)
       case ('T_amb')
         call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'T_amb', laddie%T_amb)
+      case ('S_amb')
+        call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'S_amb', laddie%S_amb)
       case ('T_freeze')
         call write_to_field_multopt_mesh_dp_2D( mesh, laddie%output_mesh_filename, ncid, 'T_freeze', laddie%T_freeze)
       case ('u_star')
@@ -577,8 +576,12 @@ contains
         call add_field_mesh_dp_2D_b( filename, ncid, 'viscV', long_name = 'Laddie V viscosity', units = 'm^2 s^-2')
       case ('T_base')
         call add_field_mesh_dp_2D( filename, ncid, 'T_base', long_name = 'Temperature at ice/ocean interface', units = 'deg C')
+      case ('S_base')
+        call add_field_mesh_dp_2D( filename, ncid, 'S_base', long_name = 'Salinity at ice/ocean interface', units = 'PSU')
       case ('T_amb')
         call add_field_mesh_dp_2D( filename, ncid, 'T_amb', long_name = 'Temperature at interface with ambient ocean', units = 'deg C')
+      case ('S_amb')
+        call add_field_mesh_dp_2D( filename, ncid, 'S_amb', long_name = 'Salinity at interface with ambient ocean', units = 'PSU')
       case ('T_freeze')
         call add_field_mesh_dp_2D( filename, ncid, 'T_freeze', long_name = 'Feezing temperature', units = 'deg C')
       case ('u_star')

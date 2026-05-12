@@ -35,6 +35,7 @@ module DIVA_solver_infinite_slab
   use mpi_f08, only: MPI_WIN
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
     multiply_CSR_matrix_with_vector_2D_wrapper
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -221,6 +222,9 @@ contains
     ! Stability info
     n_visc_its = viscosity_iteration_i
 
+    call checksum( mesh%pai_Tri, DIVA%u_vav_b, 'DIVA%u_vav_b')
+    call checksum( mesh%pai_Tri, DIVA%v_vav_b, 'DIVA%v_vav_b')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -259,6 +263,9 @@ contains
     ! Map vertical shear strain rates from the b-grid to the a-grid
     call map_b_a_3D( mesh, du_dz_3D_b, DIVA%du_dz_3D_a)
     call map_b_a_3D( mesh, dv_dz_3D_b, DIVA%dv_dz_3D_a)
+
+    call checksum( mesh%pai_V, DIVA%du_dz_3D_a, 'DIVA%du_dz_3D_a')
+    call checksum( mesh%pai_V, DIVA%dv_dz_3D_a, 'DIVA%dv_dz_3D_a')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -330,6 +337,14 @@ contains
     call ddx_a_b_2D( mesh, DIVA%N_a, DIVA%dN_dx_b)
     call ddy_a_b_2D( mesh, DIVA%N_a, DIVA%dN_dy_b)
 
+    call checksum( mesh%pai_V  , DIVA%eta_3D_a , 'DIVA%eta_3D_a')
+    call checksum( mesh%pai_Tri, DIVA%eta_3D_b , 'DIVA%eta_3D_b')
+    call checksum( mesh%pai_V  , DIVA%eta_vav_a, 'DIVA%eta_vav_a')
+    call checksum( mesh%pai_V  , DIVA%N_a      , 'DIVA%N_a')
+    call checksum( mesh%pai_Tri, DIVA%N_b      , 'DIVA%N_b')
+    call checksum( mesh%pai_Tri, DIVA%dN_dx_b  , 'DIVA%dN_dx_b')
+    call checksum( mesh%pai_Tri, DIVA%dN_dy_b  , 'DIVA%dN_dy_b')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -370,6 +385,9 @@ contains
     ! Map F-integrals from the a-grid to the b-grid
     call map_a_b_3D( mesh, DIVA%F1_3D_a, DIVA%F1_3D_b)
     call map_a_b_3D( mesh, DIVA%F2_3D_a, DIVA%F2_3D_b)
+
+    call checksum( mesh%pai_Tri, DIVA%F1_3D_b, 'DIVA%F1_3D_b')
+    call checksum( mesh%pai_Tri, DIVA%F2_3D_b, 'DIVA%F2_3D_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -428,6 +446,11 @@ contains
       end do
     end if
 
+    call checksum( mesh%pai_V  , ice%basal_friction_coefficient   , 'ice%basal_friction_coefficient')
+    call checksum( mesh%pai_Tri, DIVA%basal_friction_coefficient_b, 'DIVA%basal_friction_coefficient_b')
+    call checksum( mesh%pai_V  , DIVA%beta_eff_a                  , 'DIVA%beta_eff_a')
+    call checksum( mesh%pai_Tri, DIVA%beta_eff_b                  , 'DIVA%beta_eff_b')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -452,6 +475,9 @@ contains
       DIVA%tau_bx_b( ti) = DIVA%u_vav_b( ti) * DIVA%beta_eff_b( ti)
       DIVA%tau_by_b( ti) = DIVA%v_vav_b( ti) * DIVA%beta_eff_b( ti)
     end do
+
+    call checksum( mesh%pai_Tri, DIVA%tau_bx_b, 'DIVA%tau_bx_b')
+    call checksum( mesh%pai_Tri, DIVA%tau_by_b, 'DIVA%tau_by_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -487,6 +513,9 @@ contains
       end do
 
     end if
+
+    call checksum( mesh%pai_Tri, DIVA%u_base_b, 'DIVA%u_base_b')
+    call checksum( mesh%pai_Tri, DIVA%v_base_b, 'DIVA%v_base_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -529,6 +558,9 @@ contains
       end do
 
     end if
+
+    call checksum( mesh%pai_Tri, DIVA%u_3D_b, 'DIVA%u_3D_b')
+    call checksum( mesh%pai_Tri, DIVA%v_3D_b, 'DIVA%v_3D_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

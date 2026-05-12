@@ -2,12 +2,13 @@ module netcdf_find_timeframe
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
   use mpi_basic, only: par, sync
-  use precisions, only: dp
+  use precisions, only: dp, int8
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use netcdf_field_name_options
   use netcdf_check_dimensions
   use netcdf_read_var_primary
   use netcdf_basic_wrappers
+  use netcdf, only: NF90_FLOAT, NF90_DOUBLE, NF90_INT64
 
   implicit none
 
@@ -29,8 +30,9 @@ contains
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'find_timeframe'
-    integer                             :: nt, id_dim_time, id_var_time
+    integer                             :: nt, id_dim_time, id_var_time, var_type
     real(dp), dimension(:), allocatable :: time_from_file
+    integer(int8), dimension(:), allocatable :: time_from_file_int8
     integer                             :: ierr
     integer                             :: tii
     real(dp)                            :: dt_min
@@ -45,13 +47,22 @@ contains
     call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = nt)
 
     ! inquire time variable ID
-    call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time)
+    call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time, var_type = var_type)
 
     ! allocate memory
     allocate( time_from_file( nt))
 
     ! Read time from file
-    call read_var_primary( filename, ncid, id_var_time, time_from_file)
+    select case (var_type)
+    case default
+      call crash('invalid variable type for variable time in file ' // trim( filename))
+    case (NF90_FLOAT, NF90_DOUBLE)
+      call read_var_primary( filename, ncid, id_var_time, time_from_file)
+    case (NF90_INT64)
+      allocate( time_from_file_int8( nt))
+      call read_var_primary( filename, ncid, id_var_time, time_from_file_int8)
+      time_from_file = real( time_from_file_int8, dp)
+    end select
     call MPI_BCAST( time_from_file(:), nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
     ! Find timeframe closest to desired time

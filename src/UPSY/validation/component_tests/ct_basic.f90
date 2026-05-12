@@ -20,7 +20,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_component_tests_output_folder'
-    logical                        :: ex
     character(len=1024)            :: cwd
 
     ! Add routine to path
@@ -29,11 +28,9 @@ contains
     ! Create the directory
     if (par%primary) then
 
-      ! Create existing folder if necessary
-      inquire( file = trim( output_dir) // '/.', exist = ex)
-      if (.not. ex) then
-        call system('mkdir ' // trim( output_dir))
-      end if
+      ! Remove existing folder if necessary
+      call system('rm -rf ' // trim( output_dir))
+      call system('mkdir ' // trim( output_dir))
 
       ! Tell the user where it is
       call getcwd( cwd)

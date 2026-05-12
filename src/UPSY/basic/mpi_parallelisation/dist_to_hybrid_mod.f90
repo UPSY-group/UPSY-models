@@ -245,9 +245,9 @@ contains
   subroutine dist_to_hybrid_complex_1D( pai, d, d_nih)
 
     ! In/output variables:
-    type(type_par_arr_info),                      intent(in   ) :: pai
-    complex*16, dimension(pai%i1:pai%i2),         intent(in   ) :: d
-    complex*16, dimension(pai%i1_nih:pai%i2_nih), intent(  out) :: d_nih
+    type(type_par_arr_info),                       intent(in   ) :: pai
+    complex(dp), dimension(pai%i1:pai%i2),         intent(in   ) :: d
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih), intent(  out) :: d_nih
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'dist_to_hybrid_complex_1D'
@@ -266,10 +266,10 @@ contains
   subroutine dist_to_hybrid_complex_2D( pai, nz, d, d_nih)
 
     ! In/output variables:
-    type(type_par_arr_info),                           intent(in   ) :: pai
-    integer,                                           intent(in   ) :: nz
-    complex*16, dimension(pai%i1:pai%i2,1:nz),         intent(in   ) :: d
-    complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz), intent(  out) :: d_nih
+    type(type_par_arr_info),                            intent(in   ) :: pai
+    integer,                                            intent(in   ) :: nz
+    complex(dp), dimension(pai%i1:pai%i2,1:nz),         intent(in   ) :: d
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz), intent(  out) :: d_nih
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'dist_to_hybrid_complex_2D'
@@ -288,10 +288,10 @@ contains
   subroutine dist_to_hybrid_complex_3D( pai, nz, nl, d, d_nih)
 
     ! In/output variables:
-    type(type_par_arr_info),                                intent(in   ) :: pai
-    integer,                                                intent(in   ) :: nz, nl
-    complex*16, dimension(pai%i1:pai%i2,1:nz,1:nl),         intent(in   ) :: d
-    complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), intent(  out) :: d_nih
+    type(type_par_arr_info),                                 intent(in   ) :: pai
+    integer,                                                 intent(in   ) :: nz, nl
+    complex(dp), dimension(pai%i1:pai%i2,1:nz,1:nl),         intent(in   ) :: d
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), intent(  out) :: d_nih
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'dist_to_hybrid_complex_3D'
@@ -507,9 +507,9 @@ contains
   subroutine hybrid_to_dist_complex_1D( pai, d_nih, d)
 
     ! In/output variables:
-    type(type_par_arr_info),                      intent(in   ) :: pai
-    complex*16, dimension(pai%i1_nih:pai%i2_nih), intent(in   ) :: d_nih
-    complex*16, dimension(pai%i1:pai%i2),         intent(  out) :: d
+    type(type_par_arr_info),                       intent(in   ) :: pai
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih), intent(in   ) :: d_nih
+    complex(dp), dimension(pai%i1:pai%i2),         intent(  out) :: d
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'hybrid_to_dist_complex_1D'
@@ -528,10 +528,10 @@ contains
   subroutine hybrid_to_dist_complex_2D( pai, nz, d_nih, d)
 
     ! In/output variables:
-    type(type_par_arr_info),                           intent(in   ) :: pai
-    integer,                                           intent(in   ) :: nz
-    complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz), intent(in   ) :: d_nih
-    complex*16, dimension(pai%i1:pai%i2,1:nz),         intent(  out) :: d
+    type(type_par_arr_info),                            intent(in   ) :: pai
+    integer,                                            intent(in   ) :: nz
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz), intent(in   ) :: d_nih
+    complex(dp), dimension(pai%i1:pai%i2,1:nz),         intent(  out) :: d
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'hybrid_to_dist_complex_2D'
@@ -550,10 +550,10 @@ contains
   subroutine hybrid_to_dist_complex_3D( pai, nz, nl, d_nih, d)
 
     ! In/output variables:
-    type(type_par_arr_info),                                intent(in   ) :: pai
-    integer,                                                intent(in   ) :: nz, nl
-    complex*16, dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), intent(in   ) :: d_nih
-    complex*16, dimension(pai%i1:pai%i2,1:nz,1:nl),         intent(  out) :: d
+    type(type_par_arr_info),                                 intent(in   ) :: pai
+    integer,                                                 intent(in   ) :: nz, nl
+    complex(dp), dimension(pai%i1_nih:pai%i2_nih,1:nz,1:nl), intent(in   ) :: d_nih
+    complex(dp), dimension(pai%i1:pai%i2,1:nz,1:nl),         intent(  out) :: d
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'hybrid_to_dist_complex_3D'

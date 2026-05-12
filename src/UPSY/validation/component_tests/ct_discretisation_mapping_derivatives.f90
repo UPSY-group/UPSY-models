@@ -32,15 +32,14 @@ module ct_discretisation_mapping_derivatives
 contains
 
   !> Run all mapping/derivative tests.
-  subroutine run_all_map_deriv_tests( foldername_discretisation, test_mesh_filenames)
+  subroutine run_all_map_deriv_tests( output_dir, test_mesh_filenames)
 
     ! In/output variables:
-    character(len=*),               intent(in) :: foldername_discretisation
+    character(len=*),               intent(in) :: output_dir
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_all_map_deriv_tests'
-    character(len=1024)            :: foldername_map_deriv
     character(len=1024)            :: test_mesh_filename
     integer                        :: i
 
@@ -50,11 +49,9 @@ contains
     if (par%primary) write(0,*) '    Running mapping/derivative tests...'
     if (par%primary) write(0,*) ''
 
-    call create_map_deriv_tests_output_folder( foldername_discretisation, foldername_map_deriv)
-
     do i = 1, size(test_mesh_filenames)
       test_mesh_filename = trim(test_mesh_filenames( i))
-      call run_all_map_deriv_tests_on_mesh( foldername_map_deriv, test_mesh_filename)
+      call run_all_map_deriv_tests_on_mesh( output_dir, test_mesh_filename)
     end do
 
     if (par%primary) write(0,*) ''
@@ -64,47 +61,11 @@ contains
 
   end subroutine run_all_map_deriv_tests
 
-  !> Create the output folder for the mappoing/derivative tests
-  subroutine create_map_deriv_tests_output_folder( foldername_discretisation, foldername_map_deriv)
-
-    ! In/output variables:
-    character(len=*), intent(in)  :: foldername_discretisation
-    character(len=*), intent(out) :: foldername_map_deriv
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_map_deriv_tests_output_folder'
-    logical                        :: ex
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    foldername_map_deriv = trim(foldername_discretisation) // '/mapping_derivatives'
-
-    if (par%primary) then
-
-      ! Remove existing folder if necessary
-      inquire( file = trim( foldername_map_deriv) // '/.', exist = ex)
-      if (ex) then
-        call system('rm -rf ' // trim( foldername_map_deriv))
-      end if
-
-      ! Create the directory
-      call system('mkdir ' // trim( foldername_map_deriv))
-
-    end if
-    call MPI_BCAST( foldername_map_deriv, len(foldername_map_deriv), MPI_CHAR, 0, MPI_COMM_WORLD, ierr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine create_map_deriv_tests_output_folder
-
   !> Run all the mapping/derivative tests on a particular mesh
-  subroutine run_all_map_deriv_tests_on_mesh( foldername_discretisation, test_mesh_filename)
+  subroutine run_all_map_deriv_tests_on_mesh( output_dir, test_mesh_filename)
 
     ! In/output variables:
-    character(len=*), intent(in) :: foldername_discretisation
+    character(len=*), intent(in) :: output_dir
     character(len=*), intent(in) :: test_mesh_filename
 
     ! Local variables:
@@ -133,17 +94,17 @@ contains
 
     test_function_ptr => test_function_linear
     function_name = 'linear'
-    call run_all_map_deriv_tests_on_mesh_with_function( foldername_discretisation, &
+    call run_all_map_deriv_tests_on_mesh_with_function( output_dir, &
       test_mesh_filename, mesh, test_function_ptr, function_name)
 
     test_function_ptr => test_function_quadratic
     function_name = 'quadratic'
-    call run_all_map_deriv_tests_on_mesh_with_function( foldername_discretisation, &
+    call run_all_map_deriv_tests_on_mesh_with_function( output_dir, &
       test_mesh_filename, mesh, test_function_ptr, function_name)
 
     test_function_ptr => test_function_periodic
     function_name = 'periodic'
-    call run_all_map_deriv_tests_on_mesh_with_function( foldername_discretisation, &
+    call run_all_map_deriv_tests_on_mesh_with_function( output_dir, &
       test_mesh_filename, mesh, test_function_ptr, function_name)
 
     ! Remove routine from call stack
@@ -152,11 +113,11 @@ contains
   end subroutine run_all_map_deriv_tests_on_mesh
 
   !> Run all the mapping/derivative tests on a particular mesh with a particular test function
-  subroutine run_all_map_deriv_tests_on_mesh_with_function( foldername_discretisation, &
+  subroutine run_all_map_deriv_tests_on_mesh_with_function( output_dir, &
     test_mesh_filename, mesh, test_function_ptr, function_name)
 
     ! In/output variables:
-    character(len=*),    intent(in)   :: foldername_discretisation
+    character(len=*),    intent(in)   :: output_dir
     character(len=*),    intent(in)   :: test_mesh_filename
     type(type_mesh),     intent(in)   :: mesh
     procedure(test_function), pointer :: test_function_ptr
@@ -196,7 +157,7 @@ contains
 
     ! Create an output file for the mapping/derivative tests, for a particular mesh with a particular test function
     call  write_map_deriv_test_results_to_file( &
-      foldername_discretisation, test_mesh_filename, mesh, function_name, &
+      output_dir, test_mesh_filename, mesh, function_name, &
       d_a_ex, ddx_a_ex, ddy_a_ex, &
       d_b_ex, ddx_b_ex, ddy_b_ex, d2dx2_b_ex, d2dxdy_b_ex, d2dy2_b_ex, &
       d_a_b, d_b_a, &
@@ -414,7 +375,7 @@ contains
 
   !> Write the results of the mapping/derivative tests, for a particular mesh with a particular test function, to a file.
   subroutine write_map_deriv_test_results_to_file( &
-    foldername_discretisation, test_mesh_filename, mesh, function_name, &
+    output_dir, test_mesh_filename, mesh, function_name, &
     d_a_ex, ddx_a_ex, ddy_a_ex, &
     d_b_ex, ddx_b_ex, ddy_b_ex, d2dx2_b_ex, d2dxdy_b_ex, d2dy2_b_ex, &
     d_a_b, d_b_a, &
@@ -425,7 +386,7 @@ contains
     ddx_b_b_2nd, ddy_b_b_2nd, d2dx2_b_b_2nd, d2dxdy_b_b_2nd, d2dy2_b_b_2nd)
 
     ! In/output variables:
-    character(len=*),       intent(in) :: foldername_discretisation
+    character(len=*),       intent(in) :: output_dir
     character(len=*),       intent(in) :: test_mesh_filename
     type(type_mesh),        intent(in) :: mesh
     character(len=1024),    intent(in) :: function_name
@@ -452,7 +413,7 @@ contains
     mesh_name = test_mesh_filename( 1:len_trim( test_mesh_filename)-3)
     i = index( mesh_name, '/', back = .true.)
     mesh_name = mesh_name( i+1:len_trim( mesh_name))
-    filename = trim(foldername_discretisation) // '/res_' // &
+    filename = trim(output_dir) // '/res_map_deriv_' // &
       trim( mesh_name) // '_' // trim( function_name) // '.nc'
     call create_new_netcdf_file_for_writing( filename, ncid)
     call setup_mesh_in_netcdf_file( filename, ncid, mesh)

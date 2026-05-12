@@ -72,12 +72,12 @@ CONTAINS
     call exchange_halos( mesh, laddie%Hstar_b)
     call exchange_halos( mesh, npx_ref%H_b)
 
-    call checksum( laddie%detr       , 'laddie%detr       ', mesh%pai_V)
-    call checksum( laddie%Hdrho_amb  , 'laddie%Hdrho_amb  ', mesh%pai_V)
-    call checksum( laddie%detr_b     , 'laddie%detr_b     ', mesh%pai_Tri)
-    call checksum( laddie%Hdrho_amb_b, 'laddie%Hdrho_amb_b', mesh%pai_Tri)
-    call checksum( laddie%Hstar_b    , 'laddie%Hstar_b    ', mesh%pai_Tri)
-    call checksum( laddie%Hstar_c    , 'laddie%Hstar_c    ', mesh%pai_E)
+    call checksum( mesh%pai_V  , laddie%detr       , 'laddie%detr       ')
+    call checksum( mesh%pai_V  , laddie%Hdrho_amb  , 'laddie%Hdrho_amb  ')
+    call checksum( mesh%pai_Tri, laddie%detr_b     , 'laddie%detr_b     ')
+    call checksum( mesh%pai_Tri, laddie%Hdrho_amb_b, 'laddie%Hdrho_amb_b')
+    call checksum( mesh%pai_Tri, laddie%Hstar_b    , 'laddie%Hstar_b    ')
+    call checksum( mesh%pai_E  , laddie%Hstar_c    , 'laddie%Hstar_c    ')
 
     ! Bunch of derivatives
     call exchange_halos( mesh, laddie%drho_amb)
@@ -86,11 +86,11 @@ CONTAINS
     CALL ddx_a_b_2D( mesh, Hstar, laddie%dH_dx_b, d_a_is_hybrid = .true., ddx_b_is_hybrid = .true.)
     CALL ddy_a_b_2D( mesh, Hstar, laddie%dH_dy_b, d_a_is_hybrid = .true., ddy_b_is_hybrid = .true.)
 
-    call checksum( laddie%drho_amb      , 'laddie%drho_amb      ', mesh%pai_V)
-    call checksum( laddie%ddrho_amb_dx_b, 'laddie%ddrho_amb_dx_b', mesh%pai_Tri)
-    call checksum( laddie%ddrho_amb_dy_b, 'laddie%ddrho_amb_dy_b', mesh%pai_Tri)
-    call checksum( laddie%dH_dx_b       , 'laddie%dH_dx_b       ', mesh%pai_Tri)
-    call checksum( laddie%dH_dy_b       , 'laddie%dH_dy_b       ', mesh%pai_Tri)
+    call checksum( mesh%pai_V  , laddie%drho_amb      , 'laddie%drho_amb      ')
+    call checksum( mesh%pai_Tri, laddie%ddrho_amb_dx_b, 'laddie%ddrho_amb_dx_b')
+    call checksum( mesh%pai_Tri, laddie%ddrho_amb_dy_b, 'laddie%ddrho_amb_dy_b')
+    call checksum( mesh%pai_Tri, laddie%dH_dx_b       , 'laddie%dH_dx_b       ')
+    call checksum( mesh%pai_Tri, laddie%dH_dy_b       , 'laddie%dH_dy_b       ')
 
     ! Compute divergence of momentum
     SELECT CASE(C%choice_laddie_momentum_advection)
@@ -188,8 +188,8 @@ CONTAINS
       END IF ! (laddie%mask_b( ti))
     END DO !ti = mesh%ti1, mesh%ti2
 
-    call checksum( npx_new%U, 'npx_new%U', mesh%pai_Tri)
-    call checksum( npx_new%V, 'npx_new%V', mesh%pai_Tri)
+    call checksum( mesh%pai_Tri, npx_new%U, 'npx_new%U')
+    call checksum( mesh%pai_Tri, npx_new%V, 'npx_new%V')
 
     ! Map velocities to a and c grid
     call exchange_halos( mesh, npx_new%U)
@@ -198,10 +198,10 @@ CONTAINS
     CALL map_b_a_2D( mesh, npx_new%U, npx_new%U_a, d_b_is_hybrid = .true., d_a_is_hybrid = .true.)
     CALL map_b_a_2D( mesh, npx_new%V, npx_new%V_a, d_b_is_hybrid = .true., d_a_is_hybrid = .true.)
 
-    call checksum( npx_new%U_c, 'npx_new%U_c', mesh%pai_E)
-    call checksum( npx_new%V_c, 'npx_new%V_c', mesh%pai_E)
-    call checksum( npx_new%U_a, 'npx_new%U_a', mesh%pai_V)
-    call checksum( npx_new%V_a, 'npx_new%V_a', mesh%pai_V)
+    call checksum( mesh%pai_E, npx_new%U_c, 'npx_new%U_c')
+    call checksum( mesh%pai_E, npx_new%V_c, 'npx_new%V_c')
+    call checksum( mesh%pai_V, npx_new%U_a, 'npx_new%U_a')
+    call checksum( mesh%pai_V, npx_new%V_a, 'npx_new%V_a')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -271,8 +271,8 @@ CONTAINS
       END IF !(laddie%mask_b( ti)
     END DO !ti = mesh%ti1, mesh%ti2
 
-    call checksum( laddie%viscU, 'laddie%viscU', mesh%pai_Tri)
-    call checksum( laddie%viscV, 'laddie%viscV', mesh%pai_Tri)
+    call checksum( mesh%pai_Tri, laddie%viscU, 'laddie%viscU')
+    call checksum( mesh%pai_Tri, laddie%viscV, 'laddie%viscV')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -357,8 +357,8 @@ CONTAINS
 
     end do ! do ti = mesh%ti1, mesh%ti2
 
-    call checksum( laddie%divQU, 'laddie%divQU', mesh%pai_Tri)
-    call checksum( laddie%divQV, 'laddie%divQV', mesh%pai_Tri)
+    call checksum( mesh%pai_Tri, laddie%divQU, 'laddie%divQU')
+    call checksum( mesh%pai_Tri, laddie%divQV, 'laddie%divQV')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -93,7 +93,7 @@ contains
     par%primary = (par%i == 0)
 
     ! Safety
-    if (.not. par%n == 7) stop 'multi-node unit tests should be run on 4 processes!'
+    if (.not. par%n == 7) stop 'multi-node unit tests should be run on 7 processes!'
 
     if (par%i == 0 .or. par%i == 1) then
       call MPI_COMM_SPLIT( MPI_COMM_WORLD, 0, par%i, par%mpi_comm_node, ierr)

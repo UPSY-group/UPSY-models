@@ -125,13 +125,14 @@ contains
 
   end subroutine save_graph_pair_as_netcdf
 
-  subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid)
+  subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid, do_include_lonlat)
     !< Set up a regular x/y-grid in an existing NetCDF file
 
     ! In/output variables:
-    character(len=*), intent(in   ) :: filename
-    integer,          intent(in   ) :: ncid
-    type(type_grid),  intent(in   ) :: grid
+    character(len=*),  intent(in   ) :: filename
+    integer,           intent(in   ) :: ncid
+    type(type_grid),   intent(in   ) :: grid
+    logical, optional, intent(in   ) :: do_include_lonlat
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_xy_grid_in_netcdf_file'
@@ -141,9 +142,16 @@ contains
     integer                        :: id_var_y
     integer                        :: id_var_lon
     integer                        :: id_var_lat
+    logical                        :: do_include_lonlat_loc
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (present( do_include_lonlat)) then
+      do_include_lonlat_loc = do_include_lonlat
+    else
+      do_include_lonlat_loc = .true.
+    end if
 
     ! Create x/y dimensions
     call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_x), grid%nx, id_dim_x)
@@ -153,18 +161,20 @@ contains
 
     ! x
     call create_variable( filename, ncid, get_first_option_from_list( field_name_options_x), NF90_DOUBLE, (/ id_dim_x /), id_var_x)
-    call add_attribute_char( filename, ncid, id_var_x, 'long_name', 'x-coordinate')
+    call add_attribute_char( filename, ncid, id_var_x, 'long_name', 'x coordinate of projection')
+    call add_attribute_char( filename, ncid, id_var_x, 'standard_name', 'projection_x_coordinate')
     call add_attribute_char( filename, ncid, id_var_x, 'units'    , 'm'           )
     call write_var_primary( filename, ncid, id_var_x, grid%x)
 
     ! y
     call create_variable( filename, ncid, get_first_option_from_list( field_name_options_y), NF90_DOUBLE, (/ id_dim_y /), id_var_y)
-    call add_attribute_char( filename, ncid, id_var_y, 'long_name', 'y-coordinate')
+    call add_attribute_char( filename, ncid, id_var_y, 'long_name', 'y coordinate of projection')
+    call add_attribute_char( filename, ncid, id_var_y, 'standard_name', 'projection_y_coordinate')
     call add_attribute_char( filename, ncid, id_var_y, 'units'    , 'm'           )
     call write_var_primary( filename, ncid, id_var_y, grid%y)
 
     ! lon/lat-coordinates
-    if (allocated( grid%lon) .or. allocated( grid%lat)) then
+    if (do_include_lonlat_loc .and. (allocated( grid%lon) .or. allocated( grid%lat))) then
 
       ! Safety
       if (.not. allocated( grid%lon)) call crash('grid has lat but no lon coordinates!')
@@ -172,17 +182,19 @@ contains
 
       ! lon
       call create_variable( filename, ncid, get_first_option_from_list( field_name_options_lon), NF90_DOUBLE, (/ id_dim_x, id_dim_y /), id_var_lon)
-      call add_attribute_char( filename, ncid, id_var_lon, 'long_name', 'Longitude')
-      call add_attribute_char( filename, ncid, id_var_lon, 'units'    , 'degrees east')
+      call add_attribute_char( filename, ncid, id_var_lon, 'long_name', 'Longitude coordinate')
+      call add_attribute_char( filename, ncid, id_var_lon, 'standard_name', 'longitude')
+      call add_attribute_char( filename, ncid, id_var_lon, 'units'    , 'degrees_east')
       call write_var_primary( filename, ncid, id_var_lon, grid%lon)
 
       ! lat
       call create_variable( filename, ncid, get_first_option_from_list( field_name_options_lat), NF90_DOUBLE, (/ id_dim_x, id_dim_y /), id_var_lat)
-      call add_attribute_char( filename, ncid, id_var_lat, 'long_name', 'Latitude')
-      call add_attribute_char( filename, ncid, id_var_lat, 'units'    , 'degrees north')
+      call add_attribute_char( filename, ncid, id_var_lat, 'long_name', 'Latitude coordinate')
+      call add_attribute_char( filename, ncid, id_var_lat, 'standard_name', 'latitude')
+      call add_attribute_char( filename, ncid, id_var_lat, 'units'    , 'degrees_north')
       call write_var_primary( filename, ncid, id_var_lat, grid%lat)
 
-    end if ! if (allocated( grid%lon)) then
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -301,12 +313,12 @@ contains
     ! lambda_M
     call create_scalar_variable( filename, ncid, 'lambda_M', NF90_DOUBLE, id_var_lambda_M)
     call add_attribute_char( filename, ncid, id_var_lambda_M, 'long_name'  , 'Longitude of the pole of the oblique stereographic projection')
-    call add_attribute_char( filename, ncid, id_var_lambda_M, 'units', 'degrees east')
+    call add_attribute_char( filename, ncid, id_var_lambda_M, 'units', 'degrees_east')
 
     ! phi_M
     call create_scalar_variable( filename, ncid, 'phi_M', NF90_DOUBLE, id_var_phi_M)
     call add_attribute_char( filename, ncid, id_var_phi_M, 'long_name'  , 'Latitude of the pole of the oblique stereographic projection')
-    call add_attribute_char( filename, ncid, id_var_phi_M, 'units', 'degrees north')
+    call add_attribute_char( filename, ncid, id_var_phi_M, 'units', 'degrees_north')
 
     ! beta_stereo
     call create_scalar_variable( filename, ncid, 'beta_stereo', NF90_DOUBLE, id_var_beta_stereo)
@@ -446,10 +458,10 @@ contains
     call add_field_mesh_dp_2D_notime( filename, ncid, get_first_option_from_list( field_name_options_A), long_name = 'Voronoi cell area', units = 'm^2')
     call inquire_var(                 filename, ncid, get_first_option_from_list( field_name_options_A), id_var_A)
     ! lon
-    call add_field_mesh_dp_2D_notime( filename, ncid, get_first_option_from_list( field_name_options_lon), long_name = 'Longitude', units = 'degrees east')
+    call add_field_mesh_dp_2D_notime( filename, ncid, get_first_option_from_list( field_name_options_lon), long_name = 'Longitude', units = 'degrees_east')
     call inquire_var(                 filename, ncid, get_first_option_from_list( field_name_options_lon), id_var_lon)
     ! lat
-    call add_field_mesh_dp_2D_notime( filename, ncid, get_first_option_from_list( field_name_options_lat), long_name = 'Latitude' , units = 'degrees north')
+    call add_field_mesh_dp_2D_notime( filename, ncid, get_first_option_from_list( field_name_options_lat), long_name = 'Latitude' , units = 'degrees_north')
     call inquire_var(                 filename, ncid, get_first_option_from_list( field_name_options_lat), id_var_lat)
 
     ! == Write mesh data to file

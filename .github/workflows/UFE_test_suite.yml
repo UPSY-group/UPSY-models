@@ -62,4 +62,4 @@ jobs:
   ISMIP7_demo_small:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
-      test_path: automated_testing/UFEMISM/integrated_test_ISMIP7_demo_small_01
+      test_path: automated_testing/UFEMISM/integrated_test_ISMIP7_demo_small

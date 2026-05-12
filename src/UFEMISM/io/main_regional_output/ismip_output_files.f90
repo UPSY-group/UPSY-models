@@ -892,7 +892,7 @@ contains
     call create_new_netcdf_file_for_writing( field%filename, ncid)
 
     ! Set up the grid in the file
-    call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_output%grid)
+    call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_output%grid, do_include_lonlat = .false.)
 
     ! Add time dimension to the file
     select case (field%fieldtype)

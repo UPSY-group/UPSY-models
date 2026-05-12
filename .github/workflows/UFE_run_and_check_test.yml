@@ -48,11 +48,12 @@ jobs:
       - name: Compile UFEMISM
         run: csh compile_UFEMISM.csh  dev  clean
 
-      - name: Set up Python environment for checksum tools
-        run: |
-          python3 -m venv .venv
-          .venv/bin/python3 -m pip install --upgrade pip
-          .venv/bin/python3 -m pip install numpy netCDF4
+      - name: Set up Conda environment
+        uses: conda-incubator/setup-miniconda@v3
+        with:
+          activate-environment: upsy
+          environment-file: environment.yml
+          auto-activate-base: false
 
     # Run the test and check its results against the reference
     # ========================================================
@@ -65,5 +66,5 @@ jobs:
 
       - name: Check test result
         run: |
-          .venv/bin/python3 automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
-          .venv/bin/python3 automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}
+          python automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
+          python automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}

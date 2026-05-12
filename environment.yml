@@ -2,14 +2,14 @@ name: upsy
 channels:
   - conda-forge
 dependencies:
-  - python >=3.12
+  - python=3.12
   - cartopy
   - cmocean
   - dask
   - geopandas
   - matplotlib
-  - netcdf4
-  - numpy
+  - netcdf4=1.7.4
+  - numpy=2.4.4
   - pandas
   - pyproj
   - pyshp

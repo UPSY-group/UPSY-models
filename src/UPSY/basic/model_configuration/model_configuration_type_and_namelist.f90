@@ -1055,6 +1055,7 @@ module model_configuration_type_and_namelist
 
     ! Flow extension beneath regions of melt-through
     logical             :: laddie_extend_flow_melt_through_config       = .false.                          ! Whether or not to solve for U, V, T, S, H in regions of melt-through, default = false
+    logical             :: laddie_extend_flow_melt_through_allow_melt_config =.false.                      ! Wheter or not to compute melt beneath areas of melt-through, default = false, do not compute melt
 
   ! == Lateral mass balance
   ! =======================
@@ -2288,6 +2289,7 @@ module model_configuration_type_and_namelist
 
     ! Flow extension beneath regions of melt-through
     logical             :: laddie_extend_flow_melt_through
+    logical             :: laddie_extend_flow_melt_through_allow_melt
 
   ! == Lateral mass balance
   ! =======================
@@ -3175,6 +3177,7 @@ contains
       transects_SGD_config                                        , &
       distribute_SGD_config                                       , &
       laddie_extend_flow_melt_through_config                      , &
+      laddie_extend_flow_melt_through_allow_melt_config           , &
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
       dt_LMB_config                                               , &
@@ -4390,6 +4393,7 @@ contains
 
     ! Flow extension beneath regions of melt-through
     C%laddie_extend_flow_melt_through                        = laddie_extend_flow_melt_through_config
+    C%laddie_extend_flow_melt_through_allow_melt             = laddie_extend_flow_melt_through_allow_melt_config
 
     ! == Lateral mass balance
     ! =======================

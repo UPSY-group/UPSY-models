@@ -54,6 +54,7 @@ jobs:
           activate-environment: upsy
           environment-file: environment.yml
           auto-activate-base: false
+          conda-remove-defaults: true
 
     # Run the test and check its results against the reference
     # ========================================================

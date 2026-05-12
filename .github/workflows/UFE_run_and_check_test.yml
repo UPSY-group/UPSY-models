@@ -61,9 +61,11 @@ jobs:
     # ========================================================
 
       - name: Run test
+        shell: micromamba-shell {0}
         run: csh ${{ inputs.test_path }}/test_script.csh
 
       - name: Show checksum logfile diff
+        shell: micromamba-shell {0}
         run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result

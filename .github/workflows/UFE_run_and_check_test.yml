@@ -67,6 +67,7 @@ jobs:
         run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result
+        shell: micromamba-shell {0}
         run: |
           python automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
           python automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}

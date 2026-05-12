@@ -9,7 +9,7 @@ dependencies:
   - geopandas
   - matplotlib
   - netcdf4=1.7.4
-  - numpy=2.4.4
+  - numpy=2.4.3
   - pandas
   - pyproj
   - pyshp

@@ -8,7 +8,8 @@ set all_tests = ( \
   integrated_test_MISMIPplus_small \
   integrated_test_Berends2023nudging_exp1_small \
   integrated_test_Berends2023nudging_exp2_small \
-  integrated_test_Ant_init_small_01)
+  integrated_test_Ant_init_small_01 \
+  integrated_test_ISMIP7_demo_small)
 
 foreach test_name ($all_tests)
 

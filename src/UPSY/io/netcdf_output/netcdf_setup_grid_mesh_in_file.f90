@@ -125,13 +125,14 @@ contains
 
   end subroutine save_graph_pair_as_netcdf
 
-  subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid)
+  subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid, do_include_lonlat)
     !< Set up a regular x/y-grid in an existing NetCDF file
 
     ! In/output variables:
-    character(len=*), intent(in   ) :: filename
-    integer,          intent(in   ) :: ncid
-    type(type_grid),  intent(in   ) :: grid
+    character(len=*),  intent(in   ) :: filename
+    integer,           intent(in   ) :: ncid
+    type(type_grid),   intent(in   ) :: grid
+    logical, optional, intent(in   ) :: do_include_lonlat
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_xy_grid_in_netcdf_file'
@@ -141,9 +142,16 @@ contains
     integer                        :: id_var_y
     integer                        :: id_var_lon
     integer                        :: id_var_lat
+    logical                        :: do_include_lonlat_loc
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (present( do_include_lonlat)) then
+      do_include_lonlat_loc = do_include_lonlat
+    else
+      do_include_lonlat_loc = .true.
+    end if
 
     ! Create x/y dimensions
     call create_dimension( filename, ncid, get_first_option_from_list( field_name_options_x), grid%nx, id_dim_x)
@@ -166,7 +174,7 @@ contains
     call write_var_primary( filename, ncid, id_var_y, grid%y)
 
     ! lon/lat-coordinates
-    if (allocated( grid%lon) .or. allocated( grid%lat)) then
+    if (do_include_lonlat_loc .and. (allocated( grid%lon) .or. allocated( grid%lat))) then
 
       ! Safety
       if (.not. allocated( grid%lon)) call crash('grid has lat but no lon coordinates!')
@@ -186,7 +194,7 @@ contains
       call add_attribute_char( filename, ncid, id_var_lat, 'units'    , 'degrees_north')
       call write_var_primary( filename, ncid, id_var_lat, grid%lat)
 
-    end if ! if (allocated( grid%lon)) then
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

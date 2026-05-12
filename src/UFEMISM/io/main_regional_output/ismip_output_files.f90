@@ -3,7 +3,7 @@ module ismip_output_files
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_SUM
   use UPSY_main, only: UPSY
   use parameters
-  use precisions, only: dp 
+  use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
@@ -58,13 +58,13 @@ contains
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: gl_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
     logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
-    real( dp)                                            :: deltat 
+    real( dp)                                            :: deltat
     integer                                              :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! if no ISMIP output should be created, do nothing 
+    ! if no ISMIP output should be created, do nothing
     if (.not. C%do_create_ismip_output) then
       call finalise_routine( routine_name)
       return
@@ -172,7 +172,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! if no ISMIP output should be created, do nothing 
+    ! if no ISMIP output should be created, do nothing
     if (.not. C%do_create_ismip_output) then
       call finalise_routine( routine_name)
       return
@@ -356,6 +356,7 @@ contains
     character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_grid'
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
     real(dp), dimension(:),   allocatable :: dTdzeta
+    real(dp), dimension(C%nz)             :: d_zeta_temp
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux, gl_flux
     integer                               :: vi
     real(dp)                              :: deltat
@@ -428,7 +429,7 @@ contains
             else
               d_mesh_vec_partial_2D( vi) = NaN
             end if
-          end do 
+          end do
           field%is_initial = .false.
         else
           d_mesh_vec_partial_2D = field%accum / deltat
@@ -448,7 +449,7 @@ contains
             else
               d_mesh_vec_partial_2D( vi) = NaN
             end if
-          end do 
+          end do
           field%is_initial = .false.
         else
           d_mesh_vec_partial_2D = field%accum / deltat
@@ -508,7 +509,8 @@ contains
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%Hi( vi) > 0._dp) then
-            d_mesh_vec_partial_2D( vi) = vertical_average( region%mesh%zeta, region%ice%Ti( vi, :))
+            d_zeta_temp = region%ice%Ti( vi, :)
+            d_mesh_vec_partial_2D( vi) = vertical_average( region%mesh%zeta, d_zeta_temp)
           else
             d_mesh_vec_partial_2D( vi) = NaN
           end if
@@ -522,7 +524,8 @@ contains
         allocate( dTdzeta( 1:region%mesh%nz))
         do vi = region%mesh%vi1, region%mesh%vi2
           if (region%ice%mask_grounded_ice( vi)) then
-            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
+            d_zeta_temp = region%ice%Ti( vi, :)
+            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
             d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
           else
             d_mesh_vec_partial_2D( vi) = NaN
@@ -577,7 +580,7 @@ contains
 
       ! Basal drag
       case ('strbasemag')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
       ! Lateral mass balance
@@ -892,7 +895,7 @@ contains
     call create_new_netcdf_file_for_writing( field%filename, ncid)
 
     ! Set up the grid in the file
-    call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_output%grid)
+    call setup_xy_grid_in_netcdf_file( field%filename, ncid, ismip_output%grid, do_include_lonlat = .false.)
 
     ! Add time dimension to the file
     select case (field%fieldtype)
@@ -1084,10 +1087,10 @@ contains
     call initialise_ISMIP_field( region, region%ismip_output%litempavg, 'litempavg' , &
       'Depth average temperature', 'land_ice_temperature', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempgradgr, 'litempgradgr' , &
-      'Vertical Basal temperature gradient beneath grounded ice sheet', & 
+      'Vertical Basal temperature gradient beneath grounded ice sheet', &
       'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempgradfl, 'litempgradfl' , &
-      'Vertical Basal temperature gradient beneath floating ice sheet', & 
+      'Vertical Basal temperature gradient beneath floating ice sheet', &
       'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempbotgr, 'litempbotgr' , &
       'Basal temperature beneath grounded ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')

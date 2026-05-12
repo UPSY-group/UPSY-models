@@ -33,4 +33,4 @@ foreach experiment ($experiments)
   end
 end
 
-.venv/bin/python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}
+python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

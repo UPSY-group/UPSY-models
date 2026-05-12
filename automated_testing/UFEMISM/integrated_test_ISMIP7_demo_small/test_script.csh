@@ -7,4 +7,4 @@ mpiexec  -n 2  UFEMISM_program  ${test_dir}/config.cfg
 
 mv ${test_dir}/results/CORE/*nc  ${test_dir}/results
 
-.venv/bin/python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}
+python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

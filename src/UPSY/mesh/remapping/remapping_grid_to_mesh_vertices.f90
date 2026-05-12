@@ -56,6 +56,7 @@ contains
     type(tMat)                            :: M_cons_1st_order, M_cons_2nd_order
     type(type_sparse_matrix_CSR_dp)       :: grid_M_ddx_CSR, grid_M_ddy_CSR
     character(len=1024)                   :: filename_grid, filename_mesh
+    type(PetscErrorCode)                  :: perr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -96,10 +97,16 @@ contains
       case default
         call crash('unknown method for grid_to_mesh remapping "' // trim( map%method) // '"')
       case ('1st_order_conservative')
-        map%M = M_cons_1st_order
+        call MatDuplicate( M_cons_1st_order, MAT_COPY_VALUES, map%M, perr)
       case ('2nd_order_conservative')
-        map%M = M_cons_2nd_order
+        call MatDuplicate( M_cons_2nd_order, MAT_COPY_VALUES, map%M, perr)
     end select
+
+    call MatDestroy( w0, perr)
+    call MatDestroy( w1x, perr)
+    call MatDestroy( w1y, perr)
+    call MatDestroy( M_cons_1st_order, perr)
+    call MatDestroy( M_cons_2nd_order, perr)
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
@@ -554,6 +561,12 @@ contains
     call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, perr)
     call MatAXPY( M_cons_2nd_order, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
     call MatAXPY( M_cons_2nd_order, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+
+    ! Destroy matrices
+    call MatDestroy( grid_M_ddx, perr)
+    call MatDestroy( grid_M_ddy, perr)
+    call MatDestroy( M1, perr)
+    call MatDestroy( M2, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

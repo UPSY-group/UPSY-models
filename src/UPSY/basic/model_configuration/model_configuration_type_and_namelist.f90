@@ -742,7 +742,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: choice_ocean_model_ANT_config                = 'none'
 
     ! Choice of idealised ocean model
-    character(len=1024) :: choice_ocean_model_idealised_config          = ''                               ! Choice of idealised ocean forcing: 'ISOMIP', 'TANH', 'LINEAR'
+    character(len=1024) :: choice_ocean_model_idealised_config          = ''                               ! Choice of idealised ocean forcing: 'ISOMIP', 'TANH', 'LINEAR', 'uniform'
     character(len=1024) :: choice_ocean_isomip_scenario_config          = ''                               ! Scenario when using 'ISOMIP' forcing: 'WARM' or 'COLD'
     real(dp)            :: ocean_tanh_deep_temperature_config           = 1.0_dp                           ! [degC] Deep ocean temperature when using 'TANH' forcing
     real(dp)            :: ocean_tanh_thermocline_depth_config          = 100.0_dp                         ! [m]    Depth of thermocline when using 'TANH' forcing
@@ -756,6 +756,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_lin_therm_deep_temperature_config      = 1.2_dp                           ! [degC] Deep temperature when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_thermocline_top_config       = 200.0_dp                         ! [m] Top of thermocline depth when using 'LINEAR_THERMOCLINE'
     real(dp)            :: ocean_lin_therm_thermocline_bottom_config    = 600.0_dp                         ! [m] Bottom of thermocline depth when using 'LINEAR_THERMOCLINE'
+    real(dp)            :: ocean_uniform_T_config                       = 0.0_dp                           ! [degC] Uniform ocean temperature when using 'uniform' forcing
+    real(dp)            :: ocean_uniform_S_config                       = 33.8_dp                          ! [psu] Uniform ocean salinity when using 'uniform' forcing
 
     ! Choice of realistic ocean model
     character(len=1024) :: choice_ocean_model_realistic_config          = ''
@@ -803,6 +805,10 @@ module model_configuration_type_and_namelist
     ! Settings for the snapshot_plus_anomalies ocean model
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot_config    = ''                               ! File containing the ocean snapshot (e.g. World Ocean Atlas)
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies_config   = ''                               ! File containing the ocean anomalies (e.g. from a GCM projection)
+
+    ! Settings for the ISMIP7 ocean model
+    character(len=1024) :: ocean_ISMIP7_forcing_foldername_config       = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the ocean files are located in /path/to/base/folder/thetao/version)
+    character(len=1024) :: ocean_ISMIP7_forcing_version_config          = ''
 
   ! == Surface mass balance
   ! =======================
@@ -886,6 +892,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB_config  = ''                               ! File containing the SMB snapshot (e.g. from a RACMO historical simulation)
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies_config     = ''                               ! File containing the SMB+T2m anomalies (e.g. from a GCM projection)
 
+    ! Settings for the ISMIP7 SMB model
+    character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline_config         = ''                               ! How to define the baseline SMB for the anomalies: 'yearly' (i.e. use the provided yearly acabf fields) or 'fixed' (i.e. use a separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation)
+    character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed_config = ''                               ! Path to the separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation
+    character(len=1024) :: SMB_ISMIP7_choice_refgeo_config               = ''                               ! Which reference geometry to use as the baseline for calculating delta_SMB = dSMB/dz * delta_s: 'init', 'PD'
+    character(len=1024) :: SMB_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the SMB files are located in /path/to/base/folder/acabf/version)
+    character(len=1024) :: SMB_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the SMB files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
+
   ! == Basal mass balance
   ! =====================
 
@@ -947,6 +960,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB_config                           = 0._dp
     real(dp)            :: uniform_BMB_ROI_config                       = 0._dp
+    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp               
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma_config                  = 99.32E-5
@@ -1147,7 +1161,6 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output_config               = .true.                          !     Whether or not NetCDF output files should be created at all
-    logical             :: do_create_ismip_output_config                = .false.                          !     Whether or not ISMIP-specific output files should be created at all
     CHARACTER(LEN=1024) :: output_precision_config                      = 'double'                        !     Precision of floating-point output fields ('single' [32-bit], 'double' [64-bit])
     logical             :: do_compress_output_config                    = .false.                         !     Whether or not to use the NetCDF 'shuffle' and 'deflate' options to (losslessly) compress output
     real(dp)            :: dt_output_config                             = 1000._dp                        !     Time step for writing output
@@ -1161,6 +1174,21 @@ module model_configuration_type_and_namelist
     real(dp)            :: dx_output_grid_ROI_EAS_config                = 5E3_dp                          ! [m] Horizontal resolution for the square grid used for output for the region of interest for Eurasia
     real(dp)            :: dx_output_grid_ROI_GRL_config                = 5E3_dp                          ! [m] Horizontal resolution for the square grid used for output for the region of interest for Greenland
     real(dp)            :: dx_output_grid_ROI_ANT_config                = 5E3_dp                          ! [m] Horizontal resolution for the square grid used for output for the region of interest for Antarctica
+
+    ! ISMIP
+    logical             :: do_create_ismip_output_config                = .false.                         ! Whether or not ISMIP-specific output files should be created at all
+    character(len=1024) :: ismip_scenario_name_config                   = 'ctrl'                          ! Scenario name for ISMIP output
+    character(len=1024) :: ismip_group_name_config                      = 'IMAU'                          ! Group name included in ISMIP output files
+    character(len=1024) :: ismip_model_name_config                      = 'UFEMISM1'                      ! Model name to which numbers can be added for variants
+    character(len=4)    :: ismip_member_id_config                       = 'm001'                          ! ISM member id
+    character(len=4)    :: ismip_forcing_member_id_config               = 'f001'                          ! Forcing member id
+    character(len=4)    :: ismip_counter_config                         = 'C001'                          ! Counter
+    character(len=1024) :: ismip_esm_name_config                        = 'CESM2-WACCM'                   ! ESM forcing
+    character(len=1024) :: ismip_contact_name_config                    = ''                              ! Contact name for metadata
+    character(len=1024) :: ismip_contact_email_config                   = ''                              ! Contact email for metadata
+    character(len=1024) :: ismip_conventions_config                     = 'CF-1.10'                        ! CF conventions for metadata
+
+    real(dp)            :: dt_output_ismip_config                       = 1._dp                           ! Timestep for writing ISMIP output
 
     ! Transects
     character(len=1024) :: transects_NAM_config                         = ''                              ! List of transects to use for North America
@@ -1961,6 +1989,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: ocean_lin_therm_deep_temperature
     real(dp)            :: ocean_lin_therm_thermocline_top
     real(dp)            :: ocean_lin_therm_thermocline_bottom
+    real(dp)            :: ocean_uniform_T
+    real(dp)            :: ocean_uniform_S
 
     ! Choice of realistic ocean model
     character(len=1024) :: choice_ocean_model_realistic
@@ -2008,6 +2038,10 @@ module model_configuration_type_and_namelist
     ! Settings for the snapshot_plus_anomalies ocean model
     character(len=1024) :: ocean_snp_p_anml_filename_snapshot
     character(len=1024) :: ocean_snp_p_anml_filename_anomalies
+
+    ! Settings for the ISMIP7 ocean model
+    character(len=1024) :: ocean_ISMIP7_forcing_foldername
+    character(len=1024) :: ocean_ISMIP7_forcing_version
 
   ! == Surface mass balance
   ! =======================
@@ -2092,6 +2126,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_snp_p_anml_filename_snapshot_SMB
     character(len=1024) :: SMB_snp_p_anml_filename_anomalies
 
+    ! Settings for the ISMIP7 SMB model
+    character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline
+    character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed
+    character(len=1024) :: SMB_ISMIP7_choice_refgeo
+    character(len=1024) :: SMB_ISMIP7_forcing_foldername
+    character(len=1024) :: SMB_ISMIP7_forcing_version
+
   ! == Basal mass balance
   ! =====================
 
@@ -2153,6 +2194,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB
     real(dp)            :: uniform_BMB_ROI
+    real(dp)            :: uniform_BMB_t_start
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma
@@ -2348,7 +2390,6 @@ module model_configuration_type_and_namelist
 
     ! Basic settings
     logical             :: do_create_netcdf_output
-    logical             :: do_create_ismip_output
     CHARACTER(LEN=1024) :: output_precision
     logical             :: do_compress_output
     real(dp)            :: dt_output
@@ -2362,6 +2403,20 @@ module model_configuration_type_and_namelist
     real(dp)            :: dx_output_grid_ROI_EAS
     real(dp)            :: dx_output_grid_ROI_GRL
     real(dp)            :: dx_output_grid_ROI_ANT
+
+    ! ISMIP
+    logical             :: do_create_ismip_output
+    character(len=1024) :: ismip_scenario_name
+    character(len=1024) :: ismip_group_name
+    character(len=1024) :: ismip_model_name
+    character(len=4)    :: ismip_member_id
+    character(len=4)    :: ismip_forcing_member_id
+    character(len=4)    :: ismip_counter
+    character(len=1024) :: ismip_esm_name
+    character(len=1024) :: ismip_contact_name
+    character(len=1024) :: ismip_contact_email
+    character(len=1024) :: ismip_conventions
+    real(dp)            :: dt_output_ismip
 
     ! Transects
     character(len=1024) :: transects_NAM
@@ -2942,6 +2997,8 @@ contains
       ocean_lin_therm_deep_temperature_config                     , &
       ocean_lin_therm_thermocline_top_config                      , &
       ocean_lin_therm_thermocline_bottom_config                   , &
+      ocean_uniform_T_config                                      , &
+      ocean_uniform_S_config                                      , &
       choice_ocean_model_realistic_config                         , &
       filename_ocean_snapshot_NAM_config                          , &
       filename_ocean_snapshot_EAS_config                          , &
@@ -2971,6 +3028,8 @@ contains
       filename_ocean_GI_ANT_config                                , &
       ocean_snp_p_anml_filename_snapshot_config                   , &
       ocean_snp_p_anml_filename_anomalies_config                  , &
+      ocean_ISMIP7_forcing_foldername_config                      , &
+      ocean_ISMIP7_forcing_version_config                         , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -3027,6 +3086,11 @@ contains
       SMB_snp_p_anml_filename_snapshot_T2m_config                 , &
       SMB_snp_p_anml_filename_snapshot_SMB_config                 , &
       SMB_snp_p_anml_filename_anomalies_config                    , &
+      SMB_ISMIP7_choice_SMB_baseline_config                       , &
+      SMB_ISMIP7_forcing_foldername_config                        , &
+      SMB_ISMIP7_forcing_version_config                           , &
+      SMB_ISMIP7_filename_SMB_baseline_fixed_config               , &
+      SMB_ISMIP7_choice_refgeo_config                             , &
       do_asynchronous_BMB_config                                  , &
       dt_BMB_config                                               , &
       dt_BMB_reinit_config                                        , &
@@ -3061,6 +3125,7 @@ contains
       choice_BMB_model_parameterised_config                       , &
       uniform_BMB_config                                          , &
       uniform_BMB_ROI_config                                      , &
+      uniform_BMB_t_start_config                                  , &
       BMB_Favier2019_gamma_config                                 , &
       BMB_Holland_Cmelt_config                                    , &
       choice_BMB_laddie_system_config                             , &
@@ -3173,7 +3238,6 @@ contains
       tractrackpart_write_raw_output_config                       , &
       tractrackpart_dt_raw_output_config                          , &
       do_create_netcdf_output_config                              , &
-      do_create_ismip_output_config                               , &
       output_precision_config                                     , &
       do_compress_output_config                                   , &
       dt_output_config                                            , &
@@ -3187,6 +3251,18 @@ contains
       dx_output_grid_ROI_EAS_config                               , &
       dx_output_grid_ROI_GRL_config                               , &
       dx_output_grid_ROI_ANT_config                               , &
+      do_create_ismip_output_config                               , &
+      ismip_scenario_name_config                                  , &
+      ismip_group_name_config                                     , &
+      ismip_model_name_config                                     , &
+      ismip_member_id_config                                      , &
+      ismip_forcing_member_id_config                              , &
+      ismip_counter_config                                        , &
+      ismip_esm_name_config                                       , &
+      ismip_contact_name_config                                   , &
+      ismip_contact_email_config                                  , &
+      ismip_conventions_config                                    , &
+      dt_output_ismip_config                                      , &
       transects_NAM_config                                        , &
       transects_EAS_config                                        , &
       transects_GRL_config                                        , &
@@ -3738,8 +3814,8 @@ contains
     ! ==================
 
     ! Time step
-    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config             
-    C%dt_basal_hydro                                         = dt_basal_hydro_config                   
+    C%do_asynchronous_basal_hydro                            = do_asynchronous_basal_hydro_config
+    C%dt_basal_hydro                                         = dt_basal_hydro_config
 
     ! Basal hydrology
     C%choice_basal_hydrology_model                           = choice_basal_hydrology_model_config
@@ -4019,6 +4095,8 @@ contains
     C%ocean_lin_therm_deep_temperature                       = ocean_lin_therm_deep_temperature_config
     C%ocean_lin_therm_thermocline_top                        = ocean_lin_therm_thermocline_top_config
     C%ocean_lin_therm_thermocline_bottom                     = ocean_lin_therm_thermocline_bottom_config
+    C%ocean_uniform_T                                        = ocean_uniform_T_config
+    C%ocean_uniform_S                                        = ocean_uniform_S_config
 
     ! Choice of realistic ocean model
     C%choice_ocean_model_realistic                           = choice_ocean_model_realistic_config
@@ -4066,6 +4144,10 @@ contains
     ! Settings for the snapshot_plus_anomalies ocean model
     C%ocean_snp_p_anml_filename_snapshot                     = ocean_snp_p_anml_filename_snapshot_config
     C%ocean_snp_p_anml_filename_anomalies                    = ocean_snp_p_anml_filename_anomalies_config
+
+    ! Settings for the ISMIP7 ocean model
+    C%ocean_ISMIP7_forcing_foldername                        = ocean_ISMIP7_forcing_foldername_config
+    C%ocean_ISMIP7_forcing_version                           = ocean_ISMIP7_forcing_version_config
 
     ! == Surface mass balance
     ! =======================
@@ -4150,6 +4232,13 @@ contains
     C%SMB_snp_p_anml_filename_snapshot_SMB                   = SMB_snp_p_anml_filename_snapshot_SMB_config
     C%SMB_snp_p_anml_filename_anomalies                      = SMB_snp_p_anml_filename_anomalies_config
 
+    ! Settings for the ISMIP7 SMB model
+    C%SMB_ISMIP7_choice_SMB_baseline                         = SMB_ISMIP7_choice_SMB_baseline_config
+    C%SMB_ISMIP7_filename_SMB_baseline_fixed                 = SMB_ISMIP7_filename_SMB_baseline_fixed_config
+    C%SMB_ISMIP7_choice_refgeo                               = SMB_ISMIP7_choice_refgeo_config
+    C%SMB_ISMIP7_forcing_foldername                          = SMB_ISMIP7_forcing_foldername_config
+    C%SMB_ISMIP7_forcing_version                             = SMB_ISMIP7_forcing_version_config
+
     ! == Basal mass balance
     ! =====================
 
@@ -4210,6 +4299,7 @@ contains
     ! "uniform"
     C%uniform_BMB                                            = uniform_BMB_config
     C%uniform_BMB_ROI                                        = uniform_BMB_ROI_config
+    C%uniform_BMB_t_start                                    = uniform_BMB_t_start_config
 
     ! "parameterised"
     C%BMB_Favier2019_gamma                                   = BMB_Favier2019_gamma_config
@@ -4404,7 +4494,6 @@ contains
 
     ! Basic settings
     C%do_create_netcdf_output                                = do_create_netcdf_output_config
-    C%do_create_ismip_output                                 = do_create_ismip_output_config
     C%output_precision                                       = output_precision_config
     C%do_compress_output                                     = do_compress_output_config
     C%dt_output                                              = dt_output_config
@@ -4418,6 +4507,20 @@ contains
     C%dx_output_grid_ROI_EAS                                 = dx_output_grid_ROI_EAS_config
     C%dx_output_grid_ROI_GRL                                 = dx_output_grid_ROI_GRL_config
     C%dx_output_grid_ROI_ANT                                 = dx_output_grid_ROI_ANT_config
+
+    ! ISMIP
+    C%do_create_ismip_output                                 = do_create_ismip_output_config
+    C%ismip_scenario_name                                    = ismip_scenario_name_config
+    C%ismip_group_name                                       = ismip_group_name_config
+    C%ismip_model_name                                       = ismip_model_name_config
+    C%ismip_member_id                                        = ismip_member_id_config
+    C%ismip_forcing_member_id                                = ismip_forcing_member_id_config
+    C%ismip_counter                                          = ismip_counter_config
+    C%ismip_esm_name                                         = ismip_esm_name_config
+    C%ismip_contact_name                                     = ismip_contact_name_config
+    C%ismip_contact_email                                    = ismip_contact_email_config
+    C%ismip_conventions                                      = ismip_conventions_config
+    C%dt_output_ismip                                        = dt_output_ismip_config
 
     ! Transects
     C%transects_NAM                                          = transects_NAM_config

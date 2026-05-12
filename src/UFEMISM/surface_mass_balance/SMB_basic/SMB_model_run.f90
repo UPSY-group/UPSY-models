@@ -4,11 +4,11 @@ contains
 
   function ct_run( time, ice, climate, grid_smooth) result( context)
     !< Create a contect object for SMB_model%run
-    real(dp),                          intent(in) :: time
-    type(type_ice_model),     pointer, intent(in) :: ice
-    type(type_climate_model), pointer, intent(in) :: climate
-    type(type_grid),          pointer, intent(in) :: grid_smooth
-    type(type_SMB_model_context_run)              :: context
+    real(dp),                         intent(in) :: time
+    type(type_ice_model),     target, intent(in) :: ice
+    type(type_climate_model), target, intent(in) :: climate
+    type(type_grid),          target, intent(in) :: grid_smooth
+    type(type_SMB_model_context_run)             :: context
     context%time        =  time
     context%ice         => ice
     context%climate     => climate

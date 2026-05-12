@@ -559,7 +559,7 @@ contains
       case ('basal_friction_coefficient')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_friction_coefficient', region%ice%basal_friction_coefficient)
       case ('basal_shear_stress')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'basal_shear_stress', region%ice%basal_shear_stress)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'basal_shear_stress', region%ice%basal_shear_stress)
 
       ! Bed roughness nudging - H, dH/dt, flowline
       case ('bed_roughness_nudge_H_dHdt_flowline_deltaHs_av_up')
@@ -834,7 +834,7 @@ contains
 
     if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .or. C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
       ! Set up bedrock CDF in the file
-      call setup_bedrock_CDF_in_netcdf_file( region%output_filename_mesh, ncid, region%ice)
+      call setup_bedrock_CDF_in_netcdf_file( region%mesh, region%output_filename_mesh, ncid, region%ice)
     end if
 
     ! Add time, zeta, and month dimensions+variables to the file
@@ -1330,7 +1330,7 @@ contains
       case ('basal_friction_coefficient')
         call add_field_mesh_dp_2D( filename, ncid, 'basal_friction_coefficient', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal friction coefficient', units = 'Pa yr m^-1')
       case ('basal_shear_stress')
-        call add_field_mesh_dp_2D( filename, ncid, 'basal_shear_stress', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal shear stress', units = 'Pa')
+        call add_field_mesh_dp_2D_b( filename, ncid, 'basal_shear_stress', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal shear stress', units = 'Pa')
 
       ! Bed roughness nudging - H, dH/dt, flowline
       case ('bed_roughness_nudge_H_dHdt_flowline_deltaHs_av_up')

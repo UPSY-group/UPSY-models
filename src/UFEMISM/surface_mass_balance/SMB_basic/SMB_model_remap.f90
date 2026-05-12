@@ -2,13 +2,20 @@ submodule(SMB_model_basic) SMB_model_remap
 
 contains
 
-  function ct_remap( mesh_new, time) result( context)
+  function ct_remap( mesh_new, time, region_name, refgeo_init, refgeo_PD, ice) result( context)
     !< Create a contect object for SMB_model%remap
-    type(type_mesh), target, intent(in) :: mesh_new
-    real(dp),                intent(in) :: time
-    type(type_SMB_model_context_remap) :: context
-    context%mesh_new => mesh_new
-    context%time     =  time
+    type(type_mesh),               target, intent(in) :: mesh_new
+    real(dp),                              intent(in) :: time
+    character(len=3),                      intent(in) :: region_name
+    type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in) :: ice
+    type(type_SMB_model_context_remap)                :: context
+    context%mesh_new    => mesh_new
+    context%time        =  time
+    context%region_name =  region_name
+    context%refgeo_init => refgeo_init
+    context%refgeo_PD   => refgeo_PD
+    context%ice         => ice
   end function ct_remap
 
   subroutine remap_model_abs( self, context)

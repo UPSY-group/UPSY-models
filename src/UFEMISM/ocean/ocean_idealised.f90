@@ -52,6 +52,8 @@ CONTAINS
         ! No need to do anything
       CASE ('LINEAR_THERMOCLINE')
         ! No need to do anything
+      CASE ('uniform')
+        ! No need to do anything
     END SELECT
 
     ! Finalise routine path
@@ -92,6 +94,8 @@ CONTAINS
         CALL initialise_ocean_model_idealised_LINEAR( mesh, ocean)
       CASE ('LINEAR_THERMOCLINE')
         CALL initialise_ocean_model_idealised_LINEAR_THERMOCLINE( mesh, ocean)
+      CASE ('uniform')
+        CALL initialise_ocean_model_idealised_uniform( mesh, ocean)
     END SELECT
 
     ! Finalise routine path
@@ -281,5 +285,35 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE initialise_ocean_model_idealised_LINEAR_THERMOCLINE
+
+  SUBROUTINE initialise_ocean_model_idealised_uniform( mesh, ocean)
+    !
+
+    IMPLICIT NONE
+
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    TYPE(type_ocean_model),               INTENT(INOUT) :: ocean
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                       :: routine_name = 'initialise_ocean_model_idealised_uniform'
+    INTEGER                                             :: vi
+    INTEGER                                             :: k
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Define scenario-dependent parameters
+
+    DO vi = mesh%vi1, mesh%vi2
+      DO k = 1, C%nz_ocean
+        ocean%T( vi, k) = C%ocean_uniform_T
+        ocean%S( vi, k) = C%ocean_uniform_S
+      END DO
+    END DO
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE initialise_ocean_model_idealised_uniform
 
 END MODULE ocean_idealised

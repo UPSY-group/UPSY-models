@@ -229,6 +229,7 @@ contains
     type(tMat)                          :: M_cons_1st_order
     character(len=1024)                 :: filename_mesh_src, filename_mesh_dst
     integer                             :: stat
+    type(PetscErrorCode)                :: perr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -254,6 +255,15 @@ contains
     call calc_remapping_matrix( mesh_src, w0, w1x, w1y, M_cons_1st_order, map%M)
 
     call correct_mesh_to_mesh_map( mesh_src, mesh_dst, output_dir, M_cons_1st_order, map%M)
+
+    ! Clean up after yourself
+    call MatDestroy( A_xdy_a_b, perr)
+    call MatDestroy( A_mxydx_a_b, perr)
+    call MatDestroy( A_xydy_a_b, perr)
+    call MatDestroy( w0, perr)
+    call MatDestroy( w1x, perr)
+    call MatDestroy( w1y, perr)
+    call MatDestroy( M_cons_1st_order, perr)
 
     ! Delete mesh netcdf dumps
     if (par%primary) then
@@ -283,6 +293,7 @@ contains
     type(tMat)                          :: M_cons_1st_order
     character(len=1024)                 :: filename_mesh_src, filename_mesh_dst
     integer                             :: stat
+    type(PetscErrorCode)                :: perr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -307,7 +318,14 @@ contains
 
     call calc_remapping_matrix_tri( mesh_src, w0, w1x, w1y, M_cons_1st_order, map%M)
 
-    ! call correct_mesh_to_mesh_map( mesh_src, mesh_dst, M_cons_1st_order, map%M)
+    ! Clean up after yourself
+    call MatDestroy( A_xdy, perr)
+    call MatDestroy( A_mxydx, perr)
+    call MatDestroy( A_xydy, perr)
+    call MatDestroy( w0, perr)
+    call MatDestroy( w1x, perr)
+    call MatDestroy( w1y, perr)
+    call MatDestroy( M_cons_1st_order, perr)
 
     ! Delete mesh netcdf dumps
     if (par%primary) then
@@ -358,6 +376,13 @@ contains
     call MatAXPY( A_mxydx_a_b, 1._dp, A_mxydx_b_a_T, UNKNOWN_NONZERO_PATTERN, perr)
     call MatAXPY( A_xydy_a_b , 1._dp, A_xydy_b_a_T , UNKNOWN_NONZERO_PATTERN, perr)
 
+    call MatDestroy( A_xdy_b_a  , perr)
+    call MatDestroy( A_mxydx_b_a, perr)
+    call MatDestroy( A_xydy_b_a , perr)
+    call MatDestroy( A_xdy_b_a_T  , perr)
+    call MatDestroy( A_mxydx_b_a_T, perr)
+    call MatDestroy( A_xydy_b_a_T , perr)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -398,6 +423,13 @@ contains
     call MatAXPY( A_xdy  , 1._dp, A_xdy_src_dst_T  , UNKNOWN_NONZERO_PATTERN, perr)
     call MatAXPY( A_mxydx, 1._dp, A_mxydx_src_dst_T, UNKNOWN_NONZERO_PATTERN, perr)
     call MatAXPY( A_xydy , 1._dp, A_xydy_src_dst_T , UNKNOWN_NONZERO_PATTERN, perr)
+
+    call MatDestroy( A_xdy_src_dst  , perr)
+    call MatDestroy( A_mxydx_src_dst, perr)
+    call MatDestroy( A_xydy_src_dst , perr)
+    call MatDestroy( A_xdy_src_dst_T, perr)
+    call MatDestroy( A_mxydx_src_dst_T, perr)
+    call MatDestroy( A_xydy_src_dst_T, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -652,6 +684,12 @@ contains
     call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
     call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
 
+    call MatDestroy( M_map_a_b, perr)
+    call MatDestroy( M_ddx_a_b, perr)
+    call MatDestroy( M_ddy_a_b, perr)
+    call MatDestroy( M1, perr)
+    call MatDestroy( M2, perr)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -693,6 +731,11 @@ contains
     call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, perr)
     call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
     call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+
+    call MatDestroy( M_ddx_b_b, perr)
+    call MatDestroy( M_ddy_b_b, perr)
+    call MatDestroy( M1, perr)
+    call MatDestroy( M2, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

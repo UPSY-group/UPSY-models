@@ -1,6 +1,6 @@
 module netcdf_read_field_from_series_file
   use mpi
-  use precisions, only: dp
+  use precisions, only: dp, int8
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, insert_val_into_string_int
   use netcdf_determine_indexing
@@ -9,7 +9,7 @@ module netcdf_read_field_from_series_file
   use netcdf_setup_grid_mesh_from_file
   use grid_types, only: type_grid_lonlat, type_grid_lat
   use flip_mod
-  use netcdf
+  use netcdf, only: NF90_DOUBLE, NF90_FLOAT, NF90_INT, NF90_INT64, NF90_MAX_VAR_DIMS
 
   implicit none
 
@@ -216,36 +216,51 @@ contains
     real(dp), dimension(:), allocatable, intent(out   ) :: time
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'read_time_from_file'
-    integer                             :: ncid
-    integer                             :: nt, id_dim_time, id_var_time
-    !real(dp), dimension(:), allocatable :: time_from_file
-    integer                             :: ierr
+    character(len=1024), parameter           :: routine_name = 'read_time_from_file'
+    integer                                  :: ncid
+    integer                                  :: nt, id_dim_time, id_var_time, var_type
+    integer,       dimension(:), allocatable :: time_int
+    integer(int8), dimension(:), allocatable :: time_int8
+    integer                                  :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Open the NetCDF file
-    if (par%primary) WRITE(0,*) '     Opening file to read time...'
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
     ! inquire size of time dimension
     call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = nt)
 
     ! inquire time variable ID
-    call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time)
+    call inquire_var_multopt( filename, ncid, field_name_options_time, id_var_time, var_type=var_type)
 
     ! allocate memory
     allocate( time( nt))
 
     ! Read time from file
-    call read_var_primary( filename, ncid, id_var_time, time)
-    call MPI_BCAST( time, nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+    select case (var_type)
+    case default
+      call crash('invalid variable type for time in file "' // trim( filename) // '"')
+    case (NF90_DOUBLE, NF90_FLOAT)
+      call read_var_primary( filename, ncid, id_var_time, time)
+      call MPI_BCAST( time, nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+    case (NF90_INT)
+      allocate( time_int( nt))
+      call read_var_primary( filename, ncid, id_var_time, time_int)
+      call MPI_BCAST( time_int, nt, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      time = real( time_int, dp)
+    case (NF90_INT64)
+      ! Yes, confusing... NetCDF uses bits, i.e. 64-bit, while Fortran uses bytes, i.e. 8-byte
+      allocate( time_int8( nt))
+      call read_var_primary( filename, ncid, id_var_time, time_int8)
+      call MPI_BCAST( time_int8, nt, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
+      time = real( time_int8, dp)
+    end select
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine read_time_from_file
-
 
 end module netcdf_read_field_from_series_file

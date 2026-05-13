@@ -293,6 +293,22 @@ MODULE ice_model_types
 
   END TYPE type_ice_pc
 
+  type type_ice_retreat_masks
+    ! The "ISMIP6-style"
+
+    ! Timeframe 0
+    real(dp)                                   :: shelf_collapse_mask_t0
+    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask0
+
+    ! Timeframe 1
+    real(dp)                                   :: shelf_collapse_mask_t1
+    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask1
+
+    ! Interpolated mask
+    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask
+
+  end type type_ice_retreat_masks
+
   TYPE type_ice_model
     ! The ice dynamics model data structure.
 
@@ -352,6 +368,7 @@ MODULE ice_model_types
     INTEGER,  DIMENSION(:    ), ALLOCATABLE :: mask                        ! Diagnostic, only meant for quick visual inspection in output
     INTEGER,  DIMENSION(:    ), ALLOCATABLE :: basin_ID                    ! The drainage basin to which each vertex belongs
     INTEGER                                 :: nROI                        ! Number of ROI masks in the ice model type
+    type(type_ice_retreat_masks)            :: retreat_masks               ! Retreat masks for ISMIP6-style retreat + mask_noice
 
     ! Area fractions
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: fraction_gr                 ! [0-1] Grounded area fractions of vertices

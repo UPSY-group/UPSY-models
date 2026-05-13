@@ -18,7 +18,7 @@ jobs:
     # ==================================================
 
       - name: Install packages with Homebrew (macOS)  # Packages end up in /opt/homebrew/Cellar
-        if: runner.os == 'macos-latest'
+        if: runner.os == 'macOS'
         run: |
           #brew install gcc                    # Not needed on GitHub server, already installed
           brew install open-mpi
@@ -30,16 +30,16 @@ jobs:
           #brew install ninja
 
       - name: Set up Homebrew (ubuntu)                 # Not installed by default on ubuntu runners
-        if: runner.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         id: set-up-homebrew
         uses: Homebrew/actions/setup-homebrew@main
 
       - name: Add Homebrew to PATH (ubuntu)             # act does not persist PATH from setup-homebrew into csh subprocesses
-        if: runner.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
 
       - name: Install packages with Homebrew (ubuntu)  # Packages end up in /opt/homebrew/Cellar
-        if: runner.os == 'ubuntu-latest'
+        if: runner.os == 'Linux'
         run: |
           brew update
           brew install open-mpi

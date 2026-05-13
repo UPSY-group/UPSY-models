@@ -42,11 +42,11 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (.not. C%retreat_mask_without_time) then
+    if (.not. C%ISMIP6_retreat_mask_without_time) then
 
     ! Check if the requested time is enveloped by the two timeframes;
     ! if not, read the two relevant timeframes from the NetCDF file
-    if (time < ice%retreat_masks%shelf_collapse_mask_t0 .OR. time > ice%retreat_masks%shelf_collapse_mask_t1) then
+    if (time < ice%retreat_masks%ISMIP6_shelf_collapse_mask_t0 .OR. time > ice%retreat_masks%ISMIP6_shelf_collapse_mask_t1) then
 
       ! Find and read the two global time frames
       call update_ISMIP6_style_future_timeframes( mesh, ice, time)
@@ -54,20 +54,20 @@ contains
     end if ! IF (time >= climate_matrix%SMB_direct%t0 .AND. time <= climate_matrix%SMB_direct%t1) THEN
 
     ! Interpolate the two timeframes in time
-    wt0 = (ice%retreat_masks%shelf_collapse_mask_t1 - time) / (ice%retreat_masks%shelf_collapse_mask_t1 - ice%retreat_masks%shelf_collapse_mask_t0)
+    wt0 = (ice%retreat_masks%ISMIP6_shelf_collapse_mask_t1 - time) / (ice%retreat_masks%ISMIP6_shelf_collapse_mask_t1 - ice%retreat_masks%ISMIP6_shelf_collapse_mask_t0)
     wt1 = 1._dp - wt0
 
     do vi = mesh%vi1, mesh%vi2
 
-      ice%retreat_masks%shelf_collapse_mask( vi) = (wt0 * ice%retreat_masks%shelf_collapse_mask0( vi)) + &
-                                                        (wt1 * ice%retreat_masks%shelf_collapse_mask1( vi))
+      ice%retreat_masks%ISMIP6_shelf_collapse_mask( vi) = (wt0 * ice%retreat_masks%ISMIP6_shelf_collapse_mask0( vi)) + &
+                                                        (wt1 * ice%retreat_masks%ISMIP6_shelf_collapse_mask1( vi))
 
     end do
 
     else ! if (C%retreat_mask_without_time)
       if (time == C%start_time_of_run) then
         ! If the retreat mask is time-independent, just read it once and keep it constant
-        call read_field_from_file_2D( C%ISMIP_future_shelf_collapse_forcing_filename, 'mask', mesh, C%output_dir, ice%retreat_masks%shelf_collapse_mask)
+        call read_field_from_file_2D( C%ISMIP6_future_shelf_collapse_forcing_filename, 'mask', mesh, C%output_dir, ice%retreat_masks%ISMIP6_shelf_collapse_mask)
       else
         ! do nothing, no need to read the mask again
       end if ! if (time == C%start_time_of_run)
@@ -99,8 +99,8 @@ contains
     time1= real( floor( time, dp), dp) + 10._dp
     
     ! Read timeframes from file
-    call read_field_from_file_2D( C%ISMIP_future_shelf_collapse_forcing_filename, 'mask', mesh, C%output_dir, ice%retreat_masks%shelf_collapse_mask0, time_to_read = time0)
-    call read_field_from_file_2D( C%ISMIP_future_shelf_collapse_forcing_filename, 'mask', mesh, C%output_dir, ice%retreat_masks%shelf_collapse_mask1, time_to_read = time1)
+    call read_field_from_file_2D( C%ISMIP6_future_shelf_collapse_forcing_filename, 'mask', mesh, C%output_dir, ice%retreat_masks%ISMIP6_shelf_collapse_mask0, time_to_read = time0)
+    call read_field_from_file_2D( C%ISMIP6_future_shelf_collapse_forcing_filename, 'mask', mesh, C%output_dir, ice%retreat_masks%ISMIP6_shelf_collapse_mask1, time_to_read = time1)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -121,18 +121,18 @@ contains
     call init_routine( routine_name)
 
     ! Allocate memory
-    allocate( ice%retreat_masks%shelf_collapse_mask0( mesh%vi1:mesh%vi2))
-    allocate( ice%retreat_masks%shelf_collapse_mask1( mesh%vi1:mesh%vi2))
-    allocate( ice%retreat_masks%shelf_collapse_mask( mesh%vi1:mesh%vi2))
+    allocate( ice%retreat_masks%ISMIP6_shelf_collapse_mask0( mesh%vi1:mesh%vi2))
+    allocate( ice%retreat_masks%ISMIP6_shelf_collapse_mask1( mesh%vi1:mesh%vi2))
+    allocate( ice%retreat_masks%ISMIP6_shelf_collapse_mask( mesh%vi1:mesh%vi2))
 
     ! Give impossible values to timeframes, so that the first call to run_ice_model_ISMIP6_style
     ! is guaranteed to first read two new timeframes from the NetCDF file
-    ice%retreat_masks%shelf_collapse_mask_t0 = C%start_time_of_run - 100._dp
-    ice%retreat_masks%shelf_collapse_mask_t1 = C%start_time_of_run - 90._dp
+    ice%retreat_masks%ISMIP6_shelf_collapse_mask_t0 = C%start_time_of_run - 100._dp
+    ice%retreat_masks%ISMIP6_shelf_collapse_mask_t1 = C%start_time_of_run - 90._dp
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_ISMIP6_style_retreat_mask
 
-end module ice_retreat_mask
+end module ice_retreat_masks

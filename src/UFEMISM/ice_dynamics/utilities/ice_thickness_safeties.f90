@@ -14,7 +14,6 @@ module ice_thickness_safeties
   use mpi_basic, only: par, sync
   use masks_mod, only: determine_masks
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
-  use climate_model_types, only: type_climate_model
 
   implicit none
 
@@ -24,7 +23,7 @@ module ice_thickness_safeties
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time, climate)
+  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
@@ -36,7 +35,6 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
-    type(type_climate_model),               intent(in   ) :: climate
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'alter_ice_thickness'
@@ -124,18 +122,18 @@ contains
     end if
 
     ! if so specified, remove all ice inside the mask
-    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
-      select case(C%shelf_collapse_type)
+    if (C%do_use_ISMIP6_future_shelf_collapse_forcing) then
+      select case(C%ISMIP6_shelf_collapse_type)
       case('BMB')
         ! do nothing, collapse will be applied in BMB routine
       case('calving')
         do vi = mesh%vi1, mesh%vi2
-          if (climate%ISMIP_style%shelf_collapse_mask( vi) > 0.01_dp .and. is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi))) then
+          if (ice%retreat_masks%ISMIP6_shelf_collapse_mask( vi) > 0.01_dp .and. is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi))) then
             Hi_new( vi) = 0._dp
           end if
         end do
       case default
-        call crash('unknown shelf_collapse_type "' // trim( C%shelf_collapse_type) // '"')
+        call crash('unknown shelf_collapse_type "' // trim( C%ISMIP6_shelf_collapse_type) // '"')
       end select
     end if
 

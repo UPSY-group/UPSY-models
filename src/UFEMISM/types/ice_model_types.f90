@@ -297,15 +297,15 @@ MODULE ice_model_types
     ! The "ISMIP6-style"
 
     ! Timeframe 0
-    real(dp)                                   :: shelf_collapse_mask_t0
-    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask0
+    real(dp)                                   :: ISMIP6_shelf_collapse_mask_t0
+    real(dp), dimension(:   ), allocatable     :: ISMIP6_shelf_collapse_mask0
 
     ! Timeframe 1
-    real(dp)                                   :: shelf_collapse_mask_t1
-    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask1
+    real(dp)                                   :: ISMIP6_shelf_collapse_mask_t1
+    real(dp), dimension(:   ), allocatable     :: ISMIP6_shelf_collapse_mask1
 
     ! Interpolated mask
-    real(dp), dimension(:   ), allocatable     :: shelf_collapse_mask
+    real(dp), dimension(:   ), allocatable     :: ISMIP6_shelf_collapse_mask
 
   end type type_ice_retreat_masks
 

@@ -1,10 +1,10 @@
  -= Checksum logfile =-
-  Git commit hash        : cd30a1aa33b03f3c35a070bd37cdbdef403f0c20
-  has uncommitted changes:  F
-  PETSc version          : 3.24.6
+  Git commit hash        : b22ded44f705c381a84f01162f9c9f3dc3b12aac
+  has uncommitted changes:  T
+  PETSc version          : 3.25.1
   NetCDF version         : 4.10.0
-  OpenMPI version        : 5.0.9
-  Compiler               : GNU Fortran (Homebrew GCC 15.2.0_1) 15.2.0
+  OpenMPI version        : 5.0.10
+  Compiler               : GNU Fortran (conda-forge gcc 14.3.0-19) 14.3.0
   Compiler flags         : -fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -march=native -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33
  refgeo%Hi_grid_raw: sum = 0.16349958548257E+10, sum(abs) = 0.16349958548257E+10, min = 0.00000000000000E+00, max = 0.48655773925781E+04 [UFEMISM/initialise_model_region/initialise_reference_geometries_raw/initialise_reference_geometry_raw/initialise_reference_geometry_raw_from_file/initialise_reference_geometry_raw_from_file_grid]
  refgeo%Hb_grid_raw: sum = -.70114945526294E+10, sum(abs) = 0.74713153130889E+10, min = -.79913037109375E+04, max = 0.42746269531250E+04 [UFEMISM/initialise_model_region/initialise_reference_geometries_raw/initialise_reference_geometry_raw/initialise_reference_geometry_raw_from_file/initialise_reference_geometry_raw_from_file_grid]

@@ -74,8 +74,7 @@ jobs:
           git submodule update --init --remote
 
       - name: Compile UFEMISM
-        shell: csh
-        run: csh compile_UFEMISM.csh  dev  clean
+        run: ./compile_UFEMISM.csh  dev  clean
 
 
       - name: Set up micromamba environment
@@ -85,18 +84,17 @@ jobs:
           environment-name: upsy
           cache-environment: true
           cache-downloads: true
-          init-shell: csh
 
     # Run the test and check its results against the reference
     # ========================================================
 
       - name: Run test
         shell: micromamba-shell {0}
-        run: csh ${{ inputs.test_path }}/test_script.csh
+        run: ./${{ inputs.test_path }}/test_script.csh
 
       - name: Show checksum logfile diff
         shell: micromamba-shell {0}
-        run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
+        run: ./automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result
         shell: micromamba-shell {0}

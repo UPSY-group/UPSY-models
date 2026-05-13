@@ -68,6 +68,7 @@ jobs:
           git submodule update --init --remote
 
       - name: Compile UFEMISM
+        shell: csh
         run: csh compile_UFEMISM.csh  dev  clean
 
 
@@ -78,6 +79,7 @@ jobs:
           environment-name: upsy
           cache-environment: true
           cache-downloads: true
+          init-shell: csh
 
     # Run the test and check its results against the reference
     # ========================================================

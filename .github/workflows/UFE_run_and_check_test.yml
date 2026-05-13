@@ -33,8 +33,8 @@ jobs:
       - name: Set up micromamba environment
         uses: mamba-org/setup-micromamba@v2
         with:
-          environment-file: environment.yml
-          environment-name: upsy
+          environment-file: upsy_compile_env.yml
+          environment-name: upsy_compile
           cache-environment: true
           cache-downloads: true
 

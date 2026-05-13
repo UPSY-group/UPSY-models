@@ -1,4 +1,4 @@
-name: upsy
+name: upsy_compile
 channels:
   - conda-forge
 dependencies:
@@ -17,21 +17,3 @@ dependencies:
   - compilers
   - cmake
   - ninja
-
-  # More goodies for plotting
-  - cartopy
-  - cmocean
-  - dask
-  - geopandas
-  - matplotlib
-  - pandas
-  - pyproj
-  - pyshp
-  - scipy
-  - shapely
-  - xarray 
-  - pip
-  - setuptools >=61
-  - tqdm
-  - ipython
-  - ipykernel

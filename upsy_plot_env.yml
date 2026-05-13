@@ -1,0 +1,26 @@
+name: upsy_plot
+channels:
+  - conda-forge
+dependencies:
+  # Core python
+  - python>=3.12
+  - numpy>=2.4
+  - netcdf4>=1.7
+
+  # Goodies for plotting
+  - cartopy
+  - cmocean
+  - dask
+  - geopandas
+  - matplotlib
+  - pandas
+  - pyproj
+  - pyshp
+  - scipy
+  - shapely
+  - xarray 
+  - pip
+  - setuptools >=61
+  - tqdm
+  - ipython
+  - ipykernel

@@ -27,7 +27,6 @@ MODULE climate_main
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model  
   use checksum_mod, only: checksum
-  use climate_retreat_mask                                   , only: run_climate_retreat_mask, initialise_climate_retreat_mask
 
   IMPLICIT NONE
 
@@ -124,11 +123,6 @@ CONTAINS
     call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')
     call checksum( mesh%pai_V, climate%Precip, 'climate%Precip')
 
-    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
-      ! Run the ISMIP-style forcing
-      call run_climate_retreat_mask( mesh, climate, time, ice)
-    end if
-
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -215,11 +209,6 @@ CONTAINS
 
     call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')
     call checksum( mesh%pai_V, climate%Precip, 'climate%Precip')
-    
-    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
-      ! Initialise the ISMIP-style forcing
-      call initialise_climate_retreat_mask( mesh, climate)
-    end if
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)

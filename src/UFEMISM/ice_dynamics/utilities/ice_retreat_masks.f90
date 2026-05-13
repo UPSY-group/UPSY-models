@@ -31,7 +31,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in)    :: mesh
-    type(type_ice_model),               intent(in)    :: ice
+    type(type_ice_model),               intent(inout) :: ice
     real(dp),                           intent(in)    :: time
 
     ! Local variables:

@@ -142,7 +142,7 @@ contains
       call checksum( region%mesh%pai_V, region%ice%pc%Hi_star_np1, 'region%ice%pc%Hi_star_np1')
 
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time, region%climate)
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
       
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
@@ -230,7 +230,7 @@ contains
       region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
 
       ! if so desired, modify the corrected ice thickness field based on user-defined settings
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_np1, region%refgeo_PD, region%time, region%climate)
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 31 above rearranged to retrieve

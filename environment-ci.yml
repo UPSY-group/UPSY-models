@@ -1,4 +1,4 @@
-name: upsy_compile
+name: upsy
 channels:
   - conda-forge
 dependencies:

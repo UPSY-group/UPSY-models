@@ -17,54 +17,11 @@ jobs:
     # Install all required packages and compile the code
     # ==================================================
 
-      - name: Install packages with Homebrew (macOS)  # Packages end up in /opt/homebrew/Cellar
-        if: runner.os == 'macOS'
-        run: |
-          #brew install gcc                    # Not needed on GitHub server, already installed
-          brew install open-mpi
-          brew install petsc
-          brew unlink hdf5-mpi                 # To fix the following conflict: "hdf5-mpi: because hdf5-mpi is a variant of hdf5, one can only use one or the other"
-          brew install netcdf
-          brew install netcdf-fortran
-          #brew install cmake                  # Not needed, already installed
-          #brew install ninja
-
-      - name: Set up Homebrew (ubuntu)                 # Not installed by default on ubuntu runners
-        if: runner.os == 'Linux'
-        id: set-up-homebrew
-        uses: Homebrew/actions/setup-homebrew@main
-
-      - name: Add Homebrew to PATH (ubuntu)             # act does not persist PATH from setup-homebrew into csh subprocesses
-        if: runner.os == 'Linux'
-        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
-
-      - name: Install packages with Homebrew (ubuntu)  # Packages end up in /opt/homebrew/Cellar
-        if: runner.os == 'Linux'
-        run: |
-          brew update
-          brew install open-mpi
-          brew install netcdf
-          brew install netcdf-fortran
-          brew unlink hdf5
-          brew install petsc
-          brew install cmake
-          brew install ninja
-
       - name: Install csh (Required for .csh scripts on Ubuntu)
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
           sudo apt-get install csh
-
-      - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
-        uses: fortran-lang/setup-fortran@v1
-        id: setup-fortran
-        with:
-          compiler: gcc
-          version: 15
-
-      - name: Verify compiler setup
-        run: gfortran --version
 
       - name: Check out repository
         uses: actions/checkout@v4
@@ -73,17 +30,21 @@ jobs:
         run: |
           git submodule update --init --remote
 
-      - name: Compile UFEMISM
-        run: csh compile_UFEMISM.csh  dev  clean
-
-
       - name: Set up micromamba environment
         uses: mamba-org/setup-micromamba@v2
         with:
-          environment-file: environment.yml
+          environment-file: environment-ci.yml
           environment-name: upsy
           cache-environment: true
           cache-downloads: true
+
+      - name: Verify compiler setup
+        shell: micromamba-shell {0}
+        run: gfortran --version
+
+      - name: Compile UFEMISM
+        shell: micromamba-shell {0}
+        run: csh compile_UFEMISM.csh  dev  clean
 
     # Run the test and check its results against the reference
     # ========================================================

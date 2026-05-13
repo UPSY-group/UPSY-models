@@ -10,7 +10,9 @@ See https://github.com/UPSY-group/UPSY-models/wiki/Getting-started for how to se
 Some tools are available to plot model output on its native mesh. To use these, you need
 to install [Miniforge3](https://conda-forge.org/download/) and run:
 ```
-conda env create -y -n upsy -f environment.yml
+conda env create -f environment.yml
+conda install -n base -c conda-forge conda-libmamba-solver
+conda config --set solver libmamba
 conda activate upsy
 python -m pip install -e . --no-deps --no-build-isolation
 ```

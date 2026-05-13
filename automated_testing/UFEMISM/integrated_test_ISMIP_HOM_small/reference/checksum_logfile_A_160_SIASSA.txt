@@ -1,5 +1,5 @@
  -= Checksum logfile =-
-  Git commit hash        : ab9e502f406ea12a1181c1c284320ab4c77dd421
+  Git commit hash        : cd30a1aa33b03f3c35a070bd37cdbdef403f0c20
   has uncommitted changes:  F
   PETSc version          : 3.24.6
   NetCDF version         : 4.10.0
@@ -17,7 +17,7 @@
  ice%dHi: sum = -.26130220229637E+02, sum(abs) = 0.67028453611787E+04, min = -.71097861177578E+02, max = 0.71091859196722E+02 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
  ice%dHb: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
  ice%dHs: sum = -.26130220229640E+02, sum(abs) = 0.67028453611787E+04, min = -.71097861177578E+02, max = 0.71091859196722E+02 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
- ice%dHib: sum = -.19326762412675E-11, sum(abs) = 0.16257217794191E-10, min = -.22737367544323E-12, max = 0.22737367544323E-12 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
+ ice%dHib: sum = -.22737367544323E-11, sum(abs) = 0.16143530956469E-10, min = -.22737367544323E-12, max = 0.22737367544323E-12 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
  ice%dHi_dt: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
  ice%dHb_dt: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
  ice%dHs_dt: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
@@ -158,7 +158,7 @@
  region%ice%dHi: sum = -.26130220229637E+02, sum(abs) = 0.67028453611787E+04, min = -.71097861177578E+02, max = 0.71091859196722E+02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%dHb: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%dHs: sum = -.26130220229640E+02, sum(abs) = 0.67028453611787E+04, min = -.71097861177578E+02, max = 0.71091859196722E+02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
- region%ice%dHib: sum = -.19326762412675E-11, sum(abs) = 0.16257217794191E-10, min = -.22737367544323E-12, max = 0.22737367544323E-12 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
+ region%ice%dHib: sum = -.22737367544323E-11, sum(abs) = 0.16143530956469E-10, min = -.22737367544323E-12, max = 0.22737367544323E-12 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%dHs_dt: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%dHib_dt: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  mask_icefree_land: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/determine_masks]

@@ -11,13 +11,14 @@ on:
 jobs:
   run_and_check_test:
     name: run
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
 
     # Install all required packages and compile the code
     # ==================================================
 
-      - name: Install packages with Homebrew   # Packages end up in /opt/homebrew/Cellar
+      - name: Install packages with Homebrew (macOS)  # Packages end up in /opt/homebrew/Cellar
+        if: runner.os == 'macOS'
         run: |
           #brew install gcc                    # Not needed on GitHub server, already installed
           brew install open-mpi
@@ -27,6 +28,33 @@ jobs:
           brew install netcdf-fortran
           #brew install cmake                  # Not needed, already installed
           #brew install ninja
+
+      - name: Set up Homebrew (ubuntu)                 # Not installed by default on ubuntu runners
+        if: runner.os == 'Linux'
+        id: set-up-homebrew
+        uses: Homebrew/actions/setup-homebrew@main
+
+      - name: Add Homebrew to PATH (ubuntu)             # act does not persist PATH from setup-homebrew into csh subprocesses
+        if: runner.os == 'Linux'
+        run: echo "/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin" >> $GITHUB_PATH
+
+      - name: Install packages with Homebrew (ubuntu)  # Packages end up in /opt/homebrew/Cellar
+        if: runner.os == 'Linux'
+        run: |
+          brew update
+          brew install open-mpi
+          brew install netcdf
+          brew install netcdf-fortran
+          brew unlink hdf5
+          brew install petsc
+          brew install cmake
+          brew install ninja
+
+      - name: Install csh (Required for .csh scripts on Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install csh
 
       - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
         uses: fortran-lang/setup-fortran@v1
@@ -48,22 +76,28 @@ jobs:
       - name: Compile UFEMISM
         run: csh compile_UFEMISM.csh  dev  clean
 
-      - name: Set up Python environment for checksum tools
-        run: |
-          python3 -m venv .venv
-          .venv/bin/python3 -m pip install --upgrade pip
-          .venv/bin/python3 -m pip install numpy netCDF4
+
+      - name: Set up micromamba environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment.yml
+          environment-name: upsy
+          cache-environment: true
+          cache-downloads: true
 
     # Run the test and check its results against the reference
     # ========================================================
 
       - name: Run test
+        shell: micromamba-shell {0}
         run: csh ${{ inputs.test_path }}/test_script.csh
 
       - name: Show checksum logfile diff
+        shell: micromamba-shell {0}
         run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result
+        shell: micromamba-shell {0}
         run: |
-          .venv/bin/python3 automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
-          .venv/bin/python3 automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}
+          python automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
+          python automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}

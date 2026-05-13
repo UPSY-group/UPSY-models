@@ -54,7 +54,7 @@ jobs:
         if: runner.os == 'Linux'
         run: |
           sudo apt-get update
-          sudo apt-get install -y csh
+          sudo apt-get install csh
 
       - name: Set up Fortran compiler          # See: https://github.com/marketplace/actions/setup-fortran
         uses: fortran-lang/setup-fortran@v1
@@ -74,7 +74,7 @@ jobs:
           git submodule update --init --remote
 
       - name: Compile UFEMISM
-        run: ./compile_UFEMISM.csh  dev  clean
+        run: csh compile_UFEMISM.csh  dev  clean
 
 
       - name: Set up micromamba environment
@@ -90,11 +90,11 @@ jobs:
 
       - name: Run test
         shell: micromamba-shell {0}
-        run: ./${{ inputs.test_path }}/test_script.csh
+        run: csh ${{ inputs.test_path }}/test_script.csh
 
       - name: Show checksum logfile diff
         shell: micromamba-shell {0}
-        run: ./automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
+        run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
 
       - name: Check test result
         shell: micromamba-shell {0}

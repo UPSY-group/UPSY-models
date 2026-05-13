@@ -11,7 +11,7 @@ on:
 jobs:
   run_and_check_test:
     name: run
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     steps:
 
     # Install all required packages and compile the code

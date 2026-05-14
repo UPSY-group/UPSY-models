@@ -482,9 +482,9 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time_config                = 0.1_dp                          ! [yr] time scale for basal hydrology to get to equilibrium
     real(dp)            :: error_function_max_effective_pressure_config = 5E6_dp                           ! Maximum effective pressure inland for the error-function model
     real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
+    character(len=1024) :: choice_BMB_grounded_config                   = 'from_temperature'
 
     ! Coupling
-    logical             :: hydro_is_coupled_to_laddie_config            = .false.
     logical             :: hydro_is_coupled_to_BMB_config               = .false.
 
   ! == Bed roughness
@@ -1688,9 +1688,9 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time
     real(dp)            :: error_function_max_effective_pressure
     real(dp)            :: Leguy2014_hydro_connect_exponent
+    character(len=1024) :: choice_BMB_grounded
 
     ! Coupling
-    logical             :: hydro_is_coupled_to_laddie
     logical             :: hydro_is_coupled_to_BMB
 
   ! == Bed roughness
@@ -2761,7 +2761,7 @@ contains
       basal_hydro_equil_time_config                               , &
       error_function_max_effective_pressure_config                , &
       Leguy2014_hydro_connect_exponent_config                     , &
-      hydro_is_coupled_to_laddie_config                           , &
+      choice_BMB_grounded_config                                  , &
       hydro_is_coupled_to_BMB_config                              , &
       choice_bed_roughness_config                                 , &
       choice_bed_roughness_parameterised_config                   , &
@@ -3748,9 +3748,9 @@ contains
     C%basal_hydro_equil_time                                 = basal_hydro_equil_time_config
     C%error_function_max_effective_pressure                  = error_function_max_effective_pressure_config
     C%Leguy2014_hydro_connect_exponent                       = Leguy2014_hydro_connect_exponent_config
+    C%choice_BMB_grounded                                    = choice_BMB_grounded_config
 
     ! Coupling
-    C%hydro_is_coupled_to_laddie                             = hydro_is_coupled_to_laddie_config
     C%hydro_is_coupled_to_BMB                                = hydro_is_coupled_to_BMB_config
 
     ! == Bed roughness

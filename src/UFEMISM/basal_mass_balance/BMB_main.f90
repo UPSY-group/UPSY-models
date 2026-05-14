@@ -34,7 +34,7 @@ MODULE BMB_main
   use netcdf_io_main
   use checksum_mod, only: checksum
   use mpi_distributed_shared_memory, only: reallocate_dist_shared
-  use thermodynamics_utilities                                , ONLY: calc_grounded_basal_melt_rates
+  use thermodynamics_utilities                                , ONLY: calc_grounded_basal_melt_rates_from_temp
   use checksum_mod, only: checksum
 
   IMPLICIT NONE
@@ -109,7 +109,12 @@ CONTAINS
             ! No need to do anything
           CASE DEFAULT
             ! Compute grounded ice mass balance
-            call calc_grounded_basal_melt_rates(ice, mesh, BMB)
+            SELECT CASE (C%choice_BMB_grounded)
+              CASE ('from_temperature')
+                call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+              CASE DEFAULT
+                ! Do nothing  
+            END SELECT
             CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
         END SELECT
 
@@ -123,7 +128,12 @@ CONTAINS
     END IF
 
     ! Compute grounded ice mass balance
-    call calc_grounded_basal_melt_rates(ice, mesh, BMB)
+    SELECT CASE (C%choice_BMB_grounded)
+      CASE ('from_temperature')
+        call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+      CASE DEFAULT
+        ! Do nothing  
+    END SELECT
 
     ! Re-initialise BMB model if needed, only for LADDIE
     if (time > BMB%t_next_reinit) then

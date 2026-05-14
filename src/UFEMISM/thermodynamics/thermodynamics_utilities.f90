@@ -450,7 +450,7 @@ CONTAINS
 
   END SUBROUTINE calc_upwind_heat_flux_derivatives
 
-  subroutine calc_grounded_basal_melt_rates(ice, mesh, BMB)
+  subroutine calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
     ! Computes basal melt under grounded ice (BMB_sheet), based on the same method as PISM
     ! Following update_impl in EnthalpyModel.cc, L300-328, based on Eq. 47 of Aschwanden et al. (2012; JoG)
 
@@ -460,7 +460,7 @@ CONTAINS
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
     
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER        :: routine_name = 'calc_grounded_basal_melt_rates'
+    CHARACTER(LEN=256), PARAMETER        :: routine_name = 'calc_grounded_basal_melt_rates_from_temp'
     real(dp)                             :: dz, L_base, hf_up, melting_temp_base, melting_temp_above
     integer                              :: vi
 
@@ -485,6 +485,6 @@ CONTAINS
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
-  end subroutine calc_grounded_basal_melt_rates
+  end subroutine calc_grounded_basal_melt_rates_from_temp
 
 END MODULE thermodynamics_utilities

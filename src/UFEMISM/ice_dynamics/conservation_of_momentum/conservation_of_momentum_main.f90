@@ -505,6 +505,11 @@ contains
     ice%dw_dy_3D = 0._dp
     ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
+    ! Stresses
+    do ti = mesh%ti1, mesh%ti2
+      ice%basal_shear_stress( ti) = hypot( ice%DIVA%tau_bx_b( ti), ice%DIVA%tau_by_b( ti))
+    end do
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

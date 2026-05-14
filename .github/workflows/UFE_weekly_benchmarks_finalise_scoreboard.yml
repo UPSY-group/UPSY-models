@@ -1,0 +1,114 @@
+# NOTE: this script is created automatically by running
+# 'automated_testing/integrated_tests/add_all_integrated_tests_to_Github_workflow.m'
+
+name: UFEMISM Test Suite - finalise scoreboard
+run-name: ${{ github.actor }} - UFEMISM Test Suite - finalise scoreboard
+on:
+  workflow_call:
+
+jobs:
+  finalise_scoreboard:
+    runs-on: macos-latest
+    steps:
+
+      - name: Check out repository (from pull request)
+        if: ${{ github.event_name == 'pull_request' }}
+        uses: actions/checkout@v4
+        with:
+         repository: ${{ github.event.pull_request.head.repo.full_name }}
+         ref: ${{ github.event.pull_request.head.ref }}
+
+      - name: Check out repository (from manual run)
+        if: ${{ github.event_name != 'pull_request' }}
+        uses: actions/checkout@v4
+
+      - name: Install MATLAB
+        uses: matlab-actions/setup-matlab@v2.2.0
+        with:
+          cache: true
+
+# =========================================================
+# ===== Download scoreboard files for component tests =====
+# =========================================================
+
+      - name: Download scoreboard files for component tests
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_files_component_tests
+          path: automated_testing/scoreboard/scoreboard_files
+
+# ==========================================================
+# ===== Download scoreboard files for integrated tests =====
+# ==========================================================
+#
+# NOTE: list created automatically; if you want to add new integrated tests,
+# just run 'automated_testing/integrated_tests/add_all_integrated_tests_to_Github_workflow.m' again
+
+      - name: Download scoreboard file for integrated_tests/idealised/Halfar_dome
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_file_integrated_tests_idealised_Halfar_dome
+          path: automated_testing/scoreboard/scoreboard_files
+
+      # - name: Download scoreboard file for integrated_tests/idealised/ISMIP-HOM
+      #   uses: actions/download-artifact@v4
+      #   with:
+      #     name: scoreboard_file_integrated_tests_idealised_ISMIP-HOM
+      #     path: automated_testing/scoreboard/scoreboard_files
+
+      - name: Download scoreboard file for integrated_tests/idealised/MISMIP_mod
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_file_integrated_tests_idealised_MISMIP_mod
+          path: automated_testing/scoreboard/scoreboard_files
+
+      - name: Download scoreboard file for integrated_tests/idealised/MISMIPplus
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_file_integrated_tests_idealised_MISMIPplus
+          path: automated_testing/scoreboard/scoreboard_files
+
+      - name: Download scoreboard file for integrated_tests/idealised/SSA_icestream
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_file_integrated_tests_idealised_SSA_icestream
+          path: automated_testing/scoreboard/scoreboard_files
+
+      - name: Download scoreboard file for integrated_tests/idealised/Berends2023_nudging
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_file_integrated_tests_idealised_Berends2023_nudging
+          path: automated_testing/scoreboard/scoreboard_files
+
+      - name: Download scoreboard file for integrated_tests/realistic/Antarctica/initialisation/Ant_init_20kyr_invBMB_invfric_40km
+        uses: actions/download-artifact@v4
+        with:
+          name: scoreboard_file_integrated_tests_realistic_Antarctica_initialisation_Ant_init_20kyr_invBMB_invfric_40km
+          path: automated_testing/scoreboard/scoreboard_files
+
+# ===============================
+# ===== Finalise scoreboard =====
+# ===============================
+
+      - name: Create scoreboard visualisation
+        uses: matlab-actions/run-command@v2
+        with:
+          command: |
+            addpath('automated_testing/scoreboard/scripts')
+            create_scoreboard_html('${{github.workspace}}/automated_testing')
+
+      - name: Upload scoreboard visualisation as artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: scoreboard
+          path: automated_testing/test_reports/scoreboard.html
+
+      - name: Commit scoreboard files
+        # See https://github.com/marketplace/actions/add-commit
+        if: ${{ github.event_name == 'pull_request' }} # Only do this for pull requests
+        uses: EndBug/add-and-commit@v9 # You can change this to use a specific version.
+        with:
+          add: automated_testing/scoreboard/scoreboard_files/*.xml
+          author_name: ${{ github.actor }} (from UFEMISM test suite workflow)
+          message: 'Update scoreboard files (from UFEMISM test suite workflow by ${{ github.actor }})'
+          push: true

@@ -9,6 +9,8 @@ module checksum_mod
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_DOUBLE_PRECISION, MPI_SUM, &
     MPI_MIN, MPI_MAX, MPI_COMM_WORLD
   use crash_mod, only: crash
+  use git_commit_hash_and_package_versions, only: git_commit_hash, has_uncommitted_changes, &
+    petsc_version, netcdf_version, openmpi_version, compiler_version, compiler_flags
 
   implicit none
 
@@ -492,13 +494,25 @@ contains
   end subroutine log_checksum
 
   subroutine create_checksum_logfile( output_dir)
+
     character(len=*), intent(in) :: output_dir
+
     filename_checksum_logfile = trim( output_dir) // '/checksum_logfile.txt'
+
     if (par%primary) then
       open( file = trim( filename_checksum_logfile), newunit = unit_checksum_logfile)
       write( unit_checksum_logfile,*) '-= Checksum logfile =-'
+      write( unit_checksum_logfile,*) ' Git commit hash        : ', git_commit_hash
+      write( unit_checksum_logfile,*) ' has uncommitted changes: ', has_uncommitted_changes
+      write( unit_checksum_logfile,*) ' PETSc version          : ', petsc_version
+      write( unit_checksum_logfile,*) ' NetCDF version         : ', netcdf_version
+      write( unit_checksum_logfile,*) ' OpenMPI version        : ', openmpi_version
+      write( unit_checksum_logfile,*) ' Compiler               : ', compiler_version
+      write( unit_checksum_logfile,*) ' Compiler flags         : ', compiler_flags
     end if
+
     checksum_logfile_exists = .true.
+
   end subroutine create_checksum_logfile
 
 end module checksum_mod

@@ -17,6 +17,10 @@ module remapping_types
     character(len=1024) :: method    = ''       ! Remapping method (nearest-neighbour, bilinear, 2-nd order conservative, etc.)
     type(tMat)          :: M                    ! The actual operator matrix
 
+  contains
+
+    final :: finalise
+
   end type type_map
 
   type type_single_row_mapping_matrices
@@ -30,5 +34,11 @@ module remapping_types
   end type type_single_row_mapping_matrices
 
 contains
+
+  subroutine finalise( self)
+    type(type_map) :: self
+    integer :: perr
+    call MatDestroy( self%M, perr)
+  end subroutine finalise
 
 end module remapping_types

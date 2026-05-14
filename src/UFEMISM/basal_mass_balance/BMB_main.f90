@@ -152,17 +152,21 @@ CONTAINS
     SELECT CASE (choice_BMB_model)
       CASE ('uniform')
         BMB%BMB_shelf = 0._dp
-        DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
-            BMB%BMB_shelf( vi) = C%uniform_BMB
-          END IF
-        END DO
+        if (time > C%uniform_BMB_t_start) then
+          DO vi = mesh%vi1, mesh%vi2
+            IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
+              BMB%BMB_shelf( vi) = C%uniform_BMB
+            END IF
+          END DO
+        end if
       CASE ('prescribed')
         CALL run_BMB_model_prescribed( mesh, ice, BMB, region_name, time)
       CASE ('prescribed_fixed')
         ! No need to do anything
       CASE ('idealised')
-        CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        if (time > C%uniform_BMB_t_start) then
+          CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+        end if
       CASE ('parameterised')
         CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
       CASE ('inverted')

@@ -37,7 +37,7 @@ contains
   ! ============================================================================
 
   subroutine read_field_from_file_2D( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read)
+    mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! In/output variables:
@@ -47,6 +47,7 @@ contains
     character(len=*),       intent(in   ) :: output_dir
     real(dp), dimension(:), intent(  out) :: d_partial
     real(dp), optional,     intent(in   ) :: time_to_read
+    logical,  optional,     intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D'
@@ -58,12 +59,12 @@ contains
     if (size( d_partial,1) == mesh%pai_V%n_loc) then
       ! d_partial is distributed memory
       call read_field_from_file_2D_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial, time_to_read)
+        mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
       ! d_partial is hybrid distributed/shared memory
       allocate( d_partial_loc( mesh%pai_V%n_loc))
       call read_field_from_file_2D_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial_loc, time_to_read)
+        mesh, output_dir, d_partial_loc, time_to_read, extrapolate_fillvalues)
       call dist_to_hybrid( mesh%pai_V, d_partial_loc, d_partial)
     else
       call crash('invalid size for d_partial')
@@ -75,7 +76,7 @@ contains
   end subroutine read_field_from_file_2D
 
   subroutine read_field_from_file_2D_b( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read)
+    mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh triangles.
 
     ! In/output variables:
@@ -85,6 +86,7 @@ contains
     character(len=*),       intent(in   ) :: output_dir
     real(dp), dimension(:), intent(  out) :: d_partial
     real(dp), optional,     intent(in   ) :: time_to_read
+    logical,  optional,     intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_b'
@@ -96,12 +98,12 @@ contains
     if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
       ! d_partial is distributed memory
       call read_field_from_file_2D_b_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial, time_to_read)
+        mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
       ! d_partial is hybrid distributed/shared memory
       allocate( d_partial_loc( mesh%pai_Tri%n_loc))
       call read_field_from_file_2D_b_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial_loc, time_to_read)
+        mesh, output_dir, d_partial_loc, time_to_read, extrapolate_fillvalues)
       call dist_to_hybrid( mesh%pai_Tri, d_partial_loc, d_partial)
     else
       call crash('invalid size for d_partial')
@@ -113,7 +115,7 @@ contains
   end subroutine read_field_from_file_2D_b
 
   subroutine read_field_from_file_2D_monthly( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read)
+    mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! In/output variables:
@@ -123,6 +125,7 @@ contains
     character(len=*),         intent(in   ) :: output_dir
     real(dp), dimension(:,:), intent(  out) :: d_partial
     real(dp), optional,       intent(in   ) :: time_to_read
+    logical,  optional,       intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_file_2D_monthly'
@@ -134,12 +137,12 @@ contains
     if (size( d_partial,1) == mesh%pai_V%n_loc) then
       ! d_partial is distributed memory
       call read_field_from_file_2D_monthly_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial, time_to_read)
+        mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
       ! d_partial is hybrid distributed/shared memory
       allocate( d_partial_loc( mesh%pai_V%n_loc, 12))
       call read_field_from_file_2D_monthly_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial_loc, time_to_read)
+        mesh, output_dir, d_partial_loc, time_to_read, extrapolate_fillvalues)
       call dist_to_hybrid( mesh%pai_V, 12, d_partial_loc, d_partial)
     else
       call crash('invalid size for d_partial')
@@ -151,7 +154,7 @@ contains
   end subroutine read_field_from_file_2D_monthly
 
   subroutine read_field_from_file_3D( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read, nzeta, zeta)
+    mesh, output_dir, d_partial, time_to_read, nzeta, zeta, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! In/output variables:
@@ -163,6 +166,7 @@ contains
     real(dp), optional,                            intent(in   ) :: time_to_read
     integer,                             optional, intent(  out) :: nzeta
     real(dp), dimension(:), allocatable, optional, intent(  out) :: zeta
+    logical,  optional,                            intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D'
@@ -174,12 +178,12 @@ contains
     if (size( d_partial,1) == mesh%pai_V%n_loc) then
       ! d_partial is distributed memory
       call read_field_from_file_3D_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial, time_to_read, nzeta, zeta)
+        mesh, output_dir, d_partial, time_to_read, nzeta, zeta, extrapolate_fillvalues)
     elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
       ! d_partial is hybrid distributed/shared memory
       allocate( d_partial_loc( mesh%pai_V%n_loc, size( d_partial,2)))
       call read_field_from_file_3D_dist( filename, field_name_options, &
-        mesh, output_dir, d_partial_loc, time_to_read, nzeta, zeta)
+        mesh, output_dir, d_partial_loc, time_to_read, nzeta, zeta, extrapolate_fillvalues)
       call dist_to_hybrid( mesh%pai_V, size( d_partial,2), d_partial_loc, d_partial)
     else
       call crash('invalid size for d_partial')
@@ -191,7 +195,7 @@ contains
   end subroutine read_field_from_file_3D
 
   subroutine read_field_from_file_3D_ocean( filename, field_name_options, &
-    mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth)
+    mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! In/output variables:
@@ -204,6 +208,7 @@ contains
     real(dp), optional,                            intent(in   ) :: time_to_read
     integer ,                            optional, intent(  out) :: ndepth
     real(dp), dimension(:), allocatable, optional, intent(  out) :: depth
+    logical,  optional,                            intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'read_field_from_file_3D_ocean'
@@ -215,12 +220,12 @@ contains
     if (size( d_partial,1) == mesh%pai_V%n_loc) then
       ! d_partial is distributed memory
       call read_field_from_file_3D_ocean_dist( filename, field_name_options, &
-        mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth)
+        mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth, extrapolate_fillvalues)
     elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
       ! d_partial is hybrid distributed/shared memory
       allocate( d_partial_loc( mesh%pai_V%n_loc, size( d_partial,2)))
       call read_field_from_file_3D_ocean_dist( filename, field_name_options, &
-        mesh, output_dir, z_ocean, d_partial_loc, time_to_read, ndepth, depth)
+        mesh, output_dir, z_ocean, d_partial_loc, time_to_read, ndepth, depth, extrapolate_fillvalues)
       call dist_to_hybrid( mesh%pai_V, size( d_partial,2), d_partial_loc, d_partial)
     else
       call crash('invalid size for d_partial')
@@ -235,7 +240,7 @@ contains
   ! ==========================================================
 
   subroutine read_field_from_file_2D_dist( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read)
+    mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! Ultimate flexibility; the file can provide the data on a global lon/lat-grid,
@@ -250,6 +255,7 @@ contains
     character(len=*),       intent(in   ) :: output_dir
     real(dp), dimension(:), intent(  out) :: d_partial
     real(dp), optional,     intent(in   ) :: time_to_read
+    logical,  optional,     intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_dist'
@@ -296,7 +302,8 @@ contains
       allocate( d_grid_vec_partial_from_file( grid_from_file%n1: grid_from_file%n2))
 
       ! Read gridded data
-      call read_field_from_xy_file_dp_2D( filename, field_name_options, d_grid_vec_partial_from_file, time_to_read = time_to_read)
+      call read_field_from_xy_file_dp_2D( filename, field_name_options, d_grid_vec_partial_from_file, &
+        time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
       call map_from_xy_grid_to_mesh_2D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
@@ -353,7 +360,7 @@ contains
   end subroutine read_field_from_file_2D_dist
 
   subroutine read_field_from_file_2D_b_dist( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read)
+    mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh triangles.
 
     ! Ultimate flexibility; the file can provide the data on a global lon/lat-grid,
@@ -368,6 +375,7 @@ contains
     character(len=*),       intent(in   ) :: output_dir
     real(dp), dimension(:), intent(  out) :: d_partial
     real(dp), optional,     intent(in   ) :: time_to_read
+    logical,  optional,     intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'read_field_from_file_2D_b_dist'
@@ -412,7 +420,8 @@ contains
       allocate( d_grid_vec_partial_from_file( grid_from_file%n1: grid_from_file%n2))
 
       ! Read gridded data
-      call read_field_from_xy_file_dp_2D( filename, field_name_options, d_grid_vec_partial_from_file, time_to_read = time_to_read)
+      call read_field_from_xy_file_dp_2D( filename, field_name_options, d_grid_vec_partial_from_file, &
+        time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
       call map_from_xy_grid_to_mesh_triangles_2D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
@@ -453,7 +462,7 @@ contains
   end subroutine read_field_from_file_2D_b_dist
 
   subroutine read_field_from_file_2D_monthly_dist( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read)
+    mesh, output_dir, d_partial, time_to_read, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! Ultimate flexibility; the file can provide the data on a global lon/lat-grid,
@@ -468,6 +477,7 @@ contains
     character(len=*),         intent(in   ) :: output_dir
     real(dp), dimension(:,:), intent(  out) :: d_partial
     real(dp), optional,       intent(in   ) :: time_to_read
+    logical,  optional,       intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_file_2D_monthly_dist'
@@ -516,7 +526,8 @@ contains
       allocate( d_grid_vec_partial_from_file( grid_from_file%n1: grid_from_file%n2,12))
 
       ! Read gridded data
-      call read_field_from_xy_file_dp_2D_monthly( filename, field_name_options, d_grid_vec_partial_from_file, time_to_read = time_to_read)
+      call read_field_from_xy_file_dp_2D_monthly( filename, field_name_options, d_grid_vec_partial_from_file, &
+        time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
       call map_from_xy_grid_to_mesh_3D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
@@ -595,7 +606,7 @@ contains
   end subroutine read_field_from_file_2D_monthly_dist
 
   subroutine read_field_from_file_3D_dist( filename, field_name_options, &
-    mesh, output_dir, d_partial, time_to_read, nzeta, zeta)
+    mesh, output_dir, d_partial, time_to_read, nzeta, zeta, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! Ultimate flexibility; the file can provide the data on a global lon/lat-grid,
@@ -614,6 +625,7 @@ contains
     real(dp), optional,                            intent(in   ) :: time_to_read
     integer,                             optional, intent(  out) :: nzeta
     real(dp), dimension(:), allocatable, optional, intent(  out) :: zeta
+    logical,  optional,                            intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D_dist'
@@ -663,7 +675,8 @@ contains
       allocate( d_grid_vec_partial_from_file( grid_from_file%n1: grid_from_file%n2, nzeta_loc))
 
       ! Read gridded data
-      call read_field_from_xy_file_dp_3D( filename, field_name_options, d_grid_vec_partial_from_file, time_to_read = time_to_read)
+      call read_field_from_xy_file_dp_3D( filename, field_name_options, d_grid_vec_partial_from_file, &
+        time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
       call map_from_xy_grid_to_mesh_3D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
@@ -732,7 +745,7 @@ contains
   end subroutine read_field_from_file_3D_dist
 
   subroutine read_field_from_file_3D_ocean_dist( filename, field_name_options, &
-    mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth)
+    mesh, output_dir, z_ocean, d_partial, time_to_read, ndepth, depth, extrapolate_fillvalues)
     !< Read a data field from a NetCDF file, and map it to the model mesh.
 
     ! Ultimate flexibility; the file can provide the data on a global lon/lat-grid,
@@ -750,6 +763,7 @@ contains
     real(dp), optional,                            intent(in   ) :: time_to_read
     integer ,                            optional, intent(  out) :: ndepth
     real(dp), dimension(:), allocatable, optional, intent(  out) :: depth
+    logical,  optional,                            intent(in   ) :: extrapolate_fillvalues
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'read_field_from_file_3D_ocean_dist'
@@ -800,7 +814,8 @@ contains
       allocate( d_grid_vec_partial_from_file( grid_from_file%n1: grid_from_file%n2, ndepth_loc))
 
       ! Read gridded data
-      call read_field_from_xy_file_dp_3D_ocean( filename, field_name_options, d_grid_vec_partial_from_file, time_to_read = time_to_read)
+      call read_field_from_xy_file_dp_3D_ocean( filename, field_name_options, d_grid_vec_partial_from_file, &
+        time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! allocate memory for meshed data using all data layers
       allocate( d_partial_raw_layers( mesh%vi1:mesh%vi2, ndepth_loc))

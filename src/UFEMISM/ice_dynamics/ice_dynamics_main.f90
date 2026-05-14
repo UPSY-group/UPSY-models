@@ -729,7 +729,7 @@ contains
     ! Basal friction and shear stress
     call reallocate_bounds( ice%till_yield_stress         , mesh_new%vi1, mesh_new%vi2)  ! [Pa]               Till yield stress (used when choice_sliding_law = "Coloumb", "Budd", or "Zoet-Iverson")
     call reallocate_bounds( ice%basal_friction_coefficient, mesh_new%vi1, mesh_new%vi2)  ! [Pa yr m^-1]       Effective basal friction coefficient (basal_shear_stress = u_base * basal_friction_coefficient)
-    call reallocate_bounds( ice%basal_shear_stress        , mesh_new%vi1, mesh_new%vi2)  ! [Pa]               Basal shear stress
+    call reallocate_bounds( ice%basal_shear_stress        , mesh_new%ti1, mesh_new%ti2)  ! [Pa]               Basal shear stress
 
     ! == Geothermal heat ==
     ! =====================

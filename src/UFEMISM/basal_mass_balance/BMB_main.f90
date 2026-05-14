@@ -110,6 +110,8 @@ CONTAINS
           CASE DEFAULT
             ! Compute grounded ice mass balance
             SELECT CASE (C%choice_BMB_grounded)
+              CASE ('none')
+                ! Do nothing
               CASE ('from_temperature')
                 call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
               CASE DEFAULT
@@ -131,8 +133,10 @@ CONTAINS
     SELECT CASE (C%choice_BMB_grounded)
       CASE ('from_temperature')
         call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+      CASE ('none')
+        ! Do nothing
       CASE DEFAULT
-        ! Do nothing  
+        ! Do nothing
     END SELECT
 
     ! Re-initialise BMB model if needed, only for LADDIE

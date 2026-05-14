@@ -482,7 +482,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time_config                = 0.1_dp                          ! [yr] time scale for basal hydrology to get to equilibrium
     real(dp)            :: error_function_max_effective_pressure_config = 5E6_dp                           ! Maximum effective pressure inland for the error-function model
     real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
-    character(len=1024) :: choice_BMB_grounded_config                   = 'from_temperature'
+    character(len=1024) :: choice_BMB_grounded_config                   = 'none'
 
     ! Coupling
     logical             :: hydro_is_coupled_to_BMB_config               = .false.

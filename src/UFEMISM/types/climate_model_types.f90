@@ -147,8 +147,8 @@ MODULE climate_model_types
 
   end type type_climate_field_ISMIP7_monthly
 
-  type type_climate_field_ISMIP7_annual
-    ! Data and metadata of annual fields (dtsdz)
+  type type_climate_field_ISMIP7_yearly
+    ! Data and metadata of yearly fields (dtsdz)
 
     character(len=1024)                            :: name          !           'dtsdz', etc
     character(len=1024)                            :: foldername    !           Foldername that contains all files
@@ -162,7 +162,7 @@ MODULE climate_model_types
     integer                                        :: ti0 = -1      !           Time index before current time
     integer                                        :: ti1 = -1      !           Time index after current time
 
-  end type type_climate_field_ISMIP7_annual
+  end type type_climate_field_ISMIP7_yearly
 
   type type_climate_model_ISMIP7
 
@@ -176,7 +176,7 @@ MODULE climate_model_types
     type(type_climate_field_ISMIP7_monthly) :: tas_anomaly
     type(type_climate_field_ISMIP7_monthly) :: pr
     type(type_climate_field_ISMIP7_monthly) :: pr_anomaly
-    type(type_climate_field_ISMIP7_annual)  :: dtsdz
+    type(type_climate_field_ISMIP7_yearly)  :: dtsdz
 
     ! Elevation-induced TS change
     real(dp), dimension(:), allocatable :: delta_z

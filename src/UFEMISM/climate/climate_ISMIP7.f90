@@ -58,7 +58,7 @@ module climate_ISMIP7
   use mesh_types, only: type_mesh
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, &
-    type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_annual
+    type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_yearly
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -73,6 +73,11 @@ module climate_ISMIP7
   private
 
   public :: initialise_climate_model_ISMIP7, run_climate_model_ISMIP7
+
+  interface initialise_climate_field
+    module procedure initialise_climate_field_monthly
+    module procedure initialise_climate_field_yearly
+  end interface
 
 contains
 
@@ -120,16 +125,19 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Initialise monthly fields
-      call initialise_climate_field_monthly( mesh, ISMIP7%tas, 'tas')
-      call initialise_climate_field_monthly( mesh, ISMIP7%pr, 'pr')
+      call initialise_climate_field( mesh, ISMIP7%tas, 'tas')
+      call initialise_climate_field( mesh, ISMIP7%pr, 'pr')
     case ('fixed')
       ! Initialise monthly fields
-      call initialise_climate_field_monthly( mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
-      call initialise_climate_field_monthly( mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
+      call initialise_climate_field( mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
+      call initialise_climate_field( mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
 
       ! Initialise baseline
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
     end select
+
+    ! Initialise vertical gradient
+    call initialise_climate_field( mesh, ISMIP7%dtsdz, 'dtsdz')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -167,6 +175,38 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_climate_field_monthly
+
+  subroutine initialise_climate_field_yearly( mesh, field, name)
+
+    ! In/output variables:
+    type(type_mesh),                         intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_yearly), intent(inout) :: field
+    character(len=*),                        intent(in   ) :: name
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_climate_field_yearly'
+    character(len=1024)            :: filename
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Define name
+    field%name = name
+
+    ! Get info from files
+    !call gather_fileinfo( field)
+
+    ! Allocate memory for timeframes
+    allocate (field%val0( mesh%vi1:mesh%vi2), source = NaN)
+    allocate (field%val0( mesh%vi1:mesh%vi2), source = NaN)
+
+    ! Update timeframes to the current model time
+    !call update_timeframes( mesh, field, C%start_time_of_run)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_climate_field_yearly
 
   subroutine initialise_climate_baseline_fixed( mesh, ISMIP7)
 

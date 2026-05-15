@@ -133,22 +133,27 @@ MODULE climate_model_types
   type type_climate_model_ISMIP7_timeframe
 
     real(dp)                              :: time
-    real(dp), dimension(:,:), allocatable :: ts               ! [K]       Monthly surface temperature
-    real(dp), dimension(:,:), allocatable :: ts_anomaly       ! [K]       Monthly surface temperature anomaly
-    real(dp), dimension(:,:), allocatable :: dtsdz            ! [K m^-1]  Vertical surface temperature gradient
+    real(dp), dimension(:,:), allocatable :: tas              ! [K]             Monthly air temperature
+    real(dp), dimension(:,:), allocatable :: tas_anomaly      ! [K]             Monthly air temperature anomaly
+    real(dp), dimension(:),   allocatable :: dtsdz            ! [K m^-1]        Annual vertical surface temperature gradient
+    real(dp), dimension(:,:), allocatable :: pr               ! [kg m^-2 s^-1]  Monthly precipitation
+    real(dp), dimension(:,:), allocatable :: pr_anomaly       ! [kg m^-2 s^-1]  Monthly precipitation anomaly
 
   end type type_climate_model_ISMIP7_timeframe
 
   type type_climate_model_ISMIP7
 
     ! Baseline TS and surface elevation
-    real(dp), dimension(:), allocatable :: ts_baseline      ! [K]                     Baseline annual ts
-    real(dp), dimension(:), allocatable :: Hs_baseline      ! [m w.r.t. PD sea level] Baseline surface elevation
+    real(dp), dimension(:,:), allocatable :: tas_baseline    ! [K]                     Baseline monthly tas
+    real(dp), dimension(:,:), allocatable :: pr_baseline     ! [kg m^-2 s^-1]          Baseline monthly pr
+    real(dp), dimension(:), allocatable :: Hs_baseline       ! [m w.r.t. PD sea level] Baseline surface elevation
 
     ! List of forcing files and their timestamps
-    character(len=1024), dimension(:), allocatable :: filenames_acabf
-    character(len=1024), dimension(:), allocatable :: filenames_acabf_anomaly
-    character(len=1024), dimension(:), allocatable :: filenames_dacabfdz
+    character(len=1024), dimension(:), allocatable :: filenames_tas
+    character(len=1024), dimension(:), allocatable :: filenames_tas_anomaly
+    character(len=1024), dimension(:), allocatable :: filenames_dtsdz
+    character(len=1024), dimension(:), allocatable :: filenames_pr
+    character(len=1024), dimension(:), allocatable :: filenames_pr_anomaly
     real(dp),            dimension(:), allocatable :: timestamps
 
     ! Timeframes of forcing fields enveloping the current model time
@@ -160,11 +165,12 @@ MODULE climate_model_types
     real(dp), dimension(:), allocatable :: delta_z
     real(dp), dimension(:), allocatable :: delta_ts
 
-    ! Monthly ts
-    real(dp), dimension(:,:), allocatable :: ts_monthly
+    ! Monthly tas
+    real(dp), dimension(:,:), allocatable :: T2m
+    real(dp), dimension(:,:), allocatable :: Precip
 
   end type type_climate_model_ISMIP7
-  
+ 
   TYPE type_climate_model
     ! The climate model data structure.
 

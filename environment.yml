@@ -2,14 +2,28 @@ name: upsy
 channels:
   - conda-forge
 dependencies:
-  - python >=3.12
+  # Core python
+  - python=3.12
+  - numpy=2.4.3
+  - netcdf4=1.7.4
+
+  # Stuff to compile models
+  - openmpi=5.0.10
+  - petsc=3.25.1
+  - netcdf-fortran=4.6.2
+  - libnetcdf=4.10.0
+
+  - gfortran
+  - compilers
+  - cmake
+  - ninja
+
+  # Goodies for plotting
   - cartopy
   - cmocean
   - dask
   - geopandas
   - matplotlib
-  - netcdf4
-  - numpy
   - pandas
   - pyproj
   - pyshp
@@ -21,4 +35,3 @@ dependencies:
   - tqdm
   - ipython
   - ipykernel
-  - qt6-wayland

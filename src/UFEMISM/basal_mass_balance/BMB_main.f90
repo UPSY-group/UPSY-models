@@ -169,7 +169,7 @@ CONTAINS
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
 
-    if (C%do_use_ISMIP6_future_shelf_collapse_forcing) then
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%choice_retreat_mask_style == 'ISMIP6') then
       select case(C%ISMIP6_shelf_collapse_type)
       case('BMB')
         do vi = mesh%vi1, mesh%vi2

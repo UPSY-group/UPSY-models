@@ -45,7 +45,7 @@ module ice_dynamics_main
   use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use bed_roughness_model_types, only: type_bed_roughness_model
   use checksum_mod, only: checksum
-  use ice_retreat_masks, only: run_ISMIP6_style_retreat_mask, initialise_ISMIP6_style_retreat_mask
+  use ice_retreat_masks, only: run_retreat_masks, initialise_retreat_masks
 
   implicit none
 
@@ -189,9 +189,9 @@ contains
     call calc_grounded_fractions( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
 
     ! Calculate retreat masks if so desired
-    if (C%do_use_ISMIP6_future_shelf_collapse_forcing) then
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
       ! Run the ISMIP6-style forcing
-      call run_ISMIP6_style_retreat_mask( region%mesh, region%ice, region%time)
+      call run_retreat_masks( region%mesh, region%ice, region%time)
     end if
 
     ! Finalise routine path
@@ -288,9 +288,9 @@ contains
     call checksum( mesh%pai_V, ice%SL, 'ice%SL')
 
     ! Initialise retreat masks if so desired
-    if (C%do_use_ISMIP6_future_shelf_collapse_forcing) then
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing) then
       ! Run the ISMIP6-style forcing
-      call initialise_ISMIP6_style_retreat_mask( mesh, ice)
+      call initialise_retreat_masks( mesh, ice)
     end if
 
     do vi = mesh%vi1, mesh%vi2

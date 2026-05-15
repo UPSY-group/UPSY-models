@@ -18,11 +18,67 @@ module ice_retreat_masks
 
   private
 
-  public :: run_ISMIP6_style_retreat_mask
-  public :: update_ISMIP6_style_future_timeframes
-  public :: initialise_ISMIP6_style_retreat_mask
+  public :: run_retreat_masks
+  public :: initialise_retreat_masks
 
 contains
+
+  subroutine run_retreat_masks( mesh, ice, time)
+    ! Initialise retreat masks routine
+
+    ! In/output variables:
+    type(type_mesh),                    intent(in)    :: mesh
+    type(type_ice_model),               intent(inout) :: ice
+    real(dp),                           intent(in)    :: time
+
+    ! Local variables:
+    character(len=256), parameter                           :: routine_name = 'run_retreat_masks'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Run the retreat mask according to the chosen style
+    select case (C%choice_retreat_mask_style)
+    case default
+      call crash('unknown choice_retreat_mask_style "' // trim( C%choice_retreat_mask_style) // '"')
+    case ('ISMIP6')
+      call run_ISMIP6_style_retreat_mask( mesh, ice, time)
+    case ('ISMIP7')
+      call crash('ISMIP7 style retreat not implemented yet "' // trim( C%choice_retreat_mask_style) // '"')
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine run_retreat_masks
+
+  subroutine initialise_retreat_masks( mesh, ice)
+    ! Initialise retreat masks routine
+
+    ! In/output variables:
+    type(type_mesh),                    intent(in   ) :: mesh
+    type(type_ice_model),               intent(inout) :: ice
+
+    ! Local variables:
+    character(len=256), parameter                           :: routine_name = 'initialise_retreat_masks'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Initialise the retreat mask according to the chosen style
+    select case (C%choice_retreat_mask_style)
+    case default
+      call crash('unknown choice_retreat_mask_style "' // trim( C%choice_retreat_mask_style) // '"')
+    case ('ISMIP6')
+      call initialise_ISMIP6_style_retreat_mask( mesh, ice)
+    case ('ISMIP7')
+      call crash('ISMIP7 style retreat not implemented yet "' // trim( C%choice_retreat_mask_style) // '"')
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_retreat_masks
 
 ! == ISMIP6-style Antarctica future retreat mask
 ! ======================================================================

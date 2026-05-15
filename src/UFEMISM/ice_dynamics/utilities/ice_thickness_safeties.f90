@@ -122,7 +122,7 @@ contains
     end if
 
     ! if so specified, remove all ice inside the mask
-    if (C%do_use_ISMIP6_future_shelf_collapse_forcing) then
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%choice_retreat_mask_style == 'ISMIP6') then
       select case(C%ISMIP6_shelf_collapse_type)
       case('BMB')
         ! do nothing, collapse will be applied in BMB routine

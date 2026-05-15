@@ -130,44 +130,57 @@ MODULE climate_model_types
 
   END TYPE type_climate_model_matrix
 
-  type type_climate_model_ISMIP7_timeframe
+  type type_climate_field_ISMIP7_monthly
+    ! Data and metadata of monthly tas/pr fields and anomalies
 
-    real(dp)                              :: time
-    real(dp), dimension(:,:), allocatable :: tas              ! [K]             Monthly air temperature
-    real(dp), dimension(:,:), allocatable :: tas_anomaly      ! [K]             Monthly air temperature anomaly
-    real(dp), dimension(:),   allocatable :: dtsdz            ! [K m^-1]        Annual vertical surface temperature gradient
-    real(dp), dimension(:,:), allocatable :: pr               ! [kg m^-2 s^-1]  Monthly precipitation
-    real(dp), dimension(:,:), allocatable :: pr_anomaly       ! [kg m^-2 s^-1]  Monthly precipitation anomaly
+    character(len=1024)                            :: name          !           'tas', 'pr', etc
+    character(len=1024)                            :: foldername    !           Foldername that contains all files
+    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
 
-  end type type_climate_model_ISMIP7_timeframe
+    real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
+
+    real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
+    real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
+
+    integer                                        :: ti0 = -1      !           Time index before current time
+    integer                                        :: ti1 = -1      !           Time index after current time
+
+  end type type_climate_field_ISMIP7_monthly
+
+  type type_climate_field_ISMIP7_annual
+    ! Data and metadata of annual fields (dtsdz)
+
+    character(len=1024)                            :: name          !           'dtsdz', etc
+    character(len=1024)                            :: foldername    !           Foldername that contains all files
+    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
+
+    real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
+
+    real(dp), dimension(:), allocatable            :: val0          !           Values at timeslice before current time
+    real(dp), dimension(:), allocatable            :: val1          !           Values at timeslice after current time
+
+    integer                                        :: ti0 = -1      !           Time index before current time
+    integer                                        :: ti1 = -1      !           Time index after current time
+
+  end type type_climate_field_ISMIP7_annual
 
   type type_climate_model_ISMIP7
 
     ! Baseline TS and surface elevation
     real(dp), dimension(:,:), allocatable :: tas_baseline    ! [K]                     Baseline monthly tas
     real(dp), dimension(:,:), allocatable :: pr_baseline     ! [kg m^-2 s^-1]          Baseline monthly pr
-    real(dp), dimension(:), allocatable :: Hs_baseline       ! [m w.r.t. PD sea level] Baseline surface elevation
+    real(dp), dimension(:)  , allocatable :: Hs_baseline     ! [m w.r.t. PD sea level] Baseline surface elevation
 
-    ! List of forcing files and their timestamps
-    character(len=1024), dimension(:), allocatable :: filenames_tas
-    character(len=1024), dimension(:), allocatable :: filenames_tas_anomaly
-    character(len=1024), dimension(:), allocatable :: filenames_dtsdz
-    character(len=1024), dimension(:), allocatable :: filenames_pr
-    character(len=1024), dimension(:), allocatable :: filenames_pr_anomaly
-    real(dp),            dimension(:), allocatable :: timestamps
-
-    ! Timeframes of forcing fields enveloping the current model time
-    type(type_climate_model_ISMIP7_timeframe) :: timeframe_before
-    type(type_climate_model_ISMIP7_timeframe) :: timeframe_after
-    type(type_climate_model_ISMIP7_timeframe) :: timeframe_interp
+    ! Fields
+    type(type_climate_field_ISMIP7_monthly) :: tas
+    type(type_climate_field_ISMIP7_monthly) :: tas_anomaly
+    type(type_climate_field_ISMIP7_monthly) :: pr
+    type(type_climate_field_ISMIP7_monthly) :: pr_anomaly
+    type(type_climate_field_ISMIP7_annual)  :: dtsdz
 
     ! Elevation-induced TS change
     real(dp), dimension(:), allocatable :: delta_z
     real(dp), dimension(:), allocatable :: delta_ts
-
-    ! Monthly tas
-    real(dp), dimension(:,:), allocatable :: T2m
-    real(dp), dimension(:,:), allocatable :: Precip
 
   end type type_climate_model_ISMIP7
  

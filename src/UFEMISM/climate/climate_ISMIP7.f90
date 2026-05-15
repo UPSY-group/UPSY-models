@@ -57,7 +57,8 @@ module climate_ISMIP7
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use reference_geometry_types, only: type_reference_geometry
-  use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, type_climate_model_ISMIP7_timeframe
+  use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, &
+    type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_annual
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -88,6 +89,10 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Update timeframes if necessary
+
+    ! Interpolate between timeframes
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -108,6 +113,12 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Get info from files
+
+    ! Allocate memory for timeframes
+
+    ! Update timeframes to the current model time
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

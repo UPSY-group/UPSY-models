@@ -180,10 +180,6 @@ MODULE climate_model_types
     type(type_climate_field_ISMIP7_monthly) :: pr_anomaly
     type(type_climate_field_ISMIP7_yearly)  :: dtsdz
 
-    ! Elevation-induced TS change
-    real(dp), dimension(:), allocatable :: delta_z
-    real(dp), dimension(:), allocatable :: delta_ts
-
   end type type_climate_model_ISMIP7
  
   TYPE type_climate_model

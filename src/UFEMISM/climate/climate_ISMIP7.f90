@@ -56,6 +56,7 @@ module climate_ISMIP7
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
+  use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, &
     type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_yearly
@@ -66,7 +67,7 @@ module climate_ISMIP7
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
-  use parameters, only: NaN, sec_per_year, ice_density
+  use parameters, only: NaN, sec_per_year, freshwater_density
 
   implicit none
 
@@ -91,44 +92,72 @@ module climate_ISMIP7
 
 contains
 
-  subroutine run_climate_model_ISMIP7( mesh, climate, time)
+  subroutine run_climate_model_ISMIP7( mesh, ice, climate, time)
 
     ! In/output variables:
     type(type_mesh),          intent(in   ) :: mesh
+    type(type_ice_model),         intent(in   ) :: ice
     type(type_climate_model), intent(inout) :: climate
     real(dp),                 intent(in   ) :: time
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_climate_model_ISMIP7'
+    character(len=1024), parameter          :: routine_name = 'run_climate_model_ISMIP7'
+    integer                                 :: vi, mi
+    real(dp)                                :: delta_z
+    real(dp), dimension( mesh%vi1:mesh%vi2) :: delta_ts
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Update timeframes if necessary
+    ! Calculate elevation-based T2m correction
+    call update_timeframes( mesh, climate%ISMIP7%dtsdz, time)
+    call interpolate_single_field( mesh, climate%ISMIP7%dtsdz, time)
+
+    do vi = mesh%vi1, mesh%vi2
+      delta_z = ice%Hs( vi) - climate%ISMIP7%Hs_baseline ( vi)
+      delta_ts( vi) = delta_z * climate%ISMIP7%dtsdz%val_interp( vi)
+    end do
+
+    ! Calculate monthly climate
     select case (C%climate_ISMIP7_choice_baseline)
     case default
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
+      ! Update timeframes
       call update_timeframes( mesh, climate%ISMIP7%tas, time)
       call update_timeframes( mesh, climate%ISMIP7%pr, time)
-    case ('fixed')
-      call update_timeframes( mesh, climate%ISMIP7%tas_anomaly, time)
-      call update_timeframes( mesh, climate%ISMIP7%pr_anomaly, time)
-    end select
-    call update_timeframes( mesh, climate%ISMIP7%dtsdz, time)
 
-    ! Interpolate between timeframes
-    select case (C%climate_ISMIP7_choice_baseline)
-    case default
-      call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
-    case ('yearly')
+      ! Interpolate between timeframes
       call interpolate_single_field( mesh, climate%ISMIP7%tas, time)
       call interpolate_single_field( mesh, climate%ISMIP7%pr, time)
+
+      ! Calculate monthly climate
+      do vi = mesh%vi1, mesh%vi2
+        do mi = 1, 12
+          climate%T2m( vi, mi) = climate%ISMIP7%tas%val_interp( vi, mi) + delta_ts( vi)
+          climate%Precip( vi, mi) = climate%ISMIP7%pr%val_interp( vi, mi) * sec_per_year / freshwater_density ! [m.w.e. yr^-1] 
+        end do
+      end do
+
     case ('fixed')
+      ! Update timeframes
+      call update_timeframes( mesh, climate%ISMIP7%tas_anomaly, time)
+      call update_timeframes( mesh, climate%ISMIP7%pr_anomaly, time)
+
+      ! Interpolate between timeframes
       call interpolate_single_field( mesh, climate%ISMIP7%tas_anomaly, time)
       call interpolate_single_field( mesh, climate%ISMIP7%pr_anomaly, time)
+
+      ! Calculate monthly climate
+      do vi = mesh%vi1, mesh%vi2
+        do mi = 1, 12
+          climate%T2m( vi, mi) = climate%ISMIP7%T2m_baseline( vi, mi) + climate%ISMIP7%tas_anomaly%val_interp( vi, mi) + delta_ts( vi)
+          climate%Precip( vi, mi) = climate%ISMIP7%Precip_baseline( vi, mi) &
+            + climate%ISMIP7%pr_anomaly%val_interp( vi, mi) * sec_per_year / freshwater_density ! [m.w.e. yr^-1] 
+        end do
+      end do
+
     end select
-    call interpolate_single_field( mesh, climate%ISMIP7%dtsdz, time)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

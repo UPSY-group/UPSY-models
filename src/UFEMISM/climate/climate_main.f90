@@ -119,7 +119,7 @@ CONTAINS
         call snapshot_plus_anomalies%run( snapshot_plus_anomalies%ct_run( time, ice, climate, grid))
       end select
     case ('ISMIP7')
-      call run_climate_model_ISMIP7( mesh, climate, time)
+      call run_climate_model_ISMIP7( mesh, ice, climate, time)
     CASE DEFAULT
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT

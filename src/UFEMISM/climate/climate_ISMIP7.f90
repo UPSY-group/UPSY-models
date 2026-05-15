@@ -3,10 +3,12 @@ module climate_ISMIP7
   ! The ISMIP7 protocol provides separate NetCDF files for each year, with a single file contaning 12 monthly fields
   ! for that year. There are separate files for each variable, namely:
   !
-  ! - ts        : the absolute surface temp (in K)
-  ! - ts-anomaly: the surface temp anomaly relative to the 1960-1989 baseline
-  ! - dtsdz     : the vertical surface temp gradient, to correct for differences in elevation between
-  !               the observed and modelled ice-sheet geometry
+  ! - tas        : the absolute 2m air temp (in K)
+  ! - tas-anomaly: the 2m air temp anomaly relative to the 1960-1989 baseline
+  ! - dtsdz      : the vertical surface temp gradient, to correct for differences in elevation between
+  !                the observed and modelled ice-sheet geometry
+  ! - pr         : the absolute precipitation (in kg m^-2 s^-1)
+  ! - pr-anomaly : the precipitation anomaly relative to the 1960-1989 baseline
   !
   ! The directory structure for the forcing data is:
   !
@@ -14,23 +16,35 @@ module climate_ISMIP7
   !    path/
   !      to/
   !        base_folder/
-  !          ts/
+  !          tas/
   !            version/
-  !              ts_somethingsomethingsomething_2015.nc
-  !              ts_somethingsomethingsomething_2016.nc
-  !              ts_somethingsomethingsomething_2017.nc
+  !              tas_somethingsomethingsomething_2015.nc
+  !              tas_somethingsomethingsomething_2016.nc
+  !              tas_somethingsomethingsomething_2017.nc
   !              ...
-  !          ts-anomaly/
+  !          tas-anomaly/
   !            version/
-  !              ts-anomaly_somethingsomethingsomething_2015.nc
-  !              ts-anomaly_somethingsomethingsomething_2016.nc
-  !              ts-anomaly_somethingsomethingsomething_2017.nc
+  !              tas-anomaly_somethingsomethingsomething_2015.nc
+  !              tas-anomaly_somethingsomethingsomething_2016.nc
+  !              tas-anomaly_somethingsomethingsomething_2017.nc
   !              ...
   !          dtsdz/
   !            version/
   !              dtsdz_somethingsomethingsomething_2015.nc
   !              dtsdz_somethingsomethingsomething_2016.nc
   !              dtsdz_somethingsomethingsomething_2017.nc
+  !              ...
+  !          pr/
+  !            version/
+  !              pr_somethingsomethingsomething_2015.nc
+  !              pr_somethingsomethingsomething_2016.nc
+  !              pr_somethingsomethingsomething_2017.nc
+  !              ...
+  !          pr-anomaly/
+  !            version/
+  !              pr-anomaly_somethingsomethingsomething_2015.nc
+  !              pr-anomaly_somethingsomethingsomething_2016.nc
+  !              pr-anomaly_somethingsomethingsomething_2017.nc
   !              ...
   !
   ! In the config, you only need to provide the path/to/base_folder and the version; UFEMISM will take

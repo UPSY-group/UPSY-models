@@ -141,6 +141,7 @@ MODULE climate_model_types
 
     real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
     real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
+    real(dp), dimension(:,:), allocatable          :: val_interp    !           Interpolated values
 
     integer                                        :: ti0 = -1      !           Time index before current time
     integer                                        :: ti1 = -1      !           Time index after current time
@@ -158,6 +159,7 @@ MODULE climate_model_types
 
     real(dp), dimension(:), allocatable            :: val0          !           Values at timeslice before current time
     real(dp), dimension(:), allocatable            :: val1          !           Values at timeslice after current time
+    real(dp), dimension(:), allocatable            :: val_interp    !           Interpolated values
 
     integer                                        :: ti0 = -1      !           Time index before current time
     integer                                        :: ti1 = -1      !           Time index after current time

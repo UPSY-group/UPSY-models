@@ -84,6 +84,11 @@ module climate_ISMIP7
     module procedure update_timeframes_yearly
   end interface
 
+  interface interpolate_single_field
+    module procedure interpolate_single_field_monthly
+    module procedure interpolate_single_field_yearly
+  end interface
+
 contains
 
   subroutine run_climate_model_ISMIP7( mesh, climate, time)
@@ -113,6 +118,17 @@ contains
     call update_timeframes( mesh, climate%ISMIP7%dtsdz, time)
 
     ! Interpolate between timeframes
+    select case (C%climate_ISMIP7_choice_baseline)
+    case default
+      call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
+    case ('yearly')
+      call interpolate_single_field( mesh, climate%ISMIP7%tas, time)
+      call interpolate_single_field( mesh, climate%ISMIP7%pr, time)
+    case ('fixed')
+      call interpolate_single_field( mesh, climate%ISMIP7%tas_anomaly, time)
+      call interpolate_single_field( mesh, climate%ISMIP7%pr_anomaly, time)
+    end select
+    call interpolate_single_field( mesh, climate%ISMIP7%dtsdz, time)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -192,8 +208,9 @@ contains
     call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
     ! Allocate memory for timeframes
-    allocate (field%val0( mesh%vi1:mesh%vi2, 12), source = NaN)
-    allocate (field%val0( mesh%vi1:mesh%vi2, 12), source = NaN)
+    allocate (field%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
+    allocate (field%val1      ( mesh%vi1:mesh%vi2, 12), source = NaN)
+    allocate (field%val_interp( mesh%vi1:mesh%vi2, 12), source = NaN)
 
     ! Update timeframes to the current model time
     call update_timeframes( mesh, field, C%start_time_of_run)
@@ -225,8 +242,9 @@ contains
     call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
     ! Allocate memory for timeframes
-    allocate (field%val0( mesh%vi1:mesh%vi2), source = NaN)
-    allocate (field%val0( mesh%vi1:mesh%vi2), source = NaN)
+    allocate (field%val0      ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate (field%val1      ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate (field%val_interp( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Update timeframes to the current model time
     call update_timeframes( mesh, field, C%start_time_of_run)
@@ -534,5 +552,88 @@ contains
 
   end subroutine update_bracket_indices
 
+  subroutine interpolate_single_field_monthly( mesh, field, time)
+
+    ! In/output variables:
+    type(type_mesh),                             intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_monthly),     intent(inout) :: field
+    real(dp),                                    intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'interpolate_single_field_monthly'
+    real(dp)                       :: w0, w1
+    real(dp)                       :: days
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    call get_interpolation_weights( field%timestamps( field%ti0), field%timestamps( field%ti1), time, w0, w1)
+
+    ! Apply interpolation to values
+    field%val_interp( mesh%vi1:mesh%vi2, :) = w0 * field%val0( mesh%vi1:mesh%vi2, :) + w1 * field%val1( mesh%vi1:mesh%vi2, :)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine interpolate_single_field_monthly
+
+  subroutine interpolate_single_field_yearly( mesh, field, time)
+
+    ! In/output variables:
+    type(type_mesh),                         intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_yearly),  intent(inout) :: field
+    real(dp),                                intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'interpolate_single_field_yearly'
+    real(dp)                       :: w0, w1
+    real(dp)                       :: days
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    call get_interpolation_weights( field%timestamps( field%ti0), field%timestamps( field%ti1), time, w0, w1)
+
+    ! Apply interpolation to values
+    field%val_interp( mesh%vi1:mesh%vi2) = w0 * field%val0( mesh%vi1:mesh%vi2) + w1 * field%val1( mesh%vi1:mesh%vi2)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine interpolate_single_field_yearly
+
+  subroutine get_interpolation_weights( timestamp0, timestamp1, time, w0, w1)
+
+    ! In/output variables:
+    real(dp), intent(in   ) :: timestamp0
+    real(dp), intent(in   ) :: timestamp1
+    real(dp), intent(in   ) :: time
+    real(dp), intent(  out) :: w0
+    real(dp), intent(  out) :: w1
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'get_interpolation_weights'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Get weights
+    if (time < timestamp0) then
+      ! Model time before bracket times, put full weight on the first timeframe
+      w0 = 1._dp
+    elseif (time > timestamp1) then
+      ! Model time after bracket times, put full weight on the last timeframe
+      w0 = 0._dp
+    else
+      ! Model time between bracket times, determine interpolated weight
+      w0 = (timestamp1 - time) / (timestamp1 - timestamp0)
+    end if
+
+    w1 = 1._dp - w0
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine get_interpolation_weights
 
 end module climate_ISMIP7

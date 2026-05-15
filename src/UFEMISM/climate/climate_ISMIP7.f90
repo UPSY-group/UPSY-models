@@ -56,6 +56,7 @@ module climate_ISMIP7
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
+  use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, type_climate_model_ISMIP7_timeframe
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
@@ -92,10 +93,13 @@ contains
 
   end subroutine run_climate_model_ISMIP7
 
-  subroutine initialise_climate_model_ISMIP7( mesh, ISMIP7)
+  subroutine initialise_climate_model_ISMIP7( mesh, refgeo_PD, refgeo_init, region_name, ISMIP7)
 
     ! In/output variables:
     type(type_mesh),                 intent(in   ) :: mesh
+    type(type_reference_geometry),   intent(in   ) :: refgeo_PD
+    type(type_reference_geometry),   intent(in   ) :: refgeo_init
+    character(len=3),                intent(in   ) :: region_name
     type(type_climate_model_ISMIP7), intent(inout) :: ISMIP7
 
     ! Local variables:

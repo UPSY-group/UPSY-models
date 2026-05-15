@@ -64,7 +64,7 @@ module climate_ISMIP7
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use netcdf_io_main, only: read_field_from_file_2D, read_time_from_file
+  use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
   use parameters, only: sec_per_year, ice_density
 
@@ -114,6 +114,16 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Initialise the baseline climate
+    select case (C%climate_ISMIP7_choice_baseline)
+    case default
+      call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
+    case ('yearly')
+      ! No need to do anything
+    case ('fixed')
+      call initialise_climate_baseline_fixed( mesh, ISMIP7)
+    end select
+
     ! Get info from files
 
     ! Allocate memory for timeframes
@@ -124,5 +134,27 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_climate_model_ISMIP7
+
+  subroutine initialise_climate_baseline_fixed( mesh, ISMIP7)
+
+    ! In/output variables:
+    type(type_mesh),                 intent(in   ) :: mesh
+    type(type_climate_model_ISMIP7), intent(inout) :: ISMIP7
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_climate_baseline_fixed'
+    character(len=1024)            :: filename
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Read the fixed baseline climate
+    call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'T2m'   , mesh, C%output_dir, ISMIP7%T2m_baseline)
+    call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'Precip', mesh, C%output_dir, ISMIP7%Precip_baseline)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_climate_baseline_fixed
 
 end module climate_ISMIP7

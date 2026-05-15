@@ -167,8 +167,8 @@ MODULE climate_model_types
   type type_climate_model_ISMIP7
 
     ! Baseline TS and surface elevation
-    real(dp), dimension(:,:), allocatable :: tas_baseline    ! [K]                     Baseline monthly tas
-    real(dp), dimension(:,:), allocatable :: pr_baseline     ! [kg m^-2 s^-1]          Baseline monthly pr
+    real(dp), dimension(:,:), allocatable :: T2m_baseline    ! [K]                     Baseline monthly T2m
+    real(dp), dimension(:,:), allocatable :: Precip_baseline ! [m.w.e.]                Baseline monthly Precip
     real(dp), dimension(:)  , allocatable :: Hs_baseline     ! [m w.r.t. PD sea level] Baseline surface elevation
 
     ! Fields

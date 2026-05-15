@@ -1,0 +1,99 @@
+module climate_ISMIP7
+
+  ! The ISMIP7 protocol provides separate NetCDF files for each year, with a single file contaning 12 monthly fields
+  ! for that year. There are separate files for each variable, namely:
+  !
+  ! - ts        : the absolute surface temp (in K)
+  ! - ts-anomaly: the surface temp anomaly relative to the 1960-1989 baseline
+  ! - dtsdz     : the vertical surface temp gradient, to correct for differences in elevation between
+  !               the observed and modelled ice-sheet geometry
+  !
+  ! The directory structure for the forcing data is:
+  !
+  !  ../
+  !    path/
+  !      to/
+  !        base_folder/
+  !          ts/
+  !            version/
+  !              ts_somethingsomethingsomething_2015.nc
+  !              ts_somethingsomethingsomething_2016.nc
+  !              ts_somethingsomethingsomething_2017.nc
+  !              ...
+  !          ts-anomaly/
+  !            version/
+  !              ts-anomaly_somethingsomethingsomething_2015.nc
+  !              ts-anomaly_somethingsomethingsomething_2016.nc
+  !              ts-anomaly_somethingsomethingsomething_2017.nc
+  !              ...
+  !          dtsdz/
+  !            version/
+  !              dtsdz_somethingsomethingsomething_2015.nc
+  !              dtsdz_somethingsomethingsomething_2016.nc
+  !              dtsdz_somethingsomethingsomething_2017.nc
+  !              ...
+  !
+  ! In the config, you only need to provide the path/to/base_folder and the version; UFEMISM will take
+  ! care of the rest, assuming the directory structure is as expected.
+
+  use mpi_basic, only: par
+  use UPSY_main, only: UPSY
+  use precisions, only: dp
+  use model_configuration, only: C
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use mesh_types, only: type_mesh
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_remap
+  use Arakawa_grid_mod, only: Arakawa_grid
+  use fields_dimensions, only: third_dimension
+  use mpi_f08, only: MPI_WIN
+  use ice_model_types, only: type_ice_model
+  use reference_geometry_types, only: type_reference_geometry
+  use netcdf_io_main, only: read_field_from_file_2D, read_time_from_file
+  use basic_model_utilities, only: list_files_in_folder
+  use parameters, only: sec_per_year, ice_density
+
+  implicit none
+
+  private
+
+  public :: initialise_climate_model_ISMIP7, run_climate_model_ISMIP7
+
+  subroutine run_climate_model_ISMIP7( mesh, climate, time)
+
+    ! In/output variables:
+    type(type_mesh),          intent(in   ) :: mesh
+    type(type_climate_model), intent(inout) :: climate
+    real(dp),                 intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'run_climate_model_ISMIP7'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_climate_model_ISMIP7
+
+  subroutine initialise_climate_model_ISMIP7( mesh, ISMIP7)
+
+    ! In/output variables:
+    type(type_mesh),                 intent(in   ) :: mesh
+    type(type_climate_model_ISMIP7), intent(inout) :: ISMIP7
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_climate_model_ISMIP7'
+    character(len=1024)            :: filename
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_climate_model_ISMIP7
+
+end module climate_ISMIP7

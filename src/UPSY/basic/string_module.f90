@@ -10,7 +10,7 @@ module string_module
   public :: type_string_utilities
   public :: separate_strings_by_double_vertical_bars, colour_string, &
     insert_val_into_string_int, insert_val_into_string_dp, capitalise_string, &
-    remove_leading_spaces, str2int, int2str_with_leading_zeros, strrep
+    remove_leading_spaces, str2int, int2str_with_leading_zeros, strrep, startswith
 
   type type_string_utilities
       private
@@ -25,7 +25,6 @@ module string_module
       procedure, public, nopass :: str2int
       procedure, public, nopass :: int2str_with_leading_zeros
       procedure, public, nopass :: strrep
-      procedure, public, nopass :: startswith
       procedure, public, nopass :: endswith
   end type type_string_utilities
 

@@ -7,6 +7,7 @@ module ct_create_test_meshes
   use precisions, only: dp
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
+  use string_module, only: startswith
   use tests_main
   use assertions_basic
   use mesh_types, only: type_mesh
@@ -434,10 +435,10 @@ contains
     n_grids = 0
     n_meshes = 0
     do i = 1, size( list_of_filenames,1)
-      if     (UPSY%stru%startswith( list_of_filenames( i), 'grid_') .and. &
+      if     (startswith( list_of_filenames( i), 'grid_') .and. &
               UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
         n_grids = n_grids + 1
-      elseif (UPSY%stru%startswith( list_of_filenames( i), 'mesh_') .and. &
+      elseif (startswith( list_of_filenames( i), 'mesh_') .and. &
               UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
         n_meshes = n_meshes + 1
       end if
@@ -449,11 +450,11 @@ contains
     i_grid = 0
     i_mesh = 0
     do i = 1, size( list_of_filenames,1)
-      if     (UPSY%stru%startswith( list_of_filenames( i), 'grid_') .and. &
+      if     (startswith( list_of_filenames( i), 'grid_') .and. &
               UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
         i_grid = i_grid + 1
         test_grid_filenames( i_grid) = trim( foldername) // '/' // trim( list_of_filenames( i))
-      elseif (UPSY%stru%startswith( list_of_filenames( i), 'mesh_') .and. &
+      elseif (startswith( list_of_filenames( i), 'mesh_') .and. &
               UPSY%stru%endswith  ( list_of_filenames( i), '.nc')) then
         i_mesh = i_mesh + 1
         test_mesh_filenames( i_mesh) = trim( foldername) // '/' // trim( list_of_filenames( i))

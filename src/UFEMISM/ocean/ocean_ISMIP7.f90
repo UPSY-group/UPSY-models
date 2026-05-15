@@ -260,7 +260,7 @@ contains
       '/' // trim(C%ocean_ISMIP7_forcing_version)
 
     ! Get all filenames in this folder, assuming this folder only contains files for this specific field (thetao or so)
-    call list_files_in_folder( field%foldername, field%filenames)
+    call list_files_in_folder( field%foldername, field%filenames, trim(field%name))
 
     ! Initialise counter for timeframes
     cnt = 1

@@ -66,7 +66,7 @@ module climate_ISMIP7
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
-  use parameters, only: sec_per_year, ice_density
+  use parameters, only: NaN, sec_per_year, ice_density
 
   implicit none
 
@@ -114,26 +114,59 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise the baseline climate
+    ! Initialise fields and baseline climate
     select case (C%climate_ISMIP7_choice_baseline)
     case default
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
-      ! No need to do anything
+      ! Initialise monthly fields
+      call initialise_climate_field_monthly( mesh, ISMIP7%tas, 'tas')
+      call initialise_climate_field_monthly( mesh, ISMIP7%pr, 'pr')
     case ('fixed')
+      ! Initialise monthly fields
+      call initialise_climate_field_monthly( mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
+      call initialise_climate_field_monthly( mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
+
+      ! Initialise baseline
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
     end select
-
-    ! Get info from files
-
-    ! Allocate memory for timeframes
-
-    ! Update timeframes to the current model time
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine initialise_climate_model_ISMIP7
+
+  subroutine initialise_climate_field_monthly( mesh, field, name)
+
+    ! In/output variables:
+    type(type_mesh),                         intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_monthly), intent(inout) :: field
+    character(len=*),                        intent(in   ) :: name
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'initialise_climate_field_monthly'
+    character(len=1024)            :: filename
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Define name
+    field%name = name
+
+    ! Get info from files
+    !call gather_fileinfo( field)
+
+    ! Allocate memory for timeframes
+    allocate (field%val0( mesh%vi1:mesh%vi2, 12), source = NaN)
+    allocate (field%val0( mesh%vi1:mesh%vi2, 12), source = NaN)
+
+    ! Update timeframes to the current model time
+    !call update_timeframes( mesh, field, C%start_time_of_run)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_climate_field_monthly
 
   subroutine initialise_climate_baseline_fixed( mesh, ISMIP7)
 

@@ -42,9 +42,7 @@ module climate_ISMIP7
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
-    type_SMB_model_context_remap
+  use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, type_climate_model_ISMIP7_timeframe
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -59,6 +57,8 @@ module climate_ISMIP7
   private
 
   public :: initialise_climate_model_ISMIP7, run_climate_model_ISMIP7
+
+contains
 
   subroutine run_climate_model_ISMIP7( mesh, climate, time)
 

@@ -161,7 +161,7 @@ MODULE climate_model_types
     real(dp), dimension(:), allocatable :: delta_ts
 
     ! Monthly ts
-    real(dp), dimension(:,:), allocatable: ts_monthly
+    real(dp), dimension(:,:), allocatable :: ts_monthly
 
   end type type_climate_model_ISMIP7
   
@@ -198,6 +198,7 @@ MODULE climate_model_types
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
     TYPE(type_climate_model_snapshot_plus_anomalies)    :: snapshot_p_anml
     TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
+    type(type_climate_model_ISMIP7)                     :: ISMIP7
 
   END TYPE type_climate_model
   

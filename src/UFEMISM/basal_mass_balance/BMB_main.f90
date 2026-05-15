@@ -108,15 +108,6 @@ CONTAINS
           CASE ('laddie')
             ! No need to do anything
           CASE DEFAULT
-            ! Compute grounded ice mass balance
-            SELECT CASE (C%choice_BMB_grounded)
-              CASE ('none')
-                ! Do nothing
-              CASE ('from_temperature')
-                call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
-              CASE DEFAULT
-                ! Do nothing  
-            END SELECT
             CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
         END SELECT
 
@@ -329,6 +320,16 @@ CONTAINS
     ! Set time of next calculation to start time
     BMB%t_next = C%start_time_of_run
 
+    ! Compute grounded ice mass balance
+    SELECT CASE (C%choice_BMB_grounded)
+      CASE ('from_temperature')
+        call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+      CASE ('none')
+        ! Do nothing
+      CASE DEFAULT
+        ! Do nothing
+    END SELECT
+
     ! Determine which BMB model to initialise
     SELECT CASE (choice_BMB_model)
       CASE ('uniform')
@@ -371,6 +372,7 @@ CONTAINS
 
     call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
     call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
+    call checksum( mesh%pai_V, BMB%BMB_sheet           , 'BMB%BMB_sheet')
     call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
     call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
     call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
@@ -630,6 +632,7 @@ CONTAINS
     ! Reallocate memory for main variables
     CALL reallocate_bounds( BMB%BMB, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_shelf, mesh_new%vi1, mesh_new%vi2)
+    CALL reallocate_bounds( BMB%BMB_sheet, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_inv, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_ref, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_transition_phase, mesh_new%vi1, mesh_new%vi2)
@@ -644,6 +647,16 @@ CONTAINS
     BMB%mask_floating_ice = ice%mask_floating_ice .AND. .NOT. ice%mask_gl_fl
     BMB%mask_gl_fl = ice%mask_gl_fl
     BMB%mask_gl_gr = ice%mask_gl_gr
+
+    ! Compute grounded ice mass balance on the new mesh
+    SELECT CASE (C%choice_BMB_grounded)
+      CASE ('from_temperature')
+        call calc_grounded_basal_melt_rates_from_temp(ice, mesh_new, BMB)
+      CASE ('none')
+        ! Do nothing
+      CASE DEFAULT
+        ! Do nothing
+    END SELECT
 
     ! Determine which BMB model to initialise
     SELECT CASE (choice_BMB_model)

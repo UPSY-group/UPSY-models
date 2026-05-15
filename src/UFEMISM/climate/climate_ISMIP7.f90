@@ -139,6 +139,16 @@ contains
     ! Initialise vertical gradient
     call initialise_climate_field( mesh, ISMIP7%dtsdz, 'dtsdz')
 
+    ! Initialise the baseline surface elevation
+    select case (C%climate_ISMIP7_choice_refgeo)
+    case default
+      call crash('invalid climate_ISMIP7_choice_refgeo "' // trim( C%climate_ISMIP7_choice_refgeo) // '"')
+    case ('init')
+      call initialise_Hs_baseline( mesh, ISMIP7, refgeo_init)
+    case ('PD')
+      call initialise_Hs_baseline( mesh, ISMIP7, refgeo_PD)
+    end select
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -229,5 +239,26 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_climate_baseline_fixed
+
+  subroutine initialise_Hs_baseline( mesh, ISMIP7, refgeo)
+
+    ! In/output variables
+    type(type_mesh),                 intent(in   ) :: mesh
+    type(type_climate_model_ISMIP7), intent(inout) :: ISMIP7
+    type(type_reference_geometry),   intent(in   ) :: refgeo
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_Hs_baseline'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ISMIP7%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo%Hs( mesh%vi1: mesh%vi2)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_Hs_baseline
+
 
 end module climate_ISMIP7

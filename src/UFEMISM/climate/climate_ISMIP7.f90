@@ -79,6 +79,11 @@ module climate_ISMIP7
     module procedure initialise_climate_field_yearly
   end interface
 
+  interface update_timeframes
+    module procedure update_timeframes_monthly
+    module procedure update_timeframes_yearly
+  end interface
+
 contains
 
   subroutine run_climate_model_ISMIP7( mesh, climate, time)
@@ -95,6 +100,17 @@ contains
     call init_routine( routine_name)
 
     ! Update timeframes if necessary
+    select case (C%climate_ISMIP7_choice_baseline)
+    case default
+      call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
+    case ('yearly')
+      call update_timeframes( mesh, climate%ISMIP7%tas, time)
+      call update_timeframes( mesh, climate%ISMIP7%pr, time)
+    case ('fixed')
+      call update_timeframes( mesh, climate%ISMIP7%tas_anomaly, time)
+      call update_timeframes( mesh, climate%ISMIP7%pr_anomaly, time)
+    end select
+    call update_timeframes( mesh, climate%ISMIP7%dtsdz, time)
 
     ! Interpolate between timeframes
 
@@ -180,7 +196,7 @@ contains
     allocate (field%val0( mesh%vi1:mesh%vi2, 12), source = NaN)
 
     ! Update timeframes to the current model time
-    !call update_timeframes( mesh, field, C%start_time_of_run)
+    call update_timeframes( mesh, field, C%start_time_of_run)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -213,7 +229,7 @@ contains
     allocate (field%val0( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Update timeframes to the current model time
-    !call update_timeframes( mesh, field, C%start_time_of_run)
+    call update_timeframes( mesh, field, C%start_time_of_run)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -336,5 +352,120 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine read_year_from_netcdf_filename
+
+  subroutine update_timeframes_monthly( mesh, field, time)
+
+    ! In/output variables:
+    type(type_mesh),                          intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_monthly), intent(inout) :: field
+    real(dp),                                 intent(in   ) :: time
+
+    ! Local variables
+    character(len=*), parameter :: routine_name = 'update_timeframes_monthly'
+    integer                     :: ti0_old, ti1_old
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Get current bracket indices
+    ti0_old = field%ti0
+    ti1_old = field%ti1
+
+    ! Update the indices of time slices before and after current time
+    call update_bracket_indices( field%timestamps, field%ti0, field%ti1, time)
+
+    ! Update timeframes if necessary
+    if (field%ti0 /= ti0_old) then
+      !call update_single_timeframe_monthly( mesh, field, field%ti0, field%val0)
+    end if
+
+    if (field%ti1 /= ti1_old) then
+      !call update_single_timeframe_monthly( mesh, field, field%ti1, field%val1)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine update_timeframes_monthly
+
+  subroutine update_timeframes_yearly( mesh, field, time)
+
+    ! In/output variables:
+    type(type_mesh),                          intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_yearly), intent(inout) :: field
+    real(dp),                                 intent(in   ) :: time
+
+    ! Local variables
+    character(len=*), parameter :: routine_name = 'update_timeframes_yearly'
+    integer                     :: ti0_old, ti1_old
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Get current bracket indices
+    ti0_old = field%ti0
+    ti1_old = field%ti1
+
+    ! Update the indices of time slices before and after current time
+    call update_bracket_indices( field%timestamps, field%ti0, field%ti1, time)
+
+    ! Update timeframes if necessary
+    if (field%ti0 /= ti0_old) then
+      !call update_single_timeframe_yearly( mesh, field, field%ti0, field%val0)
+    end if
+
+    if (field%ti1 /= ti1_old) then
+      !call update_single_timeframe_yearly( mesh, field, field%ti1, field%val1)
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine update_timeframes_yearly
+
+  subroutine update_bracket_indices( timestamps, ti0, ti1, time)
+
+    ! In/output variables:
+    real(dp), dimension(:), intent(in   ) :: timestamps
+    integer,                intent(inout) :: ti0
+    integer,                intent(inout) :: ti1
+    real(dp),               intent(in   ) :: time
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'update_bracket_indices'
+    integer                        :: i, n
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Determine total numer of timeframes available for this field
+    n = size(timestamps)
+
+    if (time <= timestamps(1)) then
+      ! Model time before first available time value, return first two indices
+      ti0 = 1
+      ti1 = 2
+
+    elseif (time >= timestamps(n)) then
+      ! Model time after last available time value, return last two indices
+      ti0 = n-1
+      ti1 = n
+
+    else
+      ! Model time within array, return bracketing indices
+      do i = 1, n
+        if (timestamps(i) <= time) then
+          ti0 = i
+          ti1 = i+1
+        end if
+      end do
+
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine update_bracket_indices
+
 
 end module climate_ISMIP7

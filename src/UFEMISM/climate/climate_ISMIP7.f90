@@ -411,11 +411,11 @@ contains
 
     ! Update timeframes if necessary
     if (field%ti0 /= ti0_old) then
-      !call update_single_timeframe_yearly( mesh, field, field%ti0, field%val0)
+      call update_single_timeframe_yearly( mesh, field, field%ti0, field%val0)
     end if
 
     if (field%ti1 /= ti1_old) then
-      !call update_single_timeframe_yearly( mesh, field, field%ti1, field%val1)
+      call update_single_timeframe_yearly( mesh, field, field%ti1, field%val1)
     end if
 
     ! Finalise routine path
@@ -447,20 +447,48 @@ contains
     call read_time_from_file( filename, time_from_file)
     if (size( time_from_file,1) /= 12) call crash('file "' // trim( filename) // '" doesnt have 12 months')
 
-    if (par%primary) then
-      ! Read all 12 months individually with extrapolation
-      do mi = 1, 12
-        call read_field_from_file_2D( filename, field%name, mesh, C%output_dir, d_month, &
-        time_to_read = time_from_file( mi), extrapolate_fillvalues = .true.)
-        val( mesh%vi1:mesh%vi2, mi) = d_month( mesh%vi1:mesh%vi2)
-      end do
-    end if
+    ! Read all 12 months individually with extrapolation
+    do mi = 1, 12
+      call read_field_from_file_2D( filename, field%name, mesh, C%output_dir, d_month, &
+      time_to_read = time_from_file( mi), extrapolate_fillvalues = .true.)
+      val( mesh%vi1:mesh%vi2, mi) = d_month( mesh%vi1:mesh%vi2)
+    end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine update_single_timeframe_monthly
 
+  subroutine update_single_timeframe_yearly( mesh, field, ti, val)
+
+    ! In/output variables:
+    type(type_mesh),                          intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_yearly),   intent(in   ) :: field
+    integer,                                  intent(in   ) :: ti
+    real(dp), dimension(:),                   intent(inout) :: val
+
+    ! Local variables
+    character(len=*), parameter             :: routine_name = 'update_single_timeframe_yearly'
+    character(len=:), allocatable           :: filename
+    real(dp), dimension(:), allocatable     :: time_from_file
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    filename = trim(field%filenames( ti))
+
+    ! Read time dimension from file
+    call read_time_from_file( filename, time_from_file)
+    if (size( time_from_file,1) /= 1) call crash('file "' // trim( filename) // '" doesnt have 1 timeframe')
+
+    ! Read with extrapolation
+    call read_field_from_file_2D( filename, field%name, mesh, C%output_dir, val, &
+      time_to_read = time_from_file( 1), extrapolate_fillvalues = .true.)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine update_single_timeframe_yearly
 
   subroutine update_bracket_indices( timestamps, ti0, ti1, time)
 

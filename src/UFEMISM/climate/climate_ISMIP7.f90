@@ -234,7 +234,7 @@ contains
     field%name = name
 
     ! Get info from files
-    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, trim(field%name))
+    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
     ! Allocate memory for timeframes
     allocate (field%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
@@ -268,7 +268,7 @@ contains
     field%name = name
 
     ! Get info from files
-    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, trim(field%name))
+    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
     ! Allocate memory for timeframes
     allocate (field%val0      ( mesh%vi1:mesh%vi2), source = NaN)
@@ -336,7 +336,6 @@ contains
     ! Local variables:
     character(len=*), parameter                    :: routine_name = 'gather_fileinfo'
     character(len=:), allocatable                  :: foldername
-    character(len=1024), dimension(:), allocatable :: list_of_filenames
     integer                                        :: i
     real(dp)                                       :: year
 
@@ -347,9 +346,9 @@ contains
     if (allocated( timestamps)) deallocate( timestamps)
 
     ! Construct foldernames
-    foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // var_name // '/' // trim( C%SMB_ISMIP7_forcing_version)
+    foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // trim(var_name) // '/' // trim( C%SMB_ISMIP7_forcing_version)
 
-    call list_files_in_folder( foldername, list_of_filenames, var_name)
+    call list_files_in_folder( foldername, filenames, trim(var_name))
     if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')
 
     ! Read timestamps

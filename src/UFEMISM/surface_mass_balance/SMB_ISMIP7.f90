@@ -442,7 +442,6 @@ contains
     ! Local variables:
     character(len=*), parameter                    :: routine_name = 'initialise_list_of_files_and_timestamps'
     character(len=:), allocatable                  :: foldername
-    character(len=1024), dimension(:), allocatable :: list_of_filenames
     integer                                        :: i
     real(dp)                                       :: year
 
@@ -455,7 +454,7 @@ contains
     ! Construct foldernames
     foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // var_name // '/' // trim( C%SMB_ISMIP7_forcing_version)
 
-    call list_files_in_folder( foldername, list_of_filenames, var_name)
+    call list_files_in_folder( foldername, filenames, var_name)
     if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')
 
     ! Read timestamps

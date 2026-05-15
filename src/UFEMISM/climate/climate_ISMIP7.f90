@@ -125,19 +125,19 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Initialise monthly fields
-      call initialise_climate_field( mesh, ISMIP7%tas, 'tas')
-      call initialise_climate_field( mesh, ISMIP7%pr, 'pr')
+      call initialise_climate_field( mesh, ISMIP7, ISMIP7%tas, 'tas')
+      call initialise_climate_field( mesh, ISMIP7, ISMIP7%pr, 'pr')
     case ('fixed')
       ! Initialise monthly fields
-      call initialise_climate_field( mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
-      call initialise_climate_field( mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
+      call initialise_climate_field( mesh, ISMIP7, ISMIP7%tas_anomaly, 'tas-anomaly')
+      call initialise_climate_field( mesh, ISMIP7, ISMIP7%pr_anomaly, 'pr-anomaly')
 
       ! Initialise baseline
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
     end select
 
     ! Initialise vertical gradient
-    call initialise_climate_field( mesh, ISMIP7%dtsdz, 'dtsdz')
+    call initialise_climate_field( mesh, ISMIP7, ISMIP7%dtsdz, 'dtsdz')
 
     ! Initialise the baseline surface elevation
     select case (C%climate_ISMIP7_choice_refgeo)
@@ -154,10 +154,11 @@ contains
 
   end subroutine initialise_climate_model_ISMIP7
 
-  subroutine initialise_climate_field_monthly( mesh, field, name)
+  subroutine initialise_climate_field_monthly( mesh, ISMIP7, field, name)
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
+    type(type_climate_model_ISMIP7),         intent(inout) :: ISMIP7
     type(type_climate_field_ISMIP7_monthly), intent(inout) :: field
     character(len=*),                        intent(in   ) :: name
 
@@ -172,7 +173,7 @@ contains
     field%name = name
 
     ! Get info from files
-    !call gather_fileinfo( field)
+    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
     ! Allocate memory for timeframes
     allocate (field%val0( mesh%vi1:mesh%vi2, 12), source = NaN)
@@ -186,11 +187,12 @@ contains
 
   end subroutine initialise_climate_field_monthly
 
-  subroutine initialise_climate_field_yearly( mesh, field, name)
+  subroutine initialise_climate_field_yearly( mesh, ISMIP7, field, name)
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_yearly), intent(inout) :: field
+    type(type_climate_model_ISMIP7),         intent(inout) :: ISMIP7
+    type(type_climate_field_ISMIP7_yearly),  intent(inout) :: field
     character(len=*),                        intent(in   ) :: name
 
     ! Local variables:
@@ -204,7 +206,7 @@ contains
     field%name = name
 
     ! Get info from files
-    !call gather_fileinfo( field)
+    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
     ! Allocate memory for timeframes
     allocate (field%val0( mesh%vi1:mesh%vi2), source = NaN)
@@ -260,5 +262,79 @@ contains
 
   end subroutine initialise_Hs_baseline
 
+  subroutine gather_fileinfo( ISMIP7, filenames, timestamps, var_name)
+
+    ! In/output variables
+    class(type_climate_model_ISMIP7),               intent(inout) :: ISMIP7
+    character(len=1024), dimension(:), allocatable, intent(inout) :: filenames
+    real(dp),            dimension(:), allocatable, intent(inout) :: timestamps
+    character(len=*),                               intent(in   ) :: var_name
+
+    ! Local variables:
+    character(len=*), parameter                    :: routine_name = 'gather_fileinfo'
+    character(len=:), allocatable                  :: foldername
+    character(len=1024), dimension(:), allocatable :: list_of_filenames
+    integer                                        :: i
+    real(dp)                                       :: year
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (allocated( filenames )) deallocate( filenames)
+    if (allocated( timestamps)) deallocate( timestamps)
+
+    ! Construct foldernames
+    foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // var_name // '/' // trim( C%SMB_ISMIP7_forcing_version)
+
+    call list_files_in_folder( foldername, list_of_filenames, var_name)
+    if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')
+
+    ! Read timestamps
+    allocate( timestamps( size( filenames,1)))
+    do i = 1, size( filenames,1)
+      call read_year_from_netcdf_filename( filenames( i), year)
+      ! Add half a year, so that we have the timestamp at the middle of the year rather than the start
+      timestamps( i) = year + 0.5_dp
+    end do
+
+    ! Append foldername to filenames
+    do i = 1, size( filenames,1)
+      filenames( i) = trim( foldername) // '/' // trim( filenames( i))
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine gather_fileinfo
+
+  subroutine read_year_from_netcdf_filename( filename, year)
+    ! Rather than trying to read from the file's time dimension, which would mean
+    ! dealing with whatever calendar it uses, just read it from the filename
+
+    ! In/output variables
+    character(len=*), intent(in   ) :: filename
+    real(dp),         intent(  out) :: year
+
+    ! Local variables
+    character(len=*), parameter :: routine_name = 'read_year_from_netcdf_filename'
+    character(len=4) :: year_str
+    integer          :: year_int, stat
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Since the files are called e.g. 'acabf_AIS_CESM2-WACCM_ssp585_SDBN1-8000m_v2_2015.nc',
+    ! just assumed that the last few characters spell out the year
+
+    year_str = filename( len_trim( filename) - 6 : len_trim( filename) - 3)
+    year_int = UPSY%stru%str2int( year_str, stat)
+    if (stat /= 0) call crash('could not read year from filename "' // trim( filename) // '"')
+
+    year = real( year_int,dp)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_year_from_netcdf_filename
 
 end module climate_ISMIP7

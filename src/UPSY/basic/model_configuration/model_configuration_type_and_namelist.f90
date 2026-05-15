@@ -484,9 +484,6 @@ module model_configuration_type_and_namelist
     real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
     character(len=1024) :: choice_BMB_grounded_config                   = 'none'
 
-    ! Coupling
-    logical             :: hydro_is_coupled_to_BMB_config               = .false.
-
   ! == Bed roughness
   ! ==================
 
@@ -1718,9 +1715,6 @@ module model_configuration_type_and_namelist
     real(dp)            :: Leguy2014_hydro_connect_exponent
     character(len=1024) :: choice_BMB_grounded
 
-    ! Coupling
-    logical             :: hydro_is_coupled_to_BMB
-
   ! == Bed roughness
   ! ==================
 
@@ -2817,7 +2811,6 @@ contains
       error_function_max_effective_pressure_config                , &
       Leguy2014_hydro_connect_exponent_config                     , &
       choice_BMB_grounded_config                                  , &
-      hydro_is_coupled_to_BMB_config                              , &
       choice_bed_roughness_config                                 , &
       choice_bed_roughness_parameterised_config                   , &
       filename_bed_roughness_NAM_config                           , &
@@ -3825,9 +3818,6 @@ contains
     C%error_function_max_effective_pressure                  = error_function_max_effective_pressure_config
     C%Leguy2014_hydro_connect_exponent                       = Leguy2014_hydro_connect_exponent_config
     C%choice_BMB_grounded                                    = choice_BMB_grounded_config
-
-    ! Coupling
-    C%hydro_is_coupled_to_BMB                                = hydro_is_coupled_to_BMB_config
 
     ! == Bed roughness
     ! ==================

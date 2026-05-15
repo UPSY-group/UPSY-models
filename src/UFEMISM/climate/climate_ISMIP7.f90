@@ -234,7 +234,7 @@ contains
     field%name = name
 
     ! Get info from files
-    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
+    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, trim(field%name))
 
     ! Allocate memory for timeframes
     allocate (field%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
@@ -268,7 +268,7 @@ contains
     field%name = name
 
     ! Get info from files
-    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
+    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, trim(field%name))
 
     ! Allocate memory for timeframes
     allocate (field%val0      ( mesh%vi1:mesh%vi2), source = NaN)
@@ -496,7 +496,7 @@ contains
 
     ! Read all 12 months individually with extrapolation
     do mi = 1, 12
-      call read_field_from_file_2D( filename, field%name, mesh, C%output_dir, d_month, &
+      call read_field_from_file_2D( filename, trim(field%name), mesh, C%output_dir, d_month, &
       time_to_read = time_from_file( mi), extrapolate_fillvalues = .true.)
       val( mesh%vi1:mesh%vi2, mi) = d_month( mesh%vi1:mesh%vi2)
     end do
@@ -529,7 +529,7 @@ contains
     if (size( time_from_file,1) /= 1) call crash('file "' // trim( filename) // '" doesnt have 1 timeframe')
 
     ! Read with extrapolation
-    call read_field_from_file_2D( filename, field%name, mesh, C%output_dir, val, &
+    call read_field_from_file_2D( filename, trim(field%name), mesh, C%output_dir, val, &
       time_to_read = time_from_file( 1), extrapolate_fillvalues = .true.)
 
     ! Finalise routine path

@@ -129,6 +129,41 @@ MODULE climate_model_types
     REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: I_abs
 
   END TYPE type_climate_model_matrix
+
+  type type_climate_model_ISMIP7_timeframe
+
+    real(dp)                              :: time
+    real(dp), dimension(:,:), allocatable :: ts               ! [K]       Monthly surface temperature
+    real(dp), dimension(:,:), allocatable :: ts_anomaly       ! [K]       Monthly surface temperature anomaly
+    real(dp), dimension(:,:), allocatable :: dtsdz            ! [K m^-1]  Vertical surface temperature gradient
+
+  end type type_climate_model_ISMIP7_timeframe
+
+  type type_climate_model_ISMIP7
+
+    ! Baseline TS and surface elevation
+    real(dp), dimension(:), allocatable :: ts_baseline      ! [K]                     Baseline annual ts
+    real(dp), dimension(:), allocatable :: Hs_baseline      ! [m w.r.t. PD sea level] Baseline surface elevation
+
+    ! List of forcing files and their timestamps
+    character(len=1024), dimension(:), allocatable :: filenames_acabf
+    character(len=1024), dimension(:), allocatable :: filenames_acabf_anomaly
+    character(len=1024), dimension(:), allocatable :: filenames_dacabfdz
+    real(dp),            dimension(:), allocatable :: timestamps
+
+    ! Timeframes of forcing fields enveloping the current model time
+    type(type_climate_model_ISMIP7_timeframe) :: timeframe_before
+    type(type_climate_model_ISMIP7_timeframe) :: timeframe_after
+    type(type_climate_model_ISMIP7_timeframe) :: timeframe_interp
+
+    ! Elevation-induced TS change
+    real(dp), dimension(:), allocatable :: delta_z
+    real(dp), dimension(:), allocatable :: delta_ts
+
+    ! Monthly ts
+    real(dp), dimension(:,:), allocatable: ts_monthly
+
+  end type type_climate_model_ISMIP7
   
   TYPE type_climate_model
     ! The climate model data structure.

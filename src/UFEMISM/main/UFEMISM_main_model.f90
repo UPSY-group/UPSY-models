@@ -533,7 +533,7 @@ CONTAINS
     ! ===== Climate =====
     ! ===================
 
-    CALL initialise_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name)
+    CALL initialise_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%refgeo_PD, region%refgeo_init, region%name)
 
     ! ===== Ocean =====
     ! =================
@@ -1297,7 +1297,7 @@ CONTAINS
 
     ! Remap all the model data from the old mesh to the new mesh
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
-    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%grid_smooth, region%ice, forcing)
+    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%refgeo_PD, region%refgeo_init, region%grid_smooth, region%ice, forcing)
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
     call region%SMB%remap( region%SMB%ct_remap( mesh_new, region%time, region%name, region%refgeo_init, region%refgeo_PD, region%ice))
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)

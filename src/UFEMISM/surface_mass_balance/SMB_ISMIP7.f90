@@ -442,7 +442,6 @@ contains
     ! Local variables:
     character(len=*), parameter                    :: routine_name = 'initialise_list_of_files_and_timestamps'
     character(len=:), allocatable                  :: foldername
-    character(len=1024), dimension(:), allocatable :: list_of_filenames
     integer                                        :: i
     real(dp)                                       :: year
 
@@ -455,8 +454,7 @@ contains
     ! Construct foldernames
     foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // var_name // '/' // trim( C%SMB_ISMIP7_forcing_version)
 
-    call list_files_in_folder( foldername, list_of_filenames)
-    call take_only_valid_netcdf_files_from_list( list_of_filenames, filenames, var_name)
+    call list_files_in_folder( foldername, filenames, var_name)
     if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')
 
     ! Read timestamps
@@ -476,45 +474,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_list_of_files_and_timestamps
-
-  subroutine take_only_valid_netcdf_files_from_list( filenames_all, filenames, var_name)
-
-    ! In/output variables
-    character(len=1024), dimension(:),              intent(in   ) :: filenames_all
-    character(len=1024), dimension(:), allocatable, intent(inout) :: filenames
-    character(len=*),                               intent(in   ) :: var_name
-
-    ! Local variables:
-    character(len=*), parameter   :: routine_name = 'take_only_valid_netcdf_files_from_list'
-    character(len=:), allocatable :: filename
-    integer                       :: i, n_valid_netcdf_files, j
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    n_valid_netcdf_files = 0
-    do i = 1, size( filenames_all)
-      filename = filenames_all( i)
-      if (UPSY%stru%startswith( trim( filename), trim( var_name), case_sensitive = .false.)) then
-        n_valid_netcdf_files = n_valid_netcdf_files + 1
-      end if
-    end do
-
-    allocate( filenames( n_valid_netcdf_files))
-
-    j = 0
-    do i = 1, size( filenames_all)
-      filename = filenames_all( i)
-      if (UPSY%stru%startswith( trim( filename), trim( var_name), case_sensitive = .false.)) then
-        j = j + 1
-        filenames( j) = filename
-      end if
-    end do
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine take_only_valid_netcdf_files_from_list
 
   subroutine read_year_from_netcdf_filename( filename, year)
     ! Rather than trying to read from the file's time dimension, which would mean

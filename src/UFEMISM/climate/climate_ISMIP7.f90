@@ -472,10 +472,10 @@ contains
   subroutine update_single_timeframe_monthly( mesh, field, ti, val)
 
     ! In/output variables:
-    type(type_mesh),                          intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_monthly),  intent(in   ) :: field
-    integer,                                  intent(in   ) :: ti
-    real(dp), dimension(:,:),                 intent(inout) :: val
+    type(type_mesh),                               intent(in   ) :: mesh
+    type(type_climate_field_ISMIP7_monthly),       intent(in   ) :: field
+    integer,                                       intent(in   ) :: ti
+    real(dp), dimension( mesh%vi1:mesh%vi2, 1:12), intent(inout) :: val
 
     ! Local variables
     character(len=*), parameter             :: routine_name = 'update_single_timeframe_monthly'
@@ -511,7 +511,7 @@ contains
     type(type_mesh),                          intent(in   ) :: mesh
     type(type_climate_field_ISMIP7_yearly),   intent(in   ) :: field
     integer,                                  intent(in   ) :: ti
-    real(dp), dimension(:),                   intent(inout) :: val
+    real(dp), dimension( mesh%vi1:mesh%vi2),  intent(inout) :: val
 
     ! Local variables
     character(len=*), parameter             :: routine_name = 'update_single_timeframe_yearly'

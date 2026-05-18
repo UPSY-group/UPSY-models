@@ -193,6 +193,11 @@ contains
     ! Define the full filename of the file that contains the required timeframe
     filename = trim(field%foldername) // '/' // trim(field%filenames(fi))
 
+    if (par%primary) then
+      write(0,*) '   Reading ISMIP7 ocean forcing from file: ', &
+        UPSY%stru%colour_string( trim( filename), 'light blue')
+    end if
+
     ! Read ocean field from that timeframe
     call read_field_from_file_3D_ocean( filename, trim(field%name), mesh, C%output_dir, C%z_ocean, val, &
         time_to_read = field%alltimes( ti))

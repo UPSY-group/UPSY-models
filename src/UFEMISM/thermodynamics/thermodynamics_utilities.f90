@@ -13,6 +13,7 @@ MODULE thermodynamics_utilities
   USE ice_model_types                                        , ONLY: type_ice_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   USE climate_model_types                                    , ONLY: type_climate_model
+  use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_local
   use SMB_model, only: atype_SMB_model
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
   use plane_geometry, only: cross2
@@ -460,9 +461,11 @@ CONTAINS
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
     
     ! Local variables:
-    CHARACTER(LEN=256), PARAMETER        :: routine_name = 'calc_grounded_basal_melt_rates_from_temp'
-    real(dp)                             :: dz, L_base, hf_up, melting_temp_base, melting_temp_above
-    integer                              :: vi
+    CHARACTER(LEN=256), PARAMETER          :: routine_name = 'calc_grounded_basal_melt_rates_from_temp'
+    real(dp)                               :: dz, L_base, hf_up, melting_temp_base, melting_temp_above
+    integer                                :: vi
+    real(dp), dimension(C%nz)              :: d_zeta_temp, dTdzeta
+    real(dp)                               :: dTdz
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -472,14 +475,18 @@ CONTAINS
     if (ice%mask_grounded_ice(vi) .OR. ice%mask_gl_gr( vi)) then
       if (ice%Ti_hom( vi) >= 0.0_dp) then
 
-          dz = (1._dp - mesh%zeta( C%nz)) * ice%Hi( vi) - ((1._dp - mesh%zeta( C%nz-1)) * ice%Hi( vi)) ! finds thickness of bottom ice layer
-          hf_up = -1._dp * ice%Ki( vi, C%nz) * (ice%Ti( vi, C%nz-1) - ice%Ti( vi, C%nz)) / dz  ! computes upwards heat flux
-          L_base = L_fusion + (cp_water - cp_ice) * (ice%Ti( vi, C%nz) - 273.15_dp)                 ! computes latent heat of bottom ice layer
+          d_zeta_temp = ice%Ti( vi, :)                                                            ! Extract vertical array of Ti
+          call multiply_CSR_matrix_with_vector_local( mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta) ! Compute the vertical gradients dT/dzeta
+          dTdz = -1._dp / ice%Hi( vi) * dTdzeta( mesh%nz)                                         ! Extract actual vertical gradient at bottom in dT/dz
+          hf_up = -1._dp * ice%Ki( vi, C%nz) * dTdz                                               ! computes upwards heat flux
+          L_base = L_fusion + (cp_water - cp_ice) * (ice%Ti( vi, C%nz) - 273.15_dp)               ! computes latent heat of bottom ice layer
 
-          BMB%BMB_sheet( vi) = -1._dp * (ice%frictional_heating( vi) + ice%geothermal_heat_flux( vi) - hf_up) / (ice_density * L_base) ! we reverse the sign to keep with the convention of negative = mass loss
+          BMB%BMB_sheet( vi) = (ice%frictional_heating( vi) + ice%geothermal_heat_flux( vi) - hf_up) / (ice_density * L_base)
         else
           BMB%BMB_sheet( vi) = 0.0_dp
       end if
+    else
+      BMB%BMB_sheet( vi) = 0.0_dp
     end if
     END DO
 

@@ -2,7 +2,7 @@ module netcdf_basic_wrappers
   !< UFEMISM wrappers for the most basic NetCDF functionality
   !< (needed to deal with parallelisation and extended error messaging)
 
-  use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_INTEGER
+  use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_INTEGER, MPI_DOUBLE_PRECISION
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mpi_basic, only: par, sync
@@ -11,6 +11,7 @@ module netcdf_basic_wrappers
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
     NF90_MAX_VAR_DIMS, NF90_PUT_ATT, NF90_OPEN, NF90_NOWRITE, NF90_WRITE, NF90_SHARE, &
+    NF90_INQUIRE_ATTRIBUTE, NF90_GET_ATT, &
     NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_INT, NF90_FLOAT, NF90_DOUBLE, &
     NF90_FILL_INT, NF90_FILL_FLOAT, NF90_FILL_DOUBLE
   use basic_model_utilities, only: get_current_date_time_str
@@ -23,8 +24,9 @@ module netcdf_basic_wrappers
     create_new_netcdf_file_for_writing, create_dimension, create_variable, &
     create_scalar_variable, add_attribute_int, add_attribute_dp, add_attribute_char, &
     open_existing_netcdf_file_for_reading, open_existing_netcdf_file_for_writing, &
-    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, add_fillvalue, &
-    delete_existing_file
+    close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, delete_existing_file, &
+    add_fillvalue, inquire_fill_value
+
 
 contains
 
@@ -177,6 +179,46 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine inquire_var_info
+
+  subroutine inquire_fill_value( filename, ncid, var_name, fill_value)
+    !< Inquire the fill value of a variable
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    character(len=*), intent(in   ) :: var_name
+    real(dp),         intent(  out) :: fill_value
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'inquire_fill_value'
+    integer                     :: id_var, var_type, att_type, ierr
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    ! Check that the variable is floating-point
+    call inquire_var( filename, ncid, trim( var_name), id_var)
+    call inquire_var_info( filename, ncid, id_var, var_type = var_type)
+    if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE)) &
+      call crash('variable ' // trim( var_name) // ' in file ' // trim( filename) // ' is not ' // &
+        'of type NF90_FLOAT or NF90_DOUBLE')
+
+    ! Check that the _FillValue attribute exists and is floating-point
+    if (par%primary) then
+      call handle_netcdf_error( NF90_INQUIRE_ATTRIBUTE( ncid, id_var, '_FillValue', att_type))
+      if (.not. (att_type == NF90_FLOAT .or. att_type == NF90_DOUBLE)) &
+        call crash('_FillValue of variable ' // trim( var_name) // ' in file ' // trim( filename) // ' is not ' // &
+          'of type NF90_FLOAT or NF90_DOUBLE')
+    end if
+
+    ! Read its value
+    if (par%primary) call handle_netcdf_error( NF90_GET_ATT( ncid, id_var, '_FillValue', fill_value))
+    call MPI_BCAST( fill_value, 1, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine inquire_fill_value
 
   ! Create new NetCDF file
   subroutine create_new_netcdf_file_for_writing( filename, ncid)
@@ -645,7 +687,7 @@ contains
         call add_attribute_real( filename, ncid, id_var, '_FillValue', NF90_FILL_FLOAT)
       case (NF90_DOUBLE)
         call add_attribute_dp( filename, ncid, id_var, '_FillValue', NF90_FILL_DOUBLE)
-    end select 
+    end select
 
     ! Finalise routine path
     call finalise_routine( routine_name)

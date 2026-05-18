@@ -12,52 +12,54 @@ on:
 
 jobs:
 
-  # Compile the model and cache the executable
-  compile_and_cache_UFEMISM_dev_MacOS:
-    uses: ./.github/workflows/UFE_test_suite_compile_and_cache_dev_MacOS.yml
+  # Run the individual tests in parallel as separate workflows
+  compile_UFEMISM:
+    uses: ./.github/workflows/UFE_compiling.yml
 
-  compile_and_cache_UFEMISM_dev_Linux:
-    uses: ./.github/workflows/UFE_test_suite_compile_and_cache_dev_Linux.yml
+  unit_tests:
+    uses: ./.github/workflows/UFE_unit_tests.yml
 
-  compile_and_cache_UFEMISM_perf_MacOS:
-    uses: ./.github/workflows/UFE_test_suite_compile_and_cache_perf_MacOS.yml
+  SSA_icestream_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_SSA_icestream_small
 
-  compile_and_cache_UFEMISM_perf_Linux:
-    uses: ./.github/workflows/UFE_test_suite_compile_and_cache_perf_Linux.yml
+  ISMIP_HOM_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small
 
-  # Setup and cache Matlab
-  setup_and_cache_Matlab:
-    uses: ./.github/workflows/setup_and_cache_Matlab.yml
+  Halfar_dome_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Halfar_dome_small
 
-  # Install and cache Python
-  # install_and_cache_Python:
-  #   uses: ./.github/workflows/UPSY_test_suite_install_and_cache_Python.yml
+  MISMIP_mod_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_MISMIP_mod_small
 
-  # Run the unit tests and analyse the results
-  run_unit_tests:
-    needs: [compile_and_cache_UFEMISM_dev_MacOS, setup_and_cache_Matlab]
-    uses: ./.github/workflows/UFE_test_suite_run_unit_tests.yml
+  MISMIPplus_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_MISMIPplus_small
 
-  analyse_unit_tests:
-    needs: run_unit_tests
-    uses: ./.github/workflows/UFE_test_suite_analyse_unit_tests.yml
+  Berends2023nudging_exp1_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp1_small
 
-  # Run the component tests and analyse the results
-  run_component_tests:
-    needs: [compile_and_cache_UFEMISM_dev_MacOS, setup_and_cache_Matlab]
-    uses: ./.github/workflows/UFE_test_suite_run_component_tests.yml
+  Berends2023nudging_exp2_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp2_small
 
-  analyse_component_tests:
-    needs: run_component_tests
-    uses: ./.github/workflows/UFE_test_suite_analyse_component_tests.yml
+  Ant_init_small_01:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Ant_init_small_01
 
-  # Run the integrated tests and analyse the results
-  run_and_analyse_integrated_tests:
-    needs: [compile_and_cache_UFEMISM_perf_MacOS, setup_and_cache_Matlab]
-    uses: ./.github/workflows/UFE_test_suite_run_and_analyse_integrated_tests.yml
-
-  # Download artifacts with scoreboard files from the component and integrated tests
-  # and commit them to the repository. And create the visualisation (which is awesome)
-  finalise_scoreboard:
-    needs: [analyse_component_tests, run_and_analyse_integrated_tests]
-    uses: ./.github/workflows/UFE_test_suite_finalise_scoreboard.yml
+  ISMIP7_demo_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_ISMIP7_demo_small

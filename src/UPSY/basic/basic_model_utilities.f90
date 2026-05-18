@@ -4,7 +4,7 @@ module basic_model_utilities
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use basic_program_info, only: program_name
-  use string_module, only: colour_string, insert_val_into_string_dp, insert_val_into_string_int
+  use string_module, only: colour_string, insert_val_into_string_dp, insert_val_into_string_int, startswith
   use crash_mod, only: crash
   use mpi_f08, only: MPI_BCAST, MPI_INTEGER, MPI_CHAR, MPI_COMM_WORLD
 
@@ -322,15 +322,20 @@ contains
 
   end subroutine print_model_end
 
-  subroutine list_files_in_folder( foldername, list_of_filenames)
+  subroutine list_files_in_folder( foldername, list_of_filenames, var_name)
+    ! List all files in a folder, optionally taking only the files that start with var_name
 
     ! In/output variables:
     character(len=*),                            intent(in   ) :: foldername
     character(len=*), dimension(:), allocatable, intent(inout) :: list_of_filenames
+    character(len=*), optional,                  intent(in   ) :: var_name
 
     ! Local variables:
     integer             :: funit, n_files, ios, i, ierr
     character(len=1024) :: str
+    logical             :: do_filter_varname
+
+    do_filter_varname = present(var_name)
 
     if (par%primary) then
 
@@ -343,11 +348,19 @@ contains
       do while (.true.)
         read( funit, fmt = '(a)', iostat = ios) str
         if (ios /= 0) exit
-        if (str /= 'list_of_files.txt') n_files = n_files+1
+
+        ! Skip temporary file
+        if (str == 'list_of_files.txt') cycle
+
+        ! Add file to counter if no filtering, or if file starts with var_name
+        if (.not. do_filter_varname .or. startswith( trim( str), trim( var_name), case_sensitive = .false.)) then
+          n_files = n_files+1
+        end if
       end do
       close( funit)
-
     end if
+
+    ! Broadcast final count to all processes
     call MPI_BCAST( n_files, 1, MPI_integer, 0, MPI_COMM_WORLD, ierr)
 
     allocate( list_of_filenames( n_files))
@@ -360,7 +373,12 @@ contains
       do while (.true.)
         read( funit, fmt = '(a)', iostat = ios) str
         if (ios /= 0) exit
-        if (str /= 'list_of_files.txt') then
+
+        ! Skip temporary file
+        if (str == 'list_of_files.txt') cycle
+
+        ! Add file to counter if no filtering, or if file starts with var_name
+        if (.not. do_filter_varname .or. startswith( trim(str), trim(var_name), case_sensitive=.false.)) then
           i = i+1
           list_of_filenames( i) = trim( str)
         end if

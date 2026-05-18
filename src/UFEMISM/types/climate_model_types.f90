@@ -129,7 +129,59 @@ MODULE climate_model_types
     REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: I_abs
 
   END TYPE type_climate_model_matrix
-  
+
+  type type_climate_field_ISMIP7_monthly
+    ! Data and metadata of monthly tas/pr fields and anomalies
+
+    character(len=1024)                            :: name          !           'tas', 'pr', etc
+    character(len=1024)                            :: foldername    !           Foldername that contains all files
+    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
+
+    real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
+
+    real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
+    real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
+    real(dp), dimension(:,:), allocatable          :: val_interp    !           Interpolated values
+
+    integer                                        :: ti0 = -1      !           Time index before current time
+    integer                                        :: ti1 = -1      !           Time index after current time
+
+  end type type_climate_field_ISMIP7_monthly
+
+  type type_climate_field_ISMIP7_yearly
+    ! Data and metadata of yearly fields (dtsdz)
+
+    character(len=1024)                            :: name          !           'dtsdz', etc
+    character(len=1024)                            :: foldername    !           Foldername that contains all files
+    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
+
+    real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
+
+    real(dp), dimension(:), allocatable            :: val0          !           Values at timeslice before current time
+    real(dp), dimension(:), allocatable            :: val1          !           Values at timeslice after current time
+    real(dp), dimension(:), allocatable            :: val_interp    !           Interpolated values
+
+    integer                                        :: ti0 = -1      !           Time index before current time
+    integer                                        :: ti1 = -1      !           Time index after current time
+
+  end type type_climate_field_ISMIP7_yearly
+
+  type type_climate_model_ISMIP7
+
+    ! Baseline TS and surface elevation
+    real(dp), dimension(:,:), allocatable :: T2m_baseline    ! [K]                     Baseline monthly T2m
+    real(dp), dimension(:,:), allocatable :: Precip_baseline ! [m.w.e.]                Baseline monthly Precip
+    real(dp), dimension(:)  , allocatable :: Hs_baseline     ! [m w.r.t. PD sea level] Baseline surface elevation
+
+    ! Fields
+    type(type_climate_field_ISMIP7_monthly) :: tas
+    type(type_climate_field_ISMIP7_monthly) :: tas_anomaly
+    type(type_climate_field_ISMIP7_monthly) :: pr
+    type(type_climate_field_ISMIP7_monthly) :: pr_anomaly
+    type(type_climate_field_ISMIP7_yearly)  :: dtsdz
+
+  end type type_climate_model_ISMIP7
+ 
   TYPE type_climate_model
     ! The climate model data structure.
 
@@ -163,6 +215,7 @@ MODULE climate_model_types
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
     TYPE(type_climate_model_snapshot_plus_anomalies)    :: snapshot_p_anml
     TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
+    type(type_climate_model_ISMIP7)                     :: ISMIP7
 
   END TYPE type_climate_model
   

@@ -152,8 +152,8 @@ contains
       do vi = mesh%vi1, mesh%vi2
         do mi = 1, 12
           climate%T2m( vi, mi) = climate%ISMIP7%T2m_baseline( vi, mi) + climate%ISMIP7%tas_anomaly%val_interp( vi, mi) + delta_ts( vi)
-          climate%Precip( vi, mi) = climate%ISMIP7%Precip_baseline( vi, mi) &
-            + climate%ISMIP7%pr_anomaly%val_interp( vi, mi) * sec_per_year / freshwater_density ! [m.w.e. yr^-1] 
+          climate%Precip( vi, mi) = max(0._dp, climate%ISMIP7%Precip_baseline( vi, mi) &
+            + climate%ISMIP7%pr_anomaly%val_interp( vi, mi) * sec_per_year / freshwater_density) ! [m.w.e. yr^-1], must be positive
         end do
       end do
 

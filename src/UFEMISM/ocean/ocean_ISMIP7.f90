@@ -68,6 +68,12 @@ contains
     call gather_fileinfo( ISMIP7%T)
     call gather_fileinfo( ISMIP7%S)
 
+    ! Deallocate if necessary
+    if (allocated( ISMIP7%T%val0 )) deallocate( ISMIP7%T%val0 )
+    if (allocated( ISMIP7%S%val0 )) deallocate( ISMIP7%S%val0 )
+    if (allocated( ISMIP7%T%val1 )) deallocate( ISMIP7%T%val1 )
+    if (allocated( ISMIP7%S%val1 )) deallocate( ISMIP7%S%val1 )
+
     ! Allocate memory for timeframes
     allocate (ISMIP7%T%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
     allocate (ISMIP7%S%val0( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
@@ -299,6 +305,9 @@ contains
     end do
 
     ! Allocate arrays for times and file indices, combined for all available files in this folder
+    if (allocated( field%alltimes )) deallocate( field%alltimes )
+    if (allocated( field%allfi    )) deallocate( field%allfi    )
+
     allocate( field%alltimes( cnt-1))
     allocate( field%allfi   ( cnt-1))
 

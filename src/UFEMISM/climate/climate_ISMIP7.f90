@@ -236,6 +236,11 @@ contains
     ! Get info from files
     call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
+    ! Deallocate if necessary
+    if (allocated( field%val0       )) deallocate( field%val0      )
+    if (allocated( field%val1       )) deallocate( field%val1      )
+    if (allocated( field%val_interp )) deallocate( field%val_interp)
+
     ! Allocate memory for timeframes
     allocate (field%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
     allocate (field%val1      ( mesh%vi1:mesh%vi2, 12), source = NaN)
@@ -270,6 +275,11 @@ contains
     ! Get info from files
     call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
 
+    ! Deallocate if necessary
+    if (allocated( field%val0       )) deallocate( field%val0      )
+    if (allocated( field%val1       )) deallocate( field%val1      )
+    if (allocated( field%val_interp )) deallocate( field%val_interp)
+
     ! Allocate memory for timeframes
     allocate (field%val0      ( mesh%vi1:mesh%vi2), source = NaN)
     allocate (field%val1      ( mesh%vi1:mesh%vi2), source = NaN)
@@ -296,6 +306,18 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Allocate baseline climate
+    if (allocated( ISMIP7%T2m_baseline    )) deallocate( ISMIP7%T2m_baseline   )
+    if (allocated( ISMIP7%Precip_baseline )) deallocate( ISMIP7%Precip_baseline)
+
+    allocate (ISMIP7%T2m_baseline    ( mesh%vi1:mesh%vi2, 12), source = NaN)
+    allocate (ISMIP7%Precip_baseline ( mesh%vi1:mesh%vi2, 12), source = NaN)
+
+    if (par%primary) then
+      write(0,*) '   Reading ISMIP7 climate baseline from file: ', &
+        UPSY%stru%colour_string( trim( C%climate_ISMIP7_filename_baseline), 'light blue')
+    end if
+
     ! Read the fixed baseline climate
     call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'T2m'   , mesh, C%output_dir, ISMIP7%T2m_baseline)
     call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'Precip', mesh, C%output_dir, ISMIP7%Precip_baseline)
@@ -317,6 +339,9 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    if (allocated( ISMIP7%Hs_baseline    )) deallocate( ISMIP7%Hs_baseline   )
+    allocate (ISMIP7%Hs_baseline ( mesh%vi1:mesh%vi2), source = NaN)
 
     ISMIP7%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo%Hs( mesh%vi1: mesh%vi2)
 
@@ -493,6 +518,11 @@ contains
     call read_time_from_file( filename, time_from_file)
     if (size( time_from_file,1) /= 12) call crash('file "' // trim( filename) // '" doesnt have 12 months')
 
+    if (par%primary) then
+      write(0,*) '   Reading ISMIP7 monthly climate forcing from file: ', &
+        UPSY%stru%colour_string( trim( filename), 'light blue')
+    end if
+
     ! Read all 12 months individually with extrapolation
     do mi = 1, 12
       call read_field_from_file_2D( filename, trim(field%name), mesh, C%output_dir, d_month, &
@@ -526,6 +556,11 @@ contains
     ! Read time dimension from file
     call read_time_from_file( filename, time_from_file)
     if (size( time_from_file,1) /= 1) call crash('file "' // trim( filename) // '" doesnt have 1 timeframe')
+
+    if (par%primary) then
+      write(0,*) '   Reading ISMIP7 yearly climate forcing from file: ', &
+        UPSY%stru%colour_string( trim( filename), 'light blue')
+    end if
 
     ! Read with extrapolation
     call read_field_from_file_2D( filename, trim(field%name), mesh, C%output_dir, val, &

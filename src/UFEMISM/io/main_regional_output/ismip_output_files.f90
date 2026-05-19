@@ -19,7 +19,7 @@ module ismip_output_files
   use ismip_output_types, only: type_ismip_output, type_ismip_gridded_field, type_ismip_scalar
   use mesh_zeta, only: vertical_average
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
-  use netcdf, only: NF90_GLOBAL
+  use netcdf, only: NF90_GLOBAL, NF90_FILL_DOUBLE
   use reallocate_mod, only: reallocate_bounds
 
   implicit none
@@ -309,7 +309,7 @@ contains
     integer                               :: ncid
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
-    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
+    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D, mask_grid
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -355,10 +355,18 @@ contains
     ! Map from mesh to grid
     call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
 
+    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
+    allocate( mask_grid( region%output_grid%n_loc ))
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
+    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
+      d_grid_vec_partial_2D = NF90_FILL_DOUBLE
+    end where
+
     ! Write gridded field to file
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
     ! Clean up memory
+    deallocate( mask_grid)
     deallocate( d_grid_vec_partial_2D)
     deallocate( d_mesh_vec_partial_2D)
 
@@ -387,7 +395,7 @@ contains
     integer                               :: ncid, vi
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
-    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
+    real(dp), dimension(:),  allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D, mask_grid
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -439,10 +447,18 @@ contains
       d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
     end if
 
+    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
+    allocate( mask_grid( region%output_grid%n_loc ))
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
+    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
+      d_grid_vec_partial_2D = NF90_FILL_DOUBLE
+    end where
+
     ! Write gridded field to file
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
     ! Clean up memory
+    deallocate( mask_grid)
     deallocate( d_grid_vec_partial_2D)
     if (allocated( d_mesh_vec_partial_2D)) deallocate( d_mesh_vec_partial_2D)
 
@@ -946,15 +962,15 @@ contains
 
     ! Fluxes
     call initialise_ISMIP_field( region, region%ismip_output%tendacabf, 'tendacabf', &
-      'Total SMB flux', 'tendency_of_land_ice_mass_due_to_surface_mass_balance', 'kg s^-1', 'FL')
+      'Total SMB flux', 'tendency_of_land_ice_mass_due_to_surface_mass_balance', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendlibmassbfgr, 'tendlibmassbfgr', &
-      'Total BMB flux beneath grounded ice', 'tendency_of_land_ice_mass_due_to_basal_mass_balance', 'kg s^-1', 'FL')
+      'Total BMB flux beneath grounded ice', 'tendency_of_land_ice_mass_due_to_basal_mass_balance', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendlibmassbffl, 'tendlibmassbffl', &
-      'Total BMB flux beneath floating ice', 'tendency_of_land_ice_mass_due_to_basal_mass_balance', 'kg s^-1', 'FL')
+      'Total BMB flux beneath floating ice', 'tendency_of_land_ice_mass_due_to_basal_mass_balance', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendlicalvf, 'tendlicalvf', &
-      'Total calving flux', 'tendency_of_land_ice_mass_due_to_calving', 'kg s^-1', 'FL')
+      'Total calving flux', 'tendency_of_land_ice_mass_due_to_calving', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendlifmassbf, 'tendlifmassbf', &
-      'Total ice front melting flux', 'tendency_of_land_ice_mass_due_to_ice_front_melting', 'kg s^-1', 'FL')
+      'Total ice front melting flux', 'tendency_of_land_ice_mass_due_to_ice_front_melting', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendligroundf, 'tendligroundf', &
       'Total grounding line flux', 'tbd', 'kg s^-1', 'FL')
 

@@ -206,7 +206,7 @@ contains
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%hfgeoubed)
 
     ! Surface and basal mass balance
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%acabf)
+    call write_to_file_grid_FL( region, region%ismip_output%acabf)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%libmassbfgr)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%libmassbffl)
 
@@ -312,6 +312,73 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_to_single_ISMIP_regional_output_file_grid
+
+  subroutine write_to_file_grid_FL( region, field)
+    !< Write to single ISMIP regional output NetCDF file
+
+    ! In/output variables:
+    type(type_model_region),                              intent(inout) :: region
+    type(type_ismip_gridded_field),                       intent(inout) :: field
+
+    ! Local variables:
+    character(len=1024), parameter        :: routine_name = 'write_to_file_grid_FL'
+    integer                               :: ncid
+    character(len=16)                     :: nt_str
+    real(dp)                              :: deltat
+    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( field%filename, ncid)
+
+    ! write the time to the file
+    call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .true.)
+
+    ! Update the time counter attribute
+    field%nt = field%nt + 1
+    ! Convert counter to string
+    write(nt_str, '(I16)') field%nt
+    nt_str = adjustl(nt_str)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
+
+    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
+    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
+
+    ! Allocate memory
+    allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
+    allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+
+    ! Determine values
+    if (field%is_initial) then
+      ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
+      d_mesh_vec_partial_2D = field%accum
+      field%is_initial = .false.
+    else
+      d_mesh_vec_partial_2D = field%accum / deltat
+    end if
+
+    ! Restore accumulation to 0
+    field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+
+    ! Map from mesh to grid
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+
+    ! Write gridded field to file
+    call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+
+    ! Clean up memory
+    deallocate( d_grid_vec_partial_2D)
+    deallocate( d_mesh_vec_partial_2D)
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_file_grid_FL
 
   subroutine write_to_file_grid_ST_a( region, field, inputfield, vmin, vmax)
     !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
@@ -1011,7 +1078,8 @@ contains
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_ISMIP_output'
+    character(len=1024), parameter                       :: routine_name = 'initialise_ISMIP_output'
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -1046,8 +1114,10 @@ contains
       'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
+    SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
     call initialise_ISMIP_field( region, region%ismip_output%acabf, 'acabf' , &
-      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
+      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
+      initfield = SMB_loc * ice_density / sec_per_year)
     call initialise_ISMIP_field( region, region%ismip_output%libmassbfgr, 'libmassbfgr' , &
       'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%libmassbffl, 'libmassbffl' , &
@@ -1142,16 +1212,17 @@ contains
 
   end subroutine initialise_ISMIP_output
 
-  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype)
+  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype, initfield)
     ! Initialise a single field
 
-    type(type_model_region),           intent(inout) :: region
-    type(type_ismip_gridded_field),    intent(inout) :: field
-    character(len=*),                  intent(in   ) :: name
-    character(len=*),                  intent(in   ) :: long_name
-    character(len=*),                  intent(in   ) :: standard_name
-    character(len=*),                  intent(in   ) :: units
-    character(len=2),                  intent(in   ) :: fieldtype
+    type(type_model_region),                                        intent(inout) :: region
+    type(type_ismip_gridded_field),                                 intent(inout) :: field
+    character(len=*),                                               intent(in   ) :: name
+    character(len=*),                                               intent(in   ) :: long_name
+    character(len=*),                                               intent(in   ) :: standard_name
+    character(len=*),                                               intent(in   ) :: units
+    character(len=2),                                               intent(in   ) :: fieldtype
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: initfield
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field_grid'
@@ -1183,9 +1254,12 @@ contains
       trim(start_year) // '-' // trim(end_year) // '.nc'
 
     ! Allocate fields for accumulation during each timestep for flux fields
-    if ((field%fieldtype == 'FL') .and. (field%name /= 'hfgeoubed')) then
-      allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source=0._dp)
+    if (field%fieldtype == 'FL') then
+      allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source = 0._dp)
       field%is_initial = .true.
+      if (present(initfield)) then
+        field%accum( region%mesh%vi1:region%mesh%vi2) = initfield( region%mesh%vi1:region%mesh%vi2)
+      end if
     end if
 
     ! Initialise the counter for number of time values

@@ -225,7 +225,7 @@ contains
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%yvelmean)
 
     ! Temperatures
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litemptop)
+    call write_to_file( region, region%ismip_output%litemptop, region%ice%Ti( :, 1))
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempavg)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradgr)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradfl)
@@ -233,16 +233,16 @@ contains
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempbotfl)
 
     ! Basal drag
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%strbasemag)
+    call write_to_file( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress)
 
     ! Lateral mass balance
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%licalvf)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%sftgif)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%sftgrf)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%sftflf)
+    call write_to_file( region, region%ismip_output%sftgif, region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftgrf, region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftflf, region%ice%fraction_margin - region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
 
     ! === Scalars ===
 
@@ -637,10 +637,6 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D / sec_per_year)
 
       ! Temperatures
-      case ('litemptop')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Ti( :,1), d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-
       case ('litempavg')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
         do vi = region%mesh%vi1, region%mesh%vi2
@@ -714,11 +710,6 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
 
-      ! Basal drag
-      case ('strbasemag')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-
       ! Lateral mass balance
       case ('licalvf')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
@@ -740,26 +731,6 @@ contains
         d_grid_vec_partial_2D( :) = 0._dp
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
-      ! Area fractions
-      case ('sftgif')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, d_grid_vec_partial_2D)
-        ! Prevent values outside [0,1] due to rounding errors
-        d_grid_vec_partial_2D = min(1._dp,max(0._dp, d_grid_vec_partial_2D))
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('sftgrf')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_gr, d_grid_vec_partial_2D)
-        ! Prevent values outside [0,1] due to rounding errors
-        d_grid_vec_partial_2D = min(1._dp,max(0._dp, d_grid_vec_partial_2D))
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('sftflf')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        ! TODO check whether this is appropriate
-        d_mesh_vec_partial_2D = region%ice%fraction_margin( region%mesh%vi1: region%mesh%vi2) - region%ice%fraction_gr( region%mesh%vi1: region%mesh%vi2)
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        ! Prevent values outside [0,1] due to rounding errors
-        d_grid_vec_partial_2D = min(1._dp,max(0._dp, d_grid_vec_partial_2D))
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
     end select
 
     ! Clean up memory

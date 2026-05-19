@@ -176,8 +176,8 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
-    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdzeta, dTdz_bot
-    real(dp), dimension(C%nz)                            :: d_zeta_temp
+    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdz_bot
+    real(dp), dimension(C%nz)                            :: dTdzeta, d_zeta_temp
     integer                                              :: vi
 
     ! Add routine to path

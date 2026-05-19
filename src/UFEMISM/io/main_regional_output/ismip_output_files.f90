@@ -218,7 +218,11 @@ contains
     call write_to_file_grid_FL( region, region%ismip_output%libmassbffl, restore=.true.)
 
     ! Thickness tendency
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%dlithkdt)
+    do vi = region%mesh%vi1, region%mesh%vi2
+      region%ismip_output%dlithkdt%accum( vi) = (region%ice%Hi( vi) - region%ismip_output%dlithkdt%accum( vi)) / sec_per_year
+    end do
+    call write_to_file_grid_FL( region, region%ismip_output%dlithkdt, restore=.true.)
+    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
     call write_to_file_grid_ST_b( region, region%ismip_output%xvelsurf, region%ice%u_surf_b / sec_per_year)
@@ -663,21 +667,6 @@ contains
       case default
         call crash('unknown choice_output_field "' // trim( field%name) // '"')
 
-      ! Thickness tendency (FL)
-      case ('dlithkdt')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        if (field%is_initial) then
-          ! First timeframe, spit out 0
-          d_mesh_vec_partial_2D( :) = 0._dp
-          field%is_initial = .false.
-        else
-          d_mesh_vec_partial_2D = (region%ice%Hi - field%accum) / (region%time - region%ismip_output%t_prev) / sec_per_year
-          field%accum = region%ice%Hi
-        end if
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-
       ! Temperatures
       case ('litempavg')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
@@ -1063,9 +1052,8 @@ contains
 
     ! Thickness tendency
     call initialise_ISMIP_field( region, region%ismip_output%dlithkdt, 'dlithkdt' , &
-      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL')
-    ! Use accum of thickness tendency to store previous ice thickness
-    region%ismip_output%dlithkdt%accum = region%ice%Hi
+      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL', &
+      initfield = region%ice%Hi)
 
     ! Velocities
     call initialise_ISMIP_field( region, region%ismip_output%xvelsurf, 'xvelsurf' , &

@@ -239,8 +239,8 @@ contains
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempavg)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradgr)
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradfl)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempbotgr)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempbotfl)
+    call write_to_file_grid_ST_a( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), mask=region%ice%mask_grounded_ice)
+    call write_to_file_grid_ST_a( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), mask=region%ice%mask_floating_ice)
 
     ! Basal drag
     call write_to_file_grid_ST_a( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress)
@@ -398,22 +398,23 @@ contains
 
   end subroutine write_to_file_grid_FL
 
-  subroutine write_to_file_grid_ST_a( region, field, inputfield, vmin, vmax)
+  subroutine write_to_file_grid_ST_a( region, field, inputfield, vmin, vmax, mask)
     !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
 
     ! In/output variables:
-    type(type_model_region),                              intent(inout) :: region
-    type(type_ismip_gridded_field),                       intent(inout) :: field
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), intent(in   ) :: inputfield
-    real(dp), optional,                                   intent(in   ) :: vmin
-    real(dp), optional,                                   intent(in   ) :: vmax
+    type(type_model_region),                                       intent(inout) :: region
+    type(type_ismip_gridded_field),                                intent(inout) :: field
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2),          intent(in   ) :: inputfield
+    real(dp), optional,                                            intent(in   ) :: vmin
+    real(dp), optional,                                            intent(in   ) :: vmax
+    logical, dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: mask
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST_a'
-    integer                               :: ncid
+    integer                               :: ncid, vi
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
-    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D
+    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -436,9 +437,20 @@ contains
 
     ! Allocate memory
     allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
+    allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
+
+    ! Apply mask if requested
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (.not. present(mask) .or. mask( vi)) then
+        ! Add value if no mask is provided, or if the mask is true
+        d_mesh_vec_partial_2D( vi) = inputfield( vi)
+      else
+        d_mesh_vec_partial_2D( vi) = NaN
+      end if
+    end do
 
     ! Map from mesh to grid
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, inputfield, d_grid_vec_partial_2D)
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
 
     ! Enforce bounds
     if (present( vmin)) then
@@ -453,6 +465,7 @@ contains
 
     ! Clean up memory
     deallocate( d_grid_vec_partial_2D)
+    deallocate( d_mesh_vec_partial_2D)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -714,32 +727,6 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
         deallocate( dTdzeta)
-
-      case ('litempbotgr')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_grounded_ice( vi)) then
-            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-
-      case ('litempbotfl')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_floating_ice( vi)) then
-            d_mesh_vec_partial_2D( vi) = region%ice%Ti( vi, region%mesh%nz)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
 
     end select
 

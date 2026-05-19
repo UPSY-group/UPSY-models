@@ -92,10 +92,7 @@ contains
     ! Get delta t since last current time
     deltat = region%time - region%ismip_output%t_curr
 
-    ! Accumulate FL fields. Exceptions:
-    ! - dlithkdt (accumulation is used to store the previous written thickness
-    ! - hfgeoubed (doesn't vary, so just writing out the initial snapshot)
-    ! - lifmassbf (not computed yet, so just spitting out zeros)
+    ! Accumulate regular FL fields. Exceptions:
     call accumulate_single_ISMIP_flux_field( region, SMB_loc, mask_ice, deltat, &
       region%ismip_output%tendacabf, field = region%ismip_output%acabf)
     call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB, region%ice%mask_grounded_ice, deltat, &
@@ -106,6 +103,16 @@ contains
       region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)
     call accumulate_single_ISMIP_flux_field( region, gl_flux, mask_ice, deltat, &
       region%ismip_output%tendligroundf)
+
+    ! === Exceptions ===
+    ! Geothermal heat flux: restore to initial to spit out snapshot
+    region%ismip_output%hfgeoubed%is_initial = .true.
+    region%ismip_output%hfgeoubed%accum( region%mesh%vi1:region%mesh%vi2) = &
+      region%ice%geothermal_heat_flux( region%mesh%vi1:region%mesh%vi2) / sec_per_year
+
+    ! Frontal melting: just spit out zeros throughout
+
+    ! Ice thickness tendency: accumulation used to store previously written thickness
 
     ! Update current time
     region%ismip_output%t_curr = region%time
@@ -203,12 +210,12 @@ contains
     call write_to_file_grid_ST_a( region, region%ismip_output%base, region%ice%Hib)
 
     ! Geothermal heat flux
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%hfgeoubed)
+    call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, restore=.false.)
 
     ! Surface and basal mass balance
-    call write_to_file_grid_FL( region, region%ismip_output%acabf)
-    call write_to_file_grid_FL( region, region%ismip_output%libmassbfgr)
-    call write_to_file_grid_FL( region, region%ismip_output%libmassbffl)
+    call write_to_file_grid_FL( region, region%ismip_output%acabf, restore=.true.)
+    call write_to_file_grid_FL( region, region%ismip_output%libmassbfgr, restore=.true.)
+    call write_to_file_grid_FL( region, region%ismip_output%libmassbffl, restore=.true.)
 
     ! Thickness tendency
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%dlithkdt)
@@ -236,7 +243,7 @@ contains
 
     ! Lateral mass balance
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%licalvf)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lifmassbf)
+    call write_to_file_grid_FL( region, region%ismip_output%lifmassbf, restore=.false.)
 
     ! Area fractions
     call write_to_file_grid_ST_a( region, region%ismip_output%sftgif, region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
@@ -313,12 +320,13 @@ contains
 
   end subroutine write_to_single_ISMIP_regional_output_file_grid
 
-  subroutine write_to_file_grid_FL( region, field)
+  subroutine write_to_file_grid_FL( region, field, restore)
     !< Write to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),                              intent(inout) :: region
     type(type_ismip_gridded_field),                       intent(inout) :: field
+    logical,                                              intent(in   ) :: restore
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_file_grid_FL'
@@ -359,8 +367,14 @@ contains
       d_mesh_vec_partial_2D = field%accum / deltat
     end if
 
-    ! Restore accumulation to 0
-    field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+    ! Restore accumulation to 0 if required
+    if (restore) then
+      ! Accumulation set to 0 for new accumulation
+      field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
+    else
+      ! Accumulation field retained to again write out initial snapshot
+      field%is_initial = .true.
+    end if
 
     ! Map from mesh to grid
     call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
@@ -649,16 +663,6 @@ contains
       case default
         call crash('unknown choice_output_field "' // trim( field%name) // '"')
 
-      ! Geothermal heat flux (FL)
-      case ('hfgeoubed')
-        ! This is always a snapshot
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-        d_mesh_vec_partial_2D = region%ice%geothermal_heat_flux / sec_per_year
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-
       ! Thickness tendency (FL)
       case ('dlithkdt')
         allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
@@ -763,11 +767,6 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
-
-      case ('lifmassbf')
-        ! Undefined, so just write out zeros
-        d_grid_vec_partial_2D( :) = 0._dp
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
     end select
 
@@ -1056,7 +1055,8 @@ contains
 
     ! Geothermal heat flux
     call initialise_ISMIP_field( region, region%ismip_output%hfgeoubed, 'hfgeoubed' , &
-      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
+      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL', &
+      initfield = region%ice%geothermal_heat_flux / sec_per_year)
 
     ! Surface and basal mass balances
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)

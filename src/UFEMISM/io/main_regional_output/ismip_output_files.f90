@@ -999,6 +999,7 @@ contains
     call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'scenario', trim(C%ismip_scenario_name))
     call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'contact_name', trim(C%ismip_contact_name))
     call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'contact_email', trim(C%ismip_contact_email))
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'crs', trim(ismip_output%crs))
 
     ! Close the file
     call close_netcdf_file( ncid)

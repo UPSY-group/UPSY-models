@@ -41,6 +41,7 @@ module ismip_output_files
   interface write_to_file
     module procedure write_to_file_scalar_ST
     module procedure write_to_file_scalar_FL
+    module procedure write_to_file_grid_ST_a
   end interface
 
   interface initialise_ISMIP_field
@@ -197,10 +198,10 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lithk)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%orog)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%topg)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%base)
+    call write_to_file( region, region%ismip_output%lithk, region%ice%Hi, vmin=0._dp)
+    call write_to_file( region, region%ismip_output%orog, region%ice%Hs, vmin=0._dp)
+    call write_to_file( region, region%ismip_output%topg, region%ice%Hb)
+    call write_to_file( region, region%ismip_output%base, region%ice%Hib)
 
     ! Geothermal heat flux
     call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%hfgeoubed)
@@ -312,6 +313,70 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_to_single_ISMIP_regional_output_file_grid
+
+  subroutine write_to_file_grid_ST_a( region, field, inputfield, vmin, vmax)
+    !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
+
+    ! In/output variables:
+    type(type_model_region),                              intent(inout) :: region
+    type(type_ismip_gridded_field),                       intent(inout) :: field
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), intent(in   ) :: inputfield
+    real(dp), optional,                                   intent(in   ) :: vmin
+    real(dp), optional,                                   intent(in   ) :: vmax
+
+    ! Local variables:
+    character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST_a'
+    integer                               :: ncid
+    character(len=16)                     :: nt_str
+    real(dp)                              :: deltat
+    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( field%filename, ncid)
+
+    ! write the time to the file
+    call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .false.)
+
+    ! Update the time counter attribute
+    field%nt = field%nt + 1
+    ! Convert counter to string
+    write(nt_str, '(I16)') field%nt
+    nt_str = adjustl(nt_str)
+    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
+
+    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
+    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
+
+    ! Allocate memory
+    allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
+
+    ! Map from mesh to grid
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, inputfield, d_grid_vec_partial_2D)
+
+    ! Enforce bounds
+    if (present( vmin)) then
+      d_grid_vec_partial_2D = max(vmin, d_grid_vec_partial_2D)
+    end if
+    if (present( vmax)) then
+      d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
+    end if
+
+    ! Write gridded field to file
+    call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
+
+    ! Clean up memory
+    deallocate( d_grid_vec_partial_2D)
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_file_grid_ST_a
 
   subroutine write_to_file_scalar_ST( region, scalar, inputfield, mask)
     !< Write to STATE scalar to single ISMIP regional output NetCDF file
@@ -463,24 +528,6 @@ contains
     select case (field%name)
       case default
         call crash('unknown choice_output_field "' // trim( field%name) // '"')
-
-      ! Basic topography (ST)
-      case ('lithk')
-        call map_from_mesh_vertices_to_xy_grid_2d( region%mesh, region%output_grid, c%output_dir, region%ice%hi, d_grid_vec_partial_2d)
-        ! prevent negative values due to rounding errors
-        d_grid_vec_partial_2d = max(0._dp, d_grid_vec_partial_2d)
-        call write_to_field_multopt_grid_dp_2d( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2d)
-      case ('orog')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hs, d_grid_vec_partial_2D)
-        ! Prevent negative values due to rounding errors
-        d_grid_vec_partial_2D = max(0._dp, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('topg')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hb, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-      case ('base')
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%Hib, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
       ! Geothermal heat flux (FL)
       case ('hfgeoubed')

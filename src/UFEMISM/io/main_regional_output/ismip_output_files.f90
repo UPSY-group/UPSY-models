@@ -377,15 +377,13 @@ contains
 
   end subroutine write_to_file_grid_ST_a
 
-  subroutine write_to_file_grid_ST_b( region, field, inputfield, vmin, vmax)
+  subroutine write_to_file_grid_ST_b( region, field, inputfield)
     !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),                              intent(inout) :: region
     type(type_ismip_gridded_field),                       intent(inout) :: field
     real(dp), dimension(region%mesh%ti1:region%mesh%ti2), intent(in   ) :: inputfield
-    real(dp), optional,                                   intent(in   ) :: vmin
-    real(dp), optional,                                   intent(in   ) :: vmax
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST_b'
@@ -418,14 +416,6 @@ contains
 
     ! Map from mesh to grid
     call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, inputfield, d_grid_vec_partial_2D)
-
-    ! Enforce bounds
-    if (present( vmin)) then
-      d_grid_vec_partial_2D = max(vmin, d_grid_vec_partial_2D)
-    end if
-    if (present( vmax)) then
-      d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
-    end if
 
     ! Write gridded field to file
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)

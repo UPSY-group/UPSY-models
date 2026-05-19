@@ -34,10 +34,6 @@ module ismip_output_files
     module procedure create_single_ISMIP_regional_output_file_scalar
   end interface
 
-  interface write_to_single_ISMIP_regional_output_file
-    module procedure write_to_single_ISMIP_regional_output_file_grid
-  end interface
-
   interface write_to_file_scalar
     module procedure write_to_file_scalar_ST
     module procedure write_to_file_scalar_FL
@@ -180,6 +176,8 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
+    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdzeta, dTdz_bot
+    real(dp), dimension(C%nz)                            :: d_zeta_temp
     integer                                              :: vi
 
     ! Add routine to path
@@ -236,9 +234,26 @@ contains
 
     ! Temperatures
     call write_to_file_grid_ST_a( region, region%ismip_output%litemptop, region%ice%Ti( :, 1))
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempavg)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradgr)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%litempgradfl)
+
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (mask_ice_a( vi)) then
+        ! Get vertical T profile
+        d_zeta_temp = region%ice%Ti( vi, :)
+        ! Compute vertical average
+        T_vav( vi) = vertical_average( region%mesh%zeta, d_zeta_temp)
+        ! Compute vertical gradient wrt zeta
+        call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
+        ! Extract vertical gradient wrt height at the bottom
+        dTdz_bot( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
+      else
+        ! No ice here, return NaN
+        T_vav( vi) = NaN
+        dTdz_bot( vi) = NaN
+      end if
+    end do
+    call write_to_file_grid_ST_a( region, region%ismip_output%litempavg, T_vav)
+    call write_to_file_grid_ST_a( region, region%ismip_output%litempgradgr, dTdz_bot, mask=region%ice%mask_grounded_ice)
+    call write_to_file_grid_ST_a( region, region%ismip_output%litempgradfl, dTdz_bot, mask=region%ice%mask_floating_ice)
     call write_to_file_grid_ST_a( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), mask=region%ice%mask_grounded_ice)
     call write_to_file_grid_ST_a( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), mask=region%ice%mask_floating_ice)
 
@@ -277,52 +292,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_to_ISMIP_regional_output_files
-
-  subroutine write_to_single_ISMIP_regional_output_file_grid( region, field)
-    !< Write to single ISMIP regional output NetCDF file
-
-    ! In/output variables:
-    type(type_model_region),           intent(inout) :: region
-    type(type_ismip_gridded_field),    intent(inout) :: field
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'write_to_single_ISMIP_regional_output_file_grid'
-    integer                        :: ncid
-    character(len=16)              :: nt_str
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Open the NetCDF file
-    call open_existing_netcdf_file_for_writing( field%filename, ncid)
-
-    ! write the time to the file
-    select case (field%fieldtype)
-      case default
-        call crash('invalid fieldtype for CFtime writing "' // trim(field%fieldtype) //  '"')
-      case ('FL')
-        call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .true.)
-      case ('ST')
-        call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .false.)
-    end select
-
-    ! Update the time counter attribute
-    field%nt = field%nt + 1
-    ! Convert counter to string
-    write(nt_str, '(I16)') field%nt
-    nt_str = adjustl(nt_str)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
-
-    ! write the data to the file
-    call write_to_ISMIP_regional_output_file_field_grid( region, field, ncid)
-
-    ! Close the file
-    call close_netcdf_file( ncid)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_to_single_ISMIP_regional_output_file_grid
 
   subroutine write_to_file_grid_FL( region, field, restore)
     !< Write to single ISMIP regional output NetCDF file
@@ -648,95 +617,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_to_file_scalar_FL
-
-  subroutine write_to_ISMIP_regional_output_file_field_grid( region, field, ncid)
-    !< Write a single field to the ISMIP regional output NetCDF file
-
-    ! In/output variables:
-    type(type_model_region),           intent(inout) :: region
-    type(type_ismip_gridded_field),    intent(inout) :: field
-    integer,                           intent(in   ) :: ncid
-
-    ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_grid'
-    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
-    real(dp), dimension(:),   allocatable :: dTdzeta
-    real(dp), dimension(C%nz)             :: d_zeta_temp
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, calving_flux, gl_flux
-    integer                               :: vi
-    real(dp)                              :: deltat
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
-    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
-
-    ! Allocate memory
-    allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
-
-    ! Add the specified data field to the file
-    select case (field%name)
-      case default
-        call crash('unknown choice_output_field "' // trim( field%name) // '"')
-
-      ! Temperatures
-      case ('litempavg')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%Hi( vi) > 0._dp) then
-            d_zeta_temp = region%ice%Ti( vi, :)
-            d_mesh_vec_partial_2D( vi) = vertical_average( region%mesh%zeta, d_zeta_temp)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-
-      case ('litempgradgr')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        allocate( dTdzeta( 1:region%mesh%nz))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_grounded_ice( vi)) then
-            d_zeta_temp = region%ice%Ti( vi, :)
-            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
-            d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-        deallocate( dTdzeta)
-
-      case ('litempgradfl')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        allocate( dTdzeta( 1:region%mesh%nz))
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%mask_floating_ice( vi)) then
-            call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, region%ice%Ti( vi, :), dTdzeta)
-            d_mesh_vec_partial_2D( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
-          else
-            d_mesh_vec_partial_2D( vi) = NaN
-          end if
-        end do
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-        deallocate( dTdzeta)
-
-    end select
-
-    ! Clean up memory
-    deallocate( d_grid_vec_partial_2D)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_to_ISMIP_regional_output_file_field_grid
 
   subroutine create_ISMIP_regional_output_files( region)
     ! MAIN creation

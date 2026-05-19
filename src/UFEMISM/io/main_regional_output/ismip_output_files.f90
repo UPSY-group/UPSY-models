@@ -427,11 +427,14 @@ contains
 
       ! Apply mask if requested
       do vi = region%mesh%vi1, region%mesh%vi2
-        if (present(mask) .and. .not. mask( vi)) then
-          d_mesh_vec_partial_2D( vi) = NaN
-        else
+        if (.not. present(mask)) then
           ! Add value if no mask is provided, or if the mask is true
           d_mesh_vec_partial_2D( vi) = inputfield( vi)
+        elseif (mask( vi)) then
+          ! Add value if no mask is provided, or if the mask is true
+          d_mesh_vec_partial_2D( vi) = inputfield( vi)
+        else
+          d_mesh_vec_partial_2D( vi) = NaN
         end if
       end do
 
@@ -511,12 +514,16 @@ contains
 
     ! Accumulate scalar values per process
     scalar_loc = 0._dp
+    ! Apply mask if requested
     do vi = region%mesh%vi1, region%mesh%vi2
-      if (present(mask) .and. .not. mask( vi)) then
-        ! Do nothing
-      else
+      if (.not. present(mask)) then
         ! Add value if no mask is provided, or if the mask is true
         scalar_loc = scalar_loc + inputfield( vi) * region%mesh%A( vi)
+      elseif (mask( vi)) then
+        ! Add value if no mask is provided, or if the mask is true
+        scalar_loc = scalar_loc + inputfield( vi) * region%mesh%A( vi)
+      else
+        ! Do nothing
       end if
     end do
 

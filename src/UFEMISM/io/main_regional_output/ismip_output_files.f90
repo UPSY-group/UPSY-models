@@ -242,7 +242,7 @@ contains
     call write_to_file_grid_ST_a( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress)
 
     ! Lateral mass balance
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%licalvf)
+    call write_to_file_grid_FL( region, region%ismip_output%licalvf, restore=.true.)
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf, restore=.false.)
 
     ! Area fractions
@@ -752,22 +752,6 @@ contains
         call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
         deallocate( d_mesh_vec_partial_2D)
 
-      ! Lateral mass balance
-      case ('licalvf')
-        allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
-        if (field%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-          call calc_ISMIP_fluxes( region%mesh, region%ice, calving_flux, gl_flux)
-          d_mesh_vec_partial_2D = calving_flux * ice_density / sec_per_year
-          field%is_initial = .false.
-        else
-          d_mesh_vec_partial_2D = field%accum / deltat
-          field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
-        end if
-        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
-        call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-        deallocate( d_mesh_vec_partial_2D)
-
     end select
 
     ! Clean up memory
@@ -1022,7 +1006,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'initialise_ISMIP_output'
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr_loc, BMB_fl_loc
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr_loc, BMB_fl_loc, CF_loc, GL_loc
     integer                                              :: vi
 
     ! Add routine to path
@@ -1122,8 +1106,10 @@ contains
       'Basal drag', 'land_ice_basal_drag', 'Pa', 'ST')
 
     ! Lateral mass balance
+    call calc_ISMIP_fluxes( region%mesh, region%ice, CF_loc, GL_loc)
     call initialise_ISMIP_field( region, region%ismip_output%licalvf, 'licalvf' , &
-      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
+      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL', &
+      initfield = CF_loc * ice_density / sec_per_year)
     call initialise_ISMIP_field( region, region%ismip_output%lifmassbf,   'lifmassbf' , &
       'Ice front melt flux', 'land_ice_specific_mass_flux_due_to_ice_front_melting', 'kg m-2 s-1', 'FL')
 

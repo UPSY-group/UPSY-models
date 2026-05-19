@@ -202,10 +202,10 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_file_grid_ST_a( region, region%ismip_output%lithk, region%ice%Hi, vmin=0._dp)
-    call write_to_file_grid_ST_a( region, region%ismip_output%orog, region%ice%Hs, vmin=0._dp)
-    call write_to_file_grid_ST_a( region, region%ismip_output%topg, region%ice%Hb)
-    call write_to_file_grid_ST_a( region, region%ismip_output%base, region%ice%Hib)
+    call write_to_file_grid_ST( region, region%ismip_output%lithk, region%ice%Hi, .false., vmin=0._dp)
+    call write_to_file_grid_ST( region, region%ismip_output%orog, region%ice%Hs, .false., vmin=0._dp)
+    call write_to_file_grid_ST( region, region%ismip_output%topg, region%ice%Hb, .false.)
+    call write_to_file_grid_ST( region, region%ismip_output%base, region%ice%Hib, .false.)
 
     ! Geothermal heat flux
     call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, restore=.false.)
@@ -223,17 +223,17 @@ contains
     region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
-    call write_to_file_grid_ST_b( region, region%ismip_output%xvelsurf, region%ice%u_surf_b / sec_per_year)
-    call write_to_file_grid_ST_b( region, region%ismip_output%yvelsurf, region%ice%v_surf_b / sec_per_year)
-    call write_to_file_grid_ST_a( region, region%ismip_output%zvelsurf, region%ice%w_surf   / sec_per_year)
-    call write_to_file_grid_ST_b( region, region%ismip_output%xvelbase, region%ice%u_base_b / sec_per_year)
-    call write_to_file_grid_ST_b( region, region%ismip_output%yvelbase, region%ice%v_base_b / sec_per_year)
-    call write_to_file_grid_ST_a( region, region%ismip_output%zvelbase, region%ice%w_base   / sec_per_year)
-    call write_to_file_grid_ST_b( region, region%ismip_output%xvelmean, region%ice%u_vav_b  / sec_per_year)
-    call write_to_file_grid_ST_b( region, region%ismip_output%yvelmean, region%ice%v_vav_b  / sec_per_year)
+    call write_to_file_grid_ST( region, region%ismip_output%xvelsurf, region%ice%u_surf_b / sec_per_year, .true.)
+    call write_to_file_grid_ST( region, region%ismip_output%yvelsurf, region%ice%v_surf_b / sec_per_year, .true.)
+    call write_to_file_grid_ST( region, region%ismip_output%zvelsurf, region%ice%w_surf   / sec_per_year, .false.)
+    call write_to_file_grid_ST( region, region%ismip_output%xvelbase, region%ice%u_base_b / sec_per_year, .true.)
+    call write_to_file_grid_ST( region, region%ismip_output%yvelbase, region%ice%v_base_b / sec_per_year, .true.)
+    call write_to_file_grid_ST( region, region%ismip_output%zvelbase, region%ice%w_base   / sec_per_year, .false.)
+    call write_to_file_grid_ST( region, region%ismip_output%xvelmean, region%ice%u_vav_b  / sec_per_year, .true.)
+    call write_to_file_grid_ST( region, region%ismip_output%yvelmean, region%ice%v_vav_b  / sec_per_year, .true.)
 
     ! Temperatures
-    call write_to_file_grid_ST_a( region, region%ismip_output%litemptop, region%ice%Ti( :, 1))
+    call write_to_file_grid_ST( region, region%ismip_output%litemptop, region%ice%Ti( :, 1), .false.)
 
     do vi = region%mesh%vi1, region%mesh%vi2
       if (mask_ice_a( vi)) then
@@ -251,23 +251,24 @@ contains
         dTdz_bot( vi) = NaN
       end if
     end do
-    call write_to_file_grid_ST_a( region, region%ismip_output%litempavg, T_vav)
-    call write_to_file_grid_ST_a( region, region%ismip_output%litempgradgr, dTdz_bot, mask=region%ice%mask_grounded_ice)
-    call write_to_file_grid_ST_a( region, region%ismip_output%litempgradfl, dTdz_bot, mask=region%ice%mask_floating_ice)
-    call write_to_file_grid_ST_a( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), mask=region%ice%mask_grounded_ice)
-    call write_to_file_grid_ST_a( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), mask=region%ice%mask_floating_ice)
+    call write_to_file_grid_ST( region, region%ismip_output%litempavg, T_vav, .false.)
+    call write_to_file_grid_ST( region, region%ismip_output%litempgradgr, dTdz_bot, .false., mask=region%ice%mask_grounded_ice)
+    call write_to_file_grid_ST( region, region%ismip_output%litempgradfl, dTdz_bot, .false., mask=region%ice%mask_floating_ice)
+    call write_to_file_grid_ST( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_grounded_ice)
+    call write_to_file_grid_ST( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_floating_ice)
 
     ! Basal drag
-    call write_to_file_grid_ST_a( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress)
+    call write_to_file_grid_ST( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress, .false.)
 
     ! Lateral mass balance
     call write_to_file_grid_FL( region, region%ismip_output%licalvf, restore=.true.)
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf, restore=.false.)
 
     ! Area fractions
-    call write_to_file_grid_ST_a( region, region%ismip_output%sftgif, region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
-    call write_to_file_grid_ST_a( region, region%ismip_output%sftgrf, region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
-    call write_to_file_grid_ST_a( region, region%ismip_output%sftflf, region%ice%fraction_margin - region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
+    call write_to_file_grid_ST( region, region%ismip_output%sftgif, region%ice%fraction_margin, .false., vmin=0._dp, vmax=1._dp)
+    call write_to_file_grid_ST( region, region%ismip_output%sftgrf, region%ice%fraction_gr, .false., vmin=0._dp, vmax=1._dp)
+    call write_to_file_grid_ST( region, region%ismip_output%sftflf, region%ice%fraction_margin - region%ice%fraction_gr, &
+      .false., vmin=0._dp, vmax=1._dp)
 
     ! === Scalars ===
 
@@ -367,19 +368,20 @@ contains
 
   end subroutine write_to_file_grid_FL
 
-  subroutine write_to_file_grid_ST_a( region, field, inputfield, vmin, vmax, mask)
+  subroutine write_to_file_grid_ST( region, field, inputfield, is_bgrid, vmin, vmax, mask)
     !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),                                       intent(inout) :: region
     type(type_ismip_gridded_field),                                intent(inout) :: field
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2),          intent(in   ) :: inputfield
-    real(dp), optional,                                            intent(in   ) :: vmin
-    real(dp), optional,                                            intent(in   ) :: vmax
+    logical,                                                       intent(in   ) :: is_bgrid
+    real(dp),                                            optional, intent(in   ) :: vmin
+    real(dp),                                            optional, intent(in   ) :: vmax
     logical, dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: mask
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST_a'
+    character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST'
     integer                               :: ncid, vi
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
@@ -406,20 +408,26 @@ contains
 
     ! Allocate memory
     allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
-    allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
 
-    ! Apply mask if requested
-    do vi = region%mesh%vi1, region%mesh%vi2
-      if (.not. present(mask) .or. mask( vi)) then
-        ! Add value if no mask is provided, or if the mask is true
-        d_mesh_vec_partial_2D( vi) = inputfield( vi)
-      else
-        d_mesh_vec_partial_2D( vi) = NaN
-      end if
-    end do
+    if (is_bgrid) then
+      ! Map from mesh triangles to grid
+      call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, inputfield, d_grid_vec_partial_2D)
+    else
+      allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
 
-    ! Map from mesh to grid
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+      ! Apply mask if requested
+      do vi = region%mesh%vi1, region%mesh%vi2
+        if (.not. present(mask) .or. mask( vi)) then
+          ! Add value if no mask is provided, or if the mask is true
+          d_mesh_vec_partial_2D( vi) = inputfield( vi)
+        else
+          d_mesh_vec_partial_2D( vi) = NaN
+        end if
+      end do
+
+      ! Map from mesh vertices to grid
+      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+    end if
 
     ! Enforce bounds
     if (present( vmin)) then
@@ -434,7 +442,7 @@ contains
 
     ! Clean up memory
     deallocate( d_grid_vec_partial_2D)
-    deallocate( d_mesh_vec_partial_2D)
+    if (allocated( d_mesh_vec_partial_2D)) deallocate( d_mesh_vec_partial_2D)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -442,61 +450,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine write_to_file_grid_ST_a
-
-  subroutine write_to_file_grid_ST_b( region, field, inputfield)
-    !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
-
-    ! In/output variables:
-    type(type_model_region),                              intent(inout) :: region
-    type(type_ismip_gridded_field),                       intent(inout) :: field
-    real(dp), dimension(region%mesh%ti1:region%mesh%ti2), intent(in   ) :: inputfield
-
-    ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST_b'
-    integer                               :: ncid
-    character(len=16)                     :: nt_str
-    real(dp)                              :: deltat
-    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Open the NetCDF file
-    call open_existing_netcdf_file_for_writing( field%filename, ncid)
-
-    ! write the time to the file
-    call write_cftime_to_file( field%filename, ncid, region%time, with_bounds = .false.)
-
-    ! Update the time counter attribute
-    field%nt = field%nt + 1
-    ! Convert counter to string
-    write(nt_str, '(I16)') field%nt
-    nt_str = adjustl(nt_str)
-    call add_attribute_char( field%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
-
-    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
-    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
-
-    ! Allocate memory
-    allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
-
-    ! Map from mesh to grid
-    call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, inputfield, d_grid_vec_partial_2D)
-
-    ! Write gridded field to file
-    call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
-
-    ! Clean up memory
-    deallocate( d_grid_vec_partial_2D)
-
-    ! Close the file
-    call close_netcdf_file( ncid)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_to_file_grid_ST_b
+  end subroutine write_to_file_grid_ST
 
   subroutine write_to_file_scalar_ST( region, scalar, inputfield, mask)
     !< Write to STATE scalar to single ISMIP regional output NetCDF file

@@ -36,7 +36,11 @@ module ismip_output_files
 
   interface write_to_single_ISMIP_regional_output_file
     module procedure write_to_single_ISMIP_regional_output_file_grid
-    module procedure write_to_single_ISMIP_regional_output_file_scalar
+  end interface
+
+  interface write_to_file
+    module procedure write_to_file_scalar_ST
+    module procedure write_to_file_scalar_FL
   end interface
 
   interface initialise_ISMIP_field
@@ -167,7 +171,9 @@ contains
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'write_to_ISMIP_regional_output_files'
+    character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
+    logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
+    integer                                              :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -177,6 +183,15 @@ contains
       call finalise_routine( routine_name)
       return
     end if
+
+    ! Determine masks
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (region%ice%Hi( vi) > 0._dp) then
+        mask_ice_a( vi) = .true.
+      else
+        mask_ice_a( vi) = .false.
+      end if
+    end do
 
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
@@ -230,19 +245,19 @@ contains
 
     ! === Scalars ===
 
-    ! State
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%lim)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%limnsw)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%iareagr)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%iareafl)
+    ! State with provided inputfields and optional masks
+    call write_to_file( region, region%ismip_output%lim, region%ice%Hi * ice_density)
+    call write_to_file( region, region%ismip_output%limnsw, region%ice%TAF * ice_density, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
 
-    ! Fluxes
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendacabf)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlibmassbfgr)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlibmassbffl)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlicalvf)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendlifmassbf)
-    call write_to_single_ISMIP_regional_output_file( region, region%ismip_output%tendligroundf)
+    ! Fluxes with provided initial scalar values in Gt/yr
+    call write_to_file( region, region%ismip_output%tendacabf, region%scalars%SMB_gr + region%scalars%SMB_fl)
+    call write_to_file( region, region%ismip_output%tendlibmassbfgr, region%scalars%BMB_gr)
+    call write_to_file( region, region%ismip_output%tendlibmassbffl, region%scalars%BMB_fl)
+    call write_to_file( region, region%ismip_output%tendlicalvf, region%scalars%margin_ocean_flux)
+    call write_to_file( region, region%ismip_output%tendlifmassbf, 0._dp)
+    call write_to_file( region, region%ismip_output%tendligroundf, region%scalars%gl_flux)
 
     ! Set previous time step to current
     region%ismip_output%t_prev = region%ismip_output%t_curr
@@ -298,33 +313,34 @@ contains
 
   end subroutine write_to_single_ISMIP_regional_output_file_grid
 
-  subroutine write_to_single_ISMIP_regional_output_file_scalar( region, scalar)
-    !< Write to single ISMIP regional output NetCDF file
+  subroutine write_to_file_scalar_ST( region, scalar, inputfield, mask)
+    !< Write to STATE scalar to single ISMIP regional output NetCDF file
 
     ! In/output variables:
-    type(type_model_region),           intent(inout) :: region
-    type(type_ismip_scalar),           intent(inout) :: scalar
+    type(type_model_region),                                        intent(inout) :: region
+    type(type_ismip_scalar),                                        intent(inout) :: scalar
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2),           intent(in   ) :: inputfield
+    logical,  dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: mask
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'write_to_single_ISMIP_regional_output_file_scalar'
+    character(len=1024), parameter :: routine_name = 'write_to_file_scalar_ST'
     integer                        :: ncid
     character(len=16)              :: nt_str
+    real(dp)                       :: deltat
+    real(dp)                       :: scalar_loc
+    integer                        :: vi, ierr
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Check wheter scalar is state
+    if (scalar%fieldtype == 'FL') call crash('Flux variable should get initval')
 
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_writing( scalar%filename, ncid)
 
     ! write the time to the file
-    select case (scalar%fieldtype)
-      case default
-        call crash('invalid fieldtype for CFtime writing "' // trim(scalar%fieldtype) //  '"')
-      case ('FL')
-        call write_cftime_to_file( scalar%filename, ncid, region%time, with_bounds = .true.)
-      case ('ST')
-        call write_cftime_to_file( scalar%filename, ncid, region%time, with_bounds = .false.)
-    end select
+    call write_cftime_to_file( scalar%filename, ncid, region%time, with_bounds = .false.)
 
     ! Update the time counter attribute
     scalar%nt = scalar%nt + 1
@@ -333,8 +349,23 @@ contains
     nt_str = adjustl(nt_str)
     call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
 
-    ! write the data to the file
-    call write_to_ISMIP_regional_output_file_field_scalar( region, scalar, ncid)
+    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
+    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
+
+    ! Accumulate scalar values per process
+    scalar_loc = 0._dp
+    do vi = region%mesh%vi1, region%mesh%vi2
+      if (.not. present(mask) .or. mask( vi)) then
+        ! Add value if no mask is provided, or if the mask is true
+        scalar_loc = scalar_loc + inputfield( vi) * region%mesh%A( vi)
+      end if
+    end do
+
+    ! Accumulate sum over all processes
+    call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    ! Write scalar to file
+    call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -342,7 +373,65 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine write_to_single_ISMIP_regional_output_file_scalar
+  end subroutine write_to_file_scalar_ST
+
+  subroutine write_to_file_scalar_FL( region, scalar, initval)
+    !< Write to FLUX scalar to single ISMIP regional output NetCDF file
+
+    ! In/output variables:
+    type(type_model_region),  intent(inout) :: region
+    type(type_ismip_scalar),  intent(inout) :: scalar
+    real(dp),                 intent(in   ) :: initval ! Gt/y
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'write_to_file_scalar_FL'
+    integer                        :: ncid
+    character(len=16)              :: nt_str
+    real(dp)                       :: deltat
+    real(dp)                       :: scalar_loc
+    integer                        :: ierr
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Check wheter scalar is flux
+    if (scalar%fieldtype == 'ST') call crash('State variable should get inputfield')
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( scalar%filename, ncid)
+
+    call write_cftime_to_file( scalar%filename, ncid, region%time, with_bounds = .true.)
+
+    ! Update the time counter attribute
+    scalar%nt = scalar%nt + 1
+    ! Convert counter to string
+    write(nt_str, '(I16)') scalar%nt
+    nt_str = adjustl(nt_str)
+    call add_attribute_char( scalar%filename, ncid, NF90_GLOBAL, 'nt', trim(nt_str))
+
+    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
+    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
+
+    ! Determine scalar value
+    if (scalar%is_initial) then
+      ! First trimeframe, no accumulation yet, provide initial value instead
+      scalar_loc = initval * 1.e12_dp / sec_per_year
+      scalar%is_initial = .false.
+    else
+      scalar_loc = scalar%accum / deltat
+      scalar%accum = 0._dp
+    end if
+
+    ! Write scalar to file
+    call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_file_scalar_FL
 
   subroutine write_to_ISMIP_regional_output_file_field_grid( region, field, ncid)
     !< Write a single field to the ISMIP regional output NetCDF file
@@ -633,145 +722,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_to_ISMIP_regional_output_file_field_grid
-
-  subroutine write_to_ISMIP_regional_output_file_field_scalar( region, scalar, ncid)
-    !< Write a single field to the ISMIP regional output NetCDF file
-
-    ! In/output variables:
-    type(type_model_region),           intent(inout) :: region
-    type(type_ismip_scalar),           intent(inout) :: scalar
-    integer,                           intent(in   ) :: ncid
-
-    ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'write_to_ISMIP_regional_output_file_field_scalar'
-    real(dp)                              :: deltat
-    real(dp)                              :: scalar_loc
-    integer                               :: vi, ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Determine deltat since previous writing (should be equal to 0 (first time step) or dt_ismip_output)
-    deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
-
-    ! Add the specified data field to the file
-    select case (scalar%name)
-      case default
-        call crash('unknown choice_output_field "' // trim( scalar%name) // '"')
-
-      ! === State variables ===
-      case ('lim')
-        scalar_loc = 0._dp
-        do vi = region%mesh%vi1, region%mesh%vi2
-          scalar_loc = scalar_loc + region%ice%Hi( vi) * region%mesh%A( vi) * ice_density
-        end do
-        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      case ('limnsw')
-        scalar_loc = 0._dp
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%Hi( vi) > 0._dp) then
-            scalar_loc = scalar_loc + max(0._dp,region%ice%TAF( vi)) * region%mesh%A( vi) * ice_density
-          end if
-        end do
-        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      case ('iareagr')
-        scalar_loc = 0._dp
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%Hi( vi) > 0._dp) then
-            scalar_loc = scalar_loc + region%mesh%A( vi) * (region%ice%fraction_gr( vi))
-          end if
-        end do
-        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      case ('iareafl')
-        scalar_loc = 0._dp
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%Hi( vi) > 0._dp) then
-            scalar_loc = scalar_loc + region%mesh%A( vi) * (1._dp - region%ice%fraction_gr( vi))
-          end if
-        end do
-        call MPI_ALLREDUCE( MPI_IN_PLACE, scalar_loc, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      ! === Flux variables ===
-
-      ! SMB
-      case ('tendacabf')
-        if (scalar%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = (region%scalars%SMB_gr + region%scalars%SMB_fl) * 1.e12_dp / sec_per_year
-          scalar%is_initial = .false.
-        else
-          scalar_loc = scalar%accum / deltat
-          scalar%accum = 0._dp
-        end if
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      ! BMB_gr
-      case ('tendlibmassbfgr')
-        if (scalar%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%BMB_gr * 1.e12_dp / sec_per_year
-          scalar%is_initial = .false.
-        else
-          scalar_loc = scalar%accum / deltat
-          scalar%accum = 0._dp
-        end if
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      ! BMB_fl
-      case ('tendlibmassbffl')
-        if (scalar%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%BMB_fl * 1.e12_dp / sec_per_year
-          scalar%is_initial = .false.
-        else
-          scalar_loc = scalar%accum / deltat
-          scalar%accum = 0._dp
-        end if
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      ! Calv
-      case ('tendlicalvf')
-        if (scalar%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%margin_ocean_flux * 1.e12_dp / sec_per_year
-          scalar%is_initial = .false.
-        else
-          scalar_loc = scalar%accum / deltat
-          scalar%accum = 0._dp
-        end if
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      ! Frontal melting
-      case ('tendlifmassbf')
-        ! Undefined, so just spit out zero
-        scalar_loc = 0._dp
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-      ! GL flux
-      case ('tendligroundf')
-        if (scalar%is_initial) then
-          ! First timeframe, no accumulation yet. Following protocol, using snapshot scalar instead
-          scalar_loc = region%scalars%gl_flux * 1.e12_dp / sec_per_year
-          scalar%is_initial = .false.
-        else
-          scalar_loc = scalar%accum / deltat
-          scalar%accum = 0._dp
-        end if
-        call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
-
-    end select
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_to_ISMIP_regional_output_file_field_scalar
 
   subroutine create_ISMIP_regional_output_files( region)
     ! MAIN creation

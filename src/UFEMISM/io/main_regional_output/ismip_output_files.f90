@@ -34,7 +34,9 @@ module ismip_output_files
     module procedure create_single_ISMIP_regional_output_file_scalar
   end interface
 
-  interface write_to_file_scalar
+  interface write_to_file
+    module procedure write_to_file_grid_ST
+    module procedure write_to_file_grid_FL
     module procedure write_to_file_scalar_ST
     module procedure write_to_file_scalar_FL
   end interface
@@ -202,38 +204,38 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_file_grid_ST( region, region%ismip_output%lithk, region%ice%Hi, .false., vmin=0._dp)
-    call write_to_file_grid_ST( region, region%ismip_output%orog, region%ice%Hs, .false., vmin=0._dp)
-    call write_to_file_grid_ST( region, region%ismip_output%topg, region%ice%Hb, .false.)
-    call write_to_file_grid_ST( region, region%ismip_output%base, region%ice%Hib, .false.)
+    call write_to_file( region, region%ismip_output%lithk, region%ice%Hi, .false., vmin=0._dp)
+    call write_to_file( region, region%ismip_output%orog, region%ice%Hs, .false., vmin=0._dp)
+    call write_to_file( region, region%ismip_output%topg, region%ice%Hb, .false.)
+    call write_to_file( region, region%ismip_output%base, region%ice%Hib, .false.)
 
     ! Geothermal heat flux
-    call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, restore=.false.)
+    call write_to_file( region, region%ismip_output%hfgeoubed, restore=.false.)
 
     ! Surface and basal mass balance
-    call write_to_file_grid_FL( region, region%ismip_output%acabf, restore=.true.)
-    call write_to_file_grid_FL( region, region%ismip_output%libmassbfgr, restore=.true.)
-    call write_to_file_grid_FL( region, region%ismip_output%libmassbffl, restore=.true.)
+    call write_to_file( region, region%ismip_output%acabf, restore=.true.)
+    call write_to_file( region, region%ismip_output%libmassbfgr, restore=.true.)
+    call write_to_file( region, region%ismip_output%libmassbffl, restore=.true.)
 
     ! Thickness tendency
     do vi = region%mesh%vi1, region%mesh%vi2
       region%ismip_output%dlithkdt%accum( vi) = (region%ice%Hi( vi) - region%ismip_output%dlithkdt%accum( vi)) / sec_per_year
     end do
-    call write_to_file_grid_FL( region, region%ismip_output%dlithkdt, restore=.true.)
+    call write_to_file( region, region%ismip_output%dlithkdt, restore=.true.)
     region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
-    call write_to_file_grid_ST( region, region%ismip_output%xvelsurf, region%ice%u_surf_b / sec_per_year, .true.)
-    call write_to_file_grid_ST( region, region%ismip_output%yvelsurf, region%ice%v_surf_b / sec_per_year, .true.)
-    call write_to_file_grid_ST( region, region%ismip_output%zvelsurf, region%ice%w_surf   / sec_per_year, .false.)
-    call write_to_file_grid_ST( region, region%ismip_output%xvelbase, region%ice%u_base_b / sec_per_year, .true.)
-    call write_to_file_grid_ST( region, region%ismip_output%yvelbase, region%ice%v_base_b / sec_per_year, .true.)
-    call write_to_file_grid_ST( region, region%ismip_output%zvelbase, region%ice%w_base   / sec_per_year, .false.)
-    call write_to_file_grid_ST( region, region%ismip_output%xvelmean, region%ice%u_vav_b  / sec_per_year, .true.)
-    call write_to_file_grid_ST( region, region%ismip_output%yvelmean, region%ice%v_vav_b  / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%xvelsurf, region%ice%u_surf_b / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%yvelsurf, region%ice%v_surf_b / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%zvelsurf, region%ice%w_surf   / sec_per_year, .false.)
+    call write_to_file( region, region%ismip_output%xvelbase, region%ice%u_base_b / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%yvelbase, region%ice%v_base_b / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%zvelbase, region%ice%w_base   / sec_per_year, .false.)
+    call write_to_file( region, region%ismip_output%xvelmean, region%ice%u_vav_b  / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%yvelmean, region%ice%v_vav_b  / sec_per_year, .true.)
 
     ! Temperatures
-    call write_to_file_grid_ST( region, region%ismip_output%litemptop, region%ice%Ti( :, 1), .false.)
+    call write_to_file( region, region%ismip_output%litemptop, region%ice%Ti( :, 1), .false.)
 
     do vi = region%mesh%vi1, region%mesh%vi2
       if (mask_ice_a( vi)) then
@@ -251,40 +253,40 @@ contains
         dTdz_bot( vi) = NaN
       end if
     end do
-    call write_to_file_grid_ST( region, region%ismip_output%litempavg, T_vav, .false.)
-    call write_to_file_grid_ST( region, region%ismip_output%litempgradgr, dTdz_bot, .false., mask=region%ice%mask_grounded_ice)
-    call write_to_file_grid_ST( region, region%ismip_output%litempgradfl, dTdz_bot, .false., mask=region%ice%mask_floating_ice)
-    call write_to_file_grid_ST( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_grounded_ice)
-    call write_to_file_grid_ST( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempavg, T_vav, .false.)
+    call write_to_file( region, region%ismip_output%litempgradgr, dTdz_bot, .false., mask=region%ice%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempgradfl, dTdz_bot, .false., mask=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_floating_ice)
 
     ! Basal drag
-    call write_to_file_grid_ST( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress, .false.)
+    call write_to_file( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress, .false.)
 
     ! Lateral mass balance
-    call write_to_file_grid_FL( region, region%ismip_output%licalvf, restore=.true.)
-    call write_to_file_grid_FL( region, region%ismip_output%lifmassbf, restore=.false.)
+    call write_to_file( region, region%ismip_output%licalvf, restore=.true.)
+    call write_to_file( region, region%ismip_output%lifmassbf, restore=.false.)
 
     ! Area fractions
-    call write_to_file_grid_ST( region, region%ismip_output%sftgif, region%ice%fraction_margin, .false., vmin=0._dp, vmax=1._dp)
-    call write_to_file_grid_ST( region, region%ismip_output%sftgrf, region%ice%fraction_gr, .false., vmin=0._dp, vmax=1._dp)
-    call write_to_file_grid_ST( region, region%ismip_output%sftflf, region%ice%fraction_margin - region%ice%fraction_gr, &
+    call write_to_file( region, region%ismip_output%sftgif, region%ice%fraction_margin, .false., vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftgrf, region%ice%fraction_gr, .false., vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftflf, region%ice%fraction_margin - region%ice%fraction_gr, &
       .false., vmin=0._dp, vmax=1._dp)
 
     ! === Scalars ===
 
     ! State with provided inputfields and optional masks
-    call write_to_file_scalar( region, region%ismip_output%lim, region%ice%Hi * ice_density)
-    call write_to_file_scalar( region, region%ismip_output%limnsw, region%ice%TAF * ice_density, mask=mask_ice_a)
-    call write_to_file_scalar( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
-    call write_to_file_scalar( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%lim, region%ice%Hi * ice_density)
+    call write_to_file( region, region%ismip_output%limnsw, region%ice%TAF * ice_density, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
 
     ! Fluxes with provided initial scalar values in Gt/yr
-    call write_to_file_scalar( region, region%ismip_output%tendacabf, region%scalars%SMB_gr + region%scalars%SMB_fl)
-    call write_to_file_scalar( region, region%ismip_output%tendlibmassbfgr, region%scalars%BMB_gr)
-    call write_to_file_scalar( region, region%ismip_output%tendlibmassbffl, region%scalars%BMB_fl)
-    call write_to_file_scalar( region, region%ismip_output%tendlicalvf, region%scalars%margin_ocean_flux)
-    call write_to_file_scalar( region, region%ismip_output%tendlifmassbf, 0._dp)
-    call write_to_file_scalar( region, region%ismip_output%tendligroundf, region%scalars%gl_flux)
+    call write_to_file( region, region%ismip_output%tendacabf, region%scalars%SMB_gr + region%scalars%SMB_fl)
+    call write_to_file( region, region%ismip_output%tendlibmassbfgr, region%scalars%BMB_gr)
+    call write_to_file( region, region%ismip_output%tendlibmassbffl, region%scalars%BMB_fl)
+    call write_to_file( region, region%ismip_output%tendlicalvf, region%scalars%margin_ocean_flux)
+    call write_to_file( region, region%ismip_output%tendlifmassbf, 0._dp)
+    call write_to_file( region, region%ismip_output%tendligroundf, region%scalars%gl_flux)
 
     ! Set previous time step to current
     region%ismip_output%t_prev = region%ismip_output%t_curr

@@ -173,7 +173,7 @@ module calendar
       end do
 
       ! Add days of current year to year end
-      if (is_leap_year( full_year)) then
+      if (is_leap_year( full_year -1)) then
         days_end = days_start + 366._dp
       else
         days_end = days_start + 365._dp

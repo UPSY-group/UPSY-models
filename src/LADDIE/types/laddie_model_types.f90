@@ -163,12 +163,11 @@ MODULE laddie_model_types
     logical,  dimension(:), contiguous, pointer :: mask_a          => null()  !                   Mask on a-grid on which to apply computation
     logical,  dimension(:), contiguous, pointer :: mask_gr_a       => null()  !                   Grounded mask on a-grid
     logical,  dimension(:), contiguous, pointer :: mask_oc_a       => null()  !                   Icefree ocean mask on a-grid
-    logical,  dimension(:), contiguous, pointer :: mask_a_no_melt  => null()  !                   Mask on a-grid on which to apply computation but zero melt rates (only used when C%laddie_extend_flow_melt_through = true)
     logical,  dimension(:), contiguous, pointer :: mask_b          => null()  !                   Mask on b-grid on which to apply computation
     logical,  dimension(:), contiguous, pointer :: mask_gl_b       => null()  !                   Grounding line mask on b-grid
     logical,  dimension(:), contiguous, pointer :: mask_cf_b       => null()  !                   Calving front mask on b-grid
     logical,  dimension(:), contiguous, pointer :: mask_oc_b       => null()  !                   Icefree ocean mask on b-grid
-    type(MPI_WIN) :: wmask_a, wmask_gr_a, wmask_oc_a, wmask_a_no_melt, wmask_b, wmask_gl_b, wmask_cf_b, wmask_oc_b
+    type(MPI_WIN) :: wmask_a, wmask_gr_a, wmask_oc_a, wmask_b, wmask_gl_b, wmask_cf_b, wmask_oc_b
 
     ! Domains and areas
     real(dp), dimension(:), contiguous, pointer :: domain_a        => null()  ! []                Floating domain on a grid

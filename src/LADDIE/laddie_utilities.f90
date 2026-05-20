@@ -243,14 +243,12 @@ CONTAINS
     if (associated( laddie%mask_gr_a )) call deallocate_dist_shared( laddie%mask_gr_a , laddie%wmask_gr_a )
     if (associated( laddie%mask_oc_a )) call deallocate_dist_shared( laddie%mask_oc_a , laddie%wmask_oc_a )
     if (associated( laddie%mask_b    )) call deallocate_dist_shared( laddie%mask_b    , laddie%wmask_b    )
-    if (associated( laddie%mask_a_no_melt)) call deallocate_dist_shared( laddie%mask_a_no_melt    , laddie%wmask_a_no_melt )
     if (associated( laddie%mask_gl_b )) call deallocate_dist_shared( laddie%mask_gl_b , laddie%wmask_gl_b )
     if (associated( laddie%mask_cf_b )) call deallocate_dist_shared( laddie%mask_cf_b , laddie%wmask_cf_b )
     if (associated( laddie%mask_oc_b )) call deallocate_dist_shared( laddie%mask_oc_b , laddie%wmask_oc_b )
     call allocate_dist_shared( laddie%mask_a        , laddie%wmask_a        , [mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  ])    !                 Mask on a-grid
     call allocate_dist_shared( laddie%mask_gr_a     , laddie%wmask_gr_a     , [mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  ])    !                 Grounded mask on a-grid
     call allocate_dist_shared( laddie%mask_oc_a     , laddie%wmask_oc_a     , [mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  ])    !                 Icefree ocean mask on a-grid
-    call allocate_dist_shared( laddie%mask_a_no_melt, laddie%wmask_a_no_melt, [mesh%pai_V%i1_nih  , mesh%pai_V%i2_nih  ])    !                 Mask on a-grid
     call allocate_dist_shared( laddie%mask_b        , laddie%wmask_b        , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])    !                 Mask on b-grid
     call allocate_dist_shared( laddie%mask_gl_b     , laddie%wmask_gl_b     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])    !                 Grounding line mask on b-grid
     call allocate_dist_shared( laddie%mask_cf_b     , laddie%wmask_cf_b     , [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])    !                 Calving front mask on b-grid

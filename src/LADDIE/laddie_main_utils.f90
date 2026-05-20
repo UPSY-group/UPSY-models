@@ -65,15 +65,10 @@ CONTAINS
           .and. forcing%Hi( vi) < C%calving_threshold_thickness_shelf)) then
           laddie%mask_a( vi)    = .false.
           laddie%mask_oc_a( vi) = .true.
-        ! Check whether there was ice in the refgeo: if so melt-through occurred, pretend as if it is still in mask_a, but at the end you dont want melt for these cells!
+        ! Check whether there was ice in the refgeo: if so melt-through occurred, pretend as if it is still in mask_a to compute all variables
         else if (forcing%mask_icefree_ocean( vi) .and. forcing%refgeo_Hi( vi) > 0._dp) then
           laddie%mask_a( vi)    = .true.
           laddie%mask_oc_a( vi) = .false.
-          if (C%laddie_extend_flow_melt_through_allow_melt) then
-            laddie%mask_a_no_melt( vi) = .false.
-          else
-            laddie%mask_a_no_melt( vi) = .true.
-          end if 
         else
           ! Inherit regular masks
           laddie%mask_a( vi)    = forcing%mask_floating_ice( vi)

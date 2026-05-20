@@ -1053,10 +1053,11 @@ module model_configuration_type_and_namelist
     character(len=1024) :: transects_SGD_config                         = ''                               ! List of transects to use for applying SGD. Format: [file:file_path1,F=10 || file:file_path2,F=20]
     character(len=1024) :: distribute_SGD_config                        = 'single_cell'                    ! How to apply SGD from transect; single cell ('single_cell'), or distribute over 2 neighbours ('distribute_2neighbours')
 
-    ! Flow extension beneath regions of melt-through
-    logical             :: laddie_extend_flow_melt_through_config       = .false.                          ! Whether or not to solve for U, V, T, S, H in regions of melt-through, default = false
-    logical             :: laddie_extend_flow_melt_through_allow_melt_config =.false.                      ! Wheter or not to compute melt beneath areas of melt-through, default = false, do not compute melt
-    logical             :: laddie_limit_melt_based_on_Hi_config         =.false. ! If true: Limit melt rate based on available ice to melt = Hi / C%dt_BMB
+    ! Flow extension beneath melt-through regions
+    logical             :: laddie_extend_flow_melt_through_config       = .false.                          ! Whether or not to solve for U, V, T, S, H in regions of melt-through, default = false (do not solve in regions of melt-through)
+    
+    ! Limit melt rate to Hi/dt_BMB
+    logical             :: laddie_limit_melt_based_on_Hi_config         = .false.                          ! Whether or not to limit the melt rate based on available ice to melt (= Hi / C%dt_BMB), default = false (no limit)
 
   ! == Lateral mass balance
   ! =======================
@@ -2288,9 +2289,10 @@ module model_configuration_type_and_namelist
     character(len=1024) :: transects_SGD
     character(len=1024) :: distribute_SGD
 
-    ! Flow extension beneath regions of melt-through
+    ! Flow extension in melt-through regions
     logical             :: laddie_extend_flow_melt_through
-    logical             :: laddie_extend_flow_melt_through_allow_melt
+
+    ! Limit melt rate to Hi/dt_BMB
     logical             :: laddie_limit_melt_based_on_Hi
 
   ! == Lateral mass balance
@@ -3179,7 +3181,6 @@ contains
       transects_SGD_config                                        , &
       distribute_SGD_config                                       , &
       laddie_extend_flow_melt_through_config                      , &
-      laddie_extend_flow_melt_through_allow_melt_config           , &
       laddie_limit_melt_based_on_Hi_config                        , &
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
@@ -4394,9 +4395,10 @@ contains
     C%transects_SGD                                          = transects_SGD_config
     C%distribute_SGD                                         = distribute_SGD_config
 
-    ! Flow extension beneath regions of melt-through
+    ! Flow extension in melt-through regions    
     C%laddie_extend_flow_melt_through                        = laddie_extend_flow_melt_through_config
-    C%laddie_extend_flow_melt_through_allow_melt             = laddie_extend_flow_melt_through_allow_melt_config
+
+    ! Limit melt rate to Hi/dt_BMB
     C%laddie_limit_melt_based_on_Hi                          = laddie_limit_melt_based_on_Hi_config
 
     ! == Lateral mass balance

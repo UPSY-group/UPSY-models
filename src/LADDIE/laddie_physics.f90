@@ -83,7 +83,6 @@ CONTAINS
     ! Loop over vertices
     DO vi = mesh%vi1, mesh%vi2
        IF (laddie%mask_a( vi)) THEN
-
          ! Solve three equations
          That = freezing_lambda_2 + freezing_lambda_3*forcing%Hib( vi)
          IF (time == C%start_time_of_run .OR. C%choice_thermo_model == 'none') THEN

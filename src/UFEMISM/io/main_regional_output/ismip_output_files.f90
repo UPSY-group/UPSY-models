@@ -1015,7 +1015,7 @@ contains
     field%fieldtype     = fieldtype
 
     ! Convert grid resolution and start/end times to string.
-    ! Offset of 1 year is needed to pass compliance checker
+    ! Offset of 1 year because those years must indicate 31 Dec of the year before
     write(start_year, '(I4)') int(C%start_time_of_run - 1)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
@@ -1073,8 +1073,9 @@ contains
     scalar%fieldtype     = fieldtype
 
     ! Convert start/end times to string
-    write(start_year, '(I4)') int(C%start_time_of_run)
-    write(end_year, '(I4)') int(C%end_time_of_run)
+    ! Offset of 1 year because those years must indicate 31 Dec of the year before
+    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder
     region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'

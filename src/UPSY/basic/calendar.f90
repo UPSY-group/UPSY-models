@@ -109,8 +109,8 @@ module calendar
           ! probably to make sure output is 31 Dec for a given year
           days = -1._dp
     
-          ! Count days for full years from 1850 to full year
-          do i = 1850, full_year
+          ! Count days for full years from 1850 up to full year
+          do i = 1850, full_year - 1
             if (is_leap_year(i)) then
               days = days + 366._dp
             else
@@ -164,7 +164,7 @@ module calendar
       days_start = 0._dp
 
       ! Count days for full years from 1850 to start of last year
-      do i = 1850, full_year- 1
+      do i = 1850, full_year - 2
         if (is_leap_year(i)) then
           days_start = days_start + 366._dp
         else

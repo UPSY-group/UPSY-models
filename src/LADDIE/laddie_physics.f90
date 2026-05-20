@@ -84,13 +84,6 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
        IF (laddie%mask_a( vi)) THEN
 
-         ! If flag extend flow melt-through true and this vertice is in melt-through region: asign zero melt
-         IF (C%laddie_extend_flow_melt_through .AND. laddie%mask_a_no_melt( vi)) THEN
-           laddie%melt( vi) = 0.0
-           laddie%T_base( vi) = 0.0
-           CYCLE
-         END IF
-
          ! Solve three equations
          That = freezing_lambda_2 + freezing_lambda_3*forcing%Hib( vi)
          IF (time == C%start_time_of_run .OR. C%choice_thermo_model == 'none') THEN
@@ -109,6 +102,11 @@ CONTAINS
            laddie%melt( vi) = 0.0
          ELSE
            laddie%melt( vi) = 0.5_dp * (-Bval + SQRT(Bval**2 - 4.0_dp*Cval))
+         END IF
+
+         ! If C%laddie_limit_melt_based_on_Hi: limit melt rate based on available ice to prevent an overestimation of the buoyancy source
+         IF (C%laddie_limit_melt_based_on_Hi) THEN
+           laddie%melt( vi) = MIN( laddie%melt( vi), forcing%Hi( vi) / C%dt_BMB )
          END IF
 
          ! Get temperature at ice base

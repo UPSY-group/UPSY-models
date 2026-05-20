@@ -1056,6 +1056,7 @@ module model_configuration_type_and_namelist
     ! Flow extension beneath regions of melt-through
     logical             :: laddie_extend_flow_melt_through_config       = .false.                          ! Whether or not to solve for U, V, T, S, H in regions of melt-through, default = false
     logical             :: laddie_extend_flow_melt_through_allow_melt_config =.false.                      ! Wheter or not to compute melt beneath areas of melt-through, default = false, do not compute melt
+    logical             :: laddie_limit_melt_based_on_Hi_config         =.false. ! If true: Limit melt rate based on available ice to melt = Hi / C%dt_BMB
 
   ! == Lateral mass balance
   ! =======================
@@ -2290,6 +2291,7 @@ module model_configuration_type_and_namelist
     ! Flow extension beneath regions of melt-through
     logical             :: laddie_extend_flow_melt_through
     logical             :: laddie_extend_flow_melt_through_allow_melt
+    logical             :: laddie_limit_melt_based_on_Hi
 
   ! == Lateral mass balance
   ! =======================
@@ -3178,6 +3180,7 @@ contains
       distribute_SGD_config                                       , &
       laddie_extend_flow_melt_through_config                      , &
       laddie_extend_flow_melt_through_allow_melt_config           , &
+      laddie_limit_melt_based_on_Hi_config                        , &
       choice_laddie_tides_config                                  , &
       uniform_laddie_tidal_velocity_config                        , &
       dt_LMB_config                                               , &
@@ -4394,6 +4397,7 @@ contains
     ! Flow extension beneath regions of melt-through
     C%laddie_extend_flow_melt_through                        = laddie_extend_flow_melt_through_config
     C%laddie_extend_flow_melt_through_allow_melt             = laddie_extend_flow_melt_through_allow_melt_config
+    C%laddie_limit_melt_based_on_Hi                          = laddie_limit_melt_based_on_Hi_config
 
     ! == Lateral mass balance
     ! =======================

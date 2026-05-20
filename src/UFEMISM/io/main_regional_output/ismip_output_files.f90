@@ -981,7 +981,7 @@ contains
     call initialise_ISMIP_field( region, region%ismip_output%tendlifmassbf, 'tendlifmassbf', &
       'Total ice front melting flux', 'tendency_of_land_ice_mass_due_to_ice_front_melting', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendligroundf, 'tendligroundf', &
-      'Total grounding line flux', 'tbd', 'kg s^-1', 'FL')
+      'Total grounding line flux', 'tbd', 'kg s-1', 'FL')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

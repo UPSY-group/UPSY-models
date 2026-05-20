@@ -276,7 +276,7 @@ contains
 
     ! State with provided inputfields and optional masks
     call write_to_file( region, region%ismip_output%lim, region%ice%Hi * ice_density)
-    call write_to_file( region, region%ismip_output%limnsw, region%ice%TAF * ice_density, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%TAF) * ice_density, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
 

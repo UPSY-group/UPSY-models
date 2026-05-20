@@ -276,7 +276,7 @@ contains
 
     ! State with provided inputfields and optional masks
     call write_to_file( region, region%ismip_output%lim, region%ice%Hi * ice_density)
-    call write_to_file( region, region%ismip_output%limnsw, region%ice%TAF * ice_density, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%TAF) * ice_density, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
 
@@ -981,7 +981,7 @@ contains
     call initialise_ISMIP_field( region, region%ismip_output%tendlifmassbf, 'tendlifmassbf', &
       'Total ice front melting flux', 'tendency_of_land_ice_mass_due_to_ice_front_melting', 'kg s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%tendligroundf, 'tendligroundf', &
-      'Total grounding line flux', 'tbd', 'kg s^-1', 'FL')
+      'Total grounding line flux', 'tbd', 'kg s-1', 'FL')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1014,9 +1014,10 @@ contains
     field%units         = units
     field%fieldtype     = fieldtype
 
-    ! Convert grid resolution and start/end times to string
-    write(start_year, '(I4)') int(C%start_time_of_run)
-    write(end_year, '(I4)') int(C%end_time_of_run)
+    ! Convert grid resolution and start/end times to string.
+    ! Offset of 1 year because those years must indicate 31 Dec of the year before
+    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder
     region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'
@@ -1072,8 +1073,9 @@ contains
     scalar%fieldtype     = fieldtype
 
     ! Convert start/end times to string
-    write(start_year, '(I4)') int(C%start_time_of_run)
-    write(end_year, '(I4)') int(C%end_time_of_run)
+    ! Offset of 1 year because those years must indicate 31 Dec of the year before
+    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder
     region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'

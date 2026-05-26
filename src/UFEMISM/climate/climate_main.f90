@@ -177,12 +177,14 @@ CONTAINS
     ALLOCATE( climate%Precip( mesh%vi1:mesh%vi2,12))
     allocate( climate%Wind_LR( mesh%vi1:mesh%vi2, 12))
     allocate( climate%Wind_DU( mesh%vi1:mesh%vi2, 12))
+    allocate( climate%Q_TOA  ( mesh%vi1:mesh%vi2, 12))
     climate%Hs     = 0._dp
     climate%snapshot%Hs     = 0._dp
     climate%T2m    = 0._dp
     climate%Precip = 0._dp
     climate%Wind_LR = 0._dp
     climate%Wind_DU = 0._dp
+    climate%Q_TOA   = 0._dp
 
     ! Set time of next calculation to start time
     climate%t_next = C%start_time_of_run

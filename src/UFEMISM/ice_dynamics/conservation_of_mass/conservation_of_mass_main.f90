@@ -61,6 +61,13 @@ contains
     ! Reset artificial mass balance
     AMB = 0._dp
 
+    !Making sure verticies in no ice mask have zero thinning rates
+    do vi = mesh%vi1, mesh%vi2
+      if (mask_noice( vi)) then
+        dHi_dt(vi)  = 0._dp
+      end if
+    end do
+
     ! Calculate Hi( t+dt) with the specified time discretisation scheme
     select case (C%choice_ice_integration_method)
     case default

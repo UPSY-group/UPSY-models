@@ -74,3 +74,6 @@ linting_mods/*
 
 # Ignore local test folder
 test
+
+#Thule 
+automated_testing/integrated_tests/idealised/Thule

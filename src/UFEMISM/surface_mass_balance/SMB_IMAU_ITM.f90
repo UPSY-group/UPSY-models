@@ -13,10 +13,11 @@ module SMB_IMAU_ITM
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
-  use climate_model_types, only: type_climate_model
+  use climate_model_types, only: type_climate_model, type_climate_model_snapshot
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
   use parameters, only: ice_density, T0, L_fusion, sec_per_year
-
+  use climate_model_utilities, only: get_insolation_at_time
+  use climate_realistic, only: initialise_insolation_forcing
   implicit none
 
   private
@@ -144,7 +145,7 @@ contains
     call init_routine( routine_name)
 
     ! Retrieve input variables from context object
-    call self%run_SMB_model_IMAU_ITM( self%mesh, context%ice, context%climate, self%region_name())
+    call self%run_SMB_model_IMAU_ITM( self%mesh, context%ice, context%climate, context%time, self%region_name())
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -273,6 +274,7 @@ contains
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
     type(type_mesh),                intent(in   ) :: mesh
     type(type_ice_model),           intent(in   ) :: ice
+    ! type(type_climate_model),       intent(inout) :: climate
     character(len=3),               intent(in   ) :: region_name
 
     ! Local variables:
@@ -417,7 +419,7 @@ contains
 
   end subroutine initialise_IMAU_ITM_firn_from_file
 
-  subroutine run_SMB_model_IMAU_ITM( self, mesh, ice, climate, region_name)
+  subroutine run_SMB_model_IMAU_ITM( self, mesh, ice, climate, time, region_name)
 
     ! NOTE: all the SMB components are in meters of water equivalent;
     !       the end result (SMB_monthly and SMB) are in meters of ice equivalent.
@@ -426,7 +428,8 @@ contains
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
     type(type_mesh),                intent(in   ) :: mesh
     type(type_ice_model),           intent(in   ) :: ice
-    type(type_climate_model),       intent(in   ) :: climate
+    type(type_climate_model),       intent(inout) :: climate
+    REAL(dp),                       intent(in   ) :: time
     character(len=3),               intent(in   ) :: region_name
 
     ! Local variables:
@@ -434,9 +437,30 @@ contains
     integer                        :: vi
     integer                        :: m, mprev
     real(dp)                       :: snowfrac, liquid_water, sup_imp_wat
+    real(dp)                       :: timeframe_init_insolation
+    type(type_climate_model_snapshot) :: snapshot_dummy
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Initialise insolation if needed
+    if (.not. allocated(climate%Q_TOA)) then
+      allocate( climate%Q_TOA  ( mesh%vi1:mesh%vi2, 12),source=0.0_dp)
+      CALL initialise_insolation_forcing( snapshot_dummy, mesh)
+
+      IF (C%start_time_of_run < 0._dp) THEN
+        timeframe_init_insolation = C%start_time_of_run
+      ELSE
+        timeframe_init_insolation = 0._dp
+      END IF
+      CALL get_insolation_at_time( mesh, timeframe_init_insolation, snapshot_dummy)
+      do vi = mesh%vi1, mesh%vi2
+        do m=1,12
+          climate%Q_TOA(vi, m) = snapshot_dummy%Q_TOA(vi, m)
+        end do
+      end do
+    else
+    end if
 
     do vi = mesh%vi1, mesh%vi2
 

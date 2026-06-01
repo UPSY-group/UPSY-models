@@ -8,8 +8,7 @@ module ut_mpi_CSR_matrix_vector_multiplication
   use precisions, only: dp
   use mpi_basic, only: par, sync, sync_node
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D, &
     multiply_CSR_matrix_with_vector_1D_wrapper
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, MPI_WIN
@@ -33,7 +32,7 @@ contains
     character(len=1024), parameter :: routine_name = 'test_CSR_matrix_vector_multiplication_main'
     character(len=1024), parameter :: test_name_local = 'CSR_matrix_vector_multiplication'
     character(len=1024)            :: test_name
-    type(type_sparse_matrix_CSR_dp) :: A1, A2
+    type(type_CSR_matrix_dp) :: A1, A2
     real(dp), dimension(1)          :: x1, x2, y_correct1, y_correct2
 
     ! Add routine to call stack
@@ -62,7 +61,7 @@ contains
 
     ! In/output variables:
     character(len=*),                intent(in) :: test_name_parent
-    type(type_sparse_matrix_CSR_dp), intent(in) :: A
+    type(type_CSR_matrix_dp), intent(in) :: A
     real(dp), dimension(1),          intent(in) :: x, y_correct
     integer,                         intent(in) :: test_number
 
@@ -179,7 +178,7 @@ contains
   subroutine initialise_simple_matrix_equation_1( A, x, y)
 
     ! In/output variables:
-    type(type_sparse_matrix_CSR_dp), intent(out) :: A
+    type(type_CSR_matrix_dp), intent(out) :: A
     real(dp), dimension(1),          intent(out) :: x,y
 
     ! Local variables:
@@ -198,46 +197,46 @@ contains
     ! 6  [ ,  ,  ,  , 3,  , 4] [2]   [15]
     ! 7  [ ,  ,  ,  ,  , 1, 2] [3]   [ 8]
 
-    call allocate_matrix_CSR_dist( A, 7, 7, 1, 1, 3)
+    call A%allocate( 7, 7, 1, 1, 3)
 
     if     (par%i == 0) then
-      call add_entry_CSR_dist( A, 1, 1, 1._dp)
+      call A%add_entry( 1, 1, 1._dp)
       x = 1._dp
       y = 1._dp
     elseif (par%i == 1) then
-      call add_entry_CSR_dist( A, 2, 2, 2._dp)
-      call add_entry_CSR_dist( A, 2, 3, 3._dp)
+      call A%add_entry( 2, 2, 2._dp)
+      call A%add_entry( 2, 3, 3._dp)
       x = 2._dp
       y = 13._dp
     elseif (par%i == 2) then
-      call add_entry_CSR_dist( A, 3, 2, 4._dp)
-      call add_entry_CSR_dist( A, 3, 5, 1._dp)
+      call A%add_entry( 3, 2, 4._dp)
+      call A%add_entry( 3, 5, 1._dp)
       x = 3._dp
       y = 9._dp
     elseif (par%i == 3) then
-      call add_entry_CSR_dist( A, 4, 3, 2._dp)
-      call add_entry_CSR_dist( A, 4, 4, 3._dp)
-      call add_entry_CSR_dist( A, 4, 6, 4._dp)
+      call A%add_entry( 4, 3, 2._dp)
+      call A%add_entry( 4, 4, 3._dp)
+      call A%add_entry( 4, 6, 4._dp)
       x = 4._dp
       y = 26._dp
     elseif (par%i == 4) then
-      call add_entry_CSR_dist( A, 5, 4, 1._dp)
-      call add_entry_CSR_dist( A, 5, 5, 2._dp)
+      call A%add_entry( 5, 4, 1._dp)
+      call A%add_entry( 5, 5, 2._dp)
       x = 1._dp
       y = 6._dp
     elseif (par%i == 5) then
-      call add_entry_CSR_dist( A, 6, 5, 3._dp)
-      call add_entry_CSR_dist( A, 6, 7, 4._dp)
+      call A%add_entry( 6, 5, 3._dp)
+      call A%add_entry( 6, 7, 4._dp)
       x = 2._dp
       y = 15._dp
     elseif (par%i == 6) then
-      call add_entry_CSR_dist( A, 7, 6, 1._dp)
-      call add_entry_CSR_dist( A, 7, 7, 2._dp)
+      call A%add_entry( 7, 6, 1._dp)
+      call A%add_entry( 7, 7, 2._dp)
       x = 3._dp
       y = 8._dp
     end if
 
-    call finalise_matrix_CSR_dist( A)
+    call A%finalise
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -247,7 +246,7 @@ contains
   subroutine initialise_simple_matrix_equation_2( A, x, y)
 
     ! In/output variables:
-    type(type_sparse_matrix_CSR_dp), intent(out) :: A
+    type(type_CSR_matrix_dp), intent(out) :: A
     real(dp), dimension(1),          intent(out) :: x,y
 
     ! Local variables:
@@ -266,53 +265,53 @@ contains
     ! 6  [5,  ,  ,  , 3,  , 4] [2]   [20]
     ! 7  [ , 6,  ,  ,  , 1, 2] [3]   [20]
 
-    call allocate_matrix_CSR_dist( A, 7, 7, 1, 1, 7)
+    call A%allocate( 7, 7, 1, 1, 7)
 
     if     (par%i == 0) then
-      call add_entry_CSR_dist( A, 1, 1, 1._dp)
-      call add_entry_CSR_dist( A, 1, 5, 5._dp)
+      call A%add_entry( 1, 1, 1._dp)
+      call A%add_entry( 1, 5, 5._dp)
       x = 1._dp
       y = 6._dp
     elseif (par%i == 1) then
-      call add_entry_CSR_dist( A, 2, 2, 2._dp)
-      call add_entry_CSR_dist( A, 2, 3, 3._dp)
-      call add_entry_CSR_dist( A, 2, 6, 6._dp)
+      call A%add_entry( 2, 2, 2._dp)
+      call A%add_entry( 2, 3, 3._dp)
+      call A%add_entry( 2, 6, 6._dp)
       x = 2._dp
       y = 25._dp
     elseif (par%i == 2) then
-      call add_entry_CSR_dist( A, 3, 2, 4._dp)
-      call add_entry_CSR_dist( A, 3, 5, 1._dp)
+      call A%add_entry( 3, 2, 4._dp)
+      call A%add_entry( 3, 5, 1._dp)
       x = 3._dp
       y = 9._dp
     elseif (par%i == 3) then
-      call add_entry_CSR_dist( A, 4, 1, 5._dp)
-      call add_entry_CSR_dist( A, 4, 3, 2._dp)
-      call add_entry_CSR_dist( A, 4, 4, 3._dp)
-      call add_entry_CSR_dist( A, 4, 6, 4._dp)
-      call add_entry_CSR_dist( A, 4, 7, 5._dp)
+      call A%add_entry( 4, 1, 5._dp)
+      call A%add_entry( 4, 3, 2._dp)
+      call A%add_entry( 4, 4, 3._dp)
+      call A%add_entry( 4, 6, 4._dp)
+      call A%add_entry( 4, 7, 5._dp)
       x = 4._dp
       y = 46._dp
     elseif (par%i == 4) then
-      call add_entry_CSR_dist( A, 5, 2, 6._dp)
-      call add_entry_CSR_dist( A, 5, 4, 1._dp)
-      call add_entry_CSR_dist( A, 5, 5, 2._dp)
+      call A%add_entry( 5, 2, 6._dp)
+      call A%add_entry( 5, 4, 1._dp)
+      call A%add_entry( 5, 5, 2._dp)
       x = 1._dp
       y = 18._dp
     elseif (par%i == 5) then
-      call add_entry_CSR_dist( A, 6, 1, 5._dp)
-      call add_entry_CSR_dist( A, 6, 5, 3._dp)
-      call add_entry_CSR_dist( A, 6, 7, 4._dp)
+      call A%add_entry( 6, 1, 5._dp)
+      call A%add_entry( 6, 5, 3._dp)
+      call A%add_entry( 6, 7, 4._dp)
       x = 2._dp
       y = 20._dp
     elseif (par%i == 6) then
-      call add_entry_CSR_dist( A, 7, 2, 6._dp)
-      call add_entry_CSR_dist( A, 7, 6, 1._dp)
-      call add_entry_CSR_dist( A, 7, 7, 2._dp)
+      call A%add_entry( 7, 2, 6._dp)
+      call A%add_entry( 7, 6, 1._dp)
+      call A%add_entry( 7, 7, 2._dp)
       x = 3._dp
       y = 20._dp
     end if
 
-    call finalise_matrix_CSR_dist( A)
+    call A%finalise
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

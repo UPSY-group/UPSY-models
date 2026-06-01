@@ -1,7 +1,6 @@
 module transect_types
 
   use precisions, only: dp
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
 
   implicit none
 

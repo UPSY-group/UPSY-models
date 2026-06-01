@@ -12,9 +12,7 @@ MODULE petsc_basic
   USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE parameters
   USE reallocate_mod                                         , ONLY: reallocate
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, &
-    add_entry_CSR_dist, deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mpi_distributed_memory, only: partition_list, gather_to_all
 
   IMPLICIT NONE
@@ -35,7 +33,7 @@ CONTAINS
     IMPLICIT NONE
 
     ! In/output variables:
-    TYPE(type_sparse_matrix_CSR_dp),     INTENT(IN)    :: AA
+    TYPE(type_CSR_matrix_dp),     INTENT(IN)    :: AA
     REAL(dp), DIMENSION(:    ),          INTENT(IN)    :: bb
     REAL(dp), DIMENSION(:    ),          INTENT(INOUT) :: xx
     REAL(dp),                            INTENT(IN)    :: rtol, abstol
@@ -370,7 +368,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(tMat),                          INTENT(IN)    :: A
-    TYPE(type_sparse_matrix_CSR_dp),     INTENT(OUT)   :: AA
+    TYPE(type_CSR_matrix_dp),     INTENT(OUT)   :: AA
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'mat_petsc2CSR'
@@ -410,19 +408,19 @@ CONTAINS
     nnz_loc = SUM( nnz_row_loc)
 
     ! Allocate memory for CSR matrix
-    CALL allocate_matrix_CSR_dist( AA, m_glob, n_glob, m_loc, n_loc, nnz_loc)
+    call AA%allocate( m_glob, n_glob, m_loc, n_loc, nnz_loc)
 
     ! Copy data from the PETSc matrix to the CSR arrays
     DO row_glob = istart+1, iend ! +1 because PETSc indexes from 0
       CALL MatGetRow( A, row_glob-1, ncols, cols_, vals_, perr)
       DO k = 1, ncols
-        CALL add_entry_CSR_dist( AA, row_glob, cols_( k)+1, vals_( k))
+        call AA%add_entry( row_glob, cols_( k)+1, vals_( k))
       END DO
       CALL MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, perr)
     END DO
 
     ! Crop memory
-    call finalise_matrix_CSR_dist( AA)
+    call AA%finalise
 
     ! Clean up after yourself
     DEALLOCATE( nnz_row_loc)
@@ -447,7 +445,7 @@ CONTAINS
     IMPLICIT NONE
 
     ! In/output variables:
-    TYPE(type_sparse_matrix_CSR_dp),     INTENT(IN)    :: AA
+    TYPE(type_CSR_matrix_dp),     INTENT(IN)    :: AA
     TYPE(tMat),                          INTENT(OUT)   :: A
 
     ! Local variables:

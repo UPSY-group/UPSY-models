@@ -9,9 +9,7 @@ module remapping_mesh_vertices_to_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
-    deallocate_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
   use mesh_utilities, only: find_containing_triangle, calc_Voronoi_cell, is_in_Voronoi_cell
@@ -44,7 +42,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'create_map_from_mesh_vertices_to_xy_grid'
     integer, dimension(grid%nx, grid%ny)   :: overlaps_with_small_triangle, containing_triangle
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                             :: w0, w1x, w1y
     character(len=1024)                    :: filename_grid, filename_mesh
     integer                                :: perr
@@ -232,7 +230,7 @@ contains
     type(type_grid),                      intent(in   ) :: grid
     integer, dimension(grid%nx, grid%ny), intent(in   ) :: overlaps_with_small_triangle
     integer, dimension(grid%nx, grid%ny), intent(in   ) :: containing_triangle
-    type(type_sparse_matrix_CSR_dp),      intent(  out) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp),      intent(  out) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_A_matrices'
@@ -263,9 +261,9 @@ contains
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh%TriA) / (grid%dx**2)), &
                                     ceiling( 2._dp * (grid%dx**2) / minval( mesh%TriA))) )
 
-    call allocate_matrix_CSR_dist( A_xdy_g_b_CSR  , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_mxydx_g_b_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_xydy_g_b_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xdy_g_b_CSR%allocate  ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_mxydx_g_b_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xydy_g_b_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for single row results
     single_row_grid%n_max = nnz_per_row_max
@@ -393,9 +391,9 @@ contains
           end do ! do kk = 1, single_row_grid%n
 
           ! Add entries to the big matrices
-          call add_entry_CSR_dist( A_xdy_g_b_CSR  , row, col, single_row_grid%LI_xdy(   k))
-          call add_entry_CSR_dist( A_mxydx_g_b_CSR, row, col, single_row_grid%LI_mxydx( k))
-          call add_entry_CSR_dist( A_xydy_g_b_CSR , row, col, single_row_grid%LI_xydy(  k))
+          call A_xdy_g_b_CSR%add_entry(   row, col, single_row_grid%LI_xdy(   k))
+          call A_mxydx_g_b_CSR%add_entry( row, col, single_row_grid%LI_mxydx( k))
+          call A_xydy_g_b_CSR%add_entry(  row, col, single_row_grid%LI_xydy(  k))
 
         end do ! do k = 1, single_row_grid%n
 
@@ -411,9 +409,9 @@ contains
         LI_mxydx = grid%dx**2 * grid%x( i)
         LI_xydy  = grid%dx**2 * grid%y( j)
 
-        call add_entry_CSR_dist( A_xdy_g_b_CSR  , row, col, LI_xdy  )
-        call add_entry_CSR_dist( A_mxydx_g_b_CSR, row, col, LI_mxydx)
-        call add_entry_CSR_dist( A_xydy_g_b_CSR , row, col, LI_xydy )
+        call A_xdy_g_b_CSR%add_entry(   row, col, LI_xdy  )
+        call A_mxydx_g_b_CSR%add_entry( row, col, LI_mxydx)
+        call A_xydy_g_b_CSR%add_entry(  row, col, LI_xydy )
 
       end if ! if (overlaps_with_small_triangle( i,j) == 1) then
 
@@ -431,7 +429,7 @@ contains
     ! In/output variables
     type(type_mesh),                 intent(in   ) :: mesh
     type(type_grid),                 intent(in   ) :: grid
-    type(type_sparse_matrix_CSR_dp), intent(in   ) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp), intent(in   ) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                     , intent(  out) :: w0, w1x, w1y
 
     ! Local variables:
@@ -439,7 +437,7 @@ contains
     integer                         :: row, ti
     integer                         :: nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc
     integer                         :: k
-    type(type_sparse_matrix_CSR_dp) :: w0_CSR, w1x_CSR, w1y_CSR
+    type(type_CSR_matrix_dp) :: w0_CSR, w1x_CSR, w1y_CSR
     integer                         :: k1, k2, col
     real(dp)                        :: A_overlap_tot
 
@@ -452,9 +450,9 @@ contains
     ncols_loc    = A_xdy_g_b_CSR%n_loc
     nnz_est_proc = A_xdy_g_b_CSR%nnz
 
-    call allocate_matrix_CSR_dist( w0_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( w1x_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( w1y_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w0_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w1x_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w1y_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     do row = grid%n1, grid%n2
 
@@ -466,16 +464,16 @@ contains
       do k = k1, k2
         col = A_xdy_g_b_CSR%ind( k)
         ti = mesh%n2ti( col)
-        call add_entry_CSR_dist( w0_CSR , row, col,  A_xdy_g_b_CSR%val(   k) / A_overlap_tot)
-        call add_entry_CSR_dist( w1x_CSR, row, col, (A_mxydx_g_b_CSR%val( k) / A_overlap_tot) - (mesh%TriGC( ti,1) * w0_CSR%val( k)))
-        call add_entry_CSR_dist( w1y_CSR, row, col, (A_xydy_g_b_CSR%val(  k) / A_overlap_tot) - (mesh%TriGC( ti,2) * w0_CSR%val( k)))
+        call w0_CSR%add_entry(  row, col,  A_xdy_g_b_CSR%val(   k) / A_overlap_tot)
+        call w1x_CSR%add_entry( row, col, (A_mxydx_g_b_CSR%val( k) / A_overlap_tot) - (mesh%TriGC( ti,1) * w0_CSR%val( k)))
+        call w1y_CSR%add_entry( row, col, (A_xydy_g_b_CSR%val(  k) / A_overlap_tot) - (mesh%TriGC( ti,2) * w0_CSR%val( k)))
       end do
 
     end do
 
-    call finalise_matrix_CSR_dist( w0_CSR)
-    call finalise_matrix_CSR_dist( w1x_CSR)
-    call finalise_matrix_CSR_dist( w1y_CSR)
+    call w0_CSR%finalise
+    call w1x_CSR%finalise
+    call w1y_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( w0_CSR , w0 )

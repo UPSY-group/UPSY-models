@@ -41,10 +41,7 @@ module hybrid_DIVA_BPA_main
   use plane_geometry, only: is_in_polygon, is_in_polygons
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
-    read_single_row_CSR_dist, deallocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
-    finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use grid_basic, only: type_grid, calc_grid_mask_as_polygons
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
@@ -670,14 +667,14 @@ contains
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'solve_hybrid_DIVA_BPA_linearised'
-    type(type_sparse_matrix_CSR_dp)         :: A_DIVA, A_BPA
+    type(type_CSR_matrix_dp)         :: A_DIVA, A_BPA
     real(dp), dimension(:    ), allocatable :: b_DIVA, b_BPA
     integer,  dimension(:,:  ), allocatable :: tiuv2nh
     integer,  dimension(:,:,:), allocatable :: tikuv2nh
     integer,  dimension(:,:  ), allocatable :: nh2tiuv_tikuv
     integer                                 :: neq,i1,i2
     integer                                 :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)         :: A_combi
+    type(type_CSR_matrix_dp)         :: A_combi
     real(dp), dimension(:    ), allocatable :: b_combi
     real(dp), dimension(:    ), allocatable :: uv_combi
     integer                                 :: neq_loc
@@ -715,7 +712,7 @@ contains
     nrows_loc       = neq_loc
     nnz_est_proc    = ceiling( 1.1_dp * real( A_DIVA%nnz + A_BPA%nnz, dp))
 
-    call allocate_matrix_CSR_dist( A_combi, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_combi%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
     allocate( b_combi(  i1:i2))
@@ -751,7 +748,7 @@ contains
             ! This neighbouring triangle and vertically averaged velocity component corresponds to this column in the combined matrix
             col_nh = tiuv2nh( tin,uvn)
             ! Add the coefficient from the DIVA matrix to the combined matrix
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
           end do ! do kk = kk1, kk2
 
           ! Copy the DIVA load vector
@@ -766,7 +763,7 @@ contains
           ! -u_vav + SUM_k [ u_3D( k) * dzeta( k)] = 0
 
           ! Add the coefficient of -1 for the vertically averaged velocity to the combined matrix
-          call add_entry_CSR_dist( A_combi, row_nh, row_nh, -1._dp)
+          call A_combi%add_entry( row_nh, row_nh, -1._dp)
 
           ! Loop over the vertical column
           do k = 1, mesh%nz
@@ -784,7 +781,7 @@ contains
             col_nh = tikuv2nh( ti,k,uv)
 
             ! Add the coefficient to the combined matrix
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, dzeta)
+            call A_combi%add_entry( row_nh, col_nh, dzeta)
 
           end do ! do k = 1, mesh%nz
 
@@ -828,7 +825,7 @@ contains
             ! This neighbouring triangle, layer, and 3-D velocity component corresponds to this column in the combined matrix
             col_nh = tikuv2nh( tin,kn,uvn)
             ! Add the coefficient from the DIVA matrix to the combined matrix
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
           end do ! do kk = kk1, kk2
 
           ! Copy the BPA load vector
@@ -862,11 +859,11 @@ contains
             ! u_vav term
             col_nh = tiuv2nh( ti,uv)
             val = hybrid%DIVA%beta_eff_b( ti) * hybrid%DIVA%F1_3D_b( ti,k)
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
 
             ! u( z) term
             val = -1._dp
-            call add_entry_CSR_dist( A_combi, row_nh, row_nh, val)
+            call A_combi%add_entry( row_nh, row_nh, val)
 
             ! The load vector is zero in this case
             b_combi( row_nh) = 0._dp
@@ -897,11 +894,11 @@ contains
             col_nh = tiuv2nh( ti,uv)
             val = (1._dp + hybrid%DIVA%basal_friction_coefficient_b( ti) * hybrid%DIVA%F1_3D_b( ti,k)) / &
                   (1._dp + hybrid%DIVA%basal_friction_coefficient_b( ti) * hybrid%DIVA%F2_3D_b( ti,1))
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
 
             ! u( z) term
             val = -1._dp
-            call add_entry_CSR_dist( A_combi, row_nh, row_nh, val)
+            call A_combi%add_entry( row_nh, row_nh, val)
 
             ! The load vector is zero in this case
             b_combi( row_nh) = 0._dp
@@ -921,7 +918,7 @@ contains
 
     end do ! do row_nh = i1, i2
 
-    call finalise_matrix_CSR_dist( A_combi)
+    call A_combi%finalise
 
     ! == Solve the matrix equation
     ! ============================
@@ -1010,7 +1007,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
     logical,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: mask_DIVA_b           ! T: solve the DIVA here, F: otherwise
-    type(type_sparse_matrix_CSR_dp),        intent(  out) :: A_DIVA
+    type(type_CSR_matrix_dp),        intent(  out) :: A_DIVA
     real(dp), dimension(:), allocatable,    intent(  out) :: b_DIVA
 
     ! Local variables:
@@ -1032,7 +1029,7 @@ contains
     nrows_loc       = mesh%nTri_loc * 2
     nnz_est_proc    = mesh%M2_ddx_b_b%nnz * 4
 
-    call allocate_matrix_CSR_dist( A_DIVA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_DIVA%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector
     allocate( b_DIVA( mesh%ti1*2-1: mesh%ti2*2))
@@ -1049,7 +1046,7 @@ contains
         ! Dirichlet boundary condition; velocities are prescribed for this triangle
 
         ! Stiffness matrix: diagonal element set to 1
-        call add_entry_CSR_dist( A_DIVA, row_tiuv, row_tiuv, 1._dp)
+        call A_DIVA%add_entry( row_tiuv, row_tiuv, 1._dp)
 
         ! Load vector: prescribed velocity
         if     (uv == 1) then
@@ -1063,7 +1060,7 @@ contains
       elseif (.not. mask_DIVA_b( ti)) then
         ! The BPA is solved here, not the DIVA
 
-        call add_empty_row_CSR_dist( A_DIVA, row_tiuv)
+        call A_DIVA%add_empty_row( row_tiuv)
 
       elseif (mesh%TriBI( ti) > 0) then
         ! Domain border: apply boundary conditions
@@ -1109,7 +1106,7 @@ contains
 
     end do ! do row_tiuv = A_DIVA%i1, A_DIVA%i2
 
-    call finalise_matrix_CSR_dist( A_DIVA)
+    call A_DIVA%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1126,7 +1123,7 @@ contains
     type(type_ice_velocity_solver_BPA),     intent(inout) :: BPA
     integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
     logical,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: mask_BPA_b            ! T: solve the BPA here, F: otherwise
-    type(type_sparse_matrix_CSR_dp),        intent(  out) :: A_BPA
+    type(type_CSR_matrix_dp),        intent(  out) :: A_BPA
     real(dp), dimension(:), allocatable,    intent(  out) :: b_BPA
 
     ! Local variables:
@@ -1147,7 +1144,7 @@ contains
     nrows_loc       = mesh%nTri_loc * mesh%nz * 2
     nnz_est_proc    = mesh%M2_ddx_bk_bk%nnz   * 4
 
-    call allocate_matrix_CSR_dist( A_BPA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_BPA%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector
     allocate( b_BPA( A_BPA%i1:A_BPA%i2))
@@ -1164,7 +1161,7 @@ contains
       if (BC_prescr_mask_b( ti) == 1 .or. .not. mask_BPA_b( ti)) then
         ! The DIVA is solved here, not the BPA
 
-        call add_empty_row_CSR_dist( A_BPA, row_tikuv)
+        call A_BPA%add_empty_row( row_tikuv)
 
       elseif (mesh%TriBI( ti) == 1 .or. mesh%TriBI( ti) == 2) then
         ! Northern domain border
@@ -1205,7 +1202,7 @@ contains
 
     end do ! do row_tikuv = A_BPA%i1, A_BPA%i2
 
-    call finalise_matrix_CSR_dist( A_BPA)
+    call A_BPA%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1218,8 +1215,8 @@ contains
     ! In/output variables:
     type(type_mesh),                       intent(in   ) :: mesh
     type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
-    type(type_sparse_matrix_CSR_dp),       intent(in   ) :: A_DIVA
-    type(type_sparse_matrix_CSR_dp),       intent(in   ) :: A_BPA
+    type(type_CSR_matrix_dp),       intent(in   ) :: A_DIVA
+    type(type_CSR_matrix_dp),       intent(in   ) :: A_BPA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_hybrid_solver_masks_transition'

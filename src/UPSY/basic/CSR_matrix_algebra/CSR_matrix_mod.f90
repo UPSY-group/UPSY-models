@@ -1,27 +1,72 @@
-module CSR_matrix_basics
+module CSR_matrix_mod
 
-  ! Subroutines to work with Compressed Sparse Row formatted matrices
+  ! The Compressed Sparse Row matrix type
 
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use precisions, only: dp
+  use parallel_array_info_type, only: type_par_arr_info
   use mpi_f08, only: MPI_ALLGATHER, MPI_INTEGER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_SEND, MPI_RECV, &
     MPI_STATUS, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_ALLREDUCE, MPI_MIN, MPI_MAX, MPI_IN_PLACE, &
     MPI_LOGICAL, MPI_LOR
-  use precisions, only: dp
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine, colour_string
   use parameters
   use reallocate_mod, only: reallocate
   use mpi_distributed_memory, only: partition_list, gather_to_all
-  use parallel_array_info_type, only: type_par_arr_info
 
   implicit none
 
   private
 
-  public :: allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist, duplicate_matrix_CSR_dist, &
-    add_entry_CSR_dist, add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
-    gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
-    set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
+  public :: type_CSR_matrix_dp
+
+  ! The basic CSR matrix type
+  type type_CSR_matrix_dp
+    ! Compressed Sparse Row (CSR) format matrix
+
+      integer                             :: m,n         ! A = [m-by-n]
+      integer                             :: nnz_max     ! Maximum number of non-zero entries in A
+      integer                             :: nnz         ! Actual  number of non-zero entries in A
+      integer,  dimension(:), allocatable :: ptr         ! Row start indices
+      integer,  dimension(:), allocatable :: ind         ! Column indices
+      real(dp), dimension(:), allocatable :: val         ! Values
+
+      ! Parallelisation
+      integer :: m_loc,  i1,      i2      ! Rows    owned by each process
+      integer :: m_node, i1_node, i2_node ! Rows    owned by each node
+      integer :: n_loc,  j1,      j2      ! Columns owned by each process
+      integer :: n_node, j1_node, j2_node ! Columns owned by each node
+
+      type(type_par_arr_info) :: pai_x
+      type(type_par_arr_info) :: pai_y
+
+      logical :: is_finalised = .false.
+      integer :: j_min_node, j_max_node   ! Range of rows of x needed by this node to compute y = A*x
+      integer :: needs_x_tot = -1         ! Whether y = A*x can be evaluated with just x_nih, or if it needs x_tot (0: can use x_nih; 1: needs x_tot; -1: not checked yet)
+
+    contains
+
+      private
+
+      procedure, public  :: allocate          => allocate_matrix_CSR_dist
+      procedure, public  :: allocate_loc      => allocate_matrix_CSR_loc
+      procedure, public  :: deallocate        => deallocate_matrix_CSR_dist
+      procedure, public  :: duplicate         => duplicate_matrix_CSR_dist
+      procedure, public  :: add_entry         => add_entry_CSR_dist
+      procedure, public  :: add_empty_row     => add_empty_row_CSR_dist
+      procedure, public  :: gather_to_primary => gather_CSR_dist_to_primary
+      procedure, public  :: read_single_row   => read_single_row_CSR_dist
+      procedure, public  :: finalise          => finalise_matrix_CSR_dist
+      procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
+
+      procedure, private :: extend            => extend_matrix_CSR_dist
+      procedure, private :: crop              => crop_matrix_CSR_dist
+      procedure, private :: calc_j_node_range
+      procedure, private :: set_row_to_value
+      procedure, private :: set_row_diag_to_val
+
+      final              :: deallocate_matrix_CSR_dist_final
+
+  end type type_CSR_matrix_dp
 
 contains
 
@@ -32,14 +77,14 @@ contains
     ! Allocate memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),   intent(inout) :: A
+    class(type_CSR_matrix_dp),         intent(inout) :: A
     integer,                           intent(in   ) :: m_glob, n_glob, m_loc, n_loc, nnz_max_proc
     type(type_par_arr_info), optional, intent(in   ) :: pai_x, pai_y
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_matrix_CSR_dist'
-    integer                        :: ierr
-    integer, dimension(par%n)      :: m_loc_all, n_loc_all
+    character(len=*), parameter :: routine_name = 'allocate_matrix_CSR_dist'
+    integer                     :: ierr
+    integer, dimension(par%n)   :: m_loc_all, n_loc_all
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -157,10 +202,10 @@ contains
     !< Deallocate memory for a CSR-format sparse matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'deallocate_matrix_CSR_dist'
+    character(len=*), parameter :: routine_name = 'deallocate_matrix_CSR_dist'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -188,27 +233,35 @@ contains
     A%j1_node = 0
     A%j2_node = 0
 
-    if (allocateD( A%ptr)) deallocate( A%ptr)
-    if (allocateD( A%ind)) deallocate( A%ind)
-    if (allocateD( A%val)) deallocate( A%val)
+    if (allocated( A%ptr)) deallocate( A%ptr)
+    if (allocated( A%ind)) deallocate( A%ind)
+    if (allocated( A%val)) deallocate( A%val)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine deallocate_matrix_CSR_dist
 
+  subroutine deallocate_matrix_CSR_dist_final( A)
+    type(type_CSR_matrix_dp), intent(inout) :: A
+    call A%deallocate
+  end subroutine deallocate_matrix_CSR_dist_final
+
   subroutine duplicate_matrix_CSR_dist( A, B)
     ! Duplicate the CSR-format sparse matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(in)    :: A
-    type(type_sparse_matrix_CSR_dp),     intent(OUT)   :: B
+    class(type_CSR_matrix_dp), intent(in   ) :: A
+    type( type_CSR_matrix_dp), intent(inout) :: B
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'duplicate_matrix_CSR_dist'
+    character(len=*), parameter :: routine_name = 'duplicate_matrix_CSR_dist'
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Deallocate any memory that was allcoated for B
+    call B%deallocate
 
     ! Matrix dimensions
     B%m       = A%m
@@ -233,6 +286,9 @@ contains
     B%j1_node = A%j1_node
     B%j2_node = A%j2_node
 
+    B%pai_x = A%pai_x
+    B%pai_y = A%pai_y
+
     ! Allocate memory
     allocate( B%ptr( B%i1: B%i2+1    ), source = 1    )
     allocate( B%ind( B%nnz_max), source = 0    )
@@ -254,12 +310,12 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: i,j
-    real(dp),                            intent(in)    :: v
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i,j
+    real(dp),                  intent(in   ) :: v
 
     ! Safety
-    if (i < A%i1 .OR. i > A%i2) call crash('out of ownership range!')
+    if (i < A%i1 .or. i > A%i2) call crash('out of ownership range!')
 
     ! Increase number of non-zeros
     A%nnz = A%nnz + 1
@@ -272,7 +328,7 @@ contains
     A%ptr( i+1) = A%nnz+1
 
     ! Extend memory if necessary
-    if (A%nnz > A%nnz_max - 10) call extend_matrix_CSR_dist( A, 1000)
+    if (A%nnz > A%nnz_max - 10) call A%extend( 1000)
 
   end subroutine add_entry_CSR_dist
 
@@ -282,11 +338,11 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: i
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in)    :: i
 
     ! Safety
-    if (i < A%i1 .OR. i > A%i2) call crash('out of ownership range!')
+    if (i < A%i1 .or. i > A%i2) call crash('out of ownership range!')
 
     ! Update pointer list
     A%ptr( i+1) = A%nnz+1
@@ -295,59 +351,38 @@ contains
 
   subroutine extend_matrix_CSR_dist( A, nnz_extra)
     ! Extend memory for a CSR-format sparse m-by-n matrix A
-
-    ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: nnz_extra
-
-    ! Local variables:
-
-    ! Extend memory
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: nnz_extra
     A%nnz_max = A%nnz + nnz_extra
     call reallocate( A%ind, A%nnz_max)
     call reallocate( A%val, A%nnz_max)
-
   end subroutine extend_matrix_CSR_dist
 
   subroutine crop_matrix_CSR_dist( A)
     ! Crop memory for a CSR-format sparse m-by-n matrix A
-
-    ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
-
-    ! Local variables:
-    character(len=256), parameter                      :: routine_name = 'crop_matrix_CSR_dist'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Crop memory
+    class(type_CSR_matrix_dp), intent(inout) :: A
     A%nnz_max = A%nnz
     call reallocate( A%ind, A%nnz_max)
     call reallocate( A%val, A%nnz_max)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
   end subroutine crop_matrix_CSR_dist
 
   subroutine gather_CSR_dist_to_primary( A, A_tot)
     ! Gather a CSR-format sparse m-by-n matrix A that is distributed over the processes, to the primary
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(in)    :: A
-    type(type_sparse_matrix_CSR_dp),     intent(OUT)   :: A_tot
+    class(type_CSR_matrix_dp), intent(in   ) :: A
+    type(type_CSR_matrix_dp),  intent(inout) :: A_tot
 
     ! Local variables:
-    character(len=256), parameter                      :: routine_name = 'gather_CSR_dist_to_primary'
-    integer                                            :: ierr
-    type(MPI_STATUS)                                   :: recv_status
-    integer,  dimension(par%n)                         :: m_glob_all, n_glob_all, m_loc_all, n_loc_all
-    integer                                            :: nnz_tot
-    integer                                            :: p
-    integer                                            :: row, k1, k2, k, col
-    real(dp)                                           :: val
-    type(type_sparse_matrix_CSR_dp)                    :: A_proc
+    character(len=*), parameter :: routine_name = 'gather_CSR_dist_to_primary'
+    integer                     :: ierr
+    type(MPI_STATUS)            :: recv_status
+    integer,  dimension(par%n)  :: m_glob_all, n_glob_all, m_loc_all, n_loc_all
+    integer                     :: nnz_tot
+    integer                     :: p
+    integer                     :: row, k1, k2, k, col
+    real(dp)                    :: val
+    type(type_CSR_matrix_dp)    :: A_proc
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -483,17 +518,17 @@ contains
     ! Read the coefficients of a single row of A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(in)    :: A
-    integer,                             intent(in)    :: i
-    integer,  dimension(:    ),          intent(inout) :: ind
-    real(dp), dimension(:    ),          intent(inout) :: val
-    integer,                             intent(OUT)   :: nnz
+    class(type_CSR_matrix_dp),  intent(in   ) :: A
+    integer,                    intent(in   ) :: i
+    integer,  dimension(:    ), intent(  out) :: ind
+    real(dp), dimension(:    ), intent(  out) :: val
+    integer,                    intent(  out) :: nnz
 
     ! Local variables:
-    integer                                            :: k1,k2
+    integer :: k1,k2
 
     ! Safety
-    if (i < A%i1 .OR. i > A%i2) call crash('row {int_01} is not owned by process {int_02}!', int_01 = i, int_02 = par%i)
+    if (i < A%i1 .or. i > A%i2) call crash('row {int_01} is not owned by process {int_02}!', int_01 = i, int_02 = par%i)
 
     k1 = A%ptr( i)
     k2 = A%ptr( i+1) - 1
@@ -508,16 +543,16 @@ contains
   subroutine finalise_matrix_CSR_dist( A)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'finalise_matrix_CSR_dist'
+    character(len=*), parameter :: routine_name = 'finalise_matrix_CSR_dist'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call crop_matrix_CSR_dist( A)
-    call calc_j_node_range( A)
+    call A%crop
+    call A%calc_j_node_range
 
     A%is_finalised = .true.
 
@@ -529,7 +564,7 @@ contains
   subroutine calc_j_node_range( A)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_j_node_range'
@@ -572,56 +607,34 @@ contains
   end subroutine calc_j_node_range
 
   subroutine set_diagonal_to_one_and_rest_of_row_to_zero( A, i)
-
-    ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
-    integer,                         intent(in   ) :: i
-
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i
     call set_row_to_value(    A, i, 0._dp)
     call set_row_diag_to_val( A, i, 1._dp)
-
   end subroutine set_diagonal_to_one_and_rest_of_row_to_zero
 
   subroutine set_row_to_value( A, i, val)
     !< Set A(i,:) to val
-
-    ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
-    integer,                         intent(in   ) :: i
-    real(dp),                        intent(in   ) :: val
-
-    ! Local variables:
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i
+    real(dp),                  intent(in   ) :: val
     integer :: k
-
     do k = A%ptr( i), A%ptr( i+1) - 1
       A%val( k) = val
     end do
-
   end subroutine set_row_to_value
 
   subroutine set_row_diag_to_val( A, i, val)
     !< Set A(i,i) to val
-
-    ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
-    integer,                         intent(in   ) :: i
-    real(dp),                        intent(in   ) :: val
-
-    ! Local variables:
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i
+    real(dp),                  intent(in   ) :: val
     integer :: k
-    logical :: found_diag
-
-    found_diag = .false.
     do k = A%ptr( i), A%ptr( i+1) - 1
       if (A%ind( k) == i) then
         A%val( k) = val
-        found_diag = .true.
       end if
     end do
-
-    ! Safety
-    if (.not. found_diag) call crash('set_row_diag_to_val - row has no element on the diagonal')
-
   end subroutine set_row_diag_to_val
 
   ! ===== CSR matrices in local memory =====
@@ -631,11 +644,11 @@ contains
     ! Allocate memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: m, n, nnz_max
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: m, n, nnz_max
 
     ! Local variables:
-    character(len=256), parameter                      :: routine_name = 'allocate_matrix_CSR_loc'
+    character(*), parameter:: routine_name = 'allocate_matrix_CSR_loc'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -663,4 +676,4 @@ contains
 
   end subroutine allocate_matrix_CSR_loc
 
-end module CSR_matrix_basics
+end module CSR_matrix_mod

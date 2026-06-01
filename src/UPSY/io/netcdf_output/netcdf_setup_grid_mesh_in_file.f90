@@ -4,8 +4,7 @@ module netcdf_setup_grid_mesh_in_file
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: gather_CSR_dist_to_primary
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_basic
   use netcdf_add_field_mesh
   use netcdf, only: NF90_DOUBLE, NF90_INT, NF90_DEF_GRP
@@ -887,12 +886,12 @@ contains
     ! In/output variables:
     character(len=*),                 intent(in   ) :: filename
     integer,                          intent(inout) :: ncid
-    type(type_sparse_matrix_CSR_dp),  intent(in   ) :: A
+    type(type_CSR_matrix_dp),  intent(in   ) :: A
     character(len=*),                 intent(in   ) :: name
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'write_matrix_operator_to_netcdf_file'
-    type(type_sparse_matrix_CSR_dp) :: A_tot
+    type(type_CSR_matrix_dp)        :: A_tot
     integer                         :: ierr
     integer                         :: grp_ncid, id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
     integer                         :: id_var_ptr, id_var_ind, id_var_val
@@ -900,7 +899,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather distributed matrix to the primary
-    call gather_CSR_dist_to_primary( A, A_tot)
+    call A%gather_to_primary( A_tot)
 
     ! Create a new NetCDF group for this matrix operator
     ierr = NF90_DEF_GRP( ncid, name, grp_ncid)
@@ -930,12 +929,12 @@ contains
 
     ! In/output variables:
     character(len=*),                intent(in) :: filename
-    type(type_sparse_matrix_CSR_dp), intent(in) :: A
+    type(type_CSR_matrix_dp), intent(in) :: A
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'save_matrix_operator_as_netcdf_file'
     integer                         :: ncid
-    type(type_sparse_matrix_CSR_dp) :: A_tot
+    type(type_CSR_matrix_dp) :: A_tot
     integer                         :: ierr
     integer                         :: id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
     integer                         :: id_var_ptr, id_var_ind, id_var_val
@@ -945,7 +944,7 @@ contains
     call create_new_netcdf_file_for_writing( filename, ncid)
 
     ! Gather distributed matrix to the primary
-    call gather_CSR_dist_to_primary( A, A_tot)
+    call A%gather_to_primary( A_tot)
 
     ! Create dimensions
     call create_dimension( filename, ncid, 'm'     , A_tot%m  , id_dim_m  )

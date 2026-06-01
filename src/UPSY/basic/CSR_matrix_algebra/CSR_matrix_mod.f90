@@ -8,10 +8,11 @@ module CSR_matrix_mod
     MPI_STATUS, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_ALLREDUCE, MPI_MIN, MPI_MAX, MPI_IN_PLACE, &
     MPI_LOGICAL, MPI_LOR
   use mpi_basic, only: par, sync
-  use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine, colour_string
-  use parameters
+  use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
   use reallocate_mod, only: reallocate
-  use mpi_distributed_memory, only: partition_list, gather_to_all
+  use netcdf, only: NF90_INT, NF90_DOUBLE
+  use netcdf_basic_wrappers, only: create_dimension, create_variable
+  use netcdf_write_var_primary, only: write_var_primary
 
   implicit none
 
@@ -57,6 +58,7 @@ module CSR_matrix_mod
       procedure, public  :: read_single_row   => read_single_row_CSR_dist
       procedure, public  :: finalise          => finalise_matrix_CSR_dist
       procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
+      procedure, public  :: write_to_NetCDF   => write_CSR_matrix_to_NetCDF
 
       procedure, private :: extend            => extend_matrix_CSR_dist
       procedure, private :: crop              => crop_matrix_CSR_dist
@@ -636,6 +638,44 @@ contains
       end if
     end do
   end subroutine set_row_diag_to_val
+
+  subroutine write_CSR_matrix_to_NetCDF( A, filename, ncid)
+    !< Write a CSR matrix to a NetCDF file (or a group therein)
+
+    ! In- and output variables:
+    class(type_CSR_matrix_dp), intent(in) :: A           !< The CSR matrix
+    character(len=*),          intent(in) :: filename    !< The name of the file (only used for error messaging)
+    integer,                   intent(in) :: ncid        !< ID of a file, or a group within a file
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'write_CSR_matrix_to_NetCDF'
+    integer                     :: id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz, id_var_ptr, id_var_ind, id_var_val
+    type(type_CSR_matrix_dp)    :: A_tot
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Create dimensions
+    call create_dimension( filename, ncid, 'm'     , A%m  , id_dim_m  )
+    call create_dimension( filename, ncid, 'mplus1', A%m+1, id_dim_mp1)
+    call create_dimension( filename, ncid, 'n'     , A%n  , id_dim_n  )
+    call create_dimension( filename, ncid, 'nnz'   , A%nnz, id_dim_nnz)
+
+    ! Create variables
+    call create_variable( filename, ncid, 'ptr', NF90_INT   , [id_dim_mp1], id_var_ptr)
+    call create_variable( filename, ncid, 'ind', NF90_INT   , [id_dim_nnz], id_var_ind)
+    call create_variable( filename, ncid, 'val', NF90_DOUBLE, [id_dim_nnz], id_var_val)
+
+    ! Write variables
+    call A%gather_to_primary( A_tot)
+    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr              )
+    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
+    call write_var_primary( filename, ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_CSR_matrix_to_NetCDF
 
   ! ===== CSR matrices in local memory =====
   ! ========================================

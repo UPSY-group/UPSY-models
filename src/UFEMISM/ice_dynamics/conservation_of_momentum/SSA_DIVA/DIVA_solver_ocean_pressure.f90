@@ -114,9 +114,6 @@ contains
 
     call setup_DIVA_solver_on_graphs( mesh, ice, DIVA)
 
-    ! DENK DROM
-    call save_graph_pair_as_netcdf( trim( C%output_dir)//'/DIVA_graphs', DIVA%DIVA_graphs%graphs)
-
     ! Calculate the driving stress and ocean back pressure
     call calc_driving_stress( DIVA%DIVA_graphs)
     call calc_ocean_back_pressure( DIVA%DIVA_graphs)

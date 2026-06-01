@@ -21,4 +21,4 @@ mv ${test_dir}/results_Halfar_static_40km/checksum_logfile.txt       ${test_dir}
 
 rm -rf ${test_dir}/results_Halfar_static_40km
 
-.venv/bin/python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}
+python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

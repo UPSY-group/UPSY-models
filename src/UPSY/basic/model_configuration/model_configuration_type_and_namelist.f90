@@ -487,6 +487,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time_config                = 0.1_dp                          ! [yr] time scale for basal hydrology to get to equilibrium
     real(dp)            :: error_function_max_effective_pressure_config = 5E6_dp                           ! Maximum effective pressure inland for the error-function model
     real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
+    character(len=1024) :: choice_BMB_grounded_config                   = 'none'
 
   ! == Bed roughness
   ! ==================
@@ -723,6 +724,13 @@ module model_configuration_type_and_namelist
     logical             :: climate_matrix_biascorrect_cold_config      = .true.                           ! Whether or not to apply a bias correction (modelled vs observed PI climate) to the "cold" GCM snapshot
 
     logical             :: climate_matrix_switch_glacial_index_precip_config = .false.                    ! If a glacial index is used for the precipitation forcing, it will only depend on CO2
+
+    ! Settings for the ISMIP7 climate model
+    character(len=1024) :: climate_ISMIP7_choice_baseline_config         = ''                               ! How to define the baseline climate for the anomalies: 'yearly' (i.e. use the provided yearly fields) or 'fixed' (i.e. use a separate, time-independent climate - probably the same present-day climate that was used for the initialisation)
+    character(len=1024) :: climate_ISMIP7_filename_baseline_config       = ''                               ! Path to the separate, time-independent climate - probably the same present-day climate that was used for the initialisation
+    character(len=1024) :: climate_ISMIP7_choice_refgeo_config           = ''                               ! Which reference geometry to use as the baseline for calculating delta_ts = dts/dz * delta_s: 'init', 'PD'
+    character(len=1024) :: climate_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the climate files are located in /path/to/base/folder/acabf/version)
+    character(len=1024) :: climate_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the climate files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
 
 
   ! == Ocean
@@ -1722,6 +1730,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time
     real(dp)            :: error_function_max_effective_pressure
     real(dp)            :: Leguy2014_hydro_connect_exponent
+    character(len=1024) :: choice_BMB_grounded
 
   ! == Bed roughness
   ! ==================
@@ -1958,6 +1967,13 @@ module model_configuration_type_and_namelist
     logical             :: climate_matrix_biascorrect_cold
 
     logical             :: climate_matrix_switch_glacial_index_precip
+
+    ! Settings for the ISMIP7 climate model
+    character(len=1024) :: climate_ISMIP7_choice_baseline
+    character(len=1024) :: climate_ISMIP7_filename_baseline
+    character(len=1024) :: climate_ISMIP7_choice_refgeo
+    character(len=1024) :: climate_ISMIP7_forcing_foldername
+    character(len=1024) :: climate_ISMIP7_forcing_version
 
   ! == Ocean
   ! ========
@@ -2823,6 +2839,7 @@ contains
       basal_hydro_equil_time_config                               , &
       error_function_max_effective_pressure_config                , &
       Leguy2014_hydro_connect_exponent_config                     , &
+      choice_BMB_grounded_config                                  , &
       choice_bed_roughness_config                                 , &
       choice_bed_roughness_parameterised_config                   , &
       filename_bed_roughness_NAM_config                           , &
@@ -2980,6 +2997,11 @@ contains
       climate_matrix_biascorrect_warm_config                      , &
       climate_matrix_biascorrect_cold_config                      , &
       climate_matrix_switch_glacial_index_precip_config           , &
+      climate_ISMIP7_choice_baseline_config                       , &
+      climate_ISMIP7_filename_baseline_config                     , &
+      climate_ISMIP7_choice_refgeo_config                         , &
+      climate_ISMIP7_forcing_foldername_config                    , &
+      climate_ISMIP7_forcing_version_config                       , &
       do_asynchronous_ocean_config                                , &
       dt_ocean_config                                             , &
       ocean_vertical_grid_max_depth_config                        , &
@@ -3834,6 +3856,7 @@ contains
     C%basal_hydro_equil_time                                 = basal_hydro_equil_time_config
     C%error_function_max_effective_pressure                  = error_function_max_effective_pressure_config
     C%Leguy2014_hydro_connect_exponent                       = Leguy2014_hydro_connect_exponent_config
+    C%choice_BMB_grounded                                    = choice_BMB_grounded_config
 
     ! == Bed roughness
     ! ==================
@@ -4068,6 +4091,13 @@ contains
     C%climate_matrix_biascorrect_warm                          = climate_matrix_biascorrect_warm_config
     C%climate_matrix_biascorrect_cold                          = climate_matrix_biascorrect_cold_config
     C%climate_matrix_switch_glacial_index_precip               = climate_matrix_switch_glacial_index_precip_config
+
+    ! Settings for the ISMIP7 climate model
+    C%climate_ISMIP7_choice_baseline                           = climate_ISMIP7_choice_baseline_config
+    C%climate_ISMIP7_filename_baseline                         = climate_ISMIP7_filename_baseline_config
+    C%climate_ISMIP7_choice_refgeo                             = climate_ISMIP7_choice_refgeo_config
+    C%climate_ISMIP7_forcing_foldername                        = climate_ISMIP7_forcing_foldername_config
+    C%climate_ISMIP7_forcing_version                           = climate_ISMIP7_forcing_version_config
 
     ! == Ocean
     ! ========

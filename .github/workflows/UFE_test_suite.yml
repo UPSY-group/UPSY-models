@@ -58,3 +58,8 @@ jobs:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_Ant_init_small_01
+
+  ISMIP7_demo_small:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_ISMIP7_demo_small

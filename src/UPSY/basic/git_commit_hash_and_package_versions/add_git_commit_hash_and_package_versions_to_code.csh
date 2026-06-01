@@ -33,7 +33,19 @@ endif
 
 # Determine PETSc version
 set petsc_version = "UNKNOWN"
-if ($status == 0) then
+
+# Try conda environment first if activated
+if ($?CONDA_PREFIX) then
+  if ("$CONDA_PREFIX" != "" && -f "$CONDA_PREFIX/lib/pkgconfig/PETSc.pc") then
+    set tmp = `sed -n 's/^Version: *//p' "$CONDA_PREFIX/lib/pkgconfig/PETSc.pc"`
+    if ("$tmp" != "") then
+      set petsc_version = "$tmp"
+    endif
+  endif
+endif
+
+# Else, use pkg-config
+if ($petsc_version == "UNKNOWN") then
   set tmp = `pkg-config --modversion PETSc`
   if ($status == 0 && "$tmp" != "") then
     set petsc_version = "$tmp"

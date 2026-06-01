@@ -11,7 +11,6 @@ MODULE grid_lonlat_basic
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection
   use mpi_distributed_memory, only: partition_list, distribute_from_primary, gather_to_primary
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
 
   IMPLICIT NONE
 

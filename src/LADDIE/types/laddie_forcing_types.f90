@@ -6,7 +6,6 @@ module laddie_forcing_types
 ! ====================
 
   use precisions                                             , only: dp
-  use CSR_matrix_mod                                 , only: type_CSR_matrix_dp
   use mpi_f08                                                , only: MPI_WIN
   use transect_types                                         , only: atype_transect
 

@@ -7,7 +7,7 @@ module remapping_mesh_to_mesh
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map, type_single_row_mapping_matrices
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use plane_geometry, only: triangle_area
   use mesh_utilities, only: calc_Voronoi_cell, find_containing_triangle, find_containing_vertex
   use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
@@ -1071,9 +1071,9 @@ contains
 
       ! Add the results for this triangle to the sparse matrix
       if (single_row%n == 0) then
-        call add_empty_row_CSR_dist( A_xdy_b_a_CSR  , ti)
-        call add_empty_row_CSR_dist( A_mxydx_b_a_CSR, ti)
-        call add_empty_row_CSR_dist( A_xydy_b_a_CSR , ti)
+        call A_xdy_b_a_CSR%add_empty_row(   ti)
+        call A_mxydx_b_a_CSR%add_empty_row( ti)
+        call A_xydy_b_a_CSR%add_empty_row(  ti)
       else
         do k = 1, single_row%n
           call A_xdy_b_a_CSR%add_entry(   ti, single_row%index_left( k), single_row%LI_xdy(   k))
@@ -1176,9 +1176,9 @@ contains
 
       ! Add the results for this triangle to the sparse matrix
       if (single_row%n == 0) then
-        call add_empty_row_CSR_dist( A_xdy_a_b_CSR  , vi)
-        call add_empty_row_CSR_dist( A_mxydx_a_b_CSR, vi)
-        call add_empty_row_CSR_dist( A_xydy_a_b_CSR , vi)
+        call A_xdy_a_b_CSR%add_empty_row(   vi)
+        call A_mxydx_a_b_CSR%add_empty_row( vi)
+        call A_xydy_a_b_CSR%add_empty_row(  vi)
       else
         do k = 1, single_row%n
           call A_xdy_a_b_CSR%add_entry(   vi, single_row%index_left( k), single_row%LI_xdy(   k))
@@ -1285,9 +1285,9 @@ contains
 
       ! Add the results for this triangle to the sparse matrix
       if (single_row%n == 0) then
-        call add_empty_row_CSR_dist( A_xdy_top_bot_CSR  , ti_top)
-        call add_empty_row_CSR_dist( A_mxydx_top_bot_CSR, ti_top)
-        call add_empty_row_CSR_dist( A_xydy_top_bot_CSR , ti_top)
+        call A_xdy_top_bot_CSR%add_empty_row(   ti_top)
+        call A_mxydx_top_bot_CSR%add_empty_row( ti_top)
+        call A_xydy_top_bot_CSR%add_empty_row(  ti_top)
       else
         do k = 1, single_row%n
           call A_xdy_top_bot_CSR%add_entry(   ti_top, single_row%index_left( k), single_row%LI_xdy(   k))

@@ -41,9 +41,7 @@ module hybrid_DIVA_BPA_main
   use plane_geometry, only: is_in_polygon, is_in_polygons
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
-    read_single_row_CSR_dist, add_empty_row_CSR_dist, &
-    finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
   use grid_basic, only: type_grid, calc_grid_mask_as_polygons
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
@@ -1062,7 +1060,7 @@ contains
       elseif (.not. mask_DIVA_b( ti)) then
         ! The BPA is solved here, not the DIVA
 
-        call add_empty_row_CSR_dist( A_DIVA, row_tiuv)
+        call A_DIVA%add_empty_row( row_tiuv)
 
       elseif (mesh%TriBI( ti) > 0) then
         ! Domain border: apply boundary conditions
@@ -1163,7 +1161,7 @@ contains
       if (BC_prescr_mask_b( ti) == 1 .or. .not. mask_BPA_b( ti)) then
         ! The DIVA is solved here, not the BPA
 
-        call add_empty_row_CSR_dist( A_BPA, row_tikuv)
+        call A_BPA%add_empty_row( row_tikuv)
 
       elseif (mesh%TriBI( ti) == 1 .or. mesh%TriBI( ti) == 2) then
         ! Northern domain border

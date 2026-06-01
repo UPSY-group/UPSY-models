@@ -12,7 +12,7 @@ module laddie_operators
   use mesh_types                                             , only: type_mesh
   use laddie_model_types                                     , only: type_laddie_model, type_laddie_timestep
   use mpi_distributed_memory                                 , only: gather_to_all
-  use CSR_matrix_mod, only: add_empty_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
   use mesh_halo_exchange, only: exchange_halos
 
   implicit none
@@ -100,7 +100,7 @@ contains
 
       else
         ! Outside laddie domain, so skip
-        call add_empty_row_CSR_dist( laddie%M_map_H_a_b, ti)
+        call laddie%M_map_H_a_b%add_empty_row( ti)
 
       end if
 
@@ -182,7 +182,7 @@ contains
           call laddie%M_map_UV_b_c%add_entry( ei, tir, 1._dp)
         else
           ! Outside laddie domain, so omit
-          call add_empty_row_CSR_dist( laddie%M_map_UV_b_c, ei)
+          call laddie%M_map_UV_b_c%add_empty_row( ei)
         end if
       elseif (tir == 0 .and. til > 0) then
         ! Only triangle on left side exists
@@ -191,7 +191,7 @@ contains
           call laddie%M_map_UV_b_c%add_entry( ei, til, 1._dp)
         else
           ! Outside laddie domain, so omit
-          call add_empty_row_CSR_dist( laddie%M_map_UV_b_c, ei)
+          call laddie%M_map_UV_b_c%add_empty_row( ei)
         end if
       elseif (til > 0 .and. tir > 0) then
         ! Both triangles exist
@@ -201,7 +201,7 @@ contains
           call laddie%M_map_UV_b_c%add_entry( ei, tir, 0.5_dp)
         else
           ! Both outside laddie domain, so omit
-          call add_empty_row_CSR_dist( laddie%M_map_UV_b_c, ei)
+          call laddie%M_map_UV_b_c%add_empty_row( ei)
         end if
       else
           call crash('something is seriously wrong with the ETri array of this mesh!')

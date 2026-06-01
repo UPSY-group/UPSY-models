@@ -7,7 +7,7 @@ module remapping_grid_to_mesh_vertices
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
   use mesh_utilities, only: find_containing_triangle, calc_Voronoi_cell, is_in_Voronoi_cell
@@ -232,9 +232,9 @@ contains
 
       ! If the Voronoi cell of this vertex lies (partially) outside the domain of the grid, skip it.
       if (lies_outside_grid_domain( vi)) then
-        call add_empty_row_CSR_dist( A_xdy_a_g_CSR,   row)
-        call add_empty_row_CSR_dist( A_mxydx_a_g_CSR, row)
-        call add_empty_row_CSR_dist( A_xydy_a_g_CSR,  row)
+        call A_xdy_a_g_CSR%add_empty_row(   row)
+        call A_mxydx_a_g_CSR%add_empty_row( row)
+        call A_xydy_a_g_CSR%add_empty_row(  row)
         cycle
       end if
 
@@ -476,9 +476,9 @@ contains
 
       if (lies_outside_grid_domain( vi)) then
         ! Skip these
-        call add_empty_row_CSR_dist( w0_CSR,  row)
-        call add_empty_row_CSR_dist( w1x_CSR, row)
-        call add_empty_row_CSR_dist( w1y_CSR, row)
+        call w0_CSR%add_empty_row(  row)
+        call w1x_CSR%add_empty_row( row)
+        call w1y_CSR%add_empty_row( row)
         cycle
       end if
 
@@ -507,8 +507,8 @@ contains
       else
         ! For large vertices, don't include the gradient terms
 
-        call add_empty_row_CSR_dist( w1x_CSR, row)
-        call add_empty_row_CSR_dist( w1y_CSR, row)
+        call w1x_CSR%add_empty_row( row)
+        call w1y_CSR%add_empty_row( row)
 
       end if
 

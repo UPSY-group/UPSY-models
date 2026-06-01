@@ -18,7 +18,7 @@ module CSR_matrix_mod
   private
 
   public :: type_CSR_matrix_dp, &
-    add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+    extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
 
@@ -50,10 +50,11 @@ module CSR_matrix_mod
 
       private
 
-      procedure, public :: allocate   => allocate_matrix_CSR_dist
-      procedure, public :: deallocate => deallocate_matrix_CSR_dist
-      procedure, public :: duplicate  => duplicate_matrix_CSR_dist
-      procedure, public :: add_entry  => add_entry_CSR_dist
+      procedure, public :: allocate      => allocate_matrix_CSR_dist
+      procedure, public :: deallocate    => deallocate_matrix_CSR_dist
+      procedure, public :: duplicate     => duplicate_matrix_CSR_dist
+      procedure, public :: add_entry     => add_entry_CSR_dist
+      procedure, public :: add_empty_row => add_empty_row_CSR_dist
 
       final             :: deallocate_matrix_CSR_dist_final
 
@@ -329,11 +330,11 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: i
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in)    :: i
 
     ! Safety
-    if (i < A%i1 .OR. i > A%i2) call crash('out of ownership range!')
+    if (i < A%i1 .or. i > A%i2) call crash('out of ownership range!')
 
     ! Update pointer list
     A%ptr( i+1) = A%nnz+1

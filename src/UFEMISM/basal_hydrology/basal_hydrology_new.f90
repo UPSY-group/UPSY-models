@@ -19,7 +19,7 @@ MODULE basal_hydrology_new
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
   use mesh_utilities                                         , only: find_containing_vertex
-  use CSR_matrix_mod, only: finalise_matrix_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
   use crash_mod                                              , only: crash, warning, happy
   USE reallocate_mod                                         , ONLY: reallocate_bounds
@@ -754,7 +754,7 @@ CONTAINS
           call basal_hydro%M_b_c%add_entry( ei, tir, 1._dp)
         else
           ! Outside basal_hydro domain, so omit
-          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+          call basal_hydro%M_b_c%add_empty_row( ei)
         end if
       elseif (tir == 0 .and. til > 0) then
         ! Only triangle on left side exists
@@ -763,7 +763,7 @@ CONTAINS
           call basal_hydro%M_b_c%add_entry( ei, til, 1._dp)
         else
           ! Outside basal_hydro domain, so omit
-          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+          call basal_hydro%M_b_c%add_empty_row( ei)
         end if
       elseif (til > 0 .and. tir > 0) then
         ! Both triangles exist
@@ -773,7 +773,7 @@ CONTAINS
           call basal_hydro%M_b_c%add_entry( ei, tir, 0.5_dp)
         else
           ! Both outside basal_hydro domain, so omit
-          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+          call basal_hydro%M_b_c%add_empty_row( ei)
         end if
       else
           call crash('something is seriously wrong with the ETri array of this mesh!')

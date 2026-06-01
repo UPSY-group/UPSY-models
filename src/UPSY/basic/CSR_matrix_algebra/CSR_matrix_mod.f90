@@ -18,7 +18,7 @@ module CSR_matrix_mod
   private
 
   public :: type_CSR_matrix_dp, &
-    extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+    finalise_matrix_CSR_dist, &
     gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
 
@@ -50,13 +50,16 @@ module CSR_matrix_mod
 
       private
 
-      procedure, public :: allocate      => allocate_matrix_CSR_dist
-      procedure, public :: deallocate    => deallocate_matrix_CSR_dist
-      procedure, public :: duplicate     => duplicate_matrix_CSR_dist
-      procedure, public :: add_entry     => add_entry_CSR_dist
-      procedure, public :: add_empty_row => add_empty_row_CSR_dist
+      procedure, public  :: allocate      => allocate_matrix_CSR_dist
+      procedure, public  :: deallocate    => deallocate_matrix_CSR_dist
+      procedure, public  :: duplicate     => duplicate_matrix_CSR_dist
+      procedure, public  :: add_entry     => add_entry_CSR_dist
+      procedure, public  :: add_empty_row => add_empty_row_CSR_dist
 
-      final             :: deallocate_matrix_CSR_dist_final
+      procedure, private :: extend        => extend_matrix_CSR_dist
+      procedure, private :: crop          => crop_matrix_CSR_dist
+
+      final              :: deallocate_matrix_CSR_dist_final
 
   end type type_CSR_matrix_dp
 
@@ -320,7 +323,7 @@ contains
     A%ptr( i+1) = A%nnz+1
 
     ! Extend memory if necessary
-    if (A%nnz > A%nnz_max - 10) call extend_matrix_CSR_dist( A, 1000)
+    if (A%nnz > A%nnz_max - 10) call A%extend( 1000)
 
   end subroutine add_entry_CSR_dist
 
@@ -343,40 +346,19 @@ contains
 
   subroutine extend_matrix_CSR_dist( A, nnz_extra)
     ! Extend memory for a CSR-format sparse m-by-n matrix A
-
-    ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: nnz_extra
-
-    ! Local variables:
-
-    ! Extend memory
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: nnz_extra
     A%nnz_max = A%nnz + nnz_extra
     call reallocate( A%ind, A%nnz_max)
     call reallocate( A%val, A%nnz_max)
-
   end subroutine extend_matrix_CSR_dist
 
   subroutine crop_matrix_CSR_dist( A)
     ! Crop memory for a CSR-format sparse m-by-n matrix A
-
-    ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(inout) :: A
-
-    ! Local variables:
-    character(len=256), parameter                      :: routine_name = 'crop_matrix_CSR_dist'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Crop memory
+    class(type_CSR_matrix_dp), intent(inout) :: A
     A%nnz_max = A%nnz
     call reallocate( A%ind, A%nnz_max)
     call reallocate( A%val, A%nnz_max)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
   end subroutine crop_matrix_CSR_dist
 
   subroutine gather_CSR_dist_to_primary( A, A_tot)
@@ -564,7 +546,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call crop_matrix_CSR_dist( A)
+    call A%crop
     call calc_j_node_range( A)
 
     A%is_finalised = .true.

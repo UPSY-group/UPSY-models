@@ -21,7 +21,7 @@ module BPA_main
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
   use constitutive_equation, only: calc_effective_viscosity_Glen_3D_uv_only, calc_ice_rheology_Glen
@@ -557,13 +557,13 @@ contains
 
     ! Read coefficients of the operator matrices
     row_tik = mesh%tik2n( ti,k)
-    call read_single_row_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddz_bk_bk   , row_tik, single_row_ind, single_row_ddz_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dz2_bk_bk , row_tik, single_row_ind, single_row_d2dz2_val , single_row_nnz)
+    call mesh%M2_ddx_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_ddz_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddz_val   , single_row_nnz)
+    call mesh%M2_d2dx2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_bk_bk%read_single_row( row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_d2dz2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dz2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -810,11 +810,11 @@ contains
 
     ! Read coefficients of the operator matrices
     row_tik = mesh%tik2n( ti,k)
-    call read_single_row_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_ddx_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_d2dx2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_bk_bk%read_single_row( row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -1084,11 +1084,11 @@ contains
 
     ! Read coefficients of the operator matrices
     row_tik = mesh%tik2n( ti,k)
-    call read_single_row_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_ddx_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_d2dx2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_bk_bk%read_single_row( row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component

@@ -4,7 +4,7 @@ module solve_linearised_SSA_DIVA_infinite_slab
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
   use mpi_distributed_memory, only: gather_to_all
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
@@ -248,11 +248,11 @@ contains
     allocate( single_row_d2dy2_val(  mesh%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call read_single_row_CSR_dist( mesh%M2_ddx_b_b   , ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_b_b   , ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_b_b , ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_b_b, ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_b_b , ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -408,11 +408,11 @@ contains
     allocate( single_row_d2dy2_val(  mesh%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call read_single_row_CSR_dist( mesh%M2_ddx_b_b   , ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_b_b   , ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_b_b , ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_b_b, ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_b_b , ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component

@@ -19,7 +19,7 @@ module CSR_matrix_mod
 
   public :: type_CSR_matrix_dp, &
     finalise_matrix_CSR_dist, &
-    read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
+    allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
 
   ! The basic CSR matrix type
@@ -56,6 +56,7 @@ module CSR_matrix_mod
       procedure, public  :: add_entry         => add_entry_CSR_dist
       procedure, public  :: add_empty_row     => add_empty_row_CSR_dist
       procedure, public  :: gather_to_primary => gather_CSR_dist_to_primary
+      procedure, public  :: read_single_row   => read_single_row_CSR_dist
 
       procedure, private :: extend            => extend_matrix_CSR_dist
       procedure, private :: crop              => crop_matrix_CSR_dist
@@ -514,17 +515,17 @@ contains
     ! Read the coefficients of a single row of A
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(in)    :: A
-    integer,                             intent(in)    :: i
-    integer,  dimension(:    ),          intent(inout) :: ind
-    real(dp), dimension(:    ),          intent(inout) :: val
-    integer,                             intent(OUT)   :: nnz
+    class(type_CSR_matrix_dp),  intent(in   ) :: A
+    integer,                    intent(in   ) :: i
+    integer,  dimension(:    ), intent(  out) :: ind
+    real(dp), dimension(:    ), intent(  out) :: val
+    integer,                    intent(  out) :: nnz
 
     ! Local variables:
-    integer                                            :: k1,k2
+    integer :: k1,k2
 
     ! Safety
-    if (i < A%i1 .OR. i > A%i2) call crash('row {int_01} is not owned by process {int_02}!', int_01 = i, int_02 = par%i)
+    if (i < A%i1 .or. i > A%i2) call crash('row {int_01} is not owned by process {int_02}!', int_01 = i, int_02 = par%i)
 
     k1 = A%ptr( i)
     k2 = A%ptr( i+1) - 1

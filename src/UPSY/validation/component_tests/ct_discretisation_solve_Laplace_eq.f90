@@ -11,7 +11,7 @@ module ct_discretisation_solve_Laplace_eq
   use mesh_types, only: type_mesh
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use netcdf_io_main
 
@@ -141,8 +141,8 @@ contains
         ! d2f/dx2 + d2f/dy2 = c
 
         ! Read coefficients of the operator matrices
-        call read_single_row_CSR_dist( mesh%M2_d2dx2_b_b, ti, single_row_ind, single_row_d2dx2_val, single_row_nnz)
-        call read_single_row_CSR_dist( mesh%M2_d2dy2_b_b, ti, single_row_ind, single_row_d2dy2_val, single_row_nnz)
+        call mesh%M2_d2dx2_b_b%read_single_row( ti, single_row_ind, single_row_d2dx2_val, single_row_nnz)
+        call mesh%M2_d2dy2_b_b%read_single_row( ti, single_row_ind, single_row_d2dy2_val, single_row_nnz)
 
         do k = 1, single_row_nnz
           tj = single_row_ind( k)

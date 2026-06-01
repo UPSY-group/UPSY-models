@@ -18,13 +18,13 @@ module git_commit_hash_and_package_versions
   public :: compiler_flags
 
   ! These parameters will be set automatically when compiling the code!
-  character(len=*), parameter :: git_commit_hash         = '78dc2ba14356044ab6a5a23bd1b4f4268c1a4638'
-  logical,          parameter :: has_uncommitted_changes = .true.
-  character(len=*), parameter :: petsc_version           = '3.24.6'
-  character(len=*), parameter :: netcdf_version          = '4.10.0'
-  character(len=*), parameter :: openmpi_version         = '5.0.9'
-  character(len=*), parameter :: compiler_version        = 'GNU Fortran (Homebrew GCC 15.2.0_1) 15.2.0'
-  character(len=*), parameter :: compiler_flags          = '-fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -march=native -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33'
+  character(len=*), parameter :: git_commit_hash         = 'INVALID'
+  logical,          parameter :: has_uncommitted_changes = .false.
+  character(len=*), parameter :: petsc_version           = 'INVALID'
+  character(len=*), parameter :: netcdf_version          = 'INVALID'
+  character(len=*), parameter :: openmpi_version         = 'INVALID'
+  character(len=*), parameter :: compiler_version        = 'INVALID'
+  character(len=*), parameter :: compiler_flags          = 'INVALID'
 
 contains
 

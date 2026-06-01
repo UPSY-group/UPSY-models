@@ -12,7 +12,7 @@ module SSA_main
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SSA
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, ddx_b_a_2D, ddy_b_a_2D, map_b_a_2D

@@ -5,7 +5,7 @@ module mesh_disc_calc_matrix_operators_3D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
 
   implicit none
 
@@ -140,9 +140,9 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   do vi = mesh%vi1, mesh%vi2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M_map_b_a, vi, single_row_vi_ind, single_row_map_val , single_row_vi_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddx_b_a, vi, single_row_vi_ind, single_row_ddxh_val, single_row_vi_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddy_b_a, vi, single_row_vi_ind, single_row_ddyh_val, single_row_vi_nnz)
+    call mesh%M_map_b_a%read_single_row( vi, single_row_vi_ind, single_row_map_val , single_row_vi_nnz)
+    call mesh%M_ddx_b_a%read_single_row( vi, single_row_vi_ind, single_row_ddxh_val, single_row_vi_nnz)
+    call mesh%M_ddy_b_a%read_single_row( vi, single_row_vi_ind, single_row_ddyh_val, single_row_vi_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -151,7 +151,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
       row_vik = mesh%vik2n( vi,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_k_1D, k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
+      call mesh%M_ddzeta_k_k_1D%read_single_row( k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
 
       ! Gradients of zeta at vertex vi, layer k
       dzeta_dx = dzeta_dx_ak( vi,k)
@@ -296,9 +296,9 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   do ti = mesh%ti1, mesh%ti2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M_map_a_b, ti, single_row_ti_ind, single_row_map_val , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddx_a_b, ti, single_row_ti_ind, single_row_ddxh_val, single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddy_a_b, ti, single_row_ti_ind, single_row_ddyh_val, single_row_ti_nnz)
+    call mesh%M_map_a_b%read_single_row( ti, single_row_ti_ind, single_row_map_val , single_row_ti_nnz)
+    call mesh%M_ddx_a_b%read_single_row( ti, single_row_ti_ind, single_row_ddxh_val, single_row_ti_nnz)
+    call mesh%M_ddy_a_b%read_single_row( ti, single_row_ti_ind, single_row_ddyh_val, single_row_ti_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -307,7 +307,7 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
       row_tik = mesh%tik2n( ti,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_k_1D, k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
+      call mesh%M_ddzeta_k_k_1D%read_single_row( k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
 
       ! Gradients of zeta at triangle ti, layer k
       dzeta_dx = dzeta_dx_bk( ti,k)
@@ -447,7 +447,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
       row_tiks = mesh%tiks2n( ti,ks)
 
       ! Read coefficients from the zeta gradient operators for this staggered layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_ks_1D, ks, single_row_ks_ind, single_row_ddzeta_val, single_row_ks_nnz)
+      call mesh%M_ddzeta_k_ks_1D%read_single_row( ks, single_row_ks_ind, single_row_ddzeta_val, single_row_ks_nnz)
 
       ! Gradients of zeta at triangle ti, staggered layer ks
       dzeta_dz = dzeta_dz_bks( ti,ks)
@@ -570,8 +570,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
       row_tik = mesh%tik2n( ti,k)
 
       ! Read coefficients from the zeta gradient operators for this staggered layer
-      call read_single_row_CSR_dist( mesh%M_map_ks_k_1D   , k, single_row_k_ind, single_row_map_val   , single_row_k_nnz)
-      call read_single_row_CSR_dist( mesh%M_ddzeta_ks_k_1D, k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
+      call mesh%M_map_ks_k_1D%read_single_row   ( k, single_row_k_ind, single_row_map_val   , single_row_k_nnz)
+      call mesh%M_ddzeta_ks_k_1D%read_single_row( k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
 
       ! Gradients of zeta at triangle ti, layer k
       dzeta_dz = dzeta_dz_bk( ti,k)
@@ -670,7 +670,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   do vi = mesh%vi1, mesh%vi2
 
     ! Read coefficients from the 2-D gradient operators for this vertex
-    call read_single_row_CSR_dist( mesh%M_map_b_a, vi, single_row_vi_ind, single_row_map_b_a_val, single_row_vi_nnz)
+    call mesh%M_map_b_a%read_single_row( vi, single_row_vi_ind, single_row_map_b_a_val, single_row_vi_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -679,7 +679,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
       row_vik = mesh%vik2n( vi,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_map_ks_k_1D, k, single_row_k_ind, single_row_map_ks_k_val, single_row_k_nnz)
+      call mesh%M_map_ks_k_1D%read_single_row( k, single_row_k_ind, single_row_map_ks_k_val, single_row_k_nnz)
 
       ! Loop over the entire 3-D local neighbourhood, calculate
       ! coefficients for all 3-D matrix operators
@@ -776,7 +776,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   do ti = mesh%ti1, mesh%ti2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M_map_a_b, ti, single_row_ti_ind, single_row_map_a_b_val, single_row_ti_nnz)
+    call mesh%M_map_a_b%read_single_row( ti, single_row_ti_ind, single_row_map_a_b_val, single_row_ti_nnz)
 
     ! Loop over all staggered layers
     do ks = 1, mesh%nz-1
@@ -785,7 +785,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
       row_tiks = mesh%tiks2n( ti,ks)
 
       ! Read coefficients from the zeta gradient operators for this staggered layer
-      call read_single_row_CSR_dist( mesh%M_map_k_ks_1D, ks, single_row_ks_ind, single_row_map_k_ks_val, single_row_ks_nnz)
+      call mesh%M_map_k_ks_1D%read_single_row( ks, single_row_ks_ind, single_row_map_k_ks_val, single_row_ks_nnz)
 
       ! Loop over the entire 3-D local neighbourhood, calculate
       ! coefficients for all 3-D matrix operators
@@ -946,11 +946,11 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   do ti = mesh%ti1, mesh%ti2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M2_ddx_b_b   , ti, single_row_ti_ind, single_row_ddxh_val    , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_b_b   , ti, single_row_ti_ind, single_row_ddyh_val    , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_b_b , ti, single_row_ti_ind, single_row_d2dxh2_val  , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_b_b, ti, single_row_ti_ind, single_row_d2dxhdyh_val, single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_b_b , ti, single_row_ti_ind, single_row_d2dyh2_val  , single_row_ti_nnz)
+    call mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ti_ind, single_row_ddxh_val    , single_row_ti_nnz)
+    call mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ti_ind, single_row_ddyh_val    , single_row_ti_nnz)
+    call mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ti_ind, single_row_d2dxh2_val  , single_row_ti_nnz)
+    call mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ti_ind, single_row_d2dxhdyh_val, single_row_ti_nnz)
+    call mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ti_ind, single_row_d2dyh2_val  , single_row_ti_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -959,8 +959,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
       row_tik = mesh%tik2n( ti,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_k_1D  , k, single_row_k_ind, single_row_ddzeta_val  , single_row_k_nnz)
-      call read_single_row_CSR_dist( mesh%M_d2dzeta2_k_k_1D, k, single_row_k_ind, single_row_d2dzeta2_val, single_row_k_nnz)
+      call mesh%M_ddzeta_k_k_1D%read_single_row(   k, single_row_k_ind, single_row_ddzeta_val  , single_row_k_nnz)
+      call mesh%M_d2dzeta2_k_k_1D%read_single_row( k, single_row_k_ind, single_row_d2dzeta2_val, single_row_k_nnz)
 
       ! Gradients of zeta at triangle ti, layer k
       dzeta_dx    = dzeta_dx_bk(    ti,k)

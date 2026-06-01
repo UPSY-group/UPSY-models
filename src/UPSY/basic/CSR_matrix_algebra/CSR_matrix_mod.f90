@@ -17,7 +17,7 @@ module CSR_matrix_mod
 
   private
 
-  public :: type_CSR_matrix_dp, duplicate_matrix_CSR_dist, &
+  public :: type_CSR_matrix_dp, &
     add_entry_CSR_dist, add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
@@ -52,6 +52,9 @@ module CSR_matrix_mod
 
       procedure, public :: allocate   => allocate_matrix_CSR_dist
       procedure, public :: deallocate => deallocate_matrix_CSR_dist
+      procedure, public :: duplicate  => duplicate_matrix_CSR_dist
+
+      final             :: deallocate_matrix_CSR_dist_final
 
   end type type_CSR_matrix_dp
 
@@ -69,9 +72,9 @@ contains
     type(type_par_arr_info), optional, intent(in   ) :: pai_x, pai_y
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_matrix_CSR_dist'
-    integer                        :: ierr
-    integer, dimension(par%n)      :: m_loc_all, n_loc_all
+    character(len=*), parameter :: routine_name = 'allocate_matrix_CSR_dist'
+    integer                     :: ierr
+    integer, dimension(par%n)   :: m_loc_all, n_loc_all
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -192,7 +195,7 @@ contains
     class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'deallocate_matrix_CSR_dist'
+    character(len=*), parameter :: routine_name = 'deallocate_matrix_CSR_dist'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -230,7 +233,7 @@ contains
   end subroutine deallocate_matrix_CSR_dist
 
   subroutine deallocate_matrix_CSR_dist_final( A)
-    class(type_CSR_matrix_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
     call A%deallocate
   end subroutine deallocate_matrix_CSR_dist_final
 
@@ -238,14 +241,17 @@ contains
     ! Duplicate the CSR-format sparse matrix A
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(in)    :: A
-    type(type_CSR_matrix_dp),     intent(OUT)   :: B
+    class(type_CSR_matrix_dp), intent(in   ) :: A
+    type( type_CSR_matrix_dp), intent(inout) :: B
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'duplicate_matrix_CSR_dist'
+    character(len=*), parameter :: routine_name = 'duplicate_matrix_CSR_dist'
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Deallocate any memory that was allcoated for B
+    call B%deallocate
 
     ! Matrix dimensions
     B%m       = A%m
@@ -270,6 +276,9 @@ contains
     B%j1_node = A%j1_node
     B%j2_node = A%j2_node
 
+    B%pai_x = A%pai_x
+    B%pai_y = A%pai_y
+
     ! Allocate memory
     allocate( B%ptr( B%i1: B%i2+1    ), source = 1    )
     allocate( B%ind( B%nnz_max), source = 0    )
@@ -291,9 +300,9 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: i,j
-    real(dp),                            intent(in)    :: v
+    type(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                  intent(in   ) :: i,j
+    real(dp),                 intent(in   ) :: v
 
     ! Safety
     if (i < A%i1 .OR. i > A%i2) call crash('out of ownership range!')

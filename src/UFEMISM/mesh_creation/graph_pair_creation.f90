@@ -11,7 +11,7 @@ module graph_pair_creation
     calc_graph_matrix_operators_1st_order, &
     calc_graph_a_to_graph_b_matrix_operators, calc_graph_b_to_graph_a_matrix_operators
   use graph_memory, only: deallocate_graph
-  use CSR_matrix_basics, only: deallocate_matrix_CSR_dist
+  use CSR_matrix_mod, only: deallocate_matrix_CSR_dist
 
   implicit none
 

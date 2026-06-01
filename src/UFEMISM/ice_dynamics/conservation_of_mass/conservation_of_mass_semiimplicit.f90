@@ -5,8 +5,7 @@ module conservation_of_mass_semiimplicit
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use CSR_matrix_basics, only: duplicate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, duplicate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
      set_diagonal_to_one_and_rest_of_row_to_zero
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper

@@ -4,8 +4,7 @@ module netcdf_setup_grid_mesh_in_file
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use CSR_matrix_basics, only: gather_CSR_dist_to_primary
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, gather_CSR_dist_to_primary
   use netcdf_basic
   use netcdf_add_field_mesh
   use netcdf, only: NF90_DOUBLE, NF90_INT, NF90_DEF_GRP

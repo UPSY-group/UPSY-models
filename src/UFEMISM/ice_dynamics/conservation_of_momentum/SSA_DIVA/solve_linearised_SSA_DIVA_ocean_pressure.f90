@@ -4,9 +4,8 @@ module solve_linearised_SSA_DIVA_ocean_pressure
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use ice_model_types, only: type_ice_velocity_solver_DIVA_graphs
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
-    finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, &
+    add_entry_CSR_dist, read_single_row_CSR_dist, finalise_matrix_CSR_dist
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use graph_types, only: type_graph_pair

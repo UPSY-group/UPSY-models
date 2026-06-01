@@ -12,7 +12,7 @@ module laddie_operators
   use mesh_types                                             , only: type_mesh
   use laddie_model_types                                     , only: type_laddie_model, type_laddie_timestep
   use mpi_distributed_memory                                 , only: gather_to_all
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist, &
     add_entry_CSR_dist, add_empty_row_CSR_dist, finalise_matrix_CSR_dist
   use mesh_halo_exchange, only: exchange_halos
 

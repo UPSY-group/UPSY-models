@@ -5,9 +5,8 @@ module remapping_transects
   use mesh_types, only: type_mesh
   use transect_types, only: type_transect
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
-    finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, &
+    add_entry_CSR_dist, finalise_matrix_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex
   use plane_geometry, only: triangle_area

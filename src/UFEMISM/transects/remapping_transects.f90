@@ -5,7 +5,7 @@ module remapping_transects
   use mesh_types, only: type_mesh
   use transect_types, only: type_transect
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
     finalise_matrix_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
@@ -273,7 +273,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_vertices_to_transect_trilin'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: i
     real(dp), dimension(2)          :: p
     integer                         :: ti, via, vib, vic
@@ -357,7 +357,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_vertices_to_transect_nearest_neighbour'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: i
     real(dp), dimension(2)          :: p
     integer                         :: vi, col
@@ -415,7 +415,7 @@ contains
     ! Local variables:
     character(len=1024), parameter   :: routine_name = 'create_map_from_mesh_triangles_to_transect'
     integer                          :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)  :: M_CSR
+    type(type_CSR_matrix_dp)  :: M_CSR
     integer                          :: i
     real(dp), dimension(2)           :: p
     integer                          :: vi, iti, ti, iti_nearest

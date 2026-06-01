@@ -41,7 +41,7 @@ module hybrid_DIVA_BPA_main
   use plane_geometry, only: is_in_polygon, is_in_polygons
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
     read_single_row_CSR_dist, deallocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
     finalise_matrix_CSR_dist
@@ -670,14 +670,14 @@ contains
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'solve_hybrid_DIVA_BPA_linearised'
-    type(type_sparse_matrix_CSR_dp)         :: A_DIVA, A_BPA
+    type(type_CSR_matrix_dp)         :: A_DIVA, A_BPA
     real(dp), dimension(:    ), allocatable :: b_DIVA, b_BPA
     integer,  dimension(:,:  ), allocatable :: tiuv2nh
     integer,  dimension(:,:,:), allocatable :: tikuv2nh
     integer,  dimension(:,:  ), allocatable :: nh2tiuv_tikuv
     integer                                 :: neq,i1,i2
     integer                                 :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)         :: A_combi
+    type(type_CSR_matrix_dp)         :: A_combi
     real(dp), dimension(:    ), allocatable :: b_combi
     real(dp), dimension(:    ), allocatable :: uv_combi
     integer                                 :: neq_loc
@@ -1010,7 +1010,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
     logical,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: mask_DIVA_b           ! T: solve the DIVA here, F: otherwise
-    type(type_sparse_matrix_CSR_dp),        intent(  out) :: A_DIVA
+    type(type_CSR_matrix_dp),        intent(  out) :: A_DIVA
     real(dp), dimension(:), allocatable,    intent(  out) :: b_DIVA
 
     ! Local variables:
@@ -1126,7 +1126,7 @@ contains
     type(type_ice_velocity_solver_BPA),     intent(inout) :: BPA
     integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
     logical,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: mask_BPA_b            ! T: solve the BPA here, F: otherwise
-    type(type_sparse_matrix_CSR_dp),        intent(  out) :: A_BPA
+    type(type_CSR_matrix_dp),        intent(  out) :: A_BPA
     real(dp), dimension(:), allocatable,    intent(  out) :: b_BPA
 
     ! Local variables:
@@ -1218,8 +1218,8 @@ contains
     ! In/output variables:
     type(type_mesh),                       intent(in   ) :: mesh
     type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
-    type(type_sparse_matrix_CSR_dp),       intent(in   ) :: A_DIVA
-    type(type_sparse_matrix_CSR_dp),       intent(in   ) :: A_BPA
+    type(type_CSR_matrix_dp),       intent(in   ) :: A_DIVA
+    type(type_CSR_matrix_dp),       intent(in   ) :: A_BPA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_hybrid_solver_masks_transition'

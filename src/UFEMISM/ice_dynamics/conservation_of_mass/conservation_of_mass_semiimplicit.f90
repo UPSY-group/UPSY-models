@@ -5,7 +5,7 @@ module conservation_of_mass_semiimplicit
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: duplicate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
      set_diagonal_to_one_and_rest_of_row_to_zero
   use petsc_basic, only: solve_matrix_equation_csr_petsc
@@ -95,8 +95,8 @@ contains
     character(len=1024), parameter         :: routine_name = 'calc_dHi_dt_semiimplicit'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: AMB_ex, dHi_dt_ex, Hi_tplusdt_ex, divQ_ex
     real(dp)                               :: dt_ex
-    type(type_sparse_matrix_CSR_dp)        :: M_divQ
-    type(type_sparse_matrix_CSR_dp)        :: AA
+    type(type_CSR_matrix_dp)        :: M_divQ
+    type(type_CSR_matrix_dp)        :: AA
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bb
     integer                                :: vi, k1, k2, k, vj
     real(dp)                               :: dt_max
@@ -190,7 +190,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hb
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: Hi_tplusdt_ex
-    type(type_sparse_matrix_CSR_dp),        intent(inout)           :: AA                    ! Stiffness matrix
+    type(type_CSR_matrix_dp),        intent(inout)           :: AA                    ! Stiffness matrix
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: bb                    ! Load vector
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: Hi_tplusdt            ! Initial guess
     integer,  dimension(mesh%vi1:mesh%vi2), intent(in   ), optional :: BC_prescr_mask        ! Mask of vertices where thickness is prescribed
@@ -220,7 +220,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_tplusdt_ex
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: AA                    ! Stiffness matrix
+    type(type_CSR_matrix_dp),        intent(inout) :: AA                    ! Stiffness matrix
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: bb                    ! Load vector
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_tplusdt            ! Initial guess
 
@@ -252,7 +252,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     logical,  dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_noice            ! Mask of vertices where no ice is allowed
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: AA                    ! Stiffness matrix
+    type(type_CSR_matrix_dp),        intent(inout) :: AA                    ! Stiffness matrix
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: bb                    ! Load vector
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_tplusdt            ! Initial guess
 
@@ -284,7 +284,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )           :: mesh
-    type(type_sparse_matrix_CSR_dp),        intent(inout)           :: AA                    ! Stiffness matrix
+    type(type_CSR_matrix_dp),        intent(inout)           :: AA                    ! Stiffness matrix
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: bb                    ! Load vector
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: Hi_tplusdt            ! Initial guess
     integer,  dimension(mesh%vi1:mesh%vi2), intent(in   ), optional :: BC_prescr_mask        ! Mask of vertices where thickness is prescribed

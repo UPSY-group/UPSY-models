@@ -3,7 +3,7 @@ module mesh_types
   ! The different data types used in the mesh modules
 
   use precisions, only: dp
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use parallel_array_info_type, only: type_par_arr_info
   use mpi_f08, only: MPI_WIN
   use deallocate_dist_shared_mod, only: deallocate_dist_shared
@@ -210,34 +210,34 @@ module mesh_types
     ! Basic 2-D mapping and gradient operators
 
     ! a-grid (vertices) to a-grid (vertices)
-    type(type_sparse_matrix_CSR_dp)         :: M_ddx_a_a
-    type(type_sparse_matrix_CSR_dp)         :: M_ddy_a_a
+    type(type_CSR_matrix_dp)         :: M_ddx_a_a
+    type(type_CSR_matrix_dp)         :: M_ddy_a_a
     ! a-grid (vertices) to b-grid (triangles)
-    type(type_sparse_matrix_CSR_dp)         :: M_map_a_b
-    type(type_sparse_matrix_CSR_dp)         :: M_ddx_a_b
-    type(type_sparse_matrix_CSR_dp)         :: M_ddy_a_b
+    type(type_CSR_matrix_dp)         :: M_map_a_b
+    type(type_CSR_matrix_dp)         :: M_ddx_a_b
+    type(type_CSR_matrix_dp)         :: M_ddy_a_b
     ! b-grid (triangles) to a-grid (vertices)
-    type(type_sparse_matrix_CSR_dp)         :: M_map_b_a
-    type(type_sparse_matrix_CSR_dp)         :: M_ddx_b_a
-    type(type_sparse_matrix_CSR_dp)         :: M_ddy_b_a
+    type(type_CSR_matrix_dp)         :: M_map_b_a
+    type(type_CSR_matrix_dp)         :: M_ddx_b_a
+    type(type_CSR_matrix_dp)         :: M_ddy_b_a
     ! b-grid (triangles) to b-grid (triangles)
-    type(type_sparse_matrix_CSR_dp)         :: M_ddx_b_b
-    type(type_sparse_matrix_CSR_dp)         :: M_ddy_b_b
+    type(type_CSR_matrix_dp)         :: M_ddx_b_b
+    type(type_CSR_matrix_dp)         :: M_ddy_b_b
 
     ! b-grid (triangles) to b-grid (triangles), 2nd-order accurate
-    type(type_sparse_matrix_CSR_dp)         :: M2_ddx_b_b
-    type(type_sparse_matrix_CSR_dp)         :: M2_ddy_b_b
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dx2_b_b
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dxdy_b_b
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dy2_b_b
+    type(type_CSR_matrix_dp)         :: M2_ddx_b_b
+    type(type_CSR_matrix_dp)         :: M2_ddy_b_b
+    type(type_CSR_matrix_dp)         :: M2_d2dx2_b_b
+    type(type_CSR_matrix_dp)         :: M2_d2dxdy_b_b
+    type(type_CSR_matrix_dp)         :: M2_d2dy2_b_b
 
     ! Operators on the zeta grids
-    type(type_sparse_matrix_CSR_dp)         :: M_ddzeta_k_k_1D
-    type(type_sparse_matrix_CSR_dp)         :: M_d2dzeta2_k_k_1D
-    type(type_sparse_matrix_CSR_dp)         :: M_map_k_ks_1D
-    type(type_sparse_matrix_CSR_dp)         :: M_ddzeta_k_ks_1D
-    type(type_sparse_matrix_CSR_dp)         :: M_map_ks_k_1D
-    type(type_sparse_matrix_CSR_dp)         :: M_ddzeta_ks_k_1D
+    type(type_CSR_matrix_dp)         :: M_ddzeta_k_k_1D
+    type(type_CSR_matrix_dp)         :: M_d2dzeta2_k_k_1D
+    type(type_CSR_matrix_dp)         :: M_map_k_ks_1D
+    type(type_CSR_matrix_dp)         :: M_ddzeta_k_ks_1D
+    type(type_CSR_matrix_dp)         :: M_map_ks_k_1D
+    type(type_CSR_matrix_dp)         :: M_ddzeta_ks_k_1D
 
     ! Zeta operators in tridiagonal form for efficient use in thermodynamics
     real(dp), dimension(:    ), allocatable :: M_ddzeta_k_k_ldiag
@@ -250,32 +250,32 @@ module mesh_types
     ! 3-D gradient operators
 
     ! bk to ak (for calculating the horizontal stretch/shear strain rates in the BPA)
-    type(type_sparse_matrix_CSR_dp)         :: M_ddx_bk_ak
-    type(type_sparse_matrix_CSR_dp)         :: M_ddy_bk_ak
+    type(type_CSR_matrix_dp)         :: M_ddx_bk_ak
+    type(type_CSR_matrix_dp)         :: M_ddy_bk_ak
 
     ! ak to bk (for calculating the horizontal gradients of the effective viscosity in the BPA)
-    type(type_sparse_matrix_CSR_dp)         :: M_ddx_ak_bk
-    type(type_sparse_matrix_CSR_dp)         :: M_ddy_ak_bk
+    type(type_CSR_matrix_dp)         :: M_ddx_ak_bk
+    type(type_CSR_matrix_dp)         :: M_ddy_ak_bk
 
     ! bk to bks (for calculating the vertical shear strain rates in the BPA)
-    type(type_sparse_matrix_CSR_dp)         :: M_ddz_bk_bks
+    type(type_CSR_matrix_dp)         :: M_ddz_bk_bks
 
     ! bks to bk (for calculating (the vertical gradient of) the effective viscosity in the BPA)
-    type(type_sparse_matrix_CSR_dp)         :: M_map_bks_bk
-    type(type_sparse_matrix_CSR_dp)         :: M_ddz_bks_bk
+    type(type_CSR_matrix_dp)         :: M_map_bks_bk
+    type(type_CSR_matrix_dp)         :: M_ddz_bks_bk
 
     ! Map between the bks-grid and the ak-grid (for calculating strain rates in the BPA)
-    type(type_sparse_matrix_CSR_dp)         :: M_map_bks_ak
-    type(type_sparse_matrix_CSR_dp)         :: M_map_ak_bks
+    type(type_CSR_matrix_dp)         :: M_map_bks_ak
+    type(type_CSR_matrix_dp)         :: M_map_ak_bks
 
     ! bk to bk (for constructing the BPA stiffness matrix)
-    type(type_sparse_matrix_CSR_dp)         :: M2_ddx_bk_bk
-    type(type_sparse_matrix_CSR_dp)         :: M2_ddy_bk_bk
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dx2_bk_bk
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dxdy_bk_bk
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dy2_bk_bk
-    type(type_sparse_matrix_CSR_dp)         :: M2_ddz_bk_bk
-    type(type_sparse_matrix_CSR_dp)         :: M2_d2dz2_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_ddx_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_ddy_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_d2dx2_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_d2dxdy_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_d2dy2_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_ddz_bk_bk
+    type(type_CSR_matrix_dp)         :: M2_d2dz2_bk_bk
 
   contains
 

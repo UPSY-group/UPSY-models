@@ -13,7 +13,7 @@ module DIVA_solver_infinite_slab
   use graph_types, only: type_graph_pair
   use graph_pair_creation, only: create_ice_only_graph_pair, deallocate_graph_pair
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient

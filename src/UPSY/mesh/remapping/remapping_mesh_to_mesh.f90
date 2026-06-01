@@ -7,7 +7,7 @@ module remapping_mesh_to_mesh
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map, type_single_row_mapping_matrices
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     add_empty_row_CSR_dist, add_entry_CSR_dist, deallocate_matrix_CSR_dist
   use plane_geometry, only: triangle_area
@@ -39,7 +39,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_to_mesh_nearest_neighbour'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: row, vi_dst
     real(dp), dimension(2)          :: p
     integer                         :: vi_src, col
@@ -119,7 +119,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_to_mesh_trilin'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: row, vi_dst
     real(dp), dimension(2)          :: p
     integer                         :: ti_src, via, vib, vic
@@ -758,8 +758,8 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'correct_mesh_to_mesh_map'
     integer                                 :: perr
-    type(type_sparse_matrix_CSR_dp)         :: M_cons_1st_order_CSR
-    type(type_sparse_matrix_CSR_dp)         :: M_cons_2nd_order_CSR
+    type(type_CSR_matrix_dp)         :: M_cons_1st_order_CSR
+    type(type_CSR_matrix_dp)         :: M_cons_2nd_order_CSR
     integer                                 :: i, vi_dst, k1, k2, k
     integer                                 :: j, vi_src
     logical                                 :: do_direct_copy
@@ -771,7 +771,7 @@ contains
     integer                                 :: nVor_src  , nVor_dst
     integer                                 :: vori
     type(type_map)                          :: map_trilin
-    type(type_sparse_matrix_CSR_dp)         :: M_trilin_CSR
+    type(type_CSR_matrix_dp)         :: M_trilin_CSR
     logical,  dimension( mesh_dst%nV)       :: isgood_1st_order
     logical,  dimension( mesh_dst%nV)       :: isgood_2nd_order
     integer                                 :: kk1,kk2,kk
@@ -1006,7 +1006,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'integrate_triangles_through_Voronoi_cells'
     integer                                :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_b_a_CSR, A_mxydx_b_a_CSR, A_xydy_b_a_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_b_a_CSR, A_mxydx_b_a_CSR, A_xydy_b_a_CSR
     type(type_single_row_mapping_matrices) :: single_row
     integer                                :: via, vib, vic, ti, vi_hint, k
     real(dp), dimension(2)                 :: p, q
@@ -1115,7 +1115,7 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'integrate_Voronoi_cells_through_triangles'
     integer                                 :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-    type(type_sparse_matrix_CSR_dp)         :: A_xdy_a_b_CSR, A_mxydx_a_b_CSR, A_xydy_a_b_CSR
+    type(type_CSR_matrix_dp)         :: A_xdy_a_b_CSR, A_mxydx_a_b_CSR, A_xydy_a_b_CSR
     type(type_single_row_mapping_matrices)  :: single_row
     integer                                 :: vi, vori1, vori2, k, ti_hint
     real(dp), dimension( mesh_Vor%nC_mem,2) :: Vor
@@ -1220,7 +1220,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'integrate_triangles_through_triangles'
     integer                                :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_top_bot_CSR, A_mxydx_top_bot_CSR, A_xydy_top_bot_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_top_bot_CSR, A_mxydx_top_bot_CSR, A_xydy_top_bot_CSR
     type(type_single_row_mapping_matrices) :: single_row
     integer                                :: via, vib, vic, ti_top, ti_bot_hint, k
     real(dp), dimension(2)                 :: p, q

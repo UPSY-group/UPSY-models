@@ -8,7 +8,7 @@ module remapping_gridlonlat_to_mesh
   use grid_types, only: type_grid_lonlat
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     deallocate_matrix_CSR_dist, add_entry_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
@@ -34,7 +34,7 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
   ! Local variables:
   character(len=1024), parameter                     :: routine_name = 'create_map_from_lonlat_grid_to_mesh'
   integer                                            :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-  type(type_sparse_matrix_CSR_dp)                    :: M_CSR
+  type(type_CSR_matrix_dp)                    :: M_CSR
   integer                                            :: vi
   integer                                            :: il,iu,jl,ju
   real(dp)                                           :: wil,wiu,wjl,wju

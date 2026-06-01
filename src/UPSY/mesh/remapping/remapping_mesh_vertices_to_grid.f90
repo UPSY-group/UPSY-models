@@ -9,7 +9,7 @@ module remapping_mesh_vertices_to_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     deallocate_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
@@ -44,7 +44,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'create_map_from_mesh_vertices_to_xy_grid'
     integer, dimension(grid%nx, grid%ny)   :: overlaps_with_small_triangle, containing_triangle
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                             :: w0, w1x, w1y
     character(len=1024)                    :: filename_grid, filename_mesh
     integer                                :: perr
@@ -232,7 +232,7 @@ contains
     type(type_grid),                      intent(in   ) :: grid
     integer, dimension(grid%nx, grid%ny), intent(in   ) :: overlaps_with_small_triangle
     integer, dimension(grid%nx, grid%ny), intent(in   ) :: containing_triangle
-    type(type_sparse_matrix_CSR_dp),      intent(  out) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp),      intent(  out) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_A_matrices'
@@ -431,7 +431,7 @@ contains
     ! In/output variables
     type(type_mesh),                 intent(in   ) :: mesh
     type(type_grid),                 intent(in   ) :: grid
-    type(type_sparse_matrix_CSR_dp), intent(in   ) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp), intent(in   ) :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                     , intent(  out) :: w0, w1x, w1y
 
     ! Local variables:
@@ -439,7 +439,7 @@ contains
     integer                         :: row, ti
     integer                         :: nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc
     integer                         :: k
-    type(type_sparse_matrix_CSR_dp) :: w0_CSR, w1x_CSR, w1y_CSR
+    type(type_CSR_matrix_dp) :: w0_CSR, w1x_CSR, w1y_CSR
     integer                         :: k1, k2, col
     real(dp)                        :: A_overlap_tot
 

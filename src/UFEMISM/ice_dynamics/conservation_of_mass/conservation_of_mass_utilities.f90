@@ -5,7 +5,7 @@ module conservation_of_mass_utilities
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
   use mpi_distributed_memory, only: gather_to_all
@@ -38,7 +38,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti1), intent(in   ) :: u_vav_b
     real(dp), dimension(mesh%ti1:mesh%ti1), intent(in   ) :: v_vav_b
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: fraction_margin
-    type(type_sparse_matrix_CSR_dp),        intent(  out) :: M_divQ
+    type(type_CSR_matrix_dp),        intent(  out) :: M_divQ
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_ice_flux_divergence_matrix_upwind'

@@ -15,7 +15,7 @@ module ice_dynamics_main
   use LMB_model_types, only: type_LMB_model
   use AMB_model_types, only: type_AMB_model
   use global_forcing_types, only: type_global_forcing
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_main, only: Atlas
   use conservation_of_momentum_main, only: solve_stress_balance, remap_velocity_solver, &
     create_restart_file_ice_velocity, write_to_restart_file_ice_velocity, initialise_velocity_solver
@@ -904,7 +904,7 @@ contains
     integer                                         :: vi
     integer                                         :: mi, mi_used
     logical                                         :: found_map
-    type(type_sparse_matrix_CSR_dp)                 :: M_CSR
+    type(type_CSR_matrix_dp)                 :: M_CSR
     integer                                         :: vi_new, k1, k2, k, vi_old
     integer                                         :: n_ice, n_nonice
     integer                                         :: n_shelf, n_open_ocean

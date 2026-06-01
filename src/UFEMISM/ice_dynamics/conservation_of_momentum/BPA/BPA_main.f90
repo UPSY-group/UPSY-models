@@ -21,7 +21,7 @@ module BPA_main
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
     read_single_row_CSR_dist, deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
   use netcdf_io_main
@@ -344,7 +344,7 @@ contains
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_BPA_linearised'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)     :: A_CSR
     real(dp), dimension(:), allocatable :: bb
     real(dp), dimension(:), allocatable :: uv_bkuv
     integer                             :: row_tikuv,ti,k,uv
@@ -514,7 +514,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -715,7 +715,7 @@ contains
     type(type_mesh),                     intent(in   )           :: mesh
     type(type_ice_velocity_solver_BPA),  intent(in   )           :: BPA
     type(type_ice_model),                intent(in   )           :: ice
-    type(type_sparse_matrix_CSR_dp),     intent(inout)           :: A_CSR
+    type(type_CSR_matrix_dp),     intent(inout)           :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout)        :: bb
     integer,                             intent(in   )           :: row_tikuv
 
@@ -974,7 +974,7 @@ contains
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
     type(type_ice_model),                   intent(in   ) :: ice
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1171,7 +1171,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1311,7 +1311,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1451,7 +1451,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1591,7 +1591,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 

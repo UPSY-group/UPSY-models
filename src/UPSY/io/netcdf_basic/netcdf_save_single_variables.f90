@@ -6,7 +6,7 @@ module netcdf_save_single_variables
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: deallocate_matrix_CSR_dist, gather_CSR_dist_to_primary
   use petsc_basic, only: mat_petsc2CSR
   use mpi_distributed_memory, only: gather_to_primary
@@ -35,7 +35,7 @@ contains
 
     ! Local variables:
     character(len=256), parameter   :: routine_name = 'write_PETSc_matrix_to_NetCDF'
-    type(type_sparse_matrix_CSR_dp) :: AA
+    type(type_CSR_matrix_dp) :: AA
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -59,7 +59,7 @@ contains
 
     ! In- and output variables:
     character(len=*),                intent(in) :: output_dir
-    type(type_sparse_matrix_CSR_dp), intent(in) :: AA
+    type(type_CSR_matrix_dp), intent(in) :: AA
     character(len=*),                intent(in) :: filename
 
     ! Local variables:
@@ -68,7 +68,7 @@ contains
     integer                         :: ncid
     integer                         :: id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
     integer                         :: id_var_ptr, id_var_ind, id_var_val
-    type(type_sparse_matrix_CSR_dp) :: AA_tot
+    type(type_CSR_matrix_dp) :: AA_tot
 
     ! Add routine to path
     call init_routine( routine_name)

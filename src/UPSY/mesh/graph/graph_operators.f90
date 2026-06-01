@@ -3,7 +3,7 @@ module graph_operators
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use graph_types, only: type_graph
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
     add_entry_CSR_dist, finalise_matrix_CSR_dist
   use shape_functions, only: calc_shape_functions_2D_reg_2nd_order, &
@@ -25,7 +25,7 @@ contains
 
     ! In/output variables:
     type(type_graph),                intent(in   ) :: graph
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
+    type(type_CSR_matrix_dp), intent(  out) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_matrix_operators_2nd_order'
@@ -168,7 +168,7 @@ contains
 
     ! In/output variables:
     type(type_graph),                intent(in   ) :: graph
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_ddx, M_ddy
+    type(type_CSR_matrix_dp), intent(  out) :: M_ddx, M_ddy
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_matrix_operators_1st_order'
@@ -295,7 +295,7 @@ contains
     ! In/output variables:
     type(type_mesh),                 intent(in   ) :: mesh
     type(type_graph),                intent(in   ) :: graph_a, graph_b
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_map_a_b, M_ddx_a_b, M_ddy_a_b
+    type(type_CSR_matrix_dp), intent(  out) :: M_map_a_b, M_ddx_a_b, M_ddy_a_b
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_a_to_graph_b_matrix_operators'
@@ -408,7 +408,7 @@ contains
     ! In/output variables:
     type(type_mesh),                 intent(in   ) :: mesh
     type(type_graph),                intent(in   ) :: graph_b, graph_a
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_map_b_a, M_ddx_b_a, M_ddy_b_a
+    type(type_CSR_matrix_dp), intent(  out) :: M_map_b_a, M_ddx_b_a, M_ddy_b_a
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_b_to_graph_a_matrix_operators'

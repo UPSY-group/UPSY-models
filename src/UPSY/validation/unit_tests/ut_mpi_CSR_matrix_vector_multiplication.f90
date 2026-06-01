@@ -8,7 +8,7 @@ module ut_mpi_CSR_matrix_vector_multiplication
   use precisions, only: dp
   use mpi_basic, only: par, sync, sync_node
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D, &
     multiply_CSR_matrix_with_vector_1D_wrapper
@@ -33,7 +33,7 @@ contains
     character(len=1024), parameter :: routine_name = 'test_CSR_matrix_vector_multiplication_main'
     character(len=1024), parameter :: test_name_local = 'CSR_matrix_vector_multiplication'
     character(len=1024)            :: test_name
-    type(type_sparse_matrix_CSR_dp) :: A1, A2
+    type(type_CSR_matrix_dp) :: A1, A2
     real(dp), dimension(1)          :: x1, x2, y_correct1, y_correct2
 
     ! Add routine to call stack
@@ -62,7 +62,7 @@ contains
 
     ! In/output variables:
     character(len=*),                intent(in) :: test_name_parent
-    type(type_sparse_matrix_CSR_dp), intent(in) :: A
+    type(type_CSR_matrix_dp), intent(in) :: A
     real(dp), dimension(1),          intent(in) :: x, y_correct
     integer,                         intent(in) :: test_number
 
@@ -179,7 +179,7 @@ contains
   subroutine initialise_simple_matrix_equation_1( A, x, y)
 
     ! In/output variables:
-    type(type_sparse_matrix_CSR_dp), intent(out) :: A
+    type(type_CSR_matrix_dp), intent(out) :: A
     real(dp), dimension(1),          intent(out) :: x,y
 
     ! Local variables:
@@ -247,7 +247,7 @@ contains
   subroutine initialise_simple_matrix_equation_2( A, x, y)
 
     ! In/output variables:
-    type(type_sparse_matrix_CSR_dp), intent(out) :: A
+    type(type_CSR_matrix_dp), intent(out) :: A
     real(dp), dimension(1),          intent(out) :: x,y
 
     ! Local variables:

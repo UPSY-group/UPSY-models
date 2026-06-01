@@ -7,7 +7,7 @@ module remapping_grid_to_mesh_vertices
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     deallocate_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
@@ -51,10 +51,10 @@ contains
     character(len=1024), parameter        :: routine_name = 'create_map_from_xy_grid_to_mesh_vertices'
     logical, dimension(mesh%vi1:mesh%vi2) :: lies_outside_grid_domain
     logical, dimension(mesh%vi1:mesh%vi2) :: is_large_vertex
-    type(type_sparse_matrix_CSR_dp)       :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
+    type(type_CSR_matrix_dp)       :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
     type(tMat)                            :: w0, w1x, w1y
     type(tMat)                            :: M_cons_1st_order, M_cons_2nd_order
-    type(type_sparse_matrix_CSR_dp)       :: grid_M_ddx_CSR, grid_M_ddy_CSR
+    type(type_CSR_matrix_dp)       :: grid_M_ddx_CSR, grid_M_ddy_CSR
     character(len=1024)                   :: filename_grid, filename_mesh
     type(PetscErrorCode)                  :: perr
 
@@ -187,7 +187,7 @@ contains
     type(type_mesh),                       intent(in   ) :: mesh
     logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: lies_outside_grid_domain
     logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: is_large_vertex
-    type(type_sparse_matrix_CSR_dp),       intent(  out) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
+    type(type_CSR_matrix_dp),       intent(  out) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_A_matrices'
@@ -276,7 +276,7 @@ contains
     type(type_mesh),                        intent(in   ) :: mesh
     integer,                                intent(in   ) :: row, vi
     type(type_single_row_mapping_matrices), intent(inout) :: single_row_Vor, single_row_grid
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
 
     ! Local variables:
     logical                                :: count_coincidences
@@ -376,7 +376,7 @@ contains
     type(type_mesh),                        intent(in   ) :: mesh
     integer,                                intent(in   ) :: row, vi
     type(type_single_row_mapping_matrices), intent(inout) :: single_row_Vor
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
 
     ! Local variables
     integer                                :: col
@@ -447,7 +447,7 @@ contains
     type(type_mesh),                       intent(in   ) :: mesh
     logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: lies_outside_grid_domain
     logical, dimension(mesh%vi1:mesh%vi2), intent(in   ) :: is_large_vertex
-    type(type_sparse_matrix_CSR_dp),       intent(in   ) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
+    type(type_CSR_matrix_dp),       intent(in   ) :: A_xdy_a_g_CSR, A_mxydx_a_g_CSR, A_xydy_a_g_CSR
     type(tMat),                            intent(  out) :: w0, w1x, w1y
 
     ! Local variables:
@@ -455,7 +455,7 @@ contains
     integer                         :: nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc
     integer                         :: vi
     integer                         :: k, i, j
-    type(type_sparse_matrix_CSR_dp) :: w0_CSR, w1x_CSR, w1y_CSR
+    type(type_CSR_matrix_dp) :: w0_CSR, w1x_CSR, w1y_CSR
     integer                         :: row, k1, k2, col
     real(dp)                        :: A_overlap_tot
 
@@ -535,7 +535,7 @@ contains
 
     ! In/output variables
     type(tMat),                      intent(in   ) :: w0, w1x, w1y
-    type(type_sparse_matrix_CSR_dp), intent(in   ) :: grid_M_ddx_CSR, grid_M_ddy_CSR
+    type(type_CSR_matrix_dp), intent(in   ) :: grid_M_ddx_CSR, grid_M_ddy_CSR
     type(tMat),                      intent(  out) :: M_cons_1st_order, M_cons_2nd_order
 
     ! Local variables:

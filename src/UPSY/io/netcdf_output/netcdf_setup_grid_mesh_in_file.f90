@@ -4,7 +4,7 @@ module netcdf_setup_grid_mesh_in_file
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: gather_CSR_dist_to_primary
   use netcdf_basic
   use netcdf_add_field_mesh
@@ -887,12 +887,12 @@ contains
     ! In/output variables:
     character(len=*),                 intent(in   ) :: filename
     integer,                          intent(inout) :: ncid
-    type(type_sparse_matrix_CSR_dp),  intent(in   ) :: A
+    type(type_CSR_matrix_dp),  intent(in   ) :: A
     character(len=*),                 intent(in   ) :: name
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'write_matrix_operator_to_netcdf_file'
-    type(type_sparse_matrix_CSR_dp) :: A_tot
+    type(type_CSR_matrix_dp) :: A_tot
     integer                         :: ierr
     integer                         :: grp_ncid, id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
     integer                         :: id_var_ptr, id_var_ind, id_var_val
@@ -930,12 +930,12 @@ contains
 
     ! In/output variables:
     character(len=*),                intent(in) :: filename
-    type(type_sparse_matrix_CSR_dp), intent(in) :: A
+    type(type_CSR_matrix_dp), intent(in) :: A
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'save_matrix_operator_as_netcdf_file'
     integer                         :: ncid
-    type(type_sparse_matrix_CSR_dp) :: A_tot
+    type(type_CSR_matrix_dp) :: A_tot
     integer                         :: ierr
     integer                         :: id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
     integer                         :: id_var_ptr, id_var_ind, id_var_val

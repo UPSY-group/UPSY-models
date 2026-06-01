@@ -2,7 +2,7 @@ module CSR_matrix_basics
 
   ! Subroutines to work with Compressed Sparse Row formatted matrices
 
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mpi_f08, only: MPI_ALLGATHER, MPI_INTEGER, MPI_ANY_TAG, MPI_COMM_WORLD, MPI_SEND, MPI_RECV, &
     MPI_STATUS, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_ALLREDUCE, MPI_MIN, MPI_MAX, MPI_IN_PLACE, &
     MPI_LOGICAL, MPI_LOR
@@ -32,7 +32,7 @@ contains
     ! Allocate memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),   intent(inout) :: A
+    type(type_CSR_matrix_dp),   intent(inout) :: A
     integer,                           intent(in   ) :: m_glob, n_glob, m_loc, n_loc, nnz_max_proc
     type(type_par_arr_info), optional, intent(in   ) :: pai_x, pai_y
 
@@ -157,7 +157,7 @@ contains
     !< Deallocate memory for a CSR-format sparse matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'deallocate_matrix_CSR_dist'
@@ -201,8 +201,8 @@ contains
     ! Duplicate the CSR-format sparse matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(in)    :: A
-    type(type_sparse_matrix_CSR_dp),     intent(OUT)   :: B
+    type(type_CSR_matrix_dp),     intent(in)    :: A
+    type(type_CSR_matrix_dp),     intent(OUT)   :: B
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'duplicate_matrix_CSR_dist'
@@ -254,7 +254,7 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
+    type(type_CSR_matrix_dp),     intent(inout) :: A
     integer,                             intent(in)    :: i,j
     real(dp),                            intent(in)    :: v
 
@@ -282,7 +282,7 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
+    type(type_CSR_matrix_dp),     intent(inout) :: A
     integer,                             intent(in)    :: i
 
     ! Safety
@@ -297,7 +297,7 @@ contains
     ! Extend memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
+    type(type_CSR_matrix_dp),     intent(inout) :: A
     integer,                             intent(in)    :: nnz_extra
 
     ! Local variables:
@@ -313,7 +313,7 @@ contains
     ! Crop memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
+    type(type_CSR_matrix_dp),     intent(inout) :: A
 
     ! Local variables:
     character(len=256), parameter                      :: routine_name = 'crop_matrix_CSR_dist'
@@ -335,8 +335,8 @@ contains
     ! Gather a CSR-format sparse m-by-n matrix A that is distributed over the processes, to the primary
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(in)    :: A
-    type(type_sparse_matrix_CSR_dp),     intent(OUT)   :: A_tot
+    type(type_CSR_matrix_dp),     intent(in)    :: A
+    type(type_CSR_matrix_dp),     intent(OUT)   :: A_tot
 
     ! Local variables:
     character(len=256), parameter                      :: routine_name = 'gather_CSR_dist_to_primary'
@@ -347,7 +347,7 @@ contains
     integer                                            :: p
     integer                                            :: row, k1, k2, k, col
     real(dp)                                           :: val
-    type(type_sparse_matrix_CSR_dp)                    :: A_proc
+    type(type_CSR_matrix_dp)                    :: A_proc
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -483,7 +483,7 @@ contains
     ! Read the coefficients of a single row of A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(in)    :: A
+    type(type_CSR_matrix_dp),     intent(in)    :: A
     integer,                             intent(in)    :: i
     integer,  dimension(:    ),          intent(inout) :: ind
     real(dp), dimension(:    ),          intent(inout) :: val
@@ -508,7 +508,7 @@ contains
   subroutine finalise_matrix_CSR_dist( A)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'finalise_matrix_CSR_dist'
@@ -529,7 +529,7 @@ contains
   subroutine calc_j_node_range( A)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_j_node_range'
@@ -574,7 +574,7 @@ contains
   subroutine set_diagonal_to_one_and_rest_of_row_to_zero( A, i)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
     integer,                         intent(in   ) :: i
 
     call set_row_to_value(    A, i, 0._dp)
@@ -586,7 +586,7 @@ contains
     !< Set A(i,:) to val
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
     integer,                         intent(in   ) :: i
     real(dp),                        intent(in   ) :: val
 
@@ -603,7 +603,7 @@ contains
     !< Set A(i,i) to val
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(inout) :: A
+    type(type_CSR_matrix_dp), intent(inout) :: A
     integer,                         intent(in   ) :: i
     real(dp),                        intent(in   ) :: val
 
@@ -631,7 +631,7 @@ contains
     ! Allocate memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),     intent(inout) :: A
+    type(type_CSR_matrix_dp),     intent(inout) :: A
     integer,                             intent(in)    :: m, n, nnz_max
 
     ! Local variables:

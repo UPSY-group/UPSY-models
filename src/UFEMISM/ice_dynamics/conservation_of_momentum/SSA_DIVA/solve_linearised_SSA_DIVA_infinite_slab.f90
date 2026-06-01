@@ -4,7 +4,7 @@ module solve_linearised_SSA_DIVA_infinite_slab
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
     finalise_matrix_CSR_dist
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
@@ -41,7 +41,7 @@ contains
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)     :: A_CSR
     real(dp), dimension(:), allocatable :: bb
     real(dp), dimension(:), allocatable :: uv_buv
     integer                             :: row_tiuv,ti,uv
@@ -212,7 +212,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: N_b, dN_dx_b, dN_dy_b
     real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: basal_friction_coefficient_b
     real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_sparse_matrix_CSR_dp),               intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),               intent(inout) :: A_CSR
     real(dp), dimension(mesh%ti1*2-1: mesh%ti2*2), intent(inout) :: bb
     integer,                                       intent(in   ) :: row_tiuv
 
@@ -374,7 +374,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: N_b
     real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: basal_friction_coefficient_b
     real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_sparse_matrix_CSR_dp),               intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),               intent(inout) :: A_CSR
     real(dp), dimension(mesh%ti1*2-1: mesh%ti2*2), intent(inout) :: bb
     integer,                                       intent(in   ) :: row_tiuv
 
@@ -485,7 +485,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     real(dp), dimension(mesh%nTri),         intent(in   ) :: u_b_prev, v_b_prev
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tiuv
     character(len=*),                       intent(in   ) :: choice_BC_u, choice_BC_v

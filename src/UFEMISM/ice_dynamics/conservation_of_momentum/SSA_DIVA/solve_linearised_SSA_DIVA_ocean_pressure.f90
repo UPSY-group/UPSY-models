@@ -4,7 +4,7 @@ module solve_linearised_SSA_DIVA_ocean_pressure
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use ice_model_types, only: type_ice_velocity_solver_DIVA_graphs
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
     finalise_matrix_CSR_dist
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
@@ -33,7 +33,7 @@ contains
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised_ocean_pressure'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)     :: A_CSR
     real(dp), dimension(:), allocatable :: bb_buv
     real(dp), dimension(:), allocatable :: uv_buv
     integer                             :: row_niuv, ni, uv
@@ -186,7 +186,7 @@ contains
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: N_b, dN_dx_b, dN_dy_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: basal_friction_coefficient_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_sparse_matrix_CSR_dp),                                          intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),                                          intent(inout) :: A_CSR
     real(dp), dimension(graphs%graph_b%ni1*2-1: graphs%graph_b%ni2*2),        intent(inout) :: bb_b
     integer,                                                                  intent(in   ) :: row_niuv
 
@@ -344,7 +344,7 @@ contains
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: N_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: basal_friction_coefficient_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_sparse_matrix_CSR_dp),                                          intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),                                          intent(inout) :: A_CSR
     real(dp), dimension(graphs%graph_b%ni1*2-1: graphs%graph_b%ni2*2),        intent(inout) :: bb_b
     integer,                                                                  intent(in   ) :: row_niuv
 
@@ -470,7 +470,7 @@ contains
     ! In/output variables:
     type(type_graph_pair),                                                    intent(in   ) :: graphs
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: N_b, tau_ox_b, tau_oy_b
-    type(type_sparse_matrix_CSR_dp),                                          intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),                                          intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2),                                   intent(inout) :: bb_b
     integer,                                                                  intent(in   ) :: row_niuv
 

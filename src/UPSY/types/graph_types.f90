@@ -1,7 +1,7 @@
 module graph_types
 
   use precisions, only: dp
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use parallel_array_info_type, only: type_par_arr_info
   use mpi_f08, only: MPI_WIN
 
@@ -57,22 +57,22 @@ module graph_types
 
     type(type_graph)                :: graph_a, graph_b
 
-    type(type_sparse_matrix_CSR_dp) :: M_ddx_b_b
-    type(type_sparse_matrix_CSR_dp) :: M_ddy_b_b
+    type(type_CSR_matrix_dp) :: M_ddx_b_b
+    type(type_CSR_matrix_dp) :: M_ddy_b_b
 
-    type(type_sparse_matrix_CSR_dp) :: M2_ddx_b_b
-    type(type_sparse_matrix_CSR_dp) :: M2_ddy_b_b
-    type(type_sparse_matrix_CSR_dp) :: M2_d2dx2_b_b
-    type(type_sparse_matrix_CSR_dp) :: M2_d2dxdy_b_b
-    type(type_sparse_matrix_CSR_dp) :: M2_d2dy2_b_b
+    type(type_CSR_matrix_dp) :: M2_ddx_b_b
+    type(type_CSR_matrix_dp) :: M2_ddy_b_b
+    type(type_CSR_matrix_dp) :: M2_d2dx2_b_b
+    type(type_CSR_matrix_dp) :: M2_d2dxdy_b_b
+    type(type_CSR_matrix_dp) :: M2_d2dy2_b_b
 
-    type(type_sparse_matrix_CSR_dp) :: M_map_a_b
-    type(type_sparse_matrix_CSR_dp) :: M_ddx_a_b
-    type(type_sparse_matrix_CSR_dp) :: M_ddy_a_b
+    type(type_CSR_matrix_dp) :: M_map_a_b
+    type(type_CSR_matrix_dp) :: M_ddx_a_b
+    type(type_CSR_matrix_dp) :: M_ddy_a_b
 
-    type(type_sparse_matrix_CSR_dp) :: M_map_b_a
-    type(type_sparse_matrix_CSR_dp) :: M_ddx_b_a
-    type(type_sparse_matrix_CSR_dp) :: M_ddy_b_a
+    type(type_CSR_matrix_dp) :: M_map_b_a
+    type(type_CSR_matrix_dp) :: M_ddx_b_a
+    type(type_CSR_matrix_dp) :: M_ddy_b_a
 
     integer, dimension(:,:), allocatable :: biuv2n
     integer, dimension(:,:), allocatable :: n2biuv

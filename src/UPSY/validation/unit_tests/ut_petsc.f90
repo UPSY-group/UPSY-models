@@ -9,7 +9,7 @@ module ut_petsc
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D
   use petsc_basic, only: mat_CSR2petsc, multiply_petsc_matrix_with_vector_1D, mat_petsc2CSR
@@ -64,7 +64,7 @@ contains
     character(len=1024), parameter          :: routine_name = 'test_multiply_PETSc_matrix_with_vector_1D'
     character(len=1024), parameter          :: test_name_local = 'multiply_PETSc_matrix_with_vector_1D'
     character(len=1024)                     :: test_name
-    type(type_sparse_matrix_CSR_dp)         :: AA
+    type(type_CSR_matrix_dp)         :: AA
     type(tMat)                              :: A
     real(dp), dimension(:    ), allocatable :: xx, yy, yy_correct
     integer                                 :: perr
@@ -182,7 +182,7 @@ contains
     character(len=1024), parameter  :: routine_name = 'test_matrix_PETSc_CSR_conversion'
     character(len=1024), parameter  :: test_name_local = 'matrix_PETSc_CSR_conversion'
     character(len=1024)             :: test_name
-    type(type_sparse_matrix_CSR_dp) :: AA, AA2
+    type(type_CSR_matrix_dp) :: AA, AA2
     type(tMat)                      :: A
     logical                         :: found_errors
 

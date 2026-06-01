@@ -7,7 +7,7 @@ module remapping_mesh_triangles_to_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_types, only: type_map
   use petsc_basic, only: mat_CSR2petsc
   use remapping_mesh_vertices_to_grid, only: calc_approximate_overlaps, calc_A_matrices, &
@@ -35,7 +35,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'create_map_from_mesh_triangles_to_xy_grid'
     integer, dimension(grid%nx, grid%ny)   :: overlaps_with_small_triangle, containing_triangle
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                             :: w1x, w1y
     character(len=1024)                    :: filename_grid, filename_mesh
 

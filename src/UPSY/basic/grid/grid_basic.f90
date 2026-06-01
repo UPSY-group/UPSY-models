@@ -12,7 +12,7 @@ module grid_basic
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection
   use mpi_distributed_memory, only: partition_list
-  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     add_entry_CSR_dist, deallocate_matrix_CSR_dist
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
@@ -232,7 +232,7 @@ contains
 
     ! In/output variables:
     type(type_grid),                 intent(in   ) :: grid
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_ddx_CSR, M_ddy_CSR
+    type(type_CSR_matrix_dp), intent(  out) :: M_ddx_CSR, M_ddy_CSR
 
     ! Local variables:
     character(len=256), parameter   :: routine_name = 'calc_matrix_operators_grid'

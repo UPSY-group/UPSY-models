@@ -21,7 +21,7 @@ module ut_mesh_remapping_mesh_to_mesh
   use mesh_disc_calc_matrix_operators_2D, only: calc_matrix_operators_mesh_a_b
   use remapping_mesh_to_mesh, only: create_map_from_mesh_to_mesh_nearest_neighbour, &
     create_map_from_mesh_to_mesh_trilin, create_map_from_mesh_to_mesh_2nd_order_conservative
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, gather_CSR_dist_to_primary
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: mat_petsc2CSR
 
   implicit none
@@ -182,7 +182,7 @@ contains
     call init_routine( routine_name)
 
     call mat_petsc2CSR( map%M, M_CSR)
-    call gather_CSR_dist_to_primary( M_CSR, M_CSR_tot)
+    call M_CSR%gather_to_primary( M_CSR_tot)
 
     if (par%primary) then
       isso = .true.

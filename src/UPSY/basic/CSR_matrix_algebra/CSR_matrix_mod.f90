@@ -19,7 +19,7 @@ module CSR_matrix_mod
 
   public :: type_CSR_matrix_dp, &
     finalise_matrix_CSR_dist, &
-    gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
+    read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
 
   ! The basic CSR matrix type
@@ -50,14 +50,15 @@ module CSR_matrix_mod
 
       private
 
-      procedure, public  :: allocate      => allocate_matrix_CSR_dist
-      procedure, public  :: deallocate    => deallocate_matrix_CSR_dist
-      procedure, public  :: duplicate     => duplicate_matrix_CSR_dist
-      procedure, public  :: add_entry     => add_entry_CSR_dist
-      procedure, public  :: add_empty_row => add_empty_row_CSR_dist
+      procedure, public  :: allocate          => allocate_matrix_CSR_dist
+      procedure, public  :: deallocate        => deallocate_matrix_CSR_dist
+      procedure, public  :: duplicate         => duplicate_matrix_CSR_dist
+      procedure, public  :: add_entry         => add_entry_CSR_dist
+      procedure, public  :: add_empty_row     => add_empty_row_CSR_dist
+      procedure, public  :: gather_to_primary => gather_CSR_dist_to_primary
 
-      procedure, private :: extend        => extend_matrix_CSR_dist
-      procedure, private :: crop          => crop_matrix_CSR_dist
+      procedure, private :: extend            => extend_matrix_CSR_dist
+      procedure, private :: crop              => crop_matrix_CSR_dist
 
       final              :: deallocate_matrix_CSR_dist_final
 
@@ -365,19 +366,19 @@ contains
     ! Gather a CSR-format sparse m-by-n matrix A that is distributed over the processes, to the primary
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(in)    :: A
-    type(type_CSR_matrix_dp),     intent(OUT)   :: A_tot
+    class(type_CSR_matrix_dp), intent(in   ) :: A
+    type(type_CSR_matrix_dp),  intent(inout) :: A_tot
 
     ! Local variables:
-    character(len=256), parameter                      :: routine_name = 'gather_CSR_dist_to_primary'
-    integer                                            :: ierr
-    type(MPI_STATUS)                                   :: recv_status
-    integer,  dimension(par%n)                         :: m_glob_all, n_glob_all, m_loc_all, n_loc_all
-    integer                                            :: nnz_tot
-    integer                                            :: p
-    integer                                            :: row, k1, k2, k, col
-    real(dp)                                           :: val
-    type(type_CSR_matrix_dp)                    :: A_proc
+    character(len=*), parameter :: routine_name = 'gather_CSR_dist_to_primary'
+    integer                     :: ierr
+    type(MPI_STATUS)            :: recv_status
+    integer,  dimension(par%n)  :: m_glob_all, n_glob_all, m_loc_all, n_loc_all
+    integer                     :: nnz_tot
+    integer                     :: p
+    integer                     :: row, k1, k2, k, col
+    real(dp)                    :: val
+    type(type_CSR_matrix_dp)    :: A_proc
 
     ! Add routine to call stack
     call init_routine( routine_name)

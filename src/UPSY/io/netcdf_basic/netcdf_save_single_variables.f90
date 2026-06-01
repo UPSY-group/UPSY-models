@@ -6,7 +6,7 @@ module netcdf_save_single_variables
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, gather_CSR_dist_to_primary
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: mat_petsc2CSR
   use mpi_distributed_memory, only: gather_to_primary
   use netcdf, only: NF90_INT, NF90_DOUBLE
@@ -73,7 +73,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather distributed matrix to the primary
-    call gather_CSR_dist_to_primary( AA, AA_tot)
+    call AA%gather_to_primary( AA_tot)
 
     ! Append output directory to filename
     filename_applied = trim( output_dir) // '/' // trim( filename) // '.nc'

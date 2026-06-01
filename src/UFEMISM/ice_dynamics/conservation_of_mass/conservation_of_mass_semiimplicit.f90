@@ -5,7 +5,7 @@ module conservation_of_mass_semiimplicit
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, set_diagonal_to_one_and_rest_of_row_to_zero
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind
@@ -233,7 +233,7 @@ contains
 
     do vi = mesh%vi1, mesh%vi2
       if (mesh%VBI( vi) > 0) then
-        call set_diagonal_to_one_and_rest_of_row_to_zero( AA, vi)
+        call AA%set_diagonal_to_one_and_rest_of_row_to_zero( vi)
         bb( vi) = Hi_tplusdt_ex( vi)
         Hi_tplusdt( vi) = Hi_tplusdt_ex( vi)
       end if
@@ -265,7 +265,7 @@ contains
       if (mask_noice( vi)) then
         ! Set ice thickness to zero here
 
-        call set_diagonal_to_one_and_rest_of_row_to_zero( AA, vi)
+        call AA%set_diagonal_to_one_and_rest_of_row_to_zero( vi)
         bb( vi) = 0._dp
         Hi_tplusdt( vi) = 0._dp
 
@@ -305,7 +305,7 @@ contains
       do vi = mesh%vi1, mesh%vi2
         if (BC_prescr_mask( vi) == 1) then
 
-          call set_diagonal_to_one_and_rest_of_row_to_zero( AA, vi)
+          call AA%set_diagonal_to_one_and_rest_of_row_to_zero( vi)
           bb        ( vi) = BC_prescr_Hi( vi)
           Hi_tplusdt( vi) = BC_prescr_Hi( vi)
 

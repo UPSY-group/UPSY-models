@@ -17,9 +17,7 @@ module CSR_matrix_mod
 
   private
 
-  public :: type_CSR_matrix_dp, &
-    allocate_matrix_CSR_loc, &
-    set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
+  public :: type_CSR_matrix_dp
 
   ! The basic CSR matrix type
   type type_CSR_matrix_dp
@@ -50,6 +48,7 @@ module CSR_matrix_mod
       private
 
       procedure, public  :: allocate          => allocate_matrix_CSR_dist
+      procedure, public  :: allocate_loc      => allocate_matrix_CSR_loc
       procedure, public  :: deallocate        => deallocate_matrix_CSR_dist
       procedure, public  :: duplicate         => duplicate_matrix_CSR_dist
       procedure, public  :: add_entry         => add_entry_CSR_dist
@@ -57,9 +56,13 @@ module CSR_matrix_mod
       procedure, public  :: gather_to_primary => gather_CSR_dist_to_primary
       procedure, public  :: read_single_row   => read_single_row_CSR_dist
       procedure, public  :: finalise          => finalise_matrix_CSR_dist
+      procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
 
       procedure, private :: extend            => extend_matrix_CSR_dist
       procedure, private :: crop              => crop_matrix_CSR_dist
+      procedure, private :: calc_j_node_range
+      procedure, private :: set_row_to_value
+      procedure, private :: set_row_diag_to_val
 
       final              :: deallocate_matrix_CSR_dist_final
 
@@ -549,7 +552,7 @@ contains
     call init_routine( routine_name)
 
     call A%crop
-    call calc_j_node_range( A)
+    call A%calc_j_node_range
 
     A%is_finalised = .true.
 
@@ -561,7 +564,7 @@ contains
   subroutine calc_j_node_range( A)
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
+    class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_j_node_range'
@@ -604,56 +607,34 @@ contains
   end subroutine calc_j_node_range
 
   subroutine set_diagonal_to_one_and_rest_of_row_to_zero( A, i)
-
-    ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
-    integer,                         intent(in   ) :: i
-
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i
     call set_row_to_value(    A, i, 0._dp)
     call set_row_diag_to_val( A, i, 1._dp)
-
   end subroutine set_diagonal_to_one_and_rest_of_row_to_zero
 
   subroutine set_row_to_value( A, i, val)
     !< Set A(i,:) to val
-
-    ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
-    integer,                         intent(in   ) :: i
-    real(dp),                        intent(in   ) :: val
-
-    ! Local variables:
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i
+    real(dp),                  intent(in   ) :: val
     integer :: k
-
     do k = A%ptr( i), A%ptr( i+1) - 1
       A%val( k) = val
     end do
-
   end subroutine set_row_to_value
 
   subroutine set_row_diag_to_val( A, i, val)
     !< Set A(i,i) to val
-
-    ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
-    integer,                         intent(in   ) :: i
-    real(dp),                        intent(in   ) :: val
-
-    ! Local variables:
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i
+    real(dp),                  intent(in   ) :: val
     integer :: k
-    logical :: found_diag
-
-    found_diag = .false.
     do k = A%ptr( i), A%ptr( i+1) - 1
       if (A%ind( k) == i) then
         A%val( k) = val
-        found_diag = .true.
       end if
     end do
-
-    ! Safety
-    if (.not. found_diag) call crash('set_row_diag_to_val - row has no element on the diagonal')
-
   end subroutine set_row_diag_to_val
 
   ! ===== CSR matrices in local memory =====
@@ -663,11 +644,11 @@ contains
     ! Allocate memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),     intent(inout) :: A
-    integer,                             intent(in)    :: m, n, nnz_max
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: m, n, nnz_max
 
     ! Local variables:
-    character(len=256), parameter                      :: routine_name = 'allocate_matrix_CSR_loc'
+    character(*), parameter:: routine_name = 'allocate_matrix_CSR_loc'
 
     ! Add routine to call stack
     call init_routine( routine_name)

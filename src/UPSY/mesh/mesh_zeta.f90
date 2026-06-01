@@ -10,7 +10,6 @@ MODULE mesh_zeta
   USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE reallocate_mod                                         , ONLY: reallocate
   USE mesh_types                                             , ONLY: type_mesh
-  use CSR_matrix_mod, only: allocate_matrix_CSR_loc
   use shape_functions, only: calc_shape_functions_1D_reg_2nd_order
   use assertions_basic, only: assert
 
@@ -333,8 +332,8 @@ CONTAINS
     nnz_per_row_est = 3
     nnz_est         = nrows * nnz_per_row_est
 
-    CALL allocate_matrix_CSR_loc( mesh%M_ddzeta_k_k_1D  , nrows, ncols, nnz_est)
-    CALL allocate_matrix_CSR_loc( mesh%M_d2dzeta2_k_k_1D, nrows, ncols, nnz_est)
+    call mesh%M_ddzeta_k_k_1D%allocate_loc(   nrows, ncols, nnz_est)
+    call mesh%M_d2dzeta2_k_k_1D%allocate_loc( nrows, ncols, nnz_est)
 
     DO k = 1, mesh%nz
 
@@ -412,8 +411,8 @@ CONTAINS
     nnz_per_row_est = 2
     nnz_est         = nrows * nnz_per_row_est
 
-    CALL allocate_matrix_CSR_loc( mesh%M_map_k_ks_1D   , nrows, ncols, nnz_est)
-    CALL allocate_matrix_CSR_loc( mesh%M_ddzeta_k_ks_1D, nrows, ncols, nnz_est)
+    call mesh%M_map_k_ks_1D%allocate_loc(    nrows, ncols, nnz_est)
+    call mesh%M_ddzeta_k_ks_1D%allocate_loc( nrows, ncols, nnz_est)
 
     DO ks = 1, mesh%nz-1
 
@@ -453,8 +452,8 @@ CONTAINS
     nnz_per_row_est = 2
     nnz_est         = nrows * nnz_per_row_est
 
-    CALL allocate_matrix_CSR_loc( mesh%M_map_ks_k_1D   , nrows, ncols, nnz_est)
-    CALL allocate_matrix_CSR_loc( mesh%M_ddzeta_ks_k_1D, nrows, ncols, nnz_est)
+    call mesh%M_map_ks_k_1D%allocate_loc(    nrows, ncols, nnz_est)
+    call mesh%M_ddzeta_ks_k_1D%allocate_loc( nrows, ncols, nnz_est)
 
     DO k = 1, mesh%nz
 

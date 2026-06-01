@@ -5,7 +5,7 @@ module remapping_transects
   use mesh_types, only: type_mesh
   use transect_types, only: type_transect
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
     add_entry_CSR_dist, finalise_matrix_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex
@@ -298,7 +298,7 @@ contains
     nnz_per_row_max = 3
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ti = 1
     do i = transect%vi1, transect%vi2
@@ -379,7 +379,7 @@ contains
     nnz_per_row_max = 3
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     vi = 1
     do i = transect%vi1, transect%vi2
@@ -439,7 +439,7 @@ contains
     nnz_per_row_max = mesh%nC_mem
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! For all mesh_dst vertices, find the mesh_src vertex containing them
     vi = 1

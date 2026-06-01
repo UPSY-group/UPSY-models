@@ -7,7 +7,7 @@ module remapping_grid_to_mesh_vertices
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
     deallocate_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
@@ -207,9 +207,9 @@ contains
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh%A) / (grid%dx**2)), &
                                     ceiling( 2._dp * (grid%dx**2) / minval( mesh%A))) )
 
-    call allocate_matrix_CSR_dist( A_xdy_a_g_CSR  , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_mxydx_a_g_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_xydy_a_g_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xdy_a_g_CSR%allocate  ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_mxydx_a_g_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xydy_a_g_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! Allocate memory for single row results
     single_row_Vor%n_max = nnz_per_row_max
@@ -467,9 +467,9 @@ contains
     ncols_loc    = A_xdy_a_g_CSR%n_loc
     nnz_est_proc = A_xdy_a_g_CSR%nnz
 
-    call allocate_matrix_CSR_dist( w0_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( w1x_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( w1y_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w0_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w1x_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w1y_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     do row = mesh%vi1, mesh%vi2
 

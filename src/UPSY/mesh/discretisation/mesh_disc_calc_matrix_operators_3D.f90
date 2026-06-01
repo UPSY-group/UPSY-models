@@ -5,7 +5,7 @@ module mesh_disc_calc_matrix_operators_3D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: deallocate_matrix_CSR_dist, allocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: deallocate_matrix_CSR_dist, &
     read_single_row_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
 
   implicit none
@@ -122,8 +122,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   nrows_loc       = mesh%nV_loc   * mesh%nz
   nnz_est_proc    = mesh%M_map_b_a%nnz * mesh%nz * 3
 
-  call allocate_matrix_CSR_dist( mesh%M_ddx_bk_ak, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M_ddy_bk_ak, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddx_bk_ak%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddy_bk_ak%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -278,8 +278,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   nrows_loc       = mesh%nTri_loc * mesh%nz
   nnz_est_proc    = mesh%M_map_a_b%nnz * mesh%nz * 3
 
-  call allocate_matrix_CSR_dist( mesh%M_ddx_ak_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M_ddy_ak_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddx_ak_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddy_ak_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -429,7 +429,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
   nnz_per_row_est = 2
   nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-  call allocate_matrix_CSR_dist( mesh%M_ddz_bk_bks, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddz_bk_bks%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -550,8 +550,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
   nnz_per_row_est = 2
   nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-  call allocate_matrix_CSR_dist( mesh%M_map_bks_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M_ddz_bks_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_map_bks_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddz_bks_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -655,7 +655,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   nrows_loc       = mesh%nV_loc   *  mesh%nz
   nnz_est_proc    = mesh%M_map_b_a%nnz * mesh%nz * 2
 
-  call allocate_matrix_CSR_dist( mesh%M_map_bks_ak, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_map_bks_ak%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -761,7 +761,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   nrows_loc       = mesh%nTri_loc * (mesh%nz-1)
   nnz_est_proc    = mesh%M_map_a_b%nnz * (mesh%nz-1) * 2
 
-  call allocate_matrix_CSR_dist( mesh%M_map_ak_bks, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_map_ak_bks%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -920,13 +920,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   nrows_loc       = mesh%nTri_loc * mesh%nz
   nnz_est_proc    = mesh%M2_ddx_b_b%nnz * mesh%nz * 3
 
-  call allocate_matrix_CSR_dist( mesh%M2_ddx_bk_bk   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_ddy_bk_bk   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_ddz_bk_bk   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dx2_bk_bk , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dxdy_bk_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dy2_bk_bk , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dz2_bk_bk , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_ddx_bk_bk%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_ddy_bk_bk%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_ddz_bk_bk%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dx2_bk_bk%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dxdy_bk_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dy2_bk_bk%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dz2_bk_bk%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================

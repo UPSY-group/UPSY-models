@@ -41,7 +41,7 @@ module hybrid_DIVA_BPA_main
   use plane_geometry, only: is_in_polygon, is_in_polygons
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, add_entry_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, &
     read_single_row_CSR_dist, deallocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
     finalise_matrix_CSR_dist
   use grid_basic, only: type_grid, calc_grid_mask_as_polygons
@@ -714,7 +714,7 @@ contains
     nrows_loc       = neq_loc
     nnz_est_proc    = ceiling( 1.1_dp * real( A_DIVA%nnz + A_BPA%nnz, dp))
 
-    call allocate_matrix_CSR_dist( A_combi, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_combi%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
     allocate( b_combi(  i1:i2))
@@ -1031,7 +1031,7 @@ contains
     nrows_loc       = mesh%nTri_loc * 2
     nnz_est_proc    = mesh%M2_ddx_b_b%nnz * 4
 
-    call allocate_matrix_CSR_dist( A_DIVA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_DIVA%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector
     allocate( b_DIVA( mesh%ti1*2-1: mesh%ti2*2))
@@ -1146,7 +1146,7 @@ contains
     nrows_loc       = mesh%nTri_loc * mesh%nz * 2
     nnz_est_proc    = mesh%M2_ddx_bk_bk%nnz   * 4
 
-    call allocate_matrix_CSR_dist( A_BPA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_BPA%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector
     allocate( b_BPA( A_BPA%i1:A_BPA%i2))

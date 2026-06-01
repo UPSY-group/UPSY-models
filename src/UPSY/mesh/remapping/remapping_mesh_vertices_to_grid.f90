@@ -9,7 +9,7 @@ module remapping_mesh_vertices_to_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
     deallocate_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
@@ -262,9 +262,9 @@ contains
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh%TriA) / (grid%dx**2)), &
                                     ceiling( 2._dp * (grid%dx**2) / minval( mesh%TriA))) )
 
-    call allocate_matrix_CSR_dist( A_xdy_g_b_CSR  , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_mxydx_g_b_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_xydy_g_b_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xdy_g_b_CSR%allocate  ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_mxydx_g_b_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xydy_g_b_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for single row results
     single_row_grid%n_max = nnz_per_row_max
@@ -451,9 +451,9 @@ contains
     ncols_loc    = A_xdy_g_b_CSR%n_loc
     nnz_est_proc = A_xdy_g_b_CSR%nnz
 
-    call allocate_matrix_CSR_dist( w0_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( w1x_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( w1y_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w0_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w1x_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call w1y_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     do row = grid%n1, grid%n2
 

@@ -12,7 +12,7 @@ module laddie_operators
   use mesh_types                                             , only: type_mesh
   use laddie_model_types                                     , only: type_laddie_model, type_laddie_timestep
   use mpi_distributed_memory                                 , only: gather_to_all
-  use CSR_matrix_mod, only: allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: deallocate_matrix_CSR_dist, &
     add_entry_CSR_dist, add_empty_row_CSR_dist, finalise_matrix_CSR_dist
   use mesh_halo_exchange, only: exchange_halos
 
@@ -60,7 +60,7 @@ contains
     nnz_per_row_est = 3
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( laddie%M_map_H_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call laddie%M_map_H_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_V, pai_y = mesh%pai_Tri)
 
     ! == Calculate coefficients
@@ -118,7 +118,7 @@ contains
     nnz_per_row_est = 2
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( laddie%M_map_H_a_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call laddie%M_map_H_a_c%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_V, pai_y = mesh%pai_E)
 
     ! == Calculate coefficients
@@ -161,7 +161,7 @@ contains
     nnz_per_row_est = 2
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( laddie%M_map_UV_b_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call laddie%M_map_UV_b_c%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_Tri, pai_y = mesh%pai_E)
 
     ! == Calculate coefficients

@@ -8,7 +8,7 @@ module remapping_gridlonlat_to_mesh
   use grid_types, only: type_grid_lonlat
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
     deallocate_matrix_CSR_dist, add_entry_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
 
@@ -64,7 +64,7 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
   nnz_est         = nnz_per_row_max * nrows
   nnz_est_proc    = ceiling( real( nnz_est, dp) / real( par%n, dp))
 
-  call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Fill in the CSR matrix
   do vi = mesh%vi1, mesh%vi2

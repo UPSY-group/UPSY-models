@@ -8,7 +8,7 @@ module ut_mpi_CSR_matrix_vector_multiplication
   use precisions, only: dp
   use mpi_basic, only: par, sync, sync_node
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
     add_entry_CSR_dist, finalise_matrix_CSR_dist
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D, &
     multiply_CSR_matrix_with_vector_1D_wrapper
@@ -198,7 +198,7 @@ contains
     ! 6  [ ,  ,  ,  , 3,  , 4] [2]   [15]
     ! 7  [ ,  ,  ,  ,  , 1, 2] [3]   [ 8]
 
-    call allocate_matrix_CSR_dist( A, 7, 7, 1, 1, 3)
+    call A%allocate( 7, 7, 1, 1, 3)
 
     if     (par%i == 0) then
       call add_entry_CSR_dist( A, 1, 1, 1._dp)
@@ -266,7 +266,7 @@ contains
     ! 6  [5,  ,  ,  , 3,  , 4] [2]   [20]
     ! 7  [ , 6,  ,  ,  , 1, 2] [3]   [20]
 
-    call allocate_matrix_CSR_dist( A, 7, 7, 1, 1, 7)
+    call A%allocate( 7, 7, 1, 1, 7)
 
     if     (par%i == 0) then
       call add_entry_CSR_dist( A, 1, 1, 1._dp)

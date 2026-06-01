@@ -12,7 +12,7 @@ MODULE petsc_basic
   USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE parameters
   USE reallocate_mod                                         , ONLY: reallocate
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
     add_entry_CSR_dist, deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
   use mpi_distributed_memory, only: partition_list, gather_to_all
 
@@ -409,7 +409,7 @@ CONTAINS
     nnz_loc = SUM( nnz_row_loc)
 
     ! Allocate memory for CSR matrix
-    CALL allocate_matrix_CSR_dist( AA, m_glob, n_glob, m_loc, n_loc, nnz_loc)
+    call AA%allocate( m_glob, n_glob, m_loc, n_loc, nnz_loc)
 
     ! Copy data from the PETSc matrix to the CSR arrays
     DO row_glob = istart+1, iend ! +1 because PETSc indexes from 0

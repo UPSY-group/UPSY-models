@@ -21,7 +21,7 @@ module BPA_main
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, add_entry_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, &
     read_single_row_CSR_dist, deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
@@ -365,7 +365,7 @@ contains
     nrows_loc       = mesh%nTri_loc * mesh%nz * 2
     nnz_est_proc    = mesh%M2_ddx_bk_bk%nnz   * 4
 
-    call allocate_matrix_CSR_dist( A_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
     allocate( bb(      A_CSR%i1:A_CSR%i2))

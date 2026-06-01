@@ -17,7 +17,7 @@ module CSR_matrix_mod
 
   private
 
-  public :: type_CSR_matrix_dp, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist, duplicate_matrix_CSR_dist, &
+  public :: type_CSR_matrix_dp, deallocate_matrix_CSR_dist, duplicate_matrix_CSR_dist, &
     add_entry_CSR_dist, add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
@@ -26,25 +26,31 @@ module CSR_matrix_mod
   type type_CSR_matrix_dp
     ! Compressed Sparse Row (CSR) format matrix
 
-    integer                             :: m,n         ! A = [m-by-n]
-    integer                             :: nnz_max     ! Maximum number of non-zero entries in A
-    integer                             :: nnz         ! Actual  number of non-zero entries in A
-    integer,  dimension(:), allocatable :: ptr         ! Row start indices
-    integer,  dimension(:), allocatable :: ind         ! Column indices
-    real(dp), dimension(:), allocatable :: val         ! Values
+      integer                             :: m,n         ! A = [m-by-n]
+      integer                             :: nnz_max     ! Maximum number of non-zero entries in A
+      integer                             :: nnz         ! Actual  number of non-zero entries in A
+      integer,  dimension(:), allocatable :: ptr         ! Row start indices
+      integer,  dimension(:), allocatable :: ind         ! Column indices
+      real(dp), dimension(:), allocatable :: val         ! Values
 
-    ! Parallelisation
-    integer :: m_loc,  i1,      i2      ! Rows    owned by each process
-    integer :: m_node, i1_node, i2_node ! Rows    owned by each node
-    integer :: n_loc,  j1,      j2      ! Columns owned by each process
-    integer :: n_node, j1_node, j2_node ! Columns owned by each node
+      ! Parallelisation
+      integer :: m_loc,  i1,      i2      ! Rows    owned by each process
+      integer :: m_node, i1_node, i2_node ! Rows    owned by each node
+      integer :: n_loc,  j1,      j2      ! Columns owned by each process
+      integer :: n_node, j1_node, j2_node ! Columns owned by each node
 
-    type(type_par_arr_info) :: pai_x
-    type(type_par_arr_info) :: pai_y
+      type(type_par_arr_info) :: pai_x
+      type(type_par_arr_info) :: pai_y
 
-    logical :: is_finalised = .false.
-    integer :: j_min_node, j_max_node   ! Range of rows of x needed by this node to compute y = A*x
-    integer :: needs_x_tot = -1         ! Whether y = A*x can be evaluated with just x_nih, or if it needs x_tot (0: can use x_nih; 1: needs x_tot; -1: not checked yet)
+      logical :: is_finalised = .false.
+      integer :: j_min_node, j_max_node   ! Range of rows of x needed by this node to compute y = A*x
+      integer :: needs_x_tot = -1         ! Whether y = A*x can be evaluated with just x_nih, or if it needs x_tot (0: can use x_nih; 1: needs x_tot; -1: not checked yet)
+
+    contains
+
+      private
+
+      procedure, public :: allocate => allocate_matrix_CSR_dist
 
   end type type_CSR_matrix_dp
 
@@ -57,7 +63,7 @@ contains
     ! Allocate memory for a CSR-format sparse m-by-n matrix A
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp),   intent(inout) :: A
+    class(type_CSR_matrix_dp),         intent(inout) :: A
     integer,                           intent(in   ) :: m_glob, n_glob, m_loc, n_loc, nnz_max_proc
     type(type_par_arr_info), optional, intent(in   ) :: pai_x, pai_y
 

@@ -4,7 +4,7 @@ module solve_linearised_SSA_DIVA_infinite_slab
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
     add_entry_CSR_dist, read_single_row_CSR_dist, finalise_matrix_CSR_dist
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
   use mpi_distributed_memory, only: gather_to_all
@@ -63,7 +63,7 @@ contains
     nrows_loc       = mesh%nTri_loc * 2
     nnz_est_proc    = mesh%M2_ddx_b_b%nnz * 4
 
-    call allocate_matrix_CSR_dist( A_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
     allocate( bb(     mesh%ti1*2-1: mesh%ti2*2))

@@ -3,7 +3,7 @@ module graph_operators
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use graph_types, only: type_graph
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, allocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_empty_row_CSR_dist, &
     add_entry_CSR_dist, finalise_matrix_CSR_dist
   use shape_functions, only: calc_shape_functions_2D_reg_2nd_order, &
     calc_shape_functions_2D_stag_1st_order, calc_shape_functions_2D_reg_1st_order
@@ -61,16 +61,11 @@ contains
     nnz_per_row_est = graph%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M2_ddx   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_ddy   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_d2dx2 , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_d2dxdy, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_d2dy2 , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
+    call M2_ddx%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_ddy%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_d2dx2%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_d2dxdy%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_d2dy2%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -204,10 +199,8 @@ contains
     nnz_per_row_est = graph%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_ddx, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M_ddy, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
+    call M_ddx%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M_ddy%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -330,12 +323,9 @@ contains
     nnz_per_row_est = graph_a%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_map_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddx_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddy_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_map_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddx_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddy_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -444,12 +434,9 @@ contains
     nnz_per_row_est = graph_a%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_map_b_a, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddx_b_a, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddy_b_a, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_map_b_a%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddx_b_a%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddy_b_a%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================

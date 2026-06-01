@@ -7,7 +7,7 @@ module remapping_mesh_to_mesh
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map, type_single_row_mapping_matrices
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use plane_geometry, only: triangle_area
   use mesh_utilities, only: calc_Voronoi_cell, find_containing_triangle, find_containing_vertex
   use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
@@ -87,7 +87,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -193,7 +193,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -1084,9 +1084,9 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_b_a_CSR  )
-    call finalise_matrix_CSR_dist( A_mxydx_b_a_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_b_a_CSR )
+    call A_xdy_b_a_CSR%finalise
+    call A_mxydx_b_a_CSR%finalise
+    call A_xydy_b_a_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( A_xdy_b_a_CSR  , A_xdy_b_a  )
@@ -1189,9 +1189,9 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_a_b_CSR  )
-    call finalise_matrix_CSR_dist( A_mxydx_a_b_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_a_b_CSR )
+    call A_xdy_a_b_CSR%finalise
+    call A_mxydx_a_b_CSR%finalise
+    call A_xydy_a_b_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( A_xdy_a_b_CSR  , A_xdy_a_b  )
@@ -1298,9 +1298,9 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_top_bot_CSR  )
-    call finalise_matrix_CSR_dist( A_mxydx_top_bot_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_top_bot_CSR )
+    call A_xdy_top_bot_CSR%finalise
+    call A_mxydx_top_bot_CSR%finalise
+    call A_xydy_top_bot_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( A_xdy_top_bot_CSR  , A_xdy_top_bot  )

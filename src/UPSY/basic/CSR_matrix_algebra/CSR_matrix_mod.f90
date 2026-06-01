@@ -18,7 +18,6 @@ module CSR_matrix_mod
   private
 
   public :: type_CSR_matrix_dp, &
-    finalise_matrix_CSR_dist, &
     allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
 
@@ -57,6 +56,7 @@ module CSR_matrix_mod
       procedure, public  :: add_empty_row     => add_empty_row_CSR_dist
       procedure, public  :: gather_to_primary => gather_CSR_dist_to_primary
       procedure, public  :: read_single_row   => read_single_row_CSR_dist
+      procedure, public  :: finalise          => finalise_matrix_CSR_dist
 
       procedure, private :: extend            => extend_matrix_CSR_dist
       procedure, private :: crop              => crop_matrix_CSR_dist
@@ -540,10 +540,10 @@ contains
   subroutine finalise_matrix_CSR_dist( A)
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
+    class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'finalise_matrix_CSR_dist'
+    character(len=*), parameter :: routine_name = 'finalise_matrix_CSR_dist'
 
     ! Add routine to call stack
     call init_routine( routine_name)

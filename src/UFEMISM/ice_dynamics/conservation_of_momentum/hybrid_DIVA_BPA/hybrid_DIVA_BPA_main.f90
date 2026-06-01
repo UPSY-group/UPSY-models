@@ -41,7 +41,7 @@ module hybrid_DIVA_BPA_main
   use plane_geometry, only: is_in_polygon, is_in_polygons
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use grid_basic, only: type_grid, calc_grid_mask_as_polygons
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
@@ -918,7 +918,7 @@ contains
 
     end do ! do row_nh = i1, i2
 
-    call finalise_matrix_CSR_dist( A_combi)
+    call A_combi%finalise
 
     ! == Solve the matrix equation
     ! ============================
@@ -1106,7 +1106,7 @@ contains
 
     end do ! do row_tiuv = A_DIVA%i1, A_DIVA%i2
 
-    call finalise_matrix_CSR_dist( A_DIVA)
+    call A_DIVA%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1202,7 +1202,7 @@ contains
 
     end do ! do row_tikuv = A_BPA%i1, A_BPA%i2
 
-    call finalise_matrix_CSR_dist( A_BPA)
+    call A_BPA%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

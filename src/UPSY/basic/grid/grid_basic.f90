@@ -12,7 +12,7 @@ module grid_basic
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection
   use mpi_distributed_memory, only: partition_list
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
   use mpi_f08, only: MPI_ALLREDUCE, MPI_INTEGER, MPI_MIN, MPI_MAX
 
@@ -310,8 +310,8 @@ contains
 
     end do ! DO row = grid%n1, grid%n2
 
-    call finalise_matrix_CSR_dist( M_ddx_CSR)
-    call finalise_matrix_CSR_dist( M_ddy_CSR)
+    call M_ddx_CSR%finalise
+    call M_ddy_CSR%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

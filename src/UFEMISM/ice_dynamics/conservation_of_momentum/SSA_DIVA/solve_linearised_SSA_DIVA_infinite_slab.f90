@@ -4,7 +4,7 @@ module solve_linearised_SSA_DIVA_infinite_slab
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
   use mpi_distributed_memory, only: gather_to_all
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
@@ -148,7 +148,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( A_CSR)
+    call A_CSR%finalise
 
     ! == Solve the matrix equation
     ! ============================

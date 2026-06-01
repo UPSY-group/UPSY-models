@@ -3,7 +3,7 @@ module graph_operators
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use graph_types, only: type_graph
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use shape_functions, only: calc_shape_functions_2D_reg_2nd_order, &
     calc_shape_functions_2D_stag_1st_order, calc_shape_functions_2D_reg_1st_order
   use mesh_types, only: type_mesh
@@ -145,11 +145,11 @@ contains
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M2_ddx   )
-    call finalise_matrix_CSR_dist( M2_ddy   )
-    call finalise_matrix_CSR_dist( M2_d2dx2 )
-    call finalise_matrix_CSR_dist( M2_d2dxdy)
-    call finalise_matrix_CSR_dist( M2_d2dy2 )
+    call M2_ddx%finalise
+    call M2_ddy%finalise
+    call M2_d2dx2%finalise
+    call M2_d2dxdy%finalise
+    call M2_d2dy2%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -271,8 +271,8 @@ contains
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M_ddx)
-    call finalise_matrix_CSR_dist( M_ddy)
+    call M_ddx%finalise
+    call M_ddy%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -380,9 +380,9 @@ contains
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M_map_a_b)
-    call finalise_matrix_CSR_dist( M_ddx_a_b)
-    call finalise_matrix_CSR_dist( M_ddy_a_b)
+    call M_map_a_b%finalise
+    call M_ddx_a_b%finalise
+    call M_ddy_a_b%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -512,9 +512,9 @@ contains
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M_map_b_a)
-    call finalise_matrix_CSR_dist( M_ddx_b_a)
-    call finalise_matrix_CSR_dist( M_ddy_b_a)
+    call M_map_b_a%finalise
+    call M_ddx_b_a%finalise
+    call M_ddy_b_a%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

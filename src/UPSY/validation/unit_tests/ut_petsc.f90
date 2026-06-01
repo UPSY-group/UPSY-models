@@ -9,7 +9,7 @@ module ut_petsc
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D
   use petsc_basic, only: mat_CSR2petsc, multiply_petsc_matrix_with_vector_1D, mat_petsc2CSR
   use tests_main
@@ -149,7 +149,7 @@ contains
 
     end if
 
-    call finalise_matrix_CSR_dist( AA)
+    call AA%finalise
 
     ! Turn AA into a PETSc matrix
     call mat_CSR2petsc( AA, A)
@@ -252,7 +252,7 @@ contains
 
     end if
 
-    call finalise_matrix_CSR_dist( AA)
+    call AA%finalise
 
     ! == Convert to PETSc format and back to CSR
 

@@ -7,7 +7,7 @@ module remapping_grid_to_mesh_vertices
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
   use mesh_utilities, only: find_containing_triangle, calc_Voronoi_cell, is_in_Voronoi_cell
@@ -255,9 +255,9 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_a_g_CSR)
-    call finalise_matrix_CSR_dist( A_mxydx_a_g_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_a_g_CSR)
+    call A_xdy_a_g_CSR%finalise
+    call A_mxydx_a_g_CSR%finalise
+    call A_xydy_a_g_CSR%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -514,9 +514,9 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( w0_CSR )
-    call finalise_matrix_CSR_dist( w1x_CSR)
-    call finalise_matrix_CSR_dist( w1y_CSR)
+    call w0_CSR%finalise
+    call w1x_CSR%finalise
+    call w1y_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( w0_CSR , w0 )

@@ -8,7 +8,7 @@ module ut_mpi_CSR_matrix_vector_multiplication
   use precisions, only: dp
   use mpi_basic, only: par, sync, sync_node
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D, &
     multiply_CSR_matrix_with_vector_1D_wrapper
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, MPI_WIN
@@ -236,7 +236,7 @@ contains
       y = 8._dp
     end if
 
-    call finalise_matrix_CSR_dist( A)
+    call A%finalise
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -311,7 +311,7 @@ contains
       y = 20._dp
     end if
 
-    call finalise_matrix_CSR_dist( A)
+    call A%finalise
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

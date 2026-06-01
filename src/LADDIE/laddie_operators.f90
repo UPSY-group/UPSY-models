@@ -12,7 +12,6 @@ module laddie_operators
   use mesh_types                                             , only: type_mesh
   use laddie_model_types                                     , only: type_laddie_model, type_laddie_timestep
   use mpi_distributed_memory                                 , only: gather_to_all
-  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
   use mesh_halo_exchange, only: exchange_halos
 
   implicit none
@@ -210,9 +209,9 @@ contains
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( laddie%M_map_H_a_b)
-    call finalise_matrix_CSR_dist( laddie%M_map_H_a_c)
-    call finalise_matrix_CSR_dist( laddie%M_map_UV_b_c)
+    call laddie%M_map_H_a_b%finalise
+    call laddie%M_map_H_a_c%finalise
+    call laddie%M_map_UV_b_c%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

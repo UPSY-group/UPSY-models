@@ -19,7 +19,6 @@ MODULE basal_hydrology_new
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
   use mesh_utilities                                         , only: find_containing_vertex
-  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
   use crash_mod                                              , only: crash, warning, happy
   USE reallocate_mod                                         , ONLY: reallocate_bounds
@@ -782,7 +781,7 @@ CONTAINS
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( basal_hydro%M_b_c)
+    call basal_hydro%M_b_c%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

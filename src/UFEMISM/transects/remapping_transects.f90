@@ -5,7 +5,7 @@ module remapping_transects
   use mesh_types, only: type_mesh
   use transect_types, only: type_transect
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: mat_CSR2petsc
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex
   use plane_geometry, only: triangle_area
@@ -335,7 +335,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -393,7 +393,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -479,7 +479,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)

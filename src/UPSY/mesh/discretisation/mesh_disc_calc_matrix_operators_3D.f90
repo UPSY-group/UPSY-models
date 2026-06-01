@@ -5,7 +5,6 @@ module mesh_disc_calc_matrix_operators_3D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
 
   implicit none
 
@@ -205,8 +204,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   end do ! do vi = mesh%vi1, mesh%vi2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_ddx_bk_ak)
-  call finalise_matrix_CSR_dist( mesh%M_ddy_bk_ak)
+  call mesh%M_ddx_bk_ak%finalise
+  call mesh%M_ddy_bk_ak%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -361,8 +360,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   end do ! do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_ddx_ak_bk)
-  call finalise_matrix_CSR_dist( mesh%M_ddy_ak_bk)
+  call mesh%M_ddx_ak_bk%finalise
+  call mesh%M_ddy_ak_bk%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -481,7 +480,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
   DEallocate( single_row_ddzeta_val)
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_ddz_bk_bks)
+  call mesh%M_ddz_bk_bks%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -603,8 +602,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
   end do ! do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_map_bks_bk)
-  call finalise_matrix_CSR_dist( mesh%M_ddz_bks_bk)
+  call mesh%M_map_bks_bk%finalise
+  call mesh%M_ddz_bks_bk%finalise
 
   ! Clean up after yourself
   DEallocate( single_row_k_ind)
@@ -715,7 +714,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   end do ! do vi = mesh%vi1, mesh%vi2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_map_bks_ak)
+  call mesh%M_map_bks_ak%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -821,7 +820,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   end do !     do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_map_ak_bks)
+  call mesh%M_map_ak_bks%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -1046,13 +1045,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   end do ! do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M2_ddx_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_ddy_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_ddz_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dx2_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dxdy_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dy2_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dz2_bk_bk)
+  call mesh%M2_ddx_bk_bk%finalise
+  call mesh%M2_ddy_bk_bk%finalise
+  call mesh%M2_ddz_bk_bk%finalise
+  call mesh%M2_d2dx2_bk_bk%finalise
+  call mesh%M2_d2dxdy_bk_bk%finalise
+  call mesh%M2_d2dy2_bk_bk%finalise
+  call mesh%M2_d2dz2_bk_bk%finalise
 
   ! Clean up after yourself
   DEallocate( single_row_ti_ind)

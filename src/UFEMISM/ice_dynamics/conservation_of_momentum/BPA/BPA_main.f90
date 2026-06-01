@@ -21,7 +21,7 @@ module BPA_main
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
   use constitutive_equation, only: calc_effective_viscosity_Glen_3D_uv_only, calc_ice_rheology_Glen
@@ -448,7 +448,7 @@ contains
 
     end do ! do row_tikuv = A_CSR%i1, A_CSR%i2
 
-    call finalise_matrix_CSR_dist( A_CSR)
+    call A_CSR%finalise
 
     ! == Solve the matrix equation
     ! ============================

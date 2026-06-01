@@ -8,7 +8,7 @@ module remapping_gridlonlat_to_mesh
   use grid_types, only: type_grid_lonlat
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: mat_CSR2petsc
 
   implicit none
@@ -100,7 +100,7 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
 
   end do
 
-  call finalise_matrix_CSR_dist( M_CSR)
+  call M_CSR%finalise
 
   ! Convert matrices from Fortran to PETSc types
   call mat_CSR2petsc( M_CSR, map%M)

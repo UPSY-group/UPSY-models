@@ -21,7 +21,7 @@ module ut_mesh_remapping_mesh_to_mesh
   use mesh_disc_calc_matrix_operators_2D, only: calc_matrix_operators_mesh_a_b
   use remapping_mesh_to_mesh, only: create_map_from_mesh_to_mesh_nearest_neighbour, &
     create_map_from_mesh_to_mesh_trilin, create_map_from_mesh_to_mesh_2nd_order_conservative
-    use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+    use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: gather_CSR_dist_to_primary
   use petsc_basic, only: mat_petsc2CSR
 

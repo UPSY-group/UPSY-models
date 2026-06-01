@@ -10,7 +10,7 @@ MODULE basal_hydrology_model_types
   use laddie_forcing_types, only: type_laddie_forcing
   use reference_geometry_types, only: type_reference_geometry
   USE mesh_types                                             , ONLY: type_mesh
-  USE CSR_sparse_matrix_type                                 , ONLY: type_sparse_matrix_CSR_dp
+  USE CSR_matrix_mod                                 , ONLY: type_sparse_matrix_CSR_dp
 
   IMPLICIT NONE
 

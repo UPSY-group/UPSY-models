@@ -8,7 +8,7 @@ module ut_mpi_CSR_matrix_vector_multiplication
   use precisions, only: dp
   use mpi_basic, only: par, sync, sync_node
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D, &
     multiply_CSR_matrix_with_vector_1D_wrapper

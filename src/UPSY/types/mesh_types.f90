@@ -3,7 +3,7 @@ module mesh_types
   ! The different data types used in the mesh modules
 
   use precisions, only: dp
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use parallel_array_info_type, only: type_par_arr_info
   use mpi_f08, only: MPI_WIN
   use deallocate_dist_shared_mod, only: deallocate_dist_shared

@@ -1,4 +1,4 @@
-module CSR_sparse_matrix_type
+module CSR_matrix_mod
 
   ! The Compressed Sparse Row matrix type
 
@@ -39,4 +39,4 @@ module CSR_sparse_matrix_type
 
 contains
 
-end module CSR_sparse_matrix_type
+end module CSR_matrix_mod

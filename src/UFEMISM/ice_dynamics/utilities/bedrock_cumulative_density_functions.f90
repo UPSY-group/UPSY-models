@@ -43,7 +43,7 @@ module bedrock_cumulative_density_functions
   use mesh_types, only: type_mesh
   use reference_geometry_types, only: type_reference_geometry
   use ice_model_types, only: type_ice_model
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use remapping_main, only: Atlas
   use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
   use remapping_grid_to_mesh_triangles, only: create_map_from_xy_grid_to_mesh_triangles

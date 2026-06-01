@@ -11,7 +11,7 @@ module ct_discretisation_solve_Laplace_eq
   use mesh_types, only: type_mesh
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
   finalise_matrix_CSR_dist, deallocate_matrix_CSR_dist
   use petsc_basic, only: solve_matrix_equation_csr_petsc

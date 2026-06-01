@@ -3,7 +3,7 @@ module tests_CSR
   ! Basic tests for CSR-type matrices.
 
   use precisions, only: dp
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
 
   implicit none
 

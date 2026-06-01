@@ -6,7 +6,7 @@ MODULE laddie_model_types
 ! ====================
 
   USE precisions                                             , ONLY: dp
-  USE CSR_sparse_matrix_type                                 , ONLY: type_sparse_matrix_CSR_dp
+  USE CSR_matrix_mod                                 , ONLY: type_sparse_matrix_CSR_dp
   use grid_types, only: type_grid
   use mpi_f08, only: MPI_WIN
 

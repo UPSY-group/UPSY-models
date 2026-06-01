@@ -15,7 +15,7 @@ module ice_dynamics_main
   use LMB_model_types, only: type_LMB_model
   use AMB_model_types, only: type_AMB_model
   use global_forcing_types, only: type_global_forcing
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use remapping_main, only: Atlas
   use conservation_of_momentum_main, only: solve_stress_balance, remap_velocity_solver, &
     create_restart_file_ice_velocity, write_to_restart_file_ice_velocity, initialise_velocity_solver

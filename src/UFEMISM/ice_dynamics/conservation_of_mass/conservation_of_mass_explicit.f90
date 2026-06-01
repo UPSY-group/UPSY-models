@@ -5,7 +5,7 @@ module conservation_of_mass_explicit
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use ice_geometry_basics, only: ice_surface_elevation, Hi_from_Hb_Hs_and_SL
   use mpi_distributed_memory, only: gather_to_all
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind, &

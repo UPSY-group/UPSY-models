@@ -7,7 +7,7 @@ module remapping_mesh_to_mesh
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map, type_single_row_mapping_matrices
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     add_empty_row_CSR_dist, add_entry_CSR_dist, deallocate_matrix_CSR_dist
   use plane_geometry, only: triangle_area

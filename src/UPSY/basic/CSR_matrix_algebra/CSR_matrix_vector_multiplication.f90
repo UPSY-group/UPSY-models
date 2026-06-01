@@ -1,7 +1,7 @@
 module CSR_matrix_vector_multiplication
 
   use assertions_basic, only: assert
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use precisions, only: dp
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning

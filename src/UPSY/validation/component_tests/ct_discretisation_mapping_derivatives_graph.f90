@@ -13,7 +13,7 @@ module ct_discretisation_mapping_derivatives_graph
   use graph_types, only: type_graph
   use create_graphs_from_masked_mesh, only: create_graph_from_masked_mesh_a, create_graph_from_masked_mesh_b
   use netcdf_io_main
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use graph_operators, only: calc_graph_matrix_operators_2nd_order, &
     calc_graph_a_to_graph_b_matrix_operators, calc_graph_b_to_graph_a_matrix_operators
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper

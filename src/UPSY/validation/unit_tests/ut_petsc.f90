@@ -9,7 +9,7 @@ module ut_petsc
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_sparse_matrix_CSR_dp
   use CSR_matrix_basics, only: deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D
   use petsc_basic, only: mat_CSR2petsc, multiply_petsc_matrix_with_vector_1D, mat_petsc2CSR

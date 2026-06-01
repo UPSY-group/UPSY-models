@@ -5,8 +5,7 @@ module mesh_disc_calc_matrix_operators_3D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: deallocate_matrix_CSR_dist, &
-    read_single_row_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: read_single_row_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
 
   implicit none
 
@@ -112,8 +111,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_ddx_bk_ak%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddx_bk_ak)
-  if (allocateD( mesh%M_ddy_bk_ak%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddy_bk_ak)
+  if (allocateD( mesh%M_ddx_bk_ak%ptr)) call mesh%M_ddx_bk_ak%deallocate
+  if (allocateD( mesh%M_ddy_bk_ak%ptr)) call mesh%M_ddy_bk_ak%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * mesh%nz ! from
@@ -268,8 +267,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_ddx_ak_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddx_ak_bk)
-  if (allocateD( mesh%M_ddy_ak_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddy_ak_bk)
+  if (allocateD( mesh%M_ddx_ak_bk%ptr)) call mesh%M_ddx_ak_bk%deallocate
+  if (allocateD( mesh%M_ddy_ak_bk%ptr)) call mesh%M_ddy_ak_bk%deallocate
 
   ! Matrix size
   ncols           = mesh%nV       * mesh%nz ! from
@@ -419,7 +418,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_ddz_bk_bks%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddz_bk_bks)
+  if (allocateD( mesh%M_ddz_bk_bks%ptr)) call mesh%M_ddz_bk_bks%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     *  mesh%nz    ! from
@@ -539,8 +538,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_map_bks_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_map_bks_bk)
-  if (allocateD( mesh%M_ddz_bks_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddz_bks_bk)
+  if (allocateD( mesh%M_map_bks_bk%ptr)) call mesh%M_map_bks_bk%deallocate
+  if (allocateD( mesh%M_ddz_bks_bk%ptr)) call mesh%M_ddz_bks_bk%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * (mesh%nz-1) ! from
@@ -646,7 +645,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_map_bks_ak%ptr)) call deallocate_matrix_CSR_dist( mesh%M_map_bks_ak)
+  if (allocateD( mesh%M_map_bks_ak%ptr)) call mesh%M_map_bks_ak%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * (mesh%nz-1) ! from
@@ -752,7 +751,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_map_ak_bks%ptr)) call deallocate_matrix_CSR_dist( mesh%M_map_ak_bks)
+  if (allocateD( mesh%M_map_ak_bks%ptr)) call mesh%M_map_ak_bks%deallocate
 
   ! Matrix size
   ncols           = mesh%nV       *  mesh%nz    ! from
@@ -905,13 +904,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M2_ddx_bk_bk%ptr   )) call deallocate_matrix_CSR_dist( mesh%M2_ddx_bk_bk)
-  if (allocateD( mesh%M2_ddy_bk_bk%ptr   )) call deallocate_matrix_CSR_dist( mesh%M2_ddy_bk_bk)
-  if (allocateD( mesh%M2_ddz_bk_bk%ptr   )) call deallocate_matrix_CSR_dist( mesh%M2_ddz_bk_bk)
-  if (allocateD( mesh%M2_d2dx2_bk_bk%ptr )) call deallocate_matrix_CSR_dist( mesh%M2_d2dx2_bk_bk)
-  if (allocateD( mesh%M2_d2dxdy_bk_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M2_d2dxdy_bk_bk)
-  if (allocateD( mesh%M2_d2dy2_bk_bk%ptr )) call deallocate_matrix_CSR_dist( mesh%M2_d2dy2_bk_bk)
-  if (allocateD( mesh%M2_d2dz2_bk_bk%ptr )) call deallocate_matrix_CSR_dist( mesh%M2_d2dz2_bk_bk)
+  if (allocateD( mesh%M2_ddx_bk_bk%ptr   )) call mesh%M2_ddx_bk_bk%deallocate
+  if (allocateD( mesh%M2_ddy_bk_bk%ptr   )) call mesh%M2_ddy_bk_bk%deallocate
+  if (allocateD( mesh%M2_ddz_bk_bk%ptr   )) call mesh%M2_ddz_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dx2_bk_bk%ptr )) call mesh%M2_d2dx2_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dxdy_bk_bk%ptr)) call mesh%M2_d2dxdy_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dy2_bk_bk%ptr )) call mesh%M2_d2dy2_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dz2_bk_bk%ptr )) call mesh%M2_d2dz2_bk_bk%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * mesh%nz ! from

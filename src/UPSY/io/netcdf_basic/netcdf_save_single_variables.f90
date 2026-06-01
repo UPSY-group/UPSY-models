@@ -6,7 +6,7 @@ module netcdf_save_single_variables
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, deallocate_matrix_CSR_dist, gather_CSR_dist_to_primary
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, gather_CSR_dist_to_primary
   use petsc_basic, only: mat_petsc2CSR
   use mpi_distributed_memory, only: gather_to_primary
   use netcdf, only: NF90_INT, NF90_DOUBLE
@@ -46,7 +46,7 @@ contains
     call write_CSR_matrix_to_NetCDF( output_dir, AA, filename)
 
     ! Clean up after yourself
-    call deallocate_matrix_CSR_dist( AA)
+    call AA%deallocate
 
     ! Finalise routine path
     call finalise_routine( routine_name)

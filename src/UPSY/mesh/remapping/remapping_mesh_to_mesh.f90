@@ -8,7 +8,7 @@ module remapping_mesh_to_mesh
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map, type_single_row_mapping_matrices
   use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
-    add_empty_row_CSR_dist, add_entry_CSR_dist, deallocate_matrix_CSR_dist
+    add_empty_row_CSR_dist, add_entry_CSR_dist
   use plane_geometry, only: triangle_area
   use mesh_utilities, only: calc_Voronoi_cell, find_containing_triangle, find_containing_vertex
   use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
@@ -981,9 +981,9 @@ contains
     call mat_CSR2petsc( M_cons_2nd_order_CSR, M_cons_2nd_order)
 
     ! Clean up after yourself
-    call deallocate_matrix_CSR_dist( M_cons_1st_order_CSR)
-    call deallocate_matrix_CSR_dist( M_cons_2nd_order_CSR)
-    call deallocate_matrix_CSR_dist( M_trilin_CSR)
+    call M_cons_1st_order_CSR%deallocate
+    call M_cons_2nd_order_CSR%deallocate
+    call M_trilin_CSR%deallocate
 
     ! Finalise routine path
     call finalise_routine( routine_name)

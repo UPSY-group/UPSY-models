@@ -17,7 +17,7 @@ module CSR_matrix_mod
 
   private
 
-  public :: type_CSR_matrix_dp, deallocate_matrix_CSR_dist, duplicate_matrix_CSR_dist, &
+  public :: type_CSR_matrix_dp, duplicate_matrix_CSR_dist, &
     add_entry_CSR_dist, add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
@@ -50,7 +50,8 @@ module CSR_matrix_mod
 
       private
 
-      procedure, public :: allocate => allocate_matrix_CSR_dist
+      procedure, public :: allocate   => allocate_matrix_CSR_dist
+      procedure, public :: deallocate => deallocate_matrix_CSR_dist
 
   end type type_CSR_matrix_dp
 
@@ -188,7 +189,7 @@ contains
     !< Deallocate memory for a CSR-format sparse matrix A
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
+    class(type_CSR_matrix_dp), intent(inout) :: A
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'deallocate_matrix_CSR_dist'
@@ -219,14 +220,19 @@ contains
     A%j1_node = 0
     A%j2_node = 0
 
-    if (allocateD( A%ptr)) deallocate( A%ptr)
-    if (allocateD( A%ind)) deallocate( A%ind)
-    if (allocateD( A%val)) deallocate( A%val)
+    if (allocated( A%ptr)) deallocate( A%ptr)
+    if (allocated( A%ind)) deallocate( A%ind)
+    if (allocated( A%val)) deallocate( A%val)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine deallocate_matrix_CSR_dist
+
+  subroutine deallocate_matrix_CSR_dist_final( A)
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    call A%deallocate
+  end subroutine deallocate_matrix_CSR_dist_final
 
   subroutine duplicate_matrix_CSR_dist( A, B)
     ! Duplicate the CSR-format sparse matrix A

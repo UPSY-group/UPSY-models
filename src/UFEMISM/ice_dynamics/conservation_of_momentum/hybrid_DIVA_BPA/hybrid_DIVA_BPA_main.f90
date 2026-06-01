@@ -42,7 +42,7 @@ module hybrid_DIVA_BPA_main
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
   use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, &
-    read_single_row_CSR_dist, deallocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
+    read_single_row_CSR_dist, add_empty_row_CSR_dist, &
     finalise_matrix_CSR_dist
   use grid_basic, only: type_grid, calc_grid_mask_as_polygons
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary

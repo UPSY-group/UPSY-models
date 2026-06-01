@@ -11,7 +11,6 @@ module graph_pair_creation
     calc_graph_matrix_operators_1st_order, &
     calc_graph_a_to_graph_b_matrix_operators, calc_graph_b_to_graph_a_matrix_operators
   use graph_memory, only: deallocate_graph
-  use CSR_matrix_mod, only: deallocate_matrix_CSR_dist
 
   implicit none
 
@@ -97,22 +96,22 @@ contains
     call deallocate_graph( graphs%graph_b)
 
     ! Calculate matrix operators
-    call deallocate_matrix_CSR_dist( graphs%M2_ddx_b_b   )
-    call deallocate_matrix_CSR_dist( graphs%M2_ddy_b_b   )
-    call deallocate_matrix_CSR_dist( graphs%M2_d2dx2_b_b )
-    call deallocate_matrix_CSR_dist( graphs%M2_d2dxdy_b_b)
-    call deallocate_matrix_CSR_dist( graphs%M2_d2dy2_b_b )
+    call graphs%M2_ddx_b_b%deallocate
+    call graphs%M2_ddy_b_b%deallocate
+    call graphs%M2_d2dx2_b_b%deallocate
+    call graphs%M2_d2dxdy_b_b%deallocate
+    call graphs%M2_d2dy2_b_b%deallocate
 
-    call deallocate_matrix_CSR_dist( graphs%M_ddx_b_b)
-    call deallocate_matrix_CSR_dist( graphs%M_ddy_b_b)
+    call graphs%M_ddx_b_b%deallocate
+    call graphs%M_ddy_b_b%deallocate
 
-    call deallocate_matrix_CSR_dist( graphs%M_map_a_b)
-    call deallocate_matrix_CSR_dist( graphs%M_ddx_a_b)
-    call deallocate_matrix_CSR_dist( graphs%M_ddy_a_b)
+    call graphs%M_map_a_b%deallocate
+    call graphs%M_ddx_a_b%deallocate
+    call graphs%M_ddy_a_b%deallocate
 
-    call deallocate_matrix_CSR_dist( graphs%M_map_b_a)
-    call deallocate_matrix_CSR_dist( graphs%M_ddx_b_a)
-    call deallocate_matrix_CSR_dist( graphs%M_ddy_b_a)
+    call graphs%M_map_b_a%deallocate
+    call graphs%M_ddx_b_a%deallocate
+    call graphs%M_ddy_b_a%deallocate
 
     ! Finalise routine path
     call finalise_routine( routine_name)

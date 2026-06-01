@@ -12,7 +12,7 @@ MODULE petsc_basic
   USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE parameters
   USE reallocate_mod                                         , ONLY: reallocate
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use mpi_distributed_memory, only: partition_list, gather_to_all
 
   IMPLICIT NONE
@@ -414,7 +414,7 @@ CONTAINS
     DO row_glob = istart+1, iend ! +1 because PETSc indexes from 0
       CALL MatGetRow( A, row_glob-1, ncols, cols_, vals_, perr)
       DO k = 1, ncols
-        CALL add_entry_CSR_dist( AA, row_glob, cols_( k)+1, vals_( k))
+        call AA%add_entry( row_glob, cols_( k)+1, vals_( k))
       END DO
       CALL MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, perr)
     END DO

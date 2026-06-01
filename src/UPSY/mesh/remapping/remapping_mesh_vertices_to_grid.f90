@@ -9,8 +9,7 @@ module remapping_mesh_vertices_to_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
-    add_entry_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, add_empty_row_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
   use mesh_utilities, only: find_containing_triangle, calc_Voronoi_cell, is_in_Voronoi_cell
@@ -392,9 +391,9 @@ contains
           end do ! do kk = 1, single_row_grid%n
 
           ! Add entries to the big matrices
-          call add_entry_CSR_dist( A_xdy_g_b_CSR  , row, col, single_row_grid%LI_xdy(   k))
-          call add_entry_CSR_dist( A_mxydx_g_b_CSR, row, col, single_row_grid%LI_mxydx( k))
-          call add_entry_CSR_dist( A_xydy_g_b_CSR , row, col, single_row_grid%LI_xydy(  k))
+          call A_xdy_g_b_CSR%add_entry(   row, col, single_row_grid%LI_xdy(   k))
+          call A_mxydx_g_b_CSR%add_entry( row, col, single_row_grid%LI_mxydx( k))
+          call A_xydy_g_b_CSR%add_entry(  row, col, single_row_grid%LI_xydy(  k))
 
         end do ! do k = 1, single_row_grid%n
 
@@ -410,9 +409,9 @@ contains
         LI_mxydx = grid%dx**2 * grid%x( i)
         LI_xydy  = grid%dx**2 * grid%y( j)
 
-        call add_entry_CSR_dist( A_xdy_g_b_CSR  , row, col, LI_xdy  )
-        call add_entry_CSR_dist( A_mxydx_g_b_CSR, row, col, LI_mxydx)
-        call add_entry_CSR_dist( A_xydy_g_b_CSR , row, col, LI_xydy )
+        call A_xdy_g_b_CSR%add_entry(   row, col, LI_xdy  )
+        call A_mxydx_g_b_CSR%add_entry( row, col, LI_mxydx)
+        call A_xydy_g_b_CSR%add_entry(  row, col, LI_xydy )
 
       end if ! if (overlaps_with_small_triangle( i,j) == 1) then
 
@@ -465,9 +464,9 @@ contains
       do k = k1, k2
         col = A_xdy_g_b_CSR%ind( k)
         ti = mesh%n2ti( col)
-        call add_entry_CSR_dist( w0_CSR , row, col,  A_xdy_g_b_CSR%val(   k) / A_overlap_tot)
-        call add_entry_CSR_dist( w1x_CSR, row, col, (A_mxydx_g_b_CSR%val( k) / A_overlap_tot) - (mesh%TriGC( ti,1) * w0_CSR%val( k)))
-        call add_entry_CSR_dist( w1y_CSR, row, col, (A_xydy_g_b_CSR%val(  k) / A_overlap_tot) - (mesh%TriGC( ti,2) * w0_CSR%val( k)))
+        call w0_CSR%add_entry(  row, col,  A_xdy_g_b_CSR%val(   k) / A_overlap_tot)
+        call w1x_CSR%add_entry( row, col, (A_mxydx_g_b_CSR%val( k) / A_overlap_tot) - (mesh%TriGC( ti,1) * w0_CSR%val( k)))
+        call w1y_CSR%add_entry( row, col, (A_xydy_g_b_CSR%val(  k) / A_overlap_tot) - (mesh%TriGC( ti,2) * w0_CSR%val( k)))
       end do
 
     end do

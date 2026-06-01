@@ -5,7 +5,7 @@ module mesh_disc_calc_matrix_operators_2D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: finalise_matrix_CSR_dist
   use mesh_utilities, only: extend_group_single_iteration_a, extend_group_single_iteration_b, &
     extend_group_single_iteration_c
   use shape_functions, only: calc_shape_functions_2D_reg_1st_order, &
@@ -172,15 +172,15 @@ subroutine calc_matrix_operators_mesh_a_a( mesh)
     ! Fill them into the matrices
 
     ! Diagonal elements: shape functions for the home element
-    call add_entry_CSR_dist( mesh%M_ddx_a_a, row, row, Nfx_i)
-    call add_entry_CSR_dist( mesh%M_ddy_a_a, row, row, Nfy_i)
+    call mesh%M_ddx_a_a%add_entry( row, row, Nfx_i)
+    call mesh%M_ddy_a_a%add_entry( row, row, Nfy_i)
 
     ! Off-diagonal elements: shape functions for the neighbours
     do i = 1, n_c
       vj = i_c( i)
       col = mesh%vi2n( vj)
-      call add_entry_CSR_dist( mesh%M_ddx_a_a, row, col, Nfx_c( i))
-      call add_entry_CSR_dist( mesh%M_ddy_a_a, row, col, Nfy_c( i))
+      call mesh%M_ddx_a_a%add_entry( row, col, Nfx_c( i))
+      call mesh%M_ddy_a_a%add_entry( row, col, Nfy_c( i))
     end do
 
   end do ! do row = row1, row2
@@ -313,9 +313,9 @@ subroutine calc_matrix_operators_mesh_a_b( mesh)
     do i = 1, n_c
       vi = i_c( i)
       col = mesh%vi2n( vi)
-      call add_entry_CSR_dist( mesh%M_map_a_b, row, col, Nf_c(  i))
-      call add_entry_CSR_dist( mesh%M_ddx_a_b, row, col, Nfx_c( i))
-      call add_entry_CSR_dist( mesh%M_ddy_a_b, row, col, Nfy_c( i))
+      call mesh%M_map_a_b%add_entry( row, col, Nf_c(  i))
+      call mesh%M_ddx_a_b%add_entry( row, col, Nfx_c( i))
+      call mesh%M_ddy_a_b%add_entry( row, col, Nfy_c( i))
     end do
 
   end do ! do row = row1, row2
@@ -449,9 +449,9 @@ subroutine calc_matrix_operators_mesh_b_a( mesh)
     do i = 1, n_c
       ti = i_c( i)
       col = mesh%ti2n( ti)
-      call add_entry_CSR_dist( mesh%M_map_b_a, row, col, Nf_c(  i))
-      call add_entry_CSR_dist( mesh%M_ddx_b_a, row, col, Nfx_c( i))
-      call add_entry_CSR_dist( mesh%M_ddy_b_a, row, col, Nfy_c( i))
+      call mesh%M_map_b_a%add_entry( row, col, Nf_c(  i))
+      call mesh%M_ddx_b_a%add_entry( row, col, Nfx_c( i))
+      call mesh%M_ddy_b_a%add_entry( row, col, Nfy_c( i))
     end do
 
   end do ! do row = row1, row2
@@ -578,15 +578,15 @@ subroutine calc_matrix_operators_mesh_b_b( mesh)
     ! Fill them into the matrices
 
     ! Diagonal elements: shape functions for the home element
-    call add_entry_CSR_dist( mesh%M_ddx_b_b, row, row, Nfx_i)
-    call add_entry_CSR_dist( mesh%M_ddy_b_b, row, row, Nfy_i)
+    call mesh%M_ddx_b_b%add_entry( row, row, Nfx_i)
+    call mesh%M_ddy_b_b%add_entry( row, row, Nfy_i)
 
     ! Off-diagonal elements: shape functions for the neighbours
     do i = 1, n_c
       tj = i_c( i)
       col = mesh%ti2n( tj)
-      call add_entry_CSR_dist( mesh%M_ddx_b_b, row, col, Nfx_c( i))
-      call add_entry_CSR_dist( mesh%M_ddy_b_b, row, col, Nfy_c( i))
+      call mesh%M_ddx_b_b%add_entry( row, col, Nfx_c( i))
+      call mesh%M_ddy_b_b%add_entry( row, col, Nfy_c( i))
     end do
 
   end do ! do row = row1, row2
@@ -718,21 +718,21 @@ subroutine calc_matrix_operators_mesh_b_b_2nd_order( mesh)
     ! Fill them into the matrices
 
     ! Diagonal elements: shape functions for the home element
-    call add_entry_CSR_dist( mesh%M2_ddx_b_b   , row, row, Nfx_i )
-    call add_entry_CSR_dist( mesh%M2_ddy_b_b   , row, row, Nfy_i )
-    call add_entry_CSR_dist( mesh%M2_d2dx2_b_b , row, row, Nfxx_i)
-    call add_entry_CSR_dist( mesh%M2_d2dxdy_b_b, row, row, Nfxy_i)
-    call add_entry_CSR_dist( mesh%M2_d2dy2_b_b , row, row, Nfyy_i)
+    call mesh%M2_ddx_b_b%add_entry(    row, row, Nfx_i )
+    call mesh%M2_ddy_b_b%add_entry(    row, row, Nfy_i )
+    call mesh%M2_d2dx2_b_b%add_entry(  row, row, Nfxx_i)
+    call mesh%M2_d2dxdy_b_b%add_entry( row, row, Nfxy_i)
+    call mesh%M2_d2dy2_b_b%add_entry(  row, row, Nfyy_i)
 
     ! Off-diagonal elements: shape functions for the neighbours
     do i = 1, n_c
       tj = i_c( i)
       col = mesh%ti2n( tj)
-      call add_entry_CSR_dist( mesh%M2_ddx_b_b   , row, col, Nfx_c(  i))
-      call add_entry_CSR_dist( mesh%M2_ddy_b_b   , row, col, Nfy_c(  i))
-      call add_entry_CSR_dist( mesh%M2_d2dx2_b_b , row, col, Nfxx_c( i))
-      call add_entry_CSR_dist( mesh%M2_d2dxdy_b_b, row, col, Nfxy_c( i))
-      call add_entry_CSR_dist( mesh%M2_d2dy2_b_b , row, col, Nfyy_c( i))
+      call mesh%M2_ddx_b_b%add_entry(    row, col, Nfx_c(  i))
+      call mesh%M2_ddy_b_b%add_entry(    row, col, Nfy_c(  i))
+      call mesh%M2_d2dx2_b_b%add_entry(  row, col, Nfxx_c( i))
+      call mesh%M2_d2dxdy_b_b%add_entry( row, col, Nfxy_c( i))
+      call mesh%M2_d2dy2_b_b%add_entry(  row, col, Nfyy_c( i))
     end do
 
   end do ! do row = row1, row2

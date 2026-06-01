@@ -12,8 +12,7 @@ module grid_basic
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection
   use mpi_distributed_memory, only: partition_list
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
-    add_entry_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
   use mpi_f08, only: MPI_ALLREDUCE, MPI_INTEGER, MPI_MIN, MPI_MAX
 

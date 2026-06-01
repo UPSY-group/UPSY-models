@@ -5,8 +5,7 @@ module remapping_transects
   use mesh_types, only: type_mesh
   use transect_types, only: type_transect
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
-    add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex
   use plane_geometry, only: triangle_area
@@ -330,9 +329,9 @@ contains
       colc = mesh%vi2n( vic)
 
       ! Add to the matrix
-      call add_entry_CSR_dist( M_CSR, i, cola, wa)
-      call add_entry_CSR_dist( M_CSR, i, colb, wb)
-      call add_entry_CSR_dist( M_CSR, i, colc, wc)
+      call M_CSR%add_entry( i, cola, wa)
+      call M_CSR%add_entry( i, colb, wb)
+      call M_CSR%add_entry( i, colc, wc)
 
     end do
 
@@ -390,7 +389,7 @@ contains
       col = mesh%vi2n( vi)
 
       ! Add to the matrix
-      call add_entry_CSR_dist( M_CSR, i, col, 1._dp)
+      call M_CSR%add_entry( i, col, 1._dp)
 
     end do
 
@@ -475,7 +474,7 @@ contains
 
       do iti = 1, mesh%niTri( vi)
         ti = mesh%iTri( vi,iti)
-        call add_entry_CSR_dist( M_CSR, i, ti, ww( iti))
+        call M_CSR%add_entry( i, ti, ww( iti))
       end do
 
     end do

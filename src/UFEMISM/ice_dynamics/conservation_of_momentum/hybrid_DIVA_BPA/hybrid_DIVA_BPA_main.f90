@@ -41,7 +41,7 @@ module hybrid_DIVA_BPA_main
   use plane_geometry, only: is_in_polygon, is_in_polygons
   use mpi_distributed_memory, only: gather_to_all
   use zeta_gradients, only: calc_zeta_gradients
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, &
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
     read_single_row_CSR_dist, add_empty_row_CSR_dist, &
     finalise_matrix_CSR_dist
   use grid_basic, only: type_grid, calc_grid_mask_as_polygons
@@ -750,7 +750,7 @@ contains
             ! This neighbouring triangle and vertically averaged velocity component corresponds to this column in the combined matrix
             col_nh = tiuv2nh( tin,uvn)
             ! Add the coefficient from the DIVA matrix to the combined matrix
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
           end do ! do kk = kk1, kk2
 
           ! Copy the DIVA load vector
@@ -765,7 +765,7 @@ contains
           ! -u_vav + SUM_k [ u_3D( k) * dzeta( k)] = 0
 
           ! Add the coefficient of -1 for the vertically averaged velocity to the combined matrix
-          call add_entry_CSR_dist( A_combi, row_nh, row_nh, -1._dp)
+          call A_combi%add_entry( row_nh, row_nh, -1._dp)
 
           ! Loop over the vertical column
           do k = 1, mesh%nz
@@ -783,7 +783,7 @@ contains
             col_nh = tikuv2nh( ti,k,uv)
 
             ! Add the coefficient to the combined matrix
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, dzeta)
+            call A_combi%add_entry( row_nh, col_nh, dzeta)
 
           end do ! do k = 1, mesh%nz
 
@@ -827,7 +827,7 @@ contains
             ! This neighbouring triangle, layer, and 3-D velocity component corresponds to this column in the combined matrix
             col_nh = tikuv2nh( tin,kn,uvn)
             ! Add the coefficient from the DIVA matrix to the combined matrix
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
           end do ! do kk = kk1, kk2
 
           ! Copy the BPA load vector
@@ -861,11 +861,11 @@ contains
             ! u_vav term
             col_nh = tiuv2nh( ti,uv)
             val = hybrid%DIVA%beta_eff_b( ti) * hybrid%DIVA%F1_3D_b( ti,k)
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
 
             ! u( z) term
             val = -1._dp
-            call add_entry_CSR_dist( A_combi, row_nh, row_nh, val)
+            call A_combi%add_entry( row_nh, row_nh, val)
 
             ! The load vector is zero in this case
             b_combi( row_nh) = 0._dp
@@ -896,11 +896,11 @@ contains
             col_nh = tiuv2nh( ti,uv)
             val = (1._dp + hybrid%DIVA%basal_friction_coefficient_b( ti) * hybrid%DIVA%F1_3D_b( ti,k)) / &
                   (1._dp + hybrid%DIVA%basal_friction_coefficient_b( ti) * hybrid%DIVA%F2_3D_b( ti,1))
-            call add_entry_CSR_dist( A_combi, row_nh, col_nh, val)
+            call A_combi%add_entry( row_nh, col_nh, val)
 
             ! u( z) term
             val = -1._dp
-            call add_entry_CSR_dist( A_combi, row_nh, row_nh, val)
+            call A_combi%add_entry( row_nh, row_nh, val)
 
             ! The load vector is zero in this case
             b_combi( row_nh) = 0._dp
@@ -1048,7 +1048,7 @@ contains
         ! Dirichlet boundary condition; velocities are prescribed for this triangle
 
         ! Stiffness matrix: diagonal element set to 1
-        call add_entry_CSR_dist( A_DIVA, row_tiuv, row_tiuv, 1._dp)
+        call A_DIVA%add_entry( row_tiuv, row_tiuv, 1._dp)
 
         ! Load vector: prescribed velocity
         if     (uv == 1) then

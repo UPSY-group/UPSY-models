@@ -4,8 +4,7 @@ module solve_linearised_SSA_DIVA_ocean_pressure
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use ice_model_types, only: type_ice_velocity_solver_DIVA_graphs
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, &
-    add_entry_CSR_dist, read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use graph_types, only: type_graph_pair
@@ -87,7 +86,7 @@ contains
       !   ! Dirichlet boundary condition; velocities are prescribed for this triangle
 
       !   ! Stiffness matrix: diagonal element set to 1
-      !   call add_entry_CSR_dist( A_CSR, row_tiuv, row_tiuv, 1._dp)
+      !   call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
 
       !   ! Load vector: prescribed velocity
       !   if     (uv == 1) then
@@ -254,8 +253,8 @@ contains
                      dN_dy * single_row_ddx_val(    k)      !   dN/dy dv/dx
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -287,8 +286,8 @@ contains
                      dN_dx * single_row_ddy_val(    k)      !   dN/dx du/dy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -399,8 +398,8 @@ contains
         Av = 3._dp * single_row_d2dxdy_val( k)                 ! 3 d2v/dxdy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -427,8 +426,8 @@ contains
         Au = 3._dp * single_row_d2dxdy_val( k)                 ! 3 d2u/dxdy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -523,8 +522,8 @@ contains
                      N * n_y * single_row_ddx_val( k)      !   N n_y dv/dx
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -551,8 +550,8 @@ contains
                      N * n_x * single_row_ddy_val( k)      !   N n_x du/dy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 

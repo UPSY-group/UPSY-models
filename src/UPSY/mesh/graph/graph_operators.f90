@@ -3,8 +3,7 @@ module graph_operators
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use graph_types, only: type_graph
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_empty_row_CSR_dist, &
-    add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_empty_row_CSR_dist, finalise_matrix_CSR_dist
   use shape_functions, only: calc_shape_functions_2D_reg_2nd_order, &
     calc_shape_functions_2D_stag_1st_order, calc_shape_functions_2D_reg_1st_order
   use mesh_types, only: type_mesh
@@ -127,20 +126,20 @@ contains
       ! Fill them into the matrices
 
       ! Diagonal elements: shape functions for the home element
-      call add_entry_CSR_dist( M2_ddx   , ni, ni, Nfx_i )
-      call add_entry_CSR_dist( M2_ddy   , ni, ni, Nfy_i )
-      call add_entry_CSR_dist( M2_d2dx2 , ni, ni, Nfxx_i)
-      call add_entry_CSR_dist( M2_d2dxdy, ni, ni, Nfxy_i)
-      call add_entry_CSR_dist( M2_d2dy2 , ni, ni, Nfyy_i)
+      call M2_ddx%add_entry(    ni, ni, Nfx_i )
+      call M2_ddy%add_entry(    ni, ni, Nfy_i )
+      call M2_d2dx2%add_entry(  ni, ni, Nfxx_i)
+      call M2_d2dxdy%add_entry( ni, ni, Nfxy_i)
+      call M2_d2dy2%add_entry(  ni, ni, Nfyy_i)
 
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M2_ddx   , ni, nj, Nfx_c(  i))
-        call add_entry_CSR_dist( M2_ddy   , ni, nj, Nfy_c(  i))
-        call add_entry_CSR_dist( M2_d2dx2 , ni, nj, Nfxx_c( i))
-        call add_entry_CSR_dist( M2_d2dxdy, ni, nj, Nfxy_c( i))
-        call add_entry_CSR_dist( M2_d2dy2 , ni, nj, Nfyy_c( i))
+        call M2_ddx%add_entry(    ni, nj, Nfx_c(  i))
+        call M2_ddy%add_entry(    ni, nj, Nfy_c(  i))
+        call M2_d2dx2%add_entry(  ni, nj, Nfxx_c( i))
+        call M2_d2dxdy%add_entry( ni, nj, Nfxy_c( i))
+        call M2_d2dy2%add_entry(  ni, nj, Nfyy_c( i))
       end do
 
     end do
@@ -259,14 +258,14 @@ contains
       ! Fill them into the matrices
 
       ! Diagonal elements: shape functions for the home element
-      call add_entry_CSR_dist( M_ddx, ni, ni, Nfx_i)
-      call add_entry_CSR_dist( M_ddy, ni, ni, Nfy_i)
+      call M_ddx%add_entry( ni, ni, Nfx_i)
+      call M_ddy%add_entry( ni, ni, Nfy_i)
 
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M_ddx, ni, nj, Nfx_c( i))
-        call add_entry_CSR_dist( M_ddy, ni, nj, Nfy_c( i))
+        call M_ddx%add_entry( ni, nj, Nfx_c( i))
+        call M_ddy%add_entry( ni, nj, Nfy_c( i))
       end do
 
     end do
@@ -373,9 +372,9 @@ contains
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M_map_a_b, ni, nj, Nf_c ( i))
-        call add_entry_CSR_dist( M_ddx_a_b, ni, nj, Nfx_c( i))
-        call add_entry_CSR_dist( M_ddy_a_b, ni, nj, Nfy_c( i))
+        call M_map_a_b%add_entry( ni, nj, Nf_c ( i))
+        call M_ddx_a_b%add_entry( ni, nj, Nfx_c( i))
+        call M_ddy_a_b%add_entry( ni, nj, Nfy_c( i))
       end do
 
     end do
@@ -505,9 +504,9 @@ contains
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M_map_b_a, ni, nj, Nf_c ( i))
-        call add_entry_CSR_dist( M_ddx_b_a, ni, nj, Nfx_c( i))
-        call add_entry_CSR_dist( M_ddy_b_a, ni, nj, Nfy_c( i))
+        call M_map_b_a%add_entry( ni, nj, Nf_c ( i))
+        call M_ddx_b_a%add_entry( ni, nj, Nfx_c( i))
+        call M_ddy_b_a%add_entry( ni, nj, Nfy_c( i))
       end do
 
     end do

@@ -19,7 +19,7 @@ MODULE basal_hydrology_new
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
   use mesh_utilities                                         , only: find_containing_vertex
-  use CSR_matrix_mod                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: finalise_matrix_CSR_dist, add_empty_row_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
   use crash_mod                                              , only: crash, warning, happy
   USE reallocate_mod                                         , ONLY: reallocate_bounds
@@ -751,7 +751,7 @@ CONTAINS
         ! Only triangle on right side exists
         if (mask_b_tot( tir)) then
           ! Within basal_hydro domain, so add
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, tir, 1._dp)
+          call basal_hydro%M_b_c%add_entry( ei, tir, 1._dp)
         else
           ! Outside basal_hydro domain, so omit
           call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
@@ -760,7 +760,7 @@ CONTAINS
         ! Only triangle on left side exists
         if (mask_b_tot( til)) then
           ! Within basal_hydro domain, so add
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, til, 1._dp)
+          call basal_hydro%M_b_c%add_entry( ei, til, 1._dp)
         else
           ! Outside basal_hydro domain, so omit
           call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
@@ -769,8 +769,8 @@ CONTAINS
         ! Both triangles exist
         if (mask_b_tot( til) .or. mask_b_tot( tir)) then
           ! At least one traingle in basal_hydro domain, so add average
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, til, 0.5_dp)
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, tir, 0.5_dp)
+          call basal_hydro%M_b_c%add_entry( ei, til, 0.5_dp)
+          call basal_hydro%M_b_c%add_entry( ei, tir, 0.5_dp)
         else
           ! Both outside basal_hydro domain, so omit
           call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)

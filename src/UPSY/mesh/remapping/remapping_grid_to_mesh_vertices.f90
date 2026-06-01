@@ -7,8 +7,7 @@ module remapping_grid_to_mesh_vertices
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, &
-    add_entry_CSR_dist, add_empty_row_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, add_empty_row_CSR_dist
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
   use mesh_utilities, only: find_containing_triangle, calc_Voronoi_cell, is_in_Voronoi_cell
@@ -357,9 +356,9 @@ contains
       end do
 
       ! Add entries to the big matrices
-      call add_entry_CSR_dist( A_xdy_a_g_CSR  , row, col, single_row_Vor%LI_xdy(   k))
-      call add_entry_CSR_dist( A_mxydx_a_g_CSR, row, col, single_row_Vor%LI_mxydx( k))
-      call add_entry_CSR_dist( A_xydy_a_g_CSR , row, col, single_row_Vor%LI_xydy(  k))
+      call A_xdy_a_g_CSR%add_entry(   row, col, single_row_Vor%LI_xdy(   k))
+      call A_mxydx_a_g_CSR%add_entry( row, col, single_row_Vor%LI_mxydx( k))
+      call A_xydy_a_g_CSR%add_entry(  row, col, single_row_Vor%LI_xydy(  k))
 
     end do
 
@@ -429,9 +428,9 @@ contains
     ! Add entries to the big matrices
     do k = 1, single_row_Vor%n
       col = single_row_Vor%index_left( k)
-      call add_entry_CSR_dist( A_xdy_a_g_CSR  , row, col, single_row_Vor%LI_xdy(   k))
-      call add_entry_CSR_dist( A_mxydx_a_g_CSR, row, col, single_row_Vor%LI_mxydx( k))
-      call add_entry_CSR_dist( A_xydy_a_g_CSR , row, col, single_row_Vor%LI_xydy(  k))
+      call A_xdy_a_g_CSR%add_entry(   row, col, single_row_Vor%LI_xdy(   k))
+      call A_mxydx_a_g_CSR%add_entry( row, col, single_row_Vor%LI_mxydx( k))
+      call A_xydy_a_g_CSR%add_entry(  row, col, single_row_Vor%LI_xydy(  k))
     end do
 
   end subroutine calc_A_matrices_large_vertex
@@ -490,7 +489,7 @@ contains
 
       do k = k1, k2
         col = A_xdy_a_g_CSR%ind( k)
-        call add_entry_CSR_dist( w0_CSR, row, col, A_xdy_a_g_CSR%val( k) / A_overlap_tot)
+        call w0_CSR%add_entry( row, col, A_xdy_a_g_CSR%val( k) / A_overlap_tot)
       end do
 
       if (.not. is_large_vertex( vi)) then
@@ -501,8 +500,8 @@ contains
           ! Grid cell
           i = grid%n2ij( col,1)
           j = grid%n2ij( col,2)
-          call add_entry_CSR_dist( w1x_CSR, row, col, (A_mxydx_a_g_CSR%val( k) / A_overlap_tot) - (grid%x( i) * w0_CSR%val( k)))
-          call add_entry_CSR_dist( w1y_CSR, row, col, (A_xydy_a_g_CSR%val(  k) / A_overlap_tot) - (grid%y( j) * w0_CSR%val( k)))
+          call w1x_CSR%add_entry( row, col, (A_mxydx_a_g_CSR%val( k) / A_overlap_tot) - (grid%x( i) * w0_CSR%val( k)))
+          call w1y_CSR%add_entry( row, col, (A_xydy_a_g_CSR%val(  k) / A_overlap_tot) - (grid%y( j) * w0_CSR%val( k)))
         end do
 
       else

@@ -8,7 +8,7 @@ module remapping_gridlonlat_to_mesh
   use grid_types, only: type_grid_lonlat
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist, add_entry_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use petsc_basic, only: mat_CSR2petsc
 
   implicit none
@@ -93,10 +93,10 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
     wju = 1 - wjl
 
     ! Add values to the CSR matrix
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( il,jl), wil * wjl)
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( il,ju), wil * wju)
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( iu,jl), wiu * wjl)
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( iu,ju), wiu * wju)
+    call M_CSR%add_entry( vi, grid%ij2n( il,jl), wil * wjl)
+    call M_CSR%add_entry( vi, grid%ij2n( il,ju), wil * wju)
+    call M_CSR%add_entry( vi, grid%ij2n( iu,jl), wiu * wjl)
+    call M_CSR%add_entry( vi, grid%ij2n( iu,ju), wiu * wju)
 
   end do
 

@@ -11,8 +11,7 @@ module ct_discretisation_solve_Laplace_eq
   use mesh_types, only: type_mesh
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, &
-    read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use netcdf_io_main
 
@@ -134,7 +133,7 @@ contains
       if (norm2([x,y]) >= r0) then
         ! f = f_ex
 
-        call add_entry_CSR_dist( AA, ti, ti, 1._dp)
+        call AA%add_entry( ti, ti, 1._dp)
 
         bb( ti) = f_ex( ti)
 
@@ -148,7 +147,7 @@ contains
         do k = 1, single_row_nnz
           tj = single_row_ind( k)
           A = single_row_d2dx2_val( k) + single_row_d2dy2_val( k)
-          call add_entry_CSR_dist( AA, ti, tj, A)
+          call AA%add_entry( ti, tj, A)
         end do
 
         bb( ti) = c

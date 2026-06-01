@@ -21,8 +21,7 @@ module BPA_main
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, &
-    read_single_row_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, read_single_row_CSR_dist, finalise_matrix_CSR_dist
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
   use constitutive_equation, only: calc_effective_viscosity_Glen_3D_uv_only, calc_ice_rheology_Glen
@@ -399,7 +398,7 @@ contains
         ! Dirichlet boundary condition; velocities are prescribed for this triangle
 
         ! Stiffness matrix: diagonal element set to 1
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector: prescribed velocity
         if     (uv == 1) then
@@ -594,8 +593,8 @@ contains
                      deta_dy * single_row_ddx_val(    n)      !   deta/dy  dv/dx
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
 
       end do
 
@@ -630,8 +629,8 @@ contains
                      deta_dx * single_row_ddy_val(    n)      !   deta/dx  du/dy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
 
       end do
 
@@ -842,8 +841,8 @@ contains
              cu_d2vdxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
 
       end do
 
@@ -875,8 +874,8 @@ contains
              cv_d2udxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
 
       end do
 
@@ -1004,7 +1003,7 @@ contains
     ! Exception for the case of no sliding
     if (C%choice_sliding_law == 'no_sliding') then
       ! u = v = 0
-      call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+      call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
       bb( row_tikuv) = 0._dp
       return
     end if
@@ -1116,8 +1115,8 @@ contains
              cu_d2vdxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
 
       end do
 
@@ -1149,8 +1148,8 @@ contains
              cv_d2udxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
 
       end do
 
@@ -1202,10 +1201,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1214,7 +1213,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1226,7 +1225,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1257,10 +1256,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1269,7 +1268,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1281,7 +1280,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1342,10 +1341,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1354,7 +1353,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1366,7 +1365,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1397,10 +1396,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1409,7 +1408,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1421,7 +1420,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1482,10 +1481,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1494,7 +1493,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1506,7 +1505,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1537,10 +1536,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1549,7 +1548,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1561,7 +1560,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1622,10 +1621,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1634,7 +1633,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1646,7 +1645,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1677,10 +1676,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1689,7 +1688,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1701,7 +1700,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)

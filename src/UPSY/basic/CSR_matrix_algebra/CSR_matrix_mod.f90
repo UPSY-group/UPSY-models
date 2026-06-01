@@ -18,7 +18,7 @@ module CSR_matrix_mod
   private
 
   public :: type_CSR_matrix_dp, &
-    add_entry_CSR_dist, add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
+    add_empty_row_CSR_dist, extend_matrix_CSR_dist, finalise_matrix_CSR_dist, &
     gather_CSR_dist_to_primary, read_single_row_CSR_dist, allocate_matrix_CSR_loc, &
     set_diagonal_to_one_and_rest_of_row_to_zero, set_row_to_value, set_row_diag_to_val
 
@@ -53,6 +53,7 @@ module CSR_matrix_mod
       procedure, public :: allocate   => allocate_matrix_CSR_dist
       procedure, public :: deallocate => deallocate_matrix_CSR_dist
       procedure, public :: duplicate  => duplicate_matrix_CSR_dist
+      procedure, public :: add_entry  => add_entry_CSR_dist
 
       final             :: deallocate_matrix_CSR_dist_final
 
@@ -300,12 +301,12 @@ contains
     ! NOTE: assumes all rows before i are finished and nothing exists yet for rows after i!
 
     ! In- and output variables:
-    type(type_CSR_matrix_dp), intent(inout) :: A
-    integer,                  intent(in   ) :: i,j
-    real(dp),                 intent(in   ) :: v
+    class(type_CSR_matrix_dp), intent(inout) :: A
+    integer,                   intent(in   ) :: i,j
+    real(dp),                  intent(in   ) :: v
 
     ! Safety
-    if (i < A%i1 .OR. i > A%i2) call crash('out of ownership range!')
+    if (i < A%i1 .or. i > A%i2) call crash('out of ownership range!')
 
     ! Increase number of non-zeros
     A%nnz = A%nnz + 1

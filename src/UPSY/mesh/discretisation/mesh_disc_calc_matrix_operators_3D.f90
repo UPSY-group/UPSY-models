@@ -5,7 +5,7 @@ module mesh_disc_calc_matrix_operators_3D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: read_single_row_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: read_single_row_CSR_dist, finalise_matrix_CSR_dist
 
   implicit none
 
@@ -195,8 +195,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
           c_ddy = c_ddy + dzeta_dy * c_map * c_ddzeta   ! Now:  d/dy   =  d/dyh    +  dzeta/dy   d/dzeta
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_ddx_bk_ak, row_vik, col_tikk, c_ddx)
-          call add_entry_CSR_dist( mesh%M_ddy_bk_ak, row_vik, col_tikk, c_ddy)
+          call mesh%M_ddx_bk_ak%add_entry( row_vik, col_tikk, c_ddx)
+          call mesh%M_ddy_bk_ak%add_entry( row_vik, col_tikk, c_ddy)
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_vi_nnz
@@ -351,8 +351,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
           c_ddy = c_ddy + dzeta_dy * c_map * c_ddzeta   ! Now:  d/dy   =  d/dyh    +  dzeta/dy   d/dzeta
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_ddx_ak_bk, row_tik, col_vikk, c_ddx)
-          call add_entry_CSR_dist( mesh%M_ddy_ak_bk, row_tik, col_vikk, c_ddy)
+          call mesh%M_ddx_ak_bk%add_entry( row_tik, col_vikk, c_ddx)
+          call mesh%M_ddy_ak_bk%add_entry( row_tik, col_vikk, c_ddy)
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_ti_nnz
@@ -469,7 +469,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
         c_ddz = dzeta_dz * c_ddzeta
 
         ! Add to CSR matrices
-        call add_entry_CSR_dist( mesh%M_ddz_bk_bks, row_tiks, col_tik, c_ddz)
+        call mesh%M_ddz_bk_bks%add_entry( row_tiks, col_tik, c_ddz)
 
       end do ! do jj = 1, single_row_ks_nnz
 
@@ -594,8 +594,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
         c_ddz = dzeta_dz * c_ddzeta
 
         ! Add to CSR matrices
-        call add_entry_CSR_dist( mesh%M_map_bks_bk, row_tik, col_tiks, c_map)
-        call add_entry_CSR_dist( mesh%M_ddz_bks_bk, row_tik, col_tiks, c_ddz)
+        call mesh%M_map_bks_bk%add_entry( row_tik, col_tiks, c_map)
+        call mesh%M_ddz_bks_bk%add_entry( row_tik, col_tiks, c_ddz)
 
       end do ! do jj = 1, single_row_k_nnz
 
@@ -706,7 +706,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
           c_map = c_map_b_a * c_map_ks_k
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_map_bks_ak, row_vik, col_tiks, c_map)
+          call mesh%M_map_bks_ak%add_entry( row_vik, col_tiks, c_map)
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_vi_nnz
@@ -812,7 +812,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
           c_map = c_map_a_b * c_map_k_ks
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_map_ak_bks, row_tiks, col_vik, c_map)
+          call mesh%M_map_ak_bks%add_entry( row_tiks, col_vik, c_map)
 
         end do ! do jj = 1, single_row_ks_nnz
       end do ! do ii = 1, single_row_ti_nnz
@@ -1031,13 +1031,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
           c_d2dy2  = c_d2dy2  + 2._dp * dzeta_dy * c_ddyh * c_ddzeta                                ! Now: d2/dy2  = d2/dyh2   + d2zeta/dy2  d/dzeta + (dzeta/dy)^2       d2/dzeta2 + 2 dzeta/dy d2/dyhdzeta
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, col_tjkk, c_ddx   )
-          call add_entry_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, col_tjkk, c_ddy   )
-          call add_entry_CSR_dist( mesh%M2_ddz_bk_bk   , row_tik, col_tjkk, c_ddz   )
-          call add_entry_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, col_tjkk, c_d2dx2 )
-          call add_entry_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, col_tjkk, c_d2dxdy)
-          call add_entry_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, col_tjkk, c_d2dy2 )
-          call add_entry_CSR_dist( mesh%M2_d2dz2_bk_bk , row_tik, col_tjkk, c_d2dz2 )
+          call mesh%M2_ddx_bk_bk%add_entry(    row_tik, col_tjkk, c_ddx   )
+          call mesh%M2_ddy_bk_bk%add_entry(    row_tik, col_tjkk, c_ddy   )
+          call mesh%M2_ddz_bk_bk%add_entry(    row_tik, col_tjkk, c_ddz   )
+          call mesh%M2_d2dx2_bk_bk%add_entry(  row_tik, col_tjkk, c_d2dx2 )
+          call mesh%M2_d2dxdy_bk_bk%add_entry( row_tik, col_tjkk, c_d2dxdy)
+          call mesh%M2_d2dy2_bk_bk%add_entry(  row_tik, col_tjkk, c_d2dy2 )
+          call mesh%M2_d2dz2_bk_bk%add_entry(  row_tik, col_tjkk, c_d2dz2 )
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_ti_nnz

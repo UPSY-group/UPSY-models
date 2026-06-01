@@ -5,7 +5,7 @@ module conservation_of_mass_utilities
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
-  use CSR_matrix_mod, only: type_CSR_matrix_dp, add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp, finalise_matrix_CSR_dist
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
   use mpi_distributed_memory, only: gather_to_all
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD
@@ -118,10 +118,10 @@ contains
       end do ! do ci = 1, mesh%nC( vi)
 
       ! Add coefficients to matrix
-      call add_entry_CSR_dist( M_divQ, vi, vi, cM_divQ( 0))
+      call M_divQ%add_entry( vi, vi, cM_divQ( 0))
       do ci = 1, mesh%nC( vi)
         vj = mesh%C(  vi,ci)
-        call add_entry_CSR_dist( M_divQ, vi, vj, cM_divQ( ci))
+        call M_divQ%add_entry( vi, vj, cM_divQ( ci))
       end do ! do ci = 1, mesh%nC( vi)
 
     end do ! do vi = mesh%vi1, mesh%vi2

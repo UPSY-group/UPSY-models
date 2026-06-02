@@ -10,9 +10,11 @@ module CSR_matrix_mod
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
   use reallocate_mod, only: reallocate
-  use netcdf, only: NF90_INT, NF90_DOUBLE
-  use netcdf_basic_wrappers, only: create_dimension, create_variable
+  use netcdf, only: NF90_INT, NF90_DOUBLE, NF90_CREATE, NF90_NOCLOBBER, NF90_NETCDF4, NF90_DEF_DIM, &
+    NF90_DEF_VAR, NF90_INT, NF90_DOUBLE, NF90_PUT_VAR
+  use netcdf_basic_wrappers, only: create_dimension, create_variable, handle_netcdf_error
   use netcdf_write_var_primary, only: write_var_primary
+  use string_module, only: endswith, insert_val_into_string_int
 
   implicit none
 
@@ -48,20 +50,21 @@ module CSR_matrix_mod
 
       private
 
-      procedure, public  :: allocate          => allocate_matrix_CSR_dist
-      procedure, public  :: allocate_loc      => allocate_matrix_CSR_loc
-      procedure, public  :: deallocate        => deallocate_matrix_CSR_dist
-      procedure, public  :: duplicate         => duplicate_matrix_CSR_dist
-      procedure, public  :: add_entry         => add_entry_CSR_dist
-      procedure, public  :: add_empty_row     => add_empty_row_CSR_dist
-      procedure, public  :: gather_to_primary => gather_CSR_dist_to_primary
-      procedure, public  :: read_single_row   => read_single_row_CSR_dist
-      procedure, public  :: finalise          => finalise_matrix_CSR_dist
+      procedure, public  :: allocate               => allocate_matrix_CSR_dist
+      procedure, public  :: allocate_loc           => allocate_matrix_CSR_loc
+      procedure, public  :: deallocate             => deallocate_matrix_CSR_dist
+      procedure, public  :: duplicate              => duplicate_matrix_CSR_dist
+      procedure, public  :: add_entry              => add_entry_CSR_dist
+      procedure, public  :: add_empty_row          => add_empty_row_CSR_dist
+      procedure, public  :: gather_to_primary      => gather_CSR_dist_to_primary
+      procedure, public  :: read_single_row        => read_single_row_CSR_dist
+      procedure, public  :: finalise               => finalise_matrix_CSR_dist
       procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
-      procedure, public  :: write_to_NetCDF   => write_CSR_matrix_to_NetCDF
+      procedure, public  :: write_to_NetCDF        => write_CSR_matrix_to_NetCDF
+      procedure, public  :: write_to_dist_NetCDFs  => write_CSR_matrix_to_dist_NetCDFs
 
-      procedure, private :: extend            => extend_matrix_CSR_dist
-      procedure, private :: crop              => crop_matrix_CSR_dist
+      procedure, private :: extend                 => extend_matrix_CSR_dist
+      procedure, private :: crop                   => crop_matrix_CSR_dist
       procedure, private :: calc_j_node_range
       procedure, private :: set_row_to_value
       procedure, private :: set_row_diag_to_val
@@ -676,6 +679,79 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_CSR_matrix_to_NetCDF
+
+  subroutine write_CSR_matrix_to_dist_NetCDFs( A, filename_base)
+    !< Write a CSR matrix to multiple NetCDF files (one for each process), including all the parallellisation info
+
+    ! In- and output variables:
+    class(type_CSR_matrix_dp), intent(in) :: A                !< The CSR matrix
+    character(len=*),          intent(in) :: filename_base    !< The name of the file
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'write_CSR_matrix_to_dist_NetCDFs'
+    character(len=:), allocatable :: filename_base_sans_nc, filename_template, filename
+    integer                       :: ncid
+    integer                       :: id_dim_m, id_dim_n, id_dim_nnz
+    integer                       :: id_dim_m_loc, id_dim_m_locp1, id_dim_i1, id_dim_i2
+    integer                       :: id_dim_m_node, id_dim_i1_node, id_dim_i2_node
+    integer                       :: id_dim_n_loc, id_dim_j1, id_dim_j2
+    integer                       :: id_dim_n_node, id_dim_j1_node, id_dim_j2_node
+    integer                       :: id_var_ptr, id_var_ind, id_var_val
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Create a process-specific filename
+    if (endswith( filename_base, '.nc', case_sensitive = .false.)) then
+      filename_base_sans_nc = filename_base( 1: len_trim( filename_base)-3)
+    else
+      filename_base_sans_nc = filename_base( 1: len_trim( filename_base))
+    end if
+
+    filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
+    filename = insert_val_into_string_int( filename_template, '{proc}', par%i)
+
+    ! Create a NetCDF file for each process
+    call handle_netcdf_error( NF90_CREATE( filename, ior( NF90_NOCLOBBER, NF90_NETCDF4), ncid), filename = filename)
+
+    ! Create dimensions and variables for the CSR matrix
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm'         , A%m      , id_dim_m      ), filename = filename, dimvarname = 'm')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'n'         , A%n      , id_dim_n      ), filename = filename, dimvarname = 'n')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'nnz'       , A%nnz    , id_dim_nnz    ), filename = filename, dimvarname = 'nnz')
+
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_loc'     , A%m_loc  , id_dim_m_loc  ), filename = filename, dimvarname = 'm_loc')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_locplus1', A%m_loc+1, id_dim_m_locp1), filename = filename, dimvarname = 'm_locplus1')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i1'        , A%i1     , id_dim_i1     ), filename = filename, dimvarname = 'i1')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i2'        , A%i2     , id_dim_i2     ), filename = filename, dimvarname = 'i2')
+
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_node'    , A%m_node , id_dim_m_node ), filename = filename, dimvarname = 'm_node')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i1_node'   , A%i1_node, id_dim_i1_node), filename = filename, dimvarname = 'i1_node')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i2_node'   , A%i2_node, id_dim_i2_node), filename = filename, dimvarname = 'i2_node')
+
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'n_loc'     , A%n_loc  , id_dim_n_loc  ), filename = filename, dimvarname = 'n_loc')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j1'        , A%j1     , id_dim_j1     ), filename = filename, dimvarname = 'j1')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j2'        , A%j2     , id_dim_j2     ), filename = filename, dimvarname = 'j2')
+
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'n_node'    , A%n_node , id_dim_n_node ), filename = filename, dimvarname = 'n_node')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j1_node'   , A%j1_node, id_dim_j1_node), filename = filename, dimvarname = 'j1_node')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j2_node'   , A%j2_node, id_dim_j2_node), filename = filename, dimvarname = 'j2_node')
+
+    call handle_netcdf_error( NF90_DEF_VAR( ncid, name = 'ptr', xtype = NF90_INT, &
+      dimids = [id_dim_m_locp1], varid = id_var_ptr), filename = filename, dimvarname = 'ptr')
+    call handle_netcdf_error( NF90_DEF_VAR( ncid, name = 'ind', xtype = NF90_INT, &
+      dimids = [id_dim_nnz    ], varid = id_var_ind), filename = filename, dimvarname = 'ind')
+    call handle_netcdf_error( NF90_DEF_VAR( ncid, name = 'val', xtype = NF90_DOUBLE, &
+      dimids = [id_dim_nnz    ], varid = id_var_val), filename = filename, dimvarname = 'val')
+
+    ! Write data to the NetCDF file
+    call handle_netcdf_error( NF90_PUT_VAR( ncid, id_var_ptr, A%ptr), filename = filename, dimvarname = 'ptr')
+    call handle_netcdf_error( NF90_PUT_VAR( ncid, id_var_ind, A%ind), filename = filename, dimvarname = 'ind')
+    call handle_netcdf_error( NF90_PUT_VAR( ncid, id_var_val, A%val), filename = filename, dimvarname = 'val')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_CSR_matrix_to_dist_NetCDFs
 
   ! ===== CSR matrices in local memory =====
   ! ========================================

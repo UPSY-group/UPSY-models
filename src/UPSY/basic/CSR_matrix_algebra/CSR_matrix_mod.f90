@@ -11,10 +11,12 @@ module CSR_matrix_mod
   use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
   use reallocate_mod, only: reallocate
   use netcdf, only: NF90_INT, NF90_DOUBLE, NF90_CREATE, NF90_NOCLOBBER, NF90_NETCDF4, NF90_DEF_DIM, &
-    NF90_DEF_VAR, NF90_INT, NF90_DOUBLE, NF90_PUT_VAR
+    NF90_DEF_VAR, NF90_INT, NF90_DOUBLE, NF90_PUT_VAR, NF90_OPEN, NF90_CLOSE, NF90_NOWRITE, &
+    NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, NF90_INQ_VARID, NF90_GET_VAR
   use netcdf_basic_wrappers, only: create_dimension, create_variable, handle_netcdf_error
   use netcdf_write_var_primary, only: write_var_primary
   use string_module, only: endswith, insert_val_into_string_int
+  use crash_mod, only: warning
 
   implicit none
 
@@ -62,6 +64,7 @@ module CSR_matrix_mod
       procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
       procedure, public  :: write_to_NetCDF        => write_CSR_matrix_to_NetCDF
       procedure, public  :: write_to_dist_NetCDFs  => write_CSR_matrix_to_dist_NetCDFs
+      procedure, public  :: read_from_dist_NetCDFs => read_CSR_matrix_from_dist_NetCDFs
 
       procedure, private :: extend                 => extend_matrix_CSR_dist
       procedure, private :: crop                   => crop_matrix_CSR_dist
@@ -748,10 +751,103 @@ contains
     call handle_netcdf_error( NF90_PUT_VAR( ncid, id_var_ind, A%ind), filename = filename, dimvarname = 'ind')
     call handle_netcdf_error( NF90_PUT_VAR( ncid, id_var_val, A%val), filename = filename, dimvarname = 'val')
 
+    call handle_netcdf_error( NF90_CLOSE( ncid))
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine write_CSR_matrix_to_dist_NetCDFs
+
+  subroutine read_CSR_matrix_from_dist_NetCDFs( A, filename_base)
+    !< Read a CSR matrix from multiple NetCDF files (one for each process)
+
+    ! In- and output variables:
+    class(type_CSR_matrix_dp), intent(inout) :: A                !< The CSR matrix
+    character(len=*),          intent(in   ) :: filename_base    !< The name of the file
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'read_CSR_matrix_from_dist_NetCDFs'
+    character(len=:), allocatable :: filename_base_sans_nc, filename_template, filename
+    logical                       :: file_exists
+    integer                       :: ncid
+    integer                       :: id_var_ptr, id_var_ind, id_var_val
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate any memory that was already allocated for A
+    call A%deallocate
+
+    ! Create a process-specific filename
+    if (endswith( filename_base, '.nc', case_sensitive = .false.)) then
+      filename_base_sans_nc = filename_base( 1: len_trim( filename_base)-3)
+    else
+      filename_base_sans_nc = filename_base( 1: len_trim( filename_base))
+    end if
+
+    filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
+    filename = insert_val_into_string_int( filename_template, '{proc}', par%i)
+
+    ! Check if this file actually exists
+    inquire( exist = file_exists, file = trim( filename))
+    if (.not. file_exists) call crash('file "' // trim( filename) // '" not found!')
+
+    ! Open the NetCDF file with read-only access
+    call handle_netcdf_error( NF90_OPEN( trim( filename), NF90_NOWRITE, ncid), filename = filename)
+
+    ! Read matrix dimensions
+    call inq_CSR_NetCDF_dim( filename, ncid, 'm'      , A%m      )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'n'      , A%n      )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'nnz'    , A%nnz    )
+    A%nnz_max = A%nnz
+
+    call inq_CSR_NetCDF_dim( filename, ncid, 'm_loc'  , A%m_loc  )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'i1'     , A%i1     )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'i2'     , A%i2     )
+
+    call inq_CSR_NetCDF_dim( filename, ncid, 'm_node' , A%m_node )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'i1_node', A%i1_node)
+    call inq_CSR_NetCDF_dim( filename, ncid, 'i2_node', A%i2_node)
+
+    call inq_CSR_NetCDF_dim( filename, ncid, 'n_loc'  , A%n_loc  )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'j1'     , A%j1     )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'j2'     , A%j2     )
+
+    call inq_CSR_NetCDF_dim( filename, ncid, 'n_node' , A%n_node )
+    call inq_CSR_NetCDF_dim( filename, ncid, 'j1_node', A%j1_node)
+    call inq_CSR_NetCDF_dim( filename, ncid, 'j2_node', A%j2_node)
+
+    ! Allocate memory for A
+    allocate( A%ptr( A%i1: A%i2+1), source = 1)
+    allocate( A%ind( A%nnz_max), source = 0    )
+    allocate( A%val( A%nnz_max), source = 0._dp)
+
+    ! Read matrix data from the NetCDF file
+    call handle_netcdf_error( NF90_INQ_VARID( ncid, 'ptr', id_var_ptr))
+    call handle_netcdf_error( NF90_GET_VAR( ncid, id_var_ptr, A%ptr), filename = filename, dimvarname = 'ptr')
+    call handle_netcdf_error( NF90_INQ_VARID( ncid, 'ind', id_var_ind))
+    call handle_netcdf_error( NF90_GET_VAR( ncid, id_var_ind, A%ind), filename = filename, dimvarname = 'ind')
+    call handle_netcdf_error( NF90_INQ_VARID( ncid, 'val', id_var_val))
+    call handle_netcdf_error( NF90_GET_VAR( ncid, id_var_val, A%val), filename = filename, dimvarname = 'val')
+
+    call handle_netcdf_error( NF90_CLOSE( ncid))
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_CSR_matrix_from_dist_NetCDFs
+
+  subroutine inq_CSR_NetCDF_dim( filename, ncid, dim_name, dim_length)
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    character(len=*), intent(in   ) :: dim_name
+    integer,          intent(  out) :: dim_length
+    integer :: id_dim
+    call handle_netcdf_error( NF90_INQ_DIMID( ncid, dim_name, id_dim), &
+      filename = filename, dimvarname = dim_name)
+    call handle_netcdf_error( NF90_INQUIRE_DIMENSION( ncid, id_dim, len = dim_length), &
+      filename = filename, dimvarname = dim_name)
+  end subroutine inq_CSR_NetCDF_dim
 
   ! ===== CSR matrices in local memory =====
   ! ========================================

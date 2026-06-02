@@ -19,7 +19,6 @@ MODULE basal_hydrology_new
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
   use mesh_utilities                                         , only: find_containing_vertex
-  use CSR_matrix_basics                                      , only: finalise_matrix_CSR_dist, add_entry_CSR_dist, add_empty_row_CSR_dist, allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist
   use conservation_of_mass_utilities                         , only: calc_n_interior_neighbours
   use crash_mod                                              , only: crash, warning, happy
   USE reallocate_mod                                         , ONLY: reallocate_bounds
@@ -52,7 +51,7 @@ CONTAINS
     ! Start counter on 0
     duration = 0.0_dp
 
-    time_until_convergence = C%basal_hydro_equil_time*sec_per_year  ! Time until convergence 
+    time_until_convergence = C%basal_hydro_equil_time*sec_per_year  ! Time until convergence
 
     ! Loop until convergence time is reached
     time_loop: do while (duration < time_until_convergence)
@@ -117,7 +116,7 @@ CONTAINS
 
     call calc_uv(mesh, ice, basal_hydro)
 
-    ! 8) Get the timestep 
+    ! 8) Get the timestep
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
 
@@ -126,7 +125,7 @@ CONTAINS
 
     ! Compute how much goes in the water layer and how much goes in the till
     call calc_q_til(mesh, ice, basal_hydro, W_max_til)
-    
+
     ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
     ! 11) If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
     ! 11) Otherwise, compute next timestep of P using the equation in the paper (Bueler and Van Pelt 2015)
@@ -149,7 +148,7 @@ CONTAINS
     if (par%primary) then
       !write(*,*) "Time after basal hydrology step: ", time
     end if
-  
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -384,7 +383,7 @@ CONTAINS
     dt_hydro = correction_factor*min( dt_crit_CFL, dt_crit_W, dt_crit_P)
     call MPI_ALLREDUCE( MPI_IN_PLACE, dt_hydro, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD)
     basal_hydro%dt = dt_hydro
-    
+
     if (par%i == 1) then
       !write(*,*) "dt_crit_CFL = ", dt_crit_CFL
       !write(*,*) "dt_crit_W   = ", dt_crit_W
@@ -457,7 +456,7 @@ CONTAINS
         IF (u_perp > 0) THEN
           basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vi) / mesh%A( vi)
         ! u_perp < 0: flow is entering this vertex from vertex vj
-        ELSE 
+        ELSE
           ! Skip connection if neighbour is not grounded. No flux across grounding line
           ! Can be made more flexible when accounting for partial cells (PMP instead of FCMP)
           IF (mask_grounded_ice_tot( vj)) then
@@ -519,7 +518,7 @@ CONTAINS
         ! Compute next timestep of P using the equation in the paper
         basal_hydro%Z( vi) = basal_hydro%C( vi) - basal_hydro%O( vi) + basal_hydro%q_water_layer( vi)/basal_hydro%dt
         basal_hydro%P( vi) = basal_hydro%P( vi) + basal_hydro%dt * ((rho_w * g / phi) * (-basal_hydro%divQ( vi) + basal_hydro%Z( vi)))
-      
+
     ! 12) Make sure P is within its bounds
         basal_hydro%P( vi) = min( max( basal_hydro%P( vi), P_min), basal_hydro%P_o( vi))
       end if
@@ -636,7 +635,7 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine calc_general_dt
-  
+
 
   subroutine calc_D( mesh, basal_hydro)
     !< Calculating the diffusivity D>!
@@ -722,7 +721,7 @@ CONTAINS
     ! Get the basal hydrology mask on (a) and b-grid
     call gather_to_all(basal_hydro%mask_b, mask_b_tot)
 
-    call deallocate_matrix_CSR_dist( basal_hydro%M_b_c)
+    call basal_hydro%M_b_c%deallocate
 
     ! Matrix size
     ncols           = mesh%nTri        ! from
@@ -732,7 +731,7 @@ CONTAINS
     nnz_per_row_est = 2
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( basal_hydro%M_b_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call basal_hydro%M_b_c%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_Tri, pai_y = mesh%pai_E)
 
     ! == Calculate coefficients
@@ -751,29 +750,29 @@ CONTAINS
         ! Only triangle on right side exists
         if (mask_b_tot( tir)) then
           ! Within basal_hydro domain, so add
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, tir, 1._dp)
+          call basal_hydro%M_b_c%add_entry( ei, tir, 1._dp)
         else
           ! Outside basal_hydro domain, so omit
-          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+          call basal_hydro%M_b_c%add_empty_row( ei)
         end if
       elseif (tir == 0 .and. til > 0) then
         ! Only triangle on left side exists
         if (mask_b_tot( til)) then
           ! Within basal_hydro domain, so add
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, til, 1._dp)
+          call basal_hydro%M_b_c%add_entry( ei, til, 1._dp)
         else
           ! Outside basal_hydro domain, so omit
-          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+          call basal_hydro%M_b_c%add_empty_row( ei)
         end if
       elseif (til > 0 .and. tir > 0) then
         ! Both triangles exist
         if (mask_b_tot( til) .or. mask_b_tot( tir)) then
           ! At least one traingle in basal_hydro domain, so add average
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, til, 0.5_dp)
-          call add_entry_CSR_dist( basal_hydro%M_b_c, ei, tir, 0.5_dp)
+          call basal_hydro%M_b_c%add_entry( ei, til, 0.5_dp)
+          call basal_hydro%M_b_c%add_entry( ei, tir, 0.5_dp)
         else
           ! Both outside basal_hydro domain, so omit
-          call add_empty_row_CSR_dist( basal_hydro%M_b_c, ei)
+          call basal_hydro%M_b_c%add_empty_row( ei)
         end if
       else
           call crash('something is seriously wrong with the ETri array of this mesh!')
@@ -782,7 +781,7 @@ CONTAINS
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( basal_hydro%M_b_c)
+    call basal_hydro%M_b_c%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -806,7 +805,7 @@ CONTAINS
 
     ! Add routine to path
     call init_routine( routine_name)
-    
+
     ! Define a-grid mask directly from ice model grounded ice mask
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%mask_a( vi) = .false.
@@ -885,7 +884,7 @@ CONTAINS
     do vi = mesh%vi1, mesh%vi2
       if (test) then                          ! For testing we take R without the pressure component
         basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g
-      else 
+      else
         basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi)
       end if
     end do
@@ -922,7 +921,7 @@ CONTAINS
 
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
-        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp & 
+        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp &
                                + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp) ! Added small value to avoid dividing by 0
       else
         basal_hydro%K_b( ti) = 0.0_dp
@@ -969,7 +968,7 @@ CONTAINS
     ! Remap to c-grid velocities
     call calc_M_b_c( mesh, ice, basal_hydro)
     call map_UV_b_c( mesh, basal_hydro)
-    
+
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1054,7 +1053,7 @@ CONTAINS
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'calc_closing_rate'
     integer                                               :: vi
-    real(dp), parameter                                   :: c2 = 0.04 !Creep closure coefficient 
+    real(dp), parameter                                   :: c2 = 0.04 !Creep closure coefficient
     real(dp), parameter                                   :: A = 3.1689e-24_dp ! Ice softness parameter (Pa^-3 s^-1)
 
     ! Add routine to path
@@ -1382,7 +1381,7 @@ CONTAINS
       end if
     end do
     !call checksum(mesh%pai_V, basal_hydro%N_til, "basal_hydro%N_til")
-  
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -1402,7 +1401,7 @@ CONTAINS
     character(len=256), parameter                         :: routine_name = 'calc_yield_stress'
     integer                                               :: vi
     real(dp), parameter                                   :: c0 = 0_dp !Pa
- 
+
 
     ! Add routine to path
     call init_routine( routine_name)

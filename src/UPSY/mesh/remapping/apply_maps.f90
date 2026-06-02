@@ -10,7 +10,7 @@ module apply_maps
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid, type_grid_lonlat
   use remapping_types, only: type_map
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D, &
     mat_petsc2CSR
   use mesh_utilities, only: set_border_vertices_to_interior_mean_dp_2D, set_border_vertices_to_interior_mean_dp_3D, &
@@ -241,7 +241,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'apply_map_mesh_vertices_to_xy_grid_2D'
-    type(type_sparse_matrix_CSR_dp)         :: M_CSR
+    type(type_CSR_matrix_dp)         :: M_CSR
     real(dp), dimension(:,:  ), allocatable :: d_grid
 
     ! Add routine to path
@@ -302,7 +302,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'apply_map_mesh_vertices_to_xy_grid_3D'
-    type(type_sparse_matrix_CSR_dp)         :: M_CSR
+    type(type_CSR_matrix_dp)         :: M_CSR
     real(dp), dimension(:,:,:), allocatable :: d_grid
 
     ! Add routine to path
@@ -364,7 +364,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'apply_map_mesh_vertices_to_xy_grid_2D_minval'
     real(dp), dimension(mesh%nV)    :: d_mesh_tot
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: n,k1,k2,k,col,vi
     real(dp)                        :: d_min
 
@@ -417,7 +417,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'apply_map_mesh_triangles_to_xy_grid_2D'
-    type(type_sparse_matrix_CSR_dp)       :: M_CSR
+    type(type_CSR_matrix_dp)       :: M_CSR
     real(dp), dimension(:,:), allocatable :: d_grid
 
     ! Add routine to path
@@ -478,7 +478,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'apply_map_mesh_triangles_to_xy_grid_3D'
-    type(type_sparse_matrix_CSR_dp)         :: M_CSR
+    type(type_CSR_matrix_dp)         :: M_CSR
     real(dp), dimension(:,:,:), allocatable :: d_grid
 
     ! Add routine to path

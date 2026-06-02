@@ -10,7 +10,6 @@ MODULE mesh_zeta
   USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE reallocate_mod                                         , ONLY: reallocate
   USE mesh_types                                             , ONLY: type_mesh
-  USE CSR_matrix_basics                            , ONLY: allocate_matrix_CSR_loc, add_entry_CSR_dist
   use shape_functions, only: calc_shape_functions_1D_reg_2nd_order
   use assertions_basic, only: assert
 
@@ -333,8 +332,8 @@ CONTAINS
     nnz_per_row_est = 3
     nnz_est         = nrows * nnz_per_row_est
 
-    CALL allocate_matrix_CSR_loc( mesh%M_ddzeta_k_k_1D  , nrows, ncols, nnz_est)
-    CALL allocate_matrix_CSR_loc( mesh%M_d2dzeta2_k_k_1D, nrows, ncols, nnz_est)
+    call mesh%M_ddzeta_k_k_1D%allocate_loc(   nrows, ncols, nnz_est)
+    call mesh%M_d2dzeta2_k_k_1D%allocate_loc( nrows, ncols, nnz_est)
 
     DO k = 1, mesh%nz
 
@@ -360,14 +359,14 @@ CONTAINS
       CALL calc_shape_functions_1D_reg_2nd_order( z, n_c, n_c, z_c, Nfz_i, Nfzz_i, Nfz_c, Nfzz_c)
 
       ! Diagonal element: shape function for the source point
-      CALL add_entry_CSR_dist( mesh%M_ddzeta_k_k_1D  , k, k, Nfz_i )
-      CALL add_entry_CSR_dist( mesh%M_d2dzeta2_k_k_1D, k, k, Nfzz_i)
+      call mesh%M_ddzeta_k_k_1D%add_entry(   k, k, Nfz_i )
+      call mesh%M_d2dzeta2_k_k_1D%add_entry( k, k, Nfzz_i)
 
       ! Off-diagonal elements: shape functions for neighbours
       DO i = 1, n_c
         kn = i_c( i)
-        CALL add_entry_CSR_dist( mesh%M_ddzeta_k_k_1D  , k, kn, Nfz_c(  i))
-        CALL add_entry_CSR_dist( mesh%M_d2dzeta2_k_k_1D, k, kn, Nfzz_c( i))
+        call mesh%M_ddzeta_k_k_1D%add_entry(   k, kn, Nfz_c(  i))
+        call mesh%M_d2dzeta2_k_k_1D%add_entry( k, kn, Nfzz_c( i))
       END DO
 
     END DO
@@ -412,8 +411,8 @@ CONTAINS
     nnz_per_row_est = 2
     nnz_est         = nrows * nnz_per_row_est
 
-    CALL allocate_matrix_CSR_loc( mesh%M_map_k_ks_1D   , nrows, ncols, nnz_est)
-    CALL allocate_matrix_CSR_loc( mesh%M_ddzeta_k_ks_1D, nrows, ncols, nnz_est)
+    call mesh%M_map_k_ks_1D%allocate_loc(    nrows, ncols, nnz_est)
+    call mesh%M_ddzeta_k_ks_1D%allocate_loc( nrows, ncols, nnz_est)
 
     DO ks = 1, mesh%nz-1
 
@@ -431,14 +430,14 @@ CONTAINS
       ! Left-hand neighbour
       row = ks
       col = k_lo
-      CALL add_entry_CSR_dist( mesh%M_map_k_ks_1D   , row, col, wk_lo         )
-      CALL add_entry_CSR_dist( mesh%M_ddzeta_k_ks_1D, row, col, -1._dp / dzeta)
+      call mesh%M_map_k_ks_1D%add_entry(    row, col, wk_lo         )
+      call mesh%M_ddzeta_k_ks_1D%add_entry( row, col, -1._dp / dzeta)
 
       ! Right-hand neighbour
       row = ks
       col = k_hi
-      CALL add_entry_CSR_dist( mesh%M_map_k_ks_1D   , row, col, wk_hi         )
-      CALL add_entry_CSR_dist( mesh%M_ddzeta_k_ks_1D, row, col,  1._dp / dzeta)
+      call mesh%M_map_k_ks_1D%add_entry(    row, col, wk_hi         )
+      call mesh%M_ddzeta_k_ks_1D%add_entry( row, col,  1._dp / dzeta)
 
     END DO
 
@@ -453,8 +452,8 @@ CONTAINS
     nnz_per_row_est = 2
     nnz_est         = nrows * nnz_per_row_est
 
-    CALL allocate_matrix_CSR_loc( mesh%M_map_ks_k_1D   , nrows, ncols, nnz_est)
-    CALL allocate_matrix_CSR_loc( mesh%M_ddzeta_ks_k_1D, nrows, ncols, nnz_est)
+    call mesh%M_map_ks_k_1D%allocate_loc(    nrows, ncols, nnz_est)
+    call mesh%M_ddzeta_ks_k_1D%allocate_loc( nrows, ncols, nnz_est)
 
     DO k = 1, mesh%nz
 
@@ -480,14 +479,14 @@ CONTAINS
       ! Left-hand neighbour
       row = k
       col = ks_lo
-      CALL add_entry_CSR_dist( mesh%M_map_ks_k_1D   , row, col, wks_lo        )
-      CALL add_entry_CSR_dist( mesh%M_ddzeta_ks_k_1D, row, col, -1._dp / dzeta)
+      call mesh%M_map_ks_k_1D%add_entry(    row, col, wks_lo        )
+      call mesh%M_ddzeta_ks_k_1D%add_entry( row, col, -1._dp / dzeta)
 
       ! Right-hand neighbour
       row = k
       col = ks_hi
-      CALL add_entry_CSR_dist( mesh%M_map_ks_k_1D   , row, col, wks_hi        )
-      CALL add_entry_CSR_dist( mesh%M_ddzeta_ks_k_1D, row, col,  1._dp / dzeta)
+      call mesh%M_map_ks_k_1D%add_entry(    row, col, wks_hi        )
+      call mesh%M_ddzeta_ks_k_1D%add_entry( row, col,  1._dp / dzeta)
 
     END DO
 

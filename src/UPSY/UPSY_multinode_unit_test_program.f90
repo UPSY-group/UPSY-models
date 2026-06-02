@@ -19,6 +19,7 @@ program UPSY_multinode_unit_test_program
   use ut_halo_exchange, only: test_halo_exchange_main
   use ut_halo_exchange_mesh, only: test_mesh_halo_exchange_main
   use ut_mpi_CSR_matrix_algebra, only: test_CSR_matrix_algebra_main
+  use ut_netcdf_CSR_matrix, only: test_netcdf_CSR_matrix
 
   implicit none
 
@@ -66,6 +67,7 @@ program UPSY_multinode_unit_test_program
   call test_halo_exchange_main( test_name)
   call test_mesh_halo_exchange_main( test_name)
   call test_CSR_matrix_algebra_main( test_name)
+  call test_netcdf_CSR_matrix( test_name)
 
   ! Stop the clock
   tstop = MPI_WTIME()

@@ -7,9 +7,7 @@ module remapping_mesh_to_mesh
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map, type_single_row_mapping_matrices
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
-    add_empty_row_CSR_dist, add_entry_CSR_dist, deallocate_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use plane_geometry, only: triangle_area
   use mesh_utilities, only: calc_Voronoi_cell, find_containing_triangle, find_containing_vertex
   use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
@@ -39,7 +37,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_to_mesh_nearest_neighbour'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: row, vi_dst
     real(dp), dimension(2)          :: p
     integer                         :: vi_src, col
@@ -71,7 +69,7 @@ contains
     nnz_per_row_max = 1
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! For all mesh_dst vertices, find the mesh_src vertex containing them
     vi_src = 1
@@ -85,11 +83,11 @@ contains
       col = mesh_src%vi2n( vi_src)
 
       ! Add to the matrix
-      call add_entry_CSR_dist( M_CSR, row, col, 1._dp)
+      call M_CSR%add_entry( row, col, 1._dp)
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -119,7 +117,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_to_mesh_trilin'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: row, vi_dst
     real(dp), dimension(2)          :: p
     integer                         :: ti_src, via, vib, vic
@@ -154,7 +152,7 @@ contains
     nnz_per_row_max = 3
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! For all mesh_dst vertices, find the mesh_src triangle containing them
     ti_src = 1
@@ -189,13 +187,13 @@ contains
       colc = mesh_src%vi2n( vic)
 
       ! Add to the matrix
-      call add_entry_CSR_dist( M_CSR, row, cola, wa)
-      call add_entry_CSR_dist( M_CSR, row, colb, wb)
-      call add_entry_CSR_dist( M_CSR, row, colc, wc)
+      call M_CSR%add_entry( row, cola, wa)
+      call M_CSR%add_entry( row, colb, wb)
+      call M_CSR%add_entry( row, colc, wc)
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -758,8 +756,8 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'correct_mesh_to_mesh_map'
     integer                                 :: perr
-    type(type_sparse_matrix_CSR_dp)         :: M_cons_1st_order_CSR
-    type(type_sparse_matrix_CSR_dp)         :: M_cons_2nd_order_CSR
+    type(type_CSR_matrix_dp)         :: M_cons_1st_order_CSR
+    type(type_CSR_matrix_dp)         :: M_cons_2nd_order_CSR
     integer                                 :: i, vi_dst, k1, k2, k
     integer                                 :: j, vi_src
     logical                                 :: do_direct_copy
@@ -771,7 +769,7 @@ contains
     integer                                 :: nVor_src  , nVor_dst
     integer                                 :: vori
     type(type_map)                          :: map_trilin
-    type(type_sparse_matrix_CSR_dp)         :: M_trilin_CSR
+    type(type_CSR_matrix_dp)         :: M_trilin_CSR
     logical,  dimension( mesh_dst%nV)       :: isgood_1st_order
     logical,  dimension( mesh_dst%nV)       :: isgood_2nd_order
     integer                                 :: kk1,kk2,kk
@@ -982,9 +980,9 @@ contains
     call mat_CSR2petsc( M_cons_2nd_order_CSR, M_cons_2nd_order)
 
     ! Clean up after yourself
-    call deallocate_matrix_CSR_dist( M_cons_1st_order_CSR)
-    call deallocate_matrix_CSR_dist( M_cons_2nd_order_CSR)
-    call deallocate_matrix_CSR_dist( M_trilin_CSR)
+    call M_cons_1st_order_CSR%deallocate
+    call M_cons_2nd_order_CSR%deallocate
+    call M_trilin_CSR%deallocate
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -1006,7 +1004,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'integrate_triangles_through_Voronoi_cells'
     integer                                :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_b_a_CSR, A_mxydx_b_a_CSR, A_xydy_b_a_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_b_a_CSR, A_mxydx_b_a_CSR, A_xydy_b_a_CSR
     type(type_single_row_mapping_matrices) :: single_row
     integer                                :: via, vib, vic, ti, vi_hint, k
     real(dp), dimension(2)                 :: p, q
@@ -1027,9 +1025,9 @@ contains
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh_tri%TriA) / minval( mesh_Vor%A   )), &
                                     ceiling( 2._dp * maxval( mesh_Vor%A   ) / minval( mesh_tri%TriA)) ))
 
-    call allocate_matrix_CSR_dist( A_xdy_b_a_CSR  , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_mxydx_b_a_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_xydy_b_a_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xdy_b_a_CSR%allocate  ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_mxydx_b_a_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xydy_b_a_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! Initialise results from integrating a single triangle through the Voronoi cells
     single_row%n_max = 100
@@ -1073,22 +1071,22 @@ contains
 
       ! Add the results for this triangle to the sparse matrix
       if (single_row%n == 0) then
-        call add_empty_row_CSR_dist( A_xdy_b_a_CSR  , ti)
-        call add_empty_row_CSR_dist( A_mxydx_b_a_CSR, ti)
-        call add_empty_row_CSR_dist( A_xydy_b_a_CSR , ti)
+        call A_xdy_b_a_CSR%add_empty_row(   ti)
+        call A_mxydx_b_a_CSR%add_empty_row( ti)
+        call A_xydy_b_a_CSR%add_empty_row(  ti)
       else
         do k = 1, single_row%n
-          call add_entry_CSR_dist( A_xdy_b_a_CSR  , ti, single_row%index_left( k), single_row%LI_xdy(   k))
-          call add_entry_CSR_dist( A_mxydx_b_a_CSR, ti, single_row%index_left( k), single_row%LI_mxydx( k))
-          call add_entry_CSR_dist( A_xydy_b_a_CSR , ti, single_row%index_left( k), single_row%LI_xydy(  k))
+          call A_xdy_b_a_CSR%add_entry(   ti, single_row%index_left( k), single_row%LI_xdy(   k))
+          call A_mxydx_b_a_CSR%add_entry( ti, single_row%index_left( k), single_row%LI_mxydx( k))
+          call A_xydy_b_a_CSR%add_entry(  ti, single_row%index_left( k), single_row%LI_xydy(  k))
         end do
       end if
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_b_a_CSR  )
-    call finalise_matrix_CSR_dist( A_mxydx_b_a_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_b_a_CSR )
+    call A_xdy_b_a_CSR%finalise
+    call A_mxydx_b_a_CSR%finalise
+    call A_xydy_b_a_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( A_xdy_b_a_CSR  , A_xdy_b_a  )
@@ -1115,7 +1113,7 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'integrate_Voronoi_cells_through_triangles'
     integer                                 :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-    type(type_sparse_matrix_CSR_dp)         :: A_xdy_a_b_CSR, A_mxydx_a_b_CSR, A_xydy_a_b_CSR
+    type(type_CSR_matrix_dp)         :: A_xdy_a_b_CSR, A_mxydx_a_b_CSR, A_xydy_a_b_CSR
     type(type_single_row_mapping_matrices)  :: single_row
     integer                                 :: vi, vori1, vori2, k, ti_hint
     real(dp), dimension( mesh_Vor%nC_mem,2) :: Vor
@@ -1140,9 +1138,9 @@ contains
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh_tri%TriA) / minval( mesh_vor%A   )), &
                                     ceiling( 2._dp * maxval( mesh_vor%A   ) / minval( mesh_tri%TriA)) ))
 
-    call allocate_matrix_CSR_dist( A_xdy_a_b_CSR  , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_mxydx_a_b_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_xydy_a_b_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xdy_a_b_CSR%allocate  ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_mxydx_a_b_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xydy_a_b_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! Initialise results from integrating a single triangle through the Voronoi cells
     single_row%n_max = 100
@@ -1178,22 +1176,22 @@ contains
 
       ! Add the results for this triangle to the sparse matrix
       if (single_row%n == 0) then
-        call add_empty_row_CSR_dist( A_xdy_a_b_CSR  , vi)
-        call add_empty_row_CSR_dist( A_mxydx_a_b_CSR, vi)
-        call add_empty_row_CSR_dist( A_xydy_a_b_CSR , vi)
+        call A_xdy_a_b_CSR%add_empty_row(   vi)
+        call A_mxydx_a_b_CSR%add_empty_row( vi)
+        call A_xydy_a_b_CSR%add_empty_row(  vi)
       else
         do k = 1, single_row%n
-          call add_entry_CSR_dist( A_xdy_a_b_CSR  , vi, single_row%index_left( k), single_row%LI_xdy(   k))
-          call add_entry_CSR_dist( A_mxydx_a_b_CSR, vi, single_row%index_left( k), single_row%LI_mxydx( k))
-          call add_entry_CSR_dist( A_xydy_a_b_CSR , vi, single_row%index_left( k), single_row%LI_xydy(  k))
+          call A_xdy_a_b_CSR%add_entry(   vi, single_row%index_left( k), single_row%LI_xdy(   k))
+          call A_mxydx_a_b_CSR%add_entry( vi, single_row%index_left( k), single_row%LI_mxydx( k))
+          call A_xydy_a_b_CSR%add_entry(  vi, single_row%index_left( k), single_row%LI_xydy(  k))
         end do
       end if
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_a_b_CSR  )
-    call finalise_matrix_CSR_dist( A_mxydx_a_b_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_a_b_CSR )
+    call A_xdy_a_b_CSR%finalise
+    call A_mxydx_a_b_CSR%finalise
+    call A_xydy_a_b_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( A_xdy_a_b_CSR  , A_xdy_a_b  )
@@ -1220,7 +1218,7 @@ contains
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'integrate_triangles_through_triangles'
     integer                                :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-    type(type_sparse_matrix_CSR_dp)        :: A_xdy_top_bot_CSR, A_mxydx_top_bot_CSR, A_xydy_top_bot_CSR
+    type(type_CSR_matrix_dp)        :: A_xdy_top_bot_CSR, A_mxydx_top_bot_CSR, A_xydy_top_bot_CSR
     type(type_single_row_mapping_matrices) :: single_row
     integer                                :: via, vib, vic, ti_top, ti_bot_hint, k
     real(dp), dimension(2)                 :: p, q
@@ -1241,9 +1239,9 @@ contains
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh_top%TriA) / minval( mesh_bot%TriA)), &
                                     ceiling( 2._dp * maxval( mesh_bot%TriA) / minval( mesh_top%TriA)) ))
 
-    call allocate_matrix_CSR_dist( A_xdy_top_bot_CSR  , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_mxydx_top_bot_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( A_xydy_top_bot_CSR , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xdy_top_bot_CSR%allocate  ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_mxydx_top_bot_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_xydy_top_bot_CSR%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! Initialise results from integrating a single top-mesh triangle through the bottom mesh's triangles
     single_row%n_max = 100
@@ -1287,22 +1285,22 @@ contains
 
       ! Add the results for this triangle to the sparse matrix
       if (single_row%n == 0) then
-        call add_empty_row_CSR_dist( A_xdy_top_bot_CSR  , ti_top)
-        call add_empty_row_CSR_dist( A_mxydx_top_bot_CSR, ti_top)
-        call add_empty_row_CSR_dist( A_xydy_top_bot_CSR , ti_top)
+        call A_xdy_top_bot_CSR%add_empty_row(   ti_top)
+        call A_mxydx_top_bot_CSR%add_empty_row( ti_top)
+        call A_xydy_top_bot_CSR%add_empty_row(  ti_top)
       else
         do k = 1, single_row%n
-          call add_entry_CSR_dist( A_xdy_top_bot_CSR  , ti_top, single_row%index_left( k), single_row%LI_xdy(   k))
-          call add_entry_CSR_dist( A_mxydx_top_bot_CSR, ti_top, single_row%index_left( k), single_row%LI_mxydx( k))
-          call add_entry_CSR_dist( A_xydy_top_bot_CSR , ti_top, single_row%index_left( k), single_row%LI_xydy(  k))
+          call A_xdy_top_bot_CSR%add_entry(   ti_top, single_row%index_left( k), single_row%LI_xdy(   k))
+          call A_mxydx_top_bot_CSR%add_entry( ti_top, single_row%index_left( k), single_row%LI_mxydx( k))
+          call A_xydy_top_bot_CSR%add_entry(  ti_top, single_row%index_left( k), single_row%LI_xydy(  k))
         end do
       end if
 
     end do
 
-    call finalise_matrix_CSR_dist( A_xdy_top_bot_CSR  )
-    call finalise_matrix_CSR_dist( A_mxydx_top_bot_CSR)
-    call finalise_matrix_CSR_dist( A_xydy_top_bot_CSR )
+    call A_xdy_top_bot_CSR%finalise
+    call A_mxydx_top_bot_CSR%finalise
+    call A_xydy_top_bot_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( A_xdy_top_bot_CSR  , A_xdy_top_bot  )

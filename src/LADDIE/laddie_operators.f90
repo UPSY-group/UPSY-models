@@ -12,8 +12,6 @@ module laddie_operators
   use mesh_types                                             , only: type_mesh
   use laddie_model_types                                     , only: type_laddie_model, type_laddie_timestep
   use mpi_distributed_memory                                 , only: gather_to_all
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, deallocate_matrix_CSR_dist, &
-    add_entry_CSR_dist, add_empty_row_CSR_dist, finalise_matrix_CSR_dist
   use mesh_halo_exchange, only: exchange_halos
 
   implicit none
@@ -45,9 +43,9 @@ contains
     call exchange_halos( mesh, laddie%mask_b)
 
     ! Make sure to deallocate before allocating
-    call deallocate_matrix_CSR_dist( laddie%M_map_H_a_b)
-    call deallocate_matrix_CSR_dist( laddie%M_map_H_a_c)
-    call deallocate_matrix_CSR_dist( laddie%M_map_UV_b_c)
+    call laddie%M_map_H_a_b%deallocate
+    call laddie%M_map_H_a_c%deallocate
+    call laddie%M_map_UV_b_c%deallocate
 
     ! == Initialise the matrix using the native UFEMISM CSR-matrix format
     ! ===================================================================
@@ -60,7 +58,7 @@ contains
     nnz_per_row_est = 3
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( laddie%M_map_H_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call laddie%M_map_H_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_V, pai_y = mesh%pai_Tri)
 
     ! == Calculate coefficients
@@ -96,12 +94,12 @@ contains
         ! Add weight to matrix
         do i = 1, 3
           vi = mesh%Tri( ti, i)
-          call add_entry_CSR_dist( laddie%M_map_H_a_b, ti, vi, cM_map_H_a_b( i))
+          call laddie%M_map_H_a_b%add_entry( ti, vi, cM_map_H_a_b( i))
         end do
 
       else
         ! Outside laddie domain, so skip
-        call add_empty_row_CSR_dist( laddie%M_map_H_a_b, ti)
+        call laddie%M_map_H_a_b%add_empty_row( ti)
 
       end if
 
@@ -118,7 +116,7 @@ contains
     nnz_per_row_est = 2
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( laddie%M_map_H_a_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call laddie%M_map_H_a_c%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_V, pai_y = mesh%pai_E)
 
     ! == Calculate coefficients
@@ -145,8 +143,8 @@ contains
       end if
 
       ! Add weight to matrix
-      call add_entry_CSR_dist( laddie%M_map_H_a_c, ei, vi, cM_map_H_a_c( 1))
-      call add_entry_CSR_dist( laddie%M_map_H_a_c, ei, vj, cM_map_H_a_c( 2))
+      call laddie%M_map_H_a_c%add_entry( ei, vi, cM_map_H_a_c( 1))
+      call laddie%M_map_H_a_c%add_entry( ei, vj, cM_map_H_a_c( 2))
 
     end do
 
@@ -161,7 +159,7 @@ contains
     nnz_per_row_est = 2
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( laddie%M_map_UV_b_c, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
+    call laddie%M_map_UV_b_c%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
       pai_x = mesh%pai_Tri, pai_y = mesh%pai_E)
 
     ! == Calculate coefficients
@@ -180,29 +178,29 @@ contains
         ! Only triangle on right side exists
         if (laddie%mask_b( tir)) then
           ! Within laddie domain, so add
-          call add_entry_CSR_dist( laddie%M_map_UV_b_c, ei, tir, 1._dp)
+          call laddie%M_map_UV_b_c%add_entry( ei, tir, 1._dp)
         else
           ! Outside laddie domain, so omit
-          call add_empty_row_CSR_dist( laddie%M_map_UV_b_c, ei)
+          call laddie%M_map_UV_b_c%add_empty_row( ei)
         end if
       elseif (tir == 0 .and. til > 0) then
         ! Only triangle on left side exists
         if (laddie%mask_b( til)) then
           ! Within laddie domain, so add
-          call add_entry_CSR_dist( laddie%M_map_UV_b_c, ei, til, 1._dp)
+          call laddie%M_map_UV_b_c%add_entry( ei, til, 1._dp)
         else
           ! Outside laddie domain, so omit
-          call add_empty_row_CSR_dist( laddie%M_map_UV_b_c, ei)
+          call laddie%M_map_UV_b_c%add_empty_row( ei)
         end if
       elseif (til > 0 .and. tir > 0) then
         ! Both triangles exist
         if (laddie%mask_b( til) .or. laddie%mask_b( tir)) then
           ! At least one traingle in laddie domain, so add average
-          call add_entry_CSR_dist( laddie%M_map_UV_b_c, ei, til, 0.5_dp)
-          call add_entry_CSR_dist( laddie%M_map_UV_b_c, ei, tir, 0.5_dp)
+          call laddie%M_map_UV_b_c%add_entry( ei, til, 0.5_dp)
+          call laddie%M_map_UV_b_c%add_entry( ei, tir, 0.5_dp)
         else
           ! Both outside laddie domain, so omit
-          call add_empty_row_CSR_dist( laddie%M_map_UV_b_c, ei)
+          call laddie%M_map_UV_b_c%add_empty_row( ei)
         end if
       else
           call crash('something is seriously wrong with the ETri array of this mesh!')
@@ -211,9 +209,9 @@ contains
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( laddie%M_map_H_a_b)
-    call finalise_matrix_CSR_dist( laddie%M_map_H_a_c)
-    call finalise_matrix_CSR_dist( laddie%M_map_UV_b_c)
+    call laddie%M_map_H_a_b%finalise
+    call laddie%M_map_H_a_c%finalise
+    call laddie%M_map_UV_b_c%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -8,9 +8,7 @@ module remapping_gridlonlat_to_mesh
   use grid_types, only: type_grid_lonlat
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
-    deallocate_matrix_CSR_dist, add_entry_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: mat_CSR2petsc
 
   implicit none
@@ -34,7 +32,7 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
   ! Local variables:
   character(len=1024), parameter                     :: routine_name = 'create_map_from_lonlat_grid_to_mesh'
   integer                                            :: nrows, ncols, nrows_loc, ncols_loc, nnz_est, nnz_est_proc, nnz_per_row_max
-  type(type_sparse_matrix_CSR_dp)                    :: M_CSR
+  type(type_CSR_matrix_dp)                    :: M_CSR
   integer                                            :: vi
   integer                                            :: il,iu,jl,ju
   real(dp)                                           :: wil,wiu,wjl,wju
@@ -65,7 +63,7 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
   nnz_est         = nnz_per_row_max * nrows
   nnz_est_proc    = ceiling( real( nnz_est, dp) / real( par%n, dp))
 
-  call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Fill in the CSR matrix
   do vi = mesh%vi1, mesh%vi2
@@ -95,20 +93,20 @@ subroutine create_map_from_lonlat_grid_to_mesh( grid, mesh, map)
     wju = 1 - wjl
 
     ! Add values to the CSR matrix
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( il,jl), wil * wjl)
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( il,ju), wil * wju)
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( iu,jl), wiu * wjl)
-    call add_entry_CSR_dist( M_CSR, vi, grid%ij2n( iu,ju), wiu * wju)
+    call M_CSR%add_entry( vi, grid%ij2n( il,jl), wil * wjl)
+    call M_CSR%add_entry( vi, grid%ij2n( il,ju), wil * wju)
+    call M_CSR%add_entry( vi, grid%ij2n( iu,jl), wiu * wjl)
+    call M_CSR%add_entry( vi, grid%ij2n( iu,ju), wiu * wju)
 
   end do
 
-  call finalise_matrix_CSR_dist( M_CSR)
+  call M_CSR%finalise
 
   ! Convert matrices from Fortran to PETSc types
   call mat_CSR2petsc( M_CSR, map%M)
 
   ! Clean up the Fortran versions
-  call deallocate_matrix_CSR_dist( M_CSR)
+  call M_CSR%deallocate
 
   ! Finalise routine path
   call finalise_routine( routine_name)

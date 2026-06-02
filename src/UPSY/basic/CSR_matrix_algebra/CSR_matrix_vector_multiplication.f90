@@ -1,7 +1,7 @@
 module CSR_matrix_vector_multiplication
 
   use assertions_basic, only: assert
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use precisions, only: dp
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
@@ -27,7 +27,7 @@ contains
     !< and the new, hybrid distributed/shared memory architecture.
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(in   ) :: AA
+    type(type_CSR_matrix_dp), intent(in   ) :: AA
     type(type_par_arr_info),         intent(in   ) :: pai_x
     real(dp), dimension(:), target,  intent(in   ) :: xx
     type(type_par_arr_info),         intent(in   ) :: pai_y
@@ -115,7 +115,7 @@ contains
     !< and the new, hybrid distributed/shared memory architecture.
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),  intent(in   ) :: AA
+    type(type_CSR_matrix_dp),  intent(in   ) :: AA
     type(type_par_arr_info),          intent(in   ) :: pai_x
     real(dp), dimension(:,:), target, intent(in   ) :: xx
     type(type_par_arr_info),          intent(in   ) :: pai_y
@@ -200,7 +200,7 @@ contains
     !< Evaluate the matrix-vector product yy = AA*xx
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),                intent(in   ) :: AA
+    type(type_CSR_matrix_dp),                intent(in   ) :: AA
     type(type_par_arr_info),                        intent(in   ) :: pai_x
     real(dp), dimension(pai_x%i1_nih:pai_x%i2_nih), intent(in   ) :: xx_nih
     type(type_par_arr_info),                        intent(in   ) :: pai_y
@@ -235,7 +235,7 @@ contains
   subroutine multiply_CSR_matrix_with_vector_1D_x_tot( AA, pai_x, xx_tot, pai_y, yy_nih)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),                intent(in   ) :: AA
+    type(type_CSR_matrix_dp),                intent(in   ) :: AA
     type(type_par_arr_info),                        intent(in   ) :: pai_x
     real(dp), dimension(1:pai_x%n),                 intent(in   ) :: xx_tot
     type(type_par_arr_info),                        intent(in   ) :: pai_y
@@ -286,7 +286,7 @@ contains
   subroutine multiply_CSR_matrix_with_vector_1D_x_nih( AA, pai_x, xx_nih, pai_y, yy_nih)
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),                intent(in   ) :: AA
+    type(type_CSR_matrix_dp),                intent(in   ) :: AA
     type(type_par_arr_info),                        intent(in   ) :: pai_x
     real(dp), dimension(pai_x%i1_nih:pai_x%i2_nih), intent(in   ) :: xx_nih
     type(type_par_arr_info),                        intent(in   ) :: pai_y
@@ -338,7 +338,7 @@ contains
     !< Evaluate the matrix-vector product yy = AA*xx
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp),                             intent(in   ) :: AA
+    type(type_CSR_matrix_dp),                             intent(in   ) :: AA
     type(type_par_arr_info),                                     intent(in   ) :: pai_x
     real(dp), dimension(pai_x%i1_nih:pai_x%i2_nih,1:nz), target, intent(in   ) :: xx_nih
     type(type_par_arr_info),                                     intent(in   ) :: pai_y
@@ -368,7 +368,7 @@ contains
     !< Evaluate the matrix-vector product yy = AA*xx
 
     ! In- and output variables:
-    type(type_sparse_matrix_CSR_dp), intent(in   ) :: AA
+    type(type_CSR_matrix_dp), intent(in   ) :: AA
     real(dp), dimension(:),          intent(in   ) :: xx
     real(dp), dimension(:),          intent(  out) :: yy
 

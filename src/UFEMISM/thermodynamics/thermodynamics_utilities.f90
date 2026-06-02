@@ -11,7 +11,9 @@ MODULE thermodynamics_utilities
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_types                                        , ONLY: type_ice_model
+  USE BMB_model_types                                        , ONLY: type_BMB_model
   USE climate_model_types                                    , ONLY: type_climate_model
+  use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_local
   use SMB_model, only: atype_SMB_model
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
   use plane_geometry, only: cross2
@@ -448,5 +450,48 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE calc_upwind_heat_flux_derivatives
+
+  subroutine calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+    ! Computes basal melt under grounded ice (BMB_sheet), based on the same method as PISM
+    ! Following update_impl in EnthalpyModel.cc, L300-328, based on Eq. 47 of Aschwanden et al. (2012; JoG)
+
+    ! In- and output variables
+    TYPE(type_mesh),                     INTENT(IN)    :: mesh
+    TYPE(type_ice_model),                INTENT(IN)    :: ice
+    TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
+    
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER          :: routine_name = 'calc_grounded_basal_melt_rates_from_temp'
+    real(dp)                               :: dz, L_base, hf_up, melting_temp_base, melting_temp_above
+    integer                                :: vi
+    real(dp), dimension(C%nz)              :: d_zeta_temp, dTdzeta
+    real(dp)                               :: dTdz
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+        
+    DO vi = mesh%vi1, mesh%vi2    
+    ! we only compute BMB over grounded ice, and where it is at PMP
+    if (ice%mask_grounded_ice(vi) .OR. ice%mask_gl_gr( vi)) then
+      if (ice%Ti_hom( vi) >= 0.0_dp) then
+
+          d_zeta_temp = ice%Ti( vi, :)                                                            ! Extract vertical array of Ti
+          call multiply_CSR_matrix_with_vector_local( mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta) ! Compute the vertical gradients dT/dzeta
+          dTdz = -1._dp / ice%Hi( vi) * dTdzeta( mesh%nz)                                         ! Extract actual vertical gradient at bottom in dT/dz
+          hf_up = -1._dp * ice%Ki( vi, C%nz) * dTdz                                               ! computes upwards heat flux
+          L_base = L_fusion + (cp_water - cp_ice) * (ice%Ti( vi, C%nz) - 273.15_dp)               ! computes latent heat of bottom ice layer
+
+          BMB%BMB_sheet( vi) = (ice%frictional_heating( vi) + ice%geothermal_heat_flux( vi) - hf_up) / (ice_density * L_base)
+        else
+          BMB%BMB_sheet( vi) = 0.0_dp
+      end if
+    else
+      BMB%BMB_sheet( vi) = 0.0_dp
+    end if
+    END DO
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+  end subroutine calc_grounded_basal_melt_rates_from_temp
 
 END MODULE thermodynamics_utilities

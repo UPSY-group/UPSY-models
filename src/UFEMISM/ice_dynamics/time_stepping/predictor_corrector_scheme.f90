@@ -22,6 +22,7 @@ module predictor_corrector_scheme
   use subgrid_ice_margin, only: calc_effective_thickness
   use checksum_mod, only: checksum
   use ice_geometry_calculations
+  use calving
 
   implicit none
 
@@ -49,14 +50,19 @@ contains
     integer                                              :: n_Axb_its
     integer                                              :: ierr
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
-    type(type_ice_geometry)                              :: Prev_IG  !previous ice geometry
+    type(type_ice_geometry)                              :: Prev_IG     !previous ice geometry
+    type(type_ice_geometry)                              :: Corr_IG     !corrected ice geometry
+    type(type_ice_geometry)                              :: Calving_IG  !calving ice geometry
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! == Initialise ice geometry ==
+    ! =============================
 
     call Prev_IG%allocate_ice_geometry( region%mesh)
+    call Corr_IG%allocate_ice_geometry( region%mesh)
+    call Calving_IG%allocate_ice_geometry( region%mesh)
 
     ! == Store previous ice geometry ==
     ! =================================
@@ -184,13 +190,8 @@ contains
       region%ice%pc%Hi_np1 = Prev_IG%Hi + (region%ice%pc%dt_np1 / 2._dp) * (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
       call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')
 
-      ! ! Save "raw" thinning rates, as applied after the corrector step
-      ! region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
-
-      ! ! Add difference between raw and applied dHi_dt to residual tracker
-      ! region%ice%dHi_dt_residual = region%ice%dHi_dt_raw - &  ! Raw change
-      !                             (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1  ! Minus applied change
-      ! call checksum( region%mesh%pai_V, region%ice%dHi_dt_residual, 'region%ice%dHi_dt_residual')
+      ! Save "raw" thinning rates, as applied after the corrector step
+      region%ice%dHi_dt_raw = (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1
 
       ! == Truncation error ==
       ! ======================
@@ -250,6 +251,25 @@ contains
       end if
 
     end do iterate_pc_timestep
+
+    ! == Calving 
+    ! ===========
+
+    ! Get ice geometry from the corrector step
+    call Corr_IG%calc_ice_geometry(region%mesh,  region%ice%pc%Hi_np1, region%ice%SL , region%ice%Hb)
+
+    ! Apply calving (taking in the ice geometry from Corr_IG and apply it to Hi_np1 and dHi_dt)
+    call apply_calving( region%mesh, Corr_IG,  region%ice%pc%Hi_np1, region%ice%dHi_dt)
+
+    ! Get ice geometry from the calving step
+    call Calving_IG%calc_ice_geometry(region%mesh,  region%ice%pc%Hi_np1, region%ice%SL , region%ice%Hb)
+
+    ! Remove the icebergs that have been created 
+    call kill_icebergs( region%mesh, Calving_IG, region%ice%pc%Hi_np1, region%ice%dHi_dt)
+
+    ! Add difference between raw and applied dHi_dt to residual tracker
+    region%ice%dHi_dt_residual = region%ice%dHi_dt_raw - (region%ice%pc%Hi_np1 - region%ice%Hi_prev) / region%ice%pc%dt_np1  ! Minus applied change
+    call checksum( region%mesh%pai_V, region%ice%dHi_dt_residual, 'region%ice%dHi_dt_residual')
 
     ! == Final quantities
     ! ===================

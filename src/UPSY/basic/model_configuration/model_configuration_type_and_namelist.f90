@@ -482,6 +482,13 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time_config                = 0.1_dp                          ! [yr] time scale for basal hydrology to get to equilibrium
     real(dp)            :: error_function_max_effective_pressure_config = 5E6_dp                           ! Maximum effective pressure inland for the error-function model
     real(dp)            :: Leguy2014_hydro_connect_exponent_config      = 1._dp                            ! Leguy et al. (2014) hydrological connectivity of the subglacial hydrology drainage system
+    real(dp)            :: Salle2025_hydro_meltwater_config             = 2.186523556E-7_dp                ! [kg m^-2 s^-1] of meltwater added to basal hydrology system
+    real(dp)            :: Salle2025_W_til_max_config                   = 2.0_dp                           ! [m] Maximum allowed till water layer thickness
+    real(dp)            :: Salle2025_initial_W_til_config               = 2.0_dp                           ! [m] Initial till water layer thickness
+    real(dp)            :: Salle2025_initial_W_config                   = 0.01_dp                          ! [m] Initial subglacial water layer thickness 
+    real(dp)            :: Salle2025_Cd_config                          = 3.168874718E-11_dp               ! [m s^-1] Water leaking back from the till to the water layer above
+    real(dp)            :: Salle2025_phi_config                         = 26.565_dp                        ! [degrees] till yield stress angle
+
 
   ! == Bed roughness
   ! ==================
@@ -1719,6 +1726,13 @@ module model_configuration_type_and_namelist
     real(dp)            :: basal_hydro_equil_time
     real(dp)            :: error_function_max_effective_pressure
     real(dp)            :: Leguy2014_hydro_connect_exponent
+    real(dp)            :: Salle2025_hydro_meltwater
+    real(dp)            :: Salle2025_W_til_max
+    real(dp)            :: Salle2025_initial_W_til
+    real(dp)            :: Salle2025_initial_W
+    real(dp)            :: Salle2025_Cd
+    real(dp)            :: Salle2025_phi
+
 
   ! == Bed roughness
   ! ==================
@@ -2822,6 +2836,12 @@ contains
       basal_hydro_equil_time_config                               , &
       error_function_max_effective_pressure_config                , &
       Leguy2014_hydro_connect_exponent_config                     , &
+      Salle2025_hydro_meltwater_config                            , &
+      Salle2025_W_til_max_config                                  , & 
+      Salle2025_initial_W_til_config                              , &
+      Salle2025_initial_W_config                                  , &
+      Salle2025_Cd_config                                         , &
+      Salle2025_phi_config                                        , &
       choice_bed_roughness_config                                 , &
       choice_bed_roughness_parameterised_config                   , &
       filename_bed_roughness_NAM_config                           , &
@@ -3833,6 +3853,12 @@ contains
     C%basal_hydro_equil_time                                 = basal_hydro_equil_time_config
     C%error_function_max_effective_pressure                  = error_function_max_effective_pressure_config
     C%Leguy2014_hydro_connect_exponent                       = Leguy2014_hydro_connect_exponent_config
+    C%Salle2025_hydro_meltwater                              = Salle2025_hydro_meltwater_config
+    C%Salle2025_W_til_max                                    = Salle2025_W_til_max_config
+    C%Salle2025_initial_W_til                                = Salle2025_initial_W_til_config
+    C%Salle2025_initial_W                                    = Salle2025_initial_W_config
+    C%Salle2025_Cd                                           = Salle2025_Cd_config
+    C%Salle2025_phi                                          = Salle2025_phi_config
 
     ! == Bed roughness
     ! ==================

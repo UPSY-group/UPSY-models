@@ -86,13 +86,13 @@ CONTAINS
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'basal_hydrology'
 
-    real(dp), parameter            :: W_max = 1000.0_dp     ! Maximum basal water depth (number is placeholder for now, because there is no maximum W)
-    real(dp), parameter            :: W_min = 0.0_dp           ! Minimum basal water depth
+    real(dp), parameter            :: W_max = 1000.0_dp                 ! Maximum basal water depth (number is placeholder for now, because there is no maximum W)
+    real(dp), parameter            :: W_min = 0.0_dp                    ! Minimum basal water depth
 
-    real(dp), parameter            :: W_max_til = 2.0_dp       ! Maximum basal water depth in till
-    real(dp), parameter            :: W_min_til = 0.0_dp       ! Minimum basal water depth in till
+    !real(dp), parameter            :: W_max_til = C%Salle2025_W_til_max ! Maximum basal water depth in till
+    real(dp), parameter            :: W_min_til = 0.0_dp                ! Minimum basal water depth in till
 
-    real(dp), parameter            :: P_min = 0.0_dp           ! Minimum pressure of the ice on the basal water
+    real(dp), parameter            :: P_min = 0.0_dp                    ! Minimum pressure of the ice on the basal water
 
     real(dp)                       :: dt
     real(dp)                       :: dt_hydro
@@ -100,45 +100,50 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Convert basal velocities from ice model to SI units
     call convert_ice_to_SI(mesh, ice, basal_hydro)
 
-    ! Initialise basal hydro masks
+    ! Initialise basal hydro masks (where is the ice grounded and is basal hydrology possible)
     call calc_basal_hydro_mask_a_b(mesh, ice, basal_hydro)
 
-    ! 1) Start with W, W_til and P and make sure they are all within their bounds
-    call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til, P_min)
+    ! Start with W, W_til and P and make sure they are all within their bounds
+    call set_within_bounds(mesh, ice, basal_hydro, W_min, W_max, W_min_til, C%Salle2025_W_til_max, P_min)
 
-    ! Calculate some stuff for timesteps and u and v calculation
+    ! Calculate some variables for the calculation of the timestep and u and v, namely the hydraulic potential R,
     call calc_R(mesh, ice, basal_hydro, .false.)
 
+    ! the conducitivity K
     call calc_K(mesh, ice, basal_hydro)
 
+    ! the diffusivity D
     call calc_D(mesh, basal_hydro)
 
+    ! and eventually u and v
     call calc_uv(mesh, ice, basal_hydro)
 
-    ! 8) Get the timestep 
+    ! Get the timestep 
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
 
-    ! 9) Compute the advective fluxes (Q) on the staggered grid
+    ! Compute the advective fluxes (Q) on the staggered grid
     call calc_divQ(mesh, ice, basal_hydro)
 
     ! Compute how much goes in the water layer and how much goes in the till
-    call calc_q_til(mesh, ice, basal_hydro, W_max_til)
+    call calc_q_til(mesh, ice, basal_hydro, C%Salle2025_W_til_max)
     
-    ! 11) If icefree set next timestep of P to 0, if floating set to overburden pressure
-    ! 11) If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
-    ! 11) Otherwise, compute next timestep of P using the equation in the paper (Bueler and Van Pelt 2015)
+    ! If icefree set next timestep of P to 0, if floating set to overburden pressure
+    ! If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
+    ! Otherwise, compute next timestep of P using the equation in the paper (Bueler and Van Pelt 2015)
+    ! Calculate the pressure at the next timestep
     call calc_P_next(mesh, ice, basal_hydro, P_min)
 
-    ! 13) If icefree or float, then set next timestep of W to 0.
-    ! 13) Otherwise, compute next timestep of W using the equation in the paper
-    ! Put the computed q to use
-    call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, W_max_til)
+    ! If icefree or float, then set next timestep of W to 0.
+    ! Otherwise, compute next timestep of W using the equation in the paper
+    ! Calculate W and W_til at the next timestep
+    call calc_W_water_W_til_next(mesh, ice, basal_hydro, W_min, W_max, W_min_til, C%Salle2025_W_til_max)
 
     ! Calculate output to ice model (effective pressure and yield stress)
-    call calc_N_til(mesh, basal_hydro, W_max_til, .true.)
+    call calc_N_til(mesh, basal_hydro, C%Salle2025_W_til_max, .true.)
     call calc_yield_stress(mesh, ice, basal_hydro)
 
     ! Allow boundary conditions to be applied to W
@@ -175,14 +180,16 @@ CONTAINS
     call init_routine( routine_name)
 
     allocate(basal_hydro%P_o(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = 0.01_dp)
-    allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source =  2.0_dp)
+    allocate(basal_hydro%W(mesh%vi1:mesh%vi2), source = C%Salle2025_initial_W)
+    allocate(basal_hydro%W_til(mesh%vi1:mesh%vi2), source = C%Salle2025_initial_W_til)
     allocate(basal_hydro%W_til_next(mesh%vi1:mesh%vi2), source =  0.0_dp)
     allocate(basal_hydro%P(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = 0.0069_dp*rho_w/sec_per_year) ! basal melt rate kg m^-2 s^-1 (0.0069 m/yr water equivalent)
+    allocate(basal_hydro%m(mesh%vi1:mesh%vi2), source = C%Salle2025_hydro_meltwater) ! basal melt rate kg m^-2 s^-1 (0.0069 m/yr water equivalent)
     allocate(basal_hydro%m_extra(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%dW_dx_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
     allocate(basal_hydro%W_b(mesh%ti1:mesh%ti2), source = 0.0_dp)
+    allocate(basal_hydro%dW_dx_a(mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%dW_dy_a(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%K(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%D(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%u(mesh%vi1:mesh%vi2), source = 0.0_dp)
@@ -201,6 +208,7 @@ CONTAINS
     allocate(basal_hydro%C(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%O(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%divQ( mesh%vi1:mesh%vi2), source = 0.0_dp)
+    allocate(basal_hydro%divD( mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%old_time, source = 0.0_dp)
     allocate(basal_hydro%mask_a(mesh%vi1:mesh%vi2), source = .false.)
     allocate(basal_hydro%mask_b(mesh%ti1:mesh%ti2), source = .false.)
@@ -215,13 +223,13 @@ CONTAINS
     allocate(basal_hydro%Y(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%q_til(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%q_water_layer(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%Cd, source = 0.001_dp/sec_per_year) ! Value for water leaking back from till to water layer (m/s)
+    allocate(basal_hydro%Cd, source = C%Salle2025_Cd) ! Value for water leaking back from till to water layer (m/s)
     allocate(basal_hydro%ice_u_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%ice_v_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%ice_w_base(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%N_til(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%tau_c(mesh%vi1:mesh%vi2), source = 0.0_dp)
-    allocate(basal_hydro%phi(mesh%vi1:mesh%vi2), source = 26.565_dp) !degrees
+    allocate(basal_hydro%phi(mesh%vi1:mesh%vi2), source = C%Salle2025_phi) !degrees
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
@@ -269,9 +277,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       ! Convert ice velocities to m/s
-      basal_hydro%ice_u_base( vi) = ice%u_base( vi)/sec_per_year  ! Convert to m/s
-      basal_hydro%ice_v_base( vi) = ice%v_base( vi)/sec_per_year  ! Convert to m/s
-      basal_hydro%ice_w_base( vi) = ice%w_base( vi)/sec_per_year  ! Convert to m/s
+      basal_hydro%ice_u_base( vi) = ice%u_base( vi)/sec_per_year 
+      basal_hydro%ice_v_base( vi) = ice%v_base( vi)/sec_per_year
+      basal_hydro%ice_w_base( vi) = ice%w_base( vi)/sec_per_year 
     end do
     !call checksum(mesh%pai_V, basal_hydro%ice_u_base, "ice_u_base after conversion to SI")
     !call checksum(mesh%pai_V, basal_hydro%ice_v_base, "ice_v_base after conversion to SI")
@@ -304,9 +312,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%P_o( vi)     = rho_i * g * ice%Hi( vi) ! Calculate overburden pressure
-      basal_hydro%W( vi)       = min( max( basal_hydro%W( vi),       W_min),       W_max)
-      basal_hydro%W_til( vi)   = min( max( basal_hydro%W_til( vi),   W_min_til),   W_max_til)
-      basal_hydro%P( vi)       = min( max( basal_hydro%P( vi),       P_min),       basal_hydro%P_o( vi))
+      basal_hydro%W( vi)       = min( max( basal_hydro%W( vi),       W_min),       W_max) ! Bueler and Van Pelt 2015 eq. 33 (In this case we also give a (very high) max W but this is not in the paper. Could theoretically be used to avoid getting extremely small timesteps due to very high W for example)
+      basal_hydro%W_til( vi)   = min( max( basal_hydro%W_til( vi),   W_min_til),   W_max_til) ! Bueler and Van Pelt 2015 eq. 33
+      basal_hydro%P( vi)       = min( max( basal_hydro%P( vi),       P_min),       basal_hydro%P_o( vi)) ! Bueler and Van Pelt 2015 eq. 33
     end do
     !!call checksum(mesh%pai_V, basal_hydro%P_o, "basal_hydro%P_o")
     !call checksum(mesh%pai_V, basal_hydro%W, "basal_hydro%W")
@@ -336,7 +344,7 @@ CONTAINS
     real(dp)            :: d_min               ! Minimum triangle side length
     real(dp)            :: u_t, v_t, D_t       ! Velocity components on triangle
     real(dp)            :: dt_crit_CFL, dt_crit_W, dt_crit_P ! Critical timesteps for different conditions
-    real(dp), parameter :: phi = 0.01_dp       ! Englacial porosity)
+    real(dp), parameter :: phi = 0.01_dp       ! Englacial porosity
     real(dp), parameter :: correction_factor = 0.9_dp ! To be on the safe side
 
     ! Add routine to path
@@ -367,16 +375,16 @@ CONTAINS
       u_t = abs(basal_hydro%u_b( ti))
       v_t = abs(basal_hydro%v_b( ti))
 
-      dt_crit_CFL = min(dt_crit_CFL, d_min/(2*(u_t + v_t)))
+      dt_crit_CFL = min(dt_crit_CFL, d_min/(2*(u_t + v_t))) ! Bueler and Van Pelt 2015 eq. 50
 
       ! Diffusivity on the triangle (Tijn suggested taking the vertices to get a higher value (not done yet))
-      ! Now added a small value to avoid division by zero, but maybe using if basal_hydro%mask_b(ti) would be better?
+      ! Now added a small value to avoid division by zero
       D_t = basal_hydro%D_b( ti) + 0.0000001_dp !max(basal_hydro%D( via), basal_hydro%D( vib), basal_hydro%D( vic))
 
       ! Instead of max of D, we use D on the triangle
-      dt_crit_W = min(dt_crit_W, d_min**2/(8*D_t))
+      dt_crit_W = min(dt_crit_W, d_min**2/(8*D_t)) ! Bueler and Van Pelt 2015 eg. 51
 
-      dt_crit_P = min(dt_crit_P, 2*phi*d_min**2/(8*D_t))
+      dt_crit_P = min(dt_crit_P, 2*phi*d_min**2/(8*D_t)) ! Bueler and Van Pelt 2015 eq. 52
 
     end do
 
@@ -411,12 +419,13 @@ CONTAINS
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
 
     ! Local variables:
-    character(len=1024) :: routine_name = 'calc_divQ'
-    integer             :: vi, ci, vj, ei
-    logical,  dimension(mesh%nV)   :: mask_grounded_ice_tot
-    real(dp), dimension(mesh%nE)   :: u_c_tot, v_c_tot
-    real(dp), dimension(mesh%nV)   :: W_tot
-    real(dp)                       :: u_perp
+    character(len=1024)                    :: routine_name = 'calc_divQ'
+    integer                                :: vi, ci, vj, ei
+    logical,  dimension(mesh%nV)           :: mask_grounded_ice_tot
+    real(dp), dimension(mesh%nE)           :: u_c_tot, v_c_tot
+    real(dp), dimension(mesh%nV)           :: W_tot
+    real(dp)                               :: u_perp
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: D_nabla_W_x, D_nabla_W_y, dD_nabla_W_x, dD_nabla_W_y !Needed for the calculation of the diffusion term
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -427,6 +436,19 @@ CONTAINS
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)
+    call ddx_a_a_2D(mesh, basal_hydro%W, basal_hydro%dW_dx_a)
+    call ddy_a_a_2D(mesh, basal_hydro%W, basal_hydro%dW_dy_a)
+    call map_b_a_2D(mesh, basal_hydro%D_b, basal_hydro%D)
+
+    ! Get the D_nabla_W terms
+    do vi = mesh%vi1, mesh%vi2
+      D_nabla_W_x( vi) = basal_hydro%D( vi)*basal_hydro%dW_dx_a(vi)
+      D_nabla_W_y( vi) = basal_hydro%D( vi)*basal_hydro%dW_dy_a(vi)
+    end do
+    
+    ! Take the derivative to use in the diffusion term
+    call ddx_a_a_2D(mesh, D_nabla_W_x, dD_nabla_W_x)
+    call ddy_a_a_2D(mesh, D_nabla_W_y, dD_nabla_W_y)
 
     ! == Loop over vertices ==
     ! =========================
@@ -450,12 +472,11 @@ CONTAINS
         ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
         u_perp = u_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
-        ! 10) Compute the flux divergence approximations D_ij (this is already here right?)
         ! Calculate upwind momentum divergence
         ! =============================
         ! u_perp > 0: flow is exiting this vertex into vertex vj
         IF (u_perp > 0) THEN
-          basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vi) / mesh%A( vi)
+          basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vi) / mesh%A( vi) ! Bueler and Van Pelt 2015 eq. 43 (for the first two terms for one connection of the Voronoi cell, the diffusion term is added later)
         ! u_perp < 0: flow is entering this vertex from vertex vj
         ELSE 
           ! Skip connection if neighbour is not grounded. No flux across grounding line
@@ -466,6 +487,12 @@ CONTAINS
         END IF
 
       END DO ! DO ci = 1, mesh%nC( vi)
+
+      ! Calculate the diffusion term
+      basal_hydro%divD( vi) = dD_nabla_W_x( vi) + dD_nabla_W_y( vi) ! Bueler and Van Pelt 2015 eq. 43 (last four terms)
+
+      !Take into account the diffusion term
+      basal_hydro%divQ( vi) = basal_hydro%divQ( vi) - basal_hydro%divD( vi) ! Bueler and Van Pelt 2015 eq. 43
 
     END DO ! DO vi = mesh%vi1, mesh%vi2
 
@@ -517,8 +544,8 @@ CONTAINS
         end if
       else
         ! Compute next timestep of P using the equation in the paper
-        basal_hydro%Z( vi) = basal_hydro%C( vi) - basal_hydro%O( vi) + basal_hydro%q_water_layer( vi)/basal_hydro%dt
-        basal_hydro%P( vi) = basal_hydro%P( vi) + basal_hydro%dt * ((rho_w * g / phi) * (-basal_hydro%divQ( vi) + basal_hydro%Z( vi)))
+        basal_hydro%Z( vi) = basal_hydro%C( vi) - basal_hydro%O( vi) + basal_hydro%q_water_layer( vi)/basal_hydro%dt ! Bueler and Van Pelt 2015 eq. 48
+        basal_hydro%P( vi) = basal_hydro%P( vi) + basal_hydro%dt * ((rho_w * g / phi) * (-basal_hydro%divQ( vi) + basal_hydro%Z( vi))) ! Bueler and Van Pelt 2015 eq. 49
       
     ! 12) Make sure P is within its bounds
         basal_hydro%P( vi) = min( max( basal_hydro%P( vi), P_min), basal_hydro%P_o( vi))
@@ -588,8 +615,8 @@ CONTAINS
         basal_hydro%W_til( vi) = 0.0_dp
       else
         basal_hydro%W( vi) = basal_hydro%W( vi) + basal_hydro%q_water_layer( vi) &
-                               + basal_hydro%dt * (-basal_hydro%divQ( vi))
-        basal_hydro%W_til( vi) = basal_hydro%W_til( vi) + basal_hydro%q_til( vi)
+                               + basal_hydro%dt * (-basal_hydro%divQ( vi)) ! Bueler and Van Pelt 2015 eq. 44
+        basal_hydro%W_til( vi) = basal_hydro%W_til( vi) + basal_hydro%q_til( vi) - (basal_hydro%dt * basal_hydro%Cd) ! Bueler and Van Pelt 2015 eq. 45
       end if
       ! 14) Make sure W is within its bounds (>= 0)
       basal_hydro%W( vi) = min( max( basal_hydro%W( vi), W_min), W_max)
@@ -659,7 +686,7 @@ CONTAINS
 
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
-        basal_hydro%D_b( ti) = rho_w*g*basal_hydro%K_b( ti)*basal_hydro%W_b( ti)
+        basal_hydro%D_b( ti) = rho_w*g*basal_hydro%K_b( ti)*basal_hydro%W_b( ti) ! Bueler and Van Pelt 2015 eq. 10
       else
         basal_hydro%D_b( ti) = 0.0_dp
       end if
@@ -886,7 +913,7 @@ CONTAINS
       if (test) then                          ! For testing we take R without the pressure component
         basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g
       else 
-        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi)
+        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi) ! Bueler and Van Pelt 2015 eq. 2
       end if
     end do
     !call checksum(mesh%pai_V, basal_hydro%R, "basal_hydro%R")
@@ -898,7 +925,7 @@ CONTAINS
 
 
   subroutine calc_K( mesh, ice, basal_hydro)
-    ! Calculate K
+    ! Calculate the effective conductivity K
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
@@ -923,7 +950,7 @@ CONTAINS
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
         basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp & 
-                               + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp) ! Added small value to avoid dividing by 0
+                               + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp) ! Bueler and Van Pelt 2015 eq. 9 (Taking R without approximating) Added small value to avoid dividing by 0
       else
         basal_hydro%K_b( ti) = 0.0_dp
       end if
@@ -960,8 +987,8 @@ CONTAINS
 
     ! Calculate u and v
     do ti = mesh%ti1, mesh%ti2
-      basal_hydro%u_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dx_b( ti))
-      basal_hydro%v_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dy_b( ti))
+      basal_hydro%u_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dx_b( ti)) ! Bueler and Van Pelt 2025 eq. 10 (Again not approximating R as done in paper)
+      basal_hydro%v_b( ti) = (- basal_hydro%K_b( ti) * basal_hydro%dR_dy_b( ti)) ! Bueler and Van Pelt 2025 eq. 10
     end do
     !call checksum(mesh%pai_Tri, basal_hydro%u_b, "basal_hydro%u_b")
     !call checksum(mesh%pai_Tri, basal_hydro%v_b, "basal_hydro%v_b")
@@ -1031,7 +1058,7 @@ CONTAINS
       basal_hydro%Y( vi) = basal_hydro%W( vi)
       ! Calculate opening rate
       basal_hydro%O( vi) = c1*sqrt(basal_hydro%ice_u_base( vi)**2.0_dp + basal_hydro%ice_v_base( vi)**2.0_dp)&
-                            *max((basal_hydro%W_r( vi) - basal_hydro%Y( vi)), 0.0_dp)
+                            *max((basal_hydro%W_r( vi) - basal_hydro%Y( vi)), 0.0_dp) ! Bueler and Van Pelt 2015 eq. 14
     end do
 
     !call checksum(mesh%pai_V, basal_hydro%O, "basal_hydro%O")
@@ -1064,7 +1091,7 @@ CONTAINS
       ! In the Bueler and Van Pelt 2015 paper Y is defined as W, so we will do that for now too
       basal_hydro%Y( vi) = basal_hydro%W( vi)
       ! Calculate closing rate
-      basal_hydro%C( vi) = c2*A*(basal_hydro%P_o( vi) - basal_hydro%P( vi))**3*basal_hydro%Y( vi)
+      basal_hydro%C( vi) = c2*A*(basal_hydro%P_o( vi) - basal_hydro%P( vi))**3*basal_hydro%Y( vi) ! Bueler and Van Pelt 2015 eq. 15
     end do
     !call checksum(mesh%pai_V, basal_hydro%C, "basal_hydro%C")
 
@@ -1374,12 +1401,16 @@ CONTAINS
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      s = basal_hydro%W_til( vi) / W_max_til
-      basal_hydro%N_til( vi) = min(basal_hydro%P_o(vi), &
-                                   N0*(delta*basal_hydro%P_o( vi)/N0)**(s)*10**(e0/Cc*(1.0_dp - s)))
-      if (testing_water_layer) then     !Testing some stuff out when just adding the moving water layer pressure to effective pressure
-        basal_hydro%N_til( vi) = basal_hydro%N_til( vi) - rho_w*g*basal_hydro%W( vi)
-      end if
+      !if (basal_hydro%mask_a( vi)) then
+        s = basal_hydro%W_til( vi) / W_max_til
+        basal_hydro%N_til( vi) = min(basal_hydro%P_o(vi), &
+                                    N0*(delta*basal_hydro%P_o( vi)/N0)**(s)*10**(e0/Cc*(1.0_dp - s))) ! Bueler and Van Pelt 2015 eq. 24
+        if (testing_water_layer) then     ! If subtracting water layer pressure from effective pressure to also account for an influence of the actual water layer instead of only the till
+          basal_hydro%N_til( vi) = basal_hydro%N_til( vi) - rho_w*g*basal_hydro%W( vi)
+        end if
+      !else
+      !  basal_hydro%N_til( vi) = 0.0_dp
+      !end if
     end do
     !call checksum(mesh%pai_V, basal_hydro%N_til, "basal_hydro%N_til")
   
@@ -1408,7 +1439,7 @@ CONTAINS
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      basal_hydro%tau_c( vi) = c0 + tan(basal_hydro%phi( vi)*pi/180._dp)*basal_hydro%N_til( vi)
+      basal_hydro%tau_c( vi) = c0 + tan(basal_hydro%phi( vi)*pi/180._dp)*basal_hydro%N_til( vi) ! Bueler and Van Pelt 2015 eq. 18
       ! This next part is probably overwritten somewhere now?
       ice%till_yield_stress( vi) = basal_hydro%tau_c( vi)
     end do
@@ -1488,8 +1519,8 @@ CONTAINS
 
     ! Initialise m with the same value everywhere
     do vi = mesh_new%vi1, mesh_new%vi2
-      basal_hydro%m( vi) = 0.0069_dp*rho_w/sec_per_year
-      basal_hydro%phi( vi) = 26.565_dp !degrees
+      basal_hydro%m( vi) = C%Salle2025_hydro_meltwater
+      basal_hydro%phi( vi) = C%Salle2025_phi !degrees
       basal_hydro%W_r( vi) = 0.1_dp
     end do
 

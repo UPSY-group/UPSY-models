@@ -667,6 +667,9 @@ contains
       case("basal_hydro_N_til")
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%N_til, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_N_til", d_grid_vec_partial_2D)
+      case("basal_hydro_divD")
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%divD, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_divD", d_grid_vec_partial_2D)
 
     ! == Basal sliding ==
     ! ===================
@@ -1512,6 +1515,8 @@ contains
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_C', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Cavity closing rate', units = 'm s^-1')
       case("basal_hydro_N_til")
         call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_N_til', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Till effective pressure', units = 'Pa')
+      case("basal_hydro_divD")
+        call add_field_grid_dp_2D( filename, ncid, 'basal_hydro_divD', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Diffusion term in advection of subglacial water', units = 'm s^-1')
 
     ! == Basal sliding ==
     ! ===================

@@ -18,7 +18,8 @@ module ut_mpi_CSR_matrix_vector_multiplication
 
   private
 
-  public :: test_CSR_matrix_vector_multiplication_main
+  public :: test_CSR_matrix_vector_multiplication_main, initialise_simple_matrix_equation_1, &
+    initialise_simple_matrix_equation_2
 
 contains
 

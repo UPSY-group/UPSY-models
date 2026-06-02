@@ -11,9 +11,7 @@ module ct_discretisation_solve_Laplace_eq
   use mesh_types, only: type_mesh
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
-  finalise_matrix_CSR_dist, deallocate_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use netcdf_io_main
 
@@ -70,7 +68,7 @@ contains
     real(dp)                            :: c, r0, x, y
     integer                             :: ti
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)     :: AA
+    type(type_CSR_matrix_dp)     :: AA
     real(dp), dimension(:), allocatable :: bb
     integer,  dimension(:), allocatable :: single_row_ind
     real(dp), dimension(:), allocatable :: single_row_d2dx2_val
@@ -121,7 +119,7 @@ contains
     nrows_loc       = mesh%nTri_loc
     nnz_est_proc    = mesh%M2_ddx_b_b%nnz
 
-    call allocate_matrix_CSR_dist( AA, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call AA%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     allocate( single_row_ind      ( mesh%nC_mem*2))
     allocate( single_row_d2dx2_val( mesh%nC_mem*2))
@@ -135,7 +133,7 @@ contains
       if (norm2([x,y]) >= r0) then
         ! f = f_ex
 
-        call add_entry_CSR_dist( AA, ti, ti, 1._dp)
+        call AA%add_entry( ti, ti, 1._dp)
 
         bb( ti) = f_ex( ti)
 
@@ -143,13 +141,13 @@ contains
         ! d2f/dx2 + d2f/dy2 = c
 
         ! Read coefficients of the operator matrices
-        call read_single_row_CSR_dist( mesh%M2_d2dx2_b_b, ti, single_row_ind, single_row_d2dx2_val, single_row_nnz)
-        call read_single_row_CSR_dist( mesh%M2_d2dy2_b_b, ti, single_row_ind, single_row_d2dy2_val, single_row_nnz)
+        call mesh%M2_d2dx2_b_b%read_single_row( ti, single_row_ind, single_row_d2dx2_val, single_row_nnz)
+        call mesh%M2_d2dy2_b_b%read_single_row( ti, single_row_ind, single_row_d2dy2_val, single_row_nnz)
 
         do k = 1, single_row_nnz
           tj = single_row_ind( k)
           A = single_row_d2dx2_val( k) + single_row_d2dy2_val( k)
-          call add_entry_CSR_dist( AA, ti, tj, A)
+          call AA%add_entry( ti, tj, A)
         end do
 
         bb( ti) = c
@@ -158,7 +156,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( AA)
+    call AA%finalise
 
     ! Use PETSc to solve the matrix equation
     PETSc_rtol   = 1e-6_dp
@@ -170,7 +168,7 @@ contains
       output_dir, test_mesh_filename, mesh, f_ex, f_disc)
 
     ! Clean up after yourself
-    call deallocate_matrix_CSR_dist( AA)
+    call AA%deallocate
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

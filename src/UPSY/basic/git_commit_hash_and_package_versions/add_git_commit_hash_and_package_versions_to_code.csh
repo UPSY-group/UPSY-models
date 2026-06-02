@@ -35,10 +35,12 @@ endif
 set petsc_version = "UNKNOWN"
 
 # Try conda environment first if activated
-if ($?CONDA_PREFIX && "$CONDA_PREFIX" != "" && -f "$CONDA_PREFIX/lib/pkgconfig/PETSc.pc") then
-  set tmp = `sed -n 's/^Version: *//p' "$CONDA_PREFIX/lib/pkgconfig/PETSc.pc"`
-  if ("$tmp" != "") then
-    set petsc_version = "$tmp"
+if ($?CONDA_PREFIX) then
+  if ("$CONDA_PREFIX" != "" && -f "$CONDA_PREFIX/lib/pkgconfig/PETSc.pc") then
+    set tmp = `sed -n 's/^Version: *//p' "$CONDA_PREFIX/lib/pkgconfig/PETSc.pc"`
+    if ("$tmp" != "") then
+      set petsc_version = "$tmp"
+    endif
   endif
 endif
 

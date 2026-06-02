@@ -489,6 +489,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: Salle2025_Cd_config                          = 3.168874718E-11_dp               ! [m s^-1] Water leaking back from the till to the water layer above
     real(dp)            :: Salle2025_phi_config                         = 26.565_dp                        ! [degrees] till yield stress angle
 
+    character(len=1024) :: choice_BMB_grounded_config                   = 'none'
 
   ! == Bed roughness
   ! ==================
@@ -1733,6 +1734,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: Salle2025_Cd
     real(dp)            :: Salle2025_phi
 
+    character(len=1024) :: choice_BMB_grounded
 
   ! == Bed roughness
   ! ==================
@@ -2842,6 +2844,7 @@ contains
       Salle2025_initial_W_config                                  , &
       Salle2025_Cd_config                                         , &
       Salle2025_phi_config                                        , &
+      choice_BMB_grounded_config                                  , &
       choice_bed_roughness_config                                 , &
       choice_bed_roughness_parameterised_config                   , &
       filename_bed_roughness_NAM_config                           , &
@@ -3859,6 +3862,7 @@ contains
     C%Salle2025_initial_W                                    = Salle2025_initial_W_config
     C%Salle2025_Cd                                           = Salle2025_Cd_config
     C%Salle2025_phi                                          = Salle2025_phi_config
+    C%choice_BMB_grounded                                    = choice_BMB_grounded_config
 
     ! == Bed roughness
     ! ==================

@@ -1,3 +1,11 @@
+[![License](https://img.shields.io/github/license/UPSY-group/UPSY-models)](LICENSE)
+[![Paper](https://img.shields.io/badge/Paper-Published-blue.svg)](https://doi.org/10.5194/gmd-18-3635-2025)
+[![Paper](https://img.shields.io/badge/Paper-Published-blue.svg)](https://doi.org/10.5194/egusphere-2026-930)
+![GitHub commit activity](https://img.shields.io/github/commit-activity/w/UPSY-group/UPSY-models)
+[![Latest Commit](https://img.shields.io/github/last-commit/UPSY-group/UPSY-models)](https://github.com/UPSY-group/UPSY-models/commits)
+[![Workflow Status](https://github.com/UPSY-group/UPSY-models/actions/workflows/UFE_test_suite.yml/badge.svg)](https://github.com/UPSY-group/UPSY-models/actions)
+[![Workflow Status](https://github.com/UPSY-group/UPSY-models/actions/workflows/UPSY_test_suite.yml/badge.svg)](https://github.com/UPSY-group/UPSY-models/actions)
+
 ![UPSY_logo](UPSY_logo.png)
 
 Welcome to the Utrecht Polar SYstem (UPSY) models repo! Here you will find the UPSY modelling toolkit, the

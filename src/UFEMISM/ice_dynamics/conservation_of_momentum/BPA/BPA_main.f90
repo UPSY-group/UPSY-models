@@ -21,9 +21,7 @@ module BPA_main
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
-    read_single_row_CSR_dist, deallocate_matrix_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
   use constitutive_equation, only: calc_effective_viscosity_Glen_3D_uv_only, calc_ice_rheology_Glen
@@ -344,7 +342,7 @@ contains
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_BPA_linearised'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)     :: A_CSR
     real(dp), dimension(:), allocatable :: bb
     real(dp), dimension(:), allocatable :: uv_bkuv
     integer                             :: row_tikuv,ti,k,uv
@@ -366,7 +364,7 @@ contains
     nrows_loc       = mesh%nTri_loc * mesh%nz * 2
     nnz_est_proc    = mesh%M2_ddx_bk_bk%nnz   * 4
 
-    call allocate_matrix_CSR_dist( A_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
     allocate( bb(      A_CSR%i1:A_CSR%i2))
@@ -400,7 +398,7 @@ contains
         ! Dirichlet boundary condition; velocities are prescribed for this triangle
 
         ! Stiffness matrix: diagonal element set to 1
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector: prescribed velocity
         if     (uv == 1) then
@@ -450,7 +448,7 @@ contains
 
     end do ! do row_tikuv = A_CSR%i1, A_CSR%i2
 
-    call finalise_matrix_CSR_dist( A_CSR)
+    call A_CSR%finalise
 
     ! == Solve the matrix equation
     ! ============================
@@ -514,7 +512,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -559,13 +557,13 @@ contains
 
     ! Read coefficients of the operator matrices
     row_tik = mesh%tik2n( ti,k)
-    call read_single_row_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddz_bk_bk   , row_tik, single_row_ind, single_row_ddz_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dz2_bk_bk , row_tik, single_row_ind, single_row_d2dz2_val , single_row_nnz)
+    call mesh%M2_ddx_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_ddz_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddz_val   , single_row_nnz)
+    call mesh%M2_d2dx2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_bk_bk%read_single_row( row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_d2dz2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dz2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -595,8 +593,8 @@ contains
                      deta_dy * single_row_ddx_val(    n)      !   deta/dy  dv/dx
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
 
       end do
 
@@ -631,8 +629,8 @@ contains
                      deta_dx * single_row_ddy_val(    n)      !   deta/dx  du/dy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
 
       end do
 
@@ -715,7 +713,7 @@ contains
     type(type_mesh),                     intent(in   )           :: mesh
     type(type_ice_velocity_solver_BPA),  intent(in   )           :: BPA
     type(type_ice_model),                intent(in   )           :: ice
-    type(type_sparse_matrix_CSR_dp),     intent(inout)           :: A_CSR
+    type(type_CSR_matrix_dp),     intent(inout)           :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout)        :: bb
     integer,                             intent(in   )           :: row_tikuv
 
@@ -812,11 +810,11 @@ contains
 
     ! Read coefficients of the operator matrices
     row_tik = mesh%tik2n( ti,k)
-    call read_single_row_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_ddx_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_d2dx2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_bk_bk%read_single_row( row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -843,8 +841,8 @@ contains
              cu_d2vdxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
 
       end do
 
@@ -876,8 +874,8 @@ contains
              cv_d2udxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
 
       end do
 
@@ -974,7 +972,7 @@ contains
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
     type(type_ice_model),                   intent(in   ) :: ice
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1005,7 +1003,7 @@ contains
     ! Exception for the case of no sliding
     if (C%choice_sliding_law == 'no_sliding') then
       ! u = v = 0
-      call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+      call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
       bb( row_tikuv) = 0._dp
       return
     end if
@@ -1086,11 +1084,11 @@ contains
 
     ! Read coefficients of the operator matrices
     row_tik = mesh%tik2n( ti,k)
-    call read_single_row_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call mesh%M2_ddx_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call mesh%M2_ddy_bk_bk%read_single_row(    row_tik, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call mesh%M2_d2dx2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call mesh%M2_d2dxdy_bk_bk%read_single_row( row_tik, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call mesh%M2_d2dy2_bk_bk%read_single_row(  row_tik, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -1117,8 +1115,8 @@ contains
              cu_d2vdxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
 
       end do
 
@@ -1150,8 +1148,8 @@ contains
              cv_d2udxdy * single_row_d2dxdy_val( n)
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkkv, Av)
-        call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkku, Au)
+        call A_CSR%add_entry( row_tikuv, col_tjkkv, Av)
+        call A_CSR%add_entry( row_tikuv, col_tjkku, Au)
 
       end do
 
@@ -1171,7 +1169,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1203,10 +1201,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1215,7 +1213,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1227,7 +1225,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1258,10 +1256,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1270,7 +1268,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1282,7 +1280,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1311,7 +1309,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1343,10 +1341,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1355,7 +1353,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1367,7 +1365,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1398,10 +1396,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1410,7 +1408,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1422,7 +1420,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1451,7 +1449,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1483,10 +1481,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1495,7 +1493,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1507,7 +1505,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1538,10 +1536,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1550,7 +1548,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1562,7 +1560,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1591,7 +1589,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_sparse_matrix_CSR_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1623,10 +1621,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1635,7 +1633,7 @@ contains
         ! u = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1647,7 +1645,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         u_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)
@@ -1678,10 +1676,10 @@ contains
           if (tj == 0) CYCLE
           n_neighbours = n_neighbours + 1
           col_tjkuv = mesh%tikuv2n( tj,k,uv)
-          call add_entry_CSR_dist( A_CSR, row_tikuv, col_tjkuv, 1._dp)
+          call A_CSR%add_entry( row_tikuv, col_tjkuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
+        call A_CSR%add_entry( row_tikuv, row_tikuv, -1._dp * real( n_neighbours,dp))
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1690,7 +1688,7 @@ contains
         ! v = 0
 
         ! Stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv, 1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
 
         ! Load vector
         bb( row_tikuv) = 0._dp
@@ -1702,7 +1700,7 @@ contains
         call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
-        call add_entry_CSR_dist( A_CSR, row_tikuv, row_tikuv,  1._dp)
+        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
         v_fixed = 0._dp
         do n = 1, mesh%nC_mem
           tj = ti_copy( n)

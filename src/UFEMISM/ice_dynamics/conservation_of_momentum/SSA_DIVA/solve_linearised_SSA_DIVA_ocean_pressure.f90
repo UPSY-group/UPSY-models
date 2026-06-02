@@ -4,9 +4,7 @@ module solve_linearised_SSA_DIVA_ocean_pressure
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use ice_model_types, only: type_ice_velocity_solver_DIVA_graphs
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, read_single_row_CSR_dist, &
-    finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use graph_types, only: type_graph_pair
@@ -33,7 +31,7 @@ contains
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised_ocean_pressure'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)     :: A_CSR
     real(dp), dimension(:), allocatable :: bb_buv
     real(dp), dimension(:), allocatable :: uv_buv
     integer                             :: row_niuv, ni, uv
@@ -57,7 +55,7 @@ contains
     nrows_loc       = DIVA%graphs%graph_b%n_loc * 2
     nnz_est_proc    = DIVA%graphs%M2_ddx_b_b%nnz * 4
 
-    call allocate_matrix_CSR_dist( A_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call A_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! Allocate memory for the load vector and the solution
     allocate( bb_buv( DIVA%graphs%graph_b%ni1*2-1: DIVA%graphs%graph_b%ni2*2))
@@ -88,7 +86,7 @@ contains
       !   ! Dirichlet boundary condition; velocities are prescribed for this triangle
 
       !   ! Stiffness matrix: diagonal element set to 1
-      !   call add_entry_CSR_dist( A_CSR, row_tiuv, row_tiuv, 1._dp)
+      !   call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
 
       !   ! Load vector: prescribed velocity
       !   if     (uv == 1) then
@@ -128,7 +126,7 @@ contains
 
     end do
 
-    call finalise_matrix_CSR_dist( A_CSR)
+    call A_CSR%finalise
 
     ! ! == Solve the matrix equation
     ! ! ============================
@@ -186,7 +184,7 @@ contains
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: N_b, dN_dx_b, dN_dy_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: basal_friction_coefficient_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_sparse_matrix_CSR_dp),                                          intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),                                          intent(inout) :: A_CSR
     real(dp), dimension(graphs%graph_b%ni1*2-1: graphs%graph_b%ni2*2),        intent(inout) :: bb_b
     integer,                                                                  intent(in   ) :: row_niuv
 
@@ -224,11 +222,11 @@ contains
     allocate( single_row_d2dy2_val(  graphs%graph_a%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call read_single_row_CSR_dist( graphs%M2_ddx_b_b   , ni, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_ddy_b_b   , ni, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_d2dx2_b_b , ni, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_d2dxdy_b_b, ni, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_d2dy2_b_b , ni, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call graphs%M2_ddx_b_b%read_single_row(    ni, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call graphs%M2_ddy_b_b%read_single_row(    ni, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call graphs%M2_d2dx2_b_b%read_single_row(  ni, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call graphs%M2_d2dxdy_b_b%read_single_row( ni, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call graphs%M2_d2dy2_b_b%read_single_row(  ni, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -255,8 +253,8 @@ contains
                      dN_dy * single_row_ddx_val(    k)      !   dN/dy dv/dx
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -288,8 +286,8 @@ contains
                      dN_dx * single_row_ddy_val(    k)      !   dN/dx du/dy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -344,7 +342,7 @@ contains
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: N_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: basal_friction_coefficient_b
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_sparse_matrix_CSR_dp),                                          intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),                                          intent(inout) :: A_CSR
     real(dp), dimension(graphs%graph_b%ni1*2-1: graphs%graph_b%ni2*2),        intent(inout) :: bb_b
     integer,                                                                  intent(in   ) :: row_niuv
 
@@ -376,9 +374,9 @@ contains
     allocate( single_row_d2dy2_val(  graphs%graph_a%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call read_single_row_CSR_dist( graphs%M2_d2dx2_b_b , ni, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_d2dxdy_b_b, ni, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M2_d2dy2_b_b , ni, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call graphs%M2_d2dx2_b_b%read_single_row(  ni, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call graphs%M2_d2dxdy_b_b%read_single_row( ni, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call graphs%M2_d2dy2_b_b%read_single_row(  ni, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -400,8 +398,8 @@ contains
         Av = 3._dp * single_row_d2dxdy_val( k)                 ! 3 d2v/dxdy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -428,8 +426,8 @@ contains
         Au = 3._dp * single_row_d2dxdy_val( k)                 ! 3 d2u/dxdy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -470,7 +468,7 @@ contains
     ! In/output variables:
     type(type_graph_pair),                                                    intent(in   ) :: graphs
     real(dp), dimension(graphs%graph_b%pai%i1_nih:graphs%graph_b%pai%i2_nih), intent(in   ) :: N_b, tau_ox_b, tau_oy_b
-    type(type_sparse_matrix_CSR_dp),                                          intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),                                          intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2),                                   intent(inout) :: bb_b
     integer,                                                                  intent(in   ) :: row_niuv
 
@@ -501,8 +499,8 @@ contains
     allocate( single_row_ddy_val( graphs%graph_a%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call read_single_row_CSR_dist( graphs%M_ddx_b_b, ni, single_row_ind, single_row_ddx_val, single_row_nnz)
-    call read_single_row_CSR_dist( graphs%M_ddy_b_b, ni, single_row_ind, single_row_ddy_val, single_row_nnz)
+    call graphs%M_ddx_b_b%read_single_row( ni, single_row_ind, single_row_ddx_val, single_row_nnz)
+    call graphs%M_ddy_b_b%read_single_row( ni, single_row_ind, single_row_ddy_val, single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -524,8 +522,8 @@ contains
                      N * n_y * single_row_ddx_val( k)      !   N n_y dv/dx
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 
@@ -552,8 +550,8 @@ contains
                      N * n_x * single_row_ddy_val( k)      !   N n_x du/dy
 
         ! Add coefficients to the stiffness matrix
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_nju, Au)
-        call add_entry_CSR_dist( A_CSR, row_niuv, col_njv, Av)
+        call A_CSR%add_entry( row_niuv, col_nju, Au)
+        call A_CSR%add_entry( row_niuv, col_njv, Av)
 
       end do
 

@@ -3,9 +3,7 @@ module graph_operators
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use graph_types, only: type_graph
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_empty_row_CSR_dist, &
-    add_entry_CSR_dist, finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use shape_functions, only: calc_shape_functions_2D_reg_2nd_order, &
     calc_shape_functions_2D_stag_1st_order, calc_shape_functions_2D_reg_1st_order
   use mesh_types, only: type_mesh
@@ -25,7 +23,7 @@ contains
 
     ! In/output variables:
     type(type_graph),                intent(in   ) :: graph
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
+    type(type_CSR_matrix_dp), intent(  out) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_matrix_operators_2nd_order'
@@ -62,16 +60,11 @@ contains
     nnz_per_row_est = graph%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M2_ddx   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_ddy   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_d2dx2 , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_d2dxdy, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M2_d2dy2 , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
+    call M2_ddx%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_ddy%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_d2dx2%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_d2dxdy%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M2_d2dy2%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -133,30 +126,30 @@ contains
       ! Fill them into the matrices
 
       ! Diagonal elements: shape functions for the home element
-      call add_entry_CSR_dist( M2_ddx   , ni, ni, Nfx_i )
-      call add_entry_CSR_dist( M2_ddy   , ni, ni, Nfy_i )
-      call add_entry_CSR_dist( M2_d2dx2 , ni, ni, Nfxx_i)
-      call add_entry_CSR_dist( M2_d2dxdy, ni, ni, Nfxy_i)
-      call add_entry_CSR_dist( M2_d2dy2 , ni, ni, Nfyy_i)
+      call M2_ddx%add_entry(    ni, ni, Nfx_i )
+      call M2_ddy%add_entry(    ni, ni, Nfy_i )
+      call M2_d2dx2%add_entry(  ni, ni, Nfxx_i)
+      call M2_d2dxdy%add_entry( ni, ni, Nfxy_i)
+      call M2_d2dy2%add_entry(  ni, ni, Nfyy_i)
 
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M2_ddx   , ni, nj, Nfx_c(  i))
-        call add_entry_CSR_dist( M2_ddy   , ni, nj, Nfy_c(  i))
-        call add_entry_CSR_dist( M2_d2dx2 , ni, nj, Nfxx_c( i))
-        call add_entry_CSR_dist( M2_d2dxdy, ni, nj, Nfxy_c( i))
-        call add_entry_CSR_dist( M2_d2dy2 , ni, nj, Nfyy_c( i))
+        call M2_ddx%add_entry(    ni, nj, Nfx_c(  i))
+        call M2_ddy%add_entry(    ni, nj, Nfy_c(  i))
+        call M2_d2dx2%add_entry(  ni, nj, Nfxx_c( i))
+        call M2_d2dxdy%add_entry( ni, nj, Nfxy_c( i))
+        call M2_d2dy2%add_entry(  ni, nj, Nfyy_c( i))
       end do
 
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M2_ddx   )
-    call finalise_matrix_CSR_dist( M2_ddy   )
-    call finalise_matrix_CSR_dist( M2_d2dx2 )
-    call finalise_matrix_CSR_dist( M2_d2dxdy)
-    call finalise_matrix_CSR_dist( M2_d2dy2 )
+    call M2_ddx%finalise
+    call M2_ddy%finalise
+    call M2_d2dx2%finalise
+    call M2_d2dxdy%finalise
+    call M2_d2dy2%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -168,7 +161,7 @@ contains
 
     ! In/output variables:
     type(type_graph),                intent(in   ) :: graph
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_ddx, M_ddy
+    type(type_CSR_matrix_dp), intent(  out) :: M_ddx, M_ddy
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_matrix_operators_1st_order'
@@ -205,10 +198,8 @@ contains
     nnz_per_row_est = graph%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_ddx, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
-    call allocate_matrix_CSR_dist( M_ddy, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph%pai, pai_y = graph%pai)
+    call M_ddx%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
+    call M_ddy%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph%pai, pai_y = graph%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -267,21 +258,21 @@ contains
       ! Fill them into the matrices
 
       ! Diagonal elements: shape functions for the home element
-      call add_entry_CSR_dist( M_ddx, ni, ni, Nfx_i)
-      call add_entry_CSR_dist( M_ddy, ni, ni, Nfy_i)
+      call M_ddx%add_entry( ni, ni, Nfx_i)
+      call M_ddy%add_entry( ni, ni, Nfy_i)
 
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M_ddx, ni, nj, Nfx_c( i))
-        call add_entry_CSR_dist( M_ddy, ni, nj, Nfy_c( i))
+        call M_ddx%add_entry( ni, nj, Nfx_c( i))
+        call M_ddy%add_entry( ni, nj, Nfy_c( i))
       end do
 
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M_ddx)
-    call finalise_matrix_CSR_dist( M_ddy)
+    call M_ddx%finalise
+    call M_ddy%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -295,7 +286,7 @@ contains
     ! In/output variables:
     type(type_mesh),                 intent(in   ) :: mesh
     type(type_graph),                intent(in   ) :: graph_a, graph_b
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_map_a_b, M_ddx_a_b, M_ddy_a_b
+    type(type_CSR_matrix_dp), intent(  out) :: M_map_a_b, M_ddx_a_b, M_ddy_a_b
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_a_to_graph_b_matrix_operators'
@@ -331,12 +322,9 @@ contains
     nnz_per_row_est = graph_a%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_map_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddx_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddy_a_b, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_map_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddx_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddy_a_b%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -384,17 +372,17 @@ contains
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M_map_a_b, ni, nj, Nf_c ( i))
-        call add_entry_CSR_dist( M_ddx_a_b, ni, nj, Nfx_c( i))
-        call add_entry_CSR_dist( M_ddy_a_b, ni, nj, Nfy_c( i))
+        call M_map_a_b%add_entry( ni, nj, Nf_c ( i))
+        call M_ddx_a_b%add_entry( ni, nj, Nfx_c( i))
+        call M_ddy_a_b%add_entry( ni, nj, Nfy_c( i))
       end do
 
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M_map_a_b)
-    call finalise_matrix_CSR_dist( M_ddx_a_b)
-    call finalise_matrix_CSR_dist( M_ddy_a_b)
+    call M_map_a_b%finalise
+    call M_ddx_a_b%finalise
+    call M_ddy_a_b%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -408,7 +396,7 @@ contains
     ! In/output variables:
     type(type_mesh),                 intent(in   ) :: mesh
     type(type_graph),                intent(in   ) :: graph_b, graph_a
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_map_b_a, M_ddx_b_a, M_ddy_b_a
+    type(type_CSR_matrix_dp), intent(  out) :: M_map_b_a, M_ddx_b_a, M_ddy_b_a
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'calc_graph_b_to_graph_a_matrix_operators'
@@ -445,12 +433,9 @@ contains
     nnz_per_row_est = graph_a%nC_mem+1
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_map_b_a, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddx_b_a, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
-    call allocate_matrix_CSR_dist( M_ddy_b_a, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, &
-      pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_map_b_a%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddx_b_a%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
+    call M_ddy_b_a%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc, pai_x = graph_a%pai, pai_y = graph_b%pai)
 
     ! Calculate shape functions and fill them into the matrices
     ! =========================================================
@@ -519,17 +504,17 @@ contains
       ! Off-diagonal elements: shape functions for the neighbours
       do i = 1, n_c
         nj = i_c( i)
-        call add_entry_CSR_dist( M_map_b_a, ni, nj, Nf_c ( i))
-        call add_entry_CSR_dist( M_ddx_b_a, ni, nj, Nfx_c( i))
-        call add_entry_CSR_dist( M_ddy_b_a, ni, nj, Nfy_c( i))
+        call M_map_b_a%add_entry( ni, nj, Nf_c ( i))
+        call M_ddx_b_a%add_entry( ni, nj, Nfx_c( i))
+        call M_ddy_b_a%add_entry( ni, nj, Nfy_c( i))
       end do
 
     end do
 
     ! Crop matrix memory
-    call finalise_matrix_CSR_dist( M_map_b_a)
-    call finalise_matrix_CSR_dist( M_ddx_b_a)
-    call finalise_matrix_CSR_dist( M_ddy_b_a)
+    call M_map_b_a%finalise
+    call M_ddx_b_a%finalise
+    call M_ddy_b_a%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

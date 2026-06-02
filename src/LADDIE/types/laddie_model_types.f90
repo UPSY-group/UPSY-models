@@ -6,7 +6,7 @@ MODULE laddie_model_types
 ! ====================
 
   USE precisions                                             , ONLY: dp
-  USE CSR_sparse_matrix_type                                 , ONLY: type_sparse_matrix_CSR_dp
+  USE CSR_matrix_mod                                 , ONLY: type_CSR_matrix_dp
   use grid_types, only: type_grid
   use mpi_f08, only: MPI_WIN
 
@@ -177,9 +177,9 @@ MODULE laddie_model_types
     real(dp)                                    :: area_b                     ! [m^2]             Integrated area on b grid
 
     ! Mapping operators
-    TYPE(type_sparse_matrix_CSR_dp)         :: M_map_H_a_b
-    TYPE(type_sparse_matrix_CSR_dp)         :: M_map_H_a_c
-    TYPE(type_sparse_matrix_CSR_dp)         :: M_map_UV_b_c
+    TYPE(type_CSR_matrix_dp)         :: M_map_H_a_b
+    TYPE(type_CSR_matrix_dp)         :: M_map_H_a_c
+    TYPE(type_CSR_matrix_dp)         :: M_map_UV_b_c
 
     ! Timestepping types
     TYPE(type_laddie_timestep)              :: nm1                         !                   Timestep n minus 1

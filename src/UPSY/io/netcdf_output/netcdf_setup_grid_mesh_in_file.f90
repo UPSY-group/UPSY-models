@@ -4,8 +4,7 @@ module netcdf_setup_grid_mesh_in_file
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: gather_CSR_dist_to_primary
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_basic
   use netcdf_add_field_mesh
   use netcdf, only: NF90_DOUBLE, NF90_INT, NF90_DEF_GRP
@@ -15,9 +14,8 @@ module netcdf_setup_grid_mesh_in_file
 
   private
 
+  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf
   public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, write_matrix_operators_to_netcdf_file
-  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf, save_graph_pair_as_netcdf
-  public :: save_matrix_operator_as_netcdf_file
 
 contains
 
@@ -86,44 +84,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine save_graph_as_netcdf
-
-  subroutine save_graph_pair_as_netcdf( filename, graphs)
-
-    ! In/output variables:
-    character(len=*),      intent(in   ) :: filename
-    type(type_graph_pair), intent(in   ) :: graphs
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'save_graph_pair_as_netcdf'
-    integer                        :: ncid
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call save_graph_as_netcdf( trim( filename) // '_graph_a.nc', graphs%graph_a)
-    call save_graph_as_netcdf( trim( filename) // '_graph_b.nc', graphs%graph_b)
-
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddx_b_b.nc'    , graphs%M_ddx_b_b    )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddy_b_b.nc'    , graphs%M_ddy_b_b    )
-
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_ddx_b_b.nc'   , graphs%M2_ddx_b_b   )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_ddy_b_b.nc'   , graphs%M2_ddy_b_b   )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_d2dx2_b_b.nc' , graphs%M2_d2dx2_b_b )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_d2dxdy_b_b.nc', graphs%M2_d2dxdy_b_b)
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M2_d2dy2_b_b.nc' , graphs%M2_d2dy2_b_b )
-
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_map_a_b.nc'    , graphs%M_map_a_b    )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddx_a_b.nc'    , graphs%M_ddx_a_b    )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddy_a_b.nc'    , graphs%M_ddy_a_b    )
-
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_map_b_a.nc'    , graphs%M_map_b_a    )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddx_b_a.nc'    , graphs%M_ddx_b_a    )
-    call save_matrix_operator_as_netcdf_file( trim( filename) // '_M_ddy_b_a.nc'    , graphs%M_ddy_b_a    )
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine save_graph_pair_as_netcdf
 
   subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid, do_include_lonlat)
     !< Set up a regular x/y-grid in an existing NetCDF file
@@ -885,88 +845,25 @@ contains
     !< Write a single matrix operator to the netcdf output file
 
     ! In/output variables:
-    character(len=*),                 intent(in   ) :: filename
-    integer,                          intent(inout) :: ncid
-    type(type_sparse_matrix_CSR_dp),  intent(in   ) :: A
-    character(len=*),                 intent(in   ) :: name
+    character(len=*),          intent(in   ) :: filename
+    integer,                   intent(inout) :: ncid
+    type(type_CSR_matrix_dp),  intent(in   ) :: A
+    character(len=*),          intent(in   ) :: name
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'write_matrix_operator_to_netcdf_file'
-    type(type_sparse_matrix_CSR_dp) :: A_tot
-    integer                         :: ierr
-    integer                         :: grp_ncid, id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
-    integer                         :: id_var_ptr, id_var_ind, id_var_val
+    integer                         :: grp_ncid
 
     call init_routine( routine_name)
 
-    ! Gather distributed matrix to the primary
-    call gather_CSR_dist_to_primary( A, A_tot)
-
     ! Create a new NetCDF group for this matrix operator
-    ierr = NF90_DEF_GRP( ncid, name, grp_ncid)
+    call handle_netcdf_error( NF90_DEF_GRP( ncid, name, grp_ncid))
 
-    ! Create dimensions
-    call create_dimension( filename, grp_ncid, 'm'     , A_tot%m  , id_dim_m  )
-    call create_dimension( filename, grp_ncid, 'mplus1', A_tot%m+1, id_dim_mp1)
-    call create_dimension( filename, grp_ncid, 'n'     , A_tot%n  , id_dim_n  )
-    call create_dimension( filename, grp_ncid, 'nnz'   , A_tot%nnz, id_dim_nnz)
-
-    ! Create variables
-    call create_variable( filename, grp_ncid, 'ptr', NF90_INT   , [id_dim_mp1], id_var_ptr)
-    call create_variable( filename, grp_ncid, 'ind', NF90_INT   , [id_dim_nnz], id_var_ind)
-    call create_variable( filename, grp_ncid, 'val', NF90_DOUBLE, [id_dim_nnz], id_var_val)
-
-    ! Write to NetCDF
-    call write_var_primary( filename, grp_ncid, id_var_ptr, A_tot%ptr              )
-    call write_var_primary( filename, grp_ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
-    call write_var_primary( filename, grp_ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
+    ! Write the matrix to the group
+    call A%write_to_NetCDF( filename, grp_ncid)
 
     call finalise_routine( routine_name)
 
   end subroutine write_matrix_operator_to_netcdf_file
-
-  subroutine save_matrix_operator_as_netcdf_file( filename, A)
-    !< Save a single matrix operator as a netcdf file
-
-    ! In/output variables:
-    character(len=*),                intent(in) :: filename
-    type(type_sparse_matrix_CSR_dp), intent(in) :: A
-
-    ! Local variables:
-    character(len=1024), parameter  :: routine_name = 'save_matrix_operator_as_netcdf_file'
-    integer                         :: ncid
-    type(type_sparse_matrix_CSR_dp) :: A_tot
-    integer                         :: ierr
-    integer                         :: id_dim_m, id_dim_mp1, id_dim_n, id_dim_nnz
-    integer                         :: id_var_ptr, id_var_ind, id_var_val
-
-    call init_routine( routine_name)
-
-    call create_new_netcdf_file_for_writing( filename, ncid)
-
-    ! Gather distributed matrix to the primary
-    call gather_CSR_dist_to_primary( A, A_tot)
-
-    ! Create dimensions
-    call create_dimension( filename, ncid, 'm'     , A_tot%m  , id_dim_m  )
-    call create_dimension( filename, ncid, 'mplus1', A_tot%m+1, id_dim_mp1)
-    call create_dimension( filename, ncid, 'n'     , A_tot%n  , id_dim_n  )
-    call create_dimension( filename, ncid, 'nnz'   , A_tot%nnz, id_dim_nnz)
-
-    ! Create variables
-    call create_variable( filename, ncid, 'ptr', NF90_INT   , [id_dim_mp1], id_var_ptr)
-    call create_variable( filename, ncid, 'ind', NF90_INT   , [id_dim_nnz], id_var_ind)
-    call create_variable( filename, ncid, 'val', NF90_DOUBLE, [id_dim_nnz], id_var_val)
-
-    ! Write to NetCDF
-    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr              )
-    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
-    call write_var_primary( filename, ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
-
-    call close_netcdf_file( ncid)
-
-    call finalise_routine( routine_name)
-
-  end subroutine save_matrix_operator_as_netcdf_file
 
 end module netcdf_setup_grid_mesh_in_file

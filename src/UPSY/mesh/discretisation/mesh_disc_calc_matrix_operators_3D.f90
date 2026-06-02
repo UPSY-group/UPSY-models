@@ -5,8 +5,6 @@ module mesh_disc_calc_matrix_operators_3D
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use CSR_matrix_basics, only: deallocate_matrix_CSR_dist, allocate_matrix_CSR_dist, &
-    read_single_row_CSR_dist, add_entry_CSR_dist, finalise_matrix_CSR_dist
 
   implicit none
 
@@ -112,8 +110,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_ddx_bk_ak%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddx_bk_ak)
-  if (allocateD( mesh%M_ddy_bk_ak%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddy_bk_ak)
+  if (allocateD( mesh%M_ddx_bk_ak%ptr)) call mesh%M_ddx_bk_ak%deallocate
+  if (allocateD( mesh%M_ddy_bk_ak%ptr)) call mesh%M_ddy_bk_ak%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * mesh%nz ! from
@@ -122,8 +120,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   nrows_loc       = mesh%nV_loc   * mesh%nz
   nnz_est_proc    = mesh%M_map_b_a%nnz * mesh%nz * 3
 
-  call allocate_matrix_CSR_dist( mesh%M_ddx_bk_ak, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M_ddy_bk_ak, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddx_bk_ak%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddy_bk_ak%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -141,9 +139,9 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   do vi = mesh%vi1, mesh%vi2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M_map_b_a, vi, single_row_vi_ind, single_row_map_val , single_row_vi_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddx_b_a, vi, single_row_vi_ind, single_row_ddxh_val, single_row_vi_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddy_b_a, vi, single_row_vi_ind, single_row_ddyh_val, single_row_vi_nnz)
+    call mesh%M_map_b_a%read_single_row( vi, single_row_vi_ind, single_row_map_val , single_row_vi_nnz)
+    call mesh%M_ddx_b_a%read_single_row( vi, single_row_vi_ind, single_row_ddxh_val, single_row_vi_nnz)
+    call mesh%M_ddy_b_a%read_single_row( vi, single_row_vi_ind, single_row_ddyh_val, single_row_vi_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -152,7 +150,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
       row_vik = mesh%vik2n( vi,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_k_1D, k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
+      call mesh%M_ddzeta_k_k_1D%read_single_row( k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
 
       ! Gradients of zeta at vertex vi, layer k
       dzeta_dx = dzeta_dx_ak( vi,k)
@@ -196,8 +194,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
           c_ddy = c_ddy + dzeta_dy * c_map * c_ddzeta   ! Now:  d/dy   =  d/dyh    +  dzeta/dy   d/dzeta
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_ddx_bk_ak, row_vik, col_tikk, c_ddx)
-          call add_entry_CSR_dist( mesh%M_ddy_bk_ak, row_vik, col_tikk, c_ddy)
+          call mesh%M_ddx_bk_ak%add_entry( row_vik, col_tikk, c_ddx)
+          call mesh%M_ddy_bk_ak%add_entry( row_vik, col_tikk, c_ddy)
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_vi_nnz
@@ -206,8 +204,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_ak( mesh, dzeta_dx_ak, dzeta_dy_ak)
   end do ! do vi = mesh%vi1, mesh%vi2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_ddx_bk_ak)
-  call finalise_matrix_CSR_dist( mesh%M_ddy_bk_ak)
+  call mesh%M_ddx_bk_ak%finalise
+  call mesh%M_ddy_bk_ak%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -268,8 +266,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_ddx_ak_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddx_ak_bk)
-  if (allocateD( mesh%M_ddy_ak_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddy_ak_bk)
+  if (allocateD( mesh%M_ddx_ak_bk%ptr)) call mesh%M_ddx_ak_bk%deallocate
+  if (allocateD( mesh%M_ddy_ak_bk%ptr)) call mesh%M_ddy_ak_bk%deallocate
 
   ! Matrix size
   ncols           = mesh%nV       * mesh%nz ! from
@@ -278,8 +276,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   nrows_loc       = mesh%nTri_loc * mesh%nz
   nnz_est_proc    = mesh%M_map_a_b%nnz * mesh%nz * 3
 
-  call allocate_matrix_CSR_dist( mesh%M_ddx_ak_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M_ddy_ak_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddx_ak_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddy_ak_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -297,9 +295,9 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   do ti = mesh%ti1, mesh%ti2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M_map_a_b, ti, single_row_ti_ind, single_row_map_val , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddx_a_b, ti, single_row_ti_ind, single_row_ddxh_val, single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M_ddy_a_b, ti, single_row_ti_ind, single_row_ddyh_val, single_row_ti_nnz)
+    call mesh%M_map_a_b%read_single_row( ti, single_row_ti_ind, single_row_map_val , single_row_ti_nnz)
+    call mesh%M_ddx_a_b%read_single_row( ti, single_row_ti_ind, single_row_ddxh_val, single_row_ti_nnz)
+    call mesh%M_ddy_a_b%read_single_row( ti, single_row_ti_ind, single_row_ddyh_val, single_row_ti_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -308,7 +306,7 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
       row_tik = mesh%tik2n( ti,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_k_1D, k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
+      call mesh%M_ddzeta_k_k_1D%read_single_row( k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
 
       ! Gradients of zeta at triangle ti, layer k
       dzeta_dx = dzeta_dx_bk( ti,k)
@@ -352,8 +350,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
           c_ddy = c_ddy + dzeta_dy * c_map * c_ddzeta   ! Now:  d/dy   =  d/dyh    +  dzeta/dy   d/dzeta
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_ddx_ak_bk, row_tik, col_vikk, c_ddx)
-          call add_entry_CSR_dist( mesh%M_ddy_ak_bk, row_tik, col_vikk, c_ddy)
+          call mesh%M_ddx_ak_bk%add_entry( row_tik, col_vikk, c_ddx)
+          call mesh%M_ddy_ak_bk%add_entry( row_tik, col_vikk, c_ddy)
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_ti_nnz
@@ -362,8 +360,8 @@ subroutine calc_3D_matrix_operators_mesh_ak_bk( mesh, dzeta_dx_bk, dzeta_dy_bk)
   end do ! do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_ddx_ak_bk)
-  call finalise_matrix_CSR_dist( mesh%M_ddy_ak_bk)
+  call mesh%M_ddx_ak_bk%finalise
+  call mesh%M_ddy_ak_bk%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -419,7 +417,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_ddz_bk_bks%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddz_bk_bks)
+  if (allocateD( mesh%M_ddz_bk_bks%ptr)) call mesh%M_ddz_bk_bks%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     *  mesh%nz    ! from
@@ -429,7 +427,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
   nnz_per_row_est = 2
   nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-  call allocate_matrix_CSR_dist( mesh%M_ddz_bk_bks, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddz_bk_bks%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -448,7 +446,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
       row_tiks = mesh%tiks2n( ti,ks)
 
       ! Read coefficients from the zeta gradient operators for this staggered layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_ks_1D, ks, single_row_ks_ind, single_row_ddzeta_val, single_row_ks_nnz)
+      call mesh%M_ddzeta_k_ks_1D%read_single_row( ks, single_row_ks_ind, single_row_ddzeta_val, single_row_ks_nnz)
 
       ! Gradients of zeta at triangle ti, staggered layer ks
       dzeta_dz = dzeta_dz_bks( ti,ks)
@@ -470,7 +468,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
         c_ddz = dzeta_dz * c_ddzeta
 
         ! Add to CSR matrices
-        call add_entry_CSR_dist( mesh%M_ddz_bk_bks, row_tiks, col_tik, c_ddz)
+        call mesh%M_ddz_bk_bks%add_entry( row_tiks, col_tik, c_ddz)
 
       end do ! do jj = 1, single_row_ks_nnz
 
@@ -482,7 +480,7 @@ subroutine calc_3D_matrix_operators_mesh_bk_bks( mesh, dzeta_dz_bks)
   DEallocate( single_row_ddzeta_val)
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_ddz_bk_bks)
+  call mesh%M_ddz_bk_bks%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -539,8 +537,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_map_bks_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_map_bks_bk)
-  if (allocateD( mesh%M_ddz_bks_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M_ddz_bks_bk)
+  if (allocateD( mesh%M_map_bks_bk%ptr)) call mesh%M_map_bks_bk%deallocate
+  if (allocateD( mesh%M_ddz_bks_bk%ptr)) call mesh%M_ddz_bks_bk%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * (mesh%nz-1) ! from
@@ -550,8 +548,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
   nnz_per_row_est = 2
   nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-  call allocate_matrix_CSR_dist( mesh%M_map_bks_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M_ddz_bks_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_map_bks_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_ddz_bks_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -571,8 +569,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
       row_tik = mesh%tik2n( ti,k)
 
       ! Read coefficients from the zeta gradient operators for this staggered layer
-      call read_single_row_CSR_dist( mesh%M_map_ks_k_1D   , k, single_row_k_ind, single_row_map_val   , single_row_k_nnz)
-      call read_single_row_CSR_dist( mesh%M_ddzeta_ks_k_1D, k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
+      call mesh%M_map_ks_k_1D%read_single_row   ( k, single_row_k_ind, single_row_map_val   , single_row_k_nnz)
+      call mesh%M_ddzeta_ks_k_1D%read_single_row( k, single_row_k_ind, single_row_ddzeta_val, single_row_k_nnz)
 
       ! Gradients of zeta at triangle ti, layer k
       dzeta_dz = dzeta_dz_bk( ti,k)
@@ -595,8 +593,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
         c_ddz = dzeta_dz * c_ddzeta
 
         ! Add to CSR matrices
-        call add_entry_CSR_dist( mesh%M_map_bks_bk, row_tik, col_tiks, c_map)
-        call add_entry_CSR_dist( mesh%M_ddz_bks_bk, row_tik, col_tiks, c_ddz)
+        call mesh%M_map_bks_bk%add_entry( row_tik, col_tiks, c_map)
+        call mesh%M_ddz_bks_bk%add_entry( row_tik, col_tiks, c_ddz)
 
       end do ! do jj = 1, single_row_k_nnz
 
@@ -604,8 +602,8 @@ subroutine calc_3D_matrix_operators_mesh_bks_bk( mesh, dzeta_dz_bk)
   end do ! do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_map_bks_bk)
-  call finalise_matrix_CSR_dist( mesh%M_ddz_bks_bk)
+  call mesh%M_map_bks_bk%finalise
+  call mesh%M_ddz_bks_bk%finalise
 
   ! Clean up after yourself
   DEallocate( single_row_k_ind)
@@ -646,7 +644,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_map_bks_ak%ptr)) call deallocate_matrix_CSR_dist( mesh%M_map_bks_ak)
+  if (allocateD( mesh%M_map_bks_ak%ptr)) call mesh%M_map_bks_ak%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * (mesh%nz-1) ! from
@@ -655,7 +653,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   nrows_loc       = mesh%nV_loc   *  mesh%nz
   nnz_est_proc    = mesh%M_map_b_a%nnz * mesh%nz * 2
 
-  call allocate_matrix_CSR_dist( mesh%M_map_bks_ak, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_map_bks_ak%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -671,7 +669,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   do vi = mesh%vi1, mesh%vi2
 
     ! Read coefficients from the 2-D gradient operators for this vertex
-    call read_single_row_CSR_dist( mesh%M_map_b_a, vi, single_row_vi_ind, single_row_map_b_a_val, single_row_vi_nnz)
+    call mesh%M_map_b_a%read_single_row( vi, single_row_vi_ind, single_row_map_b_a_val, single_row_vi_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -680,7 +678,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
       row_vik = mesh%vik2n( vi,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_map_ks_k_1D, k, single_row_k_ind, single_row_map_ks_k_val, single_row_k_nnz)
+      call mesh%M_map_ks_k_1D%read_single_row( k, single_row_k_ind, single_row_map_ks_k_val, single_row_k_nnz)
 
       ! Loop over the entire 3-D local neighbourhood, calculate
       ! coefficients for all 3-D matrix operators
@@ -707,7 +705,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
           c_map = c_map_b_a * c_map_ks_k
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_map_bks_ak, row_vik, col_tiks, c_map)
+          call mesh%M_map_bks_ak%add_entry( row_vik, col_tiks, c_map)
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_vi_nnz
@@ -716,7 +714,7 @@ subroutine calc_3D_mapping_operator_mesh_bks_ak( mesh)
   end do ! do vi = mesh%vi1, mesh%vi2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_map_bks_ak)
+  call mesh%M_map_bks_ak%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -752,7 +750,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M_map_ak_bks%ptr)) call deallocate_matrix_CSR_dist( mesh%M_map_ak_bks)
+  if (allocateD( mesh%M_map_ak_bks%ptr)) call mesh%M_map_ak_bks%deallocate
 
   ! Matrix size
   ncols           = mesh%nV       *  mesh%nz    ! from
@@ -761,7 +759,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   nrows_loc       = mesh%nTri_loc * (mesh%nz-1)
   nnz_est_proc    = mesh%M_map_a_b%nnz * (mesh%nz-1) * 2
 
-  call allocate_matrix_CSR_dist( mesh%M_map_ak_bks, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M_map_ak_bks%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -777,7 +775,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   do ti = mesh%ti1, mesh%ti2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M_map_a_b, ti, single_row_ti_ind, single_row_map_a_b_val, single_row_ti_nnz)
+    call mesh%M_map_a_b%read_single_row( ti, single_row_ti_ind, single_row_map_a_b_val, single_row_ti_nnz)
 
     ! Loop over all staggered layers
     do ks = 1, mesh%nz-1
@@ -786,7 +784,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
       row_tiks = mesh%tiks2n( ti,ks)
 
       ! Read coefficients from the zeta gradient operators for this staggered layer
-      call read_single_row_CSR_dist( mesh%M_map_k_ks_1D, ks, single_row_ks_ind, single_row_map_k_ks_val, single_row_ks_nnz)
+      call mesh%M_map_k_ks_1D%read_single_row( ks, single_row_ks_ind, single_row_map_k_ks_val, single_row_ks_nnz)
 
       ! Loop over the entire 3-D local neighbourhood, calculate
       ! coefficients for all 3-D matrix operators
@@ -813,7 +811,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
           c_map = c_map_a_b * c_map_k_ks
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M_map_ak_bks, row_tiks, col_vik, c_map)
+          call mesh%M_map_ak_bks%add_entry( row_tiks, col_vik, c_map)
 
         end do ! do jj = 1, single_row_ks_nnz
       end do ! do ii = 1, single_row_ti_nnz
@@ -822,7 +820,7 @@ subroutine calc_3D_mapping_operator_mesh_ak_bks( mesh)
   end do !     do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M_map_ak_bks)
+  call mesh%M_map_ak_bks%finalise
 
   ! Finalise routine path
   call finalise_routine( routine_name)
@@ -905,13 +903,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   ! =====================================================================
 
   ! Deallocate existing matrices if necessary
-  if (allocateD( mesh%M2_ddx_bk_bk%ptr   )) call deallocate_matrix_CSR_dist( mesh%M2_ddx_bk_bk)
-  if (allocateD( mesh%M2_ddy_bk_bk%ptr   )) call deallocate_matrix_CSR_dist( mesh%M2_ddy_bk_bk)
-  if (allocateD( mesh%M2_ddz_bk_bk%ptr   )) call deallocate_matrix_CSR_dist( mesh%M2_ddz_bk_bk)
-  if (allocateD( mesh%M2_d2dx2_bk_bk%ptr )) call deallocate_matrix_CSR_dist( mesh%M2_d2dx2_bk_bk)
-  if (allocateD( mesh%M2_d2dxdy_bk_bk%ptr)) call deallocate_matrix_CSR_dist( mesh%M2_d2dxdy_bk_bk)
-  if (allocateD( mesh%M2_d2dy2_bk_bk%ptr )) call deallocate_matrix_CSR_dist( mesh%M2_d2dy2_bk_bk)
-  if (allocateD( mesh%M2_d2dz2_bk_bk%ptr )) call deallocate_matrix_CSR_dist( mesh%M2_d2dz2_bk_bk)
+  if (allocateD( mesh%M2_ddx_bk_bk%ptr   )) call mesh%M2_ddx_bk_bk%deallocate
+  if (allocateD( mesh%M2_ddy_bk_bk%ptr   )) call mesh%M2_ddy_bk_bk%deallocate
+  if (allocateD( mesh%M2_ddz_bk_bk%ptr   )) call mesh%M2_ddz_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dx2_bk_bk%ptr )) call mesh%M2_d2dx2_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dxdy_bk_bk%ptr)) call mesh%M2_d2dxdy_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dy2_bk_bk%ptr )) call mesh%M2_d2dy2_bk_bk%deallocate
+  if (allocateD( mesh%M2_d2dz2_bk_bk%ptr )) call mesh%M2_d2dz2_bk_bk%deallocate
 
   ! Matrix size
   ncols           = mesh%nTri     * mesh%nz ! from
@@ -920,13 +918,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   nrows_loc       = mesh%nTri_loc * mesh%nz
   nnz_est_proc    = mesh%M2_ddx_b_b%nnz * mesh%nz * 3
 
-  call allocate_matrix_CSR_dist( mesh%M2_ddx_bk_bk   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_ddy_bk_bk   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_ddz_bk_bk   , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dx2_bk_bk , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dxdy_bk_bk, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dy2_bk_bk , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-  call allocate_matrix_CSR_dist( mesh%M2_d2dz2_bk_bk , nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_ddx_bk_bk%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_ddy_bk_bk%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_ddz_bk_bk%allocate   ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dx2_bk_bk%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dxdy_bk_bk%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dy2_bk_bk%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+  call mesh%M2_d2dz2_bk_bk%allocate ( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
   ! Calculate shape functions and fill them into the matrices
   ! =========================================================
@@ -947,11 +945,11 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   do ti = mesh%ti1, mesh%ti2
 
     ! Read coefficients from the 2-D gradient operators for this triangle
-    call read_single_row_CSR_dist( mesh%M2_ddx_b_b   , ti, single_row_ti_ind, single_row_ddxh_val    , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_ddy_b_b   , ti, single_row_ti_ind, single_row_ddyh_val    , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dx2_b_b , ti, single_row_ti_ind, single_row_d2dxh2_val  , single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dxdy_b_b, ti, single_row_ti_ind, single_row_d2dxhdyh_val, single_row_ti_nnz)
-    call read_single_row_CSR_dist( mesh%M2_d2dy2_b_b , ti, single_row_ti_ind, single_row_d2dyh2_val  , single_row_ti_nnz)
+    call mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ti_ind, single_row_ddxh_val    , single_row_ti_nnz)
+    call mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ti_ind, single_row_ddyh_val    , single_row_ti_nnz)
+    call mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ti_ind, single_row_d2dxh2_val  , single_row_ti_nnz)
+    call mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ti_ind, single_row_d2dxhdyh_val, single_row_ti_nnz)
+    call mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ti_ind, single_row_d2dyh2_val  , single_row_ti_nnz)
 
     ! Loop over all layers
     do k = 1, mesh%nz
@@ -960,8 +958,8 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
       row_tik = mesh%tik2n( ti,k)
 
       ! Read coefficients from the zeta gradient operators for this layer
-      call read_single_row_CSR_dist( mesh%M_ddzeta_k_k_1D  , k, single_row_k_ind, single_row_ddzeta_val  , single_row_k_nnz)
-      call read_single_row_CSR_dist( mesh%M_d2dzeta2_k_k_1D, k, single_row_k_ind, single_row_d2dzeta2_val, single_row_k_nnz)
+      call mesh%M_ddzeta_k_k_1D%read_single_row(   k, single_row_k_ind, single_row_ddzeta_val  , single_row_k_nnz)
+      call mesh%M_d2dzeta2_k_k_1D%read_single_row( k, single_row_k_ind, single_row_d2dzeta2_val, single_row_k_nnz)
 
       ! Gradients of zeta at triangle ti, layer k
       dzeta_dx    = dzeta_dx_bk(    ti,k)
@@ -1032,13 +1030,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
           c_d2dy2  = c_d2dy2  + 2._dp * dzeta_dy * c_ddyh * c_ddzeta                                ! Now: d2/dy2  = d2/dyh2   + d2zeta/dy2  d/dzeta + (dzeta/dy)^2       d2/dzeta2 + 2 dzeta/dy d2/dyhdzeta
 
           ! Add to CSR matrices
-          call add_entry_CSR_dist( mesh%M2_ddx_bk_bk   , row_tik, col_tjkk, c_ddx   )
-          call add_entry_CSR_dist( mesh%M2_ddy_bk_bk   , row_tik, col_tjkk, c_ddy   )
-          call add_entry_CSR_dist( mesh%M2_ddz_bk_bk   , row_tik, col_tjkk, c_ddz   )
-          call add_entry_CSR_dist( mesh%M2_d2dx2_bk_bk , row_tik, col_tjkk, c_d2dx2 )
-          call add_entry_CSR_dist( mesh%M2_d2dxdy_bk_bk, row_tik, col_tjkk, c_d2dxdy)
-          call add_entry_CSR_dist( mesh%M2_d2dy2_bk_bk , row_tik, col_tjkk, c_d2dy2 )
-          call add_entry_CSR_dist( mesh%M2_d2dz2_bk_bk , row_tik, col_tjkk, c_d2dz2 )
+          call mesh%M2_ddx_bk_bk%add_entry(    row_tik, col_tjkk, c_ddx   )
+          call mesh%M2_ddy_bk_bk%add_entry(    row_tik, col_tjkk, c_ddy   )
+          call mesh%M2_ddz_bk_bk%add_entry(    row_tik, col_tjkk, c_ddz   )
+          call mesh%M2_d2dx2_bk_bk%add_entry(  row_tik, col_tjkk, c_d2dx2 )
+          call mesh%M2_d2dxdy_bk_bk%add_entry( row_tik, col_tjkk, c_d2dxdy)
+          call mesh%M2_d2dy2_bk_bk%add_entry(  row_tik, col_tjkk, c_d2dy2 )
+          call mesh%M2_d2dz2_bk_bk%add_entry(  row_tik, col_tjkk, c_d2dz2 )
 
         end do ! do jj = 1, single_row_k_nnz
       end do ! do ii = 1, single_row_ti_nnz
@@ -1047,13 +1045,13 @@ subroutine calc_3D_matrix_operators_mesh_bk_bk( mesh, &
   end do ! do ti = mesh%ti1, mesh%ti2
 
   ! Crop matrix memory
-  call finalise_matrix_CSR_dist( mesh%M2_ddx_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_ddy_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_ddz_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dx2_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dxdy_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dy2_bk_bk)
-  call finalise_matrix_CSR_dist( mesh%M2_d2dz2_bk_bk)
+  call mesh%M2_ddx_bk_bk%finalise
+  call mesh%M2_ddy_bk_bk%finalise
+  call mesh%M2_ddz_bk_bk%finalise
+  call mesh%M2_d2dx2_bk_bk%finalise
+  call mesh%M2_d2dxdy_bk_bk%finalise
+  call mesh%M2_d2dy2_bk_bk%finalise
+  call mesh%M2_d2dz2_bk_bk%finalise
 
   ! Clean up after yourself
   DEallocate( single_row_ti_ind)

@@ -10,7 +10,7 @@ MODULE basal_hydrology_model_types
   use laddie_forcing_types, only: type_laddie_forcing
   use reference_geometry_types, only: type_reference_geometry
   USE mesh_types                                             , ONLY: type_mesh
-  USE CSR_sparse_matrix_type                                 , ONLY: type_sparse_matrix_CSR_dp
+  USE CSR_matrix_mod                                 , ONLY: type_CSR_matrix_dp
 
   IMPLICIT NONE
 
@@ -97,9 +97,9 @@ MODULE basal_hydrology_model_types
     real(dp), allocatable               :: old_time            ! Time at previous timestep
     real(dp), allocatable               :: diff_time           ! Time since previous leg was run
 
-    type(type_sparse_matrix_CSR_dp)     :: M_a_b               ! Matrix for going from grid a to grid b
-    TYPE(type_sparse_matrix_CSR_dp)     :: M_b_c               ! Matrix for going from grid b to grid c
-    TYPE(type_sparse_matrix_CSR_dp)     :: M_a_c               ! Matrix for going from grid b to grid c
+    type(type_CSR_matrix_dp)     :: M_a_b               ! Matrix for going from grid a to grid b
+    TYPE(type_CSR_matrix_dp)     :: M_b_c               ! Matrix for going from grid b to grid c
+    TYPE(type_CSR_matrix_dp)     :: M_a_c               ! Matrix for going from grid b to grid c
 
     logical,  dimension(:), allocatable :: mask_a              ! Mask on b-grid on which to apply computation
     logical,  dimension(:), allocatable :: mask_b              ! Mask on b-grid on which to apply computation

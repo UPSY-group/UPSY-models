@@ -274,7 +274,6 @@ contains
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
     type(type_mesh),                intent(in   ) :: mesh
     type(type_ice_model),           intent(in   ) :: ice
-    ! type(type_climate_model),       intent(inout) :: climate
     character(len=3),               intent(in   ) :: region_name
 
     ! Local variables:

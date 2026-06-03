@@ -13,7 +13,7 @@ module ct_discretisation_mapping_derivatives_graph
   use graph_types, only: type_graph
   use create_graphs_from_masked_mesh, only: create_graph_from_masked_mesh_a, create_graph_from_masked_mesh_b
   use netcdf_io_main
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use graph_operators, only: calc_graph_matrix_operators_2nd_order, &
     calc_graph_a_to_graph_b_matrix_operators, calc_graph_b_to_graph_a_matrix_operators
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper
@@ -131,7 +131,7 @@ contains
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'test_2nd_order_operators_on_regular_nodes'
     character(len=1024)               :: graph_name_disp
-    type(type_sparse_matrix_CSR_dp)   :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
+    type(type_CSR_matrix_dp)   :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
     procedure(test_function), pointer :: test_function_ptr
     character(len=1024)               :: function_name
 
@@ -177,7 +177,7 @@ contains
     character(len=*),                intent(in) :: output_dir
     type(type_mesh),                 intent(in) :: mesh
     type(type_graph),                intent(in) :: graph
-    type(type_sparse_matrix_CSR_dp), intent(in) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
+    type(type_CSR_matrix_dp), intent(in) :: M2_ddx, M2_ddy, M2_d2dx2, M2_d2dxdy, M2_d2dy2
     procedure(test_function),           pointer :: test_function_ptr
     character(len=1024),             intent(in) :: function_name
 

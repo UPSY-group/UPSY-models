@@ -50,9 +50,18 @@ module SMB_ISMIP7
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use netcdf_io_main, only: read_field_from_file_2D, read_time_from_file
+  use netcdf_io_main, only: read_field_from_file_2D, read_time_from_file, &
+    open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, close_netcdf_file, &
+    inquire_var, read_var_primary, inquire_fill_value
   use basic_model_utilities, only: list_files_in_folder
-  use parameters, only: sec_per_year, ice_density
+  use parameters, only: sec_per_year, ice_density, NaN
+  use grid_types, only: type_grid
+  use remapping_types, only: type_map
+  use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
+  use mpi_distributed_memory_grid, only: distribute_gridded_data_from_primary
+  use apply_maps, only: apply_map_xy_grid_to_mesh_2D, apply_map_xy_grid_to_mesh_3D
+  use smooth_gridded_data, only: extrapolate_fillvalue_Gaussian_grid
+  use dist_to_hybrid_mod, only: dist_to_hybrid
 
   implicit none
 
@@ -69,6 +78,10 @@ module SMB_ISMIP7
   end type type_SMB_ISMIP7_timeframe
 
   type, extends(atype_SMB_model) :: type_SMB_model_ISMIP7
+
+      ! Mapping object to remap data from the ISMIP7 grid to the UFEMISM mesh
+      type(type_grid) :: grid_raw
+      type(type_map)  :: map
 
       ! Baseline SMB and surface elevation
       real(dp), dimension(:), contiguous, pointer :: SMB_baseline => null()   !< [m.i.e./yr]             baseline annual mean SMB
@@ -113,8 +126,11 @@ module SMB_ISMIP7
       procedure, private :: initialise_Hs_baseline
       procedure, private :: initialise_lists_of_files_and_timestamps
       procedure, private :: initialise_list_of_files_and_timestamps
+      procedure, private :: initialise_remapping_object
       procedure, private :: update_timeframes
       procedure, private :: update_timeframe
+      procedure, private :: read_monthly_data_from_ISMIP7_forcing_file
+      procedure, private :: read_annual_mean_data_from_ISMIP7_forcing_file
       procedure, private :: reallocate_timeframe
 
   end type type_SMB_model_ISMIP7
@@ -359,6 +375,7 @@ contains
 
     ! Initialise lists of forcing files and their timestamps
     call self%initialise_lists_of_files_and_timestamps
+    call self%initialise_remapping_object( mesh)
 
     ! Set the timestamps of the two timeframes so that the first time the model is run,
     ! it will automatically read and update them
@@ -369,6 +386,35 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_SMB_model_ISMIP7
+
+  subroutine initialise_remapping_object( self, mesh)
+
+    ! In/output variables
+    class(type_SMB_model_ISMIP7), intent(inout) :: self
+    type(type_mesh),              intent(in   ) :: mesh
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'initialise_remapping_object'
+    character(len=:), allocatable :: filename
+    integer                       :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Read the grid from the first listed input file
+    filename = trim( self%filenames_dacabfdz(1))
+    call open_existing_netcdf_file_for_reading( filename, ncid)
+    call setup_xy_grid_from_file( filename, ncid, self%grid_raw)
+    call close_netcdf_file( ncid)
+
+    ! Calculate the remapping operator
+    self%grid_raw%name = 'grid_ISMIP7_SMB_files'
+    call create_map_from_xy_grid_to_mesh_vertices( self%grid_raw, mesh, C%output_dir, self%map, '2nd_order_conservative')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_remapping_object
 
   subroutine initialise_SMB_baseline_fixed( self, mesh, region_name)
 
@@ -674,8 +720,8 @@ contains
         write(0,*) '    ', UPSY%stru%colour_string( trim( filename_dacabfdz)     , 'light blue')
       end if
 
-      call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf        , 'acabf'        , timeframe%acabf)
-      call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+      call self%read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf   , 'acabf'        , timeframe%acabf)
+      call self%read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz, 'dacabfdz'     , timeframe%dacabfdz)
 
       ! Convert from SI units (kg m^-2 s^-1) to ice model units (m yr^-1)
       timeframe%acabf        ( mesh%vi1: mesh%vi2,:) = timeframe%acabf        ( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
@@ -692,8 +738,8 @@ contains
         write(0,*) '    ', UPSY%stru%colour_string( trim( filename_dacabfdz)     , 'light blue')
       end if
 
-      call read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf_anomaly, 'acabf-anomaly', timeframe%acabf_anomaly)
-      call read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
+      call self%read_monthly_data_from_ISMIP7_forcing_file    ( mesh, filename_acabf_anomaly, 'acabf-anomaly', timeframe%acabf_anomaly)
+      call self%read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename_dacabfdz     , 'dacabfdz'     , timeframe%dacabfdz)
 
       ! Convert from SI units (kg m^-2 s^-1) to ice model units (m yr^-1)
       timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) = timeframe%acabf_anomaly( mesh%vi1: mesh%vi2,:) * sec_per_year / ice_density
@@ -706,61 +752,110 @@ contains
 
   end subroutine update_timeframe
 
-  subroutine read_monthly_data_from_ISMIP7_forcing_file( mesh, filename, var_name, d)
+  subroutine read_monthly_data_from_ISMIP7_forcing_file( self, mesh, filename, var_name, d)
     ! Since these files don't have an UPSY-style month dimension,
     ! we have to work around this a little bit...
 
     ! In/output variables:
-    type(type_mesh),          intent(in   ) :: mesh
-    character(len=*),         intent(in   ) :: filename, var_name
-    real(dp), dimension(:,:), intent(  out) :: d
+    class(type_SMB_model_ISMIP7), intent(in   ) :: self
+    type(type_mesh),              intent(in   ) :: mesh
+    character(len=*),             intent(in   ) :: filename, var_name
+    real(dp), dimension(:,:),     intent(  out) :: d
 
     ! Local variables:
-    character(len=*), parameter            :: routine_name = 'update_timeframe'
-    real(dp), dimension(:), allocatable    :: time_from_file
-    integer                                :: ti
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: d_month
+    character(len=*), parameter               :: routine_name = 'read_monthly_data_from_ISMIP7_forcing_file'
+    real(dp), dimension(:,:,:), allocatable   :: d_grid_tot
+    integer                                   :: ncid, id_var
+    real(dp)                                  :: fill_value
+    real(dp), dimension(:,:  ), allocatable   :: d_grid_vec_partial
+    real(dp)                                  :: sigma
+    real(dp), dimension(mesh%vi1:mesh%vi2,12) :: d_dist
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Read time dimension from file
-    call read_time_from_file( filename, time_from_file)
-    if (size( time_from_file,1) /= 12) call crash('file "' // trim( filename) // '" doesnt have 12 months')
+    ! Read raw gridded data to the primary
+    if (par%primary) then
+      allocate( d_grid_tot( self%grid_raw%nx, self%grid_raw%ny, 12), source = NaN)
+    else
+      allocate( d_grid_tot(0,0,0))
+    end if
 
-    ! Read all 12 months individually
-    do ti = 1, 12
-      call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d_month, &
-      time_to_read = time_from_file( ti), extrapolate_fillvalues = .true.)
-      d( mesh%vi1:mesh%vi2, ti) = d_month( mesh%vi1:mesh%vi2)
-    end do
+    call open_existing_netcdf_file_for_reading( filename, ncid)
+    call inquire_fill_value( filename, ncid, var_name, fill_value)
+    call inquire_var( filename, ncid, var_name, id_var)
+    call read_var_primary( filename, ncid, id_var, d_grid_tot)
+    call close_netcdf_file( ncid)
+
+    ! Distribute gridded data to the processes
+    allocate( d_grid_vec_partial( self%grid_raw%pai%i1: self%grid_raw%pai%i2, 12))
+    call distribute_gridded_data_from_primary( self%grid_raw, d_grid_vec_partial, d_grid_tot)
+    deallocate( d_grid_tot)
+
+    ! Extrapolate data into fill_value cells
+    sigma = self%grid_raw%dx * 2._dp
+    call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
+
+    ! Remap data to mesh
+    call apply_map_xy_grid_to_mesh_3D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)
+    call dist_to_hybrid( mesh%pai_V, 12, d_dist, d)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine read_monthly_data_from_ISMIP7_forcing_file
 
-  subroutine read_annual_mean_data_from_ISMIP7_forcing_file( mesh, filename, var_name, d)
+  subroutine read_annual_mean_data_from_ISMIP7_forcing_file( self, mesh, filename, var_name, d)
     ! Even though it's a file with only one frame, it still has a time dimension...
 
     ! In/output variables:
-    type(type_mesh),        intent(in   ) :: mesh
-    character(len=*),       intent(in   ) :: filename, var_name
-    real(dp), dimension(:), intent(  out) :: d
+    class(type_SMB_model_ISMIP7), intent(in   ) :: self
+    type(type_mesh),              intent(in   ) :: mesh
+    character(len=*),             intent(in   ) :: filename, var_name
+    real(dp), dimension(:),       intent(  out) :: d
 
     ! Local variables:
-    character(len=*), parameter         :: routine_name = 'update_timeframe'
-    real(dp), dimension(:), allocatable :: time_from_file
+    character(len=*), parameter             :: routine_name = 'read_annual_mean_data_from_ISMIP7_forcing_file'
+    real(dp), dimension(:,:,:), allocatable :: d_grid_tot_with_time
+    real(dp), dimension(:,:  ), allocatable :: d_grid_tot
+    integer                                 :: ncid, id_var
+    real(dp)                                :: fill_value
+    real(dp), dimension(:    ), allocatable :: d_grid_vec_partial
+    real(dp)                                :: sigma
+    real(dp), dimension(mesh%vi1:mesh%vi2)  :: d_dist
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Read time dimension from file
-    call read_time_from_file( filename, time_from_file)
-    if (size( time_from_file,1) /= 1) call crash('file "' // trim( filename) // '" doesnt have 1 timeframe')
+    ! Read raw gridded data to the primary
+    if (par%primary) then
+      allocate( d_grid_tot_with_time( self%grid_raw%nx, self%grid_raw%ny, 1), source = NaN)
+      allocate( d_grid_tot          ( self%grid_raw%nx, self%grid_raw%ny   ), source = NaN)
+    else
+      allocate( d_grid_tot_with_time(0,0,0))
+      allocate( d_grid_tot          (0,0  ))
+    end if
 
-    call read_field_from_file_2D( filename, var_name, mesh, C%output_dir, d, &
-      time_to_read = time_from_file( 1), extrapolate_fillvalues = .true.)
+    call open_existing_netcdf_file_for_reading( filename, ncid)
+    call inquire_fill_value( filename, ncid, var_name, fill_value)
+    call inquire_var( filename, ncid, var_name, id_var)
+    call read_var_primary( filename, ncid, id_var, d_grid_tot_with_time)
+    if (par%primary) d_grid_tot = d_grid_tot_with_time( :,:,1)
+    deallocate( d_grid_tot_with_time)
+    call close_netcdf_file( ncid)
+
+    ! Distribute gridded data to the processes
+    allocate( d_grid_vec_partial( self%grid_raw%pai%i1: self%grid_raw%pai%i2))
+    call distribute_gridded_data_from_primary( self%grid_raw, d_grid_vec_partial, d_grid_tot)
+    deallocate( d_grid_tot)
+
+    ! Extrapolate data into fill_value cells
+    sigma = self%grid_raw%dx * 2._dp
+    call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
+
+    ! Remap data to mesh
+    call apply_map_xy_grid_to_mesh_2D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)
+    call dist_to_hybrid( mesh%pai_V, d_dist, d)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

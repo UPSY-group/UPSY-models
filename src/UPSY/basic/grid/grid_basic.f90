@@ -12,9 +12,7 @@ module grid_basic
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection
   use mpi_distributed_memory, only: partition_list
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, finalise_matrix_CSR_dist, &
-    add_entry_CSR_dist, deallocate_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
   use mpi_f08, only: MPI_ALLREDUCE, MPI_INTEGER, MPI_MIN, MPI_MAX
 
@@ -232,7 +230,7 @@ contains
 
     ! In/output variables:
     type(type_grid),                 intent(in   ) :: grid
-    type(type_sparse_matrix_CSR_dp), intent(  out) :: M_ddx_CSR, M_ddy_CSR
+    type(type_CSR_matrix_dp), intent(  out) :: M_ddx_CSR, M_ddy_CSR
 
     ! Local variables:
     character(len=256), parameter   :: routine_name = 'calc_matrix_operators_grid'
@@ -254,8 +252,8 @@ contains
     nnz_per_row_est = 2
     nnz_est_proc    = nrows_loc * nnz_per_row_est
 
-    call allocate_matrix_CSR_dist( M_ddx_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
-    call allocate_matrix_CSR_dist( M_ddy_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_ddx_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_ddy_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! == Fill matrix coefficients
     ! ===========================
@@ -312,8 +310,8 @@ contains
 
     end do ! DO row = grid%n1, grid%n2
 
-    call finalise_matrix_CSR_dist( M_ddx_CSR)
-    call finalise_matrix_CSR_dist( M_ddy_CSR)
+    call M_ddx_CSR%finalise
+    call M_ddy_CSR%finalise
 
     ! Finalise routine path
     call finalise_routine( routine_name)

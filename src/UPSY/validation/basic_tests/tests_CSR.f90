@@ -3,14 +3,14 @@ module tests_CSR
   ! Basic tests for CSR-type matrices.
 
   use precisions, only: dp
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
 
   implicit none
 
 contains
 
   pure function test_tol_CSR( a, b, tol) result( res)
-    type(type_sparse_matrix_CSR_dp), intent(in) :: a, b
+    type(type_CSR_matrix_dp), intent(in) :: a, b
     real(dp),                        intent(in) :: tol
     logical :: res
 

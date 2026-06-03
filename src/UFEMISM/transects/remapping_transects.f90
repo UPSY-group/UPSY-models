@@ -5,9 +5,7 @@ module remapping_transects
   use mesh_types, only: type_mesh
   use transect_types, only: type_transect
   use remapping_types, only: type_map
-  use CSR_sparse_matrix_type, only: type_sparse_matrix_CSR_dp
-  use CSR_matrix_basics, only: allocate_matrix_CSR_dist, add_entry_CSR_dist, &
-    finalise_matrix_CSR_dist
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: mat_CSR2petsc
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex
   use plane_geometry, only: triangle_area
@@ -273,7 +271,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_vertices_to_transect_trilin'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: i
     real(dp), dimension(2)          :: p
     integer                         :: ti, via, vib, vic
@@ -299,7 +297,7 @@ contains
     nnz_per_row_max = 3
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ti = 1
     do i = transect%vi1, transect%vi2
@@ -331,13 +329,13 @@ contains
       colc = mesh%vi2n( vic)
 
       ! Add to the matrix
-      call add_entry_CSR_dist( M_CSR, i, cola, wa)
-      call add_entry_CSR_dist( M_CSR, i, colb, wb)
-      call add_entry_CSR_dist( M_CSR, i, colc, wc)
+      call M_CSR%add_entry( i, cola, wa)
+      call M_CSR%add_entry( i, colb, wb)
+      call M_CSR%add_entry( i, colc, wc)
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -357,7 +355,7 @@ contains
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'create_map_from_mesh_vertices_to_transect_nearest_neighbour'
     integer                         :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp) :: M_CSR
+    type(type_CSR_matrix_dp) :: M_CSR
     integer                         :: i
     real(dp), dimension(2)          :: p
     integer                         :: vi, col
@@ -380,7 +378,7 @@ contains
     nnz_per_row_max = 3
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     vi = 1
     do i = transect%vi1, transect%vi2
@@ -391,11 +389,11 @@ contains
       col = mesh%vi2n( vi)
 
       ! Add to the matrix
-      call add_entry_CSR_dist( M_CSR, i, col, 1._dp)
+      call M_CSR%add_entry( i, col, 1._dp)
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)
@@ -415,7 +413,7 @@ contains
     ! Local variables:
     character(len=1024), parameter   :: routine_name = 'create_map_from_mesh_triangles_to_transect'
     integer                          :: ncols, nrows, nrows_loc, ncols_loc, nnz_per_row_max, nnz_est_proc
-    type(type_sparse_matrix_CSR_dp)  :: M_CSR
+    type(type_CSR_matrix_dp)  :: M_CSR
     integer                          :: i
     real(dp), dimension(2)           :: p
     integer                          :: vi, iti, ti, iti_nearest
@@ -440,7 +438,7 @@ contains
     nnz_per_row_max = mesh%nC_mem
     nnz_est_proc    = nnz_per_row_max * nrows_loc
 
-    call allocate_matrix_CSR_dist( M_CSR, nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
+    call M_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! For all mesh_dst vertices, find the mesh_src vertex containing them
     vi = 1
@@ -476,12 +474,12 @@ contains
 
       do iti = 1, mesh%niTri( vi)
         ti = mesh%iTri( vi,iti)
-        call add_entry_CSR_dist( M_CSR, i, ti, ww( iti))
+        call M_CSR%add_entry( i, ti, ww( iti))
       end do
 
     end do
 
-    call finalise_matrix_CSR_dist( M_CSR)
+    call M_CSR%finalise
 
     ! Convert matrices from Fortran to PETSc types
     call mat_CSR2petsc( M_CSR, map%M)

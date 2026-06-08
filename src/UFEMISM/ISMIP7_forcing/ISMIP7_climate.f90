@@ -75,7 +75,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),          intent(in   ) :: mesh
-    type(type_ice_model),         intent(in   ) :: ice
+    type(type_ice_model),     intent(in   ) :: ice
     type(type_climate_model), intent(inout) :: climate
     real(dp),                 intent(in   ) :: time
 
@@ -89,7 +89,7 @@ contains
     call init_routine( routine_name)
 
     ! Calculate elevation-based T2m correction
-    call climate%ISMIP7%dtsdz%update( mesh, time)
+    call climate%ISMIP7%dtsdz%update_timeframes( mesh, time)
     call climate%ISMIP7%dtsdz%interpolate( mesh, time)
 
     do vi = mesh%vi1, mesh%vi2
@@ -103,8 +103,8 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Update timeframes
-      call climate%ISMIP7%tas%update( mesh, time)
-      call climate%ISMIP7%pr%update ( mesh, time)
+      call climate%ISMIP7%tas%update_timeframes( mesh, time)
+      call climate%ISMIP7%pr%update_timeframes ( mesh, time)
 
       ! Interpolate between timeframes
       call climate%ISMIP7%tas%interpolate( mesh, time)
@@ -120,8 +120,8 @@ contains
 
     case ('fixed')
       ! Update timeframes
-      call climate%ISMIP7%tas_anomaly%update( mesh, time)
-      call climate%ISMIP7%pr_anomaly%update ( mesh, time)
+      call climate%ISMIP7%tas_anomaly%update_timeframes( mesh, time)
+      call climate%ISMIP7%pr_anomaly%update_timeframes ( mesh, time)
 
       ! Interpolate between timeframes
       call climate%ISMIP7%tas_anomaly%interpolate( mesh, time)

@@ -325,20 +325,33 @@ module ISMIP7_forcing_field_types
 
       ! Update timeframes if necessary
       if (self%ti0 /= ti0_old) then
-        select type (f => self)
-          class default
-            call crash('invalid extentsion of atype_ISMIP7_forcing_field')
-          class is (type_ISMIP7_forcing_field_monthly)
-            call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti0, f%val0)
-          class is (type_ISMIP7_forcing_field_yearly)
-            call read_single_timeframe_from_netcdf_yearly( f, mesh, f%ti0, f%val0)
-        end select
+        if (self%ti0 == ti1_old) then
+          ! Copy data from old timeframe 1
+          select type (f => self)
+            class default
+              call crash('invalid extension of atype_ISMIP7_forcing_field')
+            class is (type_ISMIP7_forcing_field_monthly)
+              f%val0( mesh%vi1:mesh%vi2,:) = f%val1( mesh%vi1:mesh%vi2,:)
+            class is (type_ISMIP7_forcing_field_yearly)
+              f%val0( mesh%vi1:mesh%vi2) = f%val1( mesh%vi1:mesh%vi2)
+          end select
+        else
+          ! Read new timeframe from NetCDF
+          select type (f => self)
+            class default
+              call crash('invalid extension of atype_ISMIP7_forcing_field')
+            class is (type_ISMIP7_forcing_field_monthly)
+              call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti0, f%val0)
+            class is (type_ISMIP7_forcing_field_yearly)
+              call read_single_timeframe_from_netcdf_yearly( f, mesh, f%ti0, f%val0)
+          end select
+        end if
       end if
 
       if (self%ti1 /= ti1_old) then
         select type (f => self)
           class default
-            call crash('invalid extentsion of atype_ISMIP7_forcing_field')
+            call crash('invalid extension of atype_ISMIP7_forcing_field')
           class is (type_ISMIP7_forcing_field_monthly)
             call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti1, f%val1)
           class is (type_ISMIP7_forcing_field_yearly)

@@ -1,7 +1,7 @@
 module ISMIP7_climate_model_type
 
   use precisions, only: dp
-  use ISMIP7_forcing_field_types, only: type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_yearly
+  use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
 
   implicit none
 
@@ -17,11 +17,11 @@ module ISMIP7_climate_model_type
     real(dp), dimension(:)  , allocatable :: Hs_baseline     ! [m w.r.t. PD sea level] Baseline surface elevation
 
     ! Fields
-    type(type_climate_field_ISMIP7_monthly) :: tas
-    type(type_climate_field_ISMIP7_monthly) :: tas_anomaly
-    type(type_climate_field_ISMIP7_monthly) :: pr
-    type(type_climate_field_ISMIP7_monthly) :: pr_anomaly
-    type(type_climate_field_ISMIP7_yearly)  :: dtsdz
+    type(type_ISMIP7_forcing_field_monthly) :: tas
+    type(type_ISMIP7_forcing_field_monthly) :: tas_anomaly
+    type(type_ISMIP7_forcing_field_monthly) :: pr
+    type(type_ISMIP7_forcing_field_monthly) :: pr_anomaly
+    type(type_ISMIP7_forcing_field_yearly)  :: dtsdz
 
   end type type_climate_model_ISMIP7
 

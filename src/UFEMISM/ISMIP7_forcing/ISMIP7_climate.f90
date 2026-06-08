@@ -67,7 +67,7 @@ module ISMIP7_climate
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
   use parameters, only: NaN, sec_per_year, freshwater_density
-  use ISMIP7_forcing_field_types, only: type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_yearly
+  use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
   use ISMIP7_climate_model_type, only: type_climate_model_ISMIP7
 
   implicit none
@@ -221,7 +221,7 @@ contains
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
     type(type_climate_model_ISMIP7),         intent(inout) :: ISMIP7
-    type(type_climate_field_ISMIP7_monthly), intent(inout) :: field
+    type(type_ISMIP7_forcing_field_monthly), intent(inout) :: field
     character(len=*),                        intent(in   ) :: name
 
     ! Local variables:
@@ -260,7 +260,7 @@ contains
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
     type(type_climate_model_ISMIP7),         intent(inout) :: ISMIP7
-    type(type_climate_field_ISMIP7_yearly),  intent(inout) :: field
+    type(type_ISMIP7_forcing_field_yearly),  intent(inout) :: field
     character(len=*),                        intent(in   ) :: name
 
     ! Local variables:
@@ -429,7 +429,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                          intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_monthly), intent(inout) :: field
+    type(type_ISMIP7_forcing_field_monthly), intent(inout) :: field
     real(dp),                                 intent(in   ) :: time
 
     ! Local variables
@@ -464,7 +464,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                          intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_yearly), intent(inout) :: field
+    type(type_ISMIP7_forcing_field_yearly), intent(inout) :: field
     real(dp),                                 intent(in   ) :: time
 
     ! Local variables
@@ -499,7 +499,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                               intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_monthly),       intent(in   ) :: field
+    type(type_ISMIP7_forcing_field_monthly),       intent(in   ) :: field
     integer,                                       intent(in   ) :: ti
     real(dp), dimension( mesh%vi1:mesh%vi2, 1:12), intent(inout) :: val
 
@@ -540,7 +540,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                          intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_yearly),   intent(in   ) :: field
+    type(type_ISMIP7_forcing_field_yearly),   intent(in   ) :: field
     integer,                                  intent(in   ) :: ti
     real(dp), dimension( mesh%vi1:mesh%vi2),  intent(inout) :: val
 
@@ -620,7 +620,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                             intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_monthly),     intent(inout) :: field
+    type(type_ISMIP7_forcing_field_monthly),     intent(inout) :: field
     real(dp),                                    intent(in   ) :: time
 
     ! Local variables:
@@ -645,7 +645,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_climate_field_ISMIP7_yearly),  intent(inout) :: field
+    type(type_ISMIP7_forcing_field_yearly),  intent(inout) :: field
     real(dp),                                intent(in   ) :: time
 
     ! Local variables:

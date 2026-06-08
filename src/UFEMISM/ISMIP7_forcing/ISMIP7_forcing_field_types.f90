@@ -16,17 +16,6 @@ module ISMIP7_forcing_field_types
   private
 
   public :: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
-  public :: gather_fileinfo, update_timeframes, interpolate_single_field
-
-    interface update_timeframes
-      module procedure update_timeframes_monthly
-      module procedure update_timeframes_yearly
-    end interface update_timeframes
-
-    interface interpolate_single_field
-      module procedure interpolate_single_field_monthly
-      module procedure interpolate_single_field_yearly
-    end interface interpolate_single_field
 
     ! Abstract type for monthly/yearly ISMIP7 forcing fields
     ! ======================================================
@@ -45,7 +34,9 @@ module ISMIP7_forcing_field_types
 
     contains
 
-      procedure(initialise_ISMIP7_forcing_field_ifc), deferred :: initialise
+      procedure(initialise_ISMIP7_forcing_field_ifc ), deferred :: initialise
+      procedure(update_ISMIP7_forcing_field_ifc     ), deferred :: update
+      procedure(interpolate_ISMIP7_forcing_field_ifc), deferred :: interpolate
 
     end type atype_ISMIP7_forcing_field
 
@@ -63,6 +54,20 @@ module ISMIP7_forcing_field_types
         character(len=*),                  intent(in   ) :: field_name
       end subroutine initialise_ISMIP7_forcing_field_ifc
 
+      subroutine update_ISMIP7_forcing_field_ifc( self, mesh, time)
+        import atype_ISMIP7_forcing_field, type_mesh, dp
+        class(atype_ISMIP7_forcing_field), intent(inout) :: self
+        type(type_mesh),                   intent(in   ) :: mesh
+        real(dp),                          intent(in   ) :: time
+      end subroutine update_ISMIP7_forcing_field_ifc
+
+      subroutine interpolate_ISMIP7_forcing_field_ifc( self, mesh, time)
+        import atype_ISMIP7_forcing_field, type_mesh, dp
+        class(atype_ISMIP7_forcing_field), intent(inout) :: self
+        type(type_mesh),                   intent(in   ) :: mesh
+        real(dp),                          intent(in   ) :: time
+      end subroutine interpolate_ISMIP7_forcing_field_ifc
+
     end interface
 
     ! Concrete types for monthly and yearly ISMIP7 forcing fields
@@ -71,26 +76,30 @@ module ISMIP7_forcing_field_types
     type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_monthly
       !< Two enveloping timeframes and time-interpolated values of a single monthly ISMIP7 forcing field
 
-      real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
-      real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
-      real(dp), dimension(:,:), allocatable          :: val_interp    !           Interpolated values
+      real(dp), dimension(:,:), allocatable :: val0          !           Values at timeslice before current time
+      real(dp), dimension(:,:), allocatable :: val1          !           Values at timeslice after current time
+      real(dp), dimension(:,:), allocatable :: val_interp    !           Interpolated values
 
     contains
 
-      procedure :: initialise => initialise_ISMIP7_forcing_field_monthly
+      procedure :: initialise  => initialise_ISMIP7_forcing_field_monthly
+      procedure :: update      => update_timeframes_monthly
+      procedure :: interpolate => interpolate_single_field_monthly
 
     end type type_ISMIP7_forcing_field_monthly
 
     type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_yearly
       !< Two enveloping timeframes and time-interpolated values of a single yearly ISMIP7 forcing field
 
-      real(dp), dimension(:), allocatable            :: val0          !           Values at timeslice before current time
-      real(dp), dimension(:), allocatable            :: val1          !           Values at timeslice after current time
-      real(dp), dimension(:), allocatable            :: val_interp    !           Interpolated values
+      real(dp), dimension(:), allocatable :: val0          !           Values at timeslice before current time
+      real(dp), dimension(:), allocatable :: val1          !           Values at timeslice after current time
+      real(dp), dimension(:), allocatable :: val_interp    !           Interpolated values
 
     contains
 
-      procedure :: initialise => initialise_ISMIP7_forcing_field_yearly
+      procedure :: initialise  => initialise_ISMIP7_forcing_field_yearly
+      procedure :: update      => update_timeframes_yearly
+      procedure :: interpolate => interpolate_single_field_yearly
 
     end type type_ISMIP7_forcing_field_yearly
 
@@ -130,7 +139,7 @@ module ISMIP7_forcing_field_types
       allocate (self%val_interp( mesh%vi1:mesh%vi2, 12), source = NaN)
 
       ! Update timeframes to the current model time
-      call update_timeframes( mesh, self, C%start_time_of_run)
+      call self%update( mesh, C%start_time_of_run)
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)
@@ -171,7 +180,7 @@ module ISMIP7_forcing_field_types
       allocate (self%val_interp( mesh%vi1:mesh%vi2), source = NaN)
 
       ! Update timeframes to the current model time
-      call update_timeframes( mesh, self, C%start_time_of_run)
+      call self%update( mesh, C%start_time_of_run)
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)
@@ -253,11 +262,11 @@ module ISMIP7_forcing_field_types
 
     end subroutine read_year_from_netcdf_filename
 
-    subroutine update_timeframes_monthly( mesh, field, time)
+    subroutine update_timeframes_monthly( self, mesh, time)
 
       ! In/output variables:
+      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
       type(type_mesh),                          intent(in   ) :: mesh
-      type(type_ISMIP7_forcing_field_monthly), intent(inout) :: field
       real(dp),                                 intent(in   ) :: time
 
       ! Local variables
@@ -268,19 +277,19 @@ module ISMIP7_forcing_field_types
       call init_routine( routine_name)
 
       ! Get current bracket indices
-      ti0_old = field%ti0
-      ti1_old = field%ti1
+      ti0_old = self%ti0
+      ti1_old = self%ti1
 
       ! Update the indices of time slices before and after current time
-      call update_bracket_indices( field%timestamps, field%ti0, field%ti1, time)
+      call update_bracket_indices( self%timestamps, self%ti0, self%ti1, time)
 
       ! Update timeframes if necessary
-      if (field%ti0 /= ti0_old) then
-        call update_single_timeframe_monthly( mesh, field, field%ti0, field%val0)
+      if (self%ti0 /= ti0_old) then
+        call update_single_timeframe_monthly( mesh, self, self%ti0, self%val0)
       end if
 
-      if (field%ti1 /= ti1_old) then
-        call update_single_timeframe_monthly( mesh, field, field%ti1, field%val1)
+      if (self%ti1 /= ti1_old) then
+        call update_single_timeframe_monthly( mesh, self, self%ti1, self%val1)
       end if
 
       ! Finalise routine path
@@ -288,12 +297,12 @@ module ISMIP7_forcing_field_types
 
     end subroutine update_timeframes_monthly
 
-    subroutine update_timeframes_yearly( mesh, field, time)
+    subroutine update_timeframes_yearly( self, mesh, time)
 
       ! In/output variables:
-      type(type_mesh),                          intent(in   ) :: mesh
-      type(type_ISMIP7_forcing_field_yearly), intent(inout) :: field
-      real(dp),                                 intent(in   ) :: time
+      class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
+      type(type_mesh),                         intent(in   ) :: mesh
+      real(dp),                                intent(in   ) :: time
 
       ! Local variables
       character(len=*), parameter :: routine_name = 'update_timeframes_yearly'
@@ -303,19 +312,19 @@ module ISMIP7_forcing_field_types
       call init_routine( routine_name)
 
       ! Get current bracket indices
-      ti0_old = field%ti0
-      ti1_old = field%ti1
+      ti0_old = self%ti0
+      ti1_old = self%ti1
 
       ! Update the indices of time slices before and after current time
-      call update_bracket_indices( field%timestamps, field%ti0, field%ti1, time)
+      call update_bracket_indices( self%timestamps, self%ti0, self%ti1, time)
 
       ! Update timeframes if necessary
-      if (field%ti0 /= ti0_old) then
-        call update_single_timeframe_yearly( mesh, field, field%ti0, field%val0)
+      if (self%ti0 /= ti0_old) then
+        call update_single_timeframe_yearly( mesh, self, self%ti0, self%val0)
       end if
 
-      if (field%ti1 /= ti1_old) then
-        call update_single_timeframe_yearly( mesh, field, field%ti1, field%val1)
+      if (self%ti1 /= ti1_old) then
+        call update_single_timeframe_yearly( mesh, self, self%ti1, self%val1)
       end if
 
       ! Finalise routine path
@@ -444,12 +453,12 @@ module ISMIP7_forcing_field_types
 
     end subroutine update_single_timeframe_yearly
 
-    subroutine interpolate_single_field_monthly( mesh, field, time)
+    subroutine interpolate_single_field_monthly( self, mesh, time)
 
       ! In/output variables:
-      type(type_mesh),                             intent(in   ) :: mesh
-      type(type_ISMIP7_forcing_field_monthly),     intent(inout) :: field
-      real(dp),                                    intent(in   ) :: time
+      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
+      type(type_mesh),                          intent(in   ) :: mesh
+      real(dp),                                 intent(in   ) :: time
 
       ! Local variables:
       character(len=1024), parameter :: routine_name = 'interpolate_single_field_monthly'
@@ -459,21 +468,21 @@ module ISMIP7_forcing_field_types
       ! Add routine to call stack
       call init_routine( routine_name)
 
-      call get_interpolation_weights( field%timestamps( field%ti0), field%timestamps( field%ti1), time, w0, w1)
+      call get_interpolation_weights( self%timestamps( self%ti0), self%timestamps( self%ti1), time, w0, w1)
 
       ! Apply interpolation to values
-      field%val_interp( mesh%vi1:mesh%vi2, :) = w0 * field%val0( mesh%vi1:mesh%vi2, :) + w1 * field%val1( mesh%vi1:mesh%vi2, :)
+      self%val_interp( mesh%vi1:mesh%vi2, :) = w0 * self%val0( mesh%vi1:mesh%vi2, :) + w1 * self%val1( mesh%vi1:mesh%vi2, :)
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
     end subroutine interpolate_single_field_monthly
 
-    subroutine interpolate_single_field_yearly( mesh, field, time)
+    subroutine interpolate_single_field_yearly( self, mesh, time)
 
       ! In/output variables:
+      class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
       type(type_mesh),                         intent(in   ) :: mesh
-      type(type_ISMIP7_forcing_field_yearly),  intent(inout) :: field
       real(dp),                                intent(in   ) :: time
 
       ! Local variables:
@@ -484,10 +493,10 @@ module ISMIP7_forcing_field_types
       ! Add routine to call stack
       call init_routine( routine_name)
 
-      call get_interpolation_weights( field%timestamps( field%ti0), field%timestamps( field%ti1), time, w0, w1)
+      call get_interpolation_weights( self%timestamps( self%ti0), self%timestamps( self%ti1), time, w0, w1)
 
       ! Apply interpolation to values
-      field%val_interp( mesh%vi1:mesh%vi2) = w0 * field%val0( mesh%vi1:mesh%vi2) + w1 * field%val1( mesh%vi1:mesh%vi2)
+      self%val_interp( mesh%vi1:mesh%vi2) = w0 * self%val0( mesh%vi1:mesh%vi2) + w1 * self%val1( mesh%vi1:mesh%vi2)
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)

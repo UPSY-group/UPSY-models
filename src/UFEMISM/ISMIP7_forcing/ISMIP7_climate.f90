@@ -62,7 +62,6 @@ module ISMIP7_climate
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
   use parameters, only: NaN, sec_per_year, freshwater_density
   use ISMIP7_climate_model_type, only: type_climate_model_ISMIP7
-  use ISMIP7_forcing_field_types, only: update_timeframes, interpolate_single_field
 
   implicit none
 
@@ -90,8 +89,8 @@ contains
     call init_routine( routine_name)
 
     ! Calculate elevation-based T2m correction
-    call update_timeframes( mesh, climate%ISMIP7%dtsdz, time)
-    call interpolate_single_field( mesh, climate%ISMIP7%dtsdz, time)
+    call climate%ISMIP7%dtsdz%update( mesh, time)
+    call climate%ISMIP7%dtsdz%interpolate( mesh, time)
 
     do vi = mesh%vi1, mesh%vi2
       delta_z = ice%Hs( vi) - climate%ISMIP7%Hs_baseline ( vi)
@@ -104,12 +103,12 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Update timeframes
-      call update_timeframes( mesh, climate%ISMIP7%tas, time)
-      call update_timeframes( mesh, climate%ISMIP7%pr, time)
+      call climate%ISMIP7%tas%update( mesh, time)
+      call climate%ISMIP7%pr%update ( mesh, time)
 
       ! Interpolate between timeframes
-      call interpolate_single_field( mesh, climate%ISMIP7%tas, time)
-      call interpolate_single_field( mesh, climate%ISMIP7%pr, time)
+      call climate%ISMIP7%tas%interpolate( mesh, time)
+      call climate%ISMIP7%pr%interpolate ( mesh, time)
 
       ! Calculate monthly climate
       do vi = mesh%vi1, mesh%vi2
@@ -121,12 +120,12 @@ contains
 
     case ('fixed')
       ! Update timeframes
-      call update_timeframes( mesh, climate%ISMIP7%tas_anomaly, time)
-      call update_timeframes( mesh, climate%ISMIP7%pr_anomaly, time)
+      call climate%ISMIP7%tas_anomaly%update( mesh, time)
+      call climate%ISMIP7%pr_anomaly%update ( mesh, time)
 
       ! Interpolate between timeframes
-      call interpolate_single_field( mesh, climate%ISMIP7%tas_anomaly, time)
-      call interpolate_single_field( mesh, climate%ISMIP7%pr_anomaly, time)
+      call climate%ISMIP7%tas_anomaly%interpolate( mesh, time)
+      call climate%ISMIP7%pr_anomaly%interpolate( mesh, time)
 
       ! Calculate monthly climate
       do vi = mesh%vi1, mesh%vi2

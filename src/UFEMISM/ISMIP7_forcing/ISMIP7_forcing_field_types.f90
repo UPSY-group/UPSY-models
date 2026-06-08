@@ -8,8 +8,12 @@ module ISMIP7_forcing_field_types
   use crash_mod, only: crash
   use UPSY_main, only: UPSY
   use mesh_types, only: type_mesh
-  use netcdf_io_main, only: read_time_from_file, read_field_from_file_2D
+  use netcdf_io_main, only: read_time_from_file, read_field_from_file_2D, open_existing_netcdf_file_for_reading, &
+    setup_xy_grid_from_file, close_netcdf_file
+  use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
   use parameters, only: NaN
+  use grid_types, only: type_grid
+  use remapping_types, only: type_map
 
   implicit none
 
@@ -32,11 +36,16 @@ module ISMIP7_forcing_field_types
       integer                                        :: ti0 = -1      !           Index of timeframe before current time
       integer                                        :: ti1 = -1      !           Index of timeframe after current time
 
+      type(type_grid)                                :: grid_raw      !           The x/y-grid that the ISMIP7 folks provided the data on
+      type(type_map)                                 :: map           !           Mapping object to remap data from the ISMIP7 grid to the UFEMISM mesh
+
     contains
 
       procedure(initialise_ISMIP7_forcing_field_ifc ), deferred :: initialise
       procedure(update_ISMIP7_forcing_field_ifc     ), deferred :: update
       procedure(interpolate_ISMIP7_forcing_field_ifc), deferred :: interpolate
+
+      procedure, private :: initialise_remapping_object
 
     end type atype_ISMIP7_forcing_field
 
@@ -128,6 +137,8 @@ module ISMIP7_forcing_field_types
       call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
         self%filenames, self%timestamps, self%name)
 
+      call self%initialise_remapping_object( mesh)
+
       ! Deallocate if necessary
       if (allocated( self%val0       )) deallocate( self%val0      )
       if (allocated( self%val1       )) deallocate( self%val1      )
@@ -169,6 +180,8 @@ module ISMIP7_forcing_field_types
       call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
         self%filenames, self%timestamps, self%name)
 
+      call self%initialise_remapping_object( mesh)
+
       ! Deallocate if necessary
       if (allocated( self%val0       )) deallocate( self%val0      )
       if (allocated( self%val1       )) deallocate( self%val1      )
@@ -186,6 +199,35 @@ module ISMIP7_forcing_field_types
       call finalise_routine( routine_name)
 
     end subroutine initialise_yearly
+
+    subroutine initialise_remapping_object( self, mesh)
+
+      ! In/output variables
+      class(atype_ISMIP7_forcing_field), intent(inout) :: self
+      type(type_mesh),                   intent(in   ) :: mesh
+
+      ! Local variables:
+      character(len=*), parameter   :: routine_name = 'initialise_remapping_object'
+      character(len=:), allocatable :: filename
+      integer                       :: ncid
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! Read the grid from the first listed input file
+      filename = trim( self%filenames(1))
+      call open_existing_netcdf_file_for_reading( filename, ncid)
+      call setup_xy_grid_from_file( filename, ncid, self%grid_raw)
+      call close_netcdf_file( ncid)
+
+      ! Calculate the remapping operator
+      self%grid_raw%name = 'ISMIP7_input_grid_' // trim( self%name)
+      call create_map_from_xy_grid_to_mesh_vertices( self%grid_raw, mesh, C%output_dir, self%map, '2nd_order_conservative')
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+    end subroutine initialise_remapping_object
 
     subroutine gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, filenames, timestamps, var_name)
 

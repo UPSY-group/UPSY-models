@@ -1,4 +1,4 @@
-module climate_ISMIP7
+module ISMIP7_climate
 
   ! The ISMIP7 protocol provides separate NetCDF files for each year, with a single file contaning 12 monthly fields
   ! for that year. There are separate files for each variable, namely:
@@ -135,7 +135,7 @@ contains
       do vi = mesh%vi1, mesh%vi2
         do mi = 1, 12
           climate%T2m( vi, mi) = climate%ISMIP7%tas%val_interp( vi, mi) + delta_ts( vi)
-          climate%Precip( vi, mi) = climate%ISMIP7%pr%val_interp( vi, mi) * sec_per_year / freshwater_density ! [m.w.e. yr^-1] 
+          climate%Precip( vi, mi) = climate%ISMIP7%pr%val_interp( vi, mi) * sec_per_year / freshwater_density ! [m.w.e. yr^-1]
         end do
       end do
 
@@ -699,4 +699,4 @@ contains
 
   end subroutine get_interpolation_weights
 
-end module climate_ISMIP7
+end module ISMIP7_climate

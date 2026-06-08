@@ -58,8 +58,7 @@ module ISMIP7_climate
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use climate_model_types, only: type_climate_model, type_climate_model_ISMIP7, &
-    type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_yearly
+  use climate_model_types, only: type_climate_model
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -68,12 +67,14 @@ module ISMIP7_climate
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D, read_time_from_file
   use basic_model_utilities, only: list_files_in_folder
   use parameters, only: NaN, sec_per_year, freshwater_density
+  use ISMIP7_forcing_field_types, only: type_climate_field_ISMIP7_monthly, type_climate_field_ISMIP7_yearly
+  use ISMIP7_climate_model_type, only: type_climate_model_ISMIP7
 
   implicit none
 
   private
 
-  public :: initialise_climate_model_ISMIP7, run_climate_model_ISMIP7
+  public :: type_climate_model_ISMIP7, initialise_climate_model_ISMIP7, run_climate_model_ISMIP7
 
   interface initialise_climate_field
     module procedure initialise_climate_field_monthly

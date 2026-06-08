@@ -89,8 +89,7 @@ contains
     call init_routine( routine_name)
 
     ! Calculate elevation-based T2m correction
-    call climate%ISMIP7%dtsdz%update_timeframes( mesh, time)
-    call climate%ISMIP7%dtsdz%interpolate( mesh, time)
+    call climate%ISMIP7%dtsdz%update_and_interpolate( mesh, time)
 
     do vi = mesh%vi1, mesh%vi2
       delta_z = ice%Hs( vi) - climate%ISMIP7%Hs_baseline ( vi)
@@ -102,13 +101,10 @@ contains
     case default
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
-      ! Update timeframes
-      call climate%ISMIP7%tas%update_timeframes( mesh, time)
-      call climate%ISMIP7%pr%update_timeframes ( mesh, time)
 
-      ! Interpolate between timeframes
-      call climate%ISMIP7%tas%interpolate( mesh, time)
-      call climate%ISMIP7%pr%interpolate ( mesh, time)
+      ! Update and interpolate timeframes
+      call climate%ISMIP7%tas%update_and_interpolate( mesh, time)
+      call climate%ISMIP7%pr%update_and_interpolate ( mesh, time)
 
       ! Calculate monthly climate
       do vi = mesh%vi1, mesh%vi2
@@ -119,13 +115,10 @@ contains
       end do
 
     case ('fixed')
-      ! Update timeframes
-      call climate%ISMIP7%tas_anomaly%update_timeframes( mesh, time)
-      call climate%ISMIP7%pr_anomaly%update_timeframes ( mesh, time)
 
-      ! Interpolate between timeframes
-      call climate%ISMIP7%tas_anomaly%interpolate( mesh, time)
-      call climate%ISMIP7%pr_anomaly%interpolate( mesh, time)
+      ! Update and interpolate timeframes
+      call climate%ISMIP7%tas_anomaly%update_and_interpolate( mesh, time)
+      call climate%ISMIP7%pr_anomaly%update_and_interpolate ( mesh, time)
 
       ! Calculate monthly climate
       do vi = mesh%vi1, mesh%vi2

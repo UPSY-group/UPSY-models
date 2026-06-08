@@ -44,11 +44,12 @@ module ISMIP7_forcing_field_types
 
     contains
 
-      procedure(initialise_ISMIP7_forcing_field_ifc ),       deferred :: initialise
-      procedure(update_timeframes_ISMIP7_forcing_field_ifc), deferred :: update_timeframes
-      procedure(interpolate_ISMIP7_forcing_field_ifc),       deferred :: interpolate
+      procedure,                                       public  :: initialise                   => initialise_ISMIP7_forcing_field
+      procedure,                                       public  :: update_and_interpolate       => update_and_interpolate_ISMIP7_forcing_field
 
-      procedure, private :: initialise_remapping_object
+      procedure,                                       private :: initialise_remapping_object
+      procedure(allocate_timeframes_ifc),    deferred, private :: allocate_timeframes
+      procedure(interpolate_timeframes_ifc), deferred, private :: interpolate_timeframes
 
     end type atype_ISMIP7_forcing_field
 
@@ -57,28 +58,18 @@ module ISMIP7_forcing_field_types
 
     abstract interface
 
-      subroutine initialise_ISMIP7_forcing_field_ifc( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+      subroutine allocate_timeframes_ifc( self, mesh)
         import atype_ISMIP7_forcing_field, type_mesh
         class(atype_ISMIP7_forcing_field), intent(inout) :: self
-        character(len=*),                  intent(in   ) :: ISMIP7_forcing_foldername
-        character(len=*),                  intent(in   ) :: ISMIP7_forcing_version
         type(type_mesh),                   intent(in   ) :: mesh
-        character(len=*),                  intent(in   ) :: field_name
-      end subroutine initialise_ISMIP7_forcing_field_ifc
+      end subroutine allocate_timeframes_ifc
 
-      subroutine update_timeframes_ISMIP7_forcing_field_ifc( self, mesh, time)
+      subroutine interpolate_timeframes_ifc( self, mesh, time)
         import atype_ISMIP7_forcing_field, type_mesh, dp
         class(atype_ISMIP7_forcing_field), intent(inout) :: self
         type(type_mesh),                   intent(in   ) :: mesh
         real(dp),                          intent(in   ) :: time
-      end subroutine update_timeframes_ISMIP7_forcing_field_ifc
-
-      subroutine interpolate_ISMIP7_forcing_field_ifc( self, mesh, time)
-        import atype_ISMIP7_forcing_field, type_mesh, dp
-        class(atype_ISMIP7_forcing_field), intent(inout) :: self
-        type(type_mesh),                   intent(in   ) :: mesh
-        real(dp),                          intent(in   ) :: time
-      end subroutine interpolate_ISMIP7_forcing_field_ifc
+      end subroutine interpolate_timeframes_ifc
 
     end interface
 
@@ -94,9 +85,8 @@ module ISMIP7_forcing_field_types
 
     contains
 
-      procedure :: initialise        => initialise_monthly
-      procedure :: update_timeframes => update_timeframes_monthly
-      procedure :: interpolate       => interpolate_monthly
+      procedure, public  :: allocate_timeframes    => allocate_timeframes_monthly
+      procedure, private :: interpolate_timeframes => interpolate_timeframes_monthly
 
     end type type_ISMIP7_forcing_field_monthly
 
@@ -109,26 +99,25 @@ module ISMIP7_forcing_field_types
 
     contains
 
-      procedure :: initialise        => initialise_yearly
-      procedure :: update_timeframes => update_timeframes_yearly
-      procedure :: interpolate       => interpolate_yearly
+      procedure, public  :: allocate_timeframes    => allocate_timeframes_yearly
+      procedure, private :: interpolate_timeframes => interpolate_timeframes_yearly
 
     end type type_ISMIP7_forcing_field_yearly
 
   contains
 
-    subroutine initialise_monthly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+    subroutine initialise_ISMIP7_forcing_field( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
 
       ! In/output variables:
-      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
-      character(len=*),                         intent(in   ) :: ISMIP7_forcing_foldername
-      character(len=*),                         intent(in   ) :: ISMIP7_forcing_version
-      type(type_mesh),                          intent(in   ) :: mesh
-      character(len=*),                         intent(in   ) :: field_name
+      class(atype_ISMIP7_forcing_field), intent(inout) :: self
+      character(len=*),                  intent(in   ) :: ISMIP7_forcing_foldername
+      character(len=*),                  intent(in   ) :: ISMIP7_forcing_version
+      type(type_mesh),                   intent(in   ) :: mesh
+      character(len=*),                  intent(in   ) :: field_name
 
       ! Local variables:
-      character(len=1024), parameter :: routine_name = 'initialise_monthly'
-      character(len=1024)            :: filename
+      character(len=*), parameter   :: routine_name = 'initialise_ISMIP7_forcing_field'
+      character(len=:), allocatable :: filename
 
       ! Add routine to call stack
       call init_routine( routine_name)
@@ -140,7 +129,32 @@ module ISMIP7_forcing_field_types
       call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
         self%filenames, self%timestamps, self%name)
 
+      ! Initialise the single remapping object that will be re-used for all
+      ! NetCDF files of this field (which presumably are all defined on the same x/y-grid)
       call self%initialise_remapping_object( mesh)
+
+      ! Allocate memory for the before, after, and interpolated timeframes
+      call self%allocate_timeframes( mesh)
+
+      ! Update and interpolate timeframes to the current model time
+      call self%update_and_interpolate( mesh, C%start_time_of_run)
+
+      ! Remove routine from call stack
+      call finalise_routine( routine_name)
+
+    end subroutine initialise_ISMIP7_forcing_field
+
+    subroutine allocate_timeframes_monthly( self, mesh)
+
+      ! In/output variables:
+      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
+      type(type_mesh),                          intent(in   ) :: mesh
+
+      ! Local variables:
+      character(len=*), parameter :: routine_name = 'allocate_timeframes_monthly'
+
+      ! Add routine to call stack
+      call init_routine( routine_name)
 
       ! Deallocate if necessary
       if (allocated( self%val0       )) deallocate( self%val0      )
@@ -152,38 +166,22 @@ module ISMIP7_forcing_field_types
       allocate (self%val1      ( mesh%vi1:mesh%vi2, 12), source = NaN)
       allocate (self%val_interp( mesh%vi1:mesh%vi2, 12), source = NaN)
 
-      ! Update timeframes to the current model time
-      call self%update_timeframes( mesh, C%start_time_of_run)
-
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
-    end subroutine initialise_monthly
+    end subroutine allocate_timeframes_monthly
 
-    subroutine initialise_yearly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+    subroutine allocate_timeframes_yearly( self, mesh)
 
       ! In/output variables:
       class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
-      character(len=*),                        intent(in   ) :: ISMIP7_forcing_foldername
-      character(len=*),                        intent(in   ) :: ISMIP7_forcing_version
       type(type_mesh),                         intent(in   ) :: mesh
-      character(len=*),                        intent(in   ) :: field_name
 
       ! Local variables:
-      character(len=1024), parameter :: routine_name = 'initialise_yearly'
-      character(len=1024)            :: filename
+      character(len=*), parameter :: routine_name = 'allocate_timeframes_yearly'
 
       ! Add routine to call stack
       call init_routine( routine_name)
-
-      ! Define name
-      self%name = field_name
-
-      ! Get info from files
-      call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
-        self%filenames, self%timestamps, self%name)
-
-      call self%initialise_remapping_object( mesh)
 
       ! Deallocate if necessary
       if (allocated( self%val0       )) deallocate( self%val0      )
@@ -195,13 +193,10 @@ module ISMIP7_forcing_field_types
       allocate (self%val1      ( mesh%vi1:mesh%vi2), source = NaN)
       allocate (self%val_interp( mesh%vi1:mesh%vi2), source = NaN)
 
-      ! Update timeframes to the current model time
-      call self%update_timeframes( mesh, C%start_time_of_run)
-
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
-    end subroutine initialise_yearly
+    end subroutine allocate_timeframes_yearly
 
     subroutine initialise_remapping_object( self, mesh)
 
@@ -307,15 +302,15 @@ module ISMIP7_forcing_field_types
 
     end subroutine read_year_from_netcdf_filename
 
-    subroutine update_timeframes_monthly( self, mesh, time)
+    subroutine update_and_interpolate_ISMIP7_forcing_field( self, mesh, time)
 
       ! In/output variables:
-      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
-      type(type_mesh),                          intent(in   ) :: mesh
-      real(dp),                                 intent(in   ) :: time
+      class(atype_ISMIP7_forcing_field), intent(inout) :: self
+      type(type_mesh),                   intent(in   ) :: mesh
+      real(dp),                          intent(in   ) :: time
 
       ! Local variables
-      character(len=*), parameter :: routine_name = 'update_timeframes_monthly'
+      character(len=*), parameter :: routine_name = 'update_and_interpolate_ISMIP7_forcing_field'
       integer                     :: ti0_old, ti1_old
 
       ! Add routine to path
@@ -330,52 +325,34 @@ module ISMIP7_forcing_field_types
 
       ! Update timeframes if necessary
       if (self%ti0 /= ti0_old) then
-        call read_single_timeframe_from_netcdf_monthly( self, mesh, self%ti0, self%val0)
+        select type (f => self)
+          class default
+            call crash('invalid extentsion of atype_ISMIP7_forcing_field')
+          class is (type_ISMIP7_forcing_field_monthly)
+            call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti0, f%val0)
+          class is (type_ISMIP7_forcing_field_yearly)
+            call read_single_timeframe_from_netcdf_yearly( f, mesh, f%ti0, f%val0)
+        end select
       end if
 
       if (self%ti1 /= ti1_old) then
-        call read_single_timeframe_from_netcdf_monthly( self, mesh, self%ti1, self%val1)
+        select type (f => self)
+          class default
+            call crash('invalid extentsion of atype_ISMIP7_forcing_field')
+          class is (type_ISMIP7_forcing_field_monthly)
+            call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti1, f%val1)
+          class is (type_ISMIP7_forcing_field_yearly)
+            call read_single_timeframe_from_netcdf_yearly( f, mesh, f%ti1, f%val1)
+        end select
       end if
+
+      ! Interpolate between timeframes
+      call self%interpolate_timeframes( mesh, time)
 
       ! Finalise routine path
       call finalise_routine( routine_name)
 
-    end subroutine update_timeframes_monthly
-
-    subroutine update_timeframes_yearly( self, mesh, time)
-
-      ! In/output variables:
-      class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
-      type(type_mesh),                         intent(in   ) :: mesh
-      real(dp),                                intent(in   ) :: time
-
-      ! Local variables
-      character(len=*), parameter :: routine_name = 'update_timeframes_yearly'
-      integer                     :: ti0_old, ti1_old
-
-      ! Add routine to path
-      call init_routine( routine_name)
-
-      ! Get current bracket indices
-      ti0_old = self%ti0
-      ti1_old = self%ti1
-
-      ! Update the indices of time slices before and after current time
-      call update_bracket_indices( self%timestamps, self%ti0, self%ti1, time)
-
-      ! Update timeframes if necessary
-      if (self%ti0 /= ti0_old) then
-        call read_single_timeframe_from_netcdf_yearly( self, mesh, self%ti0, self%val0)
-      end if
-
-      if (self%ti1 /= ti1_old) then
-        call read_single_timeframe_from_netcdf_yearly( self, mesh, self%ti1, self%val1)
-      end if
-
-      ! Finalise routine path
-      call finalise_routine( routine_name)
-
-    end subroutine update_timeframes_yearly
+    end subroutine update_and_interpolate_ISMIP7_forcing_field
 
     subroutine update_bracket_indices( timestamps, ti0, ti1, time)
 
@@ -421,10 +398,10 @@ module ISMIP7_forcing_field_types
 
     end subroutine update_bracket_indices
 
-    subroutine read_single_timeframe_from_netcdf_monthly( field, mesh, ti, val)
+    subroutine read_single_timeframe_from_netcdf_monthly( self, mesh, ti, val)
 
       ! In/output variables:
-      type(type_ISMIP7_forcing_field_monthly),       intent(in   ) :: field
+      type(type_ISMIP7_forcing_field_monthly),       intent(in   ) :: self
       type(type_mesh),                               intent(in   ) :: mesh
       integer,                                       intent(in   ) :: ti
       real(dp), dimension( mesh%vi1:mesh%vi2, 1:12), intent(inout) :: val
@@ -441,7 +418,7 @@ module ISMIP7_forcing_field_types
       ! Add routine to path
       call init_routine( routine_name)
 
-      filename = trim( field%filenames( ti))
+      filename = trim( self%filenames( ti))
 
       if (par%primary) then
         write(0,*) '   Reading ISMIP7 monthly forcing from file: ', &
@@ -450,41 +427,41 @@ module ISMIP7_forcing_field_types
 
       ! Read raw gridded data to the primary
       if (par%primary) then
-        allocate( d_grid_tot( field%grid_raw%nx, field%grid_raw%ny, 12), source = NaN)
+        allocate( d_grid_tot( self%grid_raw%nx, self%grid_raw%ny, 12), source = NaN)
       else
         allocate( d_grid_tot(0,0,0))
       end if
 
       call open_existing_netcdf_file_for_reading( filename, ncid)
-      call inquire_fill_value( filename, ncid, field%name, fill_value)
-      call inquire_var( filename, ncid, field%name, id_var)
+      call inquire_fill_value( filename, ncid, self%name, fill_value)
+      call inquire_var( filename, ncid, self%name, id_var)
       call read_var_primary( filename, ncid, id_var, d_grid_tot)
       call close_netcdf_file( ncid)
 
       ! Distribute gridded data to the processes
-      allocate( d_grid_vec_partial( field%grid_raw%pai%i1: field%grid_raw%pai%i2, 12))
-      call distribute_gridded_data_from_primary( field%grid_raw, d_grid_vec_partial, d_grid_tot)
+      allocate( d_grid_vec_partial( self%grid_raw%pai%i1: self%grid_raw%pai%i2, 12))
+      call distribute_gridded_data_from_primary( self%grid_raw, d_grid_vec_partial, d_grid_tot)
       deallocate( d_grid_tot)
 
       ! Extrapolate data into fill_value cells
-      sigma = field%grid_raw%dx * 2._dp
-      call extrapolate_fillvalue_Gaussian_grid( field%grid_raw, d_grid_vec_partial, sigma, fill_value)
+      sigma = self%grid_raw%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
 
       ! Remap data to mesh
-      call apply_map_xy_grid_to_mesh_3D( field%grid_raw, mesh, field%map, d_grid_vec_partial, val)
+      call apply_map_xy_grid_to_mesh_3D( self%grid_raw, mesh, self%map, d_grid_vec_partial, val)
 
       ! Finalise routine path
       call finalise_routine( routine_name)
 
     end subroutine read_single_timeframe_from_netcdf_monthly
 
-    subroutine read_single_timeframe_from_netcdf_yearly( field, mesh, ti, val)
+    subroutine read_single_timeframe_from_netcdf_yearly( self, mesh, ti, val)
 
       ! In/output variables:
-      type(type_ISMIP7_forcing_field_yearly),   intent(in   ) :: field
-      type(type_mesh),                          intent(in   ) :: mesh
-      integer,                                  intent(in   ) :: ti
-      real(dp), dimension( mesh%vi1:mesh%vi2),  intent(inout) :: val
+      type(type_ISMIP7_forcing_field_yearly),  intent(in   ) :: self
+      type(type_mesh),                         intent(in   ) :: mesh
+      integer,                                 intent(in   ) :: ti
+      real(dp), dimension( mesh%vi1:mesh%vi2), intent(inout) :: val
 
       ! Local variables
       character(len=*), parameter             :: routine_name = 'update_single_timeframe_yearly'
@@ -499,7 +476,7 @@ module ISMIP7_forcing_field_types
       ! Add routine to path
       call init_routine( routine_name)
 
-      filename = trim(field%filenames( ti))
+      filename = trim(self%filenames( ti))
 
       if (par%primary) then
         write(0,*) '   Reading ISMIP7 yearly climate forcing from file: ', &
@@ -508,104 +485,63 @@ module ISMIP7_forcing_field_types
 
       ! Read raw gridded data to the primary
       if (par%primary) then
-        allocate( d_grid_tot_with_time( field%grid_raw%nx, field%grid_raw%ny, 1), source = NaN)
-        allocate( d_grid_tot          ( field%grid_raw%nx, field%grid_raw%ny   ), source = NaN)
+        allocate( d_grid_tot_with_time( self%grid_raw%nx, self%grid_raw%ny, 1), source = NaN)
+        allocate( d_grid_tot          ( self%grid_raw%nx, self%grid_raw%ny   ), source = NaN)
       else
         allocate( d_grid_tot_with_time(0,0,0))
         allocate( d_grid_tot          (0,0  ))
       end if
 
       call open_existing_netcdf_file_for_reading( filename, ncid)
-      call inquire_fill_value( filename, ncid, field%name, fill_value)
-      call inquire_var( filename, ncid, field%name, id_var)
+      call inquire_fill_value( filename, ncid, self%name, fill_value)
+      call inquire_var( filename, ncid, self%name, id_var)
       call read_var_primary( filename, ncid, id_var, d_grid_tot_with_time)
       if (par%primary) d_grid_tot = d_grid_tot_with_time( :,:,1)
       deallocate( d_grid_tot_with_time)
       call close_netcdf_file( ncid)
 
       ! Distribute gridded data to the processes
-      allocate( d_grid_vec_partial( field%grid_raw%pai%i1: field%grid_raw%pai%i2))
-      call distribute_gridded_data_from_primary( field%grid_raw, d_grid_vec_partial, d_grid_tot)
+      allocate( d_grid_vec_partial( self%grid_raw%pai%i1: self%grid_raw%pai%i2))
+      call distribute_gridded_data_from_primary( self%grid_raw, d_grid_vec_partial, d_grid_tot)
       deallocate( d_grid_tot)
 
       ! Extrapolate data into fill_value cells
-      sigma = field%grid_raw%dx * 2._dp
-      call extrapolate_fillvalue_Gaussian_grid( field%grid_raw, d_grid_vec_partial, sigma, fill_value)
+      sigma = self%grid_raw%dx * 2._dp
+      call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
 
       ! Remap data to mesh
-      call apply_map_xy_grid_to_mesh_2D( field%grid_raw, mesh, field%map, d_grid_vec_partial, val)
+      call apply_map_xy_grid_to_mesh_2D( self%grid_raw, mesh, self%map, d_grid_vec_partial, val)
 
       ! Finalise routine path
       call finalise_routine( routine_name)
 
     end subroutine read_single_timeframe_from_netcdf_yearly
 
-    subroutine interpolate_monthly( self, mesh, time)
-
-      ! In/output variables:
+    subroutine interpolate_timeframes_monthly( self, mesh, time)
       class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
       type(type_mesh),                          intent(in   ) :: mesh
       real(dp),                                 intent(in   ) :: time
-
-      ! Local variables:
-      character(len=1024), parameter :: routine_name = 'interpolate_single_field_monthly'
-      real(dp)                       :: w0, w1
-      real(dp)                       :: days
-
-      ! Add routine to call stack
-      call init_routine( routine_name)
-
-      call get_interpolation_weights( self%timestamps( self%ti0), self%timestamps( self%ti1), time, w0, w1)
-
-      ! Apply interpolation to values
+      real(dp) :: w0, w1
+      call calc_interpolation_weights( self%timestamps( self%ti0), self%timestamps( self%ti1), time, w0, w1)
       self%val_interp( mesh%vi1:mesh%vi2, :) = w0 * self%val0( mesh%vi1:mesh%vi2, :) + w1 * self%val1( mesh%vi1:mesh%vi2, :)
+    end subroutine interpolate_timeframes_monthly
 
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
-
-    end subroutine interpolate_monthly
-
-    subroutine interpolate_yearly( self, mesh, time)
-
-      ! In/output variables:
+    subroutine interpolate_timeframes_yearly( self, mesh, time)
       class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
       type(type_mesh),                         intent(in   ) :: mesh
       real(dp),                                intent(in   ) :: time
-
-      ! Local variables:
-      character(len=1024), parameter :: routine_name = 'interpolate_single_field_yearly'
-      real(dp)                       :: w0, w1
-      real(dp)                       :: days
-
-      ! Add routine to call stack
-      call init_routine( routine_name)
-
-      call get_interpolation_weights( self%timestamps( self%ti0), self%timestamps( self%ti1), time, w0, w1)
-
-      ! Apply interpolation to values
+      real(dp) :: w0, w1
+      call calc_interpolation_weights( self%timestamps( self%ti0), self%timestamps( self%ti1), time, w0, w1)
       self%val_interp( mesh%vi1:mesh%vi2) = w0 * self%val0( mesh%vi1:mesh%vi2) + w1 * self%val1( mesh%vi1:mesh%vi2)
+    end subroutine interpolate_timeframes_yearly
 
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
-
-    end subroutine interpolate_yearly
-
-    subroutine get_interpolation_weights( timestamp0, timestamp1, time, w0, w1)
-
-      ! In/output variables:
+    subroutine calc_interpolation_weights( timestamp0, timestamp1, time, w0, w1)
       real(dp), intent(in   ) :: timestamp0
       real(dp), intent(in   ) :: timestamp1
       real(dp), intent(in   ) :: time
       real(dp), intent(  out) :: w0
       real(dp), intent(  out) :: w1
-
-      ! Local variables:
-      character(len=1024), parameter :: routine_name = 'get_interpolation_weights'
-
-      ! Add routine to call stack
-      call init_routine( routine_name)
-
-      ! Get weights
+      ! Calculate linear interpolation weights
       if (time < timestamp0) then
         ! Model time before bracket times, put full weight on the first timeframe
         w0 = 1._dp
@@ -616,12 +552,7 @@ module ISMIP7_forcing_field_types
         ! Model time between bracket times, determine interpolated weight
         w0 = (timestamp1 - time) / (timestamp1 - timestamp0)
       end if
-
       w1 = 1._dp - w0
-
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
-
-    end subroutine get_interpolation_weights
+    end subroutine calc_interpolation_weights
 
   end module ISMIP7_forcing_field_types

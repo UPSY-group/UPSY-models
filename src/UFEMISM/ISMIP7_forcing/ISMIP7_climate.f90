@@ -166,19 +166,24 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Initialise monthly fields
-      call initialise_climate_field( mesh, ISMIP7%tas, 'tas')
-      call initialise_climate_field( mesh, ISMIP7%pr, 'pr')
+      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, ISMIP7%tas, 'tas')
+      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, ISMIP7%pr, 'pr')
     case ('fixed')
       ! Initialise monthly fields
-      call initialise_climate_field( mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
-      call initialise_climate_field( mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
+      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
+      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
 
       ! Initialise baseline
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
     end select
 
     ! Initialise vertical gradient
-    call initialise_climate_field( mesh, ISMIP7%dtsdz, 'dtsdz')
+    call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+      mesh, ISMIP7%dtsdz, 'dtsdz')
 
     ! Initialise the baseline surface elevation
     select case (C%climate_ISMIP7_choice_refgeo)

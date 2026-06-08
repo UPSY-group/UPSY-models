@@ -69,9 +69,11 @@ module ISMIP7_forcing_field_types
 
   contains
 
-    subroutine initialise_climate_field_monthly( mesh, field, name)
+    subroutine initialise_climate_field_monthly( ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field, name)
 
       ! In/output variables:
+      character(len=*),                        intent(in   ) :: ISMIP7_forcing_foldername
+      character(len=*),                        intent(in   ) :: ISMIP7_forcing_version
       type(type_mesh),                         intent(in   ) :: mesh
       type(type_ISMIP7_forcing_field_monthly), intent(inout) :: field
       character(len=*),                        intent(in   ) :: name
@@ -87,7 +89,8 @@ module ISMIP7_forcing_field_types
       field%name = name
 
       ! Get info from files
-      call gather_fileinfo( field%filenames, field%timestamps, field%name)
+      call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
+        field%filenames, field%timestamps, field%name)
 
       ! Deallocate if necessary
       if (allocated( field%val0       )) deallocate( field%val0      )
@@ -107,9 +110,11 @@ module ISMIP7_forcing_field_types
 
     end subroutine initialise_climate_field_monthly
 
-    subroutine initialise_climate_field_yearly( mesh, field, name)
+    subroutine initialise_climate_field_yearly( ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field, name)
 
       ! In/output variables:
+      character(len=*),                        intent(in   ) :: ISMIP7_forcing_foldername
+      character(len=*),                        intent(in   ) :: ISMIP7_forcing_version
       type(type_mesh),                         intent(in   ) :: mesh
       type(type_ISMIP7_forcing_field_yearly),  intent(inout) :: field
       character(len=*),                        intent(in   ) :: name
@@ -125,7 +130,8 @@ module ISMIP7_forcing_field_types
       field%name = name
 
       ! Get info from files
-      call gather_fileinfo( field%filenames, field%timestamps, field%name)
+      call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
+        field%filenames, field%timestamps, field%name)
 
       ! Deallocate if necessary
       if (allocated( field%val0       )) deallocate( field%val0      )
@@ -145,9 +151,11 @@ module ISMIP7_forcing_field_types
 
     end subroutine initialise_climate_field_yearly
 
-    subroutine gather_fileinfo( filenames, timestamps, var_name)
+    subroutine gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, filenames, timestamps, var_name)
 
       ! In/output variables
+      character(len=*),                               intent(in   ) :: ISMIP7_forcing_foldername
+      character(len=*),                               intent(in   ) :: ISMIP7_forcing_version
       character(len=1024), dimension(:), allocatable, intent(inout) :: filenames
       real(dp),            dimension(:), allocatable, intent(inout) :: timestamps
       character(len=*),                               intent(in   ) :: var_name
@@ -165,7 +173,7 @@ module ISMIP7_forcing_field_types
       if (allocated( timestamps)) deallocate( timestamps)
 
       ! Construct foldernames
-      foldername = trim( C%SMB_ISMIP7_forcing_foldername) // '/' // trim(var_name) // '/' // trim( C%SMB_ISMIP7_forcing_version)
+      foldername = trim( ISMIP7_forcing_foldername) // '/' // trim(var_name) // '/' // trim( ISMIP7_forcing_version)
 
       call list_files_in_folder( foldername, filenames, trim(var_name))
       if (size( filenames,1) == 0) call crash('could not find any valid NetCDF files in directory "' // trim( foldername) // '"')

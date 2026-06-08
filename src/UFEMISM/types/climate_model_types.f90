@@ -6,7 +6,7 @@ MODULE climate_model_types
 ! ====================
 
   USE precisions                                             , ONLY: dp
-  use ISMIP7_climate_model_type, only: type_climate_model_ISMIP7
+  use ISMIP7_climate, only: type_climate_model_ISMIP7
 
   IMPLICIT NONE
 

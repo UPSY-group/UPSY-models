@@ -24,7 +24,6 @@ MODULE climate_main
   USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
   USE climate_snapshot_plus_transient_deltaT                 , ONLY: initialise_climate_model_snapshot_plus_transient_deltaT, run_climate_model_snapshot_plus_transient_deltaT, remap_climate_snapshot_plus_transient_deltaT
   USE climate_snapshot_plus_anomalies                        , ONLY: initialise_climate_model_snp_p_anml, run_climate_model_snp_p_anml, remap_climate_snp_p_anml
-  use ISMIP7_climate, only: initialise_climate_model_ISMIP7, run_climate_model_ISMIP7
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
@@ -119,7 +118,9 @@ CONTAINS
         call snapshot_plus_anomalies%run( snapshot_plus_anomalies%ct_run( time, ice, climate, grid))
       end select
     case ('ISMIP7')
-      call run_climate_model_ISMIP7( mesh, ice, climate, time)
+      call climate%ISMIP7%run( climate%ISMIP7%ct_run( time, ice))
+      climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%ISMIP7%T2m   ( mesh%vi1:mesh%vi2,:)
+      climate%Precip( mesh%vi1:mesh%vi2,:) = climate%ISMIP7%Precip( mesh%vi1:mesh%vi2,:)
     CASE DEFAULT
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT
@@ -212,7 +213,8 @@ CONTAINS
     case ('SMB_snapshot_plus_anomalies')
       ! No need to do anything (initialisation is handled by the SMB model)
     case ('ISMIP7')
-      call initialise_climate_model_ISMIP7( mesh, refgeo_PD, refgeo_init, region_name, climate%ISMIP7)
+      call climate%ISMIP7%allocate  ( climate%ISMIP7%ct_allocate  ( 'ISMIP7', region_name, mesh))
+      call climate%ISMIP7%initialise( climate%ISMIP7%ct_initialise( refgeo_init, refgeo_PD))
     end select
 
     call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')
@@ -493,7 +495,7 @@ CONTAINS
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     elseif (choice_climate_model == 'ISMIP7') then
-      call initialise_climate_model_ISMIP7( mesh_new, refgeo_PD, refgeo_init, region_name, climate%ISMIP7)
+      call climate%ISMIP7%remap( climate%ISMIP7%ct_remap( mesh_new))
     ELSE
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END IF

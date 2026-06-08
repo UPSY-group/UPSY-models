@@ -12,8 +12,6 @@ module climate_model_basic
   use climate_model_common, only: type_climate_model_common
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
-  use climate_model_types, only: type_climate_model
-  use grid_types, only: type_grid
   use reference_geometry_types, only: type_reference_geometry
 
   implicit none

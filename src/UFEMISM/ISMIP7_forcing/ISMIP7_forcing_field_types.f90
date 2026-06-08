@@ -16,24 +16,22 @@ module ISMIP7_forcing_field_types
   private
 
   public :: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
-  public :: gather_fileinfo, initialise_climate_field, update_timeframes, interpolate_single_field
-
-    interface initialise_climate_field
-      module procedure initialise_climate_field_monthly
-      module procedure initialise_climate_field_yearly
-    end interface
+  public :: gather_fileinfo, update_timeframes, interpolate_single_field
 
     interface update_timeframes
       module procedure update_timeframes_monthly
       module procedure update_timeframes_yearly
-    end interface
+    end interface update_timeframes
 
     interface interpolate_single_field
       module procedure interpolate_single_field_monthly
       module procedure interpolate_single_field_yearly
-    end interface
+    end interface interpolate_single_field
 
-    type, abstract :: type_ISMIP7_forcing_field
+    ! Abstract type for monthly/yearly ISMIP7 forcing fields
+    ! ======================================================
+
+    type, abstract :: atype_ISMIP7_forcing_field
       !< Metadata of monthly/yearly ISMIP7 forcing fields
 
       character(len=1024)                            :: name          !           'tas', 'pr', etc
@@ -47,36 +45,65 @@ module ISMIP7_forcing_field_types
 
     contains
 
-    end type type_ISMIP7_forcing_field
+      procedure(initialise_ISMIP7_forcing_field_ifc), deferred :: initialise
 
-    type, extends(type_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_monthly
+    end type atype_ISMIP7_forcing_field
+
+    ! Abstract interfaces for deferred procedures
+    ! ===========================================
+
+    abstract interface
+
+      subroutine initialise_ISMIP7_forcing_field_ifc( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+        import atype_ISMIP7_forcing_field, type_mesh
+        class(atype_ISMIP7_forcing_field), intent(inout) :: self
+        character(len=*),                  intent(in   ) :: ISMIP7_forcing_foldername
+        character(len=*),                  intent(in   ) :: ISMIP7_forcing_version
+        type(type_mesh),                   intent(in   ) :: mesh
+        character(len=*),                  intent(in   ) :: field_name
+      end subroutine initialise_ISMIP7_forcing_field_ifc
+
+    end interface
+
+    ! Concrete types for monthly and yearly ISMIP7 forcing fields
+    ! ===========================================================
+
+    type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_monthly
       !< Two enveloping timeframes and time-interpolated values of a single monthly ISMIP7 forcing field
 
       real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
       real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
       real(dp), dimension(:,:), allocatable          :: val_interp    !           Interpolated values
 
+    contains
+
+      procedure :: initialise => initialise_ISMIP7_forcing_field_monthly
+
     end type type_ISMIP7_forcing_field_monthly
 
-    type, extends(type_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_yearly
+    type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_yearly
       !< Two enveloping timeframes and time-interpolated values of a single yearly ISMIP7 forcing field
 
       real(dp), dimension(:), allocatable            :: val0          !           Values at timeslice before current time
       real(dp), dimension(:), allocatable            :: val1          !           Values at timeslice after current time
       real(dp), dimension(:), allocatable            :: val_interp    !           Interpolated values
 
+    contains
+
+      procedure :: initialise => initialise_ISMIP7_forcing_field_yearly
+
     end type type_ISMIP7_forcing_field_yearly
 
   contains
 
-    subroutine initialise_climate_field_monthly( ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field, name)
+    subroutine initialise_ISMIP7_forcing_field_monthly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
 
       ! In/output variables:
-      character(len=*),                        intent(in   ) :: ISMIP7_forcing_foldername
-      character(len=*),                        intent(in   ) :: ISMIP7_forcing_version
-      type(type_mesh),                         intent(in   ) :: mesh
-      type(type_ISMIP7_forcing_field_monthly), intent(inout) :: field
-      character(len=*),                        intent(in   ) :: name
+      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
+      character(len=*),                         intent(in   ) :: ISMIP7_forcing_foldername
+      character(len=*),                         intent(in   ) :: ISMIP7_forcing_version
+      type(type_mesh),                          intent(in   ) :: mesh
+      character(len=*),                         intent(in   ) :: field_name
 
       ! Local variables:
       character(len=1024), parameter :: routine_name = 'initialise_climate_field_monthly'
@@ -86,38 +113,38 @@ module ISMIP7_forcing_field_types
       call init_routine( routine_name)
 
       ! Define name
-      field%name = name
+      self%name = field_name
 
       ! Get info from files
       call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
-        field%filenames, field%timestamps, field%name)
+        self%filenames, self%timestamps, self%name)
 
       ! Deallocate if necessary
-      if (allocated( field%val0       )) deallocate( field%val0      )
-      if (allocated( field%val1       )) deallocate( field%val1      )
-      if (allocated( field%val_interp )) deallocate( field%val_interp)
+      if (allocated( self%val0       )) deallocate( self%val0      )
+      if (allocated( self%val1       )) deallocate( self%val1      )
+      if (allocated( self%val_interp )) deallocate( self%val_interp)
 
       ! Allocate memory for timeframes
-      allocate (field%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
-      allocate (field%val1      ( mesh%vi1:mesh%vi2, 12), source = NaN)
-      allocate (field%val_interp( mesh%vi1:mesh%vi2, 12), source = NaN)
+      allocate (self%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
+      allocate (self%val1      ( mesh%vi1:mesh%vi2, 12), source = NaN)
+      allocate (self%val_interp( mesh%vi1:mesh%vi2, 12), source = NaN)
 
       ! Update timeframes to the current model time
-      call update_timeframes( mesh, field, C%start_time_of_run)
+      call update_timeframes( mesh, self, C%start_time_of_run)
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
-    end subroutine initialise_climate_field_monthly
+    end subroutine initialise_ISMIP7_forcing_field_monthly
 
-    subroutine initialise_climate_field_yearly( ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field, name)
+    subroutine initialise_ISMIP7_forcing_field_yearly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
 
       ! In/output variables:
+      class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
       character(len=*),                        intent(in   ) :: ISMIP7_forcing_foldername
       character(len=*),                        intent(in   ) :: ISMIP7_forcing_version
       type(type_mesh),                         intent(in   ) :: mesh
-      type(type_ISMIP7_forcing_field_yearly),  intent(inout) :: field
-      character(len=*),                        intent(in   ) :: name
+      character(len=*),                        intent(in   ) :: field_name
 
       ! Local variables:
       character(len=1024), parameter :: routine_name = 'initialise_climate_field_yearly'
@@ -127,29 +154,29 @@ module ISMIP7_forcing_field_types
       call init_routine( routine_name)
 
       ! Define name
-      field%name = name
+      self%name = field_name
 
       ! Get info from files
       call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
-        field%filenames, field%timestamps, field%name)
+        self%filenames, self%timestamps, self%name)
 
       ! Deallocate if necessary
-      if (allocated( field%val0       )) deallocate( field%val0      )
-      if (allocated( field%val1       )) deallocate( field%val1      )
-      if (allocated( field%val_interp )) deallocate( field%val_interp)
+      if (allocated( self%val0       )) deallocate( self%val0      )
+      if (allocated( self%val1       )) deallocate( self%val1      )
+      if (allocated( self%val_interp )) deallocate( self%val_interp)
 
       ! Allocate memory for timeframes
-      allocate (field%val0      ( mesh%vi1:mesh%vi2), source = NaN)
-      allocate (field%val1      ( mesh%vi1:mesh%vi2), source = NaN)
-      allocate (field%val_interp( mesh%vi1:mesh%vi2), source = NaN)
+      allocate (self%val0      ( mesh%vi1:mesh%vi2), source = NaN)
+      allocate (self%val1      ( mesh%vi1:mesh%vi2), source = NaN)
+      allocate (self%val_interp( mesh%vi1:mesh%vi2), source = NaN)
 
       ! Update timeframes to the current model time
-      call update_timeframes( mesh, field, C%start_time_of_run)
+      call update_timeframes( mesh, self, C%start_time_of_run)
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
-    end subroutine initialise_climate_field_yearly
+    end subroutine initialise_ISMIP7_forcing_field_yearly
 
     subroutine gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, filenames, timestamps, var_name)
 

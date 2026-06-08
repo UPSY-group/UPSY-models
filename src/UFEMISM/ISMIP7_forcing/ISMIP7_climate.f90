@@ -62,7 +62,7 @@ module ISMIP7_climate
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
   use parameters, only: NaN, sec_per_year, freshwater_density
   use ISMIP7_climate_model_type, only: type_climate_model_ISMIP7
-  use ISMIP7_forcing_field_types, only: initialise_climate_field, update_timeframes, interpolate_single_field
+  use ISMIP7_forcing_field_types, only: update_timeframes, interpolate_single_field
 
   implicit none
 
@@ -166,24 +166,24 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Initialise monthly fields
-      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, ISMIP7%tas, 'tas')
-      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, ISMIP7%pr, 'pr')
+      call ISMIP7%tas%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, 'tas')
+      call ISMIP7%pr%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, 'pr')
     case ('fixed')
       ! Initialise monthly fields
-      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
-      call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
+      call ISMIP7%tas_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, 'tas-anomaly')
+      call ISMIP7%pr_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+        mesh, 'pr-anomaly')
 
       ! Initialise baseline
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
     end select
 
     ! Initialise vertical gradient
-    call initialise_climate_field( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-      mesh, ISMIP7%dtsdz, 'dtsdz')
+    call ISMIP7%dtsdz%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
+      mesh, 'dtsdz')
 
     ! Initialise the baseline surface elevation
     select case (C%climate_ISMIP7_choice_refgeo)

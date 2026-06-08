@@ -157,20 +157,17 @@ contains
     case default
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
-      ! Initialise monthly fields
-      call ISMIP7%tas%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, 'tas')
-      call ISMIP7%pr%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, 'pr')
-    case ('fixed')
-      ! Initialise monthly fields
-      call ISMIP7%tas_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, 'tas-anomaly')
-      call ISMIP7%pr_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, &
-        mesh, 'pr-anomaly')
 
-      ! Initialise baseline
+      call ISMIP7%tas%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh, 'tas')
+      call ISMIP7%pr%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh, 'pr')
+
+    case ('fixed')
+
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
+
+      call ISMIP7%tas_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh, 'tas-anomaly')
+      call ISMIP7%pr_anomaly%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh, 'pr-anomaly')
+
     end select
 
     ! Initialise vertical gradient

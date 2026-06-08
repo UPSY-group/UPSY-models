@@ -81,7 +81,7 @@ module ISMIP7_forcing_field_types
 
       real(dp), dimension(:,:), allocatable :: val0          !< Values of timeframe before current time
       real(dp), dimension(:,:), allocatable :: val1          !< Values of timeframe after current time
-      real(dp), dimension(:,:), allocatable :: val_interp    !< Interpolated values
+      real(dp), dimension(:,:), allocatable :: val_interp    !< Time-interpolated values
 
     contains
 
@@ -95,7 +95,7 @@ module ISMIP7_forcing_field_types
 
       real(dp), dimension(:), allocatable :: val0          !< Values of timeframe before current time
       real(dp), dimension(:), allocatable :: val1          !< Values of timeframe after current time
-      real(dp), dimension(:), allocatable :: val_interp    !< Interpolated values
+      real(dp), dimension(:), allocatable :: val_interp    !< Time-interpolated values
 
     contains
 

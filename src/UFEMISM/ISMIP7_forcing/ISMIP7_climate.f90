@@ -187,19 +187,19 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
       ! Initialise monthly fields
-      call initialise_climate_field( mesh, ISMIP7, ISMIP7%tas, 'tas')
-      call initialise_climate_field( mesh, ISMIP7, ISMIP7%pr, 'pr')
+      call initialise_climate_field( mesh, ISMIP7%tas, 'tas')
+      call initialise_climate_field( mesh, ISMIP7%pr, 'pr')
     case ('fixed')
       ! Initialise monthly fields
-      call initialise_climate_field( mesh, ISMIP7, ISMIP7%tas_anomaly, 'tas-anomaly')
-      call initialise_climate_field( mesh, ISMIP7, ISMIP7%pr_anomaly, 'pr-anomaly')
+      call initialise_climate_field( mesh, ISMIP7%tas_anomaly, 'tas-anomaly')
+      call initialise_climate_field( mesh, ISMIP7%pr_anomaly, 'pr-anomaly')
 
       ! Initialise baseline
       call initialise_climate_baseline_fixed( mesh, ISMIP7)
     end select
 
     ! Initialise vertical gradient
-    call initialise_climate_field( mesh, ISMIP7, ISMIP7%dtsdz, 'dtsdz')
+    call initialise_climate_field( mesh, ISMIP7%dtsdz, 'dtsdz')
 
     ! Initialise the baseline surface elevation
     select case (C%climate_ISMIP7_choice_refgeo)
@@ -216,11 +216,10 @@ contains
 
   end subroutine initialise_climate_model_ISMIP7
 
-  subroutine initialise_climate_field_monthly( mesh, ISMIP7, field, name)
+  subroutine initialise_climate_field_monthly( mesh, field, name)
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_climate_model_ISMIP7),         intent(inout) :: ISMIP7
     type(type_ISMIP7_forcing_field_monthly), intent(inout) :: field
     character(len=*),                        intent(in   ) :: name
 
@@ -235,7 +234,7 @@ contains
     field%name = name
 
     ! Get info from files
-    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
+    call gather_fileinfo( field%filenames, field%timestamps, field%name)
 
     ! Deallocate if necessary
     if (allocated( field%val0       )) deallocate( field%val0      )
@@ -255,11 +254,10 @@ contains
 
   end subroutine initialise_climate_field_monthly
 
-  subroutine initialise_climate_field_yearly( mesh, ISMIP7, field, name)
+  subroutine initialise_climate_field_yearly( mesh, field, name)
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_climate_model_ISMIP7),         intent(inout) :: ISMIP7
     type(type_ISMIP7_forcing_field_yearly),  intent(inout) :: field
     character(len=*),                        intent(in   ) :: name
 
@@ -274,7 +272,7 @@ contains
     field%name = name
 
     ! Get info from files
-    call gather_fileinfo( ISMIP7, field%filenames, field%timestamps, field%name)
+    call gather_fileinfo( field%filenames, field%timestamps, field%name)
 
     ! Deallocate if necessary
     if (allocated( field%val0       )) deallocate( field%val0      )
@@ -351,10 +349,9 @@ contains
 
   end subroutine initialise_Hs_baseline
 
-  subroutine gather_fileinfo( ISMIP7, filenames, timestamps, var_name)
+  subroutine gather_fileinfo( filenames, timestamps, var_name)
 
     ! In/output variables
-    class(type_climate_model_ISMIP7),               intent(inout) :: ISMIP7
     character(len=1024), dimension(:), allocatable, intent(inout) :: filenames
     real(dp),            dimension(:), allocatable, intent(inout) :: timestamps
     character(len=*),                               intent(in   ) :: var_name

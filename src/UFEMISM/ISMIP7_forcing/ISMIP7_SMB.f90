@@ -1,4 +1,4 @@
-module SMB_ISMIP7
+module ISMIP7_SMB
 
   ! The ISMIP7 protocol provides separate NetCDF files for each year, with a single file contaning 12 monthly fields
   ! for that year. There are separate files for each variable, namely:
@@ -942,4 +942,4 @@ contains
 
   end subroutine reallocate_timeframe
 
-end module SMB_ISMIP7
+end module ISMIP7_SMB

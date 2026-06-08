@@ -23,14 +23,14 @@ module ISMIP7_forcing_field_types
     type, abstract :: atype_ISMIP7_forcing_field
       !< Metadata of monthly/yearly ISMIP7 forcing fields
 
-      character(len=1024)                            :: name          !           'tas', 'pr', etc
+      character(len=1024)                            :: name          !           'tas', 'pr', 'acabf', 'dacabfdz', etc
       character(len=1024)                            :: foldername    !           Foldername that contains all files
       character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
 
       real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
 
-      integer                                        :: ti0 = -1      !           Time index before current time
-      integer                                        :: ti1 = -1      !           Time index after current time
+      integer                                        :: ti0 = -1      !           Index of timeframe before current time
+      integer                                        :: ti1 = -1      !           Index of timeframe after current time
 
     contains
 
@@ -76,13 +76,13 @@ module ISMIP7_forcing_field_types
     type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_monthly
       !< Two enveloping timeframes and time-interpolated values of a single monthly ISMIP7 forcing field
 
-      real(dp), dimension(:,:), allocatable :: val0          !           Values at timeslice before current time
-      real(dp), dimension(:,:), allocatable :: val1          !           Values at timeslice after current time
-      real(dp), dimension(:,:), allocatable :: val_interp    !           Interpolated values
+      real(dp), dimension(:,:), allocatable :: val0          !< Values of timeframe before current time
+      real(dp), dimension(:,:), allocatable :: val1          !< Values of timeframe after current time
+      real(dp), dimension(:,:), allocatable :: val_interp    !< Interpolated values
 
     contains
 
-      procedure :: initialise  => initialise_ISMIP7_forcing_field_monthly
+      procedure :: initialise  => initialise_monthly
       procedure :: update      => update_timeframes_monthly
       procedure :: interpolate => interpolate_single_field_monthly
 
@@ -91,13 +91,13 @@ module ISMIP7_forcing_field_types
     type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_yearly
       !< Two enveloping timeframes and time-interpolated values of a single yearly ISMIP7 forcing field
 
-      real(dp), dimension(:), allocatable :: val0          !           Values at timeslice before current time
-      real(dp), dimension(:), allocatable :: val1          !           Values at timeslice after current time
-      real(dp), dimension(:), allocatable :: val_interp    !           Interpolated values
+      real(dp), dimension(:), allocatable :: val0          !< Values of timeframe before current time
+      real(dp), dimension(:), allocatable :: val1          !< Values of timeframe after current time
+      real(dp), dimension(:), allocatable :: val_interp    !< Interpolated values
 
     contains
 
-      procedure :: initialise  => initialise_ISMIP7_forcing_field_yearly
+      procedure :: initialise  => initialise_yearly
       procedure :: update      => update_timeframes_yearly
       procedure :: interpolate => interpolate_single_field_yearly
 
@@ -105,7 +105,7 @@ module ISMIP7_forcing_field_types
 
   contains
 
-    subroutine initialise_ISMIP7_forcing_field_monthly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+    subroutine initialise_monthly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
 
       ! In/output variables:
       class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
@@ -115,7 +115,7 @@ module ISMIP7_forcing_field_types
       character(len=*),                         intent(in   ) :: field_name
 
       ! Local variables:
-      character(len=1024), parameter :: routine_name = 'initialise_climate_field_monthly'
+      character(len=1024), parameter :: routine_name = 'initialise_monthly'
       character(len=1024)            :: filename
 
       ! Add routine to call stack
@@ -144,9 +144,9 @@ module ISMIP7_forcing_field_types
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
-    end subroutine initialise_ISMIP7_forcing_field_monthly
+    end subroutine initialise_monthly
 
-    subroutine initialise_ISMIP7_forcing_field_yearly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+    subroutine initialise_yearly( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
 
       ! In/output variables:
       class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
@@ -156,7 +156,7 @@ module ISMIP7_forcing_field_types
       character(len=*),                        intent(in   ) :: field_name
 
       ! Local variables:
-      character(len=1024), parameter :: routine_name = 'initialise_climate_field_yearly'
+      character(len=1024), parameter :: routine_name = 'initialise_yearly'
       character(len=1024)            :: filename
 
       ! Add routine to call stack
@@ -185,7 +185,7 @@ module ISMIP7_forcing_field_types
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
-    end subroutine initialise_ISMIP7_forcing_field_yearly
+    end subroutine initialise_yearly
 
     subroutine gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, filenames, timestamps, var_name)
 

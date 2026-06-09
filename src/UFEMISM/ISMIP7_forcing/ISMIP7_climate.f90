@@ -76,22 +76,22 @@ module ISMIP7_climate
   type, extends(atype_climate_model) :: type_climate_model_ISMIP7
 
       ! Baseline climate and surface elevation
-      real(dp), dimension(:,:), contiguous, pointer :: T2m_baseline    => null()   !< [K]                     Baseline monthly mean 2-m air temperature
-      real(dp), dimension(:,:), contiguous, pointer :: Precip_baseline => null()   !< [m.w.e.]                Baseline monthly total precipitation
-      real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline     => null()   !< [m w.r.t. PD sea level] Baseline surface elevation
+      real(dp), dimension(:,:), contiguous, pointer :: T2m_baseline    => null()   !< [K]                      Baseline monthly mean 2-m air temperature
+      real(dp), dimension(:,:), contiguous, pointer :: Precip_baseline => null()   !< [m.w.e. month^-1]        Baseline monthly total precipitation
+      real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline     => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
       type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
+
+      ! ISMIP7-style input forcing fields
+      type(type_ISMIP7_forcing_field_monthly) :: tas                 !< [K]                GCM-derived monthly mean surface air temperature
+      type(type_ISMIP7_forcing_field_monthly) :: tas_anomaly         !< [K]                GCM-derived monthly mean surface air temperature anomaly
+      type(type_ISMIP7_forcing_field_monthly) :: pr                  !< [m.w.e. month^-1]  GCM-derived monthly total precipitation
+      type(type_ISMIP7_forcing_field_monthly) :: pr_anomaly          !< [m.w.e. month^-1]  GCM-derived monthly total precipitation anomaly
+      type(type_ISMIP7_forcing_field_yearly)  :: dtsdz               !< [K m^-1]           GCM-derived anual mean vertical temperature gradient
 
       ! Elevation-based temperature correction
       real(dp), dimension(:  ), contiguous, pointer :: delta_z    => null()
       real(dp), dimension(:  ), contiguous, pointer :: delta_ts   => null()
       type(MPI_WIN) :: wdelta_z, wdelta_ts
-
-      ! Fields
-      type(type_ISMIP7_forcing_field_monthly) :: tas                 !< [K]       GCM-derived monthly mean surface air temperature
-      type(type_ISMIP7_forcing_field_monthly) :: tas_anomaly         !< [K]       GCM-derived monthly mean surface air temperature anomaly
-      type(type_ISMIP7_forcing_field_monthly) :: pr                  !< [m.w.e.]  GCM-derived monthly total precipitation
-      type(type_ISMIP7_forcing_field_monthly) :: pr_anomaly          !< [m.w.e.]  GCM-derived monthly total precipitation anomaly
-      type(type_ISMIP7_forcing_field_yearly)  :: dtsdz               !< [K m^-1]  GCM-derived anual mean vertical temperature gradient
 
     contains
 
@@ -228,7 +228,7 @@ contains
 
       ! Allocate monthly climate (as ISMIP7 forcing fields)
       call self%tas%allocate( self, 'tas', 'Monthly mean 2-m air temperature', 'K')
-      call self%pr%allocate ( self, 'pr' , 'Monthly total precipitation', 'm.w.e.')
+      call self%pr%allocate ( self, 'pr' , 'Monthly total precipitation', 'm.w.e. month^-1')
 
     case ('fixed')
 
@@ -244,19 +244,19 @@ contains
         self%mesh, Arakawa_grid%a(), third_dimension%month(), &
         name      = 'Precip_baseline', &
         long_name = 'Baseline monthly total precipitation', &
-        units     = 'm.w.e.', &
+        units     = 'm.w.e. month^-1', &
         remap_method = 'reallocate')
 
       ! Allocate anomalies (as ISMIP7 forcing fields)
       call self%tas_anomaly%allocate( self, 'tas-anomaly', 'Monthly mean 2-m air temperature anomaly', 'K')
-      call self%pr_anomaly%allocate ( self, 'pr-anomaly' , 'Monthly total precipitation anomaly', 'm.w.e.')
+      call self%pr_anomaly%allocate ( self, 'pr-anomaly' , 'Monthly total precipitation anomaly', 'm.w.e. month^-1')
 
     end select
 
     ! Initialise vertical gradient (as ISMIP7 forcing field)
     call self%dtsdz%allocate( self, 'dtsdz', 'Vertical temperature gradient', 'K/m')
 
-    ! Baseline surface elevation
+    ! Elevation-based temperature correction
     call self%create_field( self%Hs_baseline, self%wHs_baseline, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'Hs_baseline', &
@@ -405,8 +405,6 @@ contains
 
     case ('fixed')
 
-      call warning('beep')
-
       ! Update and interpolate timeframes
       call self%tas_anomaly%update_and_interpolate( mesh, time)
       call self%pr_anomaly%update_and_interpolate ( mesh, time)
@@ -420,11 +418,6 @@ contains
       end do
 
     end select
-
-    ! DENK DROM
-    call self%write_to_restart_file( C%output_dir)
-
-    call crash('whoopsiedaisy')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

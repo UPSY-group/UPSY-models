@@ -15,7 +15,7 @@ module ISMIP7_forcing_field_types
   use smooth_gridded_data, only: extrapolate_fillvalue_Gaussian_grid
   use apply_maps, only: apply_map_xy_grid_to_mesh_2D, apply_map_xy_grid_to_mesh_3D
   use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
-  use parameters, only: NaN, freshwater_density, sec_per_year
+  use parameters, only: NaN, freshwater_density, sec_per_year, ice_density
   use grid_types, only: type_grid
   use remapping_types, only: type_map
   use dist_to_hybrid_mod, only: dist_to_hybrid
@@ -198,6 +198,8 @@ module ISMIP7_forcing_field_types
 
     end subroutine allocate_yearly
 
+
+
     subroutine initialise_ISMIP7_forcing_field( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh)
 
       ! In/output variables:
@@ -333,6 +335,8 @@ module ISMIP7_forcing_field_types
 
     end subroutine read_year_from_netcdf_filename
 
+
+
     subroutine update_and_interpolate_ISMIP7_forcing_field( self, mesh, time)
 
       ! In/output variables:
@@ -373,9 +377,6 @@ module ISMIP7_forcing_field_types
               call crash('invalid extension of atype_ISMIP7_forcing_field')
             class is (type_ISMIP7_forcing_field_monthly)
               call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti0, f%val0)
-              if (f%name == 'pr' .or. f%name == 'pr-anomaly') then
-                call convert_precip_units( mesh, f%val0)
-              end if
             class is (type_ISMIP7_forcing_field_yearly)
               call read_single_timeframe_from_netcdf_yearly( f, mesh, f%ti0, f%val0)
           end select
@@ -388,9 +389,6 @@ module ISMIP7_forcing_field_types
             call crash('invalid extension of atype_ISMIP7_forcing_field')
           class is (type_ISMIP7_forcing_field_monthly)
             call read_single_timeframe_from_netcdf_monthly( f, mesh, f%ti1, f%val1)
-            if (f%name == 'pr' .or. f%name == 'pr-anomaly') then
-              call convert_precip_units( mesh, f%val1)
-            end if
           class is (type_ISMIP7_forcing_field_yearly)
             call read_single_timeframe_from_netcdf_yearly( f, mesh, f%ti1, f%val1)
         end select
@@ -457,7 +455,7 @@ module ISMIP7_forcing_field_types
       real(dp), dimension(:,:),                intent(inout) :: val
 
       ! Local variables
-      character(len=*), parameter               :: routine_name = 'update_single_timeframe_monthly'
+      character(len=*), parameter               :: routine_name = 'read_single_timeframe_from_netcdf_monthly'
       character(len=:), allocatable             :: filename
       real(dp), dimension(:,:,:), allocatable   :: d_grid_tot
       integer                                   :: ncid, id_var
@@ -502,6 +500,18 @@ module ISMIP7_forcing_field_types
       call apply_map_xy_grid_to_mesh_3D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)
       call dist_to_hybrid( mesh%pai_V, 12, d_dist, val)
 
+      ! Unit conversions
+      select case (self%name)
+      case default
+        call crash('invalid field name ' // trim( self%name))
+      case ('tas','tas-anomaly')
+        ! No unit conversion needed for these fields
+      case ('pr','pr-anomaly')
+        call unit_conversion_precipitation_monthly( mesh, val)
+      case ('acabf','acabf-anomaly')
+        call unit_conversion_SMB_monthly( mesh, val)
+      end select
+
       ! Finalise routine path
       call finalise_routine( routine_name)
 
@@ -516,7 +526,7 @@ module ISMIP7_forcing_field_types
       real(dp), dimension(:),                  intent(inout) :: val
 
       ! Local variables
-      character(len=*), parameter             :: routine_name = 'update_single_timeframe_yearly'
+      character(len=*), parameter             :: routine_name = 'read_single_timeframe_from_netcdf_yearly'
       character(len=:), allocatable           :: filename
       real(dp), dimension(:,:,:), allocatable :: d_grid_tot_with_time
       real(dp), dimension(:,:  ), allocatable :: d_grid_tot
@@ -566,10 +576,22 @@ module ISMIP7_forcing_field_types
       call apply_map_xy_grid_to_mesh_2D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)
       call dist_to_hybrid( mesh%pai_V, d_dist, val)
 
+      ! Unit conversions
+      select case (self%name)
+      case ('dtsdz')
+        ! No unit conversion needed for these fields
+      case ('dacabfdz')
+        call unit_conversion_SMB_yearly( mesh, val)
+      case default
+        call crash('invalid field name ' // trim( self%name))
+      end select
+
       ! Finalise routine path
       call finalise_routine( routine_name)
 
     end subroutine read_single_timeframe_from_netcdf_yearly
+
+
 
     subroutine interpolate_timeframes_monthly( self, mesh, time)
       class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
@@ -609,13 +631,27 @@ module ISMIP7_forcing_field_types
       w1 = 1._dp - w0
     end subroutine calc_interpolation_weights
 
-    subroutine convert_precip_units( mesh, precip)
-      ! UFEMISM expects precipitation in [meters of water equivalent], as cumulative monthly values,
-      ! (i.e. Precip_yearly = sum( Precip_monthly(1:12)))
-      ! ISMIP provides it in [kg m^-2 s^-1] (which is much more sensible)
+
+
+    subroutine unit_conversion_precipitation_monthly( mesh, pr)
+      ! Convert precipitation from [kg m^-2 s^-1] to [m.w.e. month^-1]
       type(type_mesh),          intent(in   ) :: mesh
-      real(dp), dimension(:,:), intent(inout) :: precip
-      precip( mesh%vi1:mesh%vi2,:) = precip( mesh%vi1:mesh%vi2,:) * sec_per_year / (12._dp * freshwater_density)
-    end subroutine convert_precip_units
+      real(dp), dimension(:,:), intent(inout) :: pr
+      pr( mesh%vi1:mesh%vi2,:) = pr( mesh%vi1:mesh%vi2,:) * sec_per_year / (12._dp * freshwater_density)
+    end subroutine unit_conversion_precipitation_monthly
+
+    subroutine unit_conversion_SMB_monthly( mesh, acabf)
+      ! Convert SMB from [kg m^-2 s^-1] to [m.i.e. month^-1]
+      type(type_mesh),          intent(in   ) :: mesh
+      real(dp), dimension(:,:), intent(inout) :: acabf
+      acabf( mesh%vi1:mesh%vi2,:) = acabf( mesh%vi1:mesh%vi2,:) * sec_per_year / (12._dp * ice_density)
+    end subroutine unit_conversion_SMB_monthly
+
+    subroutine unit_conversion_SMB_yearly( mesh, acabf)
+      ! Convert SMB from [kg m^-2 s^-1] to [m.i.e. yr^-1]
+      type(type_mesh),        intent(in   ) :: mesh
+      real(dp), dimension(:), intent(inout) :: acabf
+      acabf( mesh%vi1:mesh%vi2) = acabf( mesh%vi1:mesh%vi2) * sec_per_year / ice_density
+    end subroutine unit_conversion_SMB_yearly
 
   end module ISMIP7_forcing_field_types

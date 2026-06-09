@@ -1,11 +1,12 @@
 module ISMIP7_forcing_field_types
 
   use mpi_basic, only: par
+  use mpi_f08, only: MPI_WIN
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use basic_model_utilities, only: list_files_in_folder
   use model_configuration, only: C
-  use crash_mod, only: crash
+  use crash_mod, only: crash, warning
   use UPSY_main, only: UPSY
   use mesh_types, only: type_mesh
   use netcdf_io_main, only: read_time_from_file, read_field_from_file_2D, open_existing_netcdf_file_for_reading, &
@@ -14,9 +15,13 @@ module ISMIP7_forcing_field_types
   use smooth_gridded_data, only: extrapolate_fillvalue_Gaussian_grid
   use apply_maps, only: apply_map_xy_grid_to_mesh_2D, apply_map_xy_grid_to_mesh_3D
   use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
-  use parameters, only: NaN
+  use parameters, only: NaN, freshwater_density, sec_per_year, ice_density
   use grid_types, only: type_grid
   use remapping_types, only: type_map
+  use dist_to_hybrid_mod, only: dist_to_hybrid
+  use models_basic, only: atype_model
+  use Arakawa_grid_mod, only: Arakawa_grid
+  use fields_dimensions, only: third_dimension
 
   implicit none
 
@@ -44,11 +49,11 @@ module ISMIP7_forcing_field_types
 
     contains
 
+      procedure(allocate_timeframes_ifc), deferred,    private :: allocate
       procedure,                                       public  :: initialise                   => initialise_ISMIP7_forcing_field
       procedure,                                       public  :: update_and_interpolate       => update_and_interpolate_ISMIP7_forcing_field
 
       procedure,                                       private :: initialise_remapping_object
-      procedure(allocate_timeframes_ifc),    deferred, private :: allocate_timeframes
       procedure(interpolate_timeframes_ifc), deferred, private :: interpolate_timeframes
 
     end type atype_ISMIP7_forcing_field
@@ -58,10 +63,11 @@ module ISMIP7_forcing_field_types
 
     abstract interface
 
-      subroutine allocate_timeframes_ifc( self, mesh)
-        import atype_ISMIP7_forcing_field, type_mesh
+      subroutine allocate_timeframes_ifc( self, model, name, long_name, units)
+        import atype_ISMIP7_forcing_field, atype_model
         class(atype_ISMIP7_forcing_field), intent(inout) :: self
-        type(type_mesh),                   intent(in   ) :: mesh
+        class(atype_model),                intent(inout) :: model
+        character(len=*),                  intent(in   ) :: name, long_name, units
       end subroutine allocate_timeframes_ifc
 
       subroutine interpolate_timeframes_ifc( self, mesh, time)
@@ -79,13 +85,14 @@ module ISMIP7_forcing_field_types
     type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_monthly
       !< Two enveloping timeframes and time-interpolated values of a single monthly ISMIP7 forcing field
 
-      real(dp), dimension(:,:), allocatable :: val0          !< Values of timeframe before current time
-      real(dp), dimension(:,:), allocatable :: val1          !< Values of timeframe after current time
-      real(dp), dimension(:,:), allocatable :: val_interp    !< Time-interpolated values
+      real(dp), dimension(:,:), contiguous, pointer :: val0       => null()   !< Values of timeframe before current time
+      real(dp), dimension(:,:), contiguous, pointer :: val1       => null()   !< Values of timeframe after current time
+      real(dp), dimension(:,:), contiguous, pointer :: val_interp => null()   !< Time-interpolated values
+      type(MPI_WIN) :: wval0, wval1, wval_interp
 
     contains
 
-      procedure, public  :: allocate_timeframes    => allocate_timeframes_monthly
+      procedure, public  :: allocate               => allocate_monthly
       procedure, private :: interpolate_timeframes => interpolate_timeframes_monthly
 
     end type type_ISMIP7_forcing_field_monthly
@@ -93,27 +100,113 @@ module ISMIP7_forcing_field_types
     type, extends(atype_ISMIP7_forcing_field) :: type_ISMIP7_forcing_field_yearly
       !< Two enveloping timeframes and time-interpolated values of a single yearly ISMIP7 forcing field
 
-      real(dp), dimension(:), allocatable :: val0          !< Values of timeframe before current time
-      real(dp), dimension(:), allocatable :: val1          !< Values of timeframe after current time
-      real(dp), dimension(:), allocatable :: val_interp    !< Time-interpolated values
+      real(dp), dimension(:), contiguous, pointer :: val0       => null()   !< Values of timeframe before current time
+      real(dp), dimension(:), contiguous, pointer :: val1       => null()   !< Values of timeframe after current time
+      real(dp), dimension(:), contiguous, pointer :: val_interp => null()   !< Time-interpolated values
+      type(MPI_WIN) :: wval0, wval1, wval_interp
 
     contains
 
-      procedure, public  :: allocate_timeframes    => allocate_timeframes_yearly
+      procedure, public  :: allocate               => allocate_yearly
       procedure, private :: interpolate_timeframes => interpolate_timeframes_yearly
 
     end type type_ISMIP7_forcing_field_yearly
 
   contains
 
-    subroutine initialise_ISMIP7_forcing_field( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh, field_name)
+    subroutine allocate_monthly( self, model, name, long_name, units)
+
+      ! In/output variables:
+      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
+      class(atype_model),                       intent(inout) :: model
+      character(len=*),                         intent(in   ) :: name, long_name, units
+
+      ! Local variables:
+      character(len=*), parameter   :: routine_name = 'allocate_monthly'
+
+      ! Add routine to call stack
+      call init_routine( routine_name)
+
+      self%name = name
+
+      ! Create model fields for all three timeframes
+      call model%create_field( self%val0, self%wval0, &
+        model%mesh, Arakawa_grid%a(), third_dimension%month(), &
+        name      = trim( name) // '_val0', &
+        long_name = trim( long_name) // ' - timeframe 0', &
+        units     = trim( units), &
+        remap_method = 'reallocate')
+
+      call model%create_field( self%val1, self%wval1, &
+        model%mesh, Arakawa_grid%a(), third_dimension%month(), &
+        name      = trim( name) // '_val1', &
+        long_name = trim( long_name) // ' - timeframe 1', &
+        units     = trim( units), &
+        remap_method = 'reallocate')
+
+      call model%create_field( self%val_interp, self%wval_interp, &
+        model%mesh, Arakawa_grid%a(), third_dimension%month(), &
+        name      = trim( name) // '_val_interp', &
+        long_name = trim( long_name) // ' - time-interpolated', &
+        units     = trim( units), &
+        remap_method = 'reallocate')
+
+      ! Remove routine from call stack
+      call finalise_routine( routine_name)
+
+    end subroutine allocate_monthly
+
+    subroutine allocate_yearly( self, model, name, long_name, units)
+
+      ! In/output variables:
+      class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
+      class(atype_model),                      intent(inout) :: model
+      character(len=*),                        intent(in   ) :: name, long_name, units
+
+      ! Local variables:
+      character(len=*), parameter   :: routine_name = 'allocate_yearly'
+
+      ! Add routine to call stack
+      call init_routine( routine_name)
+
+      self%name = name
+
+      ! Create model fields for all three timeframes
+      call model%create_field( self%val0, self%wval0, &
+        model%mesh, Arakawa_grid%a(), &
+        name      = trim( name) // '_val0', &
+        long_name = trim( long_name) // ' - timeframe 0', &
+        units     = trim( units), &
+        remap_method = 'reallocate')
+
+      call model%create_field( self%val1, self%wval1, &
+        model%mesh, Arakawa_grid%a(), &
+        name      = trim( name) // '_val1', &
+        long_name = trim( long_name) // ' - timeframe 1', &
+        units     = trim( units), &
+        remap_method = 'reallocate')
+
+      call model%create_field( self%val_interp, self%wval_interp, &
+        model%mesh, Arakawa_grid%a(), &
+        name      = trim( name) // '_val_interp', &
+        long_name = trim( long_name) // ' - time-interpolated', &
+        units     = trim( units), &
+        remap_method = 'reallocate')
+
+      ! Remove routine from call stack
+      call finalise_routine( routine_name)
+
+    end subroutine allocate_yearly
+
+
+
+    subroutine initialise_ISMIP7_forcing_field( self, ISMIP7_forcing_foldername, ISMIP7_forcing_version, mesh)
 
       ! In/output variables:
       class(atype_ISMIP7_forcing_field), intent(inout) :: self
       character(len=*),                  intent(in   ) :: ISMIP7_forcing_foldername
       character(len=*),                  intent(in   ) :: ISMIP7_forcing_version
       type(type_mesh),                   intent(in   ) :: mesh
-      character(len=*),                  intent(in   ) :: field_name
 
       ! Local variables:
       character(len=*), parameter   :: routine_name = 'initialise_ISMIP7_forcing_field'
@@ -121,9 +214,6 @@ module ISMIP7_forcing_field_types
 
       ! Add routine to call stack
       call init_routine( routine_name)
-
-      ! Define name
-      self%name = field_name
 
       ! Get info from files
       call gather_fileinfo( ISMIP7_forcing_foldername, ISMIP7_forcing_version, &
@@ -133,9 +223,6 @@ module ISMIP7_forcing_field_types
       ! NetCDF files of this field (which presumably are all defined on the same x/y-grid)
       call self%initialise_remapping_object( mesh)
 
-      ! Allocate memory for the before, after, and interpolated timeframes
-      call self%allocate_timeframes( mesh)
-
       ! Update and interpolate timeframes to the current model time
       call self%update_and_interpolate( mesh, C%start_time_of_run)
 
@@ -143,60 +230,6 @@ module ISMIP7_forcing_field_types
       call finalise_routine( routine_name)
 
     end subroutine initialise_ISMIP7_forcing_field
-
-    subroutine allocate_timeframes_monthly( self, mesh)
-
-      ! In/output variables:
-      class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
-      type(type_mesh),                          intent(in   ) :: mesh
-
-      ! Local variables:
-      character(len=*), parameter :: routine_name = 'allocate_timeframes_monthly'
-
-      ! Add routine to call stack
-      call init_routine( routine_name)
-
-      ! Deallocate if necessary
-      if (allocated( self%val0       )) deallocate( self%val0      )
-      if (allocated( self%val1       )) deallocate( self%val1      )
-      if (allocated( self%val_interp )) deallocate( self%val_interp)
-
-      ! Allocate memory for timeframes
-      allocate (self%val0      ( mesh%vi1:mesh%vi2, 12), source = NaN)
-      allocate (self%val1      ( mesh%vi1:mesh%vi2, 12), source = NaN)
-      allocate (self%val_interp( mesh%vi1:mesh%vi2, 12), source = NaN)
-
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
-
-    end subroutine allocate_timeframes_monthly
-
-    subroutine allocate_timeframes_yearly( self, mesh)
-
-      ! In/output variables:
-      class(type_ISMIP7_forcing_field_yearly), intent(inout) :: self
-      type(type_mesh),                         intent(in   ) :: mesh
-
-      ! Local variables:
-      character(len=*), parameter :: routine_name = 'allocate_timeframes_yearly'
-
-      ! Add routine to call stack
-      call init_routine( routine_name)
-
-      ! Deallocate if necessary
-      if (allocated( self%val0       )) deallocate( self%val0      )
-      if (allocated( self%val1       )) deallocate( self%val1      )
-      if (allocated( self%val_interp )) deallocate( self%val_interp)
-
-      ! Allocate memory for timeframes
-      allocate (self%val0      ( mesh%vi1:mesh%vi2), source = NaN)
-      allocate (self%val1      ( mesh%vi1:mesh%vi2), source = NaN)
-      allocate (self%val_interp( mesh%vi1:mesh%vi2), source = NaN)
-
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
-
-    end subroutine allocate_timeframes_yearly
 
     subroutine initialise_remapping_object( self, mesh)
 
@@ -301,6 +334,8 @@ module ISMIP7_forcing_field_types
       call finalise_routine( routine_name)
 
     end subroutine read_year_from_netcdf_filename
+
+
 
     subroutine update_and_interpolate_ISMIP7_forcing_field( self, mesh, time)
 
@@ -414,19 +449,20 @@ module ISMIP7_forcing_field_types
     subroutine read_single_timeframe_from_netcdf_monthly( self, mesh, ti, val)
 
       ! In/output variables:
-      type(type_ISMIP7_forcing_field_monthly),       intent(in   ) :: self
-      type(type_mesh),                               intent(in   ) :: mesh
-      integer,                                       intent(in   ) :: ti
-      real(dp), dimension( mesh%vi1:mesh%vi2, 1:12), intent(inout) :: val
+      type(type_ISMIP7_forcing_field_monthly), intent(in   ) :: self
+      type(type_mesh),                         intent(in   ) :: mesh
+      integer,                                 intent(in   ) :: ti
+      real(dp), dimension(:,:),                intent(inout) :: val
 
       ! Local variables
-      character(len=*), parameter             :: routine_name = 'update_single_timeframe_monthly'
-      character(len=:), allocatable           :: filename
-      real(dp), dimension(:,:,:), allocatable :: d_grid_tot
-      integer                                 :: ncid, id_var
-      real(dp)                                :: fill_value
-      real(dp), dimension(:,:  ), allocatable :: d_grid_vec_partial
-      real(dp)                                :: sigma
+      character(len=*), parameter               :: routine_name = 'read_single_timeframe_from_netcdf_monthly'
+      character(len=:), allocatable             :: filename
+      real(dp), dimension(:,:,:), allocatable   :: d_grid_tot
+      integer                                   :: ncid, id_var
+      real(dp)                                  :: fill_value
+      real(dp), dimension(:,:  ), allocatable   :: d_grid_vec_partial
+      real(dp)                                  :: sigma
+      real(dp), dimension(mesh%vi1:mesh%vi2,12) :: d_dist
 
       ! Add routine to path
       call init_routine( routine_name)
@@ -461,7 +497,20 @@ module ISMIP7_forcing_field_types
       call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
 
       ! Remap data to mesh
-      call apply_map_xy_grid_to_mesh_3D( self%grid_raw, mesh, self%map, d_grid_vec_partial, val)
+      call apply_map_xy_grid_to_mesh_3D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)
+      call dist_to_hybrid( mesh%pai_V, 12, d_dist, val)
+
+      ! Unit conversions
+      select case (self%name)
+      case default
+        call crash('invalid field name ' // trim( self%name))
+      case ('tas','tas-anomaly')
+        ! No unit conversion needed for these fields
+      case ('pr','pr-anomaly')
+        call unit_conversion_precipitation_monthly( mesh, val)
+      case ('acabf','acabf-anomaly')
+        call unit_conversion_SMB_monthly( mesh, val)
+      end select
 
       ! Finalise routine path
       call finalise_routine( routine_name)
@@ -474,10 +523,10 @@ module ISMIP7_forcing_field_types
       type(type_ISMIP7_forcing_field_yearly),  intent(in   ) :: self
       type(type_mesh),                         intent(in   ) :: mesh
       integer,                                 intent(in   ) :: ti
-      real(dp), dimension( mesh%vi1:mesh%vi2), intent(inout) :: val
+      real(dp), dimension(:),                  intent(inout) :: val
 
       ! Local variables
-      character(len=*), parameter             :: routine_name = 'update_single_timeframe_yearly'
+      character(len=*), parameter             :: routine_name = 'read_single_timeframe_from_netcdf_yearly'
       character(len=:), allocatable           :: filename
       real(dp), dimension(:,:,:), allocatable :: d_grid_tot_with_time
       real(dp), dimension(:,:  ), allocatable :: d_grid_tot
@@ -485,6 +534,7 @@ module ISMIP7_forcing_field_types
       real(dp)                                :: fill_value
       real(dp), dimension(:    ), allocatable :: d_grid_vec_partial
       real(dp)                                :: sigma
+      real(dp), dimension(mesh%vi1:mesh%vi2)  :: d_dist
 
       ! Add routine to path
       call init_routine( routine_name)
@@ -492,7 +542,7 @@ module ISMIP7_forcing_field_types
       filename = trim(self%filenames( ti))
 
       if (par%primary) then
-        write(0,*) '   Reading ISMIP7 yearly climate forcing from file: ', &
+        write(0,*) '   Reading ISMIP7 yearly forcing from file: ', &
           UPSY%stru%colour_string( trim( filename), 'light blue')
       end if
 
@@ -523,12 +573,25 @@ module ISMIP7_forcing_field_types
       call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
 
       ! Remap data to mesh
-      call apply_map_xy_grid_to_mesh_2D( self%grid_raw, mesh, self%map, d_grid_vec_partial, val)
+      call apply_map_xy_grid_to_mesh_2D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)
+      call dist_to_hybrid( mesh%pai_V, d_dist, val)
+
+      ! Unit conversions
+      select case (self%name)
+      case ('dtsdz')
+        ! No unit conversion needed for these fields
+      case ('dacabfdz')
+        call unit_conversion_SMB_yearly( mesh, val)
+      case default
+        call crash('invalid field name ' // trim( self%name))
+      end select
 
       ! Finalise routine path
       call finalise_routine( routine_name)
 
     end subroutine read_single_timeframe_from_netcdf_yearly
+
+
 
     subroutine interpolate_timeframes_monthly( self, mesh, time)
       class(type_ISMIP7_forcing_field_monthly), intent(inout) :: self
@@ -567,5 +630,28 @@ module ISMIP7_forcing_field_types
       end if
       w1 = 1._dp - w0
     end subroutine calc_interpolation_weights
+
+
+
+    subroutine unit_conversion_precipitation_monthly( mesh, pr)
+      ! Convert precipitation from [kg m^-2 s^-1] to [m.w.e. month^-1]
+      type(type_mesh),          intent(in   ) :: mesh
+      real(dp), dimension(:,:), intent(inout) :: pr
+      pr( mesh%vi1:mesh%vi2,:) = pr( mesh%vi1:mesh%vi2,:) * sec_per_year / (12._dp * freshwater_density)
+    end subroutine unit_conversion_precipitation_monthly
+
+    subroutine unit_conversion_SMB_monthly( mesh, acabf)
+      ! Convert SMB from [kg m^-2 s^-1] to [m.i.e. month^-1]
+      type(type_mesh),          intent(in   ) :: mesh
+      real(dp), dimension(:,:), intent(inout) :: acabf
+      acabf( mesh%vi1:mesh%vi2,:) = acabf( mesh%vi1:mesh%vi2,:) * sec_per_year / (12._dp * ice_density)
+    end subroutine unit_conversion_SMB_monthly
+
+    subroutine unit_conversion_SMB_yearly( mesh, acabf)
+      ! Convert SMB from [kg m^-2 s^-1] to [m.i.e. yr^-1]
+      type(type_mesh),        intent(in   ) :: mesh
+      real(dp), dimension(:), intent(inout) :: acabf
+      acabf( mesh%vi1:mesh%vi2) = acabf( mesh%vi1:mesh%vi2) * sec_per_year / ice_density
+    end subroutine unit_conversion_SMB_yearly
 
   end module ISMIP7_forcing_field_types

@@ -228,13 +228,15 @@ contains
         units     = 'm.i.e. yr^-1', &
         remap_method = 'reallocate')
 
-      ! SMB offset
-      call self%create_field( self%SMB_offset, self%wSMB_offset, &
-        self%mesh, Arakawa_grid%a(), &
-        name      = 'SMB_offset', &
-        long_name = 'Offset to shift SMB baseline period', &
-        units     = 'm.i.e. yr^-1', &
-        remap_method = 'reallocate')
+      if (C%SMB_ISMIP7_choice_SMB_offset) then
+        ! SMB offset
+        call self%create_field( self%SMB_offset, self%wSMB_offset, &
+          self%mesh, Arakawa_grid%a(), &
+          name      = 'SMB_offset', &
+          long_name = 'Offset to shift SMB baseline period', &
+          units     = 'm.i.e. yr^-1', &
+          remap_method = 'reallocate')
+      end if
 
       ! Allocate anomalies (as ISMIP7 forcing fields)
       call self%acabf_anomaly%allocate( self, 'acabf-anomaly', 'Monthly total SMB anomaly', 'm.i.e. month^-1')
@@ -350,17 +352,23 @@ contains
     call read_field_from_file_2D( trim( C%SMB_ISMIP7_filename_SMB_baseline_fixed), 'SMB||surface_mass_balance', &
       mesh, C%output_dir, self%SMB_baseline)
 
-    if (par%primary) then
-      write(0,*) '   Reading SMB offset from file: ', &
-        UPSY%stru%colour_string( trim( C%SMB_ISMIP7_filename_SMB_offset), 'light blue')
+    if (C%SMB_ISMIP7_choice_SMB_offset) then
+      if (par%primary) then
+        write(0,*) '   Reading SMB offset from file: ', &
+          UPSY%stru%colour_string( trim( C%SMB_ISMIP7_filename_SMB_offset), 'light blue')
+      end if
+
+      call read_field_from_file_2D( trim( C%SMB_ISMIP7_filename_SMB_offset), &
+        'SMB||surface_mass_balance', mesh, C%output_dir, self%SMB_offset)
+
+      ! Subtract offset from SMB_baseline
+      self%SMB_baseline( mesh%vi1:mesh%vi2) = self%SMB_baseline( mesh%vi1:mesh%vi2) &
+        - self%SMB_offset( mesh%vi1:mesh%vi2)
+
     end if
 
-    call read_field_from_file_2D( trim( C%SMB_ISMIP7_filename_SMB_offset), 'SMB||surface_mass_balance', &
-      mesh, C%output_dir, self%SMB_offset)
-
-    ! Apply offset and convert from [m.w.e. yr^-1] to [m.i.e. yr^-1]
-    self%SMB_baseline( mesh%vi1:mesh%vi2) = &
-      (self%SMB_baseline( mesh%vi1:mesh%vi2) - self%SMB_offset( mesh%vi1:mesh%vi2)) &
+    ! Convert from [m.w.e. yr^-1] to [m.i.e. yr^-1]
+    self%SMB_baseline( mesh%vi1:mesh%vi2) = self%SMB_baseline( mesh%vi1:mesh%vi2) &
       * freshwater_density / ice_density
 
     ! Finalise routine path

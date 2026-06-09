@@ -64,8 +64,9 @@ module ISMIP7_SMB
 
       ! Baseline SMB and surface elevation
       real(dp), dimension(:), contiguous, pointer   :: SMB_baseline  => null()   !< [m.i.e. yr^-1]           Baseline yearly total SMB
+      real(dp), dimension(:), contiguous, pointer   :: SMB_offset    => null()   !< [m.i.e. yr^-1]           Offset in SMB to shift baseline period to 1960-1989
       real(dp), dimension(:), contiguous, pointer   :: Hs_baseline   => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
-      type(MPI_WIN) :: wSMB_baseline, wHs_baseline
+      type(MPI_WIN) :: wSMB_baseline, wHs_baseline, wSMB_offset
 
       ! ISMIP7-style input forcing fields
       type(type_ISMIP7_forcing_field_monthly)       :: acabf                     !< [m.i.e. month^_1]        Monthly total SMB          (scaled from SI units to ice model units upon reading)
@@ -227,6 +228,14 @@ contains
         units     = 'm.i.e. yr^-1', &
         remap_method = 'reallocate')
 
+      ! SMB offset
+      call self%create_field( self%SMB_offset, self%wSMB_offset, &
+        self%mesh, Arakawa_grid%a(), &
+        name      = 'SMB_offset', &
+        long_name = 'Offset to shift SMB baseline period', &
+        units     = 'm.i.e. yr^-1', &
+        remap_method = 'reallocate')
+
       ! Allocate anomalies (as ISMIP7 forcing fields)
       call self%acabf_anomaly%allocate( self, 'acabf-anomaly', 'Monthly total SMB anomaly', 'm.i.e. month^-1')
 
@@ -341,8 +350,18 @@ contains
     call read_field_from_file_2D( trim( C%SMB_ISMIP7_filename_SMB_baseline_fixed), 'SMB||surface_mass_balance', &
       mesh, C%output_dir, self%SMB_baseline)
 
-    ! Convert from [m.w.e. yr^-1] to [m.i.e. yr^-1]
-    self%SMB_baseline( mesh%vi1:mesh%vi2) = self%SMB_baseline( mesh%vi1:mesh%vi2) * freshwater_density / ice_density
+    if (par%primary) then
+      write(0,*) '   Reading SMB offset from file: ', &
+        UPSY%stru%colour_string( trim( C%SMB_ISMIP7_filename_SMB_offset), 'light blue')
+    end if
+
+    call read_field_from_file_2D( trim( C%SMB_ISMIP7_filename_SMB_offset), 'SMB||surface_mass_balance', &
+      mesh, C%output_dir, self%SMB_offset)
+
+    ! Apply offset and convert from [m.w.e. yr^-1] to [m.i.e. yr^-1]
+    self%SMB_baseline( mesh%vi1:mesh%vi2) = &
+      (self%SMB_baseline( mesh%vi1:mesh%vi2) - self%SMB_offset( mesh%vi1:mesh%vi2)) &
+      * freshwater_density / ice_density
 
     ! Finalise routine path
     call finalise_routine( routine_name)

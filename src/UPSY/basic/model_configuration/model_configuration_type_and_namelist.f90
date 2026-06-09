@@ -899,7 +899,7 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 SMB model
     character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline_config         = ''                               ! How to define the baseline SMB for the anomalies: 'yearly' (i.e. use the provided yearly acabf fields) or 'fixed' (i.e. use a separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation)
     character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed_config = ''                               ! Path to the separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation
-    character(len=1024) :: SMB_ISMIP7_choice_SMB_offset_config         = .false.                            ! Whether or not to read and apply an offset to the SMB baseline
+    logical :: SMB_ISMIP7_choice_SMB_offset_config         = .false.                                        ! Whether or not to read and apply an offset to the SMB baseline
     character(len=1024) :: SMB_ISMIP7_filename_SMB_offset_config         = ''                               ! Path to the SMB offset which is subtracted from the SMB_basline_fixed to shift the baseline period to the correct 1960-1989 during which SMB anomalies are defined as zero
     character(len=1024) :: SMB_ISMIP7_choice_refgeo_config               = ''                               ! Which reference geometry to use as the baseline for calculating delta_SMB = dSMB/dz * delta_s: 'init', 'PD'
     character(len=1024) :: SMB_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the SMB files are located in /path/to/base/folder/acabf/version)
@@ -2139,7 +2139,7 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 SMB model
     character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline
     character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed
-    character(len=1024) :: SMB_ISMIP7_choice_SMB_offset
+    logical             :: SMB_ISMIP7_choice_SMB_offset
     character(len=1024) :: SMB_ISMIP7_filename_SMB_offset
     character(len=1024) :: SMB_ISMIP7_choice_refgeo
     character(len=1024) :: SMB_ISMIP7_forcing_foldername

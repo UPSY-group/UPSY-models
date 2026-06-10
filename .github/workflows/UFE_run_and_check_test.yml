@@ -20,6 +20,11 @@ jobs:
         uses: actions/checkout@v4
         with:
           fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            ${{ inputs.test_path }}/reference_linux
+            ${{ inputs.test_path }}/reference_macos
+          sparse-checkout-cone-mode: false
 
       - name: Select reference folder and runner
         id: select

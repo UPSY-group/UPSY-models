@@ -1,6 +1,6 @@
 module SMB_prescribed
 
-  use parameters, only: pi
+  use parameters, only: ice_density, freshwater_density
   use UPSY_main, only: UPSY
   use precisions, only: dp
   use model_configuration, only: C
@@ -221,6 +221,10 @@ contains
         'SMB||surface_mass_balance||', mesh, C%output_dir, self%SMB, &
         time_to_read = timeframe_SMB_prescribed)
     end if
+
+    ! Convert from [m.w.e. yr^-1] to [m.i.e. yr^-1]
+    self%SMB( mesh%vi1:mesh%vi2) = self%SMB( mesh%vi1:mesh%vi2) &
+      * freshwater_density / ice_density
 
     ! Finalise routine path
     call finalise_routine( routine_name)

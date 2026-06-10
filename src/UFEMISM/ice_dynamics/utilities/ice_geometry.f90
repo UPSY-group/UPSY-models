@@ -58,7 +58,7 @@ module ice_geometry_calculations
  
     contains
  
-    subroutine calc_ice_geometry( self, mesh, Hi, SL, Hb)
+    subroutine calc_ice_geometry( self, mesh, Hi, SL, Hb, dHb)
         ! Calculates the ice geometry fields (Hs, Hib, TAF, Ho) from the primary input fields (Hi, SL, Hb), secondary fields (fraction margin ect) and calculates the masks.         
 
         !In/out variables
@@ -67,6 +67,8 @@ module ice_geometry_calculations
         real(dp),dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: Hi
         real(dp),dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: SL
         real(dp),dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: Hb
+        real(dp),dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+   
 
         !Local variables 
         character(len=1024), parameter :: routine_name = 'calc_ice_geometry'
@@ -78,6 +80,7 @@ module ice_geometry_calculations
         self%Hi   = Hi 
         self%Hb   = Hb
         self%SL   = SL
+        self%dHb  = dHb
 
         ! Apply no ice mask on Hi then calculate basic geometry
         call self%calc_ice_geometry_primary_fields()
@@ -86,7 +89,7 @@ module ice_geometry_calculations
        call determine_masks(self%mesh, self%Hi, self%Hb, self%SL, self%mask, self%mask_icefree_land, self%mask_icefree_ocean, self%mask_grounded_ice, self%mask_floating_ice, self%mask_margin, self%mask_gl_fl, self%mask_gl_gr, self%mask_cf_gr, self%mask_cf_fl, self%mask_coastline)
         
         ! Grounded fraction 
-    !    call calc_grounded_fractions( self%mesh, self%Hi, self%Hb, self%SL, self%dHb, self%fraction_gr, self%fraction_gr_b, self%mask_floating_ice, self%bedrock_cdf,self%bedrock_cdf_b)
+       call calc_grounded_fractions( self%mesh, self%Hi, self%Hb, self%SL, self%dHb, self%fraction_gr, self%fraction_gr_b, self%mask_floating_ice, self%bedrock_cdf,self%bedrock_cdf_b)
 
         ! Fraction margin and effective thickness 
        call calc_effective_thickness(self%mesh, self%Hi, self%Hb, self%SL, self%Hi_eff, self%fraction_margin)

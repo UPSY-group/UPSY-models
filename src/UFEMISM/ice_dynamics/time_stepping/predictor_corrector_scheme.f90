@@ -122,7 +122,7 @@ contains
       ! == Predictor step ==
       ! ====================
 
-       call Prev_IG%calc_ice_geometry(region%mesh, region%ice%Hi_prev, region%ice%SL , region%ice%Hb)
+       call Prev_IG%calc_ice_geometry(region%mesh, region%ice%Hi_prev, region%ice%SL , region%ice%Hb, region%ice%dHb)
 
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( Prev_IG%mesh, region%ice,  Prev_IG%Hi, Prev_IG%Hb,  Prev_IG%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB,  Prev_IG%fraction_margin, &

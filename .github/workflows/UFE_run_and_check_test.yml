@@ -7,6 +7,10 @@ on:
         description: Path to test directory
         required: true
         type: string
+      compile_script:
+        description: Script to compile the model code
+        required: true
+        type: string
 
 jobs:
   select_reference:
@@ -110,9 +114,9 @@ jobs:
         shell: micromamba-shell {0}
         run: gfortran --version
 
-      - name: Compile UFEMISM
+      - name: Compile model code
         shell: micromamba-shell {0}
-        run: csh compile_UFEMISM.csh  dev  clean
+        run: csh ${{ inputs.compile_script }}  dev  clean
 
     # Run the test and check its results against the reference
     # ========================================================

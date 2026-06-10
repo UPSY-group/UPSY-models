@@ -23,23 +23,28 @@ jobs:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_creation
+      compile_script: compile_UPSY.csh
 
   mesh_focussing:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_focussing
+      compile_script: compile_UPSY.csh
 
   mesh_discretisation:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_discretisation
+      compile_script: compile_UPSY.csh
 
   mesh_remapping_mesh_grid:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_grid
+      compile_script: compile_UPSY.csh
 
   mesh_remapping_mesh_mesh:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh
+      compile_script: compile_UPSY.csh

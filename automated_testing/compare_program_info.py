@@ -5,10 +5,11 @@ Show program info attributes stored in NetCDF files for a test's reference and r
 Usage:
     python3 compare_program_info.py <test_folder> [reference_subdir]
 
-This mirrors automated_testing/compare_program_info.m: it reads a fixed list of
-global attributes from the first NetCDF file found in reference/ and results/ and
-prints both values side by side. Missing attributes are allowed and shown as empty
-strings to preserve compatibility with older references.
+This reads a fixed list of global attributes from the first NetCDF file found in
+reference/ and results/ and prints both values side by side.
+
+Unlike earlier behavior, all listed attributes are required in both files.
+If any required attribute is missing, the script raises an error so CI fails.
 """
 
 import os
@@ -22,12 +23,12 @@ except ImportError:
 
 
 INFOS = [
-    "git commit hash",
-    "PETSc version",
-    "NetCDF version",
-    "OpenMPI version",
-    "compiler version",
-    "compiler flags",
+    "git_commit_hash",
+    "PETSc_version",
+    "NetCDF_version",
+    "OpenMPI_version",
+    "compiler_version",
+    "compiler_flags",
 ]
 
 
@@ -44,17 +45,15 @@ def read_program_info(foldername: str, fieldnames: list[str]) -> dict[str, str]:
 
     with nc.Dataset(filename, "r") as dataset:
         for attname in fieldnames:
-            # Older references might not have all the program info; allow this.
             try:
                 attval = dataset.getncattr(attname)
-            except AttributeError:
-                attval = ""
+            except AttributeError as exc:
+                raise KeyError(f'Missing required global attribute "{attname}" in {filename}') from exc
 
-            fieldname = attname.replace(" ", "_")
             if isinstance(attval, bytes):
-                program_info[fieldname] = attval.decode(errors="replace")
+                program_info[attname] = attval.decode(errors="replace")
             else:
-                program_info[fieldname] = str(attval)
+                program_info[attname] = str(attval)
 
     return program_info
 

@@ -296,13 +296,15 @@ contains
 
   end subroutine write_to_ISMIP_regional_output_files
 
-  subroutine write_to_file_grid_FL( region, field, restore)
+  subroutine write_to_file_grid_FL( region, field, restore, vmin, vmax)
     !< Write to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),                              intent(inout) :: region
     type(type_ismip_gridded_field),                       intent(inout) :: field
     logical,                                              intent(in   ) :: restore
+    real(dp),                                   optional, intent(in   ) :: vmin
+    real(dp),                                   optional, intent(in   ) :: vmax
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_file_grid_FL'
@@ -361,6 +363,14 @@ contains
     where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
       d_grid_vec_partial_2D = NF90_FILL_DOUBLE
     end where
+
+    ! Enforce bounds
+    if (present( vmin)) then
+      d_grid_vec_partial_2D = max(vmin, d_grid_vec_partial_2D)
+    end if
+    if (present( vmax)) then
+      d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
+    end if
 
     ! Write gridded field to file
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)

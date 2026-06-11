@@ -210,7 +210,7 @@ contains
     call write_to_file( region, region%ismip_output%base, region%ice%Hib, .false.)
 
     ! Geothermal heat flux
-    call write_to_file( region, region%ismip_output%hfgeoubed, restore=.false.)
+    call write_to_file( region, region%ismip_output%hfgeoubed, restore=.false., vmin=0._dp)
 
     ! Surface and basal mass balance
     call write_to_file( region, region%ismip_output%acabf, restore=.true.)

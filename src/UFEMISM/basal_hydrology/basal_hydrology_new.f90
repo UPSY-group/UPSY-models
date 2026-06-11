@@ -143,7 +143,7 @@ CONTAINS
 
     ! Calculate output to ice model (effective pressure and yield stress)
     call calc_N_til(mesh, basal_hydro, C%Salle2025_W_til_max, .true.)
-    call calc_yield_stress(mesh, ice, basal_hydro)
+    !call calc_yield_stress(mesh, ice, basal_hydro)
 
     ! Allow boundary conditions to be applied to W
     !call apply_W_thickness_BC_explicit(mesh, ice, basal_hydro)
@@ -229,6 +229,9 @@ CONTAINS
     allocate(basal_hydro%N_til(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%tau_c(mesh%vi1:mesh%vi2), source = 0.0_dp)
     allocate(basal_hydro%phi(mesh%vi1:mesh%vi2), source = C%Salle2025_phi) !degrees
+
+    !Calculate the matrix to go from b to c grid
+    call calc_M_b_c( mesh, ice, basal_hydro)
 
     do vi = mesh%vi1, mesh%vi2
       ! Initial basal water depth
@@ -611,7 +614,7 @@ CONTAINS
     do vi = mesh%vi1, mesh%vi2
       if (.not. basal_hydro%mask_a( vi)) then
         basal_hydro%W( vi) = 0.0_dp
-        basal_hydro%W_til( vi) = 0.0_dp
+        basal_hydro%W_til( vi) = W_max_til
       else
         basal_hydro%W( vi) = basal_hydro%W( vi) + basal_hydro%q_water_layer( vi) &
                                + basal_hydro%dt * (-basal_hydro%divQ( vi)) ! Bueler and Van Pelt 2015 eq. 44
@@ -993,7 +996,6 @@ CONTAINS
     !call checksum(mesh%pai_Tri, basal_hydro%v_b, "basal_hydro%v_b")
 
     ! Remap to c-grid velocities
-    call calc_M_b_c( mesh, ice, basal_hydro)
     call map_UV_b_c( mesh, basal_hydro)
 
 
@@ -1522,6 +1524,9 @@ CONTAINS
       basal_hydro%phi( vi) = C%Salle2025_phi !degrees
       basal_hydro%W_r( vi) = 0.1_dp
     end do
+
+    ! Recalculate the matrix to go from b to c-grid
+    call calc_M_b_c( mesh_new, ice, basal_hydro)
 
     !write(*,*) "Doing God's work"
 

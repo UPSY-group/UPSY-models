@@ -260,7 +260,7 @@ contains
     call write_to_file( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_floating_ice)
 
     ! Basal drag
-    call write_to_file( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress, .false.)
+    call write_to_file( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress, .true., vmin=0._dp)
 
     ! Lateral mass balance
     call write_to_file( region, region%ismip_output%licalvf, restore=.true.)

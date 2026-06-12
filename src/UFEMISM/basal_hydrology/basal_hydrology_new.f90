@@ -996,6 +996,7 @@ CONTAINS
     !call checksum(mesh%pai_Tri, basal_hydro%v_b, "basal_hydro%v_b")
 
     ! Remap to c-grid velocities
+    call calc_M_b_c( mesh, ice, basal_hydro)
     call map_UV_b_c( mesh, basal_hydro)
 
 

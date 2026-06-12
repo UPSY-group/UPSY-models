@@ -7,11 +7,83 @@ on:
         description: Path to test directory
         required: true
         type: string
+      compile_script:
+        description: Script to compile the model code
+        required: true
+        type: string
 
 jobs:
+  select_reference:
+    name: select reference and runner
+    runs-on: ubuntu-latest
+    outputs:
+      runner: ${{ steps.select.outputs.runner }}
+      reference_dir: ${{ steps.select.outputs.reference_dir }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: |
+            ${{ inputs.test_path }}/reference_linux
+            ${{ inputs.test_path }}/reference_macos
+          sparse-checkout-cone-mode: false
+
+      - name: Select reference folder and runner
+        id: select
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          test_path="${{ inputs.test_path }}"
+          ref_linux="${test_path}/reference_linux"
+          ref_macos="${test_path}/reference_macos"
+
+          get_ts() {
+            local dir="$1"
+            if [[ -d "$dir" ]]; then
+              git log -1 --format=%ct -- "$dir" 2>/dev/null || echo 0
+            else
+              echo 0
+            fi
+          }
+
+          ts_linux="$(get_ts "$ref_linux")"
+          ts_macos="$(get_ts "$ref_macos")"
+
+          runner=""
+          reference_dir=""
+
+          if [[ "$ts_linux" -gt 0 && "$ts_macos" -gt 0 ]]; then
+            if [[ "$ts_linux" -ge "$ts_macos" ]]; then
+              runner="ubuntu-latest"
+              reference_dir="reference_linux"
+            else
+              runner="macos-latest"
+              reference_dir="reference_macos"
+            fi
+          elif [[ "$ts_linux" -gt 0 ]]; then
+            runner="ubuntu-latest"
+            reference_dir="reference_linux"
+          elif [[ "$ts_macos" -gt 0 ]]; then
+            runner="macos-latest"
+            reference_dir="reference_macos"
+          else
+            echo "ERROR: Could not find reference_linux or reference_macos in $test_path"
+            exit 1
+          fi
+
+          echo "Selected reference folder: $reference_dir"
+          echo "Selected runner: $runner"
+
+          echo "runner=$runner" >> "$GITHUB_OUTPUT"
+          echo "reference_dir=$reference_dir" >> "$GITHUB_OUTPUT"
+
   run_and_check_test:
     name: run
-    runs-on: ubuntu-latest
+    needs: select_reference
+    runs-on: ${{ needs.select_reference.outputs.runner }}
     steps:
 
     # Install all required packages and compile the code
@@ -42,9 +114,9 @@ jobs:
         shell: micromamba-shell {0}
         run: gfortran --version
 
-      - name: Compile UFEMISM
+      - name: Compile model code
         shell: micromamba-shell {0}
-        run: csh compile_UFEMISM.csh  dev  clean
+        run: csh ${{ inputs.compile_script }}  dev  clean
 
     # Run the test and check its results against the reference
     # ========================================================
@@ -55,10 +127,10 @@ jobs:
 
       - name: Show checksum logfile diff
         shell: micromamba-shell {0}
-        run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}
+        run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}  ${{ needs.select_reference.outputs.reference_dir }}
 
       - name: Check test result
         shell: micromamba-shell {0}
         run: |
-          python automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}
-          python automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}
+          python automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}  ${{ needs.select_reference.outputs.reference_dir }}
+          python automated_testing/compare_all_netcdfs_in_test_folder.py  ${{ github.workspace }}/${{ inputs.test_path }}  ${{ needs.select_reference.outputs.reference_dir }}

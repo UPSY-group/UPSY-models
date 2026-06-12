@@ -3,7 +3,7 @@
 Compare all checksum NetCDF files in a test folder's reference/ vs results_checksum/ sub-directories.
 
 Usage:
-    python compare_all_netcdfs_in_test_folder.py <foldername>
+    python compare_all_netcdfs_in_test_folder.py <foldername> [reference_subdir]
 
 Exits with code 0 if all files match, 1 otherwise.
 """
@@ -348,16 +348,16 @@ def _compare_data_variable(var_path: str, d_ref: np.ndarray,
 # compare_all_netcdfs_in_test_folder
 # ---------------------------------------------------------------------------
 
-def compare_all_netcdfs_in_test_folder(foldername: str) -> bool:
+def compare_all_netcdfs_in_test_folder(foldername: str, reference_subdir: str = 'reference') -> bool:
     """Compare all *_checksum.nc files in reference/ vs results_checksum/. Returns True if all match."""
 
     if not os.path.isdir(foldername):
         print(f'ERROR: Could not find test "{foldername}"')
         return False
 
-    foldername_ref = os.path.join(foldername, 'reference')
+    foldername_ref = os.path.join(foldername, reference_subdir)
     if not os.path.isdir(foldername_ref):
-        print(f'ERROR: Could not find reference for test "{foldername}"')
+        print(f'ERROR: Could not find {reference_subdir} for test "{foldername}"')
         return False
 
     foldername_mod = os.path.join(foldername, 'results_checksum')
@@ -394,11 +394,12 @@ def compare_all_netcdfs_in_test_folder(foldername: str) -> bool:
 # ---------------------------------------------------------------------------
 
 if __name__ == '__main__':
-    if len(sys.argv) != 2:
-        print(f'Usage: {sys.argv[0]} <foldername>')
+    if len(sys.argv) not in (2, 3):
+        print(f'Usage: {sys.argv[0]} <foldername> [reference_subdir]')
         sys.exit(2)
 
-    success = compare_all_netcdfs_in_test_folder(sys.argv[1])
+    reference_subdir = sys.argv[2] if len(sys.argv) == 3 else 'reference'
+    success = compare_all_netcdfs_in_test_folder(sys.argv[1], reference_subdir)
 
     if not success:
         print('ERROR: Not all files are identical')

@@ -412,7 +412,8 @@ contains
       ! Calculate monthly SMB
       do vi = mesh%vi1, mesh%vi2
         do mi = 1, 12
-          self%SMB_monthly( vi, mi) = self%acabf%val_interp( vi, mi) + self%delta_SMB( vi)
+                                      ! Divide baseline by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
+          self%SMB_monthly( vi, mi) = (self%acabf%val_interp( vi, mi) + self%delta_SMB( vi)) / 12._dp
         end do
       end do
 
@@ -425,13 +426,13 @@ contains
       do vi = mesh%vi1, mesh%vi2
         do mi = 1, 12
                                       ! Divide baseline by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
-          self%SMB_monthly( vi, mi) = self%SMB_baseline( vi) / 12._dp + self%acabf_anomaly%val_interp( vi, mi) + self%delta_SMB( vi)
+          self%SMB_monthly( vi, mi) = (self%SMB_baseline( vi) + self%acabf_anomaly%val_interp( vi, mi) + self%delta_SMB( vi)) / 12._dp
         end do
       end do
 
     end select
 
-    ! Calculate yearly SMB
+    ! Calculate yearly SMB by summing all monthly values
     do vi = mesh%vi1, mesh%vi2
       self%SMB( vi) = sum( self%SMB_monthly( vi,:))
     end do

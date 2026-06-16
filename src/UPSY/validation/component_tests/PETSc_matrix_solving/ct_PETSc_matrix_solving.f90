@@ -9,8 +9,12 @@ module ct_PETSc_matrix_solving
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use parallel_array_info_type, only: type_par_arr_info
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, inquire_var, read_var_primary, &
-    close_netcdf_file
+    close_netcdf_file, create_new_netcdf_file_for_writing, create_scalar_variable, &
+    write_var_primary
   use mpi_distributed_memory, only: distribute_from_primary
+  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD
+  use netcdf, only: NF90_INT, NF90_DOUBLE
 
   implicit none
 
@@ -137,8 +141,10 @@ contains
         PETSC_KSPtype = trim( PETSc_KSPtypes( iksp))
         PETSc_PCtype  = trim( PETSc_PCtypes ( ipc))
 
-        call run_all_PETSc_matrix_solving_tests_on_matrix_equation_KSP_PC( foldername_output, &
-          A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype)
+        call run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC( foldername_output, &
+          test_matrix_equation_name, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype, 'zero')
+        call run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC( foldername_output, &
+          test_matrix_equation_name, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype, 'init')
 
       end do
     end do
@@ -147,30 +153,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_all_PETSc_matrix_solving_tests_on_matrix_equation
-
-  subroutine run_all_PETSc_matrix_solving_tests_on_matrix_equation_KSP_PC( foldername_output, &
-    A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype)
-
-    ! In/output variables:
-    character(len=*),         intent(in) :: foldername_output
-    type(type_CSR_matrix_dp), intent(in) :: A_CSR
-    real(dp), dimension(:),   intent(in) :: b, x_init, x
-    character(len=*),         intent(in) :: PETSc_KSPtype, PETSc_PCtype
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_all_PETSc_matrix_solving_tests_on_matrix_equation_KSP_PC'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    if (par%primary) write(0,*) '   KSP: ', &
-      UPSY%stru%colour_string( PETSc_KSPtype, 'light blue'), ', PC: ', &
-      UPSY%stru%colour_string( PETSc_PCtype, 'light blue')
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_all_PETSc_matrix_solving_tests_on_matrix_equation_KSP_PC
 
   subroutine read_test_matrix_equation( foldername, test_matrix_equation_name, A_CSR, b, x_init, x)
 
@@ -233,5 +215,95 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine read_test_matrix_equation_vector
+
+  subroutine run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC( foldername_output, &
+    test_matrix_equation_name, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype, choice_x_init)
+
+    ! In/output variables:
+    character(len=*),         intent(in) :: foldername_output, test_matrix_equation_name
+    type(type_CSR_matrix_dp), intent(in) :: A_CSR
+    real(dp), dimension(:),   intent(in) :: b, x_init, x
+    character(len=*),         intent(in) :: PETSc_KSPtype, PETSc_PCtype, choice_x_init
+
+    ! Local variables:
+    character(len=*), parameter         :: routine_name = 'run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC'
+    real(dp), dimension(:), allocatable :: x_PETSc
+    real(dp)                            :: rtol, abstol
+    integer                             :: n_Axb_its
+    real(dp)                            :: sum_sq, n_sq, rmse
+    integer                             :: ierr
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    allocate( x_PETSc( A_CSR%pai_x%i1 : A_CSR%pai_x%i2))
+
+    select case (choice_x_init)
+    case default
+      call crash('invalid choice_x_init "' // trim( choice_x_init) // '"')
+    case ('zero')
+      x_PETSc = 0._dp
+    case ('init')
+      x_PETSc = x_init
+    end select
+
+    ! Values taken from ISMIP-HOM
+    rtol   = 1E-6
+    abstol = 1E-4
+    call solve_matrix_equation_CSR_PETSc( A_CSR, b, x_PETSc, rtol, abstol, n_Axb_its, &
+      PETSc_KSPtype, PETSc_PCtype)
+
+    ! Calculate RMSE with respect to exact solution
+    sum_sq = sum( (x_PETSc - x)**2)
+    n_sq   = real( size( x_PETSc,1),dp)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_sq, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, n_sq  , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    rmse = sqrt( sum_sq / n_sq)
+
+    if (par%primary) write(0,*) '   KSP: ', &
+      UPSY%stru%colour_string( PETSc_KSPtype, 'light blue'), ', PC: ', &
+      UPSY%stru%colour_string( PETSc_PCtype, 'light blue'), ', x_init: ', &
+      UPSY%stru%colour_string( choice_x_init, 'light blue'), ' - solved in ', n_Axb_its, ' iterations, RMSE = ', rmse
+
+    ! Write test results to NetCDF
+    call write_test_results_to_NetCDF( foldername_output, test_matrix_equation_name, &
+      PETSc_KSPtype, PETSc_PCtype, choice_x_init, n_Axb_its, rmse)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC
+
+  subroutine write_test_results_to_NetCDF( foldername_output, test_matrix_equation_name, &
+      PETSc_KSPtype, PETSc_PCtype, choice_x_init, n_Axb_its, rmse)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: foldername_output, test_matrix_equation_name
+    character(len=*), intent(in) :: PETSc_KSPtype, PETSc_PCtype, choice_x_init
+    integer,          intent(in) :: n_Axb_its
+    real(dp),         intent(in) :: rmse
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'write_test_results_to_NetCDF'
+    character(len=:), allocatable :: filename
+    integer                       :: ncid, id_var_n_Axb_its, id_var_rmse
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    filename = trim( foldername_output) // '/results_' // trim( test_matrix_equation_name) // '_' // &
+      trim( PETSc_KSPtype) // '_' // trim( PETSc_PCtype) // '_' // trim( choice_x_init) // '.nc'
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+    call create_scalar_variable( filename, ncid, 'n_Axb_its', NF90_INT   , id_var_n_Axb_its)
+    call create_scalar_variable( filename, ncid, 'rmse'     , NF90_DOUBLE, id_var_rmse)
+    call write_var_primary( filename, ncid, id_var_n_Axb_its, n_Axb_its)
+    call write_var_primary( filename, ncid, id_var_rmse     , rmse)
+    call close_netcdf_file( ncid)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine write_test_results_to_NetCDF
 
 end module ct_PETSc_matrix_solving

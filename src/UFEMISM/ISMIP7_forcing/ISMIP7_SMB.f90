@@ -397,7 +397,7 @@ contains
 
     do vi = mesh%vi1, mesh%vi2
       self%delta_z  ( vi) = ice%Hs( vi) - self%Hs_baseline ( vi)
-      self%delta_SMB( vi) = self%delta_z( vi) * self%dacabfdz%val_interp( vi) / 12._dp ! convert to m.i.e. month^-1
+      self%delta_SMB( vi) = self%delta_z( vi) * self%dacabfdz%val_interp( vi)
     end do
 
     ! Calculate monthly climate
@@ -412,7 +412,8 @@ contains
       ! Calculate monthly SMB
       do vi = mesh%vi1, mesh%vi2
         do mi = 1, 12
-          self%SMB_monthly( vi, mi) = self%acabf%val_interp( vi, mi) + self%delta_SMB( vi)
+                                      ! Divide delta by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
+          self%SMB_monthly( vi, mi) = self%acabf%val_interp( vi, mi) + self%delta_SMB( vi) / 12._dp
         end do
       end do
 
@@ -424,8 +425,8 @@ contains
       ! Calculate monthly climate
       do vi = mesh%vi1, mesh%vi2
         do mi = 1, 12
-                                      ! Divide baseline by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
-          self%SMB_monthly( vi, mi) = self%SMB_baseline( vi) / 12._dp + self%acabf_anomaly%val_interp( vi, mi) + self%delta_SMB( vi)
+                                      ! Divide baseline and delta by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
+          self%SMB_monthly( vi, mi) = (self%SMB_baseline( vi) + self%delta_SMB( vi)) / 12._dp + self%acabf_anomaly%val_interp( vi, mi)
         end do
       end do
 

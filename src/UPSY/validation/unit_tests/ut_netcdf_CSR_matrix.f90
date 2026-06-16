@@ -70,9 +70,9 @@ contains
     ! Add test name to list
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
-    filename_base = trim( C%output_dir) // '/A_' // test_number // '.nc'
-    call A%write_to_dist_NetCDFs( filename_base)
-    call A_from_file%read_from_dist_NetCDFs( filename_base)
+    filename_base = 'A_' // test_number // '.nc'
+    call A%write_to_dist_NetCDFs( C%output_dir, filename_base)
+    call A_from_file%read_from_dist_NetCDFs( C%output_dir, filename_base)
 
     call unit_test( test_eq( A%m          , A_from_file%m          ), trim( test_name) // '_' // test_number // '_m')
     call unit_test( test_eq( A%n          , A_from_file%n          ), trim( test_name) // '_' // test_number // '_n')

@@ -50,11 +50,12 @@ if exist( filename_x,'file')
   delete( filename_x)
 end
 
+var_name = [filename_base '_x'];
 f = ncinfo( filename_b);
-f.Variables(1).Name = 'x';
+f.Variables(1).Name = var_name;
 
 ncwriteschema( filename_x, f);
-ncwrite( filename_x, 'x', x);
+ncwrite( filename_x, var_name, x);
 
 end
 

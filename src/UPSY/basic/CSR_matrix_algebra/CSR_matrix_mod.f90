@@ -817,13 +817,13 @@ contains
 
   end subroutine write_CSR_matrix_to_dist_NetCDFs
 
-  subroutine read_CSR_matrix_from_dist_NetCDFs( A, output_dir, filename_base)
+  subroutine read_CSR_matrix_from_dist_NetCDFs( A, foldername, filename_base)
     !< Read a CSR matrix from multiple NetCDF files (one for each process)
 
     ! In- and output variables:
     class(type_CSR_matrix_dp), intent(inout) :: A                !< The CSR matrix
-    character(len=*),          intent(in   ) :: output_dir       !< The name of the output directory
-    character(len=*),          intent(in   ) :: filename_base    !< The name of the file
+    character(len=*),          intent(in   ) :: foldername       !< The name of the directory containing the NetCDF files
+    character(len=*),          intent(in   ) :: filename_base    !< The base name of the file
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'read_CSR_matrix_from_dist_NetCDFs'
@@ -846,7 +846,7 @@ contains
     end if
 
     filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
-    filename = trim( output_dir) // '/' // trim( insert_val_into_string_int( filename_template, '{proc}', par%i))
+    filename = trim( foldername) // '/' // trim( insert_val_into_string_int( filename_template, '{proc}', par%i))
 
     ! Check if this file actually exists
     inquire( exist = file_exists, file = trim( filename))

@@ -13,12 +13,12 @@ program UPSY_component_test_program_PETSc_matrix_solving
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
   use ct_basic, only: create_component_tests_output_folder
-  ! use ct_create_test_meshes, only: create_all_test_meshes_and_grids_Antarctica
+  use ct_PETSc_matrix_solving, only: run_all_PETSc_matrix_solving_tests
 
   implicit none
 
   integer             :: perr, ierr
-  character(len=1024) :: foldername_output
+  character(len=1024) :: foldername_output, foldername_test_matrix_equations
   real(dp)            :: tstart, tstop, tcomp
 
   program_name = 'UPSY_component_test_PETSc_matrix_solving'
@@ -42,16 +42,17 @@ program UPSY_component_test_program_PETSc_matrix_solving
   call initialise_control_and_resource_tracker
 
   ! Get the input arguments
-  if (iargc() == 1) then
-    call getarg( 1, foldername_output)  ! path/to/UPSY-models/automated_testing/UPSY/component_test_PETSc_matrix_solving/results
+  if (iargc() == 2) then
+    call getarg( 1, foldername_output               )  ! path/to/UPSY-models/automated_testing/UPSY/component_test_PETSc_matrix_solving/results
+    call getarg( 2, foldername_test_matrix_equations)  ! path/to/UPSY-models/automated_testing/UPSY/test_matrix_equations
     if (par%primary) write(0,*) ''
     if (par%primary) write(0,*) '   Writing component test results to  ' // trim( foldername_output) // '...'
   else
-    call crash('needs input argument foldername_output')
+    call crash('needs input argument [foldername_output] and [foldername_test_matrix_equations]')
   end if
 
-  call create_component_tests_output_folder  ( foldername_output)
-  ! call create_all_test_meshes_and_grids_Antarctica( foldername_output)
+  call create_component_tests_output_folder( foldername_output)
+  call run_all_PETSc_matrix_solving_tests  ( foldername_output, foldername_test_matrix_equations)
 
   ! Stop the clock
   tstop = MPI_WTIME()

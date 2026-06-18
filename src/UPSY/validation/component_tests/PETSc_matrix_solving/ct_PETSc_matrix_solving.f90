@@ -9,10 +9,14 @@ module ct_PETSc_matrix_solving
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use parallel_array_info_type, only: type_par_arr_info
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, inquire_var, read_var_primary, &
-    close_netcdf_file
+    close_netcdf_file, create_new_netcdf_file_for_writing, create_dimension, create_variable, &
+    write_var_primary
   use mpi_distributed_memory, only: distribute_from_primary
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_WTIME
+  use netcdf, only: NF90_INT, NF90_DOUBLE
+  use checksum_mod, only: checksum
+  use model_configuration, only: C
 
   implicit none
 
@@ -33,8 +37,10 @@ contains
     character(len=1024), dimension(4)              :: PETSc_PCtypes
     character(len=1024), dimension(:), allocatable :: list_of_test_matrix_names
     character(len=:), allocatable                  :: filename_output
-    integer                                        :: i
+    integer                                        :: mi
     character(len=:), allocatable                  :: test_matrix_equation_name
+    integer,  dimension(:,:,:), allocatable        :: n_Axb_its
+    real(dp), dimension(:,:,:), allocatable        :: rmse
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -62,17 +68,24 @@ contains
 
     call list_test_matrix_equations( foldername_test_matrix_equations, list_of_test_matrix_names)
 
+    allocate( n_Axb_its( size( PETSc_KSPtypes,1), size( PETSc_PCtypes,1), size( list_of_test_matrix_names,1)))
+    allocate( rmse     ( size( PETSc_KSPtypes,1), size( PETSc_PCtypes,1), size( list_of_test_matrix_names,1)))
+
     call create_output_text_file( foldername_output, PETSc_KSPtypes, PETSc_PCtypes, list_of_test_matrix_names, filename_output)
 
-    do i = 1, size( list_of_test_matrix_names,1)
-      test_matrix_equation_name = trim( list_of_test_matrix_names( i))
+    do mi = 1, size( list_of_test_matrix_names,1)
+      test_matrix_equation_name = trim( list_of_test_matrix_names( mi))
       call run_all_PETSc_matrix_solving_tests_on_matrix_equation( filename_output, &
-        PETSc_KSPtypes, PETSc_PCtypes, foldername_test_matrix_equations, test_matrix_equation_name, 'init')
+        PETSc_KSPtypes, PETSc_PCtypes, foldername_test_matrix_equations, test_matrix_equation_name, 'init', &
+        n_Axb_its, rmse, mi)
       call run_all_PETSc_matrix_solving_tests_on_matrix_equation( filename_output, &
-        PETSc_KSPtypes, PETSc_PCtypes, foldername_test_matrix_equations, test_matrix_equation_name, 'zero')
+        PETSc_KSPtypes, PETSc_PCtypes, foldername_test_matrix_equations, test_matrix_equation_name, 'zero', &
+        n_Axb_its, rmse, mi)
     end do
 
     call finalise_output_text_file( filename_output)
+
+    call write_test_results_to_NetCDF( foldername_output, n_Axb_its, rmse)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -210,15 +223,19 @@ contains
   end subroutine finalise_output_text_file
 
   subroutine run_all_PETSc_matrix_solving_tests_on_matrix_equation( filename_output, &
-    PETSc_KSPtypes, PETSc_PCtypes, foldername_test_matrix_equations, test_matrix_equation_name, choice_x_init)
+    PETSc_KSPtypes, PETSc_PCtypes, foldername_test_matrix_equations, test_matrix_equation_name, choice_x_init, &
+    n_Axb_its, rmse, mi)
 
     ! In/output variables:
-    character(len=*),               intent(in) :: filename_output
-    character(len=*), dimension(:), intent(in) :: PETSc_KSPtypes
-    character(len=*), dimension(:), intent(in) :: PETSc_PCtypes
-    character(len=*),               intent(in) :: foldername_test_matrix_equations
-    character(len=*),               intent(in) :: test_matrix_equation_name
-    character(len=*),               intent(in) :: choice_x_init
+    character(len=*),               intent(in   ) :: filename_output
+    character(len=*), dimension(:), intent(in   ) :: PETSc_KSPtypes
+    character(len=*), dimension(:), intent(in   ) :: PETSc_PCtypes
+    character(len=*),               intent(in   ) :: foldername_test_matrix_equations
+    character(len=*),               intent(in   ) :: test_matrix_equation_name
+    character(len=*),               intent(in   ) :: choice_x_init
+    integer,  dimension(:,:,:),     intent(inout) :: n_Axb_its
+    real(dp), dimension(:,:,:),     intent(inout) :: rmse
+    integer,                        intent(in   ) :: mi
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'run_all_PETSc_matrix_solving_tests_on_matrix_equation'
@@ -227,6 +244,8 @@ contains
     integer                             :: iksp, ipc
     character(len=:), allocatable       :: PETSC_KSPtype, PETSc_PCtype
     character(len=:), allocatable       :: test_matrix_equation_name_init
+    integer                             :: n_Axb_its_single
+    real(dp)                            :: rmse_single
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -251,7 +270,11 @@ contains
         PETSc_PCtype  = trim( PETSc_PCtypes ( ipc))
 
         call run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC( filename_output, &
-          test_matrix_equation_name_init, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype)
+          test_matrix_equation_name_init, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype, &
+          n_Axb_its_single, rmse_single)
+
+        n_Axb_its( iksp, ipc, mi) = n_Axb_its_single
+        rmse     ( iksp, ipc, mi) = rmse_single
 
       end do
     end do
@@ -324,22 +347,24 @@ contains
   end subroutine read_test_matrix_equation_vector
 
   subroutine run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC( filename_output, &
-    test_matrix_equation_name, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype)
+    test_matrix_equation_name, A_CSR, b, x_init, x, PETSc_KSPtype, PETSc_PCtype, &
+    n_Axb_its, rmse)
 
     ! In/output variables:
-    character(len=*),         intent(in) :: filename_output
-    character(len=*),         intent(in) :: test_matrix_equation_name
-    type(type_CSR_matrix_dp), intent(in) :: A_CSR
-    real(dp), dimension(:),   intent(in) :: b, x_init, x
-    character(len=*),         intent(in) :: PETSc_KSPtype, PETSc_PCtype
+    character(len=*),         intent(in   ) :: filename_output
+    character(len=*),         intent(in   ) :: test_matrix_equation_name
+    type(type_CSR_matrix_dp), intent(in   ) :: A_CSR
+    real(dp), dimension(:),   intent(in   ) :: b, x_init, x
+    character(len=*),         intent(in   ) :: PETSc_KSPtype, PETSc_PCtype
+    integer,                  intent(  out) :: n_Axb_its
+    real(dp),                 intent(  out) :: rmse
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC'
     real(dp), dimension(:), allocatable :: x_PETSc
     real(dp)                            :: rtol, abstol
     real(dp)                            :: tstart, tstop, tcomp
-    integer                             :: n_Axb_its
-    real(dp)                            :: sum_sq, n_sq, rmse
+    real(dp)                            :: sum_sq, n_sq
     integer                             :: ierr
     character(len=60)                   :: matrix_name_str
     character(len=20)                   :: KSP_str
@@ -380,6 +405,17 @@ contains
     ! Write test results to output
     call write_test_results_to_text_output( filename_output, test_matrix_equation_name, &
       PETSc_KSPtype, PETSc_PCtype, n_Axb_its, rmse, tcomp)
+
+    ! ...and to the checksum logfile, for the automated test suite
+    C%do_write_checksum_log = .true.
+
+    deallocate( str)
+    str = trim( test_matrix_equation_name) // '_' // trim( PETSc_KSPtype) // '_' // trim( PETSc_PCtype) // '_n_Axb_its'
+    call checksum( n_Axb_its, str)
+
+    deallocate( str)
+    str = trim( test_matrix_equation_name) // '_' // trim( PETSc_KSPtype) // '_' // trim( PETSc_PCtype) // '_rmse'
+    call checksum( rmse, str)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -428,5 +464,48 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_test_results_to_text_output
+
+  subroutine write_test_results_to_NetCDF( foldername_output, n_Axb_its, rmse)
+
+    ! In/output variables:
+    character(len=*),           intent(in) :: foldername_output
+    integer,  dimension(:,:,:), intent(in) :: n_Axb_its
+    real(dp), dimension(:,:,:), intent(in) :: rmse
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'write_test_results_to_NetCDF'
+    character(len=:), allocatable :: filename
+    integer                       :: nKSPs, nPCs, nmats
+    integer                       :: ncid
+    integer                       :: id_dim_nKSPs, id_dim_nPCs, id_dim_nmats
+    integer                       :: id_var_n_Axb_its, id_var_rmse
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    nKSPs = size( rmse,1)
+    nPCs  = size( rmse,2)
+    nmats = size( rmse,3)
+
+    filename = trim( foldername_output) // '/PETSc_test_results.nc'
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+
+    call create_dimension( filename, ncid, 'nKSPs', nKSPs, id_dim_nKSPs)
+    call create_dimension( filename, ncid, 'nPCs' , nPCs , id_dim_nPCs)
+    call create_dimension( filename, ncid, 'nmats', nmats, id_dim_nmats)
+
+    call create_variable( filename, ncid, 'n_Axb_its', NF90_INT   , [id_dim_nKSPs, id_dim_nPCs, id_dim_nmats], id_var_n_Axb_its)
+    call create_variable( filename, ncid, 'rmse'     , NF90_DOUBLE, [id_dim_nKSPs, id_dim_nPCs, id_dim_nmats], id_var_rmse)
+
+    call write_var_primary( filename, ncid, id_var_n_Axb_its, n_Axb_its)
+    call write_var_primary( filename, ncid, id_var_rmse     , rmse     )
+
+    call close_netcdf_file( ncid)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine write_test_results_to_NetCDF
 
 end module ct_PETSc_matrix_solving

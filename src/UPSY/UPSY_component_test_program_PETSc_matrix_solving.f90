@@ -11,6 +11,7 @@ program UPSY_component_test_program_PETSc_matrix_solving
   use mpi_f08, only: MPI_WTIME, MPI_FINALIZE
   use crash_mod, only: crash
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
+  use checksum_mod, only: create_checksum_logfile
 
   use ct_basic, only: create_component_tests_output_folder
   use ct_PETSc_matrix_solving, only: run_all_PETSc_matrix_solving_tests
@@ -52,6 +53,7 @@ program UPSY_component_test_program_PETSc_matrix_solving
   end if
 
   call create_component_tests_output_folder( foldername_output)
+  call create_checksum_logfile( foldername_output)
   call run_all_PETSc_matrix_solving_tests  ( foldername_output, foldername_test_matrix_equations)
 
   ! Stop the clock

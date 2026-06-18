@@ -54,7 +54,7 @@ CONTAINS
     CALL mat_CSR2petsc( AA, A)
 
     ! Solve the PETSC matrix equation
-    CALL solve_matrix_equation_PETSc( A, bb, xx, rtol, abstol, n_Axb_its, PETSc_KSPtype, PETSc_PCtype)
+    CALL solve_matrix_equation_PETSc_new( A, bb, xx, rtol, abstol, n_Axb_its, PETSc_KSPtype, PETSc_PCtype)
 
     ! Clean up after yourself
     CALL MatDestroy( A, perr)

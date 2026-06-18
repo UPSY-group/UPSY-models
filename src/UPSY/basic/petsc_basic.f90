@@ -20,7 +20,7 @@ MODULE petsc_basic
   private
 
   public :: solve_matrix_equation_CSR_PETSc, vec_double2petsc, vec_petsc2double, &
-    mat_CSR2petsc, mat_petsc2CSR, multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
+    mat_CSR2petsc, mat_petsc2CSR, multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D, solve_matrix_equation_CSR_PETSc_new
 
   INTEGER :: perr    ! Error flag for PETSc routines
 
@@ -54,7 +54,7 @@ CONTAINS
     CALL mat_CSR2petsc( AA, A)
 
     ! Solve the PETSC matrix equation
-    CALL solve_matrix_equation_PETSc_new( A, bb, xx, rtol, abstol, n_Axb_its, PETSc_KSPtype, PETSc_PCtype)
+    CALL solve_matrix_equation_PETSc( A, bb, xx, rtol, abstol, n_Axb_its, PETSc_KSPtype, PETSc_PCtype)
 
     ! Clean up after yourself
     CALL MatDestroy( A, perr)
@@ -63,6 +63,43 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE solve_matrix_equation_CSR_PETSc
+
+  SUBROUTINE solve_matrix_equation_CSR_PETSc_new( AA, bb, xx, rtol, abstol, n_Axb_its, &
+    PETSc_KSPtype, PETSc_PCtype)
+
+    IMPLICIT NONE
+
+    ! In/output variables:
+    TYPE(type_CSR_matrix_dp),     INTENT(IN)    :: AA
+    REAL(dp), DIMENSION(:    ),          INTENT(IN)    :: bb
+    REAL(dp), DIMENSION(:    ),          INTENT(INOUT) :: xx
+    REAL(dp),                            INTENT(IN)    :: rtol, abstol
+    integer,                             intent(out)   :: n_Axb_its
+    character(len=*), optional,          intent(in   ) :: PETSc_KSPtype
+    character(len=*), optional,          intent(in   ) :: PETSc_PCtype
+
+    ! Local variables
+    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'solve_matrix_equation_CSR_PETSc_new'
+    TYPE(tMat)                                         :: A
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    if (.not. AA%is_finalised) call crash('A is not finalised')
+
+    ! Convert matrix to PETSc format
+    CALL mat_CSR2petsc( AA, A)
+
+    ! Solve the PETSC matrix equation
+    CALL solve_matrix_equation_PETSc_new( A, bb, xx, rtol, abstol, n_Axb_its, PETSc_KSPtype, PETSc_PCtype)
+
+    ! Clean up after yourself
+    CALL MatDestroy( A, perr)
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE solve_matrix_equation_CSR_PETSc_new
 
   subroutine solve_matrix_equation_PETSc( A, bb, xx, rtol, abstol, n_Axb_its, &
     PETSc_KSPtype, PETSc_PCtype)

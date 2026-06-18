@@ -12,7 +12,7 @@ module ct_PETSc_matrix_solving
     close_netcdf_file, create_new_netcdf_file_for_writing, create_dimension, create_variable, &
     write_var_primary
   use mpi_distributed_memory, only: distribute_from_primary
-  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
+  use petsc_basic, only: solve_matrix_equation_CSR_PETSc_new
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_WTIME
   use netcdf, only: NF90_INT, NF90_DOUBLE
   use checksum_mod, only: checksum
@@ -379,7 +379,7 @@ contains
     rtol   = 1E-6  ! Values taken from ISMIP-HOM
     abstol = 1E-4
     tstart = MPI_WTIME()
-    call solve_matrix_equation_CSR_PETSc( A_CSR, b, x_PETSc, rtol, abstol, n_Axb_its, &
+    call solve_matrix_equation_CSR_PETSc_new( A_CSR, b, x_PETSc, rtol, abstol, n_Axb_its, &
       PETSc_KSPtype, PETSc_PCtype)
     tstop = MPI_WTIME()
     tcomp = tstop - tstart

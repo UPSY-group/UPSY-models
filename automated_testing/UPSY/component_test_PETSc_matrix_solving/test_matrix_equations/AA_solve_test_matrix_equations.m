@@ -41,6 +41,17 @@ filename_b      = [filename_base '_b.nc'];
 A = read_CSR_from_NetCDF( filename_A);
 b = ncread( filename_b, [filename_base '_b']);
 
+% Display some info about the matrix
+is_symmetric = issymmetric( A);
+
+try chol(A)   % See: https://nl.mathworks.com/help/matlab/math/determine-whether-matrix-is-positive-definite.html
+  is_spd = true;
+catch ME
+  is_spd = false;
+end
+
+disp(['  Symmetric: ' num2str( is_symmetric) ', symmetric positive-definite: ' num2str( is_spd)])
+
 % Solve Ax=b using Matlab's direct solver
 x = A\b;
 

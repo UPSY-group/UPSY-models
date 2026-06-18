@@ -29,8 +29,8 @@ contains
 
     ! Local variables:
     character(len=*), parameter                    :: routine_name = 'run_all_PETSc_matrix_solving_tests'
-    character(len=1024), dimension(10)             :: PETSc_KSPtypes
-    character(len=1024), dimension(6)              :: PETSc_PCtypes
+    character(len=1024), dimension(7)              :: PETSc_KSPtypes
+    character(len=1024), dimension(4)              :: PETSc_PCtypes
     character(len=1024), dimension(:), allocatable :: list_of_test_matrix_names
     character(len=:), allocatable                  :: filename_output
     integer                                        :: i
@@ -39,23 +39,26 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    PETSc_KSPtypes(  1) = 'gmres'
-    PETSc_KSPtypes(  2) = 'pipegmres'
-    PETSc_KSPtypes(  3) = 'cg'
-    PETSc_KSPtypes(  4) = 'pipecg'
-    PETSc_KSPtypes(  5) = 'bicg'
-    PETSc_KSPtypes(  6) = 'bicgstab'
-    PETSc_KSPtypes(  7) = 'ibicgstab'
-    PETSc_KSPtypes(  8) = 'minres'
-    PETSc_KSPtypes(  9) = 'cr'
-    PETSc_KSPtypes( 10) = 'pipecr'
+    ! Also tried:
+    !   - KSPCG, KSPPIPECG, KSPCR, KSPPIPECR, KSPMINRES (don't work, require symmetric of even symmetric positive-definite matrices)
+    !   - KSPGCR (doesn't converge)
+    PETSc_KSPtypes( 1) = 'bicg'
+    PETSc_KSPtypes( 2) = 'bicgstab'
+    PETSc_KSPtypes( 3) = 'ibicgstab'
+    PETSc_KSPtypes( 4) = 'gmres'
+    PETSc_KSPtypes( 5) = 'pipegmres'
+    PETSc_KSPtypes( 6) = 'fgmres'
+    PETSc_KSPtypes( 7) = 'lgmres'
 
+    ! Also tried:
+    !   - PCILU (returns errors)
+    !   - PCHYPRE+PCHYPRESetType( precond, 'boomeramg', perr) (very inaccurate+slow)
+    !   - PCJACOBI (very inaccurate)
+    !   - PCNONE   (very slow)
     PETSc_PCtypes( 1) = 'bjacobi'
-    PETSc_PCtypes( 2) = 'asm'
     PETSc_PCtypes( 3) = 'gamg'
+    PETSc_PCtypes( 2) = 'asm'
     PETSc_PCtypes( 4) = 'gasm'
-    PETSc_PCtypes( 5) = 'jacobi'
-    PETSc_PCtypes( 6) = 'none'
 
     call list_test_matrix_equations( foldername_test_matrix_equations, list_of_test_matrix_names)
 

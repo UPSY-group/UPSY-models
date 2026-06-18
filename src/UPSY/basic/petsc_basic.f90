@@ -247,7 +247,7 @@ CONTAINS
     if (present( PETSc_PCtype)) then
       PETSc_PCtype_ = PETSc_PCtype
     else
-      PETSc_PCtype_ = 'gamg'
+      PETSc_PCtype_ = 'bjacobi'
     end if
 
     ! Safety
@@ -281,26 +281,20 @@ CONTAINS
     select case (PETSc_KSPtype_)
     case default
       call crash('unknown PETSc_KSPtype "' // trim( PETSc_KSPtype_) // '"')
-    case ('gmres')
-      call KSPSetType( KSP_solver, KSPGMRES, perr)
-    case ('pipegmres')
-      call KSPSetType( KSP_solver, KSPPGMRES, perr)
-    case ('cg')
-      call KSPSetType( KSP_solver, KSPCG, perr)
-    case ('pipecg')
-      call KSPSetType( KSP_solver, KSPPIPECG, perr)
     case ('bicg')
       call KSPSetType( KSP_solver, KSPBICG, perr)
     case ('bicgstab')
       call KSPSetType( KSP_solver, KSPBCGS, perr)
     case ('ibicgstab')
       call KSPSetType( KSP_solver, KSPIBCGS, perr)
-    case ('minres')
-      call KSPSetType( KSP_solver, KSPMINRES, perr)
-    case ('cr')
-      call KSPSetType( KSP_solver, KSPCR, perr)
-    case ('pipecr')
-      call KSPSetType( KSP_solver, KSPPIPECR, perr)
+    case ('gmres')
+      call KSPSetType( KSP_solver, KSPGMRES, perr)
+    case ('pipegmres')
+      call KSPSetType( KSP_solver, KSPPGMRES, perr)
+    case ('fgmres')
+      call KSPSetType( KSP_solver, KSPFGMRES, perr)
+    case ('lgmres')
+      call KSPSetType( KSP_solver, KSPLGMRES, perr)
     end select
 
     ! Make sure PETSc knows we're starting from an initial guess
@@ -316,16 +310,12 @@ CONTAINS
       call crash('unknown PETSc_PCtype "' // trim( PETSc_PCtype_) // '"')
     case ('bjacobi')
       call PCSetType( precond, PCBJACOBI, perr)
-    case ('asm')
-      call PCSetType( precond, PCASM, perr)
     case ('gamg')
       call PCSetType( precond, PCGAMG, perr)
+    case ('asm')
+      call PCSetType( precond, PCASM, perr)
     case ('gasm')
       call PCSetType( precond, PCGASM, perr)
-    case ('jacobi')
-      call PCSetType( precond, PCJACOBI, perr)
-    case ('none')
-      call PCSetType( precond, PCNONE, perr)
     end select
 
     ! Set runtime options, e.g.,

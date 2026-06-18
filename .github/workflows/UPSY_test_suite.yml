@@ -19,6 +19,12 @@ jobs:
   unit_tests:
     uses: ./.github/workflows/UPSY_unit_tests.yml
 
+  PETSc_matrix_solving:
+    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_PETSc_matrix_solving
+      compile_script: compile_UPSY.csh
+
   mesh_creation:
     uses: ./.github/workflows/UFE_run_and_check_test.yml
     with:

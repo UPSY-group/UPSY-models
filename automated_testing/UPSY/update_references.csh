@@ -17,6 +17,7 @@ else
 endif
 
 set all_tests = ( \
+  component_test_PETSc_matrix_solving \
   component_test_mesh_creation \
   component_test_mesh_discretisation \
   component_test_mesh_focussing \

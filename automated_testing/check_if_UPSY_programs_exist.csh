@@ -4,6 +4,7 @@ set test_dir = "build/src/UPSY"
 set expected_programs = ( \
     UPSY_unit_test_program \
     UPSY_multinode_unit_test_program \
+    UPSY_component_test_program_PETSc_matrix_solving \
     UPSY_component_test_program_mesh_creation \
     UPSY_component_test_program_mesh_discretisation \
     UPSY_component_test_program_mesh_focussing \

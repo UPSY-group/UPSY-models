@@ -307,7 +307,7 @@ CONTAINS
     call KSPSetInitialGuessNonzero( KSP_solver, PETSC_TRUE, perr)
 
     ! Iterative solver tolerances
-    call KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 2000, perr)
+    call KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 1000, perr)
 
     ! Set preconditioner
     call KSPGetPC( KSP_solver, precond, perr)

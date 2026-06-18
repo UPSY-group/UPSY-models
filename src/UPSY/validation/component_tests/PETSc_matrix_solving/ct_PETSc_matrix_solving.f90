@@ -12,7 +12,7 @@ module ct_PETSc_matrix_solving
     close_netcdf_file
   use mpi_distributed_memory, only: distribute_from_primary
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
-  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_WTIME
 
   implicit none
 
@@ -334,6 +334,7 @@ contains
     character(len=*), parameter         :: routine_name = 'run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC'
     real(dp), dimension(:), allocatable :: x_PETSc
     real(dp)                            :: rtol, abstol
+    real(dp)                            :: tstart, tstop, tcomp
     integer                             :: n_Axb_its
     real(dp)                            :: sum_sq, n_sq, rmse
     integer                             :: ierr
@@ -349,11 +350,11 @@ contains
 
     rtol   = 1E-6  ! Values taken from ISMIP-HOM
     abstol = 1E-4
+    tstart = MPI_WTIME()
     call solve_matrix_equation_CSR_PETSc( A_CSR, b, x_PETSc, rtol, abstol, n_Axb_its, &
       PETSc_KSPtype, PETSc_PCtype)
-
-    ! If n_Axb_its = 0, the solver didn't work
-    if (n_Axb_its == 0) n_Axb_its = 2000 ! maximum allowed value used inside solve_matrix_equation_CSR_PETSc
+    tstop = MPI_WTIME()
+    tcomp = tstop - tstart
 
     ! Calculate RMSE with respect to exact solution
     sum_sq = sum( (x_PETSc - x)**2)
@@ -362,15 +363,20 @@ contains
     call MPI_ALLREDUCE( MPI_IN_PLACE, n_sq  , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
     rmse = sqrt( sum_sq / n_sq)
 
+    ! If n_Axb_its = 0, the solver didn't work
+    if (n_Axb_its == 0) n_Axb_its = 1000 ! maximum allowed value used inside solve_matrix_equation_CSR_PETSc
+    if (isnan( rmse)) rmse = 1e36_dp
+
     matrix_name_str = UPSY%stru%colour_string( trim( test_matrix_equation_name), 'light blue')
     KSP_str         = UPSY%stru%colour_string( trim( PETSc_KSPtype            ), 'light blue')
     PC_str          = UPSY%stru%colour_string( trim( PETSc_PCtype             ), 'light blue')
     str = '  Matrix ' // matrix_name_str // ' - KSP: ' // KSP_str // ', PC: ' // PC_str
-    if (par%primary) write(0,'(a,i8,a,e20.14)') str // ' - solved in ', n_Axb_its, ' its, rmse = ', rmse
+    if (par%primary) write(0,'(a,i8,a,e20.14,a,e20.14)') str // &
+      ' - solved in ', n_Axb_its, ' its, rmse = ', rmse, ', tcomp = ', tcomp
 
     ! Write test results to output
     call write_test_results_to_text_output( filename_output, test_matrix_equation_name, &
-      PETSc_KSPtype, PETSc_PCtype, n_Axb_its, rmse)
+      PETSc_KSPtype, PETSc_PCtype, n_Axb_its, rmse, tcomp)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -378,13 +384,13 @@ contains
   end subroutine run_PETSc_matrix_solving_test_on_matrix_equation_KSP_PC
 
   subroutine write_test_results_to_text_output( filename_output, test_matrix_equation_name, &
-      PETSc_KSPtype, PETSc_PCtype, n_Axb_its, rmse)
+      PETSc_KSPtype, PETSc_PCtype, n_Axb_its, rmse, tcomp)
 
     ! In/output variables:
     character(len=*), intent(in) :: filename_output, test_matrix_equation_name
     character(len=*), intent(in) :: PETSc_KSPtype, PETSc_PCtype
     integer,          intent(in) :: n_Axb_its
-    real(dp),         intent(in) :: rmse
+    real(dp),         intent(in) :: rmse, tcomp
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'write_test_results_to_text_output'
@@ -403,6 +409,7 @@ contains
       write( u,'(a,a     ,a)') "result.PC          = '", trim( PETSc_PCtype), "';"
       write( u,'(a,i8    ,a)') "result.n_Axb_its   = ", n_Axb_its, ";"
       write( u,'(a,e20.14,a)') "result.rmse        = ", rmse, ";"
+      write( u,'(a,e20.14,a)') "result.tcomp       = ", tcomp, ";"
 
       write( u,'(a)') 'if isempty( results)'
       write( u,'(a)') '  results = result;'

@@ -809,7 +809,7 @@ CONTAINS
     ! The resultant BMB will be multiplied by floating fractions when applying the subgrid scheme
     if (C%choice_BMB_subgrid == 'PMP') then
       do vi = mesh%vi1, mesh%vi2
-        if (ice%mask_gl_gr( vi)) then
+        if (ice%mask_gl_gr( vi) .and. ice%Hib( vi) < 0._dp) then
           forcing%mask_grounded_ice( vi) = .false.
           forcing%mask_floating_ice( vi) = .true.
         end if

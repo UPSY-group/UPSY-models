@@ -1054,8 +1054,8 @@ contains
     field%fieldtype     = fieldtype
 
     ! Convert grid resolution and start/end times to string.
-    ! Offset of 1 year because those years must indicate 31 Dec of the year before
-    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    ! Offset end_year of 1 year to indicate last completed year
+    write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder
@@ -1112,8 +1112,8 @@ contains
     scalar%fieldtype     = fieldtype
 
     ! Convert start/end times to string
-    ! Offset of 1 year because those years must indicate 31 Dec of the year before
-    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    ! Offset end_year of 1 year to indicate last completed year
+    write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder

@@ -13,7 +13,6 @@ module ismip_output_types
     ! A gridded output field
 
     real(dp), dimension(:), allocatable :: accum             ! [..] Accumulation of values per timestep
-    logical                             :: is_initial        ! Whether this is the first time to write
 
     character(len=1024)                 :: name              ! Variable name
     character(len=1024)                 :: filename          ! Filename of output
@@ -30,7 +29,6 @@ module ismip_output_types
     ! A gridded output field
 
     real(dp), allocatable               :: accum             ! [..] Accumulation of values per timestep
-    logical                             :: is_initial        ! Whether this is the first time to write
 
     character(len=1024)                 :: name              ! Variable name
     character(len=1024)                 :: filename          ! Filename of output

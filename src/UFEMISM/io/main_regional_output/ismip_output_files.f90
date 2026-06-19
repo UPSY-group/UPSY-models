@@ -178,9 +178,10 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
+    logical,  dimension(region%mesh%ti1:region%mesh%ti2) :: mask_gr_b
     real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdz_bot
     real(dp), dimension(C%nz)                            :: dTdzeta, d_zeta_temp
-    integer                                              :: vi
+    integer                                              :: vi, ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -197,6 +198,14 @@ contains
         mask_ice_a( vi) = .true.
       else
         mask_ice_a( vi) = .false.
+      end if
+    end do
+
+    do ti = region%mesh%ti1, region%mesh%ti2
+      if (region%ice%fraction_gr_b( ti) > 0._dp) then
+        mask_gr_b( ti) = .true.
+      else
+        mask_gr_b( ti) = .false.
       end if
     end do
 
@@ -255,13 +264,13 @@ contains
       end if
     end do
     call write_to_file( region, region%ismip_output%litempavg,    inputfield_a=T_vav)
-    call write_to_file( region, region%ismip_output%litempgradgr, inputfield_a=dTdz_bot, mask=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempgradfl, inputfield_a=dTdz_bot, mask=region%ice%mask_floating_ice)
-    call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempgradgr, inputfield_a=dTdz_bot, mask_a=region%ice%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempgradfl, inputfield_a=dTdz_bot, mask_a=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_floating_ice)
 
     ! Basal drag
-    call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, vmin=0._dp)
+    call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, mask_b=mask_gr_b, vmin=0._dp)
 
     ! Lateral mass balance
     call write_to_file( region, region%ismip_output%licalvf, restore=.true.)
@@ -389,7 +398,7 @@ contains
 
   end subroutine write_to_file_grid_FL
 
-  subroutine write_to_file_grid_ST( region, field, inputfield_a, inputfield_b, vmin, vmax, mask)
+  subroutine write_to_file_grid_ST( region, field, inputfield_a, inputfield_b, vmin, vmax, mask_a, mask_b)
     !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
 
     ! In/output variables:
@@ -399,7 +408,8 @@ contains
     real(dp), dimension(region%mesh%ti1:region%mesh%ti2), optional, intent(in   ) :: inputfield_b
     real(dp),                                             optional, intent(in   ) :: vmin
     real(dp),                                             optional, intent(in   ) :: vmax
-    logical, dimension(region%mesh%vi1:region%mesh%vi2),  optional, intent(in   ) :: mask
+    logical, dimension(region%mesh%vi1:region%mesh%vi2),  optional, intent(in   ) :: mask_a
+    logical, dimension(region%mesh%ti1:region%mesh%ti2),  optional, intent(in   ) :: mask_b
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST'
@@ -435,7 +445,16 @@ contains
 
       ! Apply mask if requested
       do ti = region%mesh%ti1, region%mesh%ti2
+        if (.not. present(mask_b)) then
+          ! Add value if no mask is provided, or if the mask is true
           d_mesh_vec_partial_2D( ti) = inputfield_b( ti)
+        elseif (mask_b( ti)) then
+          ! Add value if no mask is provided, or if the mask is true
+          d_mesh_vec_partial_2D( ti) = inputfield_b( ti)
+        else
+          ! Only used for strbasemag. Set to 0 over floating regions, rather than masking
+          d_mesh_vec_partial_2D( ti) = 0._dp
+        end if
       end do
 
       ! Map from mesh triangles to grid
@@ -445,10 +464,10 @@ contains
 
       ! Apply mask if requested
       do vi = region%mesh%vi1, region%mesh%vi2
-        if (.not. present(mask)) then
+        if (.not. present(mask_a)) then
           ! Add value if no mask is provided, or if the mask is true
           d_mesh_vec_partial_2D( vi) = inputfield_a( vi)
-        elseif (mask( vi)) then
+        elseif (mask_a( vi)) then
           ! Add value if no mask is provided, or if the mask is true
           d_mesh_vec_partial_2D( vi) = inputfield_a( vi)
         else

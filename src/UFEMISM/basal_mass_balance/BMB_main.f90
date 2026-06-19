@@ -105,8 +105,6 @@ CONTAINS
             ! No need to do anything
           CASE ('prescribed_fixed')
             ! No need to do anything
-          CASE ('laddie')
-            ! No need to do anything
           CASE DEFAULT
             CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
         END SELECT
@@ -169,13 +167,13 @@ CONTAINS
         BMB%BMB = BMB%inv%BMB
       CASE ('laddie_py')
         CALL run_BMB_model_laddie( mesh, ice, BMB, time, .FALSE.)
-      CASE ('laddie')
+      case ('laddie')
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
-        CALL run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, is_initial, .FALSE.)
-
-        DO vi = mesh%vi1, mesh%vi2
-          BMB%BMB( vi) = -BMB%laddie%melt( vi) * sec_per_year
-        END DO
+        call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, is_initial, .false.)
+        BMB%BMB_shelf = 0._dp
+        do vi = mesh%vi1, mesh%vi2
+          BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year
+        end do
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -210,8 +208,6 @@ CONTAINS
         ! No need to do anything
       CASE ('prescribed_fixed')
         ! No need to do anything
-      CASE ('laddie')
-        ! No need to do anything
       CASE DEFAULT
         CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
     END SELECT
@@ -229,12 +225,8 @@ CONTAINS
     call checksum( mesh%pai_V, BMB%BMB                 , 'BMB%BMB')
     call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
     call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
-    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
     call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
     call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
-    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
-    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
-    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -256,6 +248,7 @@ CONTAINS
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'initialise_BMB_model'
     CHARACTER(LEN=256)                                    :: choice_BMB_model
     CHARACTER(LEN=256)                                    :: choice_BMB_model_ROI
+    integer                                               :: vi
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -297,10 +290,6 @@ CONTAINS
     ALLOCATE( BMB%BMB_inv( mesh%vi1:mesh%vi2))
     BMB%BMB_inv = 0._dp
 
-    ! Allocate reference BMB
-    ALLOCATE( BMB%BMB_ref( mesh%vi1:mesh%vi2))
-    BMB%BMB_ref = 0._dp
-
     ! Allocate transition phase BMB
     ALLOCATE( BMB%BMB_transition_phase( mesh%vi1:mesh%vi2))
     BMB%BMB_transition_phase = 0._dp
@@ -308,14 +297,6 @@ CONTAINS
     ! Allocate modelled BMB
     ALLOCATE( BMB%BMB_modelled( mesh%vi1:mesh%vi2))
     BMB%BMB_modelled = 0._dp
-
-    ! Allocate mask for cavities
-    ALLOCATE( BMB%mask_floating_ice( mesh%vi1:mesh%vi2))
-    ALLOCATE( BMB%mask_gl_fl( mesh%vi1:mesh%vi2))
-    ALLOCATE( BMB%mask_gl_gr( mesh%vi1:mesh%vi2))
-    BMB%mask_floating_ice = ice%mask_floating_ice .AND. .NOT. ice%mask_gl_fl
-    BMB%mask_gl_fl = ice%mask_gl_fl
-    BMB%mask_gl_gr = ice%mask_gl_gr
 
     ! Set time of next calculation to start time
     BMB%t_next = C%start_time_of_run
@@ -351,7 +332,12 @@ CONTAINS
         call allocate_laddie_forcing( mesh, BMB%forcing)
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
         call initialise_transects_SGD( mesh, BMB%forcing)
-        CALL initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .FALSE.)
+        call initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .false.)
+        BMB%BMB_shelf = 0._dp
+        do vi = mesh%vi1, mesh%vi2
+          BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year
+        end do
+        call apply_BMB_subgrid_scheme( mesh, ice, BMB)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -374,12 +360,8 @@ CONTAINS
     call checksum( mesh%pai_V, BMB%BMB_shelf           , 'BMB%BMB_shelf')
     call checksum( mesh%pai_V, BMB%BMB_sheet           , 'BMB%BMB_sheet')
     call checksum( mesh%pai_V, BMB%BMB_inv             , 'BMB%BMB_inv')
-    call checksum( mesh%pai_V, BMB%BMB_ref             , 'BMB%BMB_ref')
     call checksum( mesh%pai_V, BMB%BMB_transition_phase, 'BMB%BMB_transition_phase')
     call checksum( mesh%pai_V, BMB%BMB_modelled        , 'BMB%BMB_modelled')
-    call checksum( mesh%pai_V, BMB%mask_floating_ice   , 'BMB%mask_floating_ice')
-    call checksum( mesh%pai_V, BMB%mask_gl_fl          , 'BMB%mask_gl_fl')
-    call checksum( mesh%pai_V, BMB%mask_gl_gr          , 'BMB%mask_gl_gr')
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -608,6 +590,7 @@ CONTAINS
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_BMB_model'
     CHARACTER(LEN=256)                                    :: choice_BMB_model
+    integer                                               :: vi
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -634,19 +617,8 @@ CONTAINS
     CALL reallocate_bounds( BMB%BMB_shelf, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_sheet, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_inv, mesh_new%vi1, mesh_new%vi2)
-    CALL reallocate_bounds( BMB%BMB_ref, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_transition_phase, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_modelled, mesh_new%vi1, mesh_new%vi2)
-
-    ! Reallocate memory for cavity mask
-    CALL reallocate_bounds( BMB%mask_floating_ice, mesh_new%vi1, mesh_new%vi2)
-    CALL reallocate_bounds( BMB%mask_gl_fl, mesh_new%vi1, mesh_new%vi2)
-    CALL reallocate_bounds( BMB%mask_gl_gr, mesh_new%vi1, mesh_new%vi2)
-
-    ! Re-initialise
-    BMB%mask_floating_ice = ice%mask_floating_ice .AND. .NOT. ice%mask_gl_fl
-    BMB%mask_gl_fl = ice%mask_gl_fl
-    BMB%mask_gl_gr = ice%mask_gl_gr
 
     ! Compute grounded ice mass balance on the new mesh
     SELECT CASE (C%choice_BMB_grounded)
@@ -680,7 +652,12 @@ CONTAINS
         call remap_laddie_forcing( mesh_old, mesh_new, BMB%forcing)
         call update_laddie_forcing( mesh_new, ice, ocean, BMB%forcing, region_name)
         call remap_laddie_model( mesh_old, mesh_new, BMB%laddie, BMB%forcing, time)
-        call run_laddie_model( mesh_new, BMB%laddie, BMB%forcing, time, .FALSE., .FALSE.)
+        call run_laddie_model( mesh_new, BMB%laddie, BMB%forcing, time, .false., .false.)
+        BMB%BMB_shelf = 0._dp
+        do vi = mesh_new%vi1, mesh_new%vi2
+          BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year
+        end do
+        call apply_BMB_subgrid_scheme( mesh_new, ice, BMB)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -711,8 +688,6 @@ CONTAINS
     CALL init_routine( routine_name)
 
     ! Note: apply extrapolation_FCMP_to_PMP to non-laddie BMB models before applying sub-grid schemes
-
-    BMB%BMB = 0._dp
 
     DO vi = mesh%vi1, mesh%vi2
       ! Different sub-grid schemes for sub-shelf melt
@@ -757,33 +732,41 @@ CONTAINS
 
   END SUBROUTINE apply_BMB_subgrid_scheme_ROI
 
-  SUBROUTINE compute_subgrid_BMB(ice, BMB, vi)
+  subroutine compute_subgrid_BMB(ice, BMB, vi)
 
-    INTEGER                     , INTENT(IN)              :: vi
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
-    TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
+    type(type_ice_model), intent(in   ) :: ice
+    type(type_BMB_model), intent(inout) :: BMB
+    integer             , intent(in   ) :: vi
 
-    ! Different sub-grid schemes for sub-shelf melt
-        IF (C%do_subgrid_BMB_at_grounding_line) THEN
-          IF     (C%choice_BMB_subgrid == 'FCMP') THEN
-            ! Apply FCMP scheme
-            IF (ice%mask_floating_ice( vi)) BMB%BMB( vi) = BMB%BMB_shelf( vi)
-            IF (ice%mask_grounded_ice( vi)) BMB%BMB( vi) = BMB%BMB_sheet( vi)
+    ! Determine which sub-grid scheme to apply
+    select case (C%choice_BMB_subgrid)
+      case default
+        call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
+      case ('FCMP')
+        if (ice%mask_floating_ice( vi) .or. ice%mask_gl_fl( vi)) then
+          BMB%BMB( vi) = BMB%BMB_shelf( vi)
+        elseif (ice%mask_grounded_ice( vi) .or. ice%mask_gl_gr( vi)) then
+          BMB%BMB( vi) = BMB%BMB_sheet( vi)
+        else
+          BMB%BMB( vi) = 0._dp
+        end if
+      case ('NMP')
+        if (ice%mask_floating_ice( vi) .and. ice%fraction_gr( vi) == 0._dp) then
+          BMB%BMB( vi) = BMB%BMB_shelf( vi)
+        elseif (ice%fraction_gr( vi) > 0._dp) then
+          BMB%BMB( vi) = BMB%BMB_sheet( vi)
+        else
+          BMB%BMB( vi) = 0._dp
+        end if
+      case ('PMP')
+        if (ice%mask_floating_ice( vi) .or. ice%mask_grounded_ice( vi)) then
+          BMB%BMB( vi) = ice%fraction_gr( vi) * BMB%BMB_sheet( vi) + (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+        else
+          BMB%BMB( vi) = 0._dp
+        end if
+    end select
 
-          ELSEIF (C%choice_BMB_subgrid == 'PMP') THEN
-            ! Apply PMP scheme
-             IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
-             IF (ice%mask_grounded_ice( vi) .OR. ice%mask_gl_gr( vi)) BMB%BMB( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi) + ice%fraction_gr( vi) * BMB%BMB_sheet( vi)
-          ELSE
-            CALL crash('unknown choice_BMB_subgrid "' // TRIM(C%choice_BMB_subgrid) // '"!')
-          END IF
-        ELSE
-          ! Apply NMP scheme
-          IF (ice%fraction_gr( vi) == 0._dp) BMB%BMB( vi) = BMB%BMB_shelf( vi)
-          IF (ice%fraction_gr( vi) == 1._dp) BMB%BMB( vi) = BMB%BMB_sheet( vi)
-        END IF
-
-  END SUBROUTINE compute_subgrid_BMB
+  end subroutine compute_subgrid_BMB
 
   subroutine update_laddie_forcing( mesh, ice, ocean, forcing, region_name)
 
@@ -797,6 +780,7 @@ CONTAINS
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_laddie_forcing'
     real(dp)                       :: lambda_M, phi_M, beta_stereo
+    integer                        :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -820,6 +804,17 @@ CONTAINS
     forcing%Ti                ( mesh%vi1:mesh%vi2,:) = ice%Ti                ( mesh%vi1:mesh%vi2,:) - 273.15 ! [degC]
     forcing%T_ocean           ( mesh%vi1:mesh%vi2,:) = ocean%T               ( mesh%vi1:mesh%vi2,:)
     forcing%S_ocean           ( mesh%vi1:mesh%vi2,:) = ocean%S               ( mesh%vi1:mesh%vi2,:)
+
+    ! In case of using PMP, modify forcing masks to treat gl_gr as floating.
+    ! The resultant BMB will be multiplied by floating fractions when applying the subgrid scheme
+    if (C%choice_BMB_subgrid == 'PMP') then
+      do vi = mesh%vi1, mesh%vi2
+        if (ice%mask_gl_gr( vi)) then
+          forcing%mask_grounded_ice( vi) = .false.
+          forcing%mask_floating_ice( vi) = .true.
+        end if
+      end do
+    end if
 
     ! Determine which BMB model to run for this region
     select case (region_name)

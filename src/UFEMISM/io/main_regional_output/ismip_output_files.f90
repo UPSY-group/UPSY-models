@@ -36,7 +36,6 @@ module ismip_output_files
 
   interface write_to_file
     module procedure write_to_file_grid_ST
-    module procedure write_to_file_grid_FL
     module procedure write_to_file_scalar_ST
     module procedure write_to_file_scalar_FL
   end interface
@@ -103,8 +102,7 @@ contains
       region%ismip_output%tendligroundf)
 
     ! === Exceptions ===
-    ! Geothermal heat flux: restore to initial to spit out snapshot
-    region%ismip_output%hfgeoubed%is_initial = .true.
+    ! Geothermal heat flux: Store snapshot in accum
     region%ismip_output%hfgeoubed%accum( region%mesh%vi1:region%mesh%vi2) = &
       region%ice%geothermal_heat_flux( region%mesh%vi1:region%mesh%vi2) / sec_per_year
 
@@ -219,18 +217,18 @@ contains
     call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%Hib)
 
     ! Geothermal heat flux
-    call write_to_file( region, region%ismip_output%hfgeoubed, restore=.false., vmin=0._dp)
+    call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, vmin=0._dp)
 
     ! Surface and basal mass balance
-    call write_to_file( region, region%ismip_output%acabf, restore=.true.)
-    call write_to_file( region, region%ismip_output%libmassbfgr, restore=.true.)
-    call write_to_file( region, region%ismip_output%libmassbffl, restore=.true.)
+    call write_to_file_grid_FL( region, region%ismip_output%acabf)
+    call write_to_file_grid_FL( region, region%ismip_output%libmassbfgr)
+    call write_to_file_grid_FL( region, region%ismip_output%libmassbffl)
 
     ! Thickness tendency
     do vi = region%mesh%vi1, region%mesh%vi2
       region%ismip_output%dlithkdt%accum( vi) = (region%ice%Hi( vi) - region%ismip_output%dlithkdt%accum( vi)) / sec_per_year
     end do
-    call write_to_file( region, region%ismip_output%dlithkdt, restore=.true.)
+    call write_to_file_grid_FL( region, region%ismip_output%dlithkdt)
     region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
@@ -273,8 +271,8 @@ contains
     call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, mask_b=mask_gr_b, vmin=0._dp)
 
     ! Lateral mass balance
-    call write_to_file( region, region%ismip_output%licalvf, restore=.true.)
-    call write_to_file( region, region%ismip_output%lifmassbf, restore=.false.)
+    call write_to_file_grid_FL( region, region%ismip_output%licalvf)
+    call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
     call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
@@ -306,13 +304,12 @@ contains
 
   end subroutine write_to_ISMIP_regional_output_files
 
-  subroutine write_to_file_grid_FL( region, field, restore, vmin, vmax)
+  subroutine write_to_file_grid_FL( region, field, vmin, vmax)
     !< Write to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),                              intent(inout) :: region
     type(type_ismip_gridded_field),                       intent(inout) :: field
-    logical,                                              intent(in   ) :: restore
     real(dp),                                   optional, intent(in   ) :: vmin
     real(dp),                                   optional, intent(in   ) :: vmax
 
@@ -356,13 +353,7 @@ contains
     end if
 
     ! Restore accumulation to 0 if required
-    if (restore) then
-      ! Accumulation set to 0 for new accumulation
-      field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
-    else
-      ! Accumulation field retained to again write out initial snapshot
-      field%is_initial = .true.
-    end if
+    field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
 
     ! Map from mesh to grid
     call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)

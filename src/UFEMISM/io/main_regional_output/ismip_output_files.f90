@@ -246,7 +246,8 @@ contains
         ! Compute vertical gradient wrt zeta
         call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
         ! Extract vertical gradient wrt height at the bottom
-        dTdz_bot( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
+        ! Set minimum thickness to 10m to avoid spurious gradients
+        dTdz_bot( vi) = -1._dp / max(10._dp,region%ice%Hi( vi)) * dTdzeta( region%mesh%nz)
       else
         ! No ice here, return NaN
         T_vav( vi) = NaN

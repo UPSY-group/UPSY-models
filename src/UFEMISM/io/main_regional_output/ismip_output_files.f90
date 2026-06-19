@@ -915,14 +915,12 @@ contains
 
     ! Geothermal heat flux
     call initialise_ISMIP_field( region, region%ismip_output%hfgeoubed, 'hfgeoubed' , &
-      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL', &
-      initfield = region%ice%geothermal_heat_flux / sec_per_year)
+      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
     call initialise_ISMIP_field( region, region%ismip_output%acabf, 'acabf' , &
-      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
-      initfield = SMB_loc * ice_density / sec_per_year)
+      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     BMB_gr_loc( :) = 0._dp
     BMB_fl_loc( :) = 0._dp
@@ -931,16 +929,15 @@ contains
       if (region%ice%mask_floating_ice( vi)) BMB_fl_loc( vi) = region%BMB%BMB( vi)
     end do
     call initialise_ISMIP_field( region, region%ismip_output%libmassbfgr, 'libmassbfgr' , &
-      'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
-      initfield = BMB_gr_loc * ice_density / sec_per_year)
+      'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%libmassbffl, 'libmassbffl' , &
-      'Basal mass balance flux beneath floating ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
-      initfield = BMB_fl_loc * ice_density / sec_per_year)
+      'Basal mass balance flux beneath floating ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     ! Thickness tendency
     call initialise_ISMIP_field( region, region%ismip_output%dlithkdt, 'dlithkdt' , &
-      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL', &
-      initfield = region%ice%Hi)
+      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL')
+    ! Store snapshot ice thickness in accum
+    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
     call initialise_ISMIP_field( region, region%ismip_output%xvelsurf, 'xvelsurf' , &
@@ -981,10 +978,8 @@ contains
       'Basal drag', 'land_ice_basal_drag', 'Pa', 'ST')
 
     ! Lateral mass balance
-    call calc_ISMIP_fluxes( region%mesh, region%ice, CF_loc, GL_loc)
     call initialise_ISMIP_field( region, region%ismip_output%licalvf, 'licalvf' , &
-      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL', &
-      initfield = CF_loc * ice_density / sec_per_year)
+      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%lifmassbf,   'lifmassbf' , &
       'Ice front melt flux', 'land_ice_specific_mass_flux_due_to_ice_front_melting', 'kg m-2 s-1', 'FL')
 
@@ -1027,17 +1022,16 @@ contains
 
   end subroutine initialise_ISMIP_output
 
-  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype, initfield)
+  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype)
     ! Initialise a single field
 
-    type(type_model_region),                                        intent(inout) :: region
-    type(type_ismip_gridded_field),                                 intent(inout) :: field
-    character(len=*),                                               intent(in   ) :: name
-    character(len=*),                                               intent(in   ) :: long_name
-    character(len=*),                                               intent(in   ) :: standard_name
-    character(len=*),                                               intent(in   ) :: units
-    character(len=2),                                               intent(in   ) :: fieldtype
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: initfield
+    type(type_model_region),        intent(inout) :: region
+    type(type_ismip_gridded_field), intent(inout) :: field
+    character(len=*),               intent(in   ) :: name
+    character(len=*),               intent(in   ) :: long_name
+    character(len=*),               intent(in   ) :: standard_name
+    character(len=*),               intent(in   ) :: units
+    character(len=2),               intent(in   ) :: fieldtype
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field_grid'
@@ -1073,9 +1067,6 @@ contains
     if (field%fieldtype == 'FL') then
       allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source = 0._dp)
       field%is_initial = .true.
-      if (present(initfield)) then
-        field%accum( region%mesh%vi1:region%mesh%vi2) = initfield( region%mesh%vi1:region%mesh%vi2)
-      end if
     end if
 
     ! Initialise the counter for number of time values

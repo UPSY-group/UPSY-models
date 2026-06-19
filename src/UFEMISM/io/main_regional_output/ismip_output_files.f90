@@ -344,13 +344,7 @@ contains
     allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
 
     ! Determine values
-    if (field%is_initial) then
-      ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-      d_mesh_vec_partial_2D = field%accum
-      field%is_initial = .false.
-    else
-      d_mesh_vec_partial_2D = field%accum / deltat
-    end if
+    d_mesh_vec_partial_2D = field%accum / deltat
 
     ! Restore accumulation to 0 if required
     field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
@@ -609,14 +603,8 @@ contains
     deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
 
     ! Determine scalar value
-    if (scalar%is_initial) then
-      ! First trimeframe, no accumulation yet, provide initial value instead
-      scalar_loc = initval * 1.e12_dp / sec_per_year
-      scalar%is_initial = .false.
-    else
-      scalar_loc = scalar%accum / deltat
-      scalar%accum = 0._dp
-    end if
+    scalar_loc = scalar%accum / deltat
+    scalar%accum = 0._dp
 
     ! Write scalar to file
     call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
@@ -1057,7 +1045,6 @@ contains
     ! Allocate fields for accumulation during each timestep for flux fields
     if (field%fieldtype == 'FL') then
       allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source = 0._dp)
-      field%is_initial = .true.
     end if
 
     ! Initialise the counter for number of time values
@@ -1112,7 +1099,6 @@ contains
     ! Initialise
     if ((scalar%fieldtype == 'FL')) then
       scalar%accum = 0._dp
-      scalar%is_initial = .true.
     end if
 
     ! Initialise the counter for number of time values

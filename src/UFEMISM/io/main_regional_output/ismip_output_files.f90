@@ -36,7 +36,6 @@ module ismip_output_files
 
   interface write_to_file
     module procedure write_to_file_grid_ST
-    module procedure write_to_file_grid_FL
     module procedure write_to_file_scalar_ST
     module procedure write_to_file_scalar_FL
   end interface
@@ -103,8 +102,7 @@ contains
       region%ismip_output%tendligroundf)
 
     ! === Exceptions ===
-    ! Geothermal heat flux: restore to initial to spit out snapshot
-    region%ismip_output%hfgeoubed%is_initial = .true.
+    ! Geothermal heat flux: Store snapshot in accum
     region%ismip_output%hfgeoubed%accum( region%mesh%vi1:region%mesh%vi2) = &
       region%ice%geothermal_heat_flux( region%mesh%vi1:region%mesh%vi2) / sec_per_year
 
@@ -178,9 +176,10 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
+    logical,  dimension(region%mesh%ti1:region%mesh%ti2) :: mask_gr_b
     real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdz_bot
     real(dp), dimension(C%nz)                            :: dTdzeta, d_zeta_temp
-    integer                                              :: vi
+    integer                                              :: vi, ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -200,42 +199,50 @@ contains
       end if
     end do
 
+    do ti = region%mesh%ti1, region%mesh%ti2
+      if (region%ice%fraction_gr_b( ti) > 0._dp) then
+        mask_gr_b( ti) = .true.
+      else
+        mask_gr_b( ti) = .false.
+      end if
+    end do
+
     ! Print to terminal
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_file( region, region%ismip_output%lithk, region%ice%Hi, .false., vmin=0._dp)
-    call write_to_file( region, region%ismip_output%orog, region%ice%Hs, .false., vmin=0._dp)
-    call write_to_file( region, region%ismip_output%topg, region%ice%Hb, .false.)
-    call write_to_file( region, region%ismip_output%base, region%ice%Hib, .false.)
+    call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%Hi, vmin=0._dp)
+    call write_to_file( region, region%ismip_output%orog,  inputfield_a=region%ice%Hs, vmin=0._dp)
+    call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%Hb)
+    call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%Hib)
 
     ! Geothermal heat flux
-    call write_to_file( region, region%ismip_output%hfgeoubed, restore=.false., vmin=0._dp)
+    call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, vmin=0._dp)
 
     ! Surface and basal mass balance
-    call write_to_file( region, region%ismip_output%acabf, restore=.true.)
-    call write_to_file( region, region%ismip_output%libmassbfgr, restore=.true.)
-    call write_to_file( region, region%ismip_output%libmassbffl, restore=.true.)
+    call write_to_file_grid_FL( region, region%ismip_output%acabf)
+    call write_to_file_grid_FL( region, region%ismip_output%libmassbfgr)
+    call write_to_file_grid_FL( region, region%ismip_output%libmassbffl)
 
     ! Thickness tendency
     do vi = region%mesh%vi1, region%mesh%vi2
       region%ismip_output%dlithkdt%accum( vi) = (region%ice%Hi( vi) - region%ismip_output%dlithkdt%accum( vi)) / sec_per_year
     end do
-    call write_to_file( region, region%ismip_output%dlithkdt, restore=.true.)
+    call write_to_file_grid_FL( region, region%ismip_output%dlithkdt)
     region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
-    call write_to_file( region, region%ismip_output%xvelsurf, region%ice%u_surf_b / sec_per_year, .true.)
-    call write_to_file( region, region%ismip_output%yvelsurf, region%ice%v_surf_b / sec_per_year, .true.)
-    call write_to_file( region, region%ismip_output%zvelsurf, region%ice%w_surf   / sec_per_year, .false.)
-    call write_to_file( region, region%ismip_output%xvelbase, region%ice%u_base_b / sec_per_year, .true.)
-    call write_to_file( region, region%ismip_output%yvelbase, region%ice%v_base_b / sec_per_year, .true.)
-    call write_to_file( region, region%ismip_output%zvelbase, region%ice%w_base   / sec_per_year, .false.)
-    call write_to_file( region, region%ismip_output%xvelmean, region%ice%u_vav_b  / sec_per_year, .true.)
-    call write_to_file( region, region%ismip_output%yvelmean, region%ice%v_vav_b  / sec_per_year, .true.)
+    call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=region%ice%u_surf_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%yvelsurf, inputfield_b=region%ice%v_surf_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=region%ice%w_surf   / sec_per_year)
+    call write_to_file( region, region%ismip_output%xvelbase, inputfield_b=region%ice%u_base_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%yvelbase, inputfield_b=region%ice%v_base_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=region%ice%w_base   / sec_per_year)
+    call write_to_file( region, region%ismip_output%xvelmean, inputfield_b=region%ice%u_vav_b  / sec_per_year)
+    call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=region%ice%v_vav_b  / sec_per_year)
 
     ! Temperatures
-    call write_to_file( region, region%ismip_output%litemptop, region%ice%Ti( :, 1), .false.)
+    call write_to_file( region, region%ismip_output%litemptop, inputfield_a=region%ice%Ti( :, 1))
 
     do vi = region%mesh%vi1, region%mesh%vi2
       if (mask_ice_a( vi)) then
@@ -246,31 +253,32 @@ contains
         ! Compute vertical gradient wrt zeta
         call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
         ! Extract vertical gradient wrt height at the bottom
-        dTdz_bot( vi) = -1._dp / region%ice%Hi( vi) * dTdzeta( region%mesh%nz)
+        ! Set minimum thickness to 10m to avoid spurious gradients
+        dTdz_bot( vi) = -1._dp / max(10._dp,region%ice%Hi( vi)) * dTdzeta( region%mesh%nz)
       else
         ! No ice here, return NaN
         T_vav( vi) = NaN
         dTdz_bot( vi) = NaN
       end if
     end do
-    call write_to_file( region, region%ismip_output%litempavg, T_vav, .false.)
-    call write_to_file( region, region%ismip_output%litempgradgr, dTdz_bot, .false., mask=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempgradfl, dTdz_bot, .false., mask=region%ice%mask_floating_ice)
-    call write_to_file( region, region%ismip_output%litempbotgr, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempbotfl, region%ice%Ti( :, C%nz), .false., mask=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempavg,    inputfield_a=T_vav)
+    call write_to_file( region, region%ismip_output%litempgradgr, inputfield_a=dTdz_bot, mask_a=region%ice%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempgradfl, inputfield_a=dTdz_bot, mask_a=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_floating_ice)
 
     ! Basal drag
-    call write_to_file( region, region%ismip_output%strbasemag, region%ice%basal_shear_stress, .true., vmin=0._dp)
+    call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, mask_b=mask_gr_b, vmin=0._dp)
 
     ! Lateral mass balance
-    call write_to_file( region, region%ismip_output%licalvf, restore=.true.)
-    call write_to_file( region, region%ismip_output%lifmassbf, restore=.false.)
+    call write_to_file_grid_FL( region, region%ismip_output%licalvf)
+    call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
-    call write_to_file( region, region%ismip_output%sftgif, region%ice%fraction_margin, .false., vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftgrf, region%ice%fraction_gr, .false., vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftflf, region%ice%fraction_margin - region%ice%fraction_gr, &
-      .false., vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%fraction_margin - region%ice%fraction_gr, &
+      vmin=0._dp, vmax=1._dp)
 
     ! === Scalars ===
 
@@ -296,13 +304,12 @@ contains
 
   end subroutine write_to_ISMIP_regional_output_files
 
-  subroutine write_to_file_grid_FL( region, field, restore, vmin, vmax)
+  subroutine write_to_file_grid_FL( region, field, vmin, vmax)
     !< Write to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),                              intent(inout) :: region
     type(type_ismip_gridded_field),                       intent(inout) :: field
-    logical,                                              intent(in   ) :: restore
     real(dp),                                   optional, intent(in   ) :: vmin
     real(dp),                                   optional, intent(in   ) :: vmax
 
@@ -337,22 +344,10 @@ contains
     allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
 
     ! Determine values
-    if (field%is_initial) then
-      ! First timeframe, no accumulation yet. Following protocol, using snapshot field instead
-      d_mesh_vec_partial_2D = field%accum
-      field%is_initial = .false.
-    else
-      d_mesh_vec_partial_2D = field%accum / deltat
-    end if
+    d_mesh_vec_partial_2D = field%accum / deltat
 
     ! Restore accumulation to 0 if required
-    if (restore) then
-      ! Accumulation set to 0 for new accumulation
-      field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
-    else
-      ! Accumulation field retained to again write out initial snapshot
-      field%is_initial = .true.
-    end if
+    field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
 
     ! Map from mesh to grid
     call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
@@ -388,21 +383,22 @@ contains
 
   end subroutine write_to_file_grid_FL
 
-  subroutine write_to_file_grid_ST( region, field, inputfield, is_bgrid, vmin, vmax, mask)
+  subroutine write_to_file_grid_ST( region, field, inputfield_a, inputfield_b, vmin, vmax, mask_a, mask_b)
     !< Write STATE gridded mesh field to single ISMIP regional output NetCDF file
 
     ! In/output variables:
-    type(type_model_region),                                       intent(inout) :: region
-    type(type_ismip_gridded_field),                                intent(inout) :: field
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2),          intent(in   ) :: inputfield
-    logical,                                                       intent(in   ) :: is_bgrid
-    real(dp),                                            optional, intent(in   ) :: vmin
-    real(dp),                                            optional, intent(in   ) :: vmax
-    logical, dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: mask
+    type(type_model_region),                                        intent(inout) :: region
+    type(type_ismip_gridded_field),                                 intent(inout) :: field
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: inputfield_a
+    real(dp), dimension(region%mesh%ti1:region%mesh%ti2), optional, intent(in   ) :: inputfield_b
+    real(dp),                                             optional, intent(in   ) :: vmin
+    real(dp),                                             optional, intent(in   ) :: vmax
+    logical, dimension(region%mesh%vi1:region%mesh%vi2),  optional, intent(in   ) :: mask_a
+    logical, dimension(region%mesh%ti1:region%mesh%ti2),  optional, intent(in   ) :: mask_b
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'write_to_file_grid_ST'
-    integer                               :: ncid, vi
+    integer                               :: ncid, vi, ti
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
     real(dp), dimension(:),  allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D, mask_grid
@@ -429,20 +425,36 @@ contains
     ! Allocate memory
     allocate( d_grid_vec_partial_2D( region%output_grid%n_loc ))
 
-    if (is_bgrid) then
+    if (present(inputfield_b)) then
+      allocate( d_mesh_vec_partial_2D( region%mesh%ti1:region%mesh%ti2))
+
+      ! Apply mask if requested
+      do ti = region%mesh%ti1, region%mesh%ti2
+        if (.not. present(mask_b)) then
+          ! Add value if no mask is provided, or if the mask is true
+          d_mesh_vec_partial_2D( ti) = inputfield_b( ti)
+        elseif (mask_b( ti)) then
+          ! Add value if no mask is provided, or if the mask is true
+          d_mesh_vec_partial_2D( ti) = inputfield_b( ti)
+        else
+          ! Only used for strbasemag. Set to 0 over floating regions, rather than masking
+          d_mesh_vec_partial_2D( ti) = 0._dp
+        end if
+      end do
+
       ! Map from mesh triangles to grid
-      call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, inputfield, d_grid_vec_partial_2D)
-    else
+      call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+    elseif (present(inputfield_a)) then
       allocate( d_mesh_vec_partial_2D( region%mesh%vi1:region%mesh%vi2))
 
       ! Apply mask if requested
       do vi = region%mesh%vi1, region%mesh%vi2
-        if (.not. present(mask)) then
+        if (.not. present(mask_a)) then
           ! Add value if no mask is provided, or if the mask is true
-          d_mesh_vec_partial_2D( vi) = inputfield( vi)
-        elseif (mask( vi)) then
+          d_mesh_vec_partial_2D( vi) = inputfield_a( vi)
+        elseif (mask_a( vi)) then
           ! Add value if no mask is provided, or if the mask is true
-          d_mesh_vec_partial_2D( vi) = inputfield( vi)
+          d_mesh_vec_partial_2D( vi) = inputfield_a( vi)
         else
           d_mesh_vec_partial_2D( vi) = NaN
         end if
@@ -450,6 +462,8 @@ contains
 
       ! Map from mesh vertices to grid
       call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+    else
+      call crash('write_to_file_grid_ST requires either inputfield_a or inputfield_b') 
     end if
 
     ! Enforce bounds
@@ -589,14 +603,8 @@ contains
     deltat = region%ismip_output%t_curr - region%ismip_output%t_prev
 
     ! Determine scalar value
-    if (scalar%is_initial) then
-      ! First trimeframe, no accumulation yet, provide initial value instead
-      scalar_loc = initval * 1.e12_dp / sec_per_year
-      scalar%is_initial = .false.
-    else
-      scalar_loc = scalar%accum / deltat
-      scalar%accum = 0._dp
-    end if
+    scalar_loc = scalar%accum / deltat
+    scalar%accum = 0._dp
 
     ! Write scalar to file
     call write_to_field_multopt_dp_0D( scalar%filename, ncid, scalar%name, scalar_loc)
@@ -886,14 +894,12 @@ contains
 
     ! Geothermal heat flux
     call initialise_ISMIP_field( region, region%ismip_output%hfgeoubed, 'hfgeoubed' , &
-      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL', &
-      initfield = region%ice%geothermal_heat_flux / sec_per_year)
+      'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
     call initialise_ISMIP_field( region, region%ismip_output%acabf, 'acabf' , &
-      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
-      initfield = SMB_loc * ice_density / sec_per_year)
+      'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     BMB_gr_loc( :) = 0._dp
     BMB_fl_loc( :) = 0._dp
@@ -902,16 +908,15 @@ contains
       if (region%ice%mask_floating_ice( vi)) BMB_fl_loc( vi) = region%BMB%BMB( vi)
     end do
     call initialise_ISMIP_field( region, region%ismip_output%libmassbfgr, 'libmassbfgr' , &
-      'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
-      initfield = BMB_gr_loc * ice_density / sec_per_year)
+      'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%libmassbffl, 'libmassbffl' , &
-      'Basal mass balance flux beneath floating ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL', &
-      initfield = BMB_fl_loc * ice_density / sec_per_year)
+      'Basal mass balance flux beneath floating ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
     ! Thickness tendency
     call initialise_ISMIP_field( region, region%ismip_output%dlithkdt, 'dlithkdt' , &
-      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL', &
-      initfield = region%ice%Hi)
+      'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL')
+    ! Store snapshot ice thickness in accum
+    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
     call initialise_ISMIP_field( region, region%ismip_output%xvelsurf, 'xvelsurf' , &
@@ -952,10 +957,8 @@ contains
       'Basal drag', 'land_ice_basal_drag', 'Pa', 'ST')
 
     ! Lateral mass balance
-    call calc_ISMIP_fluxes( region%mesh, region%ice, CF_loc, GL_loc)
     call initialise_ISMIP_field( region, region%ismip_output%licalvf, 'licalvf' , &
-      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL', &
-      initfield = CF_loc * ice_density / sec_per_year)
+      'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%lifmassbf,   'lifmassbf' , &
       'Ice front melt flux', 'land_ice_specific_mass_flux_due_to_ice_front_melting', 'kg m-2 s-1', 'FL')
 
@@ -998,17 +1001,16 @@ contains
 
   end subroutine initialise_ISMIP_output
 
-  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype, initfield)
+  subroutine initialise_ISMIP_field_grid( region, field, name, long_name, standard_name, units, fieldtype)
     ! Initialise a single field
 
-    type(type_model_region),                                        intent(inout) :: region
-    type(type_ismip_gridded_field),                                 intent(inout) :: field
-    character(len=*),                                               intent(in   ) :: name
-    character(len=*),                                               intent(in   ) :: long_name
-    character(len=*),                                               intent(in   ) :: standard_name
-    character(len=*),                                               intent(in   ) :: units
-    character(len=2),                                               intent(in   ) :: fieldtype
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2), optional, intent(in   ) :: initfield
+    type(type_model_region),        intent(inout) :: region
+    type(type_ismip_gridded_field), intent(inout) :: field
+    character(len=*),               intent(in   ) :: name
+    character(len=*),               intent(in   ) :: long_name
+    character(len=*),               intent(in   ) :: standard_name
+    character(len=*),               intent(in   ) :: units
+    character(len=2),               intent(in   ) :: fieldtype
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'initialise_ISMIP_field_grid'
@@ -1025,8 +1027,8 @@ contains
     field%fieldtype     = fieldtype
 
     ! Convert grid resolution and start/end times to string.
-    ! Offset of 1 year because those years must indicate 31 Dec of the year before
-    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    ! Offset end_year of 1 year to indicate last completed year
+    write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder
@@ -1043,10 +1045,6 @@ contains
     ! Allocate fields for accumulation during each timestep for flux fields
     if (field%fieldtype == 'FL') then
       allocate(field%accum( region%mesh%vi1: region%mesh%vi2), source = 0._dp)
-      field%is_initial = .true.
-      if (present(initfield)) then
-        field%accum( region%mesh%vi1:region%mesh%vi2) = initfield( region%mesh%vi1:region%mesh%vi2)
-      end if
     end if
 
     ! Initialise the counter for number of time values
@@ -1083,8 +1081,8 @@ contains
     scalar%fieldtype     = fieldtype
 
     ! Convert start/end times to string
-    ! Offset of 1 year because those years must indicate 31 Dec of the year before
-    write(start_year, '(I4)') int(C%start_time_of_run - 1)
+    ! Offset end_year of 1 year to indicate last completed year
+    write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
     ! Define the name of the subfolder
@@ -1101,7 +1099,6 @@ contains
     ! Initialise
     if ((scalar%fieldtype == 'FL')) then
       scalar%accum = 0._dp
-      scalar%is_initial = .true.
     end if
 
     ! Initialise the counter for number of time values

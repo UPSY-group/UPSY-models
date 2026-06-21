@@ -105,9 +105,8 @@ module calendar
           ! Determine days according to standard/gregorian calendar,
           ! including leap years
 
-          ! Initialise with offset 1 day to align with ISMIP7 compliance checker,
-          ! probably to make sure output is 31 Dec for a given year
-          days = -1._dp
+          ! Initialise
+          days = 0._dp
     
           ! Count days for full years from 1850 up to full year
           do i = 1850, full_year - 1

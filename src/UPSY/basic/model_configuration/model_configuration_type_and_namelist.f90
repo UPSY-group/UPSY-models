@@ -924,8 +924,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: BMB_transition_phase_t_end_config            = +9.9E9_dp                        ! [yr] End   time for BMB transition phase
 
     ! Grounding line treatment
-    logical             :: do_subgrid_BMB_at_grounding_line_config      = .false.                          ! Whether or not to apply basal melt rates under a partially floating grounding line; if so, use choice_BMB_subgrid; if not, apply "NMP"
-    character(len=1024) :: choice_BMB_subgrid_config                    = ''                               ! Choice of sub-grid BMB scheme: "FCMP", "PMP" (following Leguy et al., 2021)
+    character(len=1024) :: choice_BMB_subgrid_config                    = 'NMP'                            ! Choice of sub-grid BMB scheme: "NMP", "FCMP", "PMP" (following Leguy et al., 2021)
 
     ! Choice of BMB model
     character(len=1024) :: choice_BMB_model_NAM_config                  = 'uniform'
@@ -2163,7 +2162,6 @@ module model_configuration_type_and_namelist
     real(dp)            :: BMB_transition_phase_t_end
 
     ! Grounding line treatment
-    logical             :: do_subgrid_BMB_at_grounding_line
     character(len=1024) :: choice_BMB_subgrid
 
     ! Choice of BMB model
@@ -3117,7 +3115,6 @@ contains
       do_BMB_transition_phase_config                              , &
       BMB_transition_phase_t_start_config                         , &
       BMB_transition_phase_t_end_config                           , &
-      do_subgrid_BMB_at_grounding_line_config                     , &
       choice_BMB_subgrid_config                                   , &
       choice_BMB_model_NAM_config                                 , &
       choice_BMB_model_EAS_config                                 , &
@@ -4281,7 +4278,6 @@ contains
     C%BMB_transition_phase_t_end                             = BMB_transition_phase_t_end_config
 
     ! Grounding line treatment
-    C%do_subgrid_BMB_at_grounding_line                       = do_subgrid_BMB_at_grounding_line_config
     C%choice_BMB_subgrid                                     = choice_BMB_subgrid_config
 
     ! Choice of BMB model

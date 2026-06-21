@@ -687,7 +687,7 @@ CONTAINS
       region%output_t_next = C%start_time_of_run
       region%output_restart_t_next = C%start_time_of_run
       region%output_grid_t_next = C%start_time_of_run
-      region%output_ismip_t_next = C%start_time_of_run
+      region%output_ismip_t_next = C%start_time_of_run + C%dt_output_ismip !Don't write fields before end of first year
     ELSE
       region%output_t_next = C%end_time_of_run
       region%output_restart_t_next = C%end_time_of_run

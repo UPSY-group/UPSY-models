@@ -14,7 +14,8 @@ module CSR_matrix_mod
     NF90_DEF_VAR, NF90_INT, NF90_DOUBLE, NF90_PUT_VAR, NF90_OPEN, NF90_CLOSE, NF90_NOWRITE, &
     NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, NF90_INQ_VARID, NF90_GET_VAR
   use netcdf_basic_wrappers, only: create_dimension, create_variable, handle_netcdf_error, &
-    create_and_write_to_scalar_variable_dist_int, read_scalar_variable_dist_int
+    create_and_write_to_scalar_variable_dist_int, read_scalar_variable_dist_int, &
+    create_new_netcdf_file_for_writing, close_netcdf_file
   use netcdf_write_var_primary, only: write_var_primary
   use string_module, only: endswith, insert_val_into_string_int
   use crash_mod, only: warning, crash
@@ -63,6 +64,7 @@ module CSR_matrix_mod
       procedure, public  :: read_single_row        => read_single_row_CSR_dist
       procedure, public  :: finalise               => finalise_matrix_CSR_dist
       procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
+      procedure, public  :: save_as_NetCDF         => save_CSR_matrix_as_NetCDF
       procedure, public  :: write_to_NetCDF        => write_CSR_matrix_to_NetCDF
       procedure, public  :: write_to_dist_NetCDFs  => write_CSR_matrix_to_dist_NetCDFs
       procedure, public  :: read_from_dist_NetCDFs => read_CSR_matrix_from_dist_NetCDFs
@@ -521,6 +523,8 @@ contains
 
     end do ! do p = 1, par%n-1
 
+    if (par%primary) call A_tot%crop
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -649,6 +653,40 @@ contains
     end do
   end subroutine set_row_diag_to_val
 
+  subroutine save_CSR_matrix_as_NetCDF( A, output_dir, filename)
+    !< Save a CSR matrix as a NetCDF file
+
+    ! In- and output variables:
+    class(type_CSR_matrix_dp), intent(in) :: A                !< The CSR matrix
+    character(len=*),          intent(in) :: output_dir       !< The name of the output directory
+    character(len=*),          intent(in) :: filename         !< The name of the file
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'save_CSR_matrix_as_NetCDF'
+    character(len=:), allocatable :: filename_sans_nc, filename_with_nc, filename_including_output_dir
+    integer                       :: ncid
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (endswith( filename, '.nc', case_sensitive = .false.)) then
+      filename_sans_nc = filename( 1: len_trim( filename)-3)
+    else
+      filename_sans_nc = filename( 1: len_trim( filename))
+    end if
+    filename_with_nc = filename_sans_nc // '.nc'
+
+    filename_including_output_dir = trim( output_dir) // '/' // trim( filename_with_nc)
+
+    call create_new_netcdf_file_for_writing( filename_including_output_dir, ncid)
+    call write_CSR_matrix_to_NetCDF( A, filename_including_output_dir, ncid)
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_CSR_matrix_as_NetCDF
+
   subroutine write_CSR_matrix_to_NetCDF( A, filename, ncid)
     !< Write a CSR matrix to a NetCDF file (or a group therein)
 
@@ -670,11 +708,13 @@ contains
       call crash('A is not finalised')
     end if
 
+    call A%gather_to_primary( A_tot)
+
     ! Create dimensions
-    call create_dimension( filename, ncid, 'm'     , A%m  , id_dim_m  )
-    call create_dimension( filename, ncid, 'mplus1', A%m+1, id_dim_mp1)
-    call create_dimension( filename, ncid, 'n'     , A%n  , id_dim_n  )
-    call create_dimension( filename, ncid, 'nnz'   , A%nnz, id_dim_nnz)
+    call create_dimension( filename, ncid, 'm'     , A_tot%m  , id_dim_m  )
+    call create_dimension( filename, ncid, 'mplus1', A_tot%m+1, id_dim_mp1)
+    call create_dimension( filename, ncid, 'n'     , A_tot%n  , id_dim_n  )
+    call create_dimension( filename, ncid, 'nnz'   , A_tot%nnz, id_dim_nnz)
 
     ! Create variables
     call create_variable( filename, ncid, 'ptr', NF90_INT   , [id_dim_mp1], id_var_ptr)
@@ -682,21 +722,21 @@ contains
     call create_variable( filename, ncid, 'val', NF90_DOUBLE, [id_dim_nnz], id_var_val)
 
     ! Write variables
-    call A%gather_to_primary( A_tot)
-    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr              )
-    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
-    call write_var_primary( filename, ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
+    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr)
+    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind)
+    call write_var_primary( filename, ncid, id_var_val, A_tot%val)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine write_CSR_matrix_to_NetCDF
 
-  subroutine write_CSR_matrix_to_dist_NetCDFs( A, filename_base)
+  subroutine write_CSR_matrix_to_dist_NetCDFs( A, output_dir, filename_base)
     !< Write a CSR matrix to multiple NetCDF files (one for each process), including all the parallellisation info
 
     ! In- and output variables:
     class(type_CSR_matrix_dp), intent(in) :: A                !< The CSR matrix
+    character(len=*),          intent(in) :: output_dir       !< The name of the output directory
     character(len=*),          intent(in) :: filename_base    !< The name of the file
 
     ! Local variables:
@@ -722,7 +762,7 @@ contains
     end if
 
     filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
-    filename = insert_val_into_string_int( filename_template, '{proc}', par%i)
+    filename = trim( output_dir) // '/' // trim( insert_val_into_string_int( filename_template, '{proc}', par%i))
 
     ! Create a NetCDF file for each process
     call handle_netcdf_error( NF90_CREATE( filename, ior( NF90_NOCLOBBER, NF90_NETCDF4), ncid), filename = filename)
@@ -777,12 +817,13 @@ contains
 
   end subroutine write_CSR_matrix_to_dist_NetCDFs
 
-  subroutine read_CSR_matrix_from_dist_NetCDFs( A, filename_base)
+  subroutine read_CSR_matrix_from_dist_NetCDFs( A, foldername, filename_base)
     !< Read a CSR matrix from multiple NetCDF files (one for each process)
 
     ! In- and output variables:
     class(type_CSR_matrix_dp), intent(inout) :: A                !< The CSR matrix
-    character(len=*),          intent(in   ) :: filename_base    !< The name of the file
+    character(len=*),          intent(in   ) :: foldername       !< The name of the directory containing the NetCDF files
+    character(len=*),          intent(in   ) :: filename_base    !< The base name of the file
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'read_CSR_matrix_from_dist_NetCDFs'
@@ -805,7 +846,7 @@ contains
     end if
 
     filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
-    filename = insert_val_into_string_int( filename_template, '{proc}', par%i)
+    filename = trim( foldername) // '/' // trim( insert_val_into_string_int( filename_template, '{proc}', par%i))
 
     ! Check if this file actually exists
     inquire( exist = file_exists, file = trim( filename))

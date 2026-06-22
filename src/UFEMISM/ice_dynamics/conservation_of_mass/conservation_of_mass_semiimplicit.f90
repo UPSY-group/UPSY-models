@@ -146,8 +146,8 @@ contains
       bb( vi) = Hi( vi) - (dt * (1._dp - C%dHi_semiimplicit_fs) * divQ( vi)) + max( -1._dp * Hi( vi), dt * (fraction_margin( vi) * (SMB( vi) + BMB( vi) - dHi_dt_target( vi)) + LMB( vi)))
     end do
 
-    ! Take the current ice thickness plus the current thinning rate as the initial guess
-    Hi_tplusdt = Hi + dt * dHi_dt
+    ! Take the current ice thickness as the initial guess
+    Hi_tplusdt = Hi
 
     ! Apply boundary conditions
     call apply_ice_thickness_BC_matrix( mesh, mask_noice, Hb, SL, Hi_tplusdt_ex, AA, bb, Hi_tplusdt, BC_prescr_mask, BC_prescr_Hi)

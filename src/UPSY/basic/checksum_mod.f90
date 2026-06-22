@@ -487,7 +487,7 @@ contains
     character(len=*), intent(in) :: str
     if (par%primary) then
       ! Write to terminal
-      write(0,*) trim(str)
+      ! write(0,*) trim(str)
       ! Write to logfile
       write(unit_checksum_logfile,*) trim(str)
     end if

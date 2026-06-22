@@ -298,10 +298,6 @@ CONTAINS
     case ('ibicgstab')
       call KSPSetType( KSP_solver, KSPIBCGS, perr)
     case ('minres')
-      call KSPSetType( KSP_solver, KSPMINRES, perr)
-    case ('cr')
-      call KSPSetType( KSP_solver, KSPCR, perr)
-    case ('pipecr')
       call KSPSetType( KSP_solver, KSPPIPECR, perr)
     end select
 

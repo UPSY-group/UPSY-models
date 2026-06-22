@@ -153,8 +153,9 @@ contains
     call apply_ice_thickness_BC_matrix( mesh, mask_noice, Hb, SL, Hi_tplusdt_ex, AA, bb, Hi_tplusdt, BC_prescr_mask, BC_prescr_Hi)
 
     ! Solve for Hi_tplusdt
-    call solve_matrix_equation_CSR_PETSc( AA, bb, Hi_tplusdt, C%dHi_PETSc_rtol, C%dHi_PETSc_abstol, &
-      n_Axb_its)
+    call solve_matrix_equation_CSR_PETSc( AA, bb, Hi_tplusdt, &
+      C%dHi_PETSc_rtol, C%dHi_PETSc_abstol, n_Axb_its, &
+      PETSc_KSPtype = C%dHi_PETSc_KSPtype, PETSc_PCtype = C%dHi_PETSc_PCtype)
 
     ! Store the corresponding dH/dt in the artificial mass balance field
     AMB = (Hi_tplusdt - Hi) / dt

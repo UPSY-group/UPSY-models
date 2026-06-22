@@ -1,6 +1,6 @@
  -= Checksum logfile =-
-  Git commit hash        : f5682f540f053caa94b6912c1e7efd1aa099a7ba
-  has uncommitted changes:  F
+  Git commit hash        : fd68d0797d39a7a8002199f625887b6a8ab97d8a
+  has uncommitted changes:  T
   PETSc version          : 3.25.1
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10
@@ -68,12 +68,8 @@
  BMB%BMB_shelf: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
  BMB%BMB_sheet: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
  BMB%BMB_inv: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
- BMB%BMB_ref: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
  BMB%BMB_transition_phase: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
  BMB%BMB_modelled: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
- BMB%mask_floating_ice: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/initialise_model_region/initialise_BMB_model]
- BMB%mask_gl_fl: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/initialise_model_region/initialise_BMB_model]
- BMB%mask_gl_gr: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/initialise_model_region/initialise_BMB_model]
  LMB%LMB: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/initialise_LMB_model]
  climate%T2m: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_climate_model]
  climate%Precip: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_climate_model]
@@ -84,12 +80,8 @@
  BMB%BMB: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
  BMB%BMB_shelf: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
  BMB%BMB_inv: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
- BMB%BMB_ref: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
  BMB%BMB_transition_phase: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
  BMB%BMB_modelled: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
- BMB%mask_floating_ice: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/initialise_model_region/run_BMB_model]
- BMB%mask_gl_fl: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/initialise_model_region/run_BMB_model]
- BMB%mask_gl_gr: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/initialise_model_region/run_BMB_model]
  LMB%LMB: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/initialise_model_region/run_LMB_model]
  ice%Ti_pmp: sum = 0.88788469339324E+07, sum(abs) = 0.88788469339324E+07, min = 0.27185505765137E+03, max = 0.27316000000000E+03 [UFEMISM/initialise_model_region/initialise_thermodynamics_model/initialise_ice_temperature/initialise_ice_temperature_uniform/calc_pressure_melting_point]
  ice%Ti_hom: sum = -.62147423220772E+04, sum(abs) = 0.62147423220772E+04, min = -.27249156539426E+01, max = -.18550576513656E+01 [UFEMISM/initialise_model_region/initialise_thermodynamics_model/initialise_ice_temperature/initialise_ice_temperature_uniform/calc_homologous_temperature]
@@ -194,12 +186,8 @@
  BMB%BMB: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
  BMB%BMB_shelf: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
  BMB%BMB_inv: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
- BMB%BMB_ref: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
  BMB%BMB_transition_phase: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
  BMB%BMB_modelled: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
- BMB%mask_floating_ice: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/run_model(ANT)/run_BMB_model]
- BMB%mask_gl_fl: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/run_model(ANT)/run_BMB_model]
- BMB%mask_gl_gr: sum = 0, sum(abs) = 0, min = 0, max = 0 [UFEMISM/run_model(ANT)/run_BMB_model]
  LMB%LMB: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_LMB_model]
  region%GIA%relative_surface_load_mesh: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
  region%GIA%dHb_prev: sum = 0.00000000000000E+00, sum(abs) = 0.00000000000000E+00, min = 0.00000000000000E+00, max = 0.00000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]

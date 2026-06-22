@@ -308,6 +308,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: visc_it_relax_config                         = 0.2_dp                           ! Relaxation parameter for subsequent viscosity iterations (for improved stability)
     real(dp)            :: visc_eff_min_config                          = 1E4_dp                           ! Minimum value for effective viscosity
     real(dp)            :: vel_max_config                               = 5000._dp                         ! Velocities are limited to this value
+    character(len=1024) :: stress_balance_PETSc_KSPtype_config          = 'gmres'                          ! Which Krylov solver PETSc should use to solve the momentum balance
+    character(len=1024) :: stress_balance_PETSc_PCtype_config           = 'bjacobi'                        ! Which preconditioner PETSc should use
     real(dp)            :: stress_balance_PETSc_rtol_config             = 1E-7_dp                          ! PETSc solver - stop criterion, relative difference (iteration stops if rtol OR abstol is reached)
     real(dp)            :: stress_balance_PETSc_abstol_config           = 1E-5_dp                          ! PETSc solver - stop criterion, absolute difference
 
@@ -354,6 +356,8 @@ module model_configuration_type_and_namelist
     ! Calculation of dH/dt
     character(len=1024) :: choice_ice_integration_method_config         = 'semi-implicit'                  ! Choice of ice thickness integration scheme: "none" (i.e. unchanging geometry), "explicit", "semi-implicit"
     real(dp)            :: dHi_semiimplicit_fs_config                   = 1.5_dp                           ! Factor for the semi-implicit ice thickness solver (0 = explicit, 0<f<1 = semi-implicit, 1 = implicit, >1 = over-implicit)
+    character(len=1024) :: dHi_PETSc_KSPtype_config                     = 'gmres'                          ! Which Krylov solver PETSc should use to solve the mass continuity equation
+    character(len=1024) :: dHi_PETSc_PCtype_config                      = 'bjacobi'                        ! Which preconditioner PETSc should use
     real(dp)            :: dHi_PETSc_rtol_config                        = 1E-8_dp                          ! dHi PETSc solver - stop criterion, relative difference (iteration stops if rtol OR abstol is reached)
     real(dp)            :: dHi_PETSc_abstol_config                      = 1E-6_dp                          ! dHi PETSc solver - stop criterion, absolute difference
 
@@ -965,7 +969,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB_config                           = 0._dp
     real(dp)            :: uniform_BMB_ROI_config                       = 0._dp
-    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp               
+    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma_config                  = 99.32E-5
@@ -1547,6 +1551,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: visc_it_relax
     real(dp)            :: visc_eff_min
     real(dp)            :: vel_max
+    character(len=1024) :: stress_balance_PETSc_KSPtype
+    character(len=1024) :: stress_balance_PETSc_PCtype
     real(dp)            :: stress_balance_PETSc_rtol
     real(dp)            :: stress_balance_PETSc_abstol
 
@@ -1593,6 +1599,8 @@ module model_configuration_type_and_namelist
     ! Calculation of dH/dt
     character(len=1024) :: choice_ice_integration_method
     real(dp)            :: dHi_semiimplicit_fs
+    character(len=1024) :: dHi_PETSc_KSPtype
+    character(len=1024) :: dHi_PETSc_PCtype
     real(dp)            :: dHi_PETSc_rtol
     real(dp)            :: dHi_PETSc_abstol
 
@@ -2716,6 +2724,8 @@ contains
       visc_it_relax_config                                        , &
       visc_eff_min_config                                         , &
       vel_max_config                                              , &
+      stress_balance_PETSc_KSPtype_config                         , &
+      stress_balance_PETSc_PCtype_config                          , &
       stress_balance_PETSc_rtol_config                            , &
       stress_balance_PETSc_abstol_config                          , &
       BC_ice_front_config                                         , &
@@ -2744,6 +2754,8 @@ contains
       slid_delta_v_config                                         , &
       choice_ice_integration_method_config                        , &
       dHi_semiimplicit_fs_config                                  , &
+      dHi_PETSc_KSPtype_config                                    , &
+      dHi_PETSc_PCtype_config                                     , &
       dHi_PETSc_rtol_config                                       , &
       dHi_PETSc_abstol_config                                     , &
       BC_H_west_config                                            , &
@@ -3666,6 +3678,8 @@ contains
     C%visc_it_relax                                          = visc_it_relax_config
     C%visc_eff_min                                           = visc_eff_min_config
     C%vel_max                                                = vel_max_config
+    C%stress_balance_PETSc_KSPtype                           = stress_balance_PETSc_KSPtype_config
+    C%stress_balance_PETSc_PCtype                            = stress_balance_PETSc_PCtype_config
     C%stress_balance_PETSc_rtol                              = stress_balance_PETSc_rtol_config
     C%stress_balance_PETSc_abstol                            = stress_balance_PETSc_abstol_config
 
@@ -3712,6 +3726,8 @@ contains
     ! Calculation of dH/dt
     C%choice_ice_integration_method                          = choice_ice_integration_method_config
     C%dHi_semiimplicit_fs                                    = dHi_semiimplicit_fs_config
+    C%dHi_PETSc_KSPtype                                      = dHi_PETSc_KSPtype_config
+    C%dHi_PETSc_PCtype                                       = dHi_PETSc_PCtype_config
     C%dHi_PETSc_rtol                                         = dHi_PETSc_rtol_config
     C%dHi_PETSc_abstol                                       = dHi_PETSc_abstol_config
 

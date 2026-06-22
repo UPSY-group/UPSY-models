@@ -18,7 +18,6 @@ module SSA_main
   use constitutive_equation, only: calc_ice_rheology_Glen, calc_effective_viscosity_Glen_2D
   use mesh_zeta, only: vertical_average
   use mpi_distributed_memory, only: gather_to_all
-  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
   use SSA_DIVA_utilities, only: calc_driving_stress, calc_horizontal_strain_rates, relax_viscosity_iterations, &
     apply_velocity_limits, calc_L2_norm_uv

@@ -56,7 +56,7 @@ contains
     character(len=1024), parameter                       :: routine_name = 'accumulate_ISMIP_flux_fields'
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: gl_flux
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr, BMB_fl
     logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
     real( dp)                                            :: deltat
     integer                                              :: vi
@@ -85,15 +85,51 @@ contains
       end if
     end do
 
+    ! Determine BMB_gr and BMB_fl, dependent on subgrid scheme
+    select case (C%choice_BMB_subgrid)
+      case default
+        call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
+      case ('FCMP')
+        if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_gl_fl( vi)) then
+          BMB_fl( vi) = region%BMB%BMB_shelf( vi)
+          BMB_gr( vi) = 0._dp
+        elseif (region%ice%mask_grounded_ice( vi) .or. region%ice%mask_gl_gr( vi)) then
+          BMB_fl( vi) = 0._dp
+          BMB_gr( vi) = region%BMB%BMB_sheet( vi)
+        else
+          BMB_fl( vi) = 0._dp
+          BMB_gr( vi) = 0._dp
+        end if
+      case ('NMP')
+        if (region%ice%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
+          BMB_fl( vi) = region%BMB%BMB_shelf( vi)
+          BMB_gr( vi) = 0._dp
+        elseif (region%ice%fraction_gr( vi) > 0._dp) then
+          BMB_fl( vi) = 0._dp
+          BMB_gr( vi) = region%BMB%BMB_sheet( vi)
+        else
+          BMB_fl( vi) = 0._dp
+          BMB_gr( vi) = 0._dp
+        end if
+      case ('PMP')
+        if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_grounded_ice( vi)) then
+          BMB_fl( vi) = (1._dp - region%ice%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
+          BMB_gr( vi) = region%ice%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
+        else
+          BMB_fl( vi) = 0._dp
+          BMB_gr( vi) = 0._dp
+        end if
+    end select
+
     ! Get delta t since last current time
     deltat = region%time - region%ismip_output%t_curr
 
-    ! Accumulate regular FL fields. Exceptions:
+    ! Accumulate regular FL fields.
     call accumulate_single_ISMIP_flux_field( region, SMB_loc, mask_ice, deltat, &
       region%ismip_output%tendacabf, field = region%ismip_output%acabf)
-    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB_sheet, mask_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, BMB_gr, mask_ice, deltat, &
       region%ismip_output%tendlibmassbfgr, field = region%ismip_output%libmassbfgr)
-    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB_shelf, mask_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, BMB_fl, mask_ice, deltat, &
       region%ismip_output%tendlibmassbffl, field = region%ismip_output%libmassbffl)
     call accumulate_single_ISMIP_flux_field( region, calving_flux, mask_ice, deltat, &
       region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)

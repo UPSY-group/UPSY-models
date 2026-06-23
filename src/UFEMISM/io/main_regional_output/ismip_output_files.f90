@@ -262,7 +262,7 @@ contains
     call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, mask_b=mask_gr_b, vmin=0._dp)
 
     ! Lateral mass balance
-    call write_to_file_grid_FL( region, region%ismip_output%licalvf)
+    call write_to_file_grid_FL( region, region%ismip_output%licalvf, vmax=0._dp)
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions

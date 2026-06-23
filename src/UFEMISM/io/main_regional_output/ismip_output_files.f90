@@ -176,7 +176,7 @@ contains
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
     logical,  dimension(region%mesh%ti1:region%mesh%ti2) :: mask_gr_b
-    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav
+    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, TF
     real(dp), dimension(C%nz)                            :: d_zeta_temp
     integer                                              :: vi, ti
 
@@ -271,6 +271,17 @@ contains
     call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
     call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%fraction_margin - region%ice%fraction_gr, &
       vmin=0._dp, vmax=1._dp)
+
+    ! Other stuff
+    do vi = region%mesh%vi, region%mesh%vi2
+      ! Determine thermal forcing
+      if (C%choice_BMB_model_ANT == 'laddie') then
+        TF( vi) = BMB%laddie%T( vi) - BMB%laddie%T_freeze( vi)
+      else
+        TF( vi) = ocean%T_draft( vi) - ocean%T_freezing_point( vi)
+      end if
+    end do
+    call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%mask_floating_ice) 
 
     ! === Scalars ===
 
@@ -682,6 +693,9 @@ contains
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftgrf)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftflf)
 
+    ! Other stuff
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tfbase)
+
     ! === Scalars ===
 
     ! State
@@ -956,6 +970,10 @@ contains
       'Grounded ice sheet area fraction', 'grounded_ice_sheet_area_fraction', '1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%sftflf, 'sftflf' , &
       'Floating ice sheet area fraction', 'floating_ice_shelf_area_fraction', '1', 'ST')
+
+    ! Other stuff
+    call initialise_ISMIP_field( region, region%ismip_output%tfbase, 'tfbase' , &
+      'Thermal forcing under floating ice shelves', '', 'K', 'ST')
 
     ! === Scalars ===
 

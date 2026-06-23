@@ -100,6 +100,9 @@ module ismip_output_types
     type(type_ismip_gridded_field)    :: sftgrf       ! []         grounded_ice_sheet_area_fraction
     type(type_ismip_gridded_field)    :: sftflf       ! []         floating_ice_shelf_area_fraction
 
+    ! Other stuff
+    type(type_ismip_gridded_field)    :: tfbase       ! [K]        thermal_forcing
+
     ! === Scalars ===
 
     ! State variables

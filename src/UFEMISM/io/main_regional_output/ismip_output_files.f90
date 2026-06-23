@@ -18,7 +18,6 @@ module ismip_output_files
   use mpi_distributed_memory, only: gather_to_all
   use ismip_output_types, only: type_ismip_output, type_ismip_gridded_field, type_ismip_scalar
   use mesh_zeta, only: vertical_average
-  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
   use netcdf, only: NF90_GLOBAL, NF90_FILL_DOUBLE
   use reallocate_mod, only: reallocate_bounds
 
@@ -177,8 +176,8 @@ contains
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
     logical,  dimension(region%mesh%ti1:region%mesh%ti2) :: mask_gr_b
-    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdz_bot
-    real(dp), dimension(C%nz)                            :: dTdzeta, d_zeta_temp
+    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav
+    real(dp), dimension(C%nz)                            :: d_zeta_temp
     integer                                              :: vi, ti
 
     ! Add routine to path
@@ -250,20 +249,12 @@ contains
         d_zeta_temp = region%ice%Ti( vi, :)
         ! Compute vertical average
         T_vav( vi) = vertical_average( region%mesh%zeta, d_zeta_temp)
-        ! Compute vertical gradient wrt zeta
-        call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
-        ! Extract vertical gradient wrt height at the bottom
-        ! Set minimum thickness to 10m to avoid spurious gradients
-        dTdz_bot( vi) = -1._dp / max(10._dp,region%ice%Hi( vi)) * dTdzeta( region%mesh%nz)
       else
         ! No ice here, return NaN
         T_vav( vi) = NaN
-        dTdz_bot( vi) = NaN
       end if
     end do
     call write_to_file( region, region%ismip_output%litempavg,    inputfield_a=T_vav)
-    call write_to_file( region, region%ismip_output%litempgradgr, inputfield_a=dTdz_bot, mask_a=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempgradfl, inputfield_a=dTdz_bot, mask_a=region%ice%mask_floating_ice)
     call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_grounded_ice)
     call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_floating_ice)
 
@@ -674,8 +665,6 @@ contains
     ! Temperatures
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litemptop)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempavg)
-    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempgradgr)
-    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempgradfl)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempbotgr)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempbotfl)
 
@@ -941,12 +930,6 @@ contains
       'Surface temperature', 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempavg, 'litempavg' , &
       'Depth average temperature', 'land_ice_temperature', 'K', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_output%litempgradgr, 'litempgradgr' , &
-      'Vertical Basal temperature gradient beneath grounded ice sheet', &
-      'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_output%litempgradfl, 'litempgradfl' , &
-      'Vertical Basal temperature gradient beneath floating ice sheet', &
-      'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempbotgr, 'litempbotgr' , &
       'Basal temperature beneath grounded ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempbotfl, 'litempbotfl' , &

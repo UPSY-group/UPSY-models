@@ -18,7 +18,6 @@ module ismip_output_files
   use mpi_distributed_memory, only: gather_to_all
   use ismip_output_types, only: type_ismip_output, type_ismip_gridded_field, type_ismip_scalar
   use mesh_zeta, only: vertical_average
-  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
   use netcdf, only: NF90_GLOBAL, NF90_FILL_DOUBLE
   use reallocate_mod, only: reallocate_bounds
 
@@ -57,7 +56,7 @@ contains
     character(len=1024), parameter                       :: routine_name = 'accumulate_ISMIP_flux_fields'
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: gl_flux
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr, BMB_fl
     logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
     real( dp)                                            :: deltat
     integer                                              :: vi
@@ -86,20 +85,58 @@ contains
       end if
     end do
 
+    ! Determine BMB_gr and BMB_fl, dependent on subgrid scheme
+    do vi = region%mesh%vi1, region%mesh%vi2
+      select case (C%choice_BMB_subgrid)
+        case default
+          call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
+        case ('FCMP')
+          if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_gl_fl( vi)) then
+            BMB_fl( vi) = region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = 0._dp
+          elseif (region%ice%mask_grounded_ice( vi) .or. region%ice%mask_gl_gr( vi)) then
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = region%BMB%BMB_sheet( vi)
+          else
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = 0._dp
+          end if
+        case ('NMP')
+          if (region%ice%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
+            BMB_fl( vi) = region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = 0._dp
+          elseif (region%ice%fraction_gr( vi) > 0._dp) then
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = region%BMB%BMB_sheet( vi)
+          else
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = 0._dp
+          end if
+        case ('PMP')
+          if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_grounded_ice( vi)) then
+            BMB_fl( vi) = (1._dp - region%ice%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = region%ice%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
+          else
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = 0._dp
+          end if
+      end select
+    end do
+
     ! Get delta t since last current time
     deltat = region%time - region%ismip_output%t_curr
 
-    ! Accumulate regular FL fields. Exceptions:
+    ! Accumulate regular FL fields.
     call accumulate_single_ISMIP_flux_field( region, SMB_loc, mask_ice, deltat, &
       region%ismip_output%tendacabf, field = region%ismip_output%acabf)
-    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB, region%ice%mask_grounded_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, BMB_gr, mask_ice, deltat, &
       region%ismip_output%tendlibmassbfgr, field = region%ismip_output%libmassbfgr)
-    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB, region%ice%mask_floating_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, BMB_fl, mask_ice, deltat, &
       region%ismip_output%tendlibmassbffl, field = region%ismip_output%libmassbffl)
     call accumulate_single_ISMIP_flux_field( region, calving_flux, mask_ice, deltat, &
       region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)
-    call accumulate_single_ISMIP_flux_field( region, gl_flux, mask_ice, deltat, &
-      region%ismip_output%tendligroundf)
+    call accumulate_single_ISMIP_flux_field( region, -gl_flux, mask_ice, deltat, &
+      region%ismip_output%tendligroundf, field = region%ismip_output%ligroundf)
 
     ! === Exceptions ===
     ! Geothermal heat flux: Store snapshot in accum
@@ -177,8 +214,8 @@ contains
     character(len=1024), parameter                       :: routine_name = 'write_to_ISMIP_regional_output_files'
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: mask_ice_a
     logical,  dimension(region%mesh%ti1:region%mesh%ti2) :: mask_gr_b
-    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, dTdz_bot
-    real(dp), dimension(C%nz)                            :: dTdzeta, d_zeta_temp
+    real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, TF
+    real(dp), dimension(C%nz)                            :: d_zeta_temp
     integer                                              :: vi, ti
 
     ! Add routine to path
@@ -250,20 +287,12 @@ contains
         d_zeta_temp = region%ice%Ti( vi, :)
         ! Compute vertical average
         T_vav( vi) = vertical_average( region%mesh%zeta, d_zeta_temp)
-        ! Compute vertical gradient wrt zeta
-        call multiply_CSR_matrix_with_vector_local( region%mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta)
-        ! Extract vertical gradient wrt height at the bottom
-        ! Set minimum thickness to 10m to avoid spurious gradients
-        dTdz_bot( vi) = -1._dp / max(10._dp,region%ice%Hi( vi)) * dTdzeta( region%mesh%nz)
       else
         ! No ice here, return NaN
         T_vav( vi) = NaN
-        dTdz_bot( vi) = NaN
       end if
     end do
     call write_to_file( region, region%ismip_output%litempavg,    inputfield_a=T_vav)
-    call write_to_file( region, region%ismip_output%litempgradgr, inputfield_a=dTdz_bot, mask_a=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempgradfl, inputfield_a=dTdz_bot, mask_a=region%ice%mask_floating_ice)
     call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_grounded_ice)
     call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_floating_ice)
 
@@ -271,7 +300,8 @@ contains
     call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, mask_b=mask_gr_b, vmin=0._dp)
 
     ! Lateral mass balance
-    call write_to_file_grid_FL( region, region%ismip_output%licalvf)
+    call write_to_file_grid_FL( region, region%ismip_output%licalvf, vmax=0._dp)
+    call write_to_file_grid_FL( region, region%ismip_output%ligroundf, vmin=0._dp)
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
@@ -279,6 +309,17 @@ contains
     call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
     call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%fraction_margin - region%ice%fraction_gr, &
       vmin=0._dp, vmax=1._dp)
+
+    ! Other stuff
+    do vi = region%mesh%vi1, region%mesh%vi2
+      ! Determine thermal forcing
+      if (C%choice_BMB_model_ANT == 'laddie') then
+        TF( vi) = region%BMB%laddie%now%T( vi) - region%BMB%laddie%T_freeze( vi)
+      else
+        TF( vi) = region%ocean%T_draft( vi) - region%ocean%T_freezing_point( vi)
+      end if
+    end do
+    call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%mask_floating_ice) 
 
     ! === Scalars ===
 
@@ -352,13 +393,6 @@ contains
     ! Map from mesh to grid
     call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
 
-    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
-    allocate( mask_grid( region%output_grid%n_loc ))
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
-    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
-      d_grid_vec_partial_2D = NF90_FILL_DOUBLE
-    end where
-
     ! Enforce bounds
     if (present( vmin)) then
       d_grid_vec_partial_2D = max(vmin, d_grid_vec_partial_2D)
@@ -366,6 +400,13 @@ contains
     if (present( vmax)) then
       d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
     end if
+
+    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
+    allocate( mask_grid( region%output_grid%n_loc ))
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
+    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
+      d_grid_vec_partial_2D = NF90_FILL_DOUBLE
+    end where
 
     ! Write gridded field to file
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
@@ -674,8 +715,6 @@ contains
     ! Temperatures
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litemptop)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempavg)
-    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempgradgr)
-    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempgradfl)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempbotgr)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%litempbotfl)
 
@@ -684,12 +723,16 @@ contains
 
     ! Lateral mass balance
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%licalvf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%ligroundf)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%lifmassbf)
 
     ! Area fractions
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftgif)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftgrf)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%sftflf)
+
+    ! Other stuff
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%tfbase)
 
     ! === Scalars ===
 
@@ -861,7 +904,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'initialise_ISMIP_output'
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr_loc, BMB_fl_loc, CF_loc, GL_loc
     integer                                              :: vi
 
     ! Add routine to path
@@ -886,6 +928,9 @@ contains
     region%ismip_output%t_prev = C%start_time_of_run
     region%ismip_output%t_curr = C%start_time_of_run
 
+    ! Define the name of the subfolder
+    region%ismip_output%folder = trim( C%output_dir) // trim(C%ismip_counter) // '/'
+
     ! Basic topography
     call initialise_ISMIP_field( region, region%ismip_output%lithk, 'lithk', 'Ice thickness', 'land_ice_thickness', 'm', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%orog,  'orog' , 'Surface elevation', 'surface_altitude', 'm', 'ST')
@@ -897,16 +942,9 @@ contains
       'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
-    SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
     call initialise_ISMIP_field( region, region%ismip_output%acabf, 'acabf' , &
       'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
-    BMB_gr_loc( :) = 0._dp
-    BMB_fl_loc( :) = 0._dp
-    do vi = region%mesh%vi1, region%mesh%vi2
-      if (region%ice%mask_grounded_ice( vi)) BMB_gr_loc( vi) = region%BMB%BMB( vi)
-      if (region%ice%mask_floating_ice( vi)) BMB_fl_loc( vi) = region%BMB%BMB( vi)
-    end do
     call initialise_ISMIP_field( region, region%ismip_output%libmassbfgr, 'libmassbfgr' , &
       'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%libmassbffl, 'libmassbffl' , &
@@ -941,12 +979,6 @@ contains
       'Surface temperature', 'temperature_at_top_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempavg, 'litempavg' , &
       'Depth average temperature', 'land_ice_temperature', 'K', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_output%litempgradgr, 'litempgradgr' , &
-      'Vertical Basal temperature gradient beneath grounded ice sheet', &
-      'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
-    call initialise_ISMIP_field( region, region%ismip_output%litempgradfl, 'litempgradfl' , &
-      'Vertical Basal temperature gradient beneath floating ice sheet', &
-      'temperature_gradient_at_base_of_ice_sheet_model', 'K m-1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempbotgr, 'litempbotgr' , &
       'Basal temperature beneath grounded ice', 'temperature_at_base_of_ice_sheet_model', 'K', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%litempbotfl, 'litempbotfl' , &
@@ -959,6 +991,8 @@ contains
     ! Lateral mass balance
     call initialise_ISMIP_field( region, region%ismip_output%licalvf, 'licalvf' , &
       'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%ligroundf, 'ligroundf' , &
+      'Calving flux', 'land_ice_specific_grounding_line_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%lifmassbf,   'lifmassbf' , &
       'Ice front melt flux', 'land_ice_specific_mass_flux_due_to_ice_front_melting', 'kg m-2 s-1', 'FL')
 
@@ -969,6 +1003,10 @@ contains
       'Grounded ice sheet area fraction', 'grounded_ice_sheet_area_fraction', '1', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%sftflf, 'sftflf' , &
       'Floating ice sheet area fraction', 'floating_ice_shelf_area_fraction', '1', 'ST')
+
+    ! Other stuff
+    call initialise_ISMIP_field( region, region%ismip_output%tfbase, 'tfbase' , &
+      'Thermal forcing under floating ice shelves', '', 'K', 'ST')
 
     ! === Scalars ===
 
@@ -1031,9 +1069,6 @@ contains
     write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
-    ! Define the name of the subfolder
-    region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'
-
     ! Define the filename for this field
     field%filename = trim( region%ismip_output%folder) // trim(field%name) // '_' // &
       trim(region%ismip_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
@@ -1085,9 +1120,6 @@ contains
     write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
-    ! Define the name of the subfolder
-    region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'
-
     ! Define the filename for this field
     scalar%filename = trim( region%ismip_output%folder) // trim(scalar%name) // '_' // &
       trim(region%ismip_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
@@ -1127,6 +1159,7 @@ contains
     call reallocate_bounds( ismip_output%libmassbfgr%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%libmassbffl%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%licalvf%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_output%ligroundf%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%lifmassbf%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
 

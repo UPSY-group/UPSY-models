@@ -263,7 +263,7 @@ contains
 
     ! Lateral mass balance
     call write_to_file_grid_FL( region, region%ismip_output%licalvf, vmax=0._dp)
-    call write_to_file_grid_FL( region, region%ismip_output%ligroundf)
+    call write_to_file_grid_FL( region, region%ismip_output%ligroundf, vmin=0._dp)
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions

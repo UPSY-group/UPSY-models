@@ -355,13 +355,6 @@ contains
     ! Map from mesh to grid
     call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
 
-    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
-    allocate( mask_grid( region%output_grid%n_loc ))
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
-    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
-      d_grid_vec_partial_2D = NF90_FILL_DOUBLE
-    end where
-
     ! Enforce bounds
     if (present( vmin)) then
       d_grid_vec_partial_2D = max(vmin, d_grid_vec_partial_2D)
@@ -369,6 +362,13 @@ contains
     if (present( vmax)) then
       d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
     end if
+
+    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
+    allocate( mask_grid( region%output_grid%n_loc ))
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
+    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid < 0.5_dp))
+      d_grid_vec_partial_2D = NF90_FILL_DOUBLE
+    end where
 
     ! Write gridded field to file
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)

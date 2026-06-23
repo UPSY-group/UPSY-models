@@ -928,6 +928,9 @@ contains
     region%ismip_output%t_prev = C%start_time_of_run
     region%ismip_output%t_curr = C%start_time_of_run
 
+    ! Define the name of the subfolder
+    region%ismip_output%folder = trim( C%output_dir) // trim(C%ismip_counter) // '/'
+
     ! Basic topography
     call initialise_ISMIP_field( region, region%ismip_output%lithk, 'lithk', 'Ice thickness', 'land_ice_thickness', 'm', 'ST')
     call initialise_ISMIP_field( region, region%ismip_output%orog,  'orog' , 'Surface elevation', 'surface_altitude', 'm', 'ST')
@@ -1066,9 +1069,6 @@ contains
     write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
 
-    ! Define the name of the subfolder
-    region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'
-
     ! Define the filename for this field
     field%filename = trim( region%ismip_output%folder) // trim(field%name) // '_' // &
       trim(region%ismip_output%IS_name) // '_' // trim(C%ismip_group_name) // '_' // &
@@ -1119,9 +1119,6 @@ contains
     ! Offset end_year of 1 year to indicate last completed year
     write(start_year, '(I4)') int(C%start_time_of_run)
     write(end_year, '(I4)') int(C%end_time_of_run - 1)
-
-    ! Define the name of the subfolder
-    region%ismip_output%folder = trim( C%output_dir) // 'CORE' // '/'
 
     ! Define the filename for this field
     scalar%filename = trim( region%ismip_output%folder) // trim(scalar%name) // '_' // &

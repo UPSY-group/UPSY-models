@@ -86,40 +86,42 @@ contains
     end do
 
     ! Determine BMB_gr and BMB_fl, dependent on subgrid scheme
-    select case (C%choice_BMB_subgrid)
-      case default
-        call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
-      case ('FCMP')
-        if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_gl_fl( vi)) then
-          BMB_fl( vi) = region%BMB%BMB_shelf( vi)
-          BMB_gr( vi) = 0._dp
-        elseif (region%ice%mask_grounded_ice( vi) .or. region%ice%mask_gl_gr( vi)) then
-          BMB_fl( vi) = 0._dp
-          BMB_gr( vi) = region%BMB%BMB_sheet( vi)
-        else
-          BMB_fl( vi) = 0._dp
-          BMB_gr( vi) = 0._dp
-        end if
-      case ('NMP')
-        if (region%ice%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
-          BMB_fl( vi) = region%BMB%BMB_shelf( vi)
-          BMB_gr( vi) = 0._dp
-        elseif (region%ice%fraction_gr( vi) > 0._dp) then
-          BMB_fl( vi) = 0._dp
-          BMB_gr( vi) = region%BMB%BMB_sheet( vi)
-        else
-          BMB_fl( vi) = 0._dp
-          BMB_gr( vi) = 0._dp
-        end if
-      case ('PMP')
-        if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_grounded_ice( vi)) then
-          BMB_fl( vi) = (1._dp - region%ice%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
-          BMB_gr( vi) = region%ice%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
-        else
-          BMB_fl( vi) = 0._dp
-          BMB_gr( vi) = 0._dp
-        end if
-    end select
+    do vi = region%mesh%vi1, region%mesh%vi2
+      select case (C%choice_BMB_subgrid)
+        case default
+          call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
+        case ('FCMP')
+          if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_gl_fl( vi)) then
+            BMB_fl( vi) = region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = 0._dp
+          elseif (region%ice%mask_grounded_ice( vi) .or. region%ice%mask_gl_gr( vi)) then
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = region%BMB%BMB_sheet( vi)
+          else
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = 0._dp
+          end if
+        case ('NMP')
+          if (region%ice%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
+            BMB_fl( vi) = region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = 0._dp
+          elseif (region%ice%fraction_gr( vi) > 0._dp) then
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = region%BMB%BMB_sheet( vi)
+          else
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = 0._dp
+          end if
+        case ('PMP')
+          if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_grounded_ice( vi)) then
+            BMB_fl( vi) = (1._dp - region%ice%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = region%ice%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
+          else
+            BMB_fl( vi) = 0._dp
+            BMB_gr( vi) = 0._dp
+          end if
+      end select
+    end do
 
     ! Get delta t since last current time
     deltat = region%time - region%ismip_output%t_curr

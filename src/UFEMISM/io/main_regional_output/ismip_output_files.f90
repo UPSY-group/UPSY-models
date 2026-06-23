@@ -273,12 +273,12 @@ contains
       vmin=0._dp, vmax=1._dp)
 
     ! Other stuff
-    do vi = region%mesh%vi, region%mesh%vi2
+    do vi = region%mesh%vi1, region%mesh%vi2
       ! Determine thermal forcing
       if (C%choice_BMB_model_ANT == 'laddie') then
-        TF( vi) = BMB%laddie%T( vi) - BMB%laddie%T_freeze( vi)
+        TF( vi) = region%BMB%laddie%now%T( vi) - region%BMB%laddie%T_freeze( vi)
       else
-        TF( vi) = ocean%T_draft( vi) - ocean%T_freezing_point( vi)
+        TF( vi) = region%ocean%T_draft( vi) - region%ocean%T_freezing_point( vi)
       end if
     end do
     call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%mask_floating_ice) 

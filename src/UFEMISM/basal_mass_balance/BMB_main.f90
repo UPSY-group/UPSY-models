@@ -165,6 +165,19 @@ CONTAINS
       CASE ('inverted')
         CALL run_BMB_model_inverted( mesh, ice, BMB%inv, time)
         BMB%BMB = BMB%inv%BMB
+        ! Separate into BMB_sheet and BMB_shelf for scalar diagnostics
+        do vi = mesh%vi1, mesh%vi2
+          if (ice%mask_floating_ice( vi)) then
+            BMB%BMB_shelf( vi) = BMB%BMB( vi)
+          else
+            BMB%BMB_shelf( vi) = 0._dp
+          end if
+          if (ice%mask_grounded_ice( vi)) then
+            BMB%BMB_sheet( vi) = BMB%BMB( vi)
+          else
+            BMB%BMB_sheet( vi) = 0._dp
+          end if
+        end do
       CASE ('laddie_py')
         CALL run_BMB_model_laddie( mesh, ice, BMB, time, .FALSE.)
       case ('laddie')

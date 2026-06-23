@@ -91,9 +91,9 @@ contains
     ! Accumulate regular FL fields. Exceptions:
     call accumulate_single_ISMIP_flux_field( region, SMB_loc, mask_ice, deltat, &
       region%ismip_output%tendacabf, field = region%ismip_output%acabf)
-    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB, region%ice%mask_grounded_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB_sheet, mask_ice, deltat, &
       region%ismip_output%tendlibmassbfgr, field = region%ismip_output%libmassbfgr)
-    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB, region%ice%mask_floating_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, region%BMB%BMB_shelf, mask_ice, deltat, &
       region%ismip_output%tendlibmassbffl, field = region%ismip_output%libmassbffl)
     call accumulate_single_ISMIP_flux_field( region, calving_flux, mask_ice, deltat, &
       region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)
@@ -866,7 +866,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'initialise_ISMIP_output'
-    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr_loc, BMB_fl_loc, CF_loc, GL_loc
     integer                                              :: vi
 
     ! Add routine to path
@@ -902,16 +901,9 @@ contains
       'Geothermal heat flux', 'upward_geothermal_heat_flux_in_land_ice', 'W m-2', 'FL')
 
     ! Surface and basal mass balances
-    SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
     call initialise_ISMIP_field( region, region%ismip_output%acabf, 'acabf' , &
       'Surface mass balance flux', 'land_ice_surface_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
 
-    BMB_gr_loc( :) = 0._dp
-    BMB_fl_loc( :) = 0._dp
-    do vi = region%mesh%vi1, region%mesh%vi2
-      if (region%ice%mask_grounded_ice( vi)) BMB_gr_loc( vi) = region%BMB%BMB( vi)
-      if (region%ice%mask_floating_ice( vi)) BMB_fl_loc( vi) = region%BMB%BMB( vi)
-    end do
     call initialise_ISMIP_field( region, region%ismip_output%libmassbfgr, 'libmassbfgr' , &
       'Basal mass balance flux beneath grounded ice', 'land_ice_basal_specific_mass_balance_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%libmassbffl, 'libmassbffl' , &

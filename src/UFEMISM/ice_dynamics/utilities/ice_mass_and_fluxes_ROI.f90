@@ -230,17 +230,19 @@ contains
         scalars%BMB_total = scalars%BMB_total + BMB%BMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
         scalars%LMB_total = scalars%LMB_total + LMB%LMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
 
+        ! BMB, before subgrid scheme is applied
+        scalars%BMB_gr = scalars%BMB_gr + BMB%BMB_sheet( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        scalars%BMB_fl = scalars%BMB_fl + BMB%BMB_shelf( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+
         ! Over grounded ice
         if (ice%mask_grounded_ice( vi)) then
           scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
-          scalars%BMB_gr = scalars%BMB_gr + BMB%BMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
           scalars%LMB_gr = scalars%LMB_gr + LMB%LMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Over floating ice
         if (ice%mask_floating_ice( vi)) then
           scalars%SMB_fl = scalars%SMB_fl + SMB%SMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
-          scalars%BMB_fl = scalars%BMB_fl + BMB%BMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
           scalars%LMB_fl = scalars%LMB_fl + LMB%LMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]
         end if
 

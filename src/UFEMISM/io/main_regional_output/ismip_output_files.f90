@@ -98,7 +98,7 @@ contains
     call accumulate_single_ISMIP_flux_field( region, calving_flux, mask_ice, deltat, &
       region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)
     call accumulate_single_ISMIP_flux_field( region, gl_flux, mask_ice, deltat, &
-      region%ismip_output%tendligroundf)
+      region%ismip_output%tendligroundf, field = region%ismip_output%ligroundf)
 
     ! === Exceptions ===
     ! Geothermal heat flux: Store snapshot in accum
@@ -263,6 +263,7 @@ contains
 
     ! Lateral mass balance
     call write_to_file_grid_FL( region, region%ismip_output%licalvf, vmax=0._dp)
+    call write_to_file_grid_FL( region, region%ismip_output%ligroundf)
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
@@ -673,6 +674,7 @@ contains
 
     ! Lateral mass balance
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%licalvf)
+    call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%ligroundf)
     call create_single_ISMIP_regional_output_file( region%ismip_output, region%ismip_output%lifmassbf)
 
     ! Area fractions
@@ -942,6 +944,8 @@ contains
     ! Lateral mass balance
     call initialise_ISMIP_field( region, region%ismip_output%licalvf, 'licalvf' , &
       'Calving flux', 'land_ice_specific_mass_flux_due_to_calving', 'kg m-2 s-1', 'FL')
+    call initialise_ISMIP_field( region, region%ismip_output%ligroundf, 'ligroundf' , &
+      'Calving flux', 'land_ice_specific_grounding_line_flux', 'kg m-2 s-1', 'FL')
     call initialise_ISMIP_field( region, region%ismip_output%lifmassbf,   'lifmassbf' , &
       'Ice front melt flux', 'land_ice_specific_mass_flux_due_to_ice_front_melting', 'kg m-2 s-1', 'FL')
 
@@ -1110,6 +1114,7 @@ contains
     call reallocate_bounds( ismip_output%libmassbfgr%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%libmassbffl%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%licalvf%accum, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ismip_output%ligroundf%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%lifmassbf%accum, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( ismip_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
 

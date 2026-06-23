@@ -97,7 +97,7 @@ contains
       region%ismip_output%tendlibmassbffl, field = region%ismip_output%libmassbffl)
     call accumulate_single_ISMIP_flux_field( region, calving_flux, mask_ice, deltat, &
       region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)
-    call accumulate_single_ISMIP_flux_field( region, gl_flux, mask_ice, deltat, &
+    call accumulate_single_ISMIP_flux_field( region, -gl_flux, mask_ice, deltat, &
       region%ismip_output%tendligroundf, field = region%ismip_output%ligroundf)
 
     ! === Exceptions ===

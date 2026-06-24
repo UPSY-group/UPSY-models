@@ -392,10 +392,10 @@ contains
 
     do i_ROI=1, region%nROI
 
-      n_mem = region%scalars%buffer%n_mem * 2
-      region%scalars%buffer%n_mem = n_mem
+      n_mem = region%scalars_ROI(i_ROI)%buffer%n_mem * 2
+      region%scalars_ROI(i_ROI)%buffer%n_mem = n_mem
 
-      call reallocate( region%scalars%buffer%time             , n_mem, source = 0._dp)
+      call reallocate( region%scalars_ROI(i_ROI)%buffer%time             , n_mem, source = 0._dp)
 
       call reallocate( region%scalars_ROI(i_ROI)%buffer%ice_area         , n_mem, source = 0._dp)
       call reallocate( region%scalars_ROI(i_ROI)%buffer%ice_volume       , n_mem, source = 0._dp)

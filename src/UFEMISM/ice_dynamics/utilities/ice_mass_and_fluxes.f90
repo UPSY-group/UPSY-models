@@ -528,9 +528,18 @@ contains
           end if
 
           ! Grounding line (grounded side)
-          if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
-            gl_flux( vi) = gl_flux( vi) - L_c * max(0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
+          if (ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
+            if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) / A_i ! [m/yr]
+            elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) / A_i ! [m/yr]
+            end if
           end if
+
+          ! Grounding line (positive only)
+          !if (fraction_margin_tot( vi) >= 1._dp .and. ice%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
+          !  gl_flux( vi) = gl_flux( vi) - L_c * max(0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
+          !end if
 
         end do ! do ci = 1, mesh%nC( vi)
 

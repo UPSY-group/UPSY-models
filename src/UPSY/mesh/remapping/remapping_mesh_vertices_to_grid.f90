@@ -34,10 +34,10 @@ contains
     ! By default uses 2nd-order conservative remapping.
 
     ! In/output variables
-    type(type_mesh),            intent(in   ) :: mesh
-    type(type_grid),            intent(in   ) :: grid
-    character(len=*),           intent(in   ) :: output_dir
-    type(type_map),             intent(inout) :: map
+    type(type_mesh),  intent(in   ) :: mesh
+    type(type_grid),  intent(in   ) :: grid
+    character(len=*), intent(in   ) :: output_dir
+    type(type_map),   intent(inout) :: map
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'create_map_from_mesh_vertices_to_xy_grid'
@@ -516,7 +516,7 @@ contains
     call MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M1, perr)
     call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
 
-    ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b)
+    ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
     call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
     call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
 

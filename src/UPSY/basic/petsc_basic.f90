@@ -23,6 +23,7 @@ MODULE petsc_basic
     mat_CSR2petsc, mat_petsc2CSR, multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
 
   INTEGER :: perr    ! Error flag for PETSc routines
+  character(len=:), allocatable :: PETSc_KSPtype_printed, PETSc_PCtype_printed
 
 CONTAINS
 
@@ -90,17 +91,17 @@ CONTAINS
     call init_routine( routine_name)
 
     ! Optional arguments
-!    if (present( PETSc_KSPtype)) then
-!      PETSc_KSPtype_ = PETSc_KSPtype
-!    else
-      PETSc_KSPtype_ = 'default'
-!    end if
+    if (present( PETSc_KSPtype)) then
+      PETSc_KSPtype_ = PETSc_KSPtype
+    else
+      PETSc_KSPtype_ = 'gmres'
+    end if
 
-!    if (present( PETSc_PCtype)) then
-!      PETSc_PCtype_ = PETSc_PCtype
-!    else
-      PETSc_PCtype_ = 'nothing'
-!    end if
+    if (present( PETSc_PCtype)) then
+      PETSc_PCtype_ = PETSc_PCtype
+    else
+      PETSc_PCtype_ = 'bjacobi'
+    end if
 
     ! Safety
     call MatGetSize( A, m, n, perr)
@@ -133,62 +134,51 @@ CONTAINS
     select case (PETSc_KSPtype_)
     case default
       call crash('unknown PETSc_KSPtype "' // trim( PETSc_KSPtype_) // '"')
-    case ('default')
-      ! Don't manually set anything, just use whatever type of solver PETSc uses by default
     case ('gmres')
       call KSPSetType( KSP_solver, KSPGMRES, perr)
+    case ('lgmres')
+      call KSPSetType( KSP_solver, KSPLGMRES, perr)
+    case ('fgmres')
+      call KSPSetType( KSP_solver, KSPFGMRES, perr)
     case ('pipegmres')
       call KSPSetType( KSP_solver, KSPPGMRES, perr)
-    case ('cg')
-      call KSPSetType( KSP_solver, KSPCG, perr)
-    case ('pipecg')
-      call KSPSetType( KSP_solver, KSPPIPECG, perr)
     case ('bicg')
       call KSPSetType( KSP_solver, KSPBICG, perr)
     case ('bicgstab')
       call KSPSetType( KSP_solver, KSPBCGS, perr)
     case ('ibicgstab')
       call KSPSetType( KSP_solver, KSPIBCGS, perr)
-    case ('minres')
-      call KSPSetType( KSP_solver, KSPMINRES, perr)
-    case ('cr')
-      call KSPSetType( KSP_solver, KSPCR, perr)
-    case ('pipecr')
-      call KSPSetType( KSP_solver, KSPPIPECR, perr)
     end select
 
-    ! Make sure PETSc knows we're starting from an initial guess
-!    call KSPSetInitialGuessNonzero( KSP_solver, .true., perr)
-
-    ! Iterative solver tolerances
-    call KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 2000, perr)
-
     ! Set preconditioner
-!    call KSPGetPC( KSP_solver, precond, perr)
+    call KSPGetPC( KSP_solver, precond, perr)
     select case (PETSc_PCtype_)
     case default
       call crash('unknown PETSc_PCtype "' // trim( PETSc_PCtype_) // '"')
-    case ('nothing')
-      ! Don't use a preconditioner at all (is this the same as PCNONE?)
-    case ('bjacobi') ! Works just as good as gasm
+    case ('bjacobi')
       call PCSetType( precond, PCBJACOBI, perr)
     case ('asm')
       call PCSetType( precond, PCASM, perr)
+    case ('gasm')
+      call PCSetType( precond, PCGASM, perr)
     case ('gamg')
       call PCSetType( precond, PCGAMG, perr)
-    case ('gasm') !  Works good
-      call PCSetType( precond, PCGASM, perr)
-    case ('jacobi') ! Works as good, but with 2x more iterations
-      call PCSetType( precond, PCJACOBI, perr)
     case ('none')
       call PCSetType( precond, PCNONE, perr)
     end select
+
+    ! Make sure PETSc knows we're starting from an initial guess
+    call KSPSetInitialGuessNonzero( KSP_solver, PETSC_TRUE, perr)
+
+    ! Iterative solver tolerances
+    call KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 1000, perr)
 
     ! Set runtime options, e.g.,
     !     -ksp_type <type> -pc_type <type> -ksp_monitor -ksp_rtol <rtol>
     ! These options will override those specified above as long as
     ! KSPSetFromOptions() is called _after_ any other customization routines.
     call KSPSetFromOptions( KSP_solver, perr)
+    call print_PETSc_KSP_PC_type( KSP_solver, precond)
 
     ! == Solve Ax=b
     ! =============
@@ -211,6 +201,66 @@ CONTAINS
     call finalise_routine( routine_name)
 
   end subroutine solve_matrix_equation_PETSc
+
+  subroutine print_PETSc_KSP_PC_type( KSP_solver, precond)
+    ! Query which KSP and PC we're actually using, and tell the user
+
+    ! In/output variables:
+    type(tKSP), intent(in) :: KSP_solver
+    type(tPC),  intent(in) :: precond
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'solve_matrix_equation_PETSc'
+    character(len=1024)            :: PETSc_KSPtype_applied, PETSc_PCtype_applied
+    logical                        :: do_print_KSP, do_print_PC
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! KSP solver
+    call KSPGetType( KSP_solver, PETSc_KSPtype_applied, perr)
+
+    do_print_KSP = .false.
+    if (.not. allocated( PETSc_KSPtype_printed)) then
+      do_print_KSP = .true.
+      PETSc_KSPtype_printed = trim( PETSc_KSPtype_applied)
+    else
+      ! Maybe the KSP type has changed; check for this
+      if (trim( PETSc_KSPtype_applied) /= PETSc_KSPtype_printed) then
+        deallocate( PETSc_KSPtype_printed)
+        do_print_KSP = .true.
+        PETSc_KSPtype_printed = trim( PETSc_KSPtype_applied)
+      end if
+    end if
+
+    if (do_print_KSP .and. par%primary) then
+      write(0,*) '  Using PETSc KSP solver ', colour_string( PETSc_KSPtype_printed, 'light blue')
+    end if
+
+    ! Preconditioner
+    call PCGetType( precond, PETSc_PCtype_applied, perr)
+
+    do_print_PC = .false.
+    if (.not. allocated( PETSc_PCtype_printed)) then
+      do_print_PC = .true.
+      PETSc_PCtype_printed = trim( PETSc_PCtype_applied)
+    else
+      ! Maybe the PC type has changed; check for this
+      if (trim( PETSc_PCtype_applied) /= PETSc_PCtype_printed) then
+        deallocate( PETSc_PCtype_printed)
+        do_print_PC = .true.
+        PETSc_PCtype_printed = trim( PETSc_PCtype_applied)
+      end if
+    end if
+
+    if (do_print_PC .and. par%primary) then
+      write(0,*) '  Using PETSc preconditioner ', colour_string( PETSc_PCtype_printed, 'light blue')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine print_PETSc_KSP_PC_type
 
   SUBROUTINE solve_matrix_equation_PETSc_KSPSolve( KSP_solver, b, x)
     ! Solve the matrix equation using a Krylov solver from PETSc

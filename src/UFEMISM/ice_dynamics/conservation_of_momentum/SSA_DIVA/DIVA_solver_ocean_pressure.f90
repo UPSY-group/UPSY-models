@@ -21,7 +21,6 @@ module DIVA_solver_ocean_pressure
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap, vertical_average
   use constitutive_equation, only: calc_ice_rheology_Glen, calc_effective_viscosity_Glen_3D_uv_only
   use mpi_distributed_memory, only: gather_to_all
-  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
   use solve_linearised_SSA_DIVA_ocean_pressure, only: solve_SSA_DIVA_linearised_ocean_pressure
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D

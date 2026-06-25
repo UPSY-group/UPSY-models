@@ -6,6 +6,7 @@ MODULE climate_model_types
 ! ====================
 
   USE precisions                                             , ONLY: dp
+  use ISMIP7_climate, only: type_climate_model_ISMIP7
 
   IMPLICIT NONE
 
@@ -38,7 +39,7 @@ MODULE climate_model_types
     REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_DU                       ! Monthly mean wind speed in the y-direction (m/s)
     !INTEGER :: wHs, wmask_ice, wmask_ocean, wmask_shelf, wT2m, wPrecip, wHs_ref, wWind_WE, wWind_SN, wWind_LR, wWind_DU
 
-    ! lapse-rate correction variables for GCM snapshots 
+    ! lapse-rate correction variables for GCM snapshots
     REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: lambda ! Spatially variable (see Berends et al., 2018)
     LOGICAL                                   :: do_lapse_rates     ! whether or not to apply the lapse rates below
     REAL(dp)                                  :: lapse_rate_precip  ! single-value per region (precipitation)
@@ -78,7 +79,7 @@ MODULE climate_model_types
 
     ! deltaT
     REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series_time
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series 
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series
     REAL(dp)                                  :: dT_t0, dT_t1, dT_at_t0, dT_at_t1
     REAL(dp)                                  :: deltaT
 
@@ -105,7 +106,7 @@ MODULE climate_model_types
     REAL(dp)                                  :: anomaly_t0, anomaly_t1        ! times of each timeframe
 
   END TYPE type_climate_model_snapshot_plus_anomalies
-  
+
   TYPE type_climate_model_matrix
     ! The "matrix" climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
 
@@ -130,58 +131,6 @@ MODULE climate_model_types
 
   END TYPE type_climate_model_matrix
 
-  type type_climate_field_ISMIP7_monthly
-    ! Data and metadata of monthly tas/pr fields and anomalies
-
-    character(len=1024)                            :: name          !           'tas', 'pr', etc
-    character(len=1024)                            :: foldername    !           Foldername that contains all files
-    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
-
-    real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
-
-    real(dp), dimension(:,:), allocatable          :: val0          !           Values at timeslice before current time
-    real(dp), dimension(:,:), allocatable          :: val1          !           Values at timeslice after current time
-    real(dp), dimension(:,:), allocatable          :: val_interp    !           Interpolated values
-
-    integer                                        :: ti0 = -1      !           Time index before current time
-    integer                                        :: ti1 = -1      !           Time index after current time
-
-  end type type_climate_field_ISMIP7_monthly
-
-  type type_climate_field_ISMIP7_yearly
-    ! Data and metadata of yearly fields (dtsdz)
-
-    character(len=1024)                            :: name          !           'dtsdz', etc
-    character(len=1024)                            :: foldername    !           Foldername that contains all files
-    character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
-
-    real(dp), dimension(:), allocatable            :: timestamps    ! [years]   All time values in combined files
-
-    real(dp), dimension(:), allocatable            :: val0          !           Values at timeslice before current time
-    real(dp), dimension(:), allocatable            :: val1          !           Values at timeslice after current time
-    real(dp), dimension(:), allocatable            :: val_interp    !           Interpolated values
-
-    integer                                        :: ti0 = -1      !           Time index before current time
-    integer                                        :: ti1 = -1      !           Time index after current time
-
-  end type type_climate_field_ISMIP7_yearly
-
-  type type_climate_model_ISMIP7
-
-    ! Baseline TS and surface elevation
-    real(dp), dimension(:,:), allocatable :: T2m_baseline    ! [K]                     Baseline monthly T2m
-    real(dp), dimension(:,:), allocatable :: Precip_baseline ! [m.w.e.]                Baseline monthly Precip
-    real(dp), dimension(:)  , allocatable :: Hs_baseline     ! [m w.r.t. PD sea level] Baseline surface elevation
-
-    ! Fields
-    type(type_climate_field_ISMIP7_monthly) :: tas
-    type(type_climate_field_ISMIP7_monthly) :: tas_anomaly
-    type(type_climate_field_ISMIP7_monthly) :: pr
-    type(type_climate_field_ISMIP7_monthly) :: pr_anomaly
-    type(type_climate_field_ISMIP7_yearly)  :: dtsdz
-
-  end type type_climate_model_ISMIP7
- 
   TYPE type_climate_model
     ! The climate model data structure.
 
@@ -189,10 +138,10 @@ MODULE climate_model_types
     REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: T2m                     ! [K]      Monthly 2-m air temperature
     REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: Precip                  ! [m.w.e.] Monthly precipitation
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hs                      ! [m] orography
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: Wind_LR                 ! [m/s]    Monthly mean wind speed in the x-direction 
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: Wind_DU                 ! [m/s]    Monthly mean wind speed in the y-direction 
-    
-    ! lapse rates for GCM snapshots 
+    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: Wind_LR                 ! [m/s]    Monthly mean wind speed in the x-direction
+    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: Wind_DU                 ! [m/s]    Monthly mean wind speed in the y-direction
+
+    ! lapse rates for GCM snapshots
     REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: lambda ! Spatially variable (see Berends et al., 2018)
     LOGICAL                                   :: do_lapse_rates     ! whether or not to apply the lapse rates below
     REAL(dp)                                  :: lapse_rate_precip  ! single-value per region (precipitation)
@@ -208,7 +157,7 @@ MODULE climate_model_types
 
     ! Timestepping
     REAL(dp)                                :: t_next
-    
+
     ! Add different climate model options
     TYPE(type_climate_model_snapshot)                   :: snapshot
     TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
@@ -218,7 +167,7 @@ MODULE climate_model_types
     type(type_climate_model_ISMIP7)                     :: ISMIP7
 
   END TYPE type_climate_model
-  
+
 
 CONTAINS
 

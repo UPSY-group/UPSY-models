@@ -454,8 +454,9 @@ contains
     ! ============================
 
     ! Use PETSc to solve the matrix equation
-    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_bkuv, BPA%PETSc_rtol, BPA%PETSc_abstol, &
-      n_Axb_its)
+    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_bkuv, &
+      BPA%PETSc_rtol, BPA%PETSc_abstol, n_Axb_its, &
+      PETSc_KSPtype = C%stress_balance_PETSc_KSPtype, PETSc_PCtype = C%stress_balance_PETSc_PCtype)
 
     ! Disentangle the u and v components of the velocity solution
     do ti = mesh%ti1, mesh%ti2

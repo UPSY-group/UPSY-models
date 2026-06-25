@@ -8,15 +8,17 @@ module CSR_matrix_mod
     MPI_STATUS, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_ALLREDUCE, MPI_MIN, MPI_MAX, MPI_IN_PLACE, &
     MPI_LOGICAL, MPI_LOR
   use mpi_basic, only: par, sync
-  use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use reallocate_mod, only: reallocate
   use netcdf, only: NF90_INT, NF90_DOUBLE, NF90_CREATE, NF90_NOCLOBBER, NF90_NETCDF4, NF90_DEF_DIM, &
     NF90_DEF_VAR, NF90_INT, NF90_DOUBLE, NF90_PUT_VAR, NF90_OPEN, NF90_CLOSE, NF90_NOWRITE, &
     NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, NF90_INQ_VARID, NF90_GET_VAR
-  use netcdf_basic_wrappers, only: create_dimension, create_variable, handle_netcdf_error
+  use netcdf_basic_wrappers, only: create_dimension, create_variable, handle_netcdf_error, &
+    create_and_write_to_scalar_variable_dist_int, read_scalar_variable_dist_int, &
+    create_new_netcdf_file_for_writing, close_netcdf_file
   use netcdf_write_var_primary, only: write_var_primary
   use string_module, only: endswith, insert_val_into_string_int
-  use crash_mod, only: warning
+  use crash_mod, only: warning, crash
 
   implicit none
 
@@ -62,6 +64,7 @@ module CSR_matrix_mod
       procedure, public  :: read_single_row        => read_single_row_CSR_dist
       procedure, public  :: finalise               => finalise_matrix_CSR_dist
       procedure, public  :: set_diagonal_to_one_and_rest_of_row_to_zero
+      procedure, public  :: save_as_NetCDF         => save_CSR_matrix_as_NetCDF
       procedure, public  :: write_to_NetCDF        => write_CSR_matrix_to_NetCDF
       procedure, public  :: write_to_dist_NetCDFs  => write_CSR_matrix_to_dist_NetCDFs
       procedure, public  :: read_from_dist_NetCDFs => read_CSR_matrix_from_dist_NetCDFs
@@ -71,6 +74,9 @@ module CSR_matrix_mod
       procedure, private :: calc_j_node_range
       procedure, private :: set_row_to_value
       procedure, private :: set_row_diag_to_val
+
+      generic,   public  :: operator(==) => eq
+      procedure, private :: eq => test_CSR_matrix_equality
 
       final              :: deallocate_matrix_CSR_dist_final
 
@@ -517,6 +523,8 @@ contains
 
     end do ! do p = 1, par%n-1
 
+    if (par%primary) call A_tot%crop
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -645,6 +653,40 @@ contains
     end do
   end subroutine set_row_diag_to_val
 
+  subroutine save_CSR_matrix_as_NetCDF( A, output_dir, filename)
+    !< Save a CSR matrix as a NetCDF file
+
+    ! In- and output variables:
+    class(type_CSR_matrix_dp), intent(in) :: A                !< The CSR matrix
+    character(len=*),          intent(in) :: output_dir       !< The name of the output directory
+    character(len=*),          intent(in) :: filename         !< The name of the file
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'save_CSR_matrix_as_NetCDF'
+    character(len=:), allocatable :: filename_sans_nc, filename_with_nc, filename_including_output_dir
+    integer                       :: ncid
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (endswith( filename, '.nc', case_sensitive = .false.)) then
+      filename_sans_nc = filename( 1: len_trim( filename)-3)
+    else
+      filename_sans_nc = filename( 1: len_trim( filename))
+    end if
+    filename_with_nc = filename_sans_nc // '.nc'
+
+    filename_including_output_dir = trim( output_dir) // '/' // trim( filename_with_nc)
+
+    call create_new_netcdf_file_for_writing( filename_including_output_dir, ncid)
+    call write_CSR_matrix_to_NetCDF( A, filename_including_output_dir, ncid)
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_CSR_matrix_as_NetCDF
+
   subroutine write_CSR_matrix_to_NetCDF( A, filename, ncid)
     !< Write a CSR matrix to a NetCDF file (or a group therein)
 
@@ -661,11 +703,18 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Safety
+    if (.not. A%is_finalised) then
+      call crash('A is not finalised')
+    end if
+
+    call A%gather_to_primary( A_tot)
+
     ! Create dimensions
-    call create_dimension( filename, ncid, 'm'     , A%m  , id_dim_m  )
-    call create_dimension( filename, ncid, 'mplus1', A%m+1, id_dim_mp1)
-    call create_dimension( filename, ncid, 'n'     , A%n  , id_dim_n  )
-    call create_dimension( filename, ncid, 'nnz'   , A%nnz, id_dim_nnz)
+    call create_dimension( filename, ncid, 'm'     , A_tot%m  , id_dim_m  )
+    call create_dimension( filename, ncid, 'mplus1', A_tot%m+1, id_dim_mp1)
+    call create_dimension( filename, ncid, 'n'     , A_tot%n  , id_dim_n  )
+    call create_dimension( filename, ncid, 'nnz'   , A_tot%nnz, id_dim_nnz)
 
     ! Create variables
     call create_variable( filename, ncid, 'ptr', NF90_INT   , [id_dim_mp1], id_var_ptr)
@@ -673,36 +722,37 @@ contains
     call create_variable( filename, ncid, 'val', NF90_DOUBLE, [id_dim_nnz], id_var_val)
 
     ! Write variables
-    call A%gather_to_primary( A_tot)
-    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr              )
-    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind( 1:A_tot%nnz))
-    call write_var_primary( filename, ncid, id_var_val, A_tot%val( 1:A_tot%nnz))
+    call write_var_primary( filename, ncid, id_var_ptr, A_tot%ptr)
+    call write_var_primary( filename, ncid, id_var_ind, A_tot%ind)
+    call write_var_primary( filename, ncid, id_var_val, A_tot%val)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine write_CSR_matrix_to_NetCDF
 
-  subroutine write_CSR_matrix_to_dist_NetCDFs( A, filename_base)
+  subroutine write_CSR_matrix_to_dist_NetCDFs( A, output_dir, filename_base)
     !< Write a CSR matrix to multiple NetCDF files (one for each process), including all the parallellisation info
 
     ! In- and output variables:
     class(type_CSR_matrix_dp), intent(in) :: A                !< The CSR matrix
+    character(len=*),          intent(in) :: output_dir       !< The name of the output directory
     character(len=*),          intent(in) :: filename_base    !< The name of the file
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'write_CSR_matrix_to_dist_NetCDFs'
     character(len=:), allocatable :: filename_base_sans_nc, filename_template, filename
     integer                       :: ncid
-    integer                       :: id_dim_m, id_dim_n, id_dim_nnz
-    integer                       :: id_dim_m_loc, id_dim_m_locp1, id_dim_i1, id_dim_i2
-    integer                       :: id_dim_m_node, id_dim_i1_node, id_dim_i2_node
-    integer                       :: id_dim_n_loc, id_dim_j1, id_dim_j2
-    integer                       :: id_dim_n_node, id_dim_j1_node, id_dim_j2_node
+    integer                       :: id_dim_m_locp1, id_dim_nnz
     integer                       :: id_var_ptr, id_var_ind, id_var_val
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Safety
+    if (.not. A%is_finalised) then
+      call crash('A is not finalised')
+    end if
 
     ! Create a process-specific filename
     if (endswith( filename_base, '.nc', case_sensitive = .false.)) then
@@ -712,32 +762,41 @@ contains
     end if
 
     filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
-    filename = insert_val_into_string_int( filename_template, '{proc}', par%i)
+    filename = trim( output_dir) // '/' // trim( insert_val_into_string_int( filename_template, '{proc}', par%i))
 
     ! Create a NetCDF file for each process
     call handle_netcdf_error( NF90_CREATE( filename, ior( NF90_NOCLOBBER, NF90_NETCDF4), ncid), filename = filename)
 
     ! Create dimensions and variables for the CSR matrix
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm'         , A%m      , id_dim_m      ), filename = filename, dimvarname = 'm')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'n'         , A%n      , id_dim_n      ), filename = filename, dimvarname = 'n')
+    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_locplus1', A%m_loc+1, id_dim_m_locp1), filename = filename, dimvarname = 'm_locplus1')
     call handle_netcdf_error( NF90_DEF_DIM( ncid, 'nnz'       , A%nnz    , id_dim_nnz    ), filename = filename, dimvarname = 'nnz')
 
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_loc'     , A%m_loc  , id_dim_m_loc  ), filename = filename, dimvarname = 'm_loc')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_locplus1', A%m_loc+1, id_dim_m_locp1), filename = filename, dimvarname = 'm_locplus1')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i1'        , A%i1     , id_dim_i1     ), filename = filename, dimvarname = 'i1')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i2'        , A%i2     , id_dim_i2     ), filename = filename, dimvarname = 'i2')
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'm'          , A%m          )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'n'          , A%n          )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'nnz'        , A%nnz        )
 
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'm_node'    , A%m_node , id_dim_m_node ), filename = filename, dimvarname = 'm_node')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i1_node'   , A%i1_node, id_dim_i1_node), filename = filename, dimvarname = 'i1_node')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'i2_node'   , A%i2_node, id_dim_i2_node), filename = filename, dimvarname = 'i2_node')
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'm_loc'      , A%m_loc      )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'i1'         , A%i1         )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'i2'         , A%i2         )
 
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'n_loc'     , A%n_loc  , id_dim_n_loc  ), filename = filename, dimvarname = 'n_loc')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j1'        , A%j1     , id_dim_j1     ), filename = filename, dimvarname = 'j1')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j2'        , A%j2     , id_dim_j2     ), filename = filename, dimvarname = 'j2')
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'm_node'     , A%m_node     )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'i1_node'    , A%i1_node    )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'i2_node'    , A%i2_node    )
 
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'n_node'    , A%n_node , id_dim_n_node ), filename = filename, dimvarname = 'n_node')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j1_node'   , A%j1_node, id_dim_j1_node), filename = filename, dimvarname = 'j1_node')
-    call handle_netcdf_error( NF90_DEF_DIM( ncid, 'j2_node'   , A%j2_node, id_dim_j2_node), filename = filename, dimvarname = 'j2_node')
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'n_loc'      , A%n_loc      )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'j1'         , A%j1         )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'j2'         , A%j2         )
+
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'n_node'     , A%n_node     )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'j1_node'    , A%j1_node    )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'j2_node'    , A%j2_node    )
+
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'j_min_node' , A%j_min_node )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'j_max_node' , A%j_max_node )
+    call create_and_write_to_scalar_variable_dist_int( filename, ncid, 'needs_x_tot', A%needs_x_tot)
+
+    call A%pai_x%setup_in_netcdf_file( filename, ncid, 'pai_x')
+    call A%pai_y%setup_in_netcdf_file( filename, ncid, 'pai_y')
 
     call handle_netcdf_error( NF90_DEF_VAR( ncid, name = 'ptr', xtype = NF90_INT, &
       dimids = [id_dim_m_locp1], varid = id_var_ptr), filename = filename, dimvarname = 'ptr')
@@ -758,12 +817,13 @@ contains
 
   end subroutine write_CSR_matrix_to_dist_NetCDFs
 
-  subroutine read_CSR_matrix_from_dist_NetCDFs( A, filename_base)
+  subroutine read_CSR_matrix_from_dist_NetCDFs( A, foldername, filename_base)
     !< Read a CSR matrix from multiple NetCDF files (one for each process)
 
     ! In- and output variables:
     class(type_CSR_matrix_dp), intent(inout) :: A                !< The CSR matrix
-    character(len=*),          intent(in   ) :: filename_base    !< The name of the file
+    character(len=*),          intent(in   ) :: foldername       !< The name of the directory containing the NetCDF files
+    character(len=*),          intent(in   ) :: filename_base    !< The base name of the file
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'read_CSR_matrix_from_dist_NetCDFs'
@@ -786,7 +846,7 @@ contains
     end if
 
     filename_template = trim( filename_base_sans_nc) // '_proc_{proc}.nc'
-    filename = insert_val_into_string_int( filename_template, '{proc}', par%i)
+    filename = trim( foldername) // '/' // trim( insert_val_into_string_int( filename_template, '{proc}', par%i))
 
     ! Check if this file actually exists
     inquire( exist = file_exists, file = trim( filename))
@@ -795,27 +855,34 @@ contains
     ! Open the NetCDF file with read-only access
     call handle_netcdf_error( NF90_OPEN( trim( filename), NF90_NOWRITE, ncid), filename = filename)
 
-    ! Read matrix dimensions
-    call inq_CSR_NetCDF_dim( filename, ncid, 'm'      , A%m      )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'n'      , A%n      )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'nnz'    , A%nnz    )
+    ! Read matrix data
+    call read_scalar_variable_dist_int( filename, ncid, 'm'          , A%m          )
+    call read_scalar_variable_dist_int( filename, ncid, 'n'          , A%n          )
+    call read_scalar_variable_dist_int( filename, ncid, 'nnz'        , A%nnz        )
     A%nnz_max = A%nnz
 
-    call inq_CSR_NetCDF_dim( filename, ncid, 'm_loc'  , A%m_loc  )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'i1'     , A%i1     )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'i2'     , A%i2     )
+    call read_scalar_variable_dist_int( filename, ncid, 'm_loc'      , A%m_loc      )
+    call read_scalar_variable_dist_int( filename, ncid, 'i1'         , A%i1         )
+    call read_scalar_variable_dist_int( filename, ncid, 'i2'         , A%i2         )
 
-    call inq_CSR_NetCDF_dim( filename, ncid, 'm_node' , A%m_node )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'i1_node', A%i1_node)
-    call inq_CSR_NetCDF_dim( filename, ncid, 'i2_node', A%i2_node)
+    call read_scalar_variable_dist_int( filename, ncid, 'm_node'     , A%m_node     )
+    call read_scalar_variable_dist_int( filename, ncid, 'i1_node'    , A%i1_node    )
+    call read_scalar_variable_dist_int( filename, ncid, 'i2_node'    , A%i2_node    )
 
-    call inq_CSR_NetCDF_dim( filename, ncid, 'n_loc'  , A%n_loc  )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'j1'     , A%j1     )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'j2'     , A%j2     )
+    call read_scalar_variable_dist_int( filename, ncid, 'n_loc'      , A%n_loc      )
+    call read_scalar_variable_dist_int( filename, ncid, 'j1'         , A%j1         )
+    call read_scalar_variable_dist_int( filename, ncid, 'j2'         , A%j2         )
 
-    call inq_CSR_NetCDF_dim( filename, ncid, 'n_node' , A%n_node )
-    call inq_CSR_NetCDF_dim( filename, ncid, 'j1_node', A%j1_node)
-    call inq_CSR_NetCDF_dim( filename, ncid, 'j2_node', A%j2_node)
+    call read_scalar_variable_dist_int( filename, ncid, 'n_node'     , A%n_node     )
+    call read_scalar_variable_dist_int( filename, ncid, 'j1_node'    , A%j1_node    )
+    call read_scalar_variable_dist_int( filename, ncid, 'j2_node'    , A%j2_node    )
+
+    call read_scalar_variable_dist_int( filename, ncid, 'j_min_node' , A%j_min_node )
+    call read_scalar_variable_dist_int( filename, ncid, 'j_max_node' , A%j_max_node )
+    call read_scalar_variable_dist_int( filename, ncid, 'needs_x_tot', A%needs_x_tot)
+
+    call A%pai_x%read_from_netcdf_file( filename, ncid, 'pai_x')
+    call A%pai_y%read_from_netcdf_file( filename, ncid, 'pai_y')
 
     ! Allocate memory for A
     allocate( A%ptr( A%i1: A%i2+1), source = 1)
@@ -832,22 +899,50 @@ contains
 
     call handle_netcdf_error( NF90_CLOSE( ncid))
 
+    A%is_finalised = .true.
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine read_CSR_matrix_from_dist_NetCDFs
 
-  subroutine inq_CSR_NetCDF_dim( filename, ncid, dim_name, dim_length)
-    character(len=*), intent(in   ) :: filename
-    integer,          intent(in   ) :: ncid
-    character(len=*), intent(in   ) :: dim_name
-    integer,          intent(  out) :: dim_length
-    integer :: id_dim
-    call handle_netcdf_error( NF90_INQ_DIMID( ncid, dim_name, id_dim), &
-      filename = filename, dimvarname = dim_name)
-    call handle_netcdf_error( NF90_INQUIRE_DIMENSION( ncid, id_dim, len = dim_length), &
-      filename = filename, dimvarname = dim_name)
-  end subroutine inq_CSR_NetCDF_dim
+  function test_CSR_matrix_equality( A, B) result( res)
+
+    class(type_CSR_matrix_dp), intent(in) :: A
+    class(type_CSR_matrix_dp), intent(in) :: B
+    logical                               :: res
+
+    integer :: ierr
+
+    res = &
+      A%is_finalised .and. &
+      B%is_finalised .and. &
+      A%m       == B%m       .and. &
+      A%n       == B%n       .and. &
+      A%nnz_max == B%nnz_max .and. &
+      A%nnz     == B%nnz     .and. &
+      A%m_loc   == B%m_loc   .and. &
+      A%i1      == B%i1      .and. &
+      A%i2      == B%i2      .and. &
+      A%m_node  == B%m_node  .and. &
+      A%i1_node == B%i1_node .and. &
+      A%i2_node == B%i2_node .and. &
+      A%n_loc   == B%n_loc   .and. &
+      A%j1      == B%j1      .and. &
+      A%j2      == B%j2      .and. &
+      A%n_node  == B%n_node  .and. &
+      A%j1_node == B%j1_node .and. &
+      A%j2_node == B%j2_node .and. &
+      A%j_min_node == B%j_min_node .and. &
+      A%j_max_node == B%j_max_node .and. &
+      A%needs_x_tot == B%needs_x_tot .and. &
+      A%pai_x == B%pai_x .and. &
+      A%pai_y == B%pai_y .and. &
+      all( A%ptr == B%ptr) .and. &
+      all( A%ind == B%ind) .and. &
+      all( A%val == B%val)
+
+  end function test_CSR_matrix_equality
 
   ! ===== CSR matrices in local memory =====
   ! ========================================

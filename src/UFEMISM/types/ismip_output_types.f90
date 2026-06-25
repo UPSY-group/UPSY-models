@@ -13,7 +13,6 @@ module ismip_output_types
     ! A gridded output field
 
     real(dp), dimension(:), allocatable :: accum             ! [..] Accumulation of values per timestep
-    logical                             :: is_initial        ! Whether this is the first time to write
 
     character(len=1024)                 :: name              ! Variable name
     character(len=1024)                 :: filename          ! Filename of output
@@ -30,7 +29,6 @@ module ismip_output_types
     ! A gridded output field
 
     real(dp), allocatable               :: accum             ! [..] Accumulation of values per timestep
-    logical                             :: is_initial        ! Whether this is the first time to write
 
     character(len=1024)                 :: name              ! Variable name
     character(len=1024)                 :: filename          ! Filename of output
@@ -86,8 +84,6 @@ module ismip_output_types
     ! Temperatures
     type(type_ismip_gridded_field)    :: litemptop    ! [K]        temperature_at_top_of_ice_sheet_model
     type(type_ismip_gridded_field)    :: litempavg    ! [K]        land_ice_temperature
-    type(type_ismip_gridded_field)    :: litempgradgr ! [K m-1]    Vertical basal temperature gradient beneath grounded ice
-    type(type_ismip_gridded_field)    :: litempgradfl ! [K m-1]    Vertical basal temperature gradient beneath floating ice
     type(type_ismip_gridded_field)    :: litempbotgr  ! [K]        temperature_at_base_of_ice_sheet_model (gr)
     type(type_ismip_gridded_field)    :: litempbotfl  ! [K]        temperature_at_base_of_ice_sheet_model (fl)
 
@@ -96,12 +92,16 @@ module ismip_output_types
 
     ! Lateral mass balance
     type(type_ismip_gridded_field)    :: licalvf      ! [kg m-2 s-1] land_ice_specific_mass_flux_due_to_calving
+    type(type_ismip_gridded_field)    :: ligroundf    ! [kg m-2 s-1] land_ice_specific_grounding_line_flux
     type(type_ismip_gridded_field)    :: lifmassbf    ! [kg m-2 s-1] Loss if ice mass resulting from ice front melting
 
     ! Area fractions
     type(type_ismip_gridded_field)    :: sftgif       ! []         land_ice_area_fraction
     type(type_ismip_gridded_field)    :: sftgrf       ! []         grounded_ice_sheet_area_fraction
     type(type_ismip_gridded_field)    :: sftflf       ! []         floating_ice_shelf_area_fraction
+
+    ! Other stuff
+    type(type_ismip_gridded_field)    :: tfbase       ! [K]        thermal_forcing
 
     ! === Scalars ===
 

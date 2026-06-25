@@ -11,7 +11,7 @@ module netcdf_basic_wrappers
   use netcdf, only: NF90_NOERR, NF90_STRERROR, NF90_INQ_DIMID, NF90_INQUIRE_DIMENSION, &
     NF90_INQ_VARID, NF90_INQUIRE_VARIABLE, NF90_CREATE, NF90_DEF_DIM, NF90_DEF_VAR, &
     NF90_MAX_VAR_DIMS, NF90_PUT_ATT, NF90_OPEN, NF90_NOWRITE, NF90_WRITE, NF90_SHARE, &
-    NF90_INQUIRE_ATTRIBUTE, NF90_GET_ATT, &
+    NF90_INQUIRE_ATTRIBUTE, NF90_GET_ATT, NF90_PUT_VAR, NF90_GET_VAR, &
     NF90_CLOSE, NF90_GLOBAL, NF90_NETCDF4, NF90_NOCLOBBER, NF90_INT, NF90_FLOAT, NF90_DOUBLE, &
     NF90_FILL_INT, NF90_FILL_FLOAT, NF90_FILL_DOUBLE
   use basic_model_utilities, only: get_current_date_time_str
@@ -25,8 +25,8 @@ module netcdf_basic_wrappers
     create_scalar_variable, add_attribute_int, add_attribute_dp, add_attribute_char, &
     open_existing_netcdf_file_for_reading, open_existing_netcdf_file_for_writing, &
     close_netcdf_file, handle_netcdf_error, parse_netcdf_precision, delete_existing_file, &
-    add_fillvalue, inquire_fill_value
-
+    add_fillvalue, inquire_fill_value, create_and_write_to_scalar_variable_dist_int, &
+    read_scalar_variable_dist_int
 
 contains
 
@@ -389,6 +389,58 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine create_scalar_variable
+
+  subroutine create_and_write_to_scalar_variable_dist_int( filename, ncid, var_name, val)
+    !< Create a new scalar variable in a distributed set of NetCDF files, and write a value to it
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    character(len=*), intent(in   ) :: var_name
+    integer,          intent(in   ) :: val
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'create_and_write_to_scalar_variable_dist_int'
+    integer                     :: id_var, ierr
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    call handle_netcdf_error( NF90_DEF_VAR( ncid, name = var_name, xtype = NF90_INT, varid = id_var), &
+      filename = filename, dimvarname = var_name)
+    call handle_netcdf_error( NF90_PUT_VAR( ncid, id_var, val), &
+      filename = filename, dimvarname = var_name)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine create_and_write_to_scalar_variable_dist_int
+
+  subroutine read_scalar_variable_dist_int( filename, ncid, var_name, val)
+    !< Read a scalar variable from a distributed set of NetCDF files
+
+    ! In/output variables:
+    character(len=*), intent(in   ) :: filename
+    integer,          intent(in   ) :: ncid
+    character(len=*), intent(in   ) :: var_name
+    integer,          intent(  out) :: val
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'read_scalar_variable_dist_int'
+    integer                     :: id_var, ierr
+
+    ! Add routine to path
+    call init_routine( routine_name, do_track_resource_use = .false.)
+
+    call handle_netcdf_error( NF90_INQ_VARID( ncid, var_name, id_var), &
+      filename = filename, dimvarname = var_name)
+    call handle_netcdf_error( NF90_GET_VAR( ncid, id_var, val), &
+      filename = filename, dimvarname = var_name)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine read_scalar_variable_dist_int
 
   subroutine add_attribute_logical( filename, ncid, id_var, att_name, att_val)
     !< Add a logical-valued attributes to a variable.

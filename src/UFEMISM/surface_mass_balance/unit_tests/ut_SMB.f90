@@ -6,7 +6,7 @@ module ut_SMB
   use tests_main, only: test_tol, test_ge_le
   use model_configuration, only: C
   use SMB_model, only: atype_SMB_model, create_SMB_model
-  use parameters, only: pi, T0
+  use parameters, only: pi, T0, ice_density, freshwater_density
   use mesh_types, only: type_mesh
   use mesh_memory, only: allocate_mesh_primary, crop_mesh_primary
   use mesh_dummy_meshes, only: initialise_dummy_mesh_5
@@ -197,7 +197,7 @@ contains
     ! Verify that it worked
     test_result = .true.
     do vi = mesh%vi1, mesh%vi2
-      test_result = test_result .and. test_tol( SMB%SMB(vi), SMB_ref( vi), 1e-5_dp)
+      test_result = test_result .and. test_tol( SMB%SMB(vi)*ice_density, SMB_ref( vi)*freshwater_density, 1e-5_dp)
     end do
     call MPI_ALLREDUCE( MPI_IN_PLACE, test_result, 1, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, ierr)
     call unit_test( test_result, test_name)

@@ -308,6 +308,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: visc_it_relax_config                         = 0.2_dp                           ! Relaxation parameter for subsequent viscosity iterations (for improved stability)
     real(dp)            :: visc_eff_min_config                          = 1E4_dp                           ! Minimum value for effective viscosity
     real(dp)            :: vel_max_config                               = 5000._dp                         ! Velocities are limited to this value
+    character(len=1024) :: stress_balance_PETSc_KSPtype_config          = 'gmres'                          ! Which Krylov solver PETSc should use to solve the momentum balance
+    character(len=1024) :: stress_balance_PETSc_PCtype_config           = 'bjacobi'                        ! Which preconditioner PETSc should use
     real(dp)            :: stress_balance_PETSc_rtol_config             = 1E-7_dp                          ! PETSc solver - stop criterion, relative difference (iteration stops if rtol OR abstol is reached)
     real(dp)            :: stress_balance_PETSc_abstol_config           = 1E-5_dp                          ! PETSc solver - stop criterion, absolute difference
 
@@ -354,6 +356,8 @@ module model_configuration_type_and_namelist
     ! Calculation of dH/dt
     character(len=1024) :: choice_ice_integration_method_config         = 'semi-implicit'                  ! Choice of ice thickness integration scheme: "none" (i.e. unchanging geometry), "explicit", "semi-implicit"
     real(dp)            :: dHi_semiimplicit_fs_config                   = 1.5_dp                           ! Factor for the semi-implicit ice thickness solver (0 = explicit, 0<f<1 = semi-implicit, 1 = implicit, >1 = over-implicit)
+    character(len=1024) :: dHi_PETSc_KSPtype_config                     = 'gmres'                          ! Which Krylov solver PETSc should use to solve the mass continuity equation
+    character(len=1024) :: dHi_PETSc_PCtype_config                      = 'bjacobi'                        ! Which preconditioner PETSc should use
     real(dp)            :: dHi_PETSc_rtol_config                        = 1E-8_dp                          ! dHi PETSc solver - stop criterion, relative difference (iteration stops if rtol OR abstol is reached)
     real(dp)            :: dHi_PETSc_abstol_config                      = 1E-6_dp                          ! dHi PETSc solver - stop criterion, absolute difference
 
@@ -906,6 +910,8 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 SMB model
     character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline_config         = ''                               ! How to define the baseline SMB for the anomalies: 'yearly' (i.e. use the provided yearly acabf fields) or 'fixed' (i.e. use a separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation)
     character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed_config = ''                               ! Path to the separate, time-independent SMB - probably the same present-day SMB that was used for the initialisation
+    logical :: SMB_ISMIP7_choice_SMB_offset_config         = .false.                                        ! Whether or not to read and apply an offset to the SMB baseline
+    character(len=1024) :: SMB_ISMIP7_filename_SMB_offset_config         = ''                               ! Path to the SMB offset which is subtracted from the SMB_basline_fixed to shift the baseline period to the correct 1960-1989 during which SMB anomalies are defined as zero
     character(len=1024) :: SMB_ISMIP7_choice_refgeo_config               = ''                               ! Which reference geometry to use as the baseline for calculating delta_SMB = dSMB/dz * delta_s: 'init', 'PD'
     character(len=1024) :: SMB_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the SMB files are located in /path/to/base/folder/acabf/version)
     character(len=1024) :: SMB_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the SMB files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
@@ -929,8 +935,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: BMB_transition_phase_t_end_config            = +9.9E9_dp                        ! [yr] End   time for BMB transition phase
 
     ! Grounding line treatment
-    logical             :: do_subgrid_BMB_at_grounding_line_config      = .false.                          ! Whether or not to apply basal melt rates under a partially floating grounding line; if so, use choice_BMB_subgrid; if not, apply "NMP"
-    character(len=1024) :: choice_BMB_subgrid_config                    = ''                               ! Choice of sub-grid BMB scheme: "FCMP", "PMP" (following Leguy et al., 2021)
+    character(len=1024) :: choice_BMB_subgrid_config                    = 'NMP'                            ! Choice of sub-grid BMB scheme: "NMP", "FCMP", "PMP" (following Leguy et al., 2021)
 
     ! Choice of BMB model
     character(len=1024) :: choice_BMB_model_NAM_config                  = 'uniform'
@@ -971,7 +976,7 @@ module model_configuration_type_and_namelist
     ! "uniform"
     real(dp)            :: uniform_BMB_config                           = 0._dp
     real(dp)            :: uniform_BMB_ROI_config                       = 0._dp
-    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp               
+    real(dp)            :: uniform_BMB_t_start_config                   = 0._dp
 
     ! "parameterised"
     real(dp)            :: BMB_Favier2019_gamma_config                  = 99.32E-5
@@ -1553,6 +1558,8 @@ module model_configuration_type_and_namelist
     real(dp)            :: visc_it_relax
     real(dp)            :: visc_eff_min
     real(dp)            :: vel_max
+    character(len=1024) :: stress_balance_PETSc_KSPtype
+    character(len=1024) :: stress_balance_PETSc_PCtype
     real(dp)            :: stress_balance_PETSc_rtol
     real(dp)            :: stress_balance_PETSc_abstol
 
@@ -1599,6 +1606,8 @@ module model_configuration_type_and_namelist
     ! Calculation of dH/dt
     character(len=1024) :: choice_ice_integration_method
     real(dp)            :: dHi_semiimplicit_fs
+    character(len=1024) :: dHi_PETSc_KSPtype
+    character(len=1024) :: dHi_PETSc_PCtype
     real(dp)            :: dHi_PETSc_rtol
     real(dp)            :: dHi_PETSc_abstol
 
@@ -2151,6 +2160,8 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 SMB model
     character(len=1024) :: SMB_ISMIP7_choice_SMB_baseline
     character(len=1024) :: SMB_ISMIP7_filename_SMB_baseline_fixed
+    logical             :: SMB_ISMIP7_choice_SMB_offset
+    character(len=1024) :: SMB_ISMIP7_filename_SMB_offset
     character(len=1024) :: SMB_ISMIP7_choice_refgeo
     character(len=1024) :: SMB_ISMIP7_forcing_foldername
     character(len=1024) :: SMB_ISMIP7_forcing_version
@@ -2173,7 +2184,6 @@ module model_configuration_type_and_namelist
     real(dp)            :: BMB_transition_phase_t_end
 
     ! Grounding line treatment
-    logical             :: do_subgrid_BMB_at_grounding_line
     character(len=1024) :: choice_BMB_subgrid
 
     ! Choice of BMB model
@@ -2728,6 +2738,8 @@ contains
       visc_it_relax_config                                        , &
       visc_eff_min_config                                         , &
       vel_max_config                                              , &
+      stress_balance_PETSc_KSPtype_config                         , &
+      stress_balance_PETSc_PCtype_config                          , &
       stress_balance_PETSc_rtol_config                            , &
       stress_balance_PETSc_abstol_config                          , &
       BC_ice_front_config                                         , &
@@ -2756,6 +2768,8 @@ contains
       slid_delta_v_config                                         , &
       choice_ice_integration_method_config                        , &
       dHi_semiimplicit_fs_config                                  , &
+      dHi_PETSc_KSPtype_config                                    , &
+      dHi_PETSc_PCtype_config                                     , &
       dHi_PETSc_rtol_config                                       , &
       dHi_PETSc_abstol_config                                     , &
       BC_H_west_config                                            , &
@@ -3122,6 +3136,8 @@ contains
       SMB_ISMIP7_forcing_foldername_config                        , &
       SMB_ISMIP7_forcing_version_config                           , &
       SMB_ISMIP7_filename_SMB_baseline_fixed_config               , &
+      SMB_ISMIP7_choice_SMB_offset_config                         , &
+      SMB_ISMIP7_filename_SMB_offset_config                       , &
       SMB_ISMIP7_choice_refgeo_config                             , &
       do_asynchronous_BMB_config                                  , &
       dt_BMB_config                                               , &
@@ -3131,7 +3147,6 @@ contains
       do_BMB_transition_phase_config                              , &
       BMB_transition_phase_t_start_config                         , &
       BMB_transition_phase_t_end_config                           , &
-      do_subgrid_BMB_at_grounding_line_config                     , &
       choice_BMB_subgrid_config                                   , &
       choice_BMB_model_NAM_config                                 , &
       choice_BMB_model_EAS_config                                 , &
@@ -3683,6 +3698,8 @@ contains
     C%visc_it_relax                                          = visc_it_relax_config
     C%visc_eff_min                                           = visc_eff_min_config
     C%vel_max                                                = vel_max_config
+    C%stress_balance_PETSc_KSPtype                           = stress_balance_PETSc_KSPtype_config
+    C%stress_balance_PETSc_PCtype                            = stress_balance_PETSc_PCtype_config
     C%stress_balance_PETSc_rtol                              = stress_balance_PETSc_rtol_config
     C%stress_balance_PETSc_abstol                            = stress_balance_PETSc_abstol_config
 
@@ -3729,6 +3746,8 @@ contains
     ! Calculation of dH/dt
     C%choice_ice_integration_method                          = choice_ice_integration_method_config
     C%dHi_semiimplicit_fs                                    = dHi_semiimplicit_fs_config
+    C%dHi_PETSc_KSPtype                                      = dHi_PETSc_KSPtype_config
+    C%dHi_PETSc_PCtype                                       = dHi_PETSc_PCtype_config
     C%dHi_PETSc_rtol                                         = dHi_PETSc_rtol_config
     C%dHi_PETSc_abstol                                       = dHi_PETSc_abstol_config
 
@@ -4277,6 +4296,8 @@ contains
     ! Settings for the ISMIP7 SMB model
     C%SMB_ISMIP7_choice_SMB_baseline                         = SMB_ISMIP7_choice_SMB_baseline_config
     C%SMB_ISMIP7_filename_SMB_baseline_fixed                 = SMB_ISMIP7_filename_SMB_baseline_fixed_config
+    C%SMB_ISMIP7_choice_SMB_offset                           = SMB_ISMIP7_choice_SMB_offset_config
+    C%SMB_ISMIP7_filename_SMB_offset                         = SMB_ISMIP7_filename_SMB_offset_config
     C%SMB_ISMIP7_choice_refgeo                               = SMB_ISMIP7_choice_refgeo_config
     C%SMB_ISMIP7_forcing_foldername                          = SMB_ISMIP7_forcing_foldername_config
     C%SMB_ISMIP7_forcing_version                             = SMB_ISMIP7_forcing_version_config
@@ -4299,7 +4320,6 @@ contains
     C%BMB_transition_phase_t_end                             = BMB_transition_phase_t_end_config
 
     ! Grounding line treatment
-    C%do_subgrid_BMB_at_grounding_line                       = do_subgrid_BMB_at_grounding_line_config
     C%choice_BMB_subgrid                                     = choice_BMB_subgrid_config
 
     ! Choice of BMB model

@@ -75,6 +75,11 @@ contains
     ! Copy SMB for hybrid memory reasons
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
 
+    ! Extract SMB only over ice-covered fraction
+    do vi = region%mesh%vi1, region%mesh%vi2
+      SMB_loc( vi) = SMB_loc( vi) * min(1._dp,max(0._dp,(region%ice%fraction_margin( vi))))
+    end do
+
     ! Determine BMB_gr and BMB_fl, dependent on subgrid scheme
     do vi = region%mesh%vi1, region%mesh%vi2
       select case (C%choice_BMB_subgrid)
@@ -309,7 +314,7 @@ contains
     call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
 
-    ! Fluxes with provided initial scalar values in Gt/yr
+    ! Fluxes
     call write_to_file( region, region%ismip_output%tendacabf)
     call write_to_file( region, region%ismip_output%tendlibmassbfgr)
     call write_to_file( region, region%ismip_output%tendlibmassbffl)

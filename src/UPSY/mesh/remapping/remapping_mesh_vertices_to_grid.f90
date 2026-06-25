@@ -28,22 +28,24 @@ module remapping_mesh_vertices_to_grid
 
 contains
 
-  subroutine create_map_from_mesh_vertices_to_xy_grid( mesh, grid, output_dir, map)
+  subroutine create_map_from_mesh_vertices_to_xy_grid( mesh, grid, output_dir, map, method)
     !< Create a new mapping object from a mesh to an x/y-grid.
 
     ! By default uses 2nd-order conservative remapping.
 
     ! In/output variables
-    type(type_mesh),  intent(in   ) :: mesh
-    type(type_grid),  intent(in   ) :: grid
-    character(len=*), intent(in   ) :: output_dir
-    type(type_map),   intent(inout) :: map
+    type(type_mesh),            intent(in   ) :: mesh
+    type(type_grid),            intent(in   ) :: grid
+    character(len=*),           intent(in   ) :: output_dir
+    type(type_map),             intent(inout) :: map
+    character(len=*), optional, intent(in   ) :: method
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'create_map_from_mesh_vertices_to_xy_grid'
     integer, dimension(grid%nx, grid%ny)   :: overlaps_with_small_triangle, containing_triangle
     type(type_CSR_matrix_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                             :: w0, w1x, w1y
+    type(tMat)                             :: M_cons_1st_order, M_cons_2nd_order
     character(len=1024)                    :: filename_grid, filename_mesh
     integer                                :: perr
 
@@ -57,7 +59,12 @@ contains
     map%is_in_use = .true.
     map%name_src  = mesh%name
     map%name_dst  = grid%name
-    map%method    = '2nd_order_conservative'
+
+    if (present( method)) then
+      map%method = method
+    else
+      map%method = '2nd_order_conservative'
+    end if
 
     call calc_approximate_overlaps( mesh, grid, &
       overlaps_with_small_triangle, containing_triangle)
@@ -69,7 +76,16 @@ contains
     call calc_w_matrices( mesh, grid, &
       A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR, w0, w1x, w1y)
 
-    call calc_remapping_matrix( mesh, w0, w1x, w1y, map%M)
+    call calc_remapping_matrix( mesh, w0, w1x, w1y, M_cons_1st_order, M_cons_2nd_order)
+
+    select case( map%method)
+      case default
+        call crash('unknown method for grid_to_mesh remapping "' // trim( map%method) // '"')
+      case ('1st_order_conservative')
+        call MatDuplicate( M_cons_1st_order, MAT_COPY_VALUES, map%M, perr)
+      case ('2nd_order_conservative')
+        call MatDuplicate( M_cons_2nd_order, MAT_COPY_VALUES, map%M, perr)
+    end select
 
     call check_remapping_matrix_validity( mesh, grid, map%M)
 
@@ -78,6 +94,8 @@ contains
     call MatDestroy( w0, perr)
     call MatDestroy( w1x, perr)
     call MatDestroy( w1y, perr)
+    call MatDestroy( M_cons_1st_order, perr)
+    call MatDestroy( M_cons_2nd_order, perr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -485,13 +503,13 @@ contains
 
   end subroutine calc_w_matrices
 
-  subroutine calc_remapping_matrix( mesh, w0, w1x, w1y, M)
+  subroutine calc_remapping_matrix( mesh, w0, w1x, w1y, M_cons_1st_order, M_cons_2nd_order)
     !< Calculate the mesh-to-grid-vertices remapping matrix M
 
     ! In/output variables
     type(type_mesh), intent(in   ) :: mesh
     type(tMat),      intent(inout) :: w0, w1x, w1y
-    type(tMat),      intent(  out) :: M
+    type(tMat),      intent(  out) :: M_cons_1st_order, M_cons_2nd_order
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_remapping_matrix'
@@ -509,16 +527,16 @@ contains
 
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
 
-    ! M = (w0 * M_map_a_b)
-    call MatMatMult( w0,  M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M, perr)
+    ! 1st order M = (w0 * M_map_a_b)
+    call MatMatMult( w0,  M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M_cons_1st_order, perr)
 
-    ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b)
+    ! 2nd order M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b)
     call MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M1, perr)
-    call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
-
-    ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
     call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
-    call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+
+    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, perr)
+    call MatAXPY( M_cons_2nd_order, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
+    call MatAXPY( M_cons_2nd_order, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
 
     call MatDestroy( M_map_a_b, perr)
     call MatDestroy( M_ddx_a_b, perr)

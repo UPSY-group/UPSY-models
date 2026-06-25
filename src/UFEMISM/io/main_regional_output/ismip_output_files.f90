@@ -345,7 +345,6 @@ contains
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
     real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D, mask_grid
-    character(len=1024), parameter        :: method = '1st_order_conservative'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -377,7 +376,7 @@ contains
     field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
 
     ! Map from mesh to grid
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D, method = method)
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
 
     ! Enforce bounds
     if (present( vmin)) then
@@ -389,7 +388,7 @@ contains
 
     ! Mask regions with ice fraction < 0.5 and convert nans to fill values
     allocate( mask_grid( region%output_grid%n_loc ))
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid, method=method)
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
     where (isnan( d_grid_vec_partial_2D) .or. (mask_grid == 0._dp))
       d_grid_vec_partial_2D = NF90_FILL_DOUBLE
     end where
@@ -429,7 +428,6 @@ contains
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
     real(dp), dimension(:),  allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D, mask_grid
-    character(len=1024), parameter        :: method = '1st_order_conservative'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -489,7 +487,7 @@ contains
       end do
 
       ! Map from mesh vertices to grid
-      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D, method=method)
+      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
     else
       call crash('write_to_file_grid_ST requires either inputfield_a or inputfield_b') 
     end if
@@ -504,7 +502,7 @@ contains
 
     ! Mask regions with ice fraction < 0.5 and convert nans to fill values
     allocate( mask_grid( region%output_grid%n_loc ))
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid, method=method)
+    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
     where (isnan( d_grid_vec_partial_2D) .or. (mask_grid ==0._dp))
       d_grid_vec_partial_2D = NF90_FILL_DOUBLE
     end where

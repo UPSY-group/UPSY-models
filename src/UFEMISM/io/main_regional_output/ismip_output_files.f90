@@ -57,7 +57,6 @@ contains
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: calving_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: gl_flux
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc, BMB_gr, BMB_fl
-    logical, dimension(region%mesh%vi1:region%mesh%vi2)  :: mask_ice
     real( dp)                                            :: deltat
     integer                                              :: vi
 
@@ -75,15 +74,6 @@ contains
 
     ! Copy SMB for hybrid memory reasons
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
-
-    ! Determine the mask where ice is present
-    do vi = region%mesh%vi1, region%mesh%vi2
-      if (region%ice%Hi( vi) > 0._dp) then
-        mask_ice( vi) = .true.
-      else
-        mask_ice( vi) = .false.
-      end if
-    end do
 
     ! Determine BMB_gr and BMB_fl, dependent on subgrid scheme
     do vi = region%mesh%vi1, region%mesh%vi2
@@ -127,16 +117,16 @@ contains
     deltat = region%time - region%ismip_output%t_curr
 
     ! Accumulate regular FL fields.
-    call accumulate_single_ISMIP_flux_field( region, SMB_loc, mask_ice, deltat, &
-      region%ismip_output%tendacabf, field = region%ismip_output%acabf)
-    call accumulate_single_ISMIP_flux_field( region, BMB_gr, mask_ice, deltat, &
-      region%ismip_output%tendlibmassbfgr, field = region%ismip_output%libmassbfgr)
-    call accumulate_single_ISMIP_flux_field( region, BMB_fl, mask_ice, deltat, &
-      region%ismip_output%tendlibmassbffl, field = region%ismip_output%libmassbffl)
-    call accumulate_single_ISMIP_flux_field( region, calving_flux, mask_ice, deltat, &
-      region%ismip_output%tendlicalvf, field = region%ismip_output%licalvf)
-    call accumulate_single_ISMIP_flux_field( region, -gl_flux, mask_ice, deltat, &
-      region%ismip_output%tendligroundf, field = region%ismip_output%ligroundf)
+    call accumulate_single_ISMIP_flux_field( region, SMB_loc, deltat, &
+      region%ismip_output%tendacabf, region%ismip_output%acabf)
+    call accumulate_single_ISMIP_flux_field( region, BMB_gr, deltat, &
+      region%ismip_output%tendlibmassbfgr, region%ismip_output%libmassbfgr)
+    call accumulate_single_ISMIP_flux_field( region, BMB_fl, deltat, &
+      region%ismip_output%tendlibmassbffl, region%ismip_output%libmassbffl)
+    call accumulate_single_ISMIP_flux_field( region, calving_flux, deltat, &
+      region%ismip_output%tendlicalvf, region%ismip_output%licalvf)
+    call accumulate_single_ISMIP_flux_field( region, -gl_flux, deltat, &
+      region%ismip_output%tendligroundf, region%ismip_output%ligroundf)
 
     ! === Exceptions ===
     ! Geothermal heat flux: Store snapshot in accum
@@ -155,16 +145,15 @@ contains
 
   end subroutine accumulate_ISMIP_flux_fields
 
-  subroutine accumulate_single_ISMIP_flux_field( region, d_partial, mask, deltat, scalar, field)
+  subroutine accumulate_single_ISMIP_flux_field( region, d_partial, deltat, scalar, field)
     !< Write to ISMIP regional output NetCDF files - grid version
 
     ! In/output variables:
     type(type_model_region),                              intent(inout) :: region
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2), intent(in   ) :: d_partial
-    logical,  dimension(region%mesh%vi1:region%mesh%vi2), intent(in   ) :: mask
     real(dp),                                             intent(in   ) :: deltat
     type(type_ismip_scalar),                              intent(inout) :: scalar
-    type(type_ismip_gridded_field), optional,             intent(inout) :: field
+    type(type_ismip_gridded_field),                       intent(inout) :: field
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'accumulate_single_ISMIP_flux_field'
@@ -174,23 +163,14 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Accumulate field if requested
-    if (present( field)) then
-      do vi = region%mesh%vi1, region%mesh%vi2
-        if (mask( vi)) then
-          field%accum( vi) = field%accum( vi) + d_partial( vi) * ice_density / sec_per_year * deltat
-        end if
-      end do
-    end if
-
     ! Initialise local scalar
     scalar_loc = 0._dp
 
-    ! Compute integrated scalar
     do vi = region%mesh%vi1, region%mesh%vi2
-      if (mask( vi)) then
-        scalar_loc = scalar_loc + d_partial( vi) * ice_density * region%mesh%A( vi) / sec_per_year * deltat
-      end if
+      ! Accumulate field
+      field%accum( vi) = field%accum( vi) + d_partial( vi) * ice_density / sec_per_year * deltat
+      ! Add to integrated scalar
+      scalar_loc = scalar_loc + d_partial( vi) * ice_density * region%mesh%A( vi) / sec_per_year * deltat
     end do
 
     ! Add together values from each process

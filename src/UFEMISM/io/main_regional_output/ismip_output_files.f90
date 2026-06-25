@@ -310,12 +310,12 @@ contains
     call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
 
     ! Fluxes with provided initial scalar values in Gt/yr
-    call write_to_file( region, region%ismip_output%tendacabf, region%scalars%SMB_gr + region%scalars%SMB_fl)
-    call write_to_file( region, region%ismip_output%tendlibmassbfgr, region%scalars%BMB_gr)
-    call write_to_file( region, region%ismip_output%tendlibmassbffl, region%scalars%BMB_fl)
-    call write_to_file( region, region%ismip_output%tendlicalvf, region%scalars%margin_ocean_flux)
-    call write_to_file( region, region%ismip_output%tendlifmassbf, 0._dp)
-    call write_to_file( region, region%ismip_output%tendligroundf, region%scalars%gl_flux)
+    call write_to_file( region, region%ismip_output%tendacabf)
+    call write_to_file( region, region%ismip_output%tendlibmassbfgr)
+    call write_to_file( region, region%ismip_output%tendlibmassbffl)
+    call write_to_file( region, region%ismip_output%tendlicalvf)
+    call write_to_file( region, region%ismip_output%tendlifmassbf)
+    call write_to_file( region, region%ismip_output%tendligroundf)
 
     ! Set previous time step to current
     region%ismip_output%t_prev = region%ismip_output%t_curr
@@ -588,13 +588,12 @@ contains
 
   end subroutine write_to_file_scalar_ST
 
-  subroutine write_to_file_scalar_FL( region, scalar, initval)
+  subroutine write_to_file_scalar_FL( region, scalar)
     !< Write to FLUX scalar to single ISMIP regional output NetCDF file
 
     ! In/output variables:
     type(type_model_region),  intent(inout) :: region
     type(type_ismip_scalar),  intent(inout) :: scalar
-    real(dp),                 intent(in   ) :: initval ! Gt/y
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_file_scalar_FL'

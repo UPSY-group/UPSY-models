@@ -344,7 +344,7 @@ contains
     integer                               :: ncid
     character(len=16)                     :: nt_str
     real(dp)                              :: deltat
-    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D, mask_grid
+    real(dp), dimension(:),   allocatable :: d_grid_vec_partial_2D, d_mesh_vec_partial_2D
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -386,10 +386,8 @@ contains
       d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
     end if
 
-    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
-    allocate( mask_grid( region%output_grid%n_loc ))
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
-    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid == 0._dp))
+    ! Convert nans to fill values
+    where (isnan( d_grid_vec_partial_2D))
       d_grid_vec_partial_2D = NF90_FILL_DOUBLE
     end where
 
@@ -397,7 +395,6 @@ contains
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
     ! Clean up memory
-    deallocate( mask_grid)
     deallocate( d_grid_vec_partial_2D)
     deallocate( d_mesh_vec_partial_2D)
 
@@ -500,10 +497,18 @@ contains
       d_grid_vec_partial_2D = min(vmax, d_grid_vec_partial_2D)
     end if
 
-    ! Mask regions with ice fraction < 0.5 and convert nans to fill values
-    allocate( mask_grid( region%output_grid%n_loc ))
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
-    where (isnan( d_grid_vec_partial_2D) .or. (mask_grid ==0._dp))
+    ! For velocity fields, mask regions with ice fraction < 0.5
+    if (present(inputfield_b)) then
+      allocate( mask_grid( region%output_grid%n_loc ))
+      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
+      where (mask_grid < 0.5_dp)
+        d_grid_vec_partial_2D = NF90_FILL_DOUBLE
+      end where
+      deallocate( mask_grid)
+    end if
+
+    ! Convert nans to fill values
+    where (isnan( d_grid_vec_partial_2D))
       d_grid_vec_partial_2D = NF90_FILL_DOUBLE
     end where
 
@@ -511,7 +516,6 @@ contains
     call write_to_field_multopt_grid_dp_2D( region%output_grid, field%filename, ncid, field%name, d_grid_vec_partial_2D)
 
     ! Clean up memory
-    deallocate( mask_grid)
     deallocate( d_grid_vec_partial_2D)
     if (allocated( d_mesh_vec_partial_2D)) deallocate( d_mesh_vec_partial_2D)
 

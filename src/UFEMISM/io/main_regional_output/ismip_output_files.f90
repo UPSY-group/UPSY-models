@@ -264,7 +264,7 @@ contains
     call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=region%ice%v_vav_b  / sec_per_year)
 
     ! Temperatures
-    call write_to_file( region, region%ismip_output%litemptop, inputfield_a=region%ice%Ti( :, 1))
+    call write_to_file( region, region%ismip_output%litemptop, inputfield_a=region%ice%Ti( :, 1), mask_a=mask_ice_a)
 
     do vi = region%mesh%vi1, region%mesh%vi2
       if (mask_ice_a( vi)) then

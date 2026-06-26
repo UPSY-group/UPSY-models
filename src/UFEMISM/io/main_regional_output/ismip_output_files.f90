@@ -256,10 +256,10 @@ contains
     ! Velocities
     call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=region%ice%u_surf_b / sec_per_year)
     call write_to_file( region, region%ismip_output%yvelsurf, inputfield_b=region%ice%v_surf_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=region%ice%w_surf   / sec_per_year)
+    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=region%ice%w_3D( :, 1) / sec_per_year)
     call write_to_file( region, region%ismip_output%xvelbase, inputfield_b=region%ice%u_base_b / sec_per_year)
     call write_to_file( region, region%ismip_output%yvelbase, inputfield_b=region%ice%v_base_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=region%ice%w_base   / sec_per_year)
+    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=region%ice%w_3D( :, C%nz) / sec_per_year)
     call write_to_file( region, region%ismip_output%xvelmean, inputfield_b=region%ice%u_vav_b  / sec_per_year)
     call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=region%ice%v_vav_b  / sec_per_year)
 

@@ -26,7 +26,7 @@ MODULE climate_main
   USE climate_snapshot_plus_anomalies                        , ONLY: initialise_climate_model_snp_p_anml, run_climate_model_snp_p_anml, remap_climate_snp_p_anml
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
-  use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
+  use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model  
   use checksum_mod, only: checksum
 
   IMPLICIT NONE

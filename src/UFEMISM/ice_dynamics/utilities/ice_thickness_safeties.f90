@@ -121,6 +121,22 @@ contains
       end do
     end if
 
+    ! if so specified, remove all ice inside the mask
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%choice_retreat_mask_style == 'ISMIP6') then
+      select case(C%ISMIP6_shelf_collapse_type)
+      case('BMB')
+        ! do nothing, collapse will be applied in BMB routine
+      case('calving')
+        do vi = mesh%vi1, mesh%vi2
+          if (ice%retreat_masks%ISMIP6_shelf_collapse_mask( vi) > 0.01_dp .and. is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi))) then
+            Hi_new( vi) = 0._dp
+          end if
+        end do
+      case default
+        call crash('unknown shelf_collapse_type "' // trim( C%ISMIP6_shelf_collapse_type) // '"')
+      end select
+    end if
+
     ! === Fixiness ===
     ! ================
 

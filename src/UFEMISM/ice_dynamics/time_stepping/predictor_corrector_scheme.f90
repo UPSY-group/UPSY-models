@@ -143,7 +143,7 @@ contains
 
       ! if so desired, modify the predicted ice thickness field based on user-defined settings
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%Hb, region%ice%SL, region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
-
+      
 
       ! Adjust the predicted dHi_dt to compensate for thickness modifications
       ! This is just Robinson et al., 2020, Eq 30 above rearranged to retrieve

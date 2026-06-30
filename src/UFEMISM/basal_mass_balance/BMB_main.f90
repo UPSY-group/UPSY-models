@@ -161,7 +161,9 @@ CONTAINS
           CALL run_BMB_model_idealised( mesh, ice, BMB, time)
         end if
       CASE ('parameterised')
-        CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
+        if (time > C%uniform_BMB_t_start) then
+          CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
+        end if
       CASE ('inverted')
         CALL run_BMB_model_inverted( mesh, ice, BMB%inv, time)
         BMB%BMB = BMB%inv%BMB

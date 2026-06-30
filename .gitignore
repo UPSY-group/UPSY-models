@@ -73,4 +73,13 @@ linting_mods/*
 .vscode/task-logs/*
 
 # Ignore local test folder
-test
+
+/Inversion_tests/Basal_hydro_run/T20
+/Inversion_tests/Basal_hydro_run/U3
+/Testing_basal
+/Testing_basal_old
+/Testing_basal_old
+/Testing_basal_old
+/Testing_basal_old
+/Testing_Martin
+/Testing_Martin_old

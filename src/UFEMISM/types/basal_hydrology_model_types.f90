@@ -28,6 +28,8 @@ MODULE basal_hydrology_model_types
     ! Fill here what we need for the basal hydrology model
     ! Part of this might need to go in ice_model_types?
     real(dp), dimension(:), allocatable :: W                   ! Basal water depth
+    real(dp), dimension(:), allocatable :: dW_dx_a             ! Derivative of W to x on A grid.
+    real(dp), dimension(:), allocatable :: dW_dy_a             ! Derivative of W to y on A grid.
     real(dp), dimension(:), allocatable :: dW_dx_b             ! Derivative of W to x on B grid.
     real(dp), dimension(:), allocatable :: W_b                 ! Basal water depth on B grid
 
@@ -62,11 +64,8 @@ MODULE basal_hydrology_model_types
     real(dp), dimension(:), allocatable :: tau_c               ! Yield stress
 
     ! Is this how it goes in UFEMISM as well? Compass indices do not really make sense here?
-    real(dp), dimension(:), allocatable :: Q_e                 ! Normal component (east) of the advective flux VW
-    real(dp), dimension(:), allocatable :: Q_w                 ! Normal component (west) of the advective flux VW
-    real(dp), dimension(:), allocatable :: Q_n                 ! Normal component (north) of the advective flux VW
-    real(dp), dimension(:), allocatable :: Q_s                 ! Normal component (south) of the advective flux VW
-    real(dp), dimension(:), allocatable :: divQ                ! Divergence of the advective flux
+    real(dp), dimension(:), allocatable :: divQ                ! Divergence of the advective-diffusion flux
+    real(dp), dimension(:), allocatable :: divD                ! Divergence of the diffusive flux
 
     real(dp), dimension(:), allocatable :: q_til               ! Water flux towards till
     real(dp), dimension(:), allocatable :: q_water_layer       ! Water flux towards water layer

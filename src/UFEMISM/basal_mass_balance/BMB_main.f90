@@ -872,7 +872,7 @@ CONTAINS
     call checksum( mesh%pai_V  , forcing%Ti                , 'forcing%Ti'                )
     call checksum( mesh%pai_V  , forcing%T_ocean           , 'forcing%T_ocean'           )
     call checksum( mesh%pai_V  , forcing%S_ocean           , 'forcing%S_ocean'           )
-    call checksum( mesh%pai_V  , forcing%f_coriolis        , 'forcing%f_coriolis'        )
+    call checksum( mesh%pai_Tri, forcing%f_coriolis        , 'forcing%f_coriolis'        )
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -221,8 +221,8 @@ contains
     nudge%dC_dt = 0._dp
 
     ! Calculate Laplacian of the bed roughness field
-    call ddx_a_b_2D( mesh, bed_roughness%generic_bed_roughness, dC_dx_b)
-    call ddy_a_b_2D( mesh, bed_roughness%generic_bed_roughness, dC_dy_b)
+    call ddx_a_b_2D( mesh, bed_roughness%generic_bed_roughness_prev, dC_dx_b)
+    call ddy_a_b_2D( mesh, bed_roughness%generic_bed_roughness_prev, dC_dy_b)
 
     call ddx_b_a_2D( mesh, dC_dx_b, d2C_dx2)
     call ddy_b_a_2D( mesh, dC_dy_b, d2C_dy2)

@@ -205,7 +205,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_dCdt'
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: I1, I2, I3
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: I1, I2, I3, I4
     integer                                :: vi
     real(dp), dimension(mesh%ti1:mesh%ti2) :: dC_dx_b, dC_dy_b
     real(dp), dimension(mesh%vi1:mesh%vi2) :: d2C_dx2, d2C_dy2
@@ -217,6 +217,7 @@ contains
     I1          = 0._dp
     I2          = 0._dp
     I3          = 0._dp
+    I4          = 0._dp
     nudge%I_tot = 0._dp
     nudge%dC_dt = 0._dp
 
@@ -240,11 +241,12 @@ contains
         nudge%R( vi) = max( 0._dp, min( 1._dp, &
           ((ice%uabs_vav( vi) * ice%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
 
-        I1( vi) = -nudge%deltau_av_up  ( vi) / C%bednudge_H_u_flowline_u0
-        I2( vi) = -nudge%deltau_av_down( vi) / C%bednudge_H_u_flowline_u0
-        I3( vi) =  nudge%deltaHs_av_up ( vi) / C%bednudge_H_u_flowline_H0
+        I1( vi) = -nudge%deltau_av_up   ( vi) / C%bednudge_H_u_flowline_u0
+        I2( vi) = -nudge%deltau_av_down ( vi) / C%bednudge_H_u_flowline_u0
+        I3( vi) =  nudge%deltaHs_av_up  ( vi) / C%bednudge_H_u_flowline_H0
+        I4( vi) =  nudge%deltaHs_av_down( vi) / C%bednudge_H_u_flowline_H0
 
-        nudge%I_tot( vi) = (I1( vi) + I2( vi) + I3( vi)) * nudge%R( vi)
+        nudge%I_tot( vi) = (I1( vi) + I2( vi) + I3( vi) - I4( vi)) * nudge%R( vi)
 
         nudge%dC_dt( vi) = -bed_roughness%generic_bed_roughness( vi) * &
           (nudge%I_tot( vi) / C%bednudge_H_u_flowline_t_scale &

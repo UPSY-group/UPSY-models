@@ -15,8 +15,8 @@ Behavior:
 - Creates <test_folder>/results_checksum if needed
 - For each file:
     - Creates results_checksum/<name>_checksum.nc containing:
-        - one 4-value stats checksum variable per original variable
-            [sum_finite, sum_abs_finite, min_finite, max_finite]
+        - one 3-value stats checksum variable per original variable
+            [sum_sq_finite, sum_abs_finite, max_abs_finite]
         - one 3-value integer count checksum variable per original variable
             [n_NaN, n_Inf, n_mInf]
         Original variables in groups are flattened with underscores in the name.
@@ -36,7 +36,7 @@ except ImportError:
 
 
 CHECKSUM_DIM_NAME = "checksum"
-CHECKSUM_DIM_LEN = 4
+CHECKSUM_DIM_LEN = 3
 CHECKSUM_COUNT_DIM_NAME = "checksum_count"
 CHECKSUM_COUNT_DIM_LEN = 3
 FILL_VALUE = 9e9
@@ -142,11 +142,9 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
             checksum_sum_sq = np.sum(np.square(finite_flat))
             checksum_sum_abs = np.sum(np.abs(finite_flat))
             if finite_flat.size > 0:
-                checksum_min = np.min(finite_flat)
-                checksum_max = np.max(finite_flat)
+                checksum_max_abs = np.max(np.abs(finite_flat))
             else:
-                checksum_min = np.nan
-                checksum_max = np.nan
+                checksum_max_abs = np.nan
 
             # Additional checksums that track non-finite values in original data.
             checksum_n_nan = np.sum(np.isnan(flat))
@@ -159,8 +157,7 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
                     [
                         checksum_sum_sq,
                         checksum_sum_abs,
-                        checksum_min,
-                        checksum_max,
+                        checksum_max_abs,
                     ],
                     dtype=np.float64,
                 )
@@ -171,7 +168,7 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
             )
 
             if is_integer_source:
-                # Integer source variables get integer-typed sum/sum_abs/min/max.
+                # Integer source variables get integer-typed sum_sq/sum_abs/max_abs.
                 stats_out = np.array(np.rint(stats_data), dtype=np.int64)
             else:
                 stats_out = stats_data

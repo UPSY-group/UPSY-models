@@ -9,10 +9,8 @@ This script reads model output from NetCDF files and creates a two-panel figure:
 
 import numpy as np
 import matplotlib.pyplot as plt
-from matplotlib.patches import Rectangle
 import netCDF4
 import os
-import glob
 
 
 def read_mismip_ensemble(foldername):
@@ -125,8 +123,7 @@ def read_ufemism_results(foldername):
     ufe = {}
 
     if not os.path.exists(filename):
-        print(f"Warning: File not found: {filename}")
-        return ufe
+        raise FileNotFoundError(f"Required UFEMISM output not found: {filename}")
 
     with netCDF4.Dataset(filename, 'r') as ds:
         # Grounding-line position over time

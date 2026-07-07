@@ -474,10 +474,10 @@ contains
 
     str = trim( var_name) // ': sum(d^2) = {dp_01}, sum(abs) = {dp_02}, min = {dp_03}, max = {dp_04} [' &
       // trim( routine_path) // ']'
-    str = insert_val_into_string_dp( str, '{dp_01}', sum_d_sq)
-    str = insert_val_into_string_dp( str, '{dp_02}', sum_abs_d)
-    str = insert_val_into_string_dp( str, '{dp_03}', min_d)
-    str = insert_val_into_string_dp( str, '{dp_04}', max_d)
+    str = insert_val_into_string_dp( str, '{dp_01}', sum_d_sq , n_digits = 6)
+    str = insert_val_into_string_dp( str, '{dp_02}', sum_abs_d, n_digits = 6)
+    str = insert_val_into_string_dp( str, '{dp_03}', min_d    , n_digits = 6)
+    str = insert_val_into_string_dp( str, '{dp_04}', max_d    , n_digits = 6)
 
     call log_checksum( str)
 

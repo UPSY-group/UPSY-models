@@ -162,7 +162,7 @@ contains
 
   end function insert_val_into_string_int
 
-  pure function insert_val_into_string_dp( str, marker, val) result( str_new)
+  pure function insert_val_into_string_dp( str, marker, val, n_digits) result( str_new)
     !< Replace marker in str with val (where val is a double-precision number)
 
     ! Example: str    = 'Johnny weighs {dp_01} kg.'
@@ -174,21 +174,32 @@ contains
     character(len=*),  intent(in) :: str
     character(len=*),  intent(in) :: marker
     real(dp),          intent(in) :: val
+    integer, optional, intent(in) :: n_digits
     character(len=:), allocatable :: str_new
 
     integer                       :: ci
-    character(len=20)             :: val_str
+    integer                       :: n_digits_loc
+    character(len=128)            :: format_str
+    character(len=:), allocatable :: val_str
     integer                       :: len_str, len_marker
 
     ! Find position ci in str where i_str occurs
     ci = index( str, marker)
+
+    if (present( n_digits)) then
+      n_digits_loc = n_digits
+    else
+      n_digits_loc = 14
+    end if
 
     ! Safety
     if (ci == 0) error stop 'insert_val_into_string_dp: couldnt find marker "' // &
       trim( marker) // '" in string "' // trim( str) // '"!'
 
     ! Write val to a string
-    write( val_str,'(E20.14)') val
+    write( format_str, '(A,I2,A,I2,A)') '(E', n_digits_loc+6, '.', n_digits_loc, ')'
+    allocate( character( n_digits_loc+6) :: val_str)
+    write( val_str, format_str) val
 
     ! Find total string length right now
     len_str    = len( str)

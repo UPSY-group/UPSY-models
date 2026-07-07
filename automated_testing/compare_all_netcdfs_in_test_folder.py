@@ -271,28 +271,26 @@ def _compare_data_variable(var_path: str, d_ref: np.ndarray,
             return False
         return True
 
-    if is_checksum and (not is_count_checksum) and len(d_ref) == 4:
-        # Values are: [sum_finite, sum_abs_finite, min_finite, max_finite]
+    if is_checksum and (not is_count_checksum) and len(d_ref) == 3:
+        # Values are: [sum_sq_finite, sum_abs_finite, max_abs_finite]
         vals_ref = [_scalar_or_nan(v) for v in d_ref]
         vals_mod = [_scalar_or_nan(v) for v in d_mod]
 
-        ref_sum, ref_sum_abs, ref_min, ref_max = vals_ref
-        mod_sum, mod_sum_abs, mod_min, mod_max = vals_mod
-
-        ref_min_max_abs = max(abs(ref_min), abs(ref_max))
+        ref_sum_sq, ref_sum_abs, ref_max_abs = vals_ref
+        mod_sum_sq, mod_sum_abs, mod_max_abs = vals_mod
 
         mismatches = []
 
-        if _both_nan(ref_sum, mod_sum):
+        if _both_nan(ref_sum_sq, mod_sum_sq):
             pass
-        elif np.isnan(ref_sum) or np.isnan(mod_sum):
-            mismatches.append(('sum', np.nan))
-        elif ref_sum_abs != 0:
-            diff_sum = abs((mod_sum - ref_sum) / ref_sum_abs)
-            if diff_sum > TOL:
-                mismatches.append(('sum', diff_sum))
-        elif abs(mod_sum - ref_sum) > TOL:
-            mismatches.append(('sum', abs(mod_sum - ref_sum)))
+        elif np.isnan(ref_sum_sq) or np.isnan(mod_sum_sq):
+            mismatches.append(('sum_sq', np.nan))
+        elif ref_sum_sq != 0:
+            diff_sum_sq = abs(1.0 - mod_sum_sq / ref_sum_sq)
+            if diff_sum_sq > TOL:
+                mismatches.append(('sum_sq', diff_sum_sq))
+        elif abs(mod_sum_sq - ref_sum_sq) > TOL:
+            mismatches.append(('sum_sq', abs(mod_sum_sq - ref_sum_sq)))
 
         if _both_nan(ref_sum_abs, mod_sum_abs):
             pass
@@ -305,27 +303,16 @@ def _compare_data_variable(var_path: str, d_ref: np.ndarray,
         elif abs(mod_sum_abs - ref_sum_abs) > TOL:
             mismatches.append(('sum_abs', abs(mod_sum_abs - ref_sum_abs)))
 
-        if _both_nan(ref_min, mod_min):
+        if _both_nan(ref_max_abs, mod_max_abs):
             pass
-        elif np.isnan(ref_min) or np.isnan(mod_min):
-            mismatches.append(('min', np.nan))
-        elif ref_min_max_abs != 0:
-            diff_min = abs((mod_min - ref_min) / ref_min_max_abs)
-            if diff_min > TOL:
-                mismatches.append(('min', diff_min))
-        elif abs(mod_min - ref_min) > TOL:
-            mismatches.append(('min', abs(mod_min - ref_min)))
-
-        if _both_nan(ref_max, mod_max):
-            pass
-        elif np.isnan(ref_max) or np.isnan(mod_max):
-            mismatches.append(('max', np.nan))
-        elif ref_min_max_abs != 0:
-            diff_max = abs((mod_max - ref_max) / ref_min_max_abs)
-            if diff_max > TOL:
-                mismatches.append(('max', diff_max))
-        elif abs(mod_max - ref_max) > TOL:
-            mismatches.append(('max', abs(mod_max - ref_max)))
+        elif np.isnan(ref_max_abs) or np.isnan(mod_max_abs):
+            mismatches.append(('max_abs', np.nan))
+        elif ref_max_abs != 0:
+            diff_max_abs = abs(1.0 - mod_max_abs / ref_max_abs)
+            if diff_max_abs > TOL:
+                mismatches.append(('max_abs', diff_max_abs))
+        elif abs(mod_max_abs - ref_max_abs) > TOL:
+            mismatches.append(('max_abs', abs(mod_max_abs - ref_max_abs)))
 
         if mismatches:
             print(f'  Mismatching data in {var_path}')

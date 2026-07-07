@@ -139,7 +139,7 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
             finite_flat = flat[np.isfinite(flat)]
 
             # Existing checksums, all computed over finite values only.
-            checksum_sum = np.sum(finite_flat)
+            checksum_sum_sq = np.sum(np.square(finite_flat))
             checksum_sum_abs = np.sum(np.abs(finite_flat))
             if finite_flat.size > 0:
                 checksum_min = np.min(finite_flat)
@@ -157,7 +157,7 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
             with np.errstate(invalid="ignore", over="ignore"):
                 stats_data = np.array(
                     [
-                        checksum_sum,
+                        checksum_sum_sq,
                         checksum_sum_abs,
                         checksum_min,
                         checksum_max,

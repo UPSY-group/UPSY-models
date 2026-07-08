@@ -9,52 +9,7 @@ on:
 
 jobs:
 
-  # Compile the model and cache the executable
-  compile_and_cache_UFEMISM_dev_MacOS:
-    uses: ./.github/workflows/UFE_weekly_benchmarks_compile_and_cache_dev_MacOS.yml
-
-  compile_and_cache_UFEMISM_dev_Linux:
-    uses: ./.github/workflows/UFE_weekly_benchmarks_compile_and_cache_dev_Linux.yml
-
-  compile_and_cache_UFEMISM_perf_MacOS:
-    uses: ./.github/workflows/UFE_weekly_benchmarks_compile_and_cache_perf_MacOS.yml
-
-  compile_and_cache_UFEMISM_perf_Linux:
-    uses: ./.github/workflows/UFE_weekly_benchmarks_compile_and_cache_perf_Linux.yml
-
-  # Setup and cache Matlab
-  setup_and_cache_Matlab:
-    uses: ./.github/workflows/setup_and_cache_Matlab.yml
-
-  # Install and cache Python
-  # install_and_cache_Python:
-  #   uses: ./.github/workflows/UPSY_weekly_benchmarks_install_and_cache_Python.yml
-
-  # Run the unit tests and analyse the results
-  run_unit_tests:
-    needs: [compile_and_cache_UFEMISM_dev_MacOS, setup_and_cache_Matlab]
-    uses: ./.github/workflows/UFE_weekly_benchmarks_run_unit_tests.yml
-
-  analyse_unit_tests:
-    needs: run_unit_tests
-    uses: ./.github/workflows/UFE_weekly_benchmarks_analyse_unit_tests.yml
-
-  # Run the component tests and analyse the results
-  run_component_tests:
-    needs: [compile_and_cache_UFEMISM_dev_MacOS, setup_and_cache_Matlab]
-    uses: ./.github/workflows/UFE_weekly_benchmarks_run_component_tests.yml
-
-  analyse_component_tests:
-    needs: run_component_tests
-    uses: ./.github/workflows/UFE_weekly_benchmarks_analyse_component_tests.yml
-
-  # Run the integrated tests and analyse the results
-  run_and_analyse_integrated_tests:
-    needs: [compile_and_cache_UFEMISM_perf_MacOS, setup_and_cache_Matlab]
-    uses: ./.github/workflows/UFE_weekly_benchmarks_run_and_analyse_integrated_tests.yml
-
-  # Download artifacts with scoreboard files from the component and integrated tests
-  # and commit them to the repository. And create the visualisation (which is awesome)
-  finalise_scoreboard:
-    needs: [analyse_component_tests, run_and_analyse_integrated_tests]
-    uses: ./.github/workflows/UFE_weekly_benchmarks_finalise_scoreboard.yml
+  MISMIPplus_full:
+    uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_MISMIPplus_full

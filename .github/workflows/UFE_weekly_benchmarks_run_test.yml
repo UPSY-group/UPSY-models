@@ -1,0 +1,52 @@
+name: Run test
+run-name: ${{ github.actor }} - Run test
+on:
+  workflow_call:
+    inputs:
+      test_path:
+        description: Path to test directory
+        required: true
+        type: string
+
+jobs:
+  run_test:
+    name: run
+    runs-on: macos-latest
+    steps:
+
+    # Install all required packages and compile the code
+    # ==================================================
+
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Update submodules
+        run: |
+          git submodule update --init --remote
+
+      - name: Set up micromamba environment
+        uses: mamba-org/setup-micromamba@v2
+        with:
+          environment-file: environment-ci.yml
+          environment-name: upsy
+          cache-environment: true
+          cache-downloads: true
+
+      - name: Verify compiler setup
+        shell: micromamba-shell {0}
+        run: gfortran --version
+
+      - name: Compile model code
+        shell: micromamba-shell {0}
+        run: csh compile_UFEMISM.csh  dev  clean
+
+    # Run the test and check its results against the reference
+    # ========================================================
+
+      - name: Run test
+        shell: micromamba-shell {0}
+        run: csh ${{ inputs.test_path }}/test_script.csh
+
+      - name: Make figures
+        shell: micromamba-shell {0}
+        run: python3 ${{ inputs.test_path }}/make_figures.py

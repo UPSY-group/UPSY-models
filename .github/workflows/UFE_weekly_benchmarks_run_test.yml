@@ -27,7 +27,7 @@ jobs:
       - name: Set up micromamba environment
         uses: mamba-org/setup-micromamba@v2
         with:
-          environment-file: environment-ci.yml
+          environment-file: environment.yml
           environment-name: upsy
           cache-environment: true
           cache-downloads: true

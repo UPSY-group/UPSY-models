@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import netCDF4
 import os
 import glob
+import argparse
 
 
 def list_transect_files(foldername):
@@ -114,6 +115,18 @@ def setup_multipanel_figure(wa, ha, margins_hor, margins_ver):
 def main():
     """Create MISMIP_mod geometry and grounding-line plots."""
 
+    parser = argparse.ArgumentParser(
+        description='Create MISMIP_mod benchmark figures from UFEMISM results.'
+    )
+    parser.add_argument(
+        '--results-root',
+        default='.',
+        help='Path to the folder containing UFEMISM results_* directories.'
+    )
+    args = parser.parse_args()
+
+    results_root = os.path.abspath(args.results_root)
+
     simulations = [
         ('spinup_10km', 'results_spinup_10km', 'r'),
         ('advance_10km', 'results_advance_10km', 'g'),
@@ -122,7 +135,7 @@ def main():
 
     all_results = {}
     for sim_name, sim_folder, _ in simulations:
-        all_results[sim_name] = read_simulation_results(sim_folder)
+        all_results[sim_name] = read_simulation_results(os.path.join(results_root, sim_folder))
 
     # Set up figure
     wa = [500, 500]  # Width of two panels in pixels

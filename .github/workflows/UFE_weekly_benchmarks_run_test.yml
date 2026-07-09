@@ -51,7 +51,7 @@ jobs:
         shell: micromamba-shell {0}
         env:
           MPLBACKEND: Agg
-        run: python3 ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }}
+        run: python3 ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }} --output-dir benchmark_figures
 
       - name: Derive artifact name
         id: artifact_name
@@ -63,5 +63,5 @@ jobs:
         uses: actions/upload-artifact@v4.3.4
         with:
           name: benchmark_figures_${{ steps.artifact_name.outputs.value }}
-          path: ${{ inputs.test_path }}/*.png
+          path: benchmark_figures/*.png
           if-no-files-found: warn

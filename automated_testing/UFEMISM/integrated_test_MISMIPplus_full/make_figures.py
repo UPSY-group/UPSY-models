@@ -220,9 +220,16 @@ def main():
         default='.',
         help='Path to the folder containing UFEMISM results_* directories.'
     )
+    parser.add_argument(
+        '--output-dir',
+        default='.',
+        help='Directory where output figure PNG files are written.'
+    )
     args = parser.parse_args()
 
     results_root = os.path.abspath(args.results_root)
+    output_dir = os.path.abspath(args.output_dir)
+    os.makedirs(output_dir, exist_ok=True)
 
     # Build paths from the script location to avoid CWD-dependent behavior.
     script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -297,7 +304,7 @@ def main():
     ax.plot(ufe_4km['time'], ufe_4km['xGL'] / 1e3, 'b-', linewidth=3, label='4 km')
 
     # Save figure
-    output_file = 'Fig_integrated_test_MISMIPplus_full.png'
+    output_file = os.path.join(output_dir, 'Fig_integrated_test_MISMIPplus_full.png')
     fig.savefig(output_file, dpi=100, bbox_inches='tight')
     print(f"Figure saved to {output_file}")
     plt.close(fig)

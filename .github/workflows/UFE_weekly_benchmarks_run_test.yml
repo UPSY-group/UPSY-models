@@ -49,4 +49,6 @@ jobs:
 
       - name: Make figures
         shell: micromamba-shell {0}
+        env:
+          MPLBACKEND: Agg
         run: python3 ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }}

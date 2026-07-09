@@ -8,6 +8,8 @@ This script reads model output from NetCDF files and creates a two-panel figure:
 """
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import netCDF4
 import os
@@ -298,8 +300,7 @@ def main():
     output_file = 'Fig_integrated_test_MISMIPplus_full.png'
     fig.savefig(output_file, dpi=100, bbox_inches='tight')
     print(f"Figure saved to {output_file}")
-
-    plt.show()
+    plt.close(fig)
 
 
 if __name__ == '__main__':

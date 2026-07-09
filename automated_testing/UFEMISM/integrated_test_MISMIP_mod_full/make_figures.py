@@ -4,6 +4,8 @@ Plot UFEMISM model output for the MISMIP_mod experiment.
 """
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import netCDF4
 import os
@@ -187,8 +189,7 @@ def main():
     output_file = 'Fig_integrated_test_MISMIP_mod_full.png'
     fig.savefig(output_file, dpi=100, bbox_inches='tight')
     print(f"Figure saved to {output_file}")
-
-    plt.show()
+    plt.close(fig)
 
 
 if __name__ == '__main__':

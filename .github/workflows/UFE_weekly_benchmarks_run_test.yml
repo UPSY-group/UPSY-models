@@ -22,7 +22,7 @@ jobs:
 
       - name: Update submodules
         run: |
-          git submodule update --init --remote
+          git submodule update --init --recursive
 
       - name: Set up micromamba environment
         uses: mamba-org/setup-micromamba@v2
@@ -51,7 +51,7 @@ jobs:
         shell: micromamba-shell {0}
         env:
           MPLBACKEND: Agg
-        run: python3 ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }} --output-dir benchmark_figures
+        run: python ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }} --output-dir benchmark_figures
 
       - name: Derive artifact name
         id: artifact_name

@@ -8,9 +8,12 @@ This script reads model output from NetCDF files and creates a two-panel figure:
 """
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import netCDF4
 import os
+import argparse
 
 
 def read_mismip_ensemble(foldername):
@@ -209,13 +212,37 @@ def setup_multipanel_figure(wa, ha, margins_hor, margins_ver):
 def main():
     """Main function to create the comparison figure."""
 
+    parser = argparse.ArgumentParser(
+        description='Create MISMIPplus benchmark figures from UFEMISM results.'
+    )
+    parser.add_argument(
+        '--results-root',
+        default='.',
+        help='Path to the folder containing UFEMISM results_* directories.'
+    )
+    parser.add_argument(
+        '--output-dir',
+        default='.',
+        help='Directory where output figure PNG files are written.'
+    )
+    args = parser.parse_args()
+
+    results_root = os.path.abspath(args.results_root)
+    output_dir = os.path.abspath(args.output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Build paths from the script location to avoid CWD-dependent behavior.
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+
     # Read ensemble results
-    foldername = '../../../external/data/model_ensembles/MISMIPplus/'
+    foldername = os.path.abspath(
+        os.path.join(script_dir, '../../../external/data/model_ensembles/MISMIPplus/')
+    )
     c2020 = read_mismip_ensemble(foldername)
 
     # Read UFEMISM results
-    ufe_5km = read_ufemism_results('results_5km_ice1r')
-    ufe_4km = read_ufemism_results('results_4km_ice1r')
+    ufe_5km = read_ufemism_results(os.path.join(results_root, 'results_5km_ice1r'))
+    ufe_4km = read_ufemism_results(os.path.join(results_root, 'results_4km_ice1r'))
 
     # Set up figure
     wa = [500, 500]  # Width of two panels in pixels
@@ -277,11 +304,10 @@ def main():
     ax.plot(ufe_4km['time'], ufe_4km['xGL'] / 1e3, 'b-', linewidth=3, label='4 km')
 
     # Save figure
-    output_file = 'Fig_integrated_test_MISMIPplus_full.png'
+    output_file = os.path.join(output_dir, 'Fig_integrated_test_MISMIPplus_full.png')
     fig.savefig(output_file, dpi=100, bbox_inches='tight')
     print(f"Figure saved to {output_file}")
-
-    plt.show()
+    plt.close(fig)
 
 
 if __name__ == '__main__':

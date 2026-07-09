@@ -4,10 +4,13 @@ Plot UFEMISM model output for the MISMIP_mod experiment.
 """
 
 import numpy as np
+import matplotlib
+matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 import netCDF4
 import os
 import glob
+import argparse
 
 
 def list_transect_files(foldername):
@@ -114,6 +117,25 @@ def setup_multipanel_figure(wa, ha, margins_hor, margins_ver):
 def main():
     """Create MISMIP_mod geometry and grounding-line plots."""
 
+    parser = argparse.ArgumentParser(
+        description='Create MISMIP_mod benchmark figures from UFEMISM results.'
+    )
+    parser.add_argument(
+        '--results-root',
+        default='.',
+        help='Path to the folder containing UFEMISM results_* directories.'
+    )
+    parser.add_argument(
+        '--output-dir',
+        default='.',
+        help='Directory where output figure PNG files are written.'
+    )
+    args = parser.parse_args()
+
+    results_root = os.path.abspath(args.results_root)
+    output_dir = os.path.abspath(args.output_dir)
+    os.makedirs(output_dir, exist_ok=True)
+
     simulations = [
         ('spinup_10km', 'results_spinup_10km', 'r'),
         ('advance_10km', 'results_advance_10km', 'g'),
@@ -122,7 +144,7 @@ def main():
 
     all_results = {}
     for sim_name, sim_folder, _ in simulations:
-        all_results[sim_name] = read_simulation_results(sim_folder)
+        all_results[sim_name] = read_simulation_results(os.path.join(results_root, sim_folder))
 
     # Set up figure
     wa = [500, 500]  # Width of two panels in pixels
@@ -171,11 +193,10 @@ def main():
             ax.plot(tr['time'] / 1e3, tr['xGL'] / 1e3, color='k', linewidth=1.25, alpha=0.75)
 
     # Save figure
-    output_file = 'Fig_integrated_test_MISMIP_mod_full.png'
+    output_file = os.path.join(output_dir, 'Fig_integrated_test_MISMIP_mod_full.png')
     fig.savefig(output_file, dpi=100, bbox_inches='tight')
     print(f"Figure saved to {output_file}")
-
-    plt.show()
+    plt.close(fig)
 
 
 if __name__ == '__main__':

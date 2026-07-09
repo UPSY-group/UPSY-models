@@ -56,7 +56,7 @@ jobs:
       - name: Derive artifact name
         id: artifact_name
         shell: bash
-        run: echo "value=$(basename \"${{ inputs.test_path }}\")" >> "$GITHUB_OUTPUT"
+        run: printf 'value=%s\n' "$(basename "${{ inputs.test_path }}")" >> "$GITHUB_OUTPUT"
 
       - name: Upload benchmark figures as artifact
         if: always()

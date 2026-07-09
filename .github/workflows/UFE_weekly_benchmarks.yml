@@ -13,3 +13,8 @@ jobs:
     uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_MISMIPplus_full
+
+  MISMIP_mod_full:
+    uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_MISMIP_mod_full

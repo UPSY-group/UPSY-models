@@ -52,3 +52,16 @@ jobs:
         env:
           MPLBACKEND: Agg
         run: python3 ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }}
+
+      - name: Derive artifact name
+        id: artifact_name
+        shell: bash
+        run: echo "value=$(basename \"${{ inputs.test_path }}\")" >> "$GITHUB_OUTPUT"
+
+      - name: Upload benchmark figures as artifact
+        if: always()
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: benchmark_figures_${{ steps.artifact_name.outputs.value }}
+          path: ${{ inputs.test_path }}/*.png
+          if-no-files-found: warn

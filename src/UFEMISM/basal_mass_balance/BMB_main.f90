@@ -62,6 +62,7 @@ CONTAINS
     CHARACTER(LEN=256)                                    :: choice_BMB_model
     CHARACTER(LEN=256)                                    :: choice_BMB_model_ROI
     INTEGER                                               :: vi
+    real(dp)                                              :: w
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -97,17 +98,34 @@ CONTAINS
         ! This should not be possible
         CALL crash('overshot the BMB time step')
       ELSE
-        ! It is not yet time to calculate a new BMB
+        ! It is not yet time to calculate a new BMB,
+        ! just apply subgrid scheme if required to adapt to any grounding line migration
 
-        ! Apply subgrid scheme of old BMB to new mask
-        SELECT CASE (choice_BMB_model)
-          CASE ('inverted')
-            ! No need to do anything
-          CASE ('prescribed_fixed')
-            ! No need to do anything
-          CASE DEFAULT
-            CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
-        END SELECT
+        ! Skip if before start of transition phase, only inversion is applied
+        if (C%do_BMB_transition_phase .and. time <= C%BMB_transition_phase_t_start) then
+          ! No need to do anything
+        else
+          ! Apply subgrid scheme of old BMB to new mask
+          SELECT CASE (choice_BMB_model)
+            CASE ('inverted')
+              ! No need to do anything
+            CASE ('prescribed_fixed')
+              ! No need to do anything
+            CASE DEFAULT
+              CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
+          END SELECT
+        end if
+
+        ! Apply weighted av with BMB_inv if within transition phase
+        if (C%do_BMB_transition_phase .and. time > C%BMB_transition_phase_t_start .and. time < C%BMB_transition_phase_t_end) then
+          ! Determine weight of modelled BMB
+          w = (time - C%BMB_transition_phase_t_start)/(C%BMB_transition_phase_t_end - C%BMB_transition_phase_t_start)
+          ! Apply weighted average
+          do vi = mesh%vi1, mesh%vi2
+            BMB%BMB( vi) = w * BMB%BMB( vi) + (1._dp - w) * BMB%inv%BMB( vi)
+            ! TODO determine BMB_sheet and BMB_shelf
+          end do
+        end if
 
         CALL finalise_routine( routine_name)
         RETURN
@@ -139,6 +157,32 @@ CONTAINS
           call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, .true., .false.)
           BMB%t_next_reinit = BMB%t_next_reinit + C%dt_BMB_reinit
       end select
+    end if
+
+    ! If transition phase and before end: compute BMB inversion
+    if (C%do_BMB_transition_phase .and. time < C%BMB_transition_phase_t_end) then
+      call run_BMB_model_inverted( mesh, ice, BMB%inv, time)
+    end if
+
+    ! If before start of transition phase: just apply inversion and return
+    if (C%do_BMB_transition_phase .and. time <= C%BMB_transition_phase_t_start) then
+      BMB%BMB = BMB%inv%BMB
+      ! Separate into BMB_sheet and BMB_shelf for scalar diagnostics
+      do vi = mesh%vi1, mesh%vi2
+        if (ice%mask_floating_ice( vi)) then
+          BMB%BMB_shelf( vi) = BMB%BMB( vi)
+        else
+          BMB%BMB_shelf( vi) = 0._dp
+        end if
+        if (ice%mask_grounded_ice( vi)) then
+          BMB%BMB_sheet( vi) = BMB%BMB( vi)
+        else
+          BMB%BMB_sheet( vi) = 0._dp
+        end if
+      end do
+
+      call finalise_routine( routine_name)
+      return
     end if
 
     ! Run the chosen BMB model
@@ -227,12 +271,17 @@ CONTAINS
         CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
     END SELECT
 
-    ! save BMB in BMB_modelled if applying transition phase
-    IF (C%do_BMB_transition_phase) THEN
-      DO vi = mesh%vi1, mesh%vi2
-        BMB%BMB_modelled( vi) = BMB%BMB( vi)
-      END DO
-    END IF
+    ! TODO if within transition phase, apply weighted average between BMB_inv and BMB
+    ! Apply weighted av with BMB_inv if within transition phase
+    if (C%do_BMB_transition_phase .and. time > C%BMB_transition_phase_t_start .and. time < C%BMB_transition_phase_t_end) then
+      ! Determine weight of modelled BMB
+      w = (time - C%BMB_transition_phase_t_start)/(C%BMB_transition_phase_t_end - C%BMB_transition_phase_t_start)
+      ! Apply weighted average
+      do vi = mesh%vi1, mesh%vi2
+        BMB%BMB( vi) = w * BMB%BMB( vi) + (1._dp - w) * BMB%inv%BMB( vi)
+        ! TODO determine BMB_sheet and BMB_shelf
+      end do
+    end if
 
     ! Apply limits
     BMB%BMB = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB ))

@@ -375,6 +375,11 @@ CONTAINS
         ! Do nothing
     END SELECT
 
+    ! Initialise BMB inversion if needed for transition phase
+    if (C%do_BMB_transition_phase) then
+      call initialise_BMB_model_inverted( mesh, BMB%inv, refgeo_PD, refgeo_init)
+    end if
+
     ! Determine which BMB model to initialise
     SELECT CASE (choice_BMB_model)
       CASE ('uniform')

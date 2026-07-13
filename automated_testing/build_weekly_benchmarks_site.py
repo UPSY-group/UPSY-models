@@ -11,10 +11,11 @@ from pathlib import Path
 
 
 def copy_artifact_images(artifacts_dir: Path, site_images_dir: Path) -> None:
-    """Copy benchmark PNG files grouped by artifact folder into site/images."""
+    """Copy benchmark PNG files into site/images from folders or a flat PNG directory."""
     site_images_dir.mkdir(parents=True, exist_ok=True)
 
     artifact_dirs = sorted(path for path in artifacts_dir.iterdir() if path.is_dir()) if artifacts_dir.exists() else []
+    flat_png_paths = sorted(path for path in artifacts_dir.iterdir() if path.suffix.lower() == ".png") if artifacts_dir.exists() else []
     copied_any = False
 
     for artifact_dir in artifact_dirs:
@@ -26,6 +27,13 @@ def copy_artifact_images(artifacts_dir: Path, site_images_dir: Path) -> None:
         destination_dir.mkdir(parents=True, exist_ok=True)
 
         for png_path in png_paths:
+            shutil.copy2(png_path, destination_dir / png_path.name)
+            copied_any = True
+
+    if flat_png_paths:
+        destination_dir = site_images_dir / artifacts_dir.name
+        destination_dir.mkdir(parents=True, exist_ok=True)
+        for png_path in flat_png_paths:
             shutil.copy2(png_path, destination_dir / png_path.name)
             copied_any = True
 
@@ -91,7 +99,11 @@ def build_index_html(site_dir: Path) -> None:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Build UFEMISM weekly benchmark static site")
-    parser.add_argument("--artifacts-dir", required=True, help="Directory containing downloaded benchmark artifact folders")
+    parser.add_argument(
+        "--artifacts-dir",
+        required=True,
+        help="Directory containing benchmark artifact folders or local PNG files",
+    )
     parser.add_argument("--site-dir", required=True, help="Output site directory")
     args = parser.parse_args()
 

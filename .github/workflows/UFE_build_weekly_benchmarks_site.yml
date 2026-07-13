@@ -36,7 +36,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          automated_testing/build_weekly_benchmarks_site.py \
+          python automated_testing/build_weekly_benchmarks_site.py \
             --artifacts-dir downloaded_artifacts \
             --site-dir site
 

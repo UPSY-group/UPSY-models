@@ -1,0 +1,19 @@
+Title: MISMIP+
+
+Keywords:
+- model intercomparison
+- grounding-line migration
+- idealised geometry
+
+URLs:
+- https://doi.org/10.5194/gmd-9-2471-2016
+- https://doi.org/10.5194/tc-14-2283-2020
+
+Description:
+MISMIP+ describes a large ice stream flowing down a laterally symmetric
+valley, into a confined embayment. In the initial steady-state geometry,
+the grounding line rests on a retrograde slope, and is kept in place
+by a strongly buttressing shelf. In the ice1r retreat experiment, a warm
+ocean is prescribed, causing the shelf to thin and the grounding line to
+retreat. In the test, we directly compare UFEMISM's modelled grounding-line
+position over time to the model ensemble by Cornford et al. (2020).

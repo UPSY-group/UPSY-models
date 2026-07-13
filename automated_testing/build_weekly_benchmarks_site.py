@@ -10,6 +10,138 @@ from html import escape
 from pathlib import Path
 
 
+UFEMISM_TESTS_DIR = Path(__file__).resolve().parent / "UFEMISM"
+
+
+def known_test_dir_names() -> list[str]:
+    """Return known UFEMISM integrated test directory names, longest first."""
+    if not UFEMISM_TESTS_DIR.exists():
+        return []
+    return sorted(
+        (path.name for path in UFEMISM_TESTS_DIR.iterdir() if path.is_dir()),
+        key=len,
+        reverse=True,
+    )
+
+
+def infer_test_dir_name(text: str, test_dir_names: list[str]) -> str | None:
+    """Infer UFEMISM test directory name present in text."""
+    for test_dir_name in test_dir_names:
+        if test_dir_name in text:
+            return test_dir_name
+    return None
+
+
+def parse_benchmark_info(info_path: Path) -> tuple[str | None, list[str], list[str], str]:
+    """Parse benchmark metadata text into title, keywords, URLs, and description."""
+    title: str | None = None
+    keywords: list[str] = []
+    urls: list[str] = []
+    description_lines: list[str] = []
+
+    if not info_path.exists():
+        return title, keywords, urls, ""
+
+    section = ""
+    for raw_line in info_path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line:
+            if section == "description":
+                description_lines.append("")
+            continue
+        if line.startswith("#"):
+            continue
+
+        lower = line.lower().rstrip(":")
+        if lower.startswith("title"):
+            if ":" in line:
+                title_value = line.split(":", 1)[1].strip()
+                if title_value:
+                    title = title_value
+            continue
+        if lower == "keywords":
+            section = "keywords"
+            continue
+        if lower == "urls":
+            section = "urls"
+            continue
+        if lower == "description":
+            section = "description"
+            continue
+
+        value = line[1:].strip() if line.startswith("-") else line
+        if section == "keywords":
+            keywords.append(value)
+        elif section == "urls":
+            urls.append(value)
+        elif section == "description":
+            description_lines.append(raw_line.strip())
+
+    description = "\n".join(description_lines).strip()
+    return title, keywords, urls, description
+
+
+def get_benchmark_info(artifact_dir_name: str) -> tuple[str | None, list[str], list[str], str]:
+    """Resolve and load benchmark metadata for a given artifact directory name."""
+    test_dir_name = artifact_dir_name
+    prefix = "benchmark_figures_"
+    if artifact_dir_name.startswith(prefix):
+        test_dir_name = artifact_dir_name[len(prefix) :]
+
+    info_path = UFEMISM_TESTS_DIR / test_dir_name / "test_metadata.txt"
+    return parse_benchmark_info(info_path)
+
+
+def render_artifact_section(
+    parts: list[str],
+    section_title: str,
+    images: list[Path],
+    site_dir: Path,
+    benchmark_key: str,
+) -> None:
+    """Render one benchmark section with images and optional metadata."""
+    title, keywords, urls, description = get_benchmark_info(benchmark_key)
+    display_title = title if title else section_title
+    parts.append('  <section class="artifact">')
+    parts.append(f"    <h2>{escape(display_title)}</h2>")
+    if not images:
+        parts.append("    <p>No PNG files were published for this benchmark.</p>")
+    for image in images:
+        rel_path = image.relative_to(site_dir).as_posix()
+        parts.append(
+            f'    <figure><img src="{escape(rel_path)}" alt="{escape(image.stem)}"><figcaption>{escape(image.name)}</figcaption></figure>'
+        )
+
+    if keywords or urls or description:
+        parts.append('    <div class="benchmark-meta">')
+
+        if keywords:
+            parts.append('      <h3 class="meta-title">Keywords</h3>')
+            parts.append('      <ul class="keyword-list">')
+            for keyword in keywords:
+                parts.append(f'        <li class="keyword-chip">{escape(keyword)}</li>')
+            parts.append("      </ul>")
+
+        if urls:
+            parts.append('      <h3 class="meta-title">Publications</h3>')
+            parts.append('      <ul class="url-list">')
+            for url in urls:
+                safe_url = escape(url)
+                parts.append(f'        <li><a href="{safe_url}" target="_blank" rel="noopener noreferrer">{safe_url}</a></li>')
+            parts.append("      </ul>")
+
+        if description:
+            parts.append('      <h3 class="meta-title">Description</h3>')
+            for paragraph in description.split("\n\n"):
+                text = paragraph.strip()
+                if text:
+                    parts.append(f'      <p class="description">{escape(text)}</p>')
+
+        parts.append("    </div>")
+
+    parts.append("  </section>")
+
+
 def copy_artifact_images(artifacts_dir: Path, site_images_dir: Path) -> None:
     """Copy benchmark PNG files into site/images from folders or a flat PNG directory."""
     site_images_dir.mkdir(parents=True, exist_ok=True)
@@ -68,6 +200,16 @@ def build_index_html(site_dir: Path) -> None:
         "    .meta { color: #46555a; margin-bottom: 2rem; }",
         "    .artifact { margin: 2rem 0; padding: 1.25rem; background: #fffdf8; border: 1px solid #d7d0bf; border-radius: 10px; box-shadow: 0 8px 24px rgba(31, 42, 46, 0.08); }",
         "    .artifact img { display: block; width: 100%; height: auto; margin: 1rem 0; border: 1px solid #d7d0bf; border-radius: 6px; background: white; }",
+        "    .artifact figure { margin: 0 0 1rem; }",
+        "    .artifact figcaption { color: #4d5659; font-size: 0.95rem; margin-top: 0.4rem; }",
+        "    .benchmark-meta { margin-top: 0.75rem; padding-top: 0.5rem; border-top: 1px dashed #d7d0bf; }",
+        "    .meta-title { margin: 0.9rem 0 0.4rem; font-family: \"Avenir Next\", \"Segoe UI\", sans-serif; font-size: 0.95rem; color: #2e3a3f; letter-spacing: 0.01em; text-transform: uppercase; }",
+        "    .keyword-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0; padding: 0; list-style: none; }",
+        "    .keyword-chip { display: inline-block; padding: 0.25rem 0.65rem; border-radius: 999px; background: #d8efe3; color: #174936; border: 1px solid #9ecdb6; font-size: 0.9rem; font-weight: 600; }",
+        "    .url-list { margin: 0; padding-left: 1.2rem; }",
+        "    .url-list li { margin: 0.2rem 0; }",
+        "    .url-list a { color: #0f4b78; text-decoration-thickness: 1px; }",
+        "    .description { margin: 0.45rem 0 0; line-height: 1.5; }",
         "    .empty { padding: 1rem; background: #fff4df; border-left: 4px solid #c97912; }",
         "    code { font-size: 0.95em; }",
         "  </style>",
@@ -80,18 +222,34 @@ def build_index_html(site_dir: Path) -> None:
     if not artifact_dirs:
         parts.append('  <div class="empty">No benchmark figures were available for this run.</div>')
 
+    test_dir_names = known_test_dir_names()
+
     for artifact_dir in artifact_dirs:
         images = sorted(path for path in artifact_dir.iterdir() if path.suffix.lower() == ".png")
-        parts.append('  <section class="artifact">')
-        parts.append(f"    <h2>{escape(artifact_dir.name)}</h2>")
-        if not images:
-            parts.append("    <p>No PNG files were published for this benchmark.</p>")
-        for image in images:
-            rel_path = image.relative_to(site_dir).as_posix()
-            parts.append(
-                f'    <figure><img src="{escape(rel_path)}" alt="{escape(image.stem)}"><figcaption>{escape(image.name)}</figcaption></figure>'
-            )
-        parts.append("  </section>")
+
+        # Local runs may put all test figures in a single flat folder (e.g. images/figures).
+        if artifact_dir.name == "figures":
+            grouped_images: dict[str, list[Path]] = {}
+            ungrouped: list[Path] = []
+
+            for image in images:
+                inferred_test = infer_test_dir_name(image.stem, test_dir_names)
+                if inferred_test is None:
+                    ungrouped.append(image)
+                    continue
+                grouped_images.setdefault(inferred_test, []).append(image)
+
+            for test_name in sorted(grouped_images):
+                render_artifact_section(parts, test_name, grouped_images[test_name], site_dir, test_name)
+
+            if ungrouped:
+                render_artifact_section(parts, artifact_dir.name, ungrouped, site_dir, artifact_dir.name)
+            continue
+
+        inferred_test = infer_test_dir_name(artifact_dir.name, test_dir_names)
+        section_title = inferred_test if inferred_test else artifact_dir.name
+        benchmark_key = inferred_test if inferred_test else artifact_dir.name
+        render_artifact_section(parts, section_title, images, site_dir, benchmark_key)
 
     parts.extend(["</body>", "</html>"])
     (site_dir / "index.html").write_text("\n".join(parts), encoding="utf-8")

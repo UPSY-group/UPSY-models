@@ -1,0 +1,48 @@
+name: Build UFEMISM Weekly Benchmarks Site
+run-name: ${{ github.actor }} - Build UFEMISM Weekly Benchmarks Site
+on:
+  workflow_call:
+    inputs:
+      benchmark_artifact_pattern:
+        description: Pattern of benchmark figure artifacts to include in the generated site
+        required: false
+        default: benchmark_figures_*
+        type: string
+      site_artifact_name:
+        description: Name of the artifact that will contain the generated static site
+        required: false
+        default: ufemism_weekly_benchmarks_site
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  build_site:
+    name: build-site
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Download benchmark figure artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: ${{ inputs.benchmark_artifact_pattern }}
+          path: downloaded_artifacts
+          merge-multiple: false
+
+      - name: Build static site
+        shell: bash
+        run: |
+          set -euo pipefail
+          python automated_testing/build_weekly_benchmarks_site.py \
+            --artifacts-dir downloaded_artifacts \
+            --site-dir site
+
+      - name: Upload generated site artifact
+        uses: actions/upload-artifact@v4.3.4
+        with:
+          name: ${{ inputs.site_artifact_name }}
+          path: site
+          if-no-files-found: error

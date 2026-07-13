@@ -4,8 +4,23 @@ name: UFEMISM Weekly Benchmarks
 run-name: ${{ github.actor }} - UFEMISM Weekly Benchmarks
 on:
   workflow_dispatch:
+    inputs:
+      preview:
+        description: Upload the generated site as a downloadable artifact instead of deploying to Pages
+        required: false
+        default: false
+        type: boolean
   schedule:
     - cron: '23 3 * * 1'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: ufemism-weekly-benchmarks-pages
+  cancel-in-progress: true
 
 jobs:
 
@@ -18,3 +33,18 @@ jobs:
     uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_MISMIP_mod_full
+
+  build_site:
+    needs:
+      - MISMIPplus_full
+      - MISMIP_mod_full
+    if: always()
+    uses: ./.github/workflows/UFE_build_weekly_benchmarks_site.yml
+
+  deploy_pages:
+    needs: build_site
+    if: always() && needs.build_site.result == 'success'
+    uses: ./.github/workflows/UFE_deploy_pages.yml
+    with:
+      preview: ${{ github.event_name == 'workflow_dispatch' && inputs.preview }}
+      site_artifact_name: ufemism_weekly_benchmarks_site

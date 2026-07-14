@@ -50,6 +50,7 @@ jobs:
 
   build_site:
     needs:
+      - Halfar_dome
       - MISMIPplus_full
       - MISMIP_mod_full
       - SSA_icestream_full

@@ -82,48 +82,54 @@ module mesh_types
   ! =======================================================================================
 
     ! Derived geometry data
-    real(dp), dimension(:    ), allocatable :: A                             ! [m^2]     The area             of each vertex's Voronoi cell
-    real(dp), dimension(:,:  ), allocatable :: VorGC                         ! [m]       The geometric centre of each vertex's Voronoi cell
-    real(dp), dimension(:    ), allocatable :: R                             ! [m]       The resolution of each vertex (defined as distance to nearest neighbour)
-    real(dp), dimension(:,:  ), allocatable :: Cw                            ! [m]       The width of all vertex connections (= length of the shared Voronoi cell edge)
-    real(dp), dimension(:,:  ), allocatable :: D_x                           ! [m]       x-component of vertex-vertex connections
-    real(dp), dimension(:,:  ), allocatable :: D_y                           ! [m]       y-component of vertex-vertex connections
-    real(dp), dimension(:,:  ), allocatable :: D                             ! [m]       absolute distance of vertex-vertex connections
-    real(dp), dimension(:,:  ), allocatable :: TriCw                         ! [m]       The width of all triangle connections (= shared triangle edge)
-    integer,  dimension(:    ), allocatable :: TriBI                         ! [0-8]     Each triangle's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
-    real(dp), dimension(:,:  ), allocatable :: TriGC                         ! [m]       The X,Y-coordinates of each triangle's geometric centre
-    real(dp), dimension(:    ), allocatable :: TriA                          ! [m^2]     The area of each triangle
-    real(dp), dimension(:,:  ), allocatable :: TriD_x                        ! [m]       x-component of triangle-triangle connections
-    real(dp), dimension(:,:  ), allocatable :: TriD_y                        ! [m]       y-component of triangle-triangle connections
-    real(dp), dimension(:,:  ), allocatable :: TriD                          ! [m]       absolute distance of triangle-triangle connections
+    real(dp), dimension(:    ), contiguous, pointer :: A       => null()             ! [m^2]     The area             of each vertex's Voronoi cell
+    real(dp), dimension(:,:  ), contiguous, pointer :: VorGC   => null()             ! [m]       The geometric centre of each vertex's Voronoi cell
+    real(dp), dimension(:    ), contiguous, pointer :: R       => null()             ! [m]       The resolution of each vertex (defined as distance to nearest neighbour)
+    real(dp), dimension(:,:  ), contiguous, pointer :: Cw      => null()             ! [m]       The width of all vertex connections (= length of the shared Voronoi cell edge)
+    real(dp), dimension(:,:  ), contiguous, pointer :: D_x     => null()             ! [m]       x-component of vertex-vertex connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: D_y     => null()             ! [m]       y-component of vertex-vertex connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: D       => null()             ! [m]       absolute distance of vertex-vertex connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriCw   => null()             ! [m]       The width of all triangle connections (= shared triangle edge)
+    integer,  dimension(:    ), contiguous, pointer :: TriBI   => null()             ! [0-8]     Each triangle's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriGC   => null()             ! [m]       The X,Y-coordinates of each triangle's geometric centre
+    real(dp), dimension(:    ), contiguous, pointer :: TriA    => null()             ! [m^2]     The area of each triangle
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriD_x  => null()             ! [m]       x-component of triangle-triangle connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriD_y  => null()             ! [m]       y-component of triangle-triangle connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriD    => null()             ! [m]       absolute distance of triangle-triangle connections
+    type(MPI_WIN) :: wA, wVorGC, wR, wCw, wD_x, wD_y, wD, wTriCw
+    type(MPI_WIN) :: wTriBI, wTriGC, wTriA, wTriD_x, wTriD_y, wTriD
 
     ! lon/lat coordinates
-    real(dp), dimension(:    ), allocatable :: lat                           ! [degrees north] Latitude  of each vertex
-    real(dp), dimension(:    ), allocatable :: lon                           ! [degrees east]  Longitude of each vertex
+    real(dp), dimension(:    ), contiguous, pointer :: lat     => null()             ! [degrees north] Latitude  of each vertex
+    real(dp), dimension(:    ), contiguous, pointer :: lon     => null()             ! [degrees east]  Longitude of each vertex
+    type(MPI_WIN) :: wlon, wlat
 
     ! Edges (c-grid)
-    integer                                 :: nE                            !           Number of edges
-    real(dp), dimension(:,:  ), allocatable :: E                             ! [m]       The x,y-coordinates of all the edges
-    integer,  dimension(:,:  ), allocatable :: VE                            !           Vertex-to-edge connectivity list
-    integer,  dimension(:,:  ), allocatable :: EV                            !           Edge-to-vertex connectivity list
-    integer,  dimension(:,:  ), allocatable :: ETri                          !           Edge-to-triangle connectivity list
-    integer,  dimension(:,:  ), allocatable :: TriE                          !           Triangle-to-edge connectivity list (order of TriC, across from 1st, 2nd, 3rd vertex)
-    integer,  dimension(:    ), allocatable :: EBI                           ! [0-8]     Each edge's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
-    real(dp), dimension(:    ), allocatable :: EA                            ! [m^2]     Area of each edge's "cell"
+    integer                                         :: nE                            !           Number of edges
+    real(dp), dimension(:,:  ), contiguous, pointer :: E       => null()             ! [m]       The x,y-coordinates of all the edges
+    integer,  dimension(:,:  ), contiguous, pointer :: VE      => null()             !           Vertex-to-edge connectivity list
+    integer,  dimension(:,:  ), contiguous, pointer :: EV      => null()             !           Edge-to-vertex connectivity list
+    integer,  dimension(:,:  ), contiguous, pointer :: ETri    => null()             !           Edge-to-triangle connectivity list
+    integer,  dimension(:,:  ), contiguous, pointer :: TriE    => null()             !           Triangle-to-edge connectivity list (order of TriC, across from 1st, 2nd, 3rd vertex)
+    integer,  dimension(:    ), contiguous, pointer :: EBI     => null()             ! [0-8]     Each edge's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
+    real(dp), dimension(:    ), contiguous, pointer :: EA      => null()             ! [m^2]     Area of each edge's "cell"
+    type(MPI_WIN) :: wE, wVE, wEV, wETri, wTriE, wEBI, wEA
 
     ! Voronoi mesh
-    integer                                 :: nVor                          !           Total number of Voronoi vertices
-    integer,  dimension(:    ), allocatable :: vi2vori                       !           To which Voronoi vertex (if any) each vertex   corresponds (>0 only for the four corner vertices)
-    integer,  dimension(:    ), allocatable :: ti2vori                       !           To which Voronoi vertex (if any) each triangle corresponds (>0 always)
-    integer,  dimension(:    ), allocatable :: ei2vori                       !           To which Voronoi vertex (if any) each edge     corresponds (>0 only for border edges)
-    integer,  dimension(:    ), allocatable :: vori2vi                       !           To which regular vertex (if any) each Voronoi vertex corresponds (vori2vi( vi2vori( vi)) = vi)
-    integer,  dimension(:    ), allocatable :: vori2ti                       !           To which triangle       (if any) each Voronoi vertex corresponds (vori2ti( ti2vori( ti)) = ti)
-    integer,  dimension(:    ), allocatable :: vori2ei                       !           To which edge           (if any) each Voronoi vertex corresponds (vori2ei( ei2vori( ei)) = ei)
-    real(dp), dimension(:,:  ), allocatable :: Vor                           ! [m]       Coordinates of all the Voronoi vertices
-    integer,  dimension(:    ), allocatable :: VornC                         !           Number  of other Voronoi vertices that each Voronoi vertex is connected to (2 for corners, 3 otherwise)
-    integer,  dimension(:,:  ), allocatable :: VorC                          !           Indices of other Voronoi vertices that each Voronoi vertex is connected to
-    integer,  dimension(:    ), allocatable :: nVVor                         !           For each regular vertex, the number of Voronoi vertices spanning its Voronoi cell
-    integer,  dimension(:,:  ), allocatable :: VVor                          !           For each regular vertex, the indices of the Voronoi vertices spanning its Voronoi cell
+    integer                                         :: nVor                          !           Total number of Voronoi vertices
+    integer,  dimension(:    ), contiguous, pointer :: vi2vori => null()             !           To which Voronoi vertex (if any) each vertex   corresponds (>0 only for the four corner vertices)
+    integer,  dimension(:    ), contiguous, pointer :: ti2vori => null()             !           To which Voronoi vertex (if any) each triangle corresponds (>0 always)
+    integer,  dimension(:    ), contiguous, pointer :: ei2vori => null()             !           To which Voronoi vertex (if any) each edge     corresponds (>0 only for border edges)
+    integer,  dimension(:    ), contiguous, pointer :: vori2vi => null()             !           To which regular vertex (if any) each Voronoi vertex corresponds (vori2vi( vi2vori( vi)) = vi)
+    integer,  dimension(:    ), contiguous, pointer :: vori2ti => null()             !           To which triangle       (if any) each Voronoi vertex corresponds (vori2ti( ti2vori( ti)) = ti)
+    integer,  dimension(:    ), contiguous, pointer :: vori2ei => null()             !           To which edge           (if any) each Voronoi vertex corresponds (vori2ei( ei2vori( ei)) = ei)
+    real(dp), dimension(:,:  ), contiguous, pointer :: Vor     => null()             ! [m]       Coordinates of all the Voronoi vertices
+    integer,  dimension(:    ), contiguous, pointer :: VornC   => null()             !           Number  of other Voronoi vertices that each Voronoi vertex is connected to (2 for corners, 3 otherwise)
+    integer,  dimension(:,:  ), contiguous, pointer :: VorC    => null()             !           Indices of other Voronoi vertices that each Voronoi vertex is connected to
+    integer,  dimension(:    ), contiguous, pointer :: nVVor   => null()             !           For each regular vertex, the number of Voronoi vertices spanning its Voronoi cell
+    integer,  dimension(:,:  ), contiguous, pointer :: VVor    => null()             !           For each regular vertex, the indices of the Voronoi vertices spanning its Voronoi cell
+    type(MPI_WIN) :: wvi2vori, wti2vori, wei2vori, wvori2vi, wvori2ti, wvori2ei
+    type(MPI_WIN) :: wVor, wVornC, wVorC, wnVVor, wVVor
 
     ! Parallelisation ranges
     integer                                         :: vi1, vi2, nV_loc              ! Each process "owns" nV_loc    vertices  vi1      - vi2     , so that nV_loc    = vi2      + 1 - vi1
@@ -299,6 +305,48 @@ contains
     !< not captured by automatic finalisation)
 
     type(type_mesh) :: mesh
+
+    ! Derived geometry data
+    if (associated( mesh%A     )) call deallocate_dist_shared( mesh%A     , mesh%wA     )
+    if (associated( mesh%VorGC )) call deallocate_dist_shared( mesh%VorGC , mesh%wVorGC )
+    if (associated( mesh%R     )) call deallocate_dist_shared( mesh%R     , mesh%wR     )
+    if (associated( mesh%Cw    )) call deallocate_dist_shared( mesh%Cw    , mesh%wCw    )
+    if (associated( mesh%D_x   )) call deallocate_dist_shared( mesh%D_x   , mesh%wD_x   )
+    if (associated( mesh%D_y   )) call deallocate_dist_shared( mesh%D_y   , mesh%wD_y   )
+    if (associated( mesh%D     )) call deallocate_dist_shared( mesh%D     , mesh%wD     )
+    if (associated( mesh%TriCw )) call deallocate_dist_shared( mesh%TriCw , mesh%wTriCw )
+    if (associated( mesh%TriBI )) call deallocate_dist_shared( mesh%TriBI , mesh%wTriBI )
+    if (associated( mesh%TriGC )) call deallocate_dist_shared( mesh%TriGC , mesh%wTriGC )
+    if (associated( mesh%TriA  )) call deallocate_dist_shared( mesh%TriA  , mesh%wTriA  )
+    if (associated( mesh%TriD_x)) call deallocate_dist_shared( mesh%TriD_x, mesh%wTriD_x)
+    if (associated( mesh%TriD_y)) call deallocate_dist_shared( mesh%TriD_y, mesh%wTriD_y)
+    if (associated( mesh%TriD  )) call deallocate_dist_shared( mesh%TriD  , mesh%wTriD  )
+
+    ! lon/lat coordinates
+    if (associated( mesh%lat)) call deallocate_dist_shared( mesh%lat, mesh%wlat)
+    if (associated( mesh%lon)) call deallocate_dist_shared( mesh%lon, mesh%wlon)
+
+    ! Edges (c-grid)
+    if (associated( mesh%E   )) call deallocate_dist_shared( mesh%E   , mesh%wE   )
+    if (associated( mesh%VE  )) call deallocate_dist_shared( mesh%VE  , mesh%wVE  )
+    if (associated( mesh%EV  )) call deallocate_dist_shared( mesh%EV  , mesh%wEV  )
+    if (associated( mesh%ETri)) call deallocate_dist_shared( mesh%ETri, mesh%wETri)
+    if (associated( mesh%TriE)) call deallocate_dist_shared( mesh%TriE, mesh%wTriE)
+    if (associated( mesh%EBI )) call deallocate_dist_shared( mesh%EBI , mesh%wEBI )
+    if (associated( mesh%EA  )) call deallocate_dist_shared( mesh%EA  , mesh%wEA  )
+
+    ! Voronoi mesh
+    if (associated( mesh%vi2vori)) call deallocate_dist_shared( mesh%vi2vori, mesh%wvi2vori)
+    if (associated( mesh%ti2vori)) call deallocate_dist_shared( mesh%ti2vori, mesh%wti2vori)
+    if (associated( mesh%ei2vori)) call deallocate_dist_shared( mesh%ei2vori, mesh%wei2vori)
+    if (associated( mesh%vori2vi)) call deallocate_dist_shared( mesh%vori2vi, mesh%wvori2vi)
+    if (associated( mesh%vori2ti)) call deallocate_dist_shared( mesh%vori2ti, mesh%wvori2ti)
+    if (associated( mesh%vori2ei)) call deallocate_dist_shared( mesh%vori2ei, mesh%wvori2ei)
+    if (associated( mesh%Vor    )) call deallocate_dist_shared( mesh%Vor    , mesh%wVor    )
+    if (associated( mesh%VornC  )) call deallocate_dist_shared( mesh%VornC  , mesh%wVornC  )
+    if (associated( mesh%VorC   )) call deallocate_dist_shared( mesh%VorC   , mesh%wVorC   )
+    if (associated( mesh%nVVor  )) call deallocate_dist_shared( mesh%nVVor  , mesh%wnVVor  )
+    if (associated( mesh%VVor   )) call deallocate_dist_shared( mesh%VVor   , mesh%wVVor   )
 
     ! Parallelisation ranges
     if (associated( mesh%V_owning_process  )) call deallocate_dist_shared( mesh%V_owning_process  , mesh%wV_owning_process  )

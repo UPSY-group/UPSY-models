@@ -7,6 +7,8 @@ module mesh_Voronoi
   use precisions, only: dp
   use mesh_types, only: type_mesh
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use mpi_distributed_shared_memory, only: deallocate_dist_shared, allocate_dist_shared
+  use mpi_basic, only: par, sync
 
   implicit none
 
@@ -34,7 +36,7 @@ subroutine construct_Voronoi_mesh( mesh)
   call construct_Voronoi_cells( mesh)
 
   ! Finalise routine path
-  call finalise_routine( routine_name)
+  call finalise_routine( routine_name, n_extra_MPI_windows_expected = 11)
 
 end subroutine construct_Voronoi_mesh
 
@@ -81,21 +83,23 @@ subroutine construct_Voronoi_mesh_translation_tables( mesh)
   ! Add routine to path
   call init_routine( routine_name)
 
-  if (allocated( mesh%vi2vori)) deallocate( mesh%vi2vori)
-  if (allocated( mesh%ti2vori)) deallocate( mesh%ti2vori)
-  if (allocated( mesh%ei2vori)) deallocate( mesh%ei2vori)
+  if (associated( mesh%vi2vori)) call deallocate_dist_shared( mesh%vi2vori, mesh%wvi2vori)
+  if (associated( mesh%ti2vori)) call deallocate_dist_shared( mesh%ti2vori, mesh%wti2vori)
+  if (associated( mesh%ei2vori)) call deallocate_dist_shared( mesh%ei2vori, mesh%wei2vori)
 
-  if (allocated( mesh%vori2vi)) deallocate( mesh%vori2vi)
-  if (allocated( mesh%vori2ti)) deallocate( mesh%vori2ti)
-  if (allocated( mesh%vori2ei)) deallocate( mesh%vori2ei)
+  if (associated( mesh%vori2vi)) call deallocate_dist_shared( mesh%vori2vi, mesh%wvori2vi)
+  if (associated( mesh%vori2ti)) call deallocate_dist_shared( mesh%vori2ti, mesh%wvori2ti)
+  if (associated( mesh%vori2ei)) call deallocate_dist_shared( mesh%vori2ei, mesh%wvori2ei)
 
-  allocate( mesh%vi2vori( mesh%nV  ), source = 0)
-  allocate( mesh%ti2vori( mesh%nTri), source = 0)
-  allocate( mesh%ei2vori( mesh%nE  ), source = 0)
+  call allocate_dist_shared( mesh%vi2vori, mesh%wvi2vori, [1, mesh%nV  ])
+  call allocate_dist_shared( mesh%ti2vori, mesh%wti2vori, [1, mesh%nTri])
+  call allocate_dist_shared( mesh%ei2vori, mesh%wei2vori, [1, mesh%nE  ])
 
-  allocate( mesh%vori2vi( mesh%nVor), source = 0)
-  allocate( mesh%vori2ti( mesh%nVor), source = 0)
-  allocate( mesh%vori2ei( mesh%nVor), source = 0)
+  call allocate_dist_shared( mesh%vori2vi, mesh%wvori2vi, [1, mesh%nVor])
+  call allocate_dist_shared( mesh%vori2ti, mesh%wvori2ti, [1, mesh%nVor])
+  call allocate_dist_shared( mesh%vori2ei, mesh%wvori2ei, [1, mesh%nVor])
+
+  if (par%node_primary) then
 
   vori = 0
 
@@ -124,8 +128,11 @@ subroutine construct_Voronoi_mesh_translation_tables( mesh)
     mesh%vori2vi( vori) = vi
   end do
 
+  end if
+  call sync
+
   ! Finalise routine path
-  call finalise_routine( routine_name)
+  call finalise_routine( routine_name, n_extra_MPI_windows_expected = 6)
 
 end subroutine construct_Voronoi_mesh_translation_tables
 
@@ -141,8 +148,10 @@ subroutine calc_Voronoi_vertex_coordinates( mesh)
   ! Add routine to path
   call init_routine( routine_name)
 
-  if (allocated( mesh%Vor)) deallocate( mesh%Vor)
-  allocate( mesh%Vor( mesh%nVor,2), source = 0._dp)
+  if (associated( mesh%Vor)) call deallocate_dist_shared( mesh%Vor, mesh%wVor)
+  call allocate_dist_shared( mesh%Vor, mesh%wVor, [1, mesh%nVor], [1, 2])
+
+  if (par%node_primary) then
 
   do vori = 1, mesh%nVor
 
@@ -162,8 +171,11 @@ subroutine calc_Voronoi_vertex_coordinates( mesh)
 
   end do
 
+  end if
+  call sync
+
   ! Finalise routine path
-  call finalise_routine( routine_name)
+  call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
 end subroutine calc_Voronoi_vertex_coordinates
 
@@ -178,18 +190,18 @@ subroutine construct_Voronoi_mesh_connectivity( mesh)
   ! Add routine to path
   call init_routine( routine_name)
 
-  if (allocated( mesh%VornC)) deallocate( mesh%VornC)
-  if (allocated( mesh%VorC )) deallocate( mesh%VorC)
+  if (associated( mesh%VornC)) call deallocate_dist_shared( mesh%VornC, mesh%wVornC)
+  if (associated( mesh%VorC )) call deallocate_dist_shared( mesh%VorC , mesh%wVorC )
 
-  allocate( mesh%VornC( mesh%nVor  ), source = 0)
-  allocate( mesh%VorC ( mesh%nVor,3), source = 0)
+  call allocate_dist_shared( mesh%VornC, mesh%wVornC, [1, mesh%nVor]        )
+  call allocate_dist_shared( mesh%VorC , mesh%wVorC , [1, mesh%nVor], [1, 3])
 
   call construct_Voronoi_mesh_connectivity_triangle_based( mesh)
   call construct_Voronoi_mesh_connectivity_edge_based    ( mesh)
   call construct_Voronoi_mesh_connectivity_vertex_based  ( mesh)
 
   ! Finalise routine path
-  call finalise_routine( routine_name)
+  call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
 
 end subroutine construct_Voronoi_mesh_connectivity
 
@@ -204,6 +216,8 @@ subroutine construct_Voronoi_mesh_connectivity_triangle_based( mesh)
 
   ! Add routine to path
   call init_routine( routine_name)
+
+  if (par%node_primary) then
 
   do ti = 1, mesh%nTri
 
@@ -248,6 +262,9 @@ subroutine construct_Voronoi_mesh_connectivity_triangle_based( mesh)
 
   end do
 
+  end if
+  call sync
+
   ! Finalise routine path
   call finalise_routine( routine_name)
 
@@ -264,6 +281,8 @@ subroutine construct_Voronoi_mesh_connectivity_edge_based( mesh)
 
   ! Add routine to path
   call init_routine( routine_name)
+
+  if (par%node_primary) then
 
   do ei = 1, mesh%nE
     if (mesh%EBI( ei) > 0) then
@@ -330,6 +349,9 @@ subroutine construct_Voronoi_mesh_connectivity_edge_based( mesh)
     end if
   end do
 
+  end if
+  call sync
+
   ! Finalise routine path
   call finalise_routine( routine_name)
 
@@ -350,6 +372,8 @@ subroutine construct_Voronoi_mesh_connectivity_vertex_based( mesh)
 
   corners = [mesh%vi_SW, mesh%vi_SE, mesh%vi_NW, mesh%vi_NE]
 
+  if (par%node_primary) then
+
   do cori = 1, 4
     vi = corners( cori)
     vori = mesh%vi2vori( vi)
@@ -369,6 +393,9 @@ subroutine construct_Voronoi_mesh_connectivity_vertex_based( mesh)
 
   end do
 
+  end if
+  call sync
+
   ! Finalise routine path
   call finalise_routine( routine_name)
 
@@ -387,11 +414,13 @@ subroutine construct_Voronoi_cells( mesh)
   ! Add routine to path
   call init_routine( routine_name)
 
-  if (allocated( mesh%nVVor)) deallocate( mesh%nVVor)
-  if (allocated( mesh%VVor )) deallocate( mesh%VVor )
+  if (associated( mesh%nVVor)) call deallocate_dist_shared( mesh%nVVor, mesh%wnVVor)
+  if (associated( mesh%VVor )) call deallocate_dist_shared( mesh%VVor , mesh%wVVor )
 
-  allocate( mesh%nVVor( mesh%nV)             , source = 0)
-  allocate( mesh%VVor ( mesh%nV, mesh%nC_mem), source = 0)
+  call allocate_dist_shared( mesh%nVVor, mesh%wnVVor, [1, mesh%nV]                  )
+  call allocate_dist_shared( mesh%VVor , mesh%wVVor , [1, mesh%nV], [1, mesh%nC_mem])
+
+  if (par%node_primary) then
 
   do vi = 1, mesh%nV
     if (mesh%VBI( vi) == 0) then
@@ -460,8 +489,11 @@ subroutine construct_Voronoi_cells( mesh)
     end if
   end do
 
+  end if
+  call sync
+
   ! Finalise routine path
-  call finalise_routine( routine_name)
+  call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
 
 end subroutine construct_Voronoi_cells
 

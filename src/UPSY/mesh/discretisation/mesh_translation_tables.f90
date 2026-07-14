@@ -346,7 +346,7 @@ contains
     call sync
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 36)
 
   end subroutine calc_field_to_vector_form_translation_tables
 

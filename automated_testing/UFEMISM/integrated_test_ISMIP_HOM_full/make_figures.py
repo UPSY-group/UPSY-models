@@ -117,6 +117,19 @@ def read_ufe_results(results_dir, experiments, length_scales, stokes_approxs):
     return results
 
 
+def resolve_results_dir(path):
+    """Accept either a results folder or the parent test folder containing results/."""
+
+    if os.path.isfile(os.path.join(path, 'transect_A_160_SIASSA.nc')):
+        return path
+
+    nested_results_dir = os.path.join(path, 'results')
+    if os.path.isfile(os.path.join(nested_results_dir, 'transect_A_160_SIASSA.nc')):
+        return nested_results_dir
+
+    return path
+
+
 def setup_multipanel_figure(wa, ha, margins_hor, margins_ver):
     """Set up figure/axes using the same pixel geometry as the MATLAB script."""
 
@@ -172,7 +185,7 @@ def main():
     )
     args = parser.parse_args()
 
-    results_root = os.path.abspath(args.results_root)
+    results_root = resolve_results_dir(os.path.abspath(args.results_root))
     script_dir = os.path.dirname(os.path.abspath(__file__))
     repo_root = os.path.abspath(os.path.join(script_dir, '../../..'))
 

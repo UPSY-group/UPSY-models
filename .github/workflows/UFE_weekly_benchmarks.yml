@@ -26,6 +26,11 @@ jobs:
 
   # Run and analyse all the full integrated tests
 
+  Halfar_dome:
+    uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_Halfar_dome_full
+
   MISMIPplus_full:
     uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
     with:

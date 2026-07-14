@@ -48,4 +48,4 @@ jobs:
 
       - name: Verify compiling
         shell: micromamba-shell {0}
-        run: csh automated_testing/check_if_UFEMISM_programs_exist.csh
+        run: csh automated_testing/UFEMISM/check_if_programs_exist.csh

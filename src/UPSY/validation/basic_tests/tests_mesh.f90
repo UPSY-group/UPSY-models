@@ -656,7 +656,7 @@ contains
 
     res = .true.
 
-    if (.not. allocated( mesh%VornC)) return
+    if (.not. associated( mesh%VornC)) return
 
     do vori = 1, mesh%nVor
 

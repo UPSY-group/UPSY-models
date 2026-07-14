@@ -20,6 +20,7 @@ MODULE mesh_secondary
   use mesh_Voronoi, only: construct_Voronoi_mesh
   use mesh_parallelisation, only: setup_mesh_parallelisation
   use mpi_f08, only: MPI_ALLREDUCE, MPI_INTEGER, MPI_MIN, MPI_MAX
+  use mpi_distributed_shared_memory, only: deallocate_dist_shared, allocate_dist_shared
 
   IMPLICIT NONE
 
@@ -65,7 +66,7 @@ CONTAINS
     CALL setup_mesh_parallelisation(            mesh, mask_active_a_tot, mask_active_b_tot)
 
     ! Finalise routine path
-    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 12)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 52)
 
   END SUBROUTINE calc_all_secondary_mesh_data
 
@@ -82,9 +83,10 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Allocate clean memory
-    if (allocated( mesh%TriBI)) deallocate( mesh%TriBI)
-    allocate( mesh%TriBI( mesh%nTri), source = 0)
+    if (associated( mesh%TriBI)) call deallocate_dist_shared( mesh%TriBI, mesh%wTriBI)
+    call allocate_dist_shared( mesh%TriBI, mesh%wTriBI, [1, mesh%nTri])
+
+    if (par%node_primary) then
 
     ! Locate the southwest corner
     vi_SW = 0
@@ -129,8 +131,11 @@ CONTAINS
     if (mesh%niTri( vi_NE) == 1) mesh%TriBI( mesh%iTri( vi_NE,1)) = 2
     if (mesh%niTri( vi_NW) == 1) mesh%TriBI( mesh%iTri( vi_NW,1)) = 8
 
+    end if
+    call sync
+
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine calc_TriBI
 
@@ -154,10 +159,10 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Allocate clean memory
-    IF (ALLOCATED( mesh%A)) DEALLOCATE( mesh%A)
-    ALLOCATE( mesh%A( mesh%nV), source = 0._dp)
+    if (associated( mesh%A)) call deallocate_dist_shared( mesh%A, mesh%wA)
+    call allocate_dist_shared( mesh%A, mesh%wA, [1, mesh%nV])
 
+    if (par%node_primary) then
     DO vi = 1, mesh%nV
 
       CALL calc_Voronoi_cell( mesh, vi, 0._dp, Vor, Vor_vi, Vor_ti, nVor)
@@ -173,6 +178,8 @@ CONTAINS
       END DO
 
     END DO
+    end if
+    call sync
 
     ! Check if everything went alright
     A_tot_Vor = SUM( mesh%A)
@@ -181,7 +188,7 @@ CONTAINS
     IF (Aerr > 0.0001_dp .AND. par%primary) CALL warning('sum of Voronoi cell areas doesnt match square area of mesh! (error of {dp_01} %)', dp_01 = Aerr)
 
     ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   END SUBROUTINE calc_Voronoi_cell_areas
 
@@ -207,10 +214,10 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Allocate clean memory
-    IF (ALLOCATED( mesh%VorGC)) DEALLOCATE( mesh%VorGC)
-    ALLOCATE( mesh%VorGC( mesh%nV,2), source = 0._dp)
+    if (associated( mesh%VorGC)) call deallocate_dist_shared( mesh%VorGC, mesh%wVorGC)
+    call allocate_dist_shared( mesh%VorGC, mesh%wVorGC, [1, mesh%nV], [1, 2])
 
+    if (par%node_primary) then
     DO vi = 1, mesh%nV
 
       CALL calc_Voronoi_cell( mesh, vi, 0._dp, Vor, Vor_vi, Vor_ti, nVor)
@@ -237,9 +244,11 @@ CONTAINS
       mesh%VorGC( vi,:) = [LI_mxydx / mesh%A( vi), LI_xydy / mesh%A( vi)]
 
     END DO ! DO vi = 1, mesh%nV
+    end if
+    call sync
 
     ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   END SUBROUTINE calc_Voronoi_cell_geometric_centres
 
@@ -257,11 +266,12 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Allocate clean memory
-    if (allocated( mesh%Cw)) deallocate( mesh%Cw)
-    if (allocated( mesh%TriCw)) deallocate( mesh%TriCw)
-    allocate( mesh%Cw( mesh%nV, mesh%nC_mem), source = 0._dp)
-    allocate( mesh%TriCw( mesh%nTri, 3), source = 0._dp)
+    if (associated( mesh%Cw   )) call deallocate_dist_shared( mesh%Cw   , mesh%wCw   )
+    if (associated( mesh%TriCw)) call deallocate_dist_shared( mesh%TriCw, mesh%wTriCw)
+    call allocate_dist_shared( mesh%Cw   , mesh%wCw   , [1, mesh%nV  ], [1, mesh%nC_mem])
+    call allocate_dist_shared( mesh%TriCw, mesh%wTriCw, [1, mesh%nTri], [1, 3          ])
+
+    if (par%node_primary) then
 
     do vi = 1, mesh%nV
       do ci = 1, mesh%nC( vi)
@@ -292,8 +302,11 @@ CONTAINS
       end do ! DO ci = 1, 3
     end do ! DO t1 = 1, mesh%nTri
 
+    end if
+    call sync
+
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
 
   end subroutine calc_connection_widths
 
@@ -310,19 +323,21 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Allocate clean memory
-    if (allocated( mesh%D_x)) deallocate( mesh%D_x)
-    if (allocated( mesh%D_y)) deallocate( mesh%D_y)
-    if (allocated( mesh%D)) deallocate( mesh%D)
-    if (allocated( mesh%TriD_x)) deallocate( mesh%TriD_x)
-    if (allocated( mesh%TriD_y)) deallocate( mesh%TriD_y)
-    if (allocated( mesh%TriD)) deallocate( mesh%TriD)
-    allocate( mesh%D_x( mesh%nV, mesh%nC_mem), source = 0._dp)
-    allocate( mesh%D_y( mesh%nV, mesh%nC_mem), source = 0._dp)
-    allocate( mesh%D( mesh%nV, mesh%nC_mem), source = 0._dp)
-    allocate( mesh%TriD_x( mesh%nTri, 3), source = 0._dp)
-    allocate( mesh%TriD_y( mesh%nTri, 3), source = 0._dp)
-    allocate( mesh%TriD( mesh%nTri, 3), source = 0._dp)
+    if (associated( mesh%D     )) call deallocate_dist_shared( mesh%D     , mesh%wD     )
+    if (associated( mesh%D_x   )) call deallocate_dist_shared( mesh%D_x   , mesh%wD_x   )
+    if (associated( mesh%D_y   )) call deallocate_dist_shared( mesh%D_x   , mesh%wD_y   )
+    if (associated( mesh%TriD  )) call deallocate_dist_shared( mesh%TriD  , mesh%wTriD  )
+    if (associated( mesh%TriD_x)) call deallocate_dist_shared( mesh%TriD_x, mesh%wTriD_x)
+    if (associated( mesh%TriD_y)) call deallocate_dist_shared( mesh%TriD_x, mesh%wTriD_y)
+
+    call allocate_dist_shared( mesh%D     , mesh%wD     , [1, mesh%nV  ], [1, mesh%nC_mem])
+    call allocate_dist_shared( mesh%D_x   , mesh%wD_x   , [1, mesh%nV  ], [1, mesh%nC_mem])
+    call allocate_dist_shared( mesh%D_y   , mesh%wD_y   , [1, mesh%nV  ], [1, mesh%nC_mem])
+    call allocate_dist_shared( mesh%TriD  , mesh%wTriD  , [1, mesh%nTri], [1, 3])
+    call allocate_dist_shared( mesh%TriD_x, mesh%wTriD_x, [1, mesh%nTri], [1, 3])
+    call allocate_dist_shared( mesh%TriD_y, mesh%wTriD_y, [1, mesh%nTri], [1, 3])
+
+    if (par%node_primary) then
 
     ! Vertex-vertex connections
     do vi = 1, mesh%nV
@@ -360,8 +375,11 @@ CONTAINS
       end do
     end do
 
+    end if
+    call sync
+
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 6)
 
   end subroutine calc_connection_lengths
 
@@ -380,9 +398,10 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Allocate clean memory
-    IF (ALLOCATED( mesh%TriA)) DEALLOCATE( mesh%TriA)
-    ALLOCATE( mesh%TriA( mesh%nTri), source = 0._dp)
+    if (associated( mesh%TriA)) call deallocate_dist_shared( mesh%TriA, mesh%wTriA)
+    call allocate_dist_shared( mesh%TriA, mesh%wTriA, [1, mesh%nTri])
+
+    if (par%node_primary) then
 
     DO ti = 1, mesh%nTri
       pa = mesh%V( mesh%Tri( ti,1),:)
@@ -391,8 +410,11 @@ CONTAINS
       mesh%TriA( ti) = triangle_area( pa, pb, pc)
     END DO
 
+    end if
+    call sync
+
     ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   END SUBROUTINE calc_triangle_areas
 
@@ -410,9 +432,10 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Allocate clean memory
-    IF (ALLOCATED( mesh%R)) DEALLOCATE( mesh%R)
-    ALLOCATE( mesh%R( mesh%nV), source = 0._dp)
+    if (associated( mesh%R)) call deallocate_dist_shared( mesh%R, mesh%wR)
+    call allocate_dist_shared( mesh%R, mesh%wR, [1, mesh%nV])
+
+    if (par%node_primary) then
 
     ! Initialise with large value
     mesh%R = mesh%xmax - mesh%xmin
@@ -424,8 +447,11 @@ CONTAINS
       END DO
     END DO
 
+    end if
+    call sync
+
     ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   END SUBROUTINE calc_mesh_resolution
 
@@ -444,9 +470,10 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    ! Allocate clean memory
-    IF (ALLOCATED( mesh%TriGC)) DEALLOCATE( mesh%TriGC)
-    ALLOCATE( mesh%TriGC( mesh%nTri,2), source = 0._dp)
+    if (associated( mesh%TriGC)) call deallocate_dist_shared( mesh%TriGC, mesh%wTriGC)
+    call allocate_dist_shared( mesh%TriGC, mesh%wTriGC, [1, mesh%nTri], [1, 2])
+
+    if (par%node_primary) then
 
     DO ti = 1, mesh%nTri
 
@@ -462,8 +489,11 @@ CONTAINS
 
     END DO
 
+    end if
+    call sync
+
     ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   END SUBROUTINE calc_triangle_geometric_centres
 
@@ -489,19 +519,22 @@ CONTAINS
     mesh%phi_M       = phi_M
     mesh%beta_stereo = beta_stereo
 
-    ! Allocate clean memory
-    IF (ALLOCATED( mesh%lon)) DEALLOCATE( mesh%lon)
-    ALLOCATE( mesh%lon( mesh%nV), source = 0._dp)
-    IF (ALLOCATED( mesh%lat)) DEALLOCATE( mesh%lat)
-    ALLOCATE( mesh%lat( mesh%nV), source = 0._dp)
+    if (associated( mesh%lon)) call deallocate_dist_shared( mesh%lon, mesh%wlon)
+    if (associated( mesh%lat)) call deallocate_dist_shared( mesh%lat, mesh%wlat)
+    call allocate_dist_shared( mesh%lon, mesh%wlon, [1, mesh%nV])
+    call allocate_dist_shared( mesh%lat, mesh%wlat, [1, mesh%nV])
+
+    if (par%node_primary) then
 
     DO vi = 1, mesh%nV
       CALL inverse_oblique_sg_projection( mesh%V( vi,1), mesh%V( vi,2), lambda_M, phi_M, beta_stereo, mesh%lon( vi), mesh%lat( vi))
     END DO
-    CALL sync
+
+    end if
+    call sync
 
     ! Finalise routine path
-    CALL finalise_routine( routine_name)
+    CALL finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
 
   END SUBROUTINE calc_lonlat
 

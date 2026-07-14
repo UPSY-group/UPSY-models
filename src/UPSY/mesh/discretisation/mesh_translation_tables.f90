@@ -4,6 +4,8 @@ module mesh_translation_tables
 
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
+  use allocate_dist_shared_mod, only: allocate_dist_shared
+  use mpi_basic, only: par, sync
 
   implicit none
 
@@ -16,8 +18,8 @@ contains
     type(type_mesh), intent(inout) :: mesh
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'calc_field_to_vector_form_translation_tables'
-    integer                       :: nz,vi,ti,ei,k,ks,uv,n
+    character(len=*), parameter :: routine_name = 'calc_field_to_vector_form_translation_tables'
+    integer                     :: nz,vi,ti,ei,k,ks,uv,n
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -46,48 +48,50 @@ contains
     mesh%nncks   = mesh%nE   * (nz-1)
     mesh%nncksuv = mesh%nE   * (nz-1) * 2
 
-    ! allocate shared memory
-    allocate( mesh%n2vi(     mesh%nna       ), source = 0)
-    allocate( mesh%n2viuv(   mesh%nnauv  , 2), source = 0)
-    allocate( mesh%n2vik(    mesh%nnak   , 2), source = 0)
-    allocate( mesh%n2vikuv(  mesh%nnakuv , 3), source = 0)
-    allocate( mesh%n2viks(   mesh%nnaks  , 2), source = 0)
-    allocate( mesh%n2viksuv( mesh%nnaksuv, 3), source = 0)
+    ! Allocate node-shared memory
+    call allocate_dist_shared( mesh%n2vi    , mesh%wn2vi    , [1, mesh%nna    ]        )
+    call allocate_dist_shared( mesh%n2viuv  , mesh%wn2viuv  , [1, mesh%nnauv  ], [1, 2])
+    call allocate_dist_shared( mesh%n2vik   , mesh%wn2vik   , [1, mesh%nnak   ], [1, 2])
+    call allocate_dist_shared( mesh%n2vikuv , mesh%wn2vikuv , [1, mesh%nnakuv ], [1, 3])
+    call allocate_dist_shared( mesh%n2viks  , mesh%wn2viks  , [1, mesh%nnaks  ], [1, 2])
+    call allocate_dist_shared( mesh%n2viksuv, mesh%wn2viksuv, [1, mesh%nnaksuv], [1, 3])
 
-    allocate( mesh%n2ti(     mesh%nnb       ), source = 0)
-    allocate( mesh%n2tiuv(   mesh%nnbuv  , 2), source = 0)
-    allocate( mesh%n2tik(    mesh%nnbk   , 2), source = 0)
-    allocate( mesh%n2tikuv(  mesh%nnbkuv , 3), source = 0)
-    allocate( mesh%n2tiks(   mesh%nnbks  , 2), source = 0)
-    allocate( mesh%n2tiksuv( mesh%nnbksuv, 3), source = 0)
+    call allocate_dist_shared( mesh%n2ti    , mesh%wn2ti    , [1, mesh%nnb    ]        )
+    call allocate_dist_shared( mesh%n2tiuv  , mesh%wn2tiuv  , [1, mesh%nnbuv  ], [1, 2])
+    call allocate_dist_shared( mesh%n2tik   , mesh%wn2tik   , [1, mesh%nnbk   ], [1, 2])
+    call allocate_dist_shared( mesh%n2tikuv , mesh%wn2tikuv , [1, mesh%nnbkuv ], [1, 3])
+    call allocate_dist_shared( mesh%n2tiks  , mesh%wn2tiks  , [1, mesh%nnbks  ], [1, 2])
+    call allocate_dist_shared( mesh%n2tiksuv, mesh%wn2tiksuv, [1, mesh%nnbksuv], [1, 3])
 
-    allocate( mesh%n2ei(     mesh%nnc       ), source = 0)
-    allocate( mesh%n2eiuv(   mesh%nncuv  , 2), source = 0)
-    allocate( mesh%n2eik(    mesh%nnck   , 2), source = 0)
-    allocate( mesh%n2eikuv(  mesh%nnckuv , 3), source = 0)
-    allocate( mesh%n2eiks(   mesh%nncks  , 2), source = 0)
-    allocate( mesh%n2eiksuv( mesh%nncksuv, 3), source = 0)
+    call allocate_dist_shared( mesh%n2ei    , mesh%wn2ei    , [1, mesh%nnc    ]        )
+    call allocate_dist_shared( mesh%n2eiuv  , mesh%wn2eiuv  , [1, mesh%nncuv  ], [1, 2])
+    call allocate_dist_shared( mesh%n2eik   , mesh%wn2eik   , [1, mesh%nnck   ], [1, 2])
+    call allocate_dist_shared( mesh%n2eikuv , mesh%wn2eikuv , [1, mesh%nnckuv ], [1, 3])
+    call allocate_dist_shared( mesh%n2eiks  , mesh%wn2eiks  , [1, mesh%nncks  ], [1, 2])
+    call allocate_dist_shared( mesh%n2eiksuv, mesh%wn2eiksuv, [1, mesh%nncksuv], [1, 3])
 
-    allocate( mesh%vi2n(     mesh%nV           ), source = 0)
-    allocate( mesh%viuv2n(   mesh%nV        , 2), source = 0)
-    allocate( mesh%vik2n(    mesh%nV  , nz     ), source = 0)
-    allocate( mesh%vikuv2n(  mesh%nV  , nz  , 2), source = 0)
-    allocate( mesh%viks2n(   mesh%nV  , nz-1   ), source = 0)
-    allocate( mesh%viksuv2n( mesh%nV  , nz-1, 2), source = 0)
+    call allocate_dist_shared( mesh%vi2n    , mesh%wvi2n    , [1, mesh%nV  ]                 )
+    call allocate_dist_shared( mesh%viuv2n  , mesh%wviuv2n  , [1, mesh%nV  ],          [1, 2])
+    call allocate_dist_shared( mesh%vik2n   , mesh%wvik2n   , [1, mesh%nV  ], [1, nz]        )
+    call allocate_dist_shared( mesh%vikuv2n , mesh%wvikuv2n , [1, mesh%nV  ], [1, nz], [1, 2])
+    call allocate_dist_shared( mesh%viks2n  , mesh%wviks2n  , [1, mesh%nV  ], [1, nz]        )
+    call allocate_dist_shared( mesh%viksuv2n, mesh%wviksuv2n, [1, mesh%nV  ], [1, nz], [1, 2])
 
-    allocate( mesh%ti2n(     mesh%nTri         ), source = 0)
-    allocate( mesh%tiuv2n(   mesh%nTri      , 2), source = 0)
-    allocate( mesh%tik2n(    mesh%nTri, nz     ), source = 0)
-    allocate( mesh%tikuv2n(  mesh%nTri, nz  , 2), source = 0)
-    allocate( mesh%tiks2n(   mesh%nTri, nz-1   ), source = 0)
-    allocate( mesh%tiksuv2n( mesh%nTri, nz-1, 2), source = 0)
+    call allocate_dist_shared( mesh%ti2n    , mesh%wti2n    , [1, mesh%nTri]                 )
+    call allocate_dist_shared( mesh%tiuv2n  , mesh%wtiuv2n  , [1, mesh%nTri],          [1, 2])
+    call allocate_dist_shared( mesh%tik2n   , mesh%wtik2n   , [1, mesh%nTri], [1, nz]        )
+    call allocate_dist_shared( mesh%tikuv2n , mesh%wtikuv2n , [1, mesh%nTri], [1, nz], [1, 2])
+    call allocate_dist_shared( mesh%tiks2n  , mesh%wtiks2n  , [1, mesh%nTri], [1, nz]        )
+    call allocate_dist_shared( mesh%tiksuv2n, mesh%wtiksuv2n, [1, mesh%nTri], [1, nz], [1, 2])
 
-    allocate( mesh%ei2n(     mesh%nE           ), source = 0)
-    allocate( mesh%eiuv2n(   mesh%nE        , 2), source = 0)
-    allocate( mesh%eik2n(    mesh%nE  , nz     ), source = 0)
-    allocate( mesh%eikuv2n(  mesh%nE  , nz  , 2), source = 0)
-    allocate( mesh%eiks2n(   mesh%nE  , nz-1   ), source = 0)
-    allocate( mesh%eiksuv2n( mesh%nE  , nz-1, 2), source = 0)
+    call allocate_dist_shared( mesh%ei2n    , mesh%wei2n    , [1, mesh%nE  ]                 )
+    call allocate_dist_shared( mesh%eiuv2n  , mesh%weiuv2n  , [1, mesh%nE  ],          [1, 2])
+    call allocate_dist_shared( mesh%eik2n   , mesh%weik2n   , [1, mesh%nE  ], [1, nz]        )
+    call allocate_dist_shared( mesh%eikuv2n , mesh%weikuv2n , [1, mesh%nE  ], [1, nz], [1, 2])
+    call allocate_dist_shared( mesh%eiks2n  , mesh%weiks2n  , [1, mesh%nE  ], [1, nz]        )
+    call allocate_dist_shared( mesh%eiksuv2n, mesh%weiksuv2n, [1, mesh%nE  ], [1, nz], [1, 2])
+
+    if (par%node_primary) then
 
     ! == a-grid (vertices)
 
@@ -338,8 +342,11 @@ contains
         end do
       end do
 
+    end if
+    call sync
+
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 36)
 
   end subroutine calc_field_to_vector_form_translation_tables
 

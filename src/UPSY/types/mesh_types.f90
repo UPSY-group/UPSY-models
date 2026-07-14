@@ -82,65 +82,74 @@ module mesh_types
   ! =======================================================================================
 
     ! Derived geometry data
-    real(dp), dimension(:    ), allocatable :: A                             ! [m^2]     The area             of each vertex's Voronoi cell
-    real(dp), dimension(:,:  ), allocatable :: VorGC                         ! [m]       The geometric centre of each vertex's Voronoi cell
-    real(dp), dimension(:    ), allocatable :: R                             ! [m]       The resolution of each vertex (defined as distance to nearest neighbour)
-    real(dp), dimension(:,:  ), allocatable :: Cw                            ! [m]       The width of all vertex connections (= length of the shared Voronoi cell edge)
-    real(dp), dimension(:,:  ), allocatable :: D_x                           ! [m]       x-component of vertex-vertex connections
-    real(dp), dimension(:,:  ), allocatable :: D_y                           ! [m]       y-component of vertex-vertex connections
-    real(dp), dimension(:,:  ), allocatable :: D                             ! [m]       absolute distance of vertex-vertex connections
-    real(dp), dimension(:,:  ), allocatable :: TriCw                         ! [m]       The width of all triangle connections (= shared triangle edge)
-    integer,  dimension(:    ), allocatable :: TriBI                         ! [0-8]     Each triangle's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
-    real(dp), dimension(:,:  ), allocatable :: TriGC                         ! [m]       The X,Y-coordinates of each triangle's geometric centre
-    real(dp), dimension(:    ), allocatable :: TriA                          ! [m^2]     The area of each triangle
-    real(dp), dimension(:,:  ), allocatable :: TriD_x                        ! [m]       x-component of triangle-triangle connections
-    real(dp), dimension(:,:  ), allocatable :: TriD_y                        ! [m]       y-component of triangle-triangle connections
-    real(dp), dimension(:,:  ), allocatable :: TriD                          ! [m]       absolute distance of triangle-triangle connections
+    real(dp), dimension(:    ), contiguous, pointer :: A       => null()             ! [m^2]     The area             of each vertex's Voronoi cell
+    real(dp), dimension(:,:  ), contiguous, pointer :: VorGC   => null()             ! [m]       The geometric centre of each vertex's Voronoi cell
+    real(dp), dimension(:    ), contiguous, pointer :: R       => null()             ! [m]       The resolution of each vertex (defined as distance to nearest neighbour)
+    real(dp), dimension(:,:  ), contiguous, pointer :: Cw      => null()             ! [m]       The width of all vertex connections (= length of the shared Voronoi cell edge)
+    real(dp), dimension(:,:  ), contiguous, pointer :: D_x     => null()             ! [m]       x-component of vertex-vertex connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: D_y     => null()             ! [m]       y-component of vertex-vertex connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: D       => null()             ! [m]       absolute distance of vertex-vertex connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriCw   => null()             ! [m]       The width of all triangle connections (= shared triangle edge)
+    integer,  dimension(:    ), contiguous, pointer :: TriBI   => null()             ! [0-8]     Each triangle's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriGC   => null()             ! [m]       The X,Y-coordinates of each triangle's geometric centre
+    real(dp), dimension(:    ), contiguous, pointer :: TriA    => null()             ! [m^2]     The area of each triangle
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriD_x  => null()             ! [m]       x-component of triangle-triangle connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriD_y  => null()             ! [m]       y-component of triangle-triangle connections
+    real(dp), dimension(:,:  ), contiguous, pointer :: TriD    => null()             ! [m]       absolute distance of triangle-triangle connections
+    type(MPI_WIN) :: wA, wVorGC, wR, wCw, wD_x, wD_y, wD, wTriCw
+    type(MPI_WIN) :: wTriBI, wTriGC, wTriA, wTriD_x, wTriD_y, wTriD
 
     ! lon/lat coordinates
-    real(dp), dimension(:    ), allocatable :: lat                           ! [degrees north] Latitude  of each vertex
-    real(dp), dimension(:    ), allocatable :: lon                           ! [degrees east]  Longitude of each vertex
+    real(dp), dimension(:    ), contiguous, pointer :: lat     => null()             ! [degrees north] Latitude  of each vertex
+    real(dp), dimension(:    ), contiguous, pointer :: lon     => null()             ! [degrees east]  Longitude of each vertex
+    type(MPI_WIN) :: wlon, wlat
 
     ! Edges (c-grid)
-    integer                                 :: nE                            !           Number of edges
-    real(dp), dimension(:,:  ), allocatable :: E                             ! [m]       The x,y-coordinates of all the edges
-    integer,  dimension(:,:  ), allocatable :: VE                            !           Vertex-to-edge connectivity list
-    integer,  dimension(:,:  ), allocatable :: EV                            !           Edge-to-vertex connectivity list
-    integer,  dimension(:,:  ), allocatable :: ETri                          !           Edge-to-triangle connectivity list
-    integer,  dimension(:,:  ), allocatable :: TriE                          !           Triangle-to-edge connectivity list (order of TriC, across from 1st, 2nd, 3rd vertex)
-    integer,  dimension(:    ), allocatable :: EBI                           ! [0-8]     Each edge's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
-    real(dp), dimension(:    ), allocatable :: EA                            ! [m^2]     Area of each edge's "cell"
+    integer                                         :: nE                            !           Number of edges
+    real(dp), dimension(:,:  ), contiguous, pointer :: E       => null()             ! [m]       The x,y-coordinates of all the edges
+    integer,  dimension(:,:  ), contiguous, pointer :: VE      => null()             !           Vertex-to-edge connectivity list
+    integer,  dimension(:,:  ), contiguous, pointer :: EV      => null()             !           Edge-to-vertex connectivity list
+    integer,  dimension(:,:  ), contiguous, pointer :: ETri    => null()             !           Edge-to-triangle connectivity list
+    integer,  dimension(:,:  ), contiguous, pointer :: TriE    => null()             !           Triangle-to-edge connectivity list (order of TriC, across from 1st, 2nd, 3rd vertex)
+    integer,  dimension(:    ), contiguous, pointer :: EBI     => null()             ! [0-8]     Each edge's border index; 0 = free, 1 = north, 2 = northeast, ..., 8 = northwest
+    real(dp), dimension(:    ), contiguous, pointer :: EA      => null()             ! [m^2]     Area of each edge's "cell"
+    type(MPI_WIN) :: wE, wVE, wEV, wETri, wTriE, wEBI, wEA
 
     ! Voronoi mesh
-    integer                                 :: nVor                          !           Total number of Voronoi vertices
-    integer,  dimension(:    ), allocatable :: vi2vori                       !           To which Voronoi vertex (if any) each vertex   corresponds (>0 only for the four corner vertices)
-    integer,  dimension(:    ), allocatable :: ti2vori                       !           To which Voronoi vertex (if any) each triangle corresponds (>0 always)
-    integer,  dimension(:    ), allocatable :: ei2vori                       !           To which Voronoi vertex (if any) each edge     corresponds (>0 only for border edges)
-    integer,  dimension(:    ), allocatable :: vori2vi                       !           To which regular vertex (if any) each Voronoi vertex corresponds (vori2vi( vi2vori( vi)) = vi)
-    integer,  dimension(:    ), allocatable :: vori2ti                       !           To which triangle       (if any) each Voronoi vertex corresponds (vori2ti( ti2vori( ti)) = ti)
-    integer,  dimension(:    ), allocatable :: vori2ei                       !           To which edge           (if any) each Voronoi vertex corresponds (vori2ei( ei2vori( ei)) = ei)
-    real(dp), dimension(:,:  ), allocatable :: Vor                           ! [m]       Coordinates of all the Voronoi vertices
-    integer,  dimension(:    ), allocatable :: VornC                         !           Number  of other Voronoi vertices that each Voronoi vertex is connected to (2 for corners, 3 otherwise)
-    integer,  dimension(:,:  ), allocatable :: VorC                          !           Indices of other Voronoi vertices that each Voronoi vertex is connected to
-    integer,  dimension(:    ), allocatable :: nVVor                         !           For each regular vertex, the number of Voronoi vertices spanning its Voronoi cell
-    integer,  dimension(:,:  ), allocatable :: VVor                          !           For each regular vertex, the indices of the Voronoi vertices spanning its Voronoi cell
+    integer                                         :: nVor                          !           Total number of Voronoi vertices
+    integer,  dimension(:    ), contiguous, pointer :: vi2vori => null()             !           To which Voronoi vertex (if any) each vertex   corresponds (>0 only for the four corner vertices)
+    integer,  dimension(:    ), contiguous, pointer :: ti2vori => null()             !           To which Voronoi vertex (if any) each triangle corresponds (>0 always)
+    integer,  dimension(:    ), contiguous, pointer :: ei2vori => null()             !           To which Voronoi vertex (if any) each edge     corresponds (>0 only for border edges)
+    integer,  dimension(:    ), contiguous, pointer :: vori2vi => null()             !           To which regular vertex (if any) each Voronoi vertex corresponds (vori2vi( vi2vori( vi)) = vi)
+    integer,  dimension(:    ), contiguous, pointer :: vori2ti => null()             !           To which triangle       (if any) each Voronoi vertex corresponds (vori2ti( ti2vori( ti)) = ti)
+    integer,  dimension(:    ), contiguous, pointer :: vori2ei => null()             !           To which edge           (if any) each Voronoi vertex corresponds (vori2ei( ei2vori( ei)) = ei)
+    real(dp), dimension(:,:  ), contiguous, pointer :: Vor     => null()             ! [m]       Coordinates of all the Voronoi vertices
+    integer,  dimension(:    ), contiguous, pointer :: VornC   => null()             !           Number  of other Voronoi vertices that each Voronoi vertex is connected to (2 for corners, 3 otherwise)
+    integer,  dimension(:,:  ), contiguous, pointer :: VorC    => null()             !           Indices of other Voronoi vertices that each Voronoi vertex is connected to
+    integer,  dimension(:    ), contiguous, pointer :: nVVor   => null()             !           For each regular vertex, the number of Voronoi vertices spanning its Voronoi cell
+    integer,  dimension(:,:  ), contiguous, pointer :: VVor    => null()             !           For each regular vertex, the indices of the Voronoi vertices spanning its Voronoi cell
+    type(MPI_WIN) :: wvi2vori, wti2vori, wei2vori, wvori2vi, wvori2ti, wvori2ei
+    type(MPI_WIN) :: wVor, wVornC, wVorC, wnVVor, wVVor
 
     ! Parallelisation ranges
-    integer                                 :: vi1, vi2, nV_loc              ! Each process "owns" nV_loc    vertices  vi1      - vi2     , so that nV_loc    = vi2      + 1 - vi1
-    integer                                 :: ti1, ti2, nTri_loc            ! Each process "owns" nTri_loc  triangles ti1      - ti2     , so that nTri_loc  = ti2      + 1 - ti1
-    integer                                 :: ei1, ei2, nE_loc              ! Each process "owns" nE_loc    edges     ei1      - ei2     , so that nE_loc    = ei2      + 1 - ei1
+    integer                                         :: vi1, vi2, nV_loc              ! Each process "owns" nV_loc    vertices  vi1      - vi2     , so that nV_loc    = vi2      + 1 - vi1
+    integer                                         :: ti1, ti2, nTri_loc            ! Each process "owns" nTri_loc  triangles ti1      - ti2     , so that nTri_loc  = ti2      + 1 - ti1
+    integer                                         :: ei1, ei2, nE_loc              ! Each process "owns" nE_loc    edges     ei1      - ei2     , so that nE_loc    = ei2      + 1 - ei1
 
-    integer,  dimension(:    ), allocatable :: V_owning_process              !           Which process owns each vertex
-    integer,  dimension(:    ), allocatable :: Tri_owning_process            !           Which process owns each triangle
-    integer,  dimension(:    ), allocatable :: E_owning_process              !           Which process owns each edge
-    integer,  dimension(:    ), allocatable :: V_owning_node                 !           Which node owns each vertex
-    integer,  dimension(:    ), allocatable :: Tri_owning_node               !           Which node owns each triangle
-    integer,  dimension(:    ), allocatable :: E_owning_node                 !           Which node owns each edge
+    integer,  dimension(:    ), contiguous, pointer :: V_owning_process   => null()  ! Which process owns each vertex
+    integer,  dimension(:    ), contiguous, pointer :: Tri_owning_process => null()  ! Which process owns each triangle
+    integer,  dimension(:    ), contiguous, pointer :: E_owning_process   => null()  ! Which process owns each edge
+    integer,  dimension(:    ), contiguous, pointer :: V_owning_node      => null()  ! Which node owns each vertex
+    integer,  dimension(:    ), contiguous, pointer :: Tri_owning_node    => null()  ! Which node owns each triangle
+    integer,  dimension(:    ), contiguous, pointer :: E_owning_node      => null()  ! Which node owns each edge
+    type(MPI_WIN) :: wV_owning_process, wTri_owning_process, wE_owning_process
+    type(MPI_WIN) :: wV_owning_node, wTri_owning_node, wE_owning_node
 
-    type(type_par_arr_info)                 :: pai_V                         ! Parallelisation info for vertex-based fields
-    type(type_par_arr_info)                 :: pai_Tri                       ! Parallelisation info for triangle-based fields
-    type(type_par_arr_info)                 :: pai_E                         ! Parallelisation info for edge-based fields
+    type(type_par_arr_info)                         :: pai_V                          ! Parallelisation info for vertex-based fields
+    type(type_par_arr_info)                         :: pai_Tri                        ! Parallelisation info for triangle-based fields
+    type(type_par_arr_info)                         :: pai_E                          ! Parallelisation info for edge-based fields
 
+    ! Buffer shared memory
     real(dp), dimension(:    ), contiguous, pointer :: buffer1_d_a_nih  => null()     ! Pre-allocated buffer memory on the a-grid (vertices)
     real(dp), dimension(:    ), contiguous, pointer :: buffer2_d_a_nih  => null()
     real(dp), dimension(:,:  ), contiguous, pointer :: buffer1_d_ak_nih => null()
@@ -163,49 +172,55 @@ module mesh_types
     ! Grid-cell-to-matrix-row translation tables
 
     ! a-grid (vertices)
-    integer                                 :: nna, nnauv, nnak, nnaks, nnakuv, nnaksuv
-    integer,  dimension(:    ), allocatable :: n2vi
-    integer,  dimension(:,:  ), allocatable :: n2viuv
-    integer,  dimension(:,:  ), allocatable :: n2vik
-    integer,  dimension(:,:  ), allocatable :: n2vikuv
-    integer,  dimension(:,:  ), allocatable :: n2viks
-    integer,  dimension(:,:  ), allocatable :: n2viksuv
-    integer,  dimension(:    ), allocatable :: vi2n
-    integer,  dimension(:,:  ), allocatable :: viuv2n
-    integer,  dimension(:,:  ), allocatable :: vik2n
-    integer,  dimension(:,:,:), allocatable :: vikuv2n
-    integer,  dimension(:,:  ), allocatable :: viks2n
-    integer,  dimension(:,:,:), allocatable :: viksuv2n
+    integer                                         :: nna, nnauv, nnak, nnaks, nnakuv, nnaksuv
+    integer,  dimension(:    ), contiguous, pointer :: n2vi     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2viuv   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2vik    => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2vikuv  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2viks   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2viksuv => null()
+    integer,  dimension(:    ), contiguous, pointer :: vi2n     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: viuv2n   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: vik2n    => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: vikuv2n  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: viks2n   => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: viksuv2n => null()
+    type(MPI_WIN) :: wn2vi, wn2viuv, wn2vik, wn2vikuv, wn2viks, wn2viksuv
+    type(MPI_WIN) :: wvi2n, wviuv2n, wvik2n, wvikuv2n, wviks2n, wviksuv2n
 
     ! b-grid (triangles)
-    integer                                 :: nnb, nnbuv, nnbk, nnbks, nnbkuv, nnbksuv
-    integer,  dimension(:    ), allocatable :: n2ti
-    integer,  dimension(:,:  ), allocatable :: n2tiuv
-    integer,  dimension(:,:  ), allocatable :: n2tik
-    integer,  dimension(:,:  ), allocatable :: n2tikuv
-    integer,  dimension(:,:  ), allocatable :: n2tiks
-    integer,  dimension(:,:  ), allocatable :: n2tiksuv
-    integer,  dimension(:    ), allocatable :: ti2n
-    integer,  dimension(:,:  ), allocatable :: tiuv2n
-    integer,  dimension(:,:  ), allocatable :: tik2n
-    integer,  dimension(:,:,:), allocatable :: tikuv2n
-    integer,  dimension(:,:  ), allocatable :: tiks2n
-    integer,  dimension(:,:,:), allocatable :: tiksuv2n
+    integer                                         :: nnb, nnbuv, nnbk, nnbks, nnbkuv, nnbksuv
+    integer,  dimension(:    ), contiguous, pointer :: n2ti     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tiuv   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tik    => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tikuv  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tiks   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tiksuv => null()
+    integer,  dimension(:    ), contiguous, pointer :: ti2n     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: tiuv2n   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: tik2n    => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: tikuv2n  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: tiks2n   => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: tiksuv2n => null()
+    type(MPI_WIN) :: wn2ti, wn2tiuv, wn2tik, wn2tikuv, wn2tiks, wn2tiksuv
+    type(MPI_WIN) :: wti2n, wtiuv2n, wtik2n, wtikuv2n, wtiks2n, wtiksuv2n
 
     ! c-grid (edges)
-    integer                                 :: nnc, nncuv, nnck, nncks, nnckuv, nncksuv
-    integer,  dimension(:    ), allocatable :: n2ei
-    integer,  dimension(:,:  ), allocatable :: n2eiuv
-    integer,  dimension(:,:  ), allocatable :: n2eik
-    integer,  dimension(:,:  ), allocatable :: n2eikuv
-    integer,  dimension(:,:  ), allocatable :: n2eiks
-    integer,  dimension(:,:  ), allocatable :: n2eiksuv
-    integer,  dimension(:    ), allocatable :: ei2n
-    integer,  dimension(:,:  ), allocatable :: eiuv2n
-    integer,  dimension(:,:  ), allocatable :: eik2n
-    integer,  dimension(:,:,:), allocatable :: eikuv2n
-    integer,  dimension(:,:  ), allocatable :: eiks2n
-    integer,  dimension(:,:,:), allocatable :: eiksuv2n
+    integer                                         :: nnc, nncuv, nnck, nncks, nnckuv, nncksuv
+    integer,  dimension(:    ), contiguous, pointer :: n2ei     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eiuv   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eik    => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eikuv  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eiks   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eiksuv => null()
+    integer,  dimension(:    ), contiguous, pointer :: ei2n     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: eiuv2n   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: eik2n    => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: eikuv2n  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: eiks2n   => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: eiksuv2n => null()
+    type(MPI_WIN) :: wn2ei, wn2eiuv, wn2eik, wn2eikuv, wn2eiks, wn2eiksuv
+    type(MPI_WIN) :: wei2n, weiuv2n, weik2n, weikuv2n, weiks2n, weiksuv2n
 
     ! Basic 2-D mapping and gradient operators
 
@@ -291,6 +306,57 @@ contains
 
     type(type_mesh) :: mesh
 
+    ! Derived geometry data
+    if (associated( mesh%A     )) call deallocate_dist_shared( mesh%A     , mesh%wA     )
+    if (associated( mesh%VorGC )) call deallocate_dist_shared( mesh%VorGC , mesh%wVorGC )
+    if (associated( mesh%R     )) call deallocate_dist_shared( mesh%R     , mesh%wR     )
+    if (associated( mesh%Cw    )) call deallocate_dist_shared( mesh%Cw    , mesh%wCw    )
+    if (associated( mesh%D_x   )) call deallocate_dist_shared( mesh%D_x   , mesh%wD_x   )
+    if (associated( mesh%D_y   )) call deallocate_dist_shared( mesh%D_y   , mesh%wD_y   )
+    if (associated( mesh%D     )) call deallocate_dist_shared( mesh%D     , mesh%wD     )
+    if (associated( mesh%TriCw )) call deallocate_dist_shared( mesh%TriCw , mesh%wTriCw )
+    if (associated( mesh%TriBI )) call deallocate_dist_shared( mesh%TriBI , mesh%wTriBI )
+    if (associated( mesh%TriGC )) call deallocate_dist_shared( mesh%TriGC , mesh%wTriGC )
+    if (associated( mesh%TriA  )) call deallocate_dist_shared( mesh%TriA  , mesh%wTriA  )
+    if (associated( mesh%TriD_x)) call deallocate_dist_shared( mesh%TriD_x, mesh%wTriD_x)
+    if (associated( mesh%TriD_y)) call deallocate_dist_shared( mesh%TriD_y, mesh%wTriD_y)
+    if (associated( mesh%TriD  )) call deallocate_dist_shared( mesh%TriD  , mesh%wTriD  )
+
+    ! lon/lat coordinates
+    if (associated( mesh%lat)) call deallocate_dist_shared( mesh%lat, mesh%wlat)
+    if (associated( mesh%lon)) call deallocate_dist_shared( mesh%lon, mesh%wlon)
+
+    ! Edges (c-grid)
+    if (associated( mesh%E   )) call deallocate_dist_shared( mesh%E   , mesh%wE   )
+    if (associated( mesh%VE  )) call deallocate_dist_shared( mesh%VE  , mesh%wVE  )
+    if (associated( mesh%EV  )) call deallocate_dist_shared( mesh%EV  , mesh%wEV  )
+    if (associated( mesh%ETri)) call deallocate_dist_shared( mesh%ETri, mesh%wETri)
+    if (associated( mesh%TriE)) call deallocate_dist_shared( mesh%TriE, mesh%wTriE)
+    if (associated( mesh%EBI )) call deallocate_dist_shared( mesh%EBI , mesh%wEBI )
+    if (associated( mesh%EA  )) call deallocate_dist_shared( mesh%EA  , mesh%wEA  )
+
+    ! Voronoi mesh
+    if (associated( mesh%vi2vori)) call deallocate_dist_shared( mesh%vi2vori, mesh%wvi2vori)
+    if (associated( mesh%ti2vori)) call deallocate_dist_shared( mesh%ti2vori, mesh%wti2vori)
+    if (associated( mesh%ei2vori)) call deallocate_dist_shared( mesh%ei2vori, mesh%wei2vori)
+    if (associated( mesh%vori2vi)) call deallocate_dist_shared( mesh%vori2vi, mesh%wvori2vi)
+    if (associated( mesh%vori2ti)) call deallocate_dist_shared( mesh%vori2ti, mesh%wvori2ti)
+    if (associated( mesh%vori2ei)) call deallocate_dist_shared( mesh%vori2ei, mesh%wvori2ei)
+    if (associated( mesh%Vor    )) call deallocate_dist_shared( mesh%Vor    , mesh%wVor    )
+    if (associated( mesh%VornC  )) call deallocate_dist_shared( mesh%VornC  , mesh%wVornC  )
+    if (associated( mesh%VorC   )) call deallocate_dist_shared( mesh%VorC   , mesh%wVorC   )
+    if (associated( mesh%nVVor  )) call deallocate_dist_shared( mesh%nVVor  , mesh%wnVVor  )
+    if (associated( mesh%VVor   )) call deallocate_dist_shared( mesh%VVor   , mesh%wVVor   )
+
+    ! Parallelisation ranges
+    if (associated( mesh%V_owning_process  )) call deallocate_dist_shared( mesh%V_owning_process  , mesh%wV_owning_process  )
+    if (associated( mesh%Tri_owning_process)) call deallocate_dist_shared( mesh%Tri_owning_process, mesh%wTri_owning_process)
+    if (associated( mesh%E_owning_process  )) call deallocate_dist_shared( mesh%E_owning_process  , mesh%wE_owning_process  )
+    if (associated( mesh%V_owning_node     )) call deallocate_dist_shared( mesh%V_owning_node     , mesh%wV_owning_node     )
+    if (associated( mesh%Tri_owning_node   )) call deallocate_dist_shared( mesh%Tri_owning_node   , mesh%wTri_owning_node   )
+    if (associated( mesh%E_owning_node     )) call deallocate_dist_shared( mesh%E_owning_node     , mesh%wE_owning_node     )
+
+    ! Buffer shared memory
     if (associated( mesh%buffer1_d_a_nih )) call deallocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih )
     if (associated( mesh%buffer2_d_a_nih )) call deallocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih )
     if (associated( mesh%buffer1_d_ak_nih)) call deallocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih)
@@ -303,6 +369,50 @@ contains
     if (associated( mesh%buffer2_d_c_nih )) call deallocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih )
     if (associated( mesh%buffer1_d_ck_nih)) call deallocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih)
     if (associated( mesh%buffer2_d_ck_nih)) call deallocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih)
+
+    ! Grid-cell-to-matrix-row translation tables
+
+    ! a-grid (vertices)
+    if (associated( mesh%n2vi    )) call deallocate_dist_shared( mesh%n2vi    , mesh%wn2vi    )
+    if (associated( mesh%n2viuv  )) call deallocate_dist_shared( mesh%n2viuv  , mesh%wn2viuv  )
+    if (associated( mesh%n2vik   )) call deallocate_dist_shared( mesh%n2vik   , mesh%wn2vik   )
+    if (associated( mesh%n2vikuv )) call deallocate_dist_shared( mesh%n2vikuv , mesh%wn2vikuv )
+    if (associated( mesh%n2viks  )) call deallocate_dist_shared( mesh%n2viks  , mesh%wn2viks  )
+    if (associated( mesh%n2viksuv)) call deallocate_dist_shared( mesh%n2viksuv, mesh%wn2viksuv)
+    if (associated( mesh%vi2n    )) call deallocate_dist_shared( mesh%vi2n    , mesh%wvi2n    )
+    if (associated( mesh%viuv2n  )) call deallocate_dist_shared( mesh%viuv2n  , mesh%wviuv2n  )
+    if (associated( mesh%vik2n   )) call deallocate_dist_shared( mesh%vik2n   , mesh%wvik2n   )
+    if (associated( mesh%vikuv2n )) call deallocate_dist_shared( mesh%vikuv2n , mesh%wvikuv2n )
+    if (associated( mesh%viks2n  )) call deallocate_dist_shared( mesh%viks2n  , mesh%wviks2n  )
+    if (associated( mesh%viksuv2n)) call deallocate_dist_shared( mesh%viksuv2n, mesh%wviksuv2n)
+
+    ! b-grid (triangles)
+    if (associated( mesh%n2ti    )) call deallocate_dist_shared( mesh%n2ti    , mesh%wn2ti    )
+    if (associated( mesh%n2tiuv  )) call deallocate_dist_shared( mesh%n2tiuv  , mesh%wn2tiuv  )
+    if (associated( mesh%n2tik   )) call deallocate_dist_shared( mesh%n2tik   , mesh%wn2tik   )
+    if (associated( mesh%n2tikuv )) call deallocate_dist_shared( mesh%n2tikuv , mesh%wn2tikuv )
+    if (associated( mesh%n2tiks  )) call deallocate_dist_shared( mesh%n2tiks  , mesh%wn2tiks  )
+    if (associated( mesh%n2tiksuv)) call deallocate_dist_shared( mesh%n2tiksuv, mesh%wn2tiksuv)
+    if (associated( mesh%ti2n    )) call deallocate_dist_shared( mesh%ti2n    , mesh%wti2n    )
+    if (associated( mesh%tiuv2n  )) call deallocate_dist_shared( mesh%tiuv2n  , mesh%wtiuv2n  )
+    if (associated( mesh%tik2n   )) call deallocate_dist_shared( mesh%tik2n   , mesh%wtik2n   )
+    if (associated( mesh%tikuv2n )) call deallocate_dist_shared( mesh%tikuv2n , mesh%wtikuv2n )
+    if (associated( mesh%tiks2n  )) call deallocate_dist_shared( mesh%tiks2n  , mesh%wtiks2n  )
+    if (associated( mesh%tiksuv2n)) call deallocate_dist_shared( mesh%tiksuv2n, mesh%wtiksuv2n)
+
+    ! c-grid (edges)
+    if (associated( mesh%n2ei    )) call deallocate_dist_shared( mesh%n2ei    , mesh%wn2ei    )
+    if (associated( mesh%n2eiuv  )) call deallocate_dist_shared( mesh%n2eiuv  , mesh%wn2eiuv  )
+    if (associated( mesh%n2eik   )) call deallocate_dist_shared( mesh%n2eik   , mesh%wn2eik   )
+    if (associated( mesh%n2eikuv )) call deallocate_dist_shared( mesh%n2eikuv , mesh%wn2eikuv )
+    if (associated( mesh%n2eiks  )) call deallocate_dist_shared( mesh%n2eiks  , mesh%wn2eiks  )
+    if (associated( mesh%n2eiksuv)) call deallocate_dist_shared( mesh%n2eiksuv, mesh%wn2eiksuv)
+    if (associated( mesh%ei2n    )) call deallocate_dist_shared( mesh%ei2n    , mesh%wei2n    )
+    if (associated( mesh%eiuv2n  )) call deallocate_dist_shared( mesh%eiuv2n  , mesh%weiuv2n  )
+    if (associated( mesh%eik2n   )) call deallocate_dist_shared( mesh%eik2n   , mesh%weik2n   )
+    if (associated( mesh%eikuv2n )) call deallocate_dist_shared( mesh%eikuv2n , mesh%weikuv2n )
+    if (associated( mesh%eiks2n  )) call deallocate_dist_shared( mesh%eiks2n  , mesh%weiks2n  )
+    if (associated( mesh%eiksuv2n)) call deallocate_dist_shared( mesh%eiksuv2n, mesh%weiksuv2n)
 
   end subroutine finalise
 

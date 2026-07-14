@@ -662,7 +662,7 @@ contains
     call init_routine( routine_name)
 
     ! Safety
-    if (.not. allocated( mesh_src%vi2n)) then
+    if (.not. associated( mesh_src%vi2n)) then
       call crash('matrix operators for mesh "' // trim( mesh_src%name) // '" have not been calculated!')
     end if
 
@@ -711,7 +711,7 @@ contains
     call init_routine( routine_name)
 
     ! Safety
-    if (.not. allocated( mesh_src%vi2n)) then
+    if (.not. associated( mesh_src%vi2n)) then
       call crash('matrix operators for mesh "' // trim( mesh_src%name) // '" have not been calculated!')
     end if
 

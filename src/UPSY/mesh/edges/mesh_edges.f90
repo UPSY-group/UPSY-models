@@ -7,6 +7,7 @@ module mesh_edges
   use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use plane_geometry, only: triangle_area
+  use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
 
   implicit none
 
@@ -60,24 +61,25 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Deallocate memory if necessary
-    if (allocated( mesh%E   )) deallocate( mesh%E   )
-    if (allocated( mesh%VE  )) deallocate( mesh%VE  )
-    if (allocated( mesh%EV  )) deallocate( mesh%EV  )
-    if (allocated( mesh%ETri)) deallocate( mesh%ETri)
-    if (allocated( mesh%TriE)) deallocate( mesh%TriE)
-    if (allocated( mesh%EBI )) deallocate( mesh%EBI )
-    if (allocated( mesh%EA  )) deallocate( mesh%EA  )
+    if (associated( mesh%E   )) call deallocate_dist_shared( mesh%E   , mesh%wE   )
+    if (associated( mesh%VE  )) call deallocate_dist_shared( mesh%VE  , mesh%wVE  )
+    if (associated( mesh%EV  )) call deallocate_dist_shared( mesh%EV  , mesh%wEV  )
+    if (associated( mesh%ETri)) call deallocate_dist_shared( mesh%ETri, mesh%wETri)
+    if (associated( mesh%TriE)) call deallocate_dist_shared( mesh%TriE, mesh%wTriE)
+    if (associated( mesh%EBI )) call deallocate_dist_shared( mesh%EBI , mesh%wEBI )
+    if (associated( mesh%EA  )) call deallocate_dist_shared( mesh%EA  , mesh%wEA  )
 
-    ! Allocate memory
+    ! Allocate node-shared memory
     mesh%nE = sum( mesh%nC) / 2   ! Because every edge is listed by both vertices spanning it
-    allocate( mesh%E    (mesh%nE,   2          ), source = 0._dp)
-    allocate( mesh%VE   (mesh%nV,   mesh%nC_mem), source = 0    )
-    allocate( mesh%EV   (mesh%nE,   4          ), source = 0    )
-    allocate( mesh%ETri (mesh%nE,   2          ), source = 0    )
-    allocate( mesh%TriE (mesh%nTri, 3          ), source = 0    )
-    allocate( mesh%EBI  (mesh%nE               ), source = 0    )
-    allocate( mesh%EA   (mesh%nE               ), source = 0._dp)
+    call allocate_dist_shared( mesh%E   , mesh%wE   , [1, mesh%nE  ], [1, 2          ])
+    call allocate_dist_shared( mesh%VE  , mesh%wVE  , [1, mesh%nV  ], [1, mesh%nC_mem])
+    call allocate_dist_shared( mesh%EV  , mesh%wEV  , [1, mesh%nE  ], [1, 4          ])
+    call allocate_dist_shared( mesh%ETri, mesh%wETri, [1, mesh%nE  ], [1, 2          ])
+    call allocate_dist_shared( mesh%TriE, mesh%wTriE, [1, mesh%nTri], [1, 3          ])
+    call allocate_dist_shared( mesh%EBI , mesh%wEBI , [1, mesh%nE  ]                  )
+    call allocate_dist_shared( mesh%EA  , mesh%wEA  , [1, mesh%nE  ]                  )
+
+    if (par%node_primary) then
 
     ei = 0
     do vi = 1, mesh%nV
@@ -195,10 +197,13 @@ contains
       end do
     end do
 
+    end if
+    call sync
+
     call calc_edge_areas( mesh)
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 7)
 
   end subroutine construct_mesh_edges
 
@@ -249,6 +254,8 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    if (par%node_primary) then
+
     do ei = 1, mesh%nE
 
       vi  = mesh%EV( ei,1)
@@ -273,6 +280,9 @@ contains
       end if
 
     end do
+
+    end if
+    call sync
 
     ! Finalise routine path
     call finalise_routine( routine_name)

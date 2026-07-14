@@ -53,6 +53,7 @@ jobs:
       - MISMIPplus_full
       - MISMIP_mod_full
       - SSA_icestream_full
+      - ISMIP_HOM_full
     if: always()
     uses: ./.github/workflows/UFE_build_weekly_benchmarks_site.yml
 

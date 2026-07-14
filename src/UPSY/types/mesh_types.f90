@@ -163,49 +163,55 @@ module mesh_types
     ! Grid-cell-to-matrix-row translation tables
 
     ! a-grid (vertices)
-    integer                                 :: nna, nnauv, nnak, nnaks, nnakuv, nnaksuv
-    integer,  dimension(:    ), allocatable :: n2vi
-    integer,  dimension(:,:  ), allocatable :: n2viuv
-    integer,  dimension(:,:  ), allocatable :: n2vik
-    integer,  dimension(:,:  ), allocatable :: n2vikuv
-    integer,  dimension(:,:  ), allocatable :: n2viks
-    integer,  dimension(:,:  ), allocatable :: n2viksuv
-    integer,  dimension(:    ), allocatable :: vi2n
-    integer,  dimension(:,:  ), allocatable :: viuv2n
-    integer,  dimension(:,:  ), allocatable :: vik2n
-    integer,  dimension(:,:,:), allocatable :: vikuv2n
-    integer,  dimension(:,:  ), allocatable :: viks2n
-    integer,  dimension(:,:,:), allocatable :: viksuv2n
+    integer                                         :: nna, nnauv, nnak, nnaks, nnakuv, nnaksuv
+    integer,  dimension(:    ), contiguous, pointer :: n2vi     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2viuv   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2vik    => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2vikuv  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2viks   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2viksuv => null()
+    integer,  dimension(:    ), contiguous, pointer :: vi2n     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: viuv2n   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: vik2n    => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: vikuv2n  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: viks2n   => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: viksuv2n => null()
+    type(MPI_WIN) :: wn2vi, wn2viuv, wn2vik, wn2vikuv, wn2viks, wn2viksuv
+    type(MPI_WIN) :: wvi2n, wviuv2n, wvik2n, wvikuv2n, wviks2n, wviksuv2n
 
     ! b-grid (triangles)
-    integer                                 :: nnb, nnbuv, nnbk, nnbks, nnbkuv, nnbksuv
-    integer,  dimension(:    ), allocatable :: n2ti
-    integer,  dimension(:,:  ), allocatable :: n2tiuv
-    integer,  dimension(:,:  ), allocatable :: n2tik
-    integer,  dimension(:,:  ), allocatable :: n2tikuv
-    integer,  dimension(:,:  ), allocatable :: n2tiks
-    integer,  dimension(:,:  ), allocatable :: n2tiksuv
-    integer,  dimension(:    ), allocatable :: ti2n
-    integer,  dimension(:,:  ), allocatable :: tiuv2n
-    integer,  dimension(:,:  ), allocatable :: tik2n
-    integer,  dimension(:,:,:), allocatable :: tikuv2n
-    integer,  dimension(:,:  ), allocatable :: tiks2n
-    integer,  dimension(:,:,:), allocatable :: tiksuv2n
+    integer                                         :: nnb, nnbuv, nnbk, nnbks, nnbkuv, nnbksuv
+    integer,  dimension(:    ), contiguous, pointer :: n2ti     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tiuv   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tik    => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tikuv  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tiks   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2tiksuv => null()
+    integer,  dimension(:    ), contiguous, pointer :: ti2n     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: tiuv2n   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: tik2n    => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: tikuv2n  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: tiks2n   => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: tiksuv2n => null()
+    type(MPI_WIN) :: wn2ti, wn2tiuv, wn2tik, wn2tikuv, wn2tiks, wn2tiksuv
+    type(MPI_WIN) :: wti2n, wtiuv2n, wtik2n, wtikuv2n, wtiks2n, wtiksuv2n
 
     ! c-grid (edges)
-    integer                                 :: nnc, nncuv, nnck, nncks, nnckuv, nncksuv
-    integer,  dimension(:    ), allocatable :: n2ei
-    integer,  dimension(:,:  ), allocatable :: n2eiuv
-    integer,  dimension(:,:  ), allocatable :: n2eik
-    integer,  dimension(:,:  ), allocatable :: n2eikuv
-    integer,  dimension(:,:  ), allocatable :: n2eiks
-    integer,  dimension(:,:  ), allocatable :: n2eiksuv
-    integer,  dimension(:    ), allocatable :: ei2n
-    integer,  dimension(:,:  ), allocatable :: eiuv2n
-    integer,  dimension(:,:  ), allocatable :: eik2n
-    integer,  dimension(:,:,:), allocatable :: eikuv2n
-    integer,  dimension(:,:  ), allocatable :: eiks2n
-    integer,  dimension(:,:,:), allocatable :: eiksuv2n
+    integer                                         :: nnc, nncuv, nnck, nncks, nnckuv, nncksuv
+    integer,  dimension(:    ), contiguous, pointer :: n2ei     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eiuv   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eik    => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eikuv  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eiks   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: n2eiksuv => null()
+    integer,  dimension(:    ), contiguous, pointer :: ei2n     => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: eiuv2n   => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: eik2n    => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: eikuv2n  => null()
+    integer,  dimension(:,:  ), contiguous, pointer :: eiks2n   => null()
+    integer,  dimension(:,:,:), contiguous, pointer :: eiksuv2n => null()
+    type(MPI_WIN) :: wn2ei, wn2eiuv, wn2eik, wn2eikuv, wn2eiks, wn2eiksuv
+    type(MPI_WIN) :: wei2n, weiuv2n, weik2n, weikuv2n, weiks2n, weiksuv2n
 
     ! Basic 2-D mapping and gradient operators
 
@@ -291,6 +297,51 @@ contains
 
     type(type_mesh) :: mesh
 
+    ! Deallocate grid-cell-to-matrix-row translation tables
+
+    ! a-grid (vertices)
+    if (associated( mesh%n2vi    )) call deallocate_dist_shared( mesh%n2vi    , mesh%wn2vi    )
+    if (associated( mesh%n2viuv  )) call deallocate_dist_shared( mesh%n2viuv  , mesh%wn2viuv  )
+    if (associated( mesh%n2vik   )) call deallocate_dist_shared( mesh%n2vik   , mesh%wn2vik   )
+    if (associated( mesh%n2vikuv )) call deallocate_dist_shared( mesh%n2vikuv , mesh%wn2vikuv )
+    if (associated( mesh%n2viks  )) call deallocate_dist_shared( mesh%n2viks  , mesh%wn2viks  )
+    if (associated( mesh%n2viksuv)) call deallocate_dist_shared( mesh%n2viksuv, mesh%wn2viksuv)
+    if (associated( mesh%vi2n    )) call deallocate_dist_shared( mesh%vi2n    , mesh%wvi2n    )
+    if (associated( mesh%viuv2n  )) call deallocate_dist_shared( mesh%viuv2n  , mesh%wviuv2n  )
+    if (associated( mesh%vik2n   )) call deallocate_dist_shared( mesh%vik2n   , mesh%wvik2n   )
+    if (associated( mesh%vikuv2n )) call deallocate_dist_shared( mesh%vikuv2n , mesh%wvikuv2n )
+    if (associated( mesh%viks2n  )) call deallocate_dist_shared( mesh%viks2n  , mesh%wviks2n  )
+    if (associated( mesh%viksuv2n)) call deallocate_dist_shared( mesh%viksuv2n, mesh%wviksuv2n)
+
+    ! b-grid (triangles)
+    if (associated( mesh%n2ti    )) call deallocate_dist_shared( mesh%n2ti    , mesh%wn2ti    )
+    if (associated( mesh%n2tiuv  )) call deallocate_dist_shared( mesh%n2tiuv  , mesh%wn2tiuv  )
+    if (associated( mesh%n2tik   )) call deallocate_dist_shared( mesh%n2tik   , mesh%wn2tik   )
+    if (associated( mesh%n2tikuv )) call deallocate_dist_shared( mesh%n2tikuv , mesh%wn2tikuv )
+    if (associated( mesh%n2tiks  )) call deallocate_dist_shared( mesh%n2tiks  , mesh%wn2tiks  )
+    if (associated( mesh%n2tiksuv)) call deallocate_dist_shared( mesh%n2tiksuv, mesh%wn2tiksuv)
+    if (associated( mesh%ti2n    )) call deallocate_dist_shared( mesh%ti2n    , mesh%wti2n    )
+    if (associated( mesh%tiuv2n  )) call deallocate_dist_shared( mesh%tiuv2n  , mesh%wtiuv2n  )
+    if (associated( mesh%tik2n   )) call deallocate_dist_shared( mesh%tik2n   , mesh%wtik2n   )
+    if (associated( mesh%tikuv2n )) call deallocate_dist_shared( mesh%tikuv2n , mesh%wtikuv2n )
+    if (associated( mesh%tiks2n  )) call deallocate_dist_shared( mesh%tiks2n  , mesh%wtiks2n  )
+    if (associated( mesh%tiksuv2n)) call deallocate_dist_shared( mesh%tiksuv2n, mesh%wtiksuv2n)
+
+    ! c-grid (edges)
+    if (associated( mesh%n2ei    )) call deallocate_dist_shared( mesh%n2ei    , mesh%wn2ei    )
+    if (associated( mesh%n2eiuv  )) call deallocate_dist_shared( mesh%n2eiuv  , mesh%wn2eiuv  )
+    if (associated( mesh%n2eik   )) call deallocate_dist_shared( mesh%n2eik   , mesh%wn2eik   )
+    if (associated( mesh%n2eikuv )) call deallocate_dist_shared( mesh%n2eikuv , mesh%wn2eikuv )
+    if (associated( mesh%n2eiks  )) call deallocate_dist_shared( mesh%n2eiks  , mesh%wn2eiks  )
+    if (associated( mesh%n2eiksuv)) call deallocate_dist_shared( mesh%n2eiksuv, mesh%wn2eiksuv)
+    if (associated( mesh%ei2n    )) call deallocate_dist_shared( mesh%ei2n    , mesh%wei2n    )
+    if (associated( mesh%eiuv2n  )) call deallocate_dist_shared( mesh%eiuv2n  , mesh%weiuv2n  )
+    if (associated( mesh%eik2n   )) call deallocate_dist_shared( mesh%eik2n   , mesh%weik2n   )
+    if (associated( mesh%eikuv2n )) call deallocate_dist_shared( mesh%eikuv2n , mesh%weikuv2n )
+    if (associated( mesh%eiks2n  )) call deallocate_dist_shared( mesh%eiks2n  , mesh%weiks2n  )
+    if (associated( mesh%eiksuv2n)) call deallocate_dist_shared( mesh%eiksuv2n, mesh%weiksuv2n)
+
+    ! Deallocate buffer shared memory
     if (associated( mesh%buffer1_d_a_nih )) call deallocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih )
     if (associated( mesh%buffer2_d_a_nih )) call deallocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih )
     if (associated( mesh%buffer1_d_ak_nih)) call deallocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih)

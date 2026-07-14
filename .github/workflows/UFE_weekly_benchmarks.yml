@@ -41,6 +41,11 @@ jobs:
     with:
       test_path: automated_testing/UFEMISM/integrated_test_SSA_icestream_full
 
+  ISMIP_HOM_full:
+    uses: ./.github/workflows/UFE_weekly_benchmarks_run_test.yml
+    with:
+      test_path: automated_testing/UFEMISM/integrated_test_ISMIP_HOM_full
+
   # Combine the resulting figures into a neat little website
 
   build_site:

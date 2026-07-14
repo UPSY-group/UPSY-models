@@ -1,0 +1,18 @@
+Title: ISMIP-HOM
+
+Keywords:
+- idealised geometry
+- velocity only
+- model intercomparison
+
+URLs:
+- https://doi.org/10.5194/tc-2-95-2008
+
+Description:
+ISMIP-HOM is a benchmark experiment for higher-order and full-Stokes
+models. The idealised geometries are slab-on-a-slope, with periodic
+spatial variations in either the bed geometry or the basal friction
+coefficient. UFEMISM's Blatter-Pattyn solver generally agrees well
+with the ensemble results; the DIVA and particularly the hybrid SIA/SSA
+quickly deviate from the ensemble as the wavelength of the
+geometry/friction variations decreases.

@@ -1,0 +1,18 @@
+Title: Halfar dome
+
+Keywords:
+- idealised geometry
+- SIA
+- analytical solution
+- evolving geometry
+
+URLs:
+
+Description:
+The Halfar solution to the SIA gives the ice thickness H(x,y,t),
+given a specific initial ice geometry H0(x,y). This is a great
+tool for verifying the ice thickness integration module.
+The Halfar_static experiment imposes an SMB that is exactly
+equal and opposite to the thinning rate dH/dt of the Halfar
+solution, so that the ice thickness ideally should not change
+at all.

@@ -80,19 +80,19 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (allocated( mesh%V_owning_process  )) deallocate( mesh%V_owning_process  )
-    if (allocated( mesh%V_owning_node     )) deallocate( mesh%V_owning_node     )
-    if (allocated( mesh%Tri_owning_process)) deallocate( mesh%Tri_owning_process)
-    if (allocated( mesh%Tri_owning_node   )) deallocate( mesh%Tri_owning_node   )
-    if (allocated( mesh%E_owning_process  )) deallocate( mesh%E_owning_process  )
-    if (allocated( mesh%E_owning_node     )) deallocate( mesh%E_owning_node     )
+    if (associated( mesh%V_owning_process  )) call deallocate_dist_shared( mesh%V_owning_process  , mesh%wV_owning_process  )
+    if (associated( mesh%V_owning_node     )) call deallocate_dist_shared( mesh%V_owning_node     , mesh%wV_owning_node     )
+    if (associated( mesh%Tri_owning_process)) call deallocate_dist_shared( mesh%Tri_owning_process, mesh%wTri_owning_process)
+    if (associated( mesh%Tri_owning_node   )) call deallocate_dist_shared( mesh%Tri_owning_node   , mesh%wTri_owning_node   )
+    if (associated( mesh%E_owning_process  )) call deallocate_dist_shared( mesh%E_owning_process  , mesh%wE_owning_process  )
+    if (associated( mesh%E_owning_node     )) call deallocate_dist_shared( mesh%E_owning_node     , mesh%wE_owning_node     )
 
-    allocate( mesh%V_owning_process  ( mesh%nV))
-    allocate( mesh%V_owning_node     ( mesh%nV))
-    allocate( mesh%Tri_owning_process( mesh%nTri))
-    allocate( mesh%Tri_owning_node   ( mesh%nTri))
-    allocate( mesh%E_owning_process  ( mesh%nE))
-    allocate( mesh%E_owning_node     ( mesh%nE))
+    call allocate_dist_shared( mesh%V_owning_process  , mesh%wV_owning_process  , [1, mesh%nV  ])
+    call allocate_dist_shared( mesh%V_owning_node     , mesh%wV_owning_node     , [1, mesh%nV  ])
+    call allocate_dist_shared( mesh%Tri_owning_process, mesh%wTri_owning_process, [1, mesh%nTri])
+    call allocate_dist_shared( mesh%Tri_owning_node   , mesh%wTri_owning_node   , [1, mesh%nTri])
+    call allocate_dist_shared( mesh%E_owning_process  , mesh%wE_owning_process  , [1, mesh%nE  ])
+    call allocate_dist_shared( mesh%E_owning_node     , mesh%wE_owning_node     , [1, mesh%nE  ])
 
     if (.not. present( mask_active_a_tot)) then
       ! Divide all vertices equally over the processes

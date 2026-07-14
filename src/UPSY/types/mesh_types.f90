@@ -126,21 +126,24 @@ module mesh_types
     integer,  dimension(:,:  ), allocatable :: VVor                          !           For each regular vertex, the indices of the Voronoi vertices spanning its Voronoi cell
 
     ! Parallelisation ranges
-    integer                                 :: vi1, vi2, nV_loc              ! Each process "owns" nV_loc    vertices  vi1      - vi2     , so that nV_loc    = vi2      + 1 - vi1
-    integer                                 :: ti1, ti2, nTri_loc            ! Each process "owns" nTri_loc  triangles ti1      - ti2     , so that nTri_loc  = ti2      + 1 - ti1
-    integer                                 :: ei1, ei2, nE_loc              ! Each process "owns" nE_loc    edges     ei1      - ei2     , so that nE_loc    = ei2      + 1 - ei1
+    integer                                         :: vi1, vi2, nV_loc              ! Each process "owns" nV_loc    vertices  vi1      - vi2     , so that nV_loc    = vi2      + 1 - vi1
+    integer                                         :: ti1, ti2, nTri_loc            ! Each process "owns" nTri_loc  triangles ti1      - ti2     , so that nTri_loc  = ti2      + 1 - ti1
+    integer                                         :: ei1, ei2, nE_loc              ! Each process "owns" nE_loc    edges     ei1      - ei2     , so that nE_loc    = ei2      + 1 - ei1
 
-    integer,  dimension(:    ), allocatable :: V_owning_process              !           Which process owns each vertex
-    integer,  dimension(:    ), allocatable :: Tri_owning_process            !           Which process owns each triangle
-    integer,  dimension(:    ), allocatable :: E_owning_process              !           Which process owns each edge
-    integer,  dimension(:    ), allocatable :: V_owning_node                 !           Which node owns each vertex
-    integer,  dimension(:    ), allocatable :: Tri_owning_node               !           Which node owns each triangle
-    integer,  dimension(:    ), allocatable :: E_owning_node                 !           Which node owns each edge
+    integer,  dimension(:    ), contiguous, pointer :: V_owning_process   => null()  ! Which process owns each vertex
+    integer,  dimension(:    ), contiguous, pointer :: Tri_owning_process => null()  ! Which process owns each triangle
+    integer,  dimension(:    ), contiguous, pointer :: E_owning_process   => null()  ! Which process owns each edge
+    integer,  dimension(:    ), contiguous, pointer :: V_owning_node      => null()  ! Which node owns each vertex
+    integer,  dimension(:    ), contiguous, pointer :: Tri_owning_node    => null()  ! Which node owns each triangle
+    integer,  dimension(:    ), contiguous, pointer :: E_owning_node      => null()  ! Which node owns each edge
+    type(MPI_WIN) :: wV_owning_process, wTri_owning_process, wE_owning_process
+    type(MPI_WIN) :: wV_owning_node, wTri_owning_node, wE_owning_node
 
-    type(type_par_arr_info)                 :: pai_V                         ! Parallelisation info for vertex-based fields
-    type(type_par_arr_info)                 :: pai_Tri                       ! Parallelisation info for triangle-based fields
-    type(type_par_arr_info)                 :: pai_E                         ! Parallelisation info for edge-based fields
+    type(type_par_arr_info)                         :: pai_V                          ! Parallelisation info for vertex-based fields
+    type(type_par_arr_info)                         :: pai_Tri                        ! Parallelisation info for triangle-based fields
+    type(type_par_arr_info)                         :: pai_E                          ! Parallelisation info for edge-based fields
 
+    ! Buffer shared memory
     real(dp), dimension(:    ), contiguous, pointer :: buffer1_d_a_nih  => null()     ! Pre-allocated buffer memory on the a-grid (vertices)
     real(dp), dimension(:    ), contiguous, pointer :: buffer2_d_a_nih  => null()
     real(dp), dimension(:,:  ), contiguous, pointer :: buffer1_d_ak_nih => null()
@@ -297,7 +300,29 @@ contains
 
     type(type_mesh) :: mesh
 
-    ! Deallocate grid-cell-to-matrix-row translation tables
+    ! Parallelisation ranges
+    if (associated( mesh%V_owning_process  )) call deallocate_dist_shared( mesh%V_owning_process  , mesh%wV_owning_process  )
+    if (associated( mesh%Tri_owning_process)) call deallocate_dist_shared( mesh%Tri_owning_process, mesh%wTri_owning_process)
+    if (associated( mesh%E_owning_process  )) call deallocate_dist_shared( mesh%E_owning_process  , mesh%wE_owning_process  )
+    if (associated( mesh%V_owning_node     )) call deallocate_dist_shared( mesh%V_owning_node     , mesh%wV_owning_node     )
+    if (associated( mesh%Tri_owning_node   )) call deallocate_dist_shared( mesh%Tri_owning_node   , mesh%wTri_owning_node   )
+    if (associated( mesh%E_owning_node     )) call deallocate_dist_shared( mesh%E_owning_node     , mesh%wE_owning_node     )
+
+    ! Buffer shared memory
+    if (associated( mesh%buffer1_d_a_nih )) call deallocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih )
+    if (associated( mesh%buffer2_d_a_nih )) call deallocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih )
+    if (associated( mesh%buffer1_d_ak_nih)) call deallocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih)
+    if (associated( mesh%buffer2_d_ak_nih)) call deallocate_dist_shared( mesh%buffer2_d_ak_nih, mesh%wbuffer2_d_ak_nih)
+    if (associated( mesh%buffer1_d_b_nih )) call deallocate_dist_shared( mesh%buffer1_d_b_nih , mesh%wbuffer1_d_b_nih )
+    if (associated( mesh%buffer2_d_b_nih )) call deallocate_dist_shared( mesh%buffer2_d_b_nih , mesh%wbuffer2_d_b_nih )
+    if (associated( mesh%buffer1_d_bk_nih)) call deallocate_dist_shared( mesh%buffer1_d_bk_nih, mesh%wbuffer1_d_bk_nih)
+    if (associated( mesh%buffer2_d_bk_nih)) call deallocate_dist_shared( mesh%buffer2_d_bk_nih, mesh%wbuffer2_d_bk_nih)
+    if (associated( mesh%buffer1_d_c_nih )) call deallocate_dist_shared( mesh%buffer1_d_c_nih , mesh%wbuffer1_d_c_nih )
+    if (associated( mesh%buffer2_d_c_nih )) call deallocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih )
+    if (associated( mesh%buffer1_d_ck_nih)) call deallocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih)
+    if (associated( mesh%buffer2_d_ck_nih)) call deallocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih)
+
+    ! Grid-cell-to-matrix-row translation tables
 
     ! a-grid (vertices)
     if (associated( mesh%n2vi    )) call deallocate_dist_shared( mesh%n2vi    , mesh%wn2vi    )
@@ -340,20 +365,6 @@ contains
     if (associated( mesh%eikuv2n )) call deallocate_dist_shared( mesh%eikuv2n , mesh%weikuv2n )
     if (associated( mesh%eiks2n  )) call deallocate_dist_shared( mesh%eiks2n  , mesh%weiks2n  )
     if (associated( mesh%eiksuv2n)) call deallocate_dist_shared( mesh%eiksuv2n, mesh%weiksuv2n)
-
-    ! Deallocate buffer shared memory
-    if (associated( mesh%buffer1_d_a_nih )) call deallocate_dist_shared( mesh%buffer1_d_a_nih , mesh%wbuffer1_d_a_nih )
-    if (associated( mesh%buffer2_d_a_nih )) call deallocate_dist_shared( mesh%buffer2_d_a_nih , mesh%wbuffer2_d_a_nih )
-    if (associated( mesh%buffer1_d_ak_nih)) call deallocate_dist_shared( mesh%buffer1_d_ak_nih, mesh%wbuffer1_d_ak_nih)
-    if (associated( mesh%buffer2_d_ak_nih)) call deallocate_dist_shared( mesh%buffer2_d_ak_nih, mesh%wbuffer2_d_ak_nih)
-    if (associated( mesh%buffer1_d_b_nih )) call deallocate_dist_shared( mesh%buffer1_d_b_nih , mesh%wbuffer1_d_b_nih )
-    if (associated( mesh%buffer2_d_b_nih )) call deallocate_dist_shared( mesh%buffer2_d_b_nih , mesh%wbuffer2_d_b_nih )
-    if (associated( mesh%buffer1_d_bk_nih)) call deallocate_dist_shared( mesh%buffer1_d_bk_nih, mesh%wbuffer1_d_bk_nih)
-    if (associated( mesh%buffer2_d_bk_nih)) call deallocate_dist_shared( mesh%buffer2_d_bk_nih, mesh%wbuffer2_d_bk_nih)
-    if (associated( mesh%buffer1_d_c_nih )) call deallocate_dist_shared( mesh%buffer1_d_c_nih , mesh%wbuffer1_d_c_nih )
-    if (associated( mesh%buffer2_d_c_nih )) call deallocate_dist_shared( mesh%buffer2_d_c_nih , mesh%wbuffer2_d_c_nih )
-    if (associated( mesh%buffer1_d_ck_nih)) call deallocate_dist_shared( mesh%buffer1_d_ck_nih, mesh%wbuffer1_d_ck_nih)
-    if (associated( mesh%buffer2_d_ck_nih)) call deallocate_dist_shared( mesh%buffer2_d_ck_nih, mesh%wbuffer2_d_ck_nih)
 
   end subroutine finalise
 

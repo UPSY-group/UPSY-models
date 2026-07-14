@@ -1,5 +1,3 @@
-# The full UFEMISM Test Suite
-
 name: UFEMISM Test Suite
 run-name: ${{ github.actor }} - UFEMISM Test Suite
 on:
@@ -14,61 +12,61 @@ jobs:
 
   # Run the individual tests in parallel as separate workflows
   compile_UFEMISM:
-    uses: ./.github/workflows/UFE_compiling.yml
+    uses: ./.github/workflows/UFE_test_suite_compiling.yml
 
   unit_tests:
-    uses: ./.github/workflows/UFE_unit_tests.yml
+    uses: ./.github/workflows/UFE_test_suite_unit_tests.yml
 
   SSA_icestream_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_SSA_icestream_small
       compile_script: compile_UFEMISM.csh
 
   ISMIP_HOM_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small
       compile_script: compile_UFEMISM.csh
 
   Halfar_dome_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_Halfar_dome_small
       compile_script: compile_UFEMISM.csh
 
   MISMIP_mod_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_MISMIP_mod_small
       compile_script: compile_UFEMISM.csh
 
   MISMIPplus_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_MISMIPplus_small
       compile_script: compile_UFEMISM.csh
 
   Berends2023nudging_exp1_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp1_small
       compile_script: compile_UFEMISM.csh
 
   Berends2023nudging_exp2_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_Berends2023nudging_exp2_small
       compile_script: compile_UFEMISM.csh
 
   Ant_init_small_01:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_Ant_init_small_01
       compile_script: compile_UFEMISM.csh
 
   ISMIP7_demo_small:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UFEMISM/integrated_test_ISMIP7_demo_small
       compile_script: compile_UFEMISM.csh

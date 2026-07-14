@@ -18,31 +18,31 @@ jobs:
     uses: ./.github/workflows/UPSY_test_suite_unit_tests.yml
 
   mesh_creation:
-    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_creation
       compile_script: compile_UPSY.csh
 
   mesh_focussing:
-    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_focussing
       compile_script: compile_UPSY.csh
 
   mesh_discretisation:
-    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_discretisation
       compile_script: compile_UPSY.csh
 
   mesh_remapping_mesh_grid:
-    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_grid
       compile_script: compile_UPSY.csh
 
   mesh_remapping_mesh_mesh:
-    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh
       compile_script: compile_UPSY.csh

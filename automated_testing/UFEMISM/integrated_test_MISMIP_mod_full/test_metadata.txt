@@ -1,0 +1,19 @@
+Title: MISMIP_mod
+
+Keywords:
+- grounding-line migration
+- idealised geometry
+
+URLs:
+- https://doi.org/10.5194/tc-6-573-2012
+
+Description:
+MISMIP_mod is a modified version of the flowline experiment from the first
+MISMIP paper (Pattyn et al., 2012). After initialising a steady-state ice
+sheet, the uniform flow factor is decreased, causing the grounding line to
+advance to a new steady state. Then, the flow factor is reset to its original
+value. Ideally, the grounding line should then retreat back to its original
+position. Any difference between the initial and final geometry is a numerical
+error - which Pattyn et al. showed can be quite substantial. UFEMISM's sub-grid
+friction scaling approach works quite well to reduce this error, so that even
+with a 10 km resolution, the hysteresis is almost negligible.

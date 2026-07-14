@@ -1,5 +1,5 @@
-name: UFEMISM compiling
-run-name: ${{ github.actor }} - UFEMISM compiling
+name: UFEMISM Test Suite - compiling
+run-name: ${{ github.actor }} - compiling
 on:
   workflow_call:
 

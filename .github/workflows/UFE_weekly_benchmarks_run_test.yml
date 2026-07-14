@@ -1,5 +1,5 @@
-name: Run test
-run-name: ${{ github.actor }} - Run test
+name: UFEMISM Weekly Benchmarks - run test
+run-name: ${{ github.actor }} - run test
 on:
   workflow_call:
     inputs:

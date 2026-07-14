@@ -1,10 +1,10 @@
-name: UPSY unit tests
-run-name: ${{ github.actor }} - UPSY unit tests
+name: UPSY Test Suite - compiling
+run-name: ${{ github.actor }} - compiling
 on:
   workflow_call:
 
 jobs:
-  unit_tests:
+  compile_UPSY:
     name: ${{ matrix.os }}-${{ matrix.build_type }}
     runs-on: ${{ matrix.os }}
     strategy:
@@ -50,14 +50,6 @@ jobs:
         shell: micromamba-shell {0}
         run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
 
-      - name: Run unit tests
+      - name: Verify compiling
         shell: micromamba-shell {0}
-        run: |
-          csh automated_testing/UPSY/unit_tests/test_script.csh
-          csh automated_testing/UPSY/unit_tests_multinode/test_script.csh
-
-      - name: Check unit tests
-        shell: micromamba-shell {0}
-        run: |
-          csh automated_testing/check_unit_tests.csh   automated_testing/UPSY/unit_tests/results/unit_tests_output.txt
-          csh automated_testing/check_unit_tests.csh   automated_testing/UPSY/unit_tests_multinode/results/unit_tests_output.txt
+        run: csh automated_testing/check_if_UPSY_programs_exist.csh

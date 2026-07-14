@@ -1,5 +1,3 @@
-# The UFEMISM Weekly Benchmarks
-
 name: UFEMISM Weekly Benchmarks
 run-name: ${{ github.actor }} - UFEMISM Weekly Benchmarks
 on:
@@ -61,12 +59,12 @@ jobs:
       - SSA_icestream_full
       - ISMIP_HOM_full
     if: always()
-    uses: ./.github/workflows/UFE_build_weekly_benchmarks_site.yml
+    uses: ./.github/workflows/UFE_weekly_benchmarks_build_site.yml
 
   deploy_pages:
     needs: build_site
     if: always() && needs.build_site.result == 'success'
-    uses: ./.github/workflows/UFE_deploy_pages.yml
+    uses: ./.github/workflows/UFE_weekly_benchmarks_deploy_pages.yml
     with:
       preview: ${{ github.event_name == 'workflow_dispatch' && inputs.preview }}
       site_artifact_name: ufemism_weekly_benchmarks_site

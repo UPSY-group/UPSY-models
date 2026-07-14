@@ -1,5 +1,5 @@
-name: Run and check test
-run-name: ${{ github.actor }} - Run and check test
+name: UPSY/UFEMISM Test Suite - run and check test
+run-name: ${{ github.actor }} - run and check test
 on:
   workflow_call:
     inputs:

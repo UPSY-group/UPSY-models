@@ -1,5 +1,5 @@
-name: Build UFEMISM Weekly Benchmarks Site
-run-name: ${{ github.actor }} - Build UFEMISM Weekly Benchmarks Site
+name: UFEMISM Weekly Benchmarks - build site
+run-name: ${{ github.actor }} - build site
 on:
   workflow_call:
     inputs:

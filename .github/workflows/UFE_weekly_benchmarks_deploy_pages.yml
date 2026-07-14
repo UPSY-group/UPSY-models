@@ -1,5 +1,5 @@
-name: Publish UFEMISM Weekly Benchmarks Pages
-run-name: ${{ github.actor }} - Publish UFEMISM Weekly Benchmarks Pages
+name: UFEMISM Weekly Benchmarks - deploy pages
+run-name: ${{ github.actor }} - deploy pages
 on:
   workflow_call:
     inputs:

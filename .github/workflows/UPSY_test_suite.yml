@@ -1,5 +1,3 @@
-# The full UPSY Test Suite
-
 name: UPSY Test Suite
 run-name: ${{ github.actor }} - UPSY Test Suite
 on:
@@ -14,37 +12,37 @@ jobs:
 
   # Run the individual tests in parallel as separate workflows
   compile_UPSY:
-    uses: ./.github/workflows/UPSY_compiling.yml
+    uses: ./.github/workflows/UPSY_test_suite_compiling.yml
 
   unit_tests:
-    uses: ./.github/workflows/UPSY_unit_tests.yml
+    uses: ./.github/workflows/UPSY_test_suite_unit_tests.yml
 
   mesh_creation:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_creation
       compile_script: compile_UPSY.csh
 
   mesh_focussing:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_focussing
       compile_script: compile_UPSY.csh
 
   mesh_discretisation:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_discretisation
       compile_script: compile_UPSY.csh
 
   mesh_remapping_mesh_grid:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_grid
       compile_script: compile_UPSY.csh
 
   mesh_remapping_mesh_mesh:
-    uses: ./.github/workflows/UFE_run_and_check_test.yml
+    uses: ./.github/workflows/UFEUPSY_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh
       compile_script: compile_UPSY.csh

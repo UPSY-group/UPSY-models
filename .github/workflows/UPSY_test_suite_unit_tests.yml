@@ -1,5 +1,5 @@
-name: UFEMISM unit tests
-run-name: ${{ github.actor }} - UFEMISM unit tests
+name: UPSY Test Suite - unit tests
+run-name: ${{ github.actor }} - unit tests
 on:
   workflow_call:
 
@@ -44,14 +44,20 @@ jobs:
 
       - name: Compile UFEMISM
         shell: micromamba-shell {0}
-        run: csh compile_UFEMISM.csh  ${{ matrix.build_type }}  clean
+        run: csh compile_UFEMISM.csh  dev  clean
+
+      - name: Compile UPSY
+        shell: micromamba-shell {0}
+        run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean
 
       - name: Run unit tests
         shell: micromamba-shell {0}
         run: |
-          csh automated_testing/UFEMISM/unit_tests/test_script.csh
+          csh automated_testing/UPSY/unit_tests/test_script.csh
+          csh automated_testing/UPSY/unit_tests_multinode/test_script.csh
 
       - name: Check unit tests
         shell: micromamba-shell {0}
         run: |
-          csh automated_testing/check_unit_tests.csh   automated_testing/UFEMISM/unit_tests/results/unit_tests_output.txt
+          csh automated_testing/check_unit_tests.csh   automated_testing/UPSY/unit_tests/results/unit_tests_output.txt
+          csh automated_testing/check_unit_tests.csh   automated_testing/UPSY/unit_tests_multinode/results/unit_tests_output.txt

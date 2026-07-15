@@ -52,7 +52,7 @@ subroutine calc_all_matrix_operators_mesh( mesh)
   call calc_zeta_operators_tridiagonal( mesh)
 
   ! Finalise routine path
-  call finalise_routine( routine_name)
+  call finalise_routine( routine_name, n_extra_MPI_windows_expected = 36)
 
 end subroutine calc_all_matrix_operators_mesh
 

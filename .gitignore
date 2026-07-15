@@ -72,6 +72,12 @@ linting_mods/*
 # Ignore vscode task logs
 .vscode/task-logs/*
 
+# Ignore automated testing figures
+automated_testing/figures/*.png
+
+# Ignore site for GitHub Pages
+site/*
+
 # Ignore local test folder
 
 /Inversion_tests/Basal_hydro_run/T20

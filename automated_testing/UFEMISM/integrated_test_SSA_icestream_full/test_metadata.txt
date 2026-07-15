@@ -1,0 +1,16 @@
+Title: SSA Icestream
+
+Keywords:
+- idealised geometry
+- analytical solution
+- SSA
+- velocity only
+
+URLs:
+- https://doi.org/10.1017/S0022112006009591
+
+Description:
+This experiment verifies UFEMISM's solution to the SSA in a slab-on-a-slope
+geometry, with laterally varying basal friction resulting in the formation
+of a confined ice stream. Schoof (2006) derived an analytical solution to
+the SSA for this case, to which we can directly compare the model.

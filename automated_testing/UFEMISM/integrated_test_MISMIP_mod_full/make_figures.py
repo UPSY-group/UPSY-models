@@ -127,13 +127,20 @@ def main():
     )
     parser.add_argument(
         '--output-dir',
-        default='.',
+        default=None,
         help='Directory where output figure PNG files are written.'
     )
     args = parser.parse_args()
 
     results_root = os.path.abspath(args.results_root)
-    output_dir = os.path.abspath(args.output_dir)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(script_dir, '../../..'))
+
+    if args.output_dir is None:
+        output_dir = os.path.join(repo_root, 'automated_testing', 'figures')
+    else:
+        output_dir = os.path.abspath(args.output_dir)
+
     os.makedirs(output_dir, exist_ok=True)
 
     simulations = [

@@ -38,13 +38,13 @@ module climate_model_basic
       ! in the deferred procedures 'allocate_climate_model', 'initialise_climate_model', etc.
 
       procedure, public :: allocate_climate_model
-      procedure, public :: deallocate_model => deallocate_model
+      procedure, public :: deallocate_climate_model
       procedure, public :: initialise_model => initialise_model_abs
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(climate_model_allocate_ifc),   deferred :: allocate
-      procedure(deallocate_climate_model_ifc), deferred :: deallocate_climate_model
+      procedure(climate_model_deallocate_ifc), deferred :: deallocate
       procedure(initialise_climate_model_ifc), deferred :: initialise_climate_model
       procedure(run_climate_model_ifc),        deferred :: run_climate_model
       procedure(remap_climate_model_ifc),      deferred :: remap_climate_model
@@ -83,10 +83,10 @@ module climate_model_basic
       type(type_mesh), target,    intent(in   ) :: mesh
     end subroutine climate_model_allocate_ifc
 
-    subroutine deallocate_climate_model_ifc( self)
+    subroutine climate_model_deallocate_ifc( self)
       import atype_climate_model
       class(atype_climate_model), intent(inout) :: self
-    end subroutine deallocate_climate_model_ifc
+    end subroutine climate_model_deallocate_ifc
 
     subroutine initialise_climate_model_ifc( self, context)
       import atype_climate_model, type_climate_model_context_initialise
@@ -112,10 +112,6 @@ module climate_model_basic
   ! =========================================================
 
   interface
-
-    module subroutine deallocate_model( self)
-      class(atype_climate_model), intent(inout) :: self
-    end subroutine deallocate_model
 
     module subroutine initialise_model_abs( self, context)
       class(atype_climate_model),                    intent(inout) :: self
@@ -191,5 +187,31 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine allocate_climate_model
+
+  subroutine deallocate_climate_model( self)
+    !< Deallocate stuff that is common to all climate models
+    !< (call this from your climate model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_climate_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_climate_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate stuff that is common to all models
+    call self%deallocate_model()
+
+    ! Deallocate stuff that is specific to climate models
+
+    nullify( self%T2m)
+    nullify( self%Precip)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_climate_model
 
 end module climate_model_basic

@@ -824,7 +824,7 @@ contains
 
     ! SMB
     ! ===
-    call SMB_dummy%allocate  ( SMB_dummy%ct_allocate( 'SMB_IMAU_ITM_dummy', region_name, mesh))
+    call SMB_dummy%allocate  ( 'SMB_IMAU_ITM_dummy', region_name, mesh)
     call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy, refgeo_init_dummy, refgeo_PD_dummy))
 
     ! Initialisation choice

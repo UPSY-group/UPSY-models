@@ -6,7 +6,7 @@ module SMB_IMAU_ITM
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_allocate, &
+  use SMB_model_basic, only: atype_SMB_model, &
     type_SMB_model_context_initialise, type_SMB_model_context_run, &
     type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
@@ -28,6 +28,7 @@ module SMB_IMAU_ITM
 ! =================
 
   type, extends(atype_SMB_model) :: type_SMB_model_IMAU_ITM
+    !< Variables and functions that are specific to the IMAU-ITM SMB model
 
       ! Main data fields
       real(dp), dimension(:  ), contiguous, pointer :: AlbedoSurf       => null() !< Surface albedo underneath the snow layer (water, rock or ice)
@@ -61,13 +62,12 @@ module SMB_IMAU_ITM
 
     contains
 
-      procedure, public :: allocate_SMB_model   => allocate_SMB_model_IMAU_ITM_abs
+      procedure, public :: allocate   => SMB_model_IMAU_ITM_allocate
       procedure, public :: deallocate_SMB_model => deallocate_SMB_model_IMAU_ITM_abs
       procedure, public :: initialise_SMB_model => initialise_SMB_model_IMAU_ITM_abs
       procedure, public :: run_SMB_model        => run_SMB_model_IMAU_ITM_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_IMAU_ITM_abs
 
-      procedure, private :: allocate_SMB_model_IMAU_ITM
       procedure, private :: initialise_SMB_model_IMAU_ITM
       procedure, private :: initialise_IMAU_ITM_firn_from_file
       procedure, private :: run_SMB_model_IMAU_ITM
@@ -76,25 +76,6 @@ module SMB_IMAU_ITM
   end type type_SMB_model_IMAU_ITM
 
 contains
-
-  subroutine allocate_SMB_model_IMAU_ITM_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_IMAU_ITM),                intent(inout) :: self
-    type(type_SMB_model_context_allocate), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_IMAU_ITM_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call self%allocate_SMB_model_IMAU_ITM
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine allocate_SMB_model_IMAU_ITM_abs
 
   subroutine deallocate_SMB_model_IMAU_ITM_abs( self)
 
@@ -173,17 +154,24 @@ contains
 
 
 
-  subroutine allocate_SMB_model_IMAU_ITM( self)
+  subroutine SMB_model_IMAU_ITM_allocate( self, name, region_name, mesh)
 
-    ! In/output variables
+    ! In/output variables:
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
+    character(len=*),               intent(in   ) :: name
+    character(len=*),               intent(in   ) :: region_name
+    type(type_mesh), target,        intent(in   ) :: mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_SMB_model_IMAU_ITM'
-    character(:), allocatable      :: choice_SMB_IMAU_ITM
+    character(len=*), parameter :: routine_name = 'SMB_model_IMAU_ITM_allocate'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Allocate all the stuff that is common to all SMB models
+    call self%allocate_SMB_model( name, region_name, mesh)
+
+    ! Allocate all the stuff that is specific to the IMAU_ITM SMB model
 
     call self%create_field( self%AlbedoSurf, self%wAlbedoSurf, &
       self%mesh, Arakawa_grid%a(), &
@@ -266,7 +254,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine allocate_SMB_model_IMAU_ITM
+  end subroutine SMB_model_IMAU_ITM_allocate
 
   subroutine initialise_SMB_model_IMAU_ITM( self, mesh, ice, region_name)
 

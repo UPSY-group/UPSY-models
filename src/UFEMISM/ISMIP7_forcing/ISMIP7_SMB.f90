@@ -194,7 +194,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is common to all SMB models
-    call self%allocate_climate_model( name, region_name, mesh)
+    call self%allocate_SMB_model( name, region_name, mesh)
 
     ! Allocate all the stuff that is specific to the ISMIP7 SMB model
 

@@ -41,13 +41,13 @@ module calving_model_basic
       ! in the deferred procedures 'allocate_calving_model', 'initialise_calving_model', etc.
 
       procedure, public :: allocate_calving_model
-      procedure, public :: deallocate_model => deallocate_model
+      procedure, public :: deallocate_calving_model
       procedure, public :: initialise_model => initialise_model_abs
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(calving_model_allocate_ifc),   deferred :: allocate
-      procedure(deallocate_calving_model_ifc), deferred :: deallocate_calving_model
+      procedure(calving_model_deallocate_ifc), deferred :: deallocate
       procedure(initialise_calving_model_ifc), deferred :: initialise_calving_model
       procedure(run_calving_model_ifc),        deferred :: run_calving_model
       procedure(remap_calving_model_ifc),      deferred :: remap_calving_model
@@ -86,10 +86,10 @@ module calving_model_basic
       type(type_mesh), target,    intent(in   ) :: mesh
     end subroutine calving_model_allocate_ifc
 
-    subroutine deallocate_calving_model_ifc( self)
+    subroutine calving_model_deallocate_ifc( self)
       import atype_calving_model
       class(atype_calving_model), intent(inout) :: self
-    end subroutine deallocate_calving_model_ifc
+    end subroutine calving_model_deallocate_ifc
 
     subroutine initialise_calving_model_ifc( self, context)
       import atype_calving_model, type_calving_model_context_initialise
@@ -115,10 +115,6 @@ module calving_model_basic
   ! =========================================================
 
   interface
-
-    module subroutine deallocate_model( self)
-      class(atype_calving_model), intent(inout) :: self
-    end subroutine deallocate_model
 
     module subroutine initialise_model_abs( self, context)
       class(atype_calving_model),                    intent(inout) :: self
@@ -188,5 +184,30 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine allocate_calving_model
+
+  subroutine deallocate_calving_model( self)
+    !< Deallocate stuff that is common to all calving models
+    !< (call this from your calving model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_calving_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_calving_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate stuff that is common to all models
+    call self%deallocate_model()
+
+    ! Deallocate stuff that is specific to calving models
+
+    nullify( self%Hi_calved)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_calving_model
 
 end module calving_model_basic

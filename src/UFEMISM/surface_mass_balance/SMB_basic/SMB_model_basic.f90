@@ -9,7 +9,7 @@ module SMB_model_basic
   use fields_main, only: third_dimension
   use models_basic, only: atype_model, atype_model_context_allocate, &
     atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
-  use SMB_model_common, only: type_SMB_model_common
+  use SMB_model_data, only: atype_SMB_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
@@ -24,7 +24,7 @@ module SMB_model_basic
     type_SMB_model_context_initialise, type_SMB_model_context_run, &
     type_SMB_model_context_remap
 
-  type, abstract, extends(type_SMB_model_common) :: atype_SMB_model
+  type, abstract, extends(atype_SMB_model_data) :: atype_SMB_model
 
     real(dp) :: t_next   !< Time when the SMB model should be run next
 

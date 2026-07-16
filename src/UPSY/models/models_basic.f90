@@ -15,7 +15,7 @@ module models_basic
   private
 
   public :: atype_model, &
-    atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
+    atype_model_context_run, atype_model_context_remap
 
   ! Abstract basic model type
   ! =========================
@@ -41,11 +41,9 @@ module models_basic
 
       procedure, public :: allocate_model
       procedure, public :: deallocate_model
-      procedure, public :: initialise
       procedure, public :: run
       procedure, public :: remap
 
-      procedure(initialise_model_ifc), deferred :: initialise_model
       procedure(run_model_ifc),        deferred :: run_model
       procedure(remap_model_ifc),      deferred :: remap_model
 
@@ -113,9 +111,6 @@ module models_basic
   ! Context classes for initialise/run/remap
   ! =================================================
 
-  type, abstract :: atype_model_context_initialise
-  end type atype_model_context_initialise
-
   type, abstract :: atype_model_context_run
     real(dp) :: time
   end type atype_model_context_run
@@ -128,17 +123,6 @@ module models_basic
   ! ===========================================
 
   abstract interface
-
-    subroutine deallocate_model_ifc( self)
-      import atype_model
-      class(atype_model), intent(inout) :: self
-    end subroutine deallocate_model_ifc
-
-    subroutine initialise_model_ifc( self, context)
-      import atype_model, atype_model_context_initialise
-      class(atype_model),                            intent(inout) :: self
-      class(atype_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_model_ifc
 
     subroutine run_model_ifc( self, context)
       import atype_model, atype_model_context_run
@@ -158,15 +142,6 @@ module models_basic
   ! =========================================================
 
   interface
-
-    module subroutine deallocate( self)
-      class(atype_model), intent(inout) :: self
-    end subroutine deallocate
-
-    module subroutine initialise( self, context)
-      class(atype_model),                            intent(inout) :: self
-      class(atype_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise
 
     module subroutine run( self, context)
       class(atype_model),                     intent(inout) :: self

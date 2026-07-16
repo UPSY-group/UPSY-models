@@ -154,7 +154,8 @@ module climate_model_basic
 contains
 
   subroutine allocate_climate_model( self, name, region_name, mesh)
-    !< Allocate all the stuff that is common to all climate models
+    !< Allocate stuff that is common to all climate models
+    !< (call this from your climate model-specific allocation routine)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self

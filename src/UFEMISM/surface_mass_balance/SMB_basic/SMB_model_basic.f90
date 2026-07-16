@@ -8,7 +8,7 @@ module SMB_model_basic
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
   use models_basic, only: atype_model, &
-    atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
+    atype_model_context_run, atype_model_context_remap
   use SMB_model_data, only: atype_SMB_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
@@ -21,7 +21,7 @@ module SMB_model_basic
   private
 
   public :: atype_SMB_model, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_run, &
     type_SMB_model_context_remap
 
   type, abstract, extends(atype_SMB_model_data) :: atype_SMB_model
@@ -41,18 +41,17 @@ module SMB_model_basic
 
       procedure, public :: allocate_SMB_model
       procedure, public :: deallocate_SMB_model
-      procedure, public :: initialise_model => initialise_model_abs
+      ! procedure, public :: initialise_SMB_model   ! Nothing to initialise...
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(SMB_model_allocate_ifc),   deferred :: allocate
       procedure(SMB_model_deallocate_ifc), deferred :: deallocate
-      procedure(initialise_SMB_model_ifc), deferred :: initialise_SMB_model
+      procedure(SMB_model_initialise_ifc), deferred :: initialise
       procedure(run_SMB_model_ifc),        deferred :: run_SMB_model
       procedure(remap_SMB_model_ifc),      deferred :: remap_SMB_model
 
       ! Factory functions to create model context objects
-      procedure, nopass, public :: ct_initialise
       procedure, nopass, public :: ct_run
       procedure, nopass, public :: ct_remap
 
@@ -60,12 +59,6 @@ module SMB_model_basic
 
   ! Context classes for allocate/initialise/run/remap
   ! =================================================
-
-  type, extends(atype_model_context_initialise) :: type_SMB_model_context_initialise
-    type(type_ice_model),          pointer :: ice
-    type(type_reference_geometry), pointer :: refgeo_init
-    type(type_reference_geometry), pointer :: refgeo_PD
-  end type type_SMB_model_context_initialise
 
   type, extends(atype_model_context_run) :: type_SMB_model_context_run
     type(type_ice_model),          pointer :: ice
@@ -98,11 +91,13 @@ module SMB_model_basic
       class(atype_SMB_model), intent(inout) :: self
     end subroutine SMB_model_deallocate_ifc
 
-    subroutine initialise_SMB_model_ifc( self, context)
-      import atype_SMB_model, type_SMB_model_context_initialise
-      class(atype_SMB_model),                          intent(inout) :: self
-      type(type_SMB_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_SMB_model_ifc
+    subroutine SMB_model_initialise_ifc( self, ice, refgeo_init, refgeo_PD, region_name)
+      import atype_SMB_model, type_ice_model, type_reference_geometry
+      class(atype_SMB_model),        intent(inout) :: self
+      type(type_ice_model),          intent(in   ) :: ice
+      type(type_reference_geometry), intent(in   ) :: refgeo_init, refgeo_PD
+      character(len=*),              intent(in   ) :: region_name
+    end subroutine SMB_model_initialise_ifc
 
     subroutine run_SMB_model_ifc( self, context)
       import atype_SMB_model, type_SMB_model_context_run
@@ -123,11 +118,6 @@ module SMB_model_basic
 
   interface
 
-    module subroutine initialise_model_abs( self, context)
-      class(atype_SMB_model),                        intent(inout) :: self
-      class(atype_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_model_abs
-
     module subroutine run_model_abs( self, context)
       class(atype_SMB_model),                 intent(inout) :: self
       class(atype_model_context_run), target, intent(in   ) :: context
@@ -137,12 +127,6 @@ module SMB_model_basic
       class(atype_SMB_model),                   intent(inout) :: self
       class(atype_model_context_remap), target, intent(in   ) :: context
     end subroutine remap_model_abs
-
-    module function ct_initialise( ice, refgeo_init, refgeo_PD) result( context)
-      type(type_ice_model),          target, intent(in) :: ice
-      type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
-      type(type_SMB_model_context_initialise)           :: context
-    end function ct_initialise
 
     module function ct_run( time, ice, climate, grid_smooth) result( context)
       real(dp),                         intent(in) :: time

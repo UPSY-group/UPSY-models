@@ -7,10 +7,12 @@ module SMB_prescribed
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_run, &
     type_SMB_model_context_remap
   use mpi_basic, only: par
   use netcdf_io_main, only: read_field_from_file_2D
+  use ice_model_types, only: type_ice_model
+  use reference_geometry_types, only: type_reference_geometry
 
   implicit none
 
@@ -25,12 +27,11 @@ module SMB_prescribed
 
       procedure, public :: allocate   => SMB_model_prescribed_allocate
       procedure, public :: deallocate => SMB_model_prescribed_deallocate
-      procedure, public :: initialise_SMB_model => initialise_SMB_model_prescribed_abs
+      procedure, public :: initialise => SMB_model_prescribed_initialise
       procedure, public :: run_SMB_model        => run_SMB_model_prescribed_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_prescribed_abs
 
       procedure, private :: run_SMB_model_prescribed
-      procedure, private :: initialise_SMB_model_prescribed
       procedure, private :: initialise_SMB_model_prescribed_notime
 
   end type type_SMB_model_prescribed
@@ -82,42 +83,6 @@ contains
 
   end subroutine SMB_model_prescribed_deallocate
 
-  subroutine deallocate_SMB_model_prescribed_abs( self)
-
-    ! In/output variables:
-    class(type_SMB_model_prescribed), intent(inout) :: self
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'deallocate_SMB_model_prescribed_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine deallocate_SMB_model_prescribed_abs
-
-  subroutine initialise_SMB_model_prescribed_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_prescribed),                intent(inout) :: self
-    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_prescribed_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%initialise_SMB_model_prescribed( self%mesh, self%region_name())
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_SMB_model_prescribed_abs
-
   subroutine run_SMB_model_prescribed_abs( self, context)
 
     ! In/output variables:
@@ -145,13 +110,14 @@ contains
     type(type_SMB_model_context_remap), target, intent(in   ) :: context
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_prescribed_abs'
+    character(len=*), parameter :: routine_name = 'remap_SMB_model_prescribed_abs'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
     ! Re-initialise to read and remap the SMB from the input file again
-    call self%initialise_SMB_model_prescribed( self%mesh, self%region_name())
+    call crash('FIXME')
+    ! call self%SMB_model_prescribed_initialise( ice, self%region_name())
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -160,16 +126,17 @@ contains
 
 
 
-  subroutine initialise_SMB_model_prescribed( self, mesh, region_name)
+  subroutine SMB_model_prescribed_initialise( self, ice, refgeo_init, refgeo_PD, region_name)
 
     ! In/output variables
     class(type_SMB_model_prescribed), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_ice_model),             intent(in   ) :: ice
+    type(type_reference_geometry),    intent(in   ) :: refgeo_init, refgeo_PD
     character(len=3),                 intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_prescribed'
-    character(:), allocatable      :: choice_SMB_prescribed
+    character(len=*), parameter   :: routine_name = 'initialise_SMB_model_prescribed'
+    character(len=:), allocatable :: choice_SMB_prescribed
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -193,13 +160,13 @@ contains
     case default
       call crash('unknown choice_SMB_prescribed "' // trim( choice_SMB_prescribed) // '"!')
     case ('SMB_no_time')
-      call self%initialise_SMB_model_prescribed_notime( mesh, region_name)
+      call self%initialise_SMB_model_prescribed_notime( self%mesh, region_name)
     end select
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_prescribed
+  end subroutine SMB_model_prescribed_initialise
 
   subroutine initialise_SMB_model_prescribed_notime( self, mesh, region_name)
     ! Prescribe SMB from a file without a time dimension

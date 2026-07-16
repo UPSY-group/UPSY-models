@@ -7,7 +7,7 @@ module SMB_IMAU_ITM
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_run, &
     type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
@@ -18,6 +18,8 @@ module SMB_IMAU_ITM
   use parameters, only: ice_density, T0, L_fusion, sec_per_year
   use climate_model_utilities, only: get_insolation_at_time
   use climate_realistic, only: initialise_insolation_forcing
+  use reference_geometry_types, only: type_reference_geometry
+
   implicit none
 
   private
@@ -64,11 +66,10 @@ module SMB_IMAU_ITM
 
       procedure, public :: allocate   => SMB_model_IMAU_ITM_allocate
       procedure, public :: deallocate => SMB_model_IMAU_ITM_deallocate
-      procedure, public :: initialise_SMB_model => initialise_SMB_model_IMAU_ITM_abs
+      procedure, public :: initialise => SMB_model_IMAU_ITM_initialise
       procedure, public :: run_SMB_model        => run_SMB_model_IMAU_ITM_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_IMAU_ITM_abs
 
-      procedure, private :: initialise_SMB_model_IMAU_ITM
       procedure, private :: initialise_IMAU_ITM_firn_from_file
       procedure, private :: run_SMB_model_IMAU_ITM
       procedure, private :: remap_SMB_model_IMAU_ITM
@@ -76,26 +77,6 @@ module SMB_IMAU_ITM
   end type type_SMB_model_IMAU_ITM
 
 contains
-
-  subroutine initialise_SMB_model_IMAU_ITM_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_IMAU_ITM),                  intent(inout) :: self
-    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_IMAU_ITM_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%initialise_SMB_model_IMAU_ITM( self%mesh, context%ice, self%region_name())
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_SMB_model_IMAU_ITM_abs
 
   subroutine run_SMB_model_IMAU_ITM_abs( self, context)
 
@@ -274,18 +255,18 @@ contains
 
   end subroutine SMB_model_IMAU_ITM_deallocate
 
-  subroutine initialise_SMB_model_IMAU_ITM( self, mesh, ice, region_name)
+  subroutine SMB_model_IMAU_ITM_initialise( self, ice, refgeo_init, refgeo_PD, region_name)
 
     ! In/output variables
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    type(type_mesh),                intent(in   ) :: mesh
     type(type_ice_model),           intent(in   ) :: ice
-    character(len=3),               intent(in   ) :: region_name
+    type(type_reference_geometry),  intent(in   ) :: refgeo_init, refgeo_PD
+    character(len=*),               intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_IMAU_ITM'
-    integer                        :: vi
-    character(:), allocatable      :: choice_SMB_IMAUITM_init_firn
+    character(len=*), parameter :: routine_name = 'initialise_SMB_model_IMAU_ITM'
+    integer                     :: vi
+    character(:), allocatable   :: choice_SMB_IMAUITM_init_firn
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -333,7 +314,7 @@ contains
     case ('uniform')
       ! Initialise with a uniform firn layer over the ice sheet
 
-      do vi = mesh%vi1, mesh%vi2
+      do vi = self%mesh%vi1, self%mesh%vi2
         if (ice%Hi( vi) > 0._dp) then
           self%FirnDepth       ( vi,:) = C%SMB_IMAUITM_initial_firn_thickness
           self%MeltPreviousYear( vi  ) = 0._dp
@@ -345,11 +326,11 @@ contains
 
     case ('read_from_file')
       ! Initialise with the firn layer of a previous run
-      call self%initialise_IMAU_ITM_firn_from_file( mesh, region_name)
+      call self%initialise_IMAU_ITM_firn_from_file( self%mesh, region_name)
     end select
 
     ! Initialise albedo
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Background albedo
       if (ice%Hb( vi) < 0._dp) then
@@ -368,7 +349,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_IMAU_ITM
+  end subroutine SMB_model_IMAU_ITM_initialise
 
   subroutine initialise_IMAU_ITM_firn_from_file( self, mesh, region_name)
     !< Initialise the firn depth and meltpreviousyear data from a NetCDF file

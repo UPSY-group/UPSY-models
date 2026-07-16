@@ -43,7 +43,7 @@ module ISMIP7_SMB
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_run, &
     type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
@@ -87,11 +87,10 @@ module ISMIP7_SMB
 
       procedure, public :: allocate   => SMB_model_ISMIP7_allocate
       procedure, public :: deallocate => SMB_model_ISMIP7_deallocate
-      procedure, public :: initialise_SMB_model => initialise_SMB_model_ISMIP7_abs
+      procedure, public :: initialise => SMB_model_ISMIP7_initialise
       procedure, public :: run_SMB_model        => run_SMB_model_ISMIP7_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_ISMIP7_abs
 
-      procedure, private :: initialise_SMB_model_ISMIP7
       procedure, private :: run_SMB_model_ISMIP7
       ! procedure, private :: remap_SMB_model_ISMIP7
 
@@ -100,26 +99,6 @@ module ISMIP7_SMB
   end type type_SMB_model_ISMIP7
 
 contains
-
-  subroutine initialise_SMB_model_ISMIP7_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_ISMIP7),                    intent(inout) :: self
-    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_SMB_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%initialise_SMB_model_ISMIP7( self%mesh, context%refgeo_init, context%refgeo_PD, self%region_name())
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_SMB_model_ISMIP7_abs
 
   subroutine run_SMB_model_ISMIP7_abs( self, context)
 
@@ -292,18 +271,16 @@ contains
 
   end subroutine SMB_model_ISMIP7_deallocate
 
-  subroutine initialise_SMB_model_ISMIP7( self, mesh, refgeo_init, refgeo_PD, region_name)
+  subroutine SMB_model_ISMIP7_initialise( self, ice, refgeo_init, refgeo_PD, region_name)
 
     ! In/output variables
     class(type_SMB_model_ISMIP7),  intent(inout) :: self
-    type(type_mesh),               intent(in   ) :: mesh
+    type(type_ice_model),          intent(in   ) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init, refgeo_PD
     character(len=3),              intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=*), parameter            :: routine_name = 'initialise_SMB_model_ISMIP7'
-    type(type_reference_geometry), pointer :: refgeo
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: dummy
+    character(len=*), parameter :: routine_name = 'initialise_SMB_model_ISMIP7'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -314,33 +291,33 @@ contains
       call crash('invalid SMB_ISMIP7_choice_SMB_baseline "' // trim( C%SMB_ISMIP7_choice_SMB_baseline) // '"')
     case ('yearly')
 
-      call self%acabf%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, mesh)
+      call self%acabf%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, self%mesh)
 
     case ('fixed')
 
-      call self%initialise_SMB_baseline_fixed( mesh)
+      call self%initialise_SMB_baseline_fixed( self%mesh)
 
-      call self%acabf_anomaly%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, mesh)
+      call self%acabf_anomaly%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, self%mesh)
 
     end select
 
     ! Initialise vertical gradient
-    call self%dacabfdz%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, mesh)
+    call self%dacabfdz%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, self%mesh)
 
     ! Initialise the baseline surface elevation
     select case (C%SMB_ISMIP7_choice_refgeo)
     case default
       call crash('invalid SMB_ISMIP7_choice_refgeo "' // trim( C%SMB_ISMIP7_choice_refgeo) // '"')
     case ('init')
-      self%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo_init%Hs( mesh%vi1: mesh%vi2)
+      self%Hs_baseline( self%mesh%vi1:self%mesh%vi2) = refgeo_init%Hs( self%mesh%vi1: self%mesh%vi2)
     case ('PD')
-      self%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo_PD%Hs( mesh%vi1: mesh%vi2)
+      self%Hs_baseline( self%mesh%vi1:self%mesh%vi2) = refgeo_PD%Hs( self%mesh%vi1: self%mesh%vi2)
     end select
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_ISMIP7
+  end subroutine SMB_model_ISMIP7_initialise
 
   subroutine initialise_SMB_baseline_fixed( self, mesh)
 

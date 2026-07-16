@@ -47,7 +47,7 @@ contains
     call init_routine( routine_name)
 
     ! Part common to all models of atype_demo_model
-    call remap_model_common( self, self%s, context%mesh_new)
+    call remap_model_common( self, context%mesh_new)
 
     ! Part specific to the model classes inheriting from atype_demo_model
     call self%remap_demo_model( context)
@@ -57,11 +57,10 @@ contains
 
   end subroutine remap_model
 
-  subroutine remap_model_common( self, demo, mesh_new)
+  subroutine remap_model_common( self, mesh_new)
 
     ! In/output variables:
     class(atype_demo_model),     intent(inout) :: self
-    type(type_demo_model_state), intent(inout) :: demo
     type(type_mesh),             intent(in   ) :: mesh_new
 
     ! Local variables:
@@ -70,11 +69,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call self%remap_field( mesh_new, 'H'       , demo%H       )
-    call self%remap_field( mesh_new, 'u_3D'    , demo%u_3D    )
-    call self%remap_field( mesh_new, 'v_3D'    , demo%v_3D    )
-    call self%remap_field( mesh_new, 'mask_ice', demo%mask_ice)
-    call self%remap_field( mesh_new, 'T2m'     , demo%T2m     )
+    call self%remap_field( mesh_new, 'H'       , self%H       )
+    call self%remap_field( mesh_new, 'u_3D'    , self%u_3D    )
+    call self%remap_field( mesh_new, 'v_3D'    , self%v_3D    )
+    call self%remap_field( mesh_new, 'mask_ice', self%mask_ice)
+    call self%remap_field( mesh_new, 'T2m'     , self%T2m     )
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

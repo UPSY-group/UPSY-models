@@ -108,7 +108,7 @@ contains
 
     ! Create idealised SMB model
     call create_SMB_model( SMB, 'idealised')
-    call SMB%allocate  ( SMB%ct_allocate( 'SMB_idealised', 'ANT', mesh))
+    call SMB%allocate ( 'ANT', mesh)
     call SMB%initialise( SMB%ct_initialise( ice, refgeo_init, refgeo_PD))
 
     ! Run idealised SMB model for static Halfar solution
@@ -191,7 +191,7 @@ contains
     C%timeframe_SMB_prescribed_ANT = 1e9_dp
 
     call create_SMB_model( SMB, 'prescribed')
-    call SMB%allocate  ( SMB%ct_allocate( 'SMB_prescribed', 'ANT', mesh))
+    call SMB%allocate( 'ANT', mesh)
     call SMB%initialise( SMB%ct_initialise( ice, refgeo_init, refgeo_PD))
 
     ! Verify that it worked
@@ -271,7 +271,7 @@ contains
 
     ! Create and run IMAU-ITM SMB model
     call create_SMB_model( SMB, 'IMAU-ITM')
-    call SMB%allocate  ( SMB%ct_allocate( 'SMB_IMAU_ITM', 'ANT', mesh))
+    call SMB%allocate( 'ANT', mesh)
     call SMB%initialise( SMB%ct_initialise( ice, refgeo_init, refgeo_PD))
     call SMB%run       ( SMB%ct_run( 0._dp, ice, climate, grid_smooth))
 

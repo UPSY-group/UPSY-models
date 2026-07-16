@@ -6,8 +6,7 @@ module demo_model_b
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use demo_model_state, only: type_demo_model_state
-  use demo_model_basic, only: atype_demo_model, type_demo_model_context_allocate, &
+  use demo_model_basic, only: atype_demo_model, &
     type_demo_model_context_initialise, type_demo_model_context_run, &
     type_demo_model_context_remap
   use mpi_f08, only: MPI_WIN
@@ -26,7 +25,7 @@ module demo_model_b
 
     contains
 
-      procedure, public :: allocate_demo_model   => allocate_demo_model_b_abs
+      procedure, public :: allocate   => demo_model_b_allocate
       procedure, public :: deallocate_demo_model => deallocate_demo_model_b
       procedure, public :: initialise_demo_model => initialise_demo_model_b_abs
       procedure, public :: run_demo_model        => run_demo_model_b_abs
@@ -36,37 +35,24 @@ module demo_model_b
 
 contains
 
-  subroutine allocate_demo_model_b_abs( self, context)
+  subroutine demo_model_b_allocate( self, region_name, mesh, nz)
 
     ! In/output variables:
-    class(type_demo_model_b),                       intent(inout) :: self
-    type(type_demo_model_context_allocate), target, intent(in   ) :: context
+    class(type_demo_model_b), intent(inout) :: self
+    character(len=*),         intent(in   ) :: region_name
+    type(type_mesh), target,  intent(in   ) :: mesh
+    integer,                  intent(in   ) :: nz
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_demo_model_b_abs'
+    character(len=*), parameter :: routine_name = 'demo_model_b_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Retrieve input variables from context object
-    call allocate_demo_model_b( self%mesh, self)
+    ! Allocate all the stuff that is common to all demo models
+    call self%allocate_demo_model( 'demo_b', region_name, mesh, nz)
 
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine allocate_demo_model_b_abs
-
-  subroutine allocate_demo_model_b( mesh, self)
-
-    ! In/output variables:
-    type(type_mesh),         intent(in   ) :: mesh
-    type(type_demo_model_b), intent(inout) :: self
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_demo_model_b'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
+    ! Allocate all the stuff that is specific to demo model b
 
     call self%create_field( self%beta_sq, self%wbeta_sq, &
       mesh, Arakawa_grid%a(), &
@@ -78,7 +64,7 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine allocate_demo_model_b
+  end subroutine demo_model_b_allocate
 
   subroutine deallocate_demo_model_b( self)
 
@@ -151,19 +137,19 @@ contains
     call init_routine( routine_name)
 
     ! Retrieve input variables from context object
-    call run_demo_model_b( self%mesh, self%s, context%H_new)
+    call run_demo_model_b( self, self%mesh, context%H_new)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine run_demo_model_b_abs
 
-  subroutine run_demo_model_b( mesh, demo, H_new)
+  subroutine run_demo_model_b( self, mesh, H_new)
 
     ! In/output variables:
-    type(type_mesh),             intent(in   ) :: mesh
-    type(type_demo_model_state), intent(inout) :: demo
-    real(dp),                    intent(in   ) :: H_new
+    class(type_demo_model_b), intent(inout) :: self
+    type(type_mesh),          intent(in   ) :: mesh
+    real(dp),                 intent(in   ) :: H_new
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_demo_model_b'
@@ -171,7 +157,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    demo%H( mesh%vi1: mesh%vi2) = H_new
+    self%H( mesh%vi1: mesh%vi2) = H_new
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

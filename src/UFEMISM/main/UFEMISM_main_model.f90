@@ -556,7 +556,7 @@ CONTAINS
       call create_SMB_model( region%SMB, C%choice_SMB_model_ANT)
     end select
 
-    call region%SMB%allocate  ( region%SMB%ct_allocate( 'SMB_model', region%name, region%mesh))
+    call region%SMB%allocate( region%name, region%mesh)
     call region%SMB%initialise( region%SMB%ct_initialise( region%ice, region%refgeo_init, region%refgeo_PD))
 
     call checksum( region%mesh%pai_V, region%SMB%SMB, 'region%SMB%SMB')

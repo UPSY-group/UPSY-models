@@ -14,7 +14,7 @@ module models_basic
 
   private
 
-  public :: atype_model, atype_model_context_allocate, &
+  public :: atype_model, &
     atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
 
   ! Abstract basic model type
@@ -39,13 +39,12 @@ module models_basic
       ! only executed for each specific model class. The specific parts are defined
       ! in the deferred procedures 'allocate_model', 'initialise_model', etc.
 
-      procedure, public :: allocate
+      procedure, public :: allocate_model
       procedure, public :: deallocate
       procedure, public :: initialise
       procedure, public :: run
       procedure, public :: remap
 
-      procedure(allocate_model_ifc),   deferred :: allocate_model
       procedure(deallocate_model_ifc), deferred :: deallocate_model
       procedure(initialise_model_ifc), deferred :: initialise_model
       procedure(run_model_ifc),        deferred :: run_model
@@ -112,14 +111,8 @@ module models_basic
 
   end type atype_model
 
-  ! Context classes for allocate/initialise/run/remap
+  ! Context classes for initialise/run/remap
   ! =================================================
-
-  type, abstract :: atype_model_context_allocate
-    character(len=2048)       :: name
-    character(len=3)          :: region_name
-    type(type_mesh), pointer  :: mesh
-  end type atype_model_context_allocate
 
   type, abstract :: atype_model_context_initialise
   end type atype_model_context_initialise
@@ -136,12 +129,6 @@ module models_basic
   ! ===========================================
 
   abstract interface
-
-    subroutine allocate_model_ifc( self, context)
-      import atype_model, atype_model_context_allocate
-      class(atype_model),                          intent(inout) :: self
-      class(atype_model_context_allocate), target, intent(in   ) :: context
-    end subroutine allocate_model_ifc
 
     subroutine deallocate_model_ifc( self)
       import atype_model
@@ -172,11 +159,6 @@ module models_basic
   ! =========================================================
 
   interface
-
-    module subroutine allocate( self, context)
-      class(atype_model),                          intent(inout) :: self
-      class(atype_model_context_allocate), target, intent(in   ) :: context
-    end subroutine allocate
 
     module subroutine deallocate( self)
       class(atype_model), intent(inout) :: self
@@ -440,5 +422,33 @@ module models_basic
     end function is_region_name
 
   end interface
+
+contains
+
+  subroutine allocate_model( self, name, region_name, mesh)
+    !< Allocate stuff that is common to all models
+    !< (call this from your model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_model),      intent(inout) :: self
+    character(len=*),        intent(in   ) :: name
+    character(len=*),        intent(in   ) :: region_name
+    type(type_mesh), target, intent(in   ) :: mesh
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'allocate_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Set model metadata and mesh
+    call self%set_name       ( name)
+    call self%set_region_name( region_name)
+    self%mesh => mesh
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_model
 
 end module models_basic

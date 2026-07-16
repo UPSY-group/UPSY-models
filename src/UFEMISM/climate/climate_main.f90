@@ -213,7 +213,7 @@ CONTAINS
     case ('SMB_snapshot_plus_anomalies')
       ! No need to do anything (initialisation is handled by the SMB model)
     case ('ISMIP7')
-      call climate%ISMIP7%allocate  ( climate%ISMIP7%ct_allocate  ( 'ISMIP7', region_name, mesh))
+      call climate%ISMIP7%allocate( region_name, mesh)
       call climate%ISMIP7%initialise( climate%ISMIP7%ct_initialise( refgeo_init, refgeo_PD))
     end select
 

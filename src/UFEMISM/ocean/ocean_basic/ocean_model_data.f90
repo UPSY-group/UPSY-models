@@ -1,4 +1,4 @@
-module ocean_model_common
+module ocean_model_data
 
   use models_basic, only: atype_model
   use precisions, only: dp
@@ -8,9 +8,11 @@ module ocean_model_common
 
   private
 
-  public :: type_ocean_model_common
+  public :: atype_ocean_model_data
 
-  type, abstract, extends(atype_model) :: type_ocean_model_common
+  type, abstract, extends(atype_model) :: atype_ocean_model_data
+    !< Variables that are common to all ocean models,
+    !< which we want other models to be able to access
 
     ! Main data fields
     real(dp), dimension(:,:), contiguous, pointer :: T => null()   !< [degrees Celsius] Temperature
@@ -22,6 +24,6 @@ module ocean_model_common
     real(dp), dimension(:), contiguous, pointer :: T_freezing_point => null()   !< [degrees Celsius] Pressure freezing point of water
     type(MPI_WIN) :: wT_draft, wT_freezing_point
 
-  end type type_ocean_model_common
+  end type atype_ocean_model_data
 
-end module ocean_model_common
+end module ocean_model_data

@@ -51,7 +51,7 @@ contains
     call init_routine( routine_name)
 
     ! Part common to all models of atype_demo_model
-    call initialise_model_common( self%mesh, self%s, context%H0)
+    call initialise_model_common( self, self%mesh, context%H0)
 
     ! Part specific to the model classes inheriting from atype_demo_model
     call self%initialise_demo_model( context)
@@ -61,12 +61,12 @@ contains
 
   end subroutine initialise_model
 
-  subroutine initialise_model_common( mesh, demo, H0)
+  subroutine initialise_model_common( self, mesh, H0)
 
     ! In/output variables:
-    type(type_mesh),              intent(in   ) :: mesh
-    class(type_demo_model_state), intent(inout) :: demo
-    real(dp),                     intent(in   ) :: H0
+    class(atype_demo_model), intent(inout) :: self
+    type(type_mesh),         intent(in   ) :: mesh
+    real(dp),                intent(in   ) :: H0
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'initialise_model_common'
@@ -86,11 +86,11 @@ contains
       x = mesh%V( vi,1)
       y = mesh%V( vi,2)
 
-      demo%H( vi) = max( H0, cos( x * pi / cx) * cos( y * pi / cy) - 0.2_dp)
-      demo%mask_ice( vi) = demo%H( vi) > 0._dp
+      self%H( vi) = max( H0, cos( x * pi / cx) * cos( y * pi / cy) - 0.2_dp)
+      self%mask_ice( vi) = self%H( vi) > 0._dp
 
       do m = 1, 12
-        demo%T2m( vi,m) = hypot( x,y) + sin( real(m,dp) * 2._dp * pi / 12._dp)
+        self%T2m( vi,m) = hypot( x,y) + sin( real(m,dp) * 2._dp * pi / 12._dp)
       end do
 
     end do
@@ -100,9 +100,9 @@ contains
       x = mesh%Trigc( ti,1)
       y = mesh%Trigc( ti,2)
 
-      do k = 1, size( demo%u_3D,2)
-        demo%u_3D( ti,k) = max( 0._dp, cos( x * pi / cx) * cos( y * pi / cy) - 0.2_dp) + real( k,dp)
-        demo%v_3D( ti,k) =             sin( x * pi / cx) * sin( y * pi / cy)           + real( k,dp)
+      do k = 1, size( self%u_3D,2)
+        self%u_3D( ti,k) = max( 0._dp, cos( x * pi / cx) * cos( y * pi / cy) - 0.2_dp) + real( k,dp)
+        self%v_3D( ti,k) =             sin( x * pi / cx) * sin( y * pi / cy)           + real( k,dp)
       end do
 
     end do

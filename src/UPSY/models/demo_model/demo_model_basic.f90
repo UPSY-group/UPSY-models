@@ -165,7 +165,7 @@ contains
     integer,                 intent(in   ) :: nz
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'allocate_model_common'
+    character(len=*), parameter :: routine_name = 'allocate_demo_model'
 
     ! Add routine to call stack
     call init_routine( routine_name)

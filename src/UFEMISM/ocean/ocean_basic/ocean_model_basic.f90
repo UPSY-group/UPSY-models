@@ -8,7 +8,7 @@ module ocean_model_basic
   use fields_main, only: third_dimension
   use models_basic, only: atype_model, atype_model_context_allocate, &
     atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
-  use ocean_model_common, only: type_ocean_model_common
+  use ocean_model_data, only: atype_ocean_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
@@ -22,7 +22,11 @@ module ocean_model_basic
     type_ocean_model_context_initialise, type_ocean_model_context_run, &
     type_ocean_model_context_remap
 
-  type, abstract, extends(type_ocean_model_common) :: atype_ocean_model
+  type, abstract, extends(atype_ocean_model_data) :: atype_ocean_model
+    !< Stuff that is common to all ocean models
+    !<
+    !< (except for the variables that we want other models to
+    !< be able to access, which are already defined in atype_ocean_model_data)
 
     real(dp) :: t_next   !< Time when the ocean model should be run next
 

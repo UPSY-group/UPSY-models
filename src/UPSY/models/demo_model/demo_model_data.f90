@@ -11,7 +11,8 @@ module demo_model_data
   public :: atype_demo_model_data
 
   type, abstract, extends(atype_model) :: atype_demo_model_data
-    !< Variables that are common to all demo models
+    !< Variables that are common to all demo models,
+    !< which we want other models to be able to access
 
     ! Some ice-model-esque data fields
     real(dp), dimension(:  ), contiguous, pointer :: H        => null()

@@ -20,7 +20,10 @@ module demo_model_basic
     type_demo_model_context_remap
 
   type, abstract, extends(atype_demo_model_data) :: atype_demo_model
-    !< Functions that are common to all demo models
+    !< Stuff that is common to all demo models
+    !<
+    !< (except for the variables that we want other models to
+    !< be able to access, which are already defined in atype_demo_model_data)
 
     contains
 

@@ -73,10 +73,9 @@ module demo_model_basic
 
   abstract interface
 
-    subroutine demo_model_allocate_ifc( self, name, region_name, mesh, nz)
+    subroutine demo_model_allocate_ifc( self, region_name, mesh, nz)
       import atype_demo_model, type_mesh
       class(atype_demo_model), intent(inout) :: self
-      character(len=*),        intent(in   ) :: name
       character(len=*),        intent(in   ) :: region_name
       type(type_mesh), target, intent(in   ) :: mesh
       integer,                 intent(in   ) :: nz

@@ -35,11 +35,10 @@ module demo_model_a
 
 contains
 
-  subroutine demo_model_a_allocate( self, name, region_name, mesh, nz)
+  subroutine demo_model_a_allocate( self, region_name, mesh, nz)
 
     ! In/output variables:
     class(type_demo_model_a), intent(inout) :: self
-    character(len=*),         intent(in   ) :: name
     character(len=*),         intent(in   ) :: region_name
     type(type_mesh), target,  intent(in   ) :: mesh
     integer,                  intent(in   ) :: nz
@@ -51,7 +50,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is common to all demo models
-    call self%allocate_demo_model( name, region_name, mesh, nz)
+    call self%allocate_demo_model( 'demo_a', region_name, mesh, nz)
 
     ! Allocate all the stuff that is specific to demo model a
 

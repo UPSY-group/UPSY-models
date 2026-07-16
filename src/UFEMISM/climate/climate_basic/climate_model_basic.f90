@@ -76,10 +76,9 @@ module climate_model_basic
 
   abstract interface
 
-    subroutine climate_model_allocate_ifc( self, name, region_name, mesh)
+    subroutine climate_model_allocate_ifc( self, region_name, mesh)
       import atype_climate_model, type_mesh
       class(atype_climate_model), intent(inout) :: self
-      character(len=*),           intent(in   ) :: name
       character(len=*),           intent(in   ) :: region_name
       type(type_mesh), target,    intent(in   ) :: mesh
     end subroutine climate_model_allocate_ifc

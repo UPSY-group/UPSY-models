@@ -70,9 +70,8 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate the demo model and test if that worked
-    call a1%allocate( 'demo_model_a1', 'aaa', mesh1, nz)
+    call a1%allocate( 'aaa', mesh1, nz)
     call unit_test( ( &
-      trim( a1%name())        == 'demo_model_a1' .and. &
       trim( a1%region_name()) == 'aaa' .and. &
       trim( a1%mesh%name)     == trim( mesh1%name) .and. &
       size( a1%H   ,1) == mesh1%pai_V%n_nih .and. &
@@ -107,14 +106,13 @@ contains
     ! then allocate a new demo model and initialise it from that
     ! restart file; test if all of that worked
     call a1%write_to_restart_file( foldername_unit_tests_output, filename)
-    call a2%allocate( 'demo_model_a2', 'aaa', mesh2, nz)
+    call a2%allocate( 'aaa', mesh2, nz)
     call a2%read_from_restart_file( filename)
     call unit_test( a1 == a2, trim( test_name) // '/restart')
 
     ! Deallocate the demo model and test if that worked
     call a1%deallocate
     call unit_test( ( &
-      trim( a1%name()) == 'empty_model' .and. &
       trim( a1%region_name()) == '!!!' .and. &
       .not. associated( a1%mesh) .and. &
       .not. associated( a1%H) .and. &
@@ -159,9 +157,8 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     ! Allocate the demo model and test if that worked
-    call b1%allocate( 'demo_model_b1', 'aaa', mesh1, nz)
+    call b1%allocate( 'aaa', mesh1, nz)
     call unit_test( ( &
-      trim( b1%name())        == 'demo_model_b1' .and. &
       trim( b1%region_name()) == 'aaa' .and. &
       trim( b1%mesh%name)     == trim( mesh1%name) .and. &
       size( b1%H   ,1) == mesh1%pai_V%n_nih .and. &
@@ -197,14 +194,13 @@ contains
     ! then allocate a new demo model and initialise it from that
     ! restart file; test if all of that worked
     call b1%write_to_restart_file( foldername_unit_tests_output, filename)
-    call b2%allocate( 'demo_model_b2', 'aaa', mesh2, nz)
+    call b2%allocate( 'aaa', mesh2, nz)
     call b2%read_from_restart_file( filename)
     call unit_test( b1 == b2, trim( test_name) // '/restart')
 
     ! Deallocate the demo model and test if that worked
     call b1%deallocate
     call unit_test( ( &
-      trim( b1%name()) == 'empty_model' .and. &
       trim( b1%region_name()) == '!!!' .and. &
       .not. associated( b1%mesh) .and. &
       .not. associated( b1%H) .and. &
@@ -250,9 +246,8 @@ contains
 
     ! Allocate the demo model and test if that worked
     call create_demo_model( demo1, 'demo_a')
-    call demo1%allocate( 'demo_model_a1', 'aaa', mesh1, nz)
+    call demo1%allocate( 'aaa', mesh1, nz)
     call unit_test( ( &
-      trim( demo1%name())        == 'demo_model_a1' .and. &
       trim( demo1%region_name()) == 'aaa' .and. &
       trim( demo1%mesh%name)     == trim( mesh1%name) .and. &
       size( demo1%H   ,1) == mesh1%pai_V%n_nih .and. &
@@ -286,14 +281,13 @@ contains
     ! restart file; test if all of that worked
     call demo1%write_to_restart_file( foldername_unit_tests_output, filename)
     call create_demo_model( demo2, 'demo_a')
-    call demo2%allocate( 'demo_model_a2', 'aaa', mesh2, nz)
+    call demo2%allocate( 'aaa', mesh2, nz)
     call demo2%read_from_restart_file( filename)
     call unit_test( demo1 == demo2, trim( test_name) // '/restart')
 
     ! Deallocate the demo model and test if that worked
     call demo1%deallocate
     call unit_test( ( &
-      trim( demo1%name()) == 'empty_model' .and. &
       trim( demo1%region_name()) == '!!!' .and. &
       .not. associated( demo1%mesh) .and. &
       .not. associated( demo1%H) .and. &
@@ -338,9 +332,8 @@ contains
 
     ! Allocate the demo model and test if that worked
     call create_demo_model( demo1, 'demo_b')
-    call demo1%allocate( 'demo_model_b1', 'aaa', mesh1, nz)
+    call demo1%allocate( 'aaa', mesh1, nz)
     call unit_test( ( &
-      trim( demo1%name())        == 'demo_model_b1' .and. &
       trim( demo1%region_name()) == 'aaa' .and. &
       trim( demo1%mesh%name)     == trim( mesh1%name) .and. &
       size( demo1%H   ,1) == mesh1%pai_V%n_nih .and. &
@@ -374,14 +367,13 @@ contains
     ! restart file; test if all of that worked
     call demo1%write_to_restart_file( foldername_unit_tests_output, filename)
     call create_demo_model( demo2, 'demo_b')
-    call demo2%allocate( 'demo_model_b2', 'aaa', mesh2, nz)
+    call demo2%allocate( 'aaa', mesh2, nz)
     call demo2%read_from_restart_file( filename)
     call unit_test( demo1 == demo2, trim( test_name) // '/restart')
 
     ! Deallocate the demo model and test if that worked
     call demo1%deallocate
     call unit_test( ( &
-      trim( demo1%name()) == 'empty_model' .and. &
       trim( demo1%region_name()) == '!!!' .and. &
       .not. associated( demo1%mesh) .and. &
       .not. associated( demo1%H) .and. &

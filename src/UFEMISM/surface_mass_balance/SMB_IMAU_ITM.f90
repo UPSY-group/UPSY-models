@@ -154,11 +154,10 @@ contains
 
 
 
-  subroutine SMB_model_IMAU_ITM_allocate( self, name, region_name, mesh)
+  subroutine SMB_model_IMAU_ITM_allocate( self, region_name, mesh)
 
     ! In/output variables:
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    character(len=*),               intent(in   ) :: name
     character(len=*),               intent(in   ) :: region_name
     type(type_mesh), target,        intent(in   ) :: mesh
 
@@ -169,7 +168,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is common to all SMB models
-    call self%allocate_SMB_model( name, region_name, mesh)
+    call self%allocate_SMB_model( 'SMB_IMAU_ITM', region_name, mesh)
 
     ! Allocate all the stuff that is specific to the IMAU_ITM SMB model
 

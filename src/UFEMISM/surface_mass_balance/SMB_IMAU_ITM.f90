@@ -63,7 +63,7 @@ module SMB_IMAU_ITM
     contains
 
       procedure, public :: allocate   => SMB_model_IMAU_ITM_allocate
-      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_IMAU_ITM_abs
+      procedure, public :: deallocate => SMB_model_IMAU_ITM_deallocate
       procedure, public :: initialise_SMB_model => initialise_SMB_model_IMAU_ITM_abs
       procedure, public :: run_SMB_model        => run_SMB_model_IMAU_ITM_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_IMAU_ITM_abs
@@ -76,22 +76,6 @@ module SMB_IMAU_ITM
   end type type_SMB_model_IMAU_ITM
 
 contains
-
-  subroutine deallocate_SMB_model_IMAU_ITM_abs( self)
-
-    ! In/output variables:
-    class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'deallocate_SMB_model_IMAU_ITM_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine deallocate_SMB_model_IMAU_ITM_abs
 
   subroutine initialise_SMB_model_IMAU_ITM_abs( self, context)
 
@@ -254,6 +238,41 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_IMAU_ITM_allocate
+
+  subroutine SMB_model_IMAU_ITM_deallocate( self)
+
+    ! In/output variables:
+    class(type_SMB_model_IMAU_ITM), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_IMAU_ITM_deallocate'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate all the stuff that is common to all SMB models
+    call self%deallocate_SMB_model()
+
+    ! Deallocate all the stuff that is specific to SMB model IMAU_ITM
+
+    nullify( self%AlbedoSurf)
+    nullify( self%MeltPreviousYear)
+    nullify( self%FirnDepth)
+    nullify( self%Rainfall)
+    nullify( self%Snowfall)
+    nullify( self%AddedFirn)
+    nullify( self%Melt)
+    nullify( self%Refreezing)
+    nullify( self%Refreezing_year)
+    nullify( self%Runoff)
+    nullify( self%Albedo)
+    nullify( self%Albedo_year)
+    nullify( self%SMB_monthly)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_IMAU_ITM_deallocate
 
   subroutine initialise_SMB_model_IMAU_ITM( self, mesh, ice, region_name)
 

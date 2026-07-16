@@ -21,7 +21,7 @@ module SMB_idealised
     contains
 
       procedure, public :: allocate   => SMB_model_idealised_allocate
-      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_idealised_abs
+      procedure, public :: deallocate => SMB_model_idealised_deallocate
       procedure, public :: initialise_SMB_model => initialise_SMB_model_idealised_abs
       procedure, public :: run_SMB_model        => run_SMB_model_idealised_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_idealised_abs
@@ -57,21 +57,27 @@ contains
 
   end subroutine SMB_model_idealised_allocate
 
-  subroutine deallocate_SMB_model_idealised_abs( self)
+  subroutine SMB_model_idealised_deallocate( self)
 
     ! In/output variables:
     class(type_SMB_model_idealised), intent(inout) :: self
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'deallocate_SMB_model_idealised_abs'
+    character(len=*), parameter :: routine_name = 'SMB_model_idealised_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Deallocate all the stuff that is common to all SMB models
+    call self%deallocate_SMB_model()
+
+    ! Deallocate all the stuff that is specific to SMB model idealised
+
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine deallocate_SMB_model_idealised_abs
+  end subroutine SMB_model_idealised_deallocate
 
   subroutine initialise_SMB_model_idealised_abs( self, context)
 

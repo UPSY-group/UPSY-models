@@ -53,7 +53,7 @@ module SMB_snapshot_plus_anomalies
     contains
 
       procedure, public :: allocate   => SMB_model_snp_p_anml_allocate
-      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_snp_p_anml_abs
+      procedure, public :: deallocate => SMB_model_snp_p_anml_deallocate
       procedure, public :: initialise_SMB_model => initialise_SMB_model_snp_p_anml_abs
       procedure, public :: run_SMB_model        => run_SMB_model_snp_p_anml_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_snp_p_anml_abs
@@ -65,22 +65,6 @@ module SMB_snapshot_plus_anomalies
   end type type_SMB_model_snp_p_anml
 
 contains
-
-  subroutine deallocate_SMB_model_snp_p_anml_abs( self)
-
-    ! In/output variables:
-    class(type_SMB_model_snp_p_anml), intent(inout) :: self
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'deallocate_SMB_model_snp_p_anml'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine deallocate_SMB_model_snp_p_anml_abs
 
   subroutine initialise_SMB_model_snp_p_anml_abs( self, context)
 
@@ -245,6 +229,44 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_snp_p_anml_allocate
+
+  subroutine SMB_model_snp_p_anml_deallocate( self)
+
+    ! In/output variables:
+    class(type_SMB_model_snp_p_anml), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_deallocate'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate all the stuff that is common to all SMB models
+    call self%deallocate_SMB_model()
+
+    ! Deallocate all the stuff that is specific to SMB model snp_p_anml
+
+    nullify( self%T2m_baseline)
+    nullify( self%SMB_baseline)
+
+    ! Two anomaly timeframes enveloping the current model time
+    nullify( self%T2m_anomaly_0)
+    nullify( self%SMB_anomaly_0)
+
+    nullify( self%T2m_anomaly_1)
+    nullify( self%SMB_anomaly_1)
+
+    ! Time-weighted anomaly
+    nullify( self%T2m_anomaly)
+    nullify( self%SMB_anomaly)
+
+    ! Applied climate
+    nullify( self%T2m)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_snp_p_anml_deallocate
 
   subroutine initialise_SMB_model_snp_p_anml( self, mesh)
 

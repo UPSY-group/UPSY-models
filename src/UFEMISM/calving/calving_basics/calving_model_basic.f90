@@ -9,7 +9,7 @@ module calving_model_basic
   use fields_main, only: third_dimension
   use models_basic, only: atype_model, atype_model_context_allocate, &
     atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
-  use calving_model_common, only: type_calving_model_common
+  use calving_model_data, only: atype_calving_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
@@ -25,7 +25,7 @@ module calving_model_basic
    type_calving_model_context_initialise , type_calving_model_context_run , &
     type_calving_model_context_remap
 
-  type, abstract, extends(type_calving_model_common) :: atype_calving_model
+  type, abstract, extends(atype_calving_model_data) :: atype_calving_model
 
     real(dp) :: t_next   !< Time when the calving model should be run next
 

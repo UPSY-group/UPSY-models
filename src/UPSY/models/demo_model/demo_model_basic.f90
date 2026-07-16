@@ -6,9 +6,9 @@ module demo_model_basic
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use models_basic, only: atype_model, atype_model_context_allocate, &
+  use models_basic, only: atype_model_context_allocate, &
     atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
-  use demo_model_state, only: type_demo_model_state
+  use demo_model_data, only: atype_demo_model_data
   use mpi_f08, only: MPI_WIN
 
   implicit none
@@ -19,9 +19,8 @@ module demo_model_basic
     type_demo_model_context_initialise, type_demo_model_context_run, &
     type_demo_model_context_remap
 
-  type, abstract, extends(atype_model) :: atype_demo_model
-
-      type(type_demo_model_state) :: s
+  type, abstract, extends(atype_demo_model_data) :: atype_demo_model
+    !< Functions that are common to all demo models
 
     contains
 

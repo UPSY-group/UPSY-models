@@ -75,15 +75,15 @@ contains
       trim( a1%name())        == 'demo_model_a1' .and. &
       trim( a1%region_name()) == 'aaa' .and. &
       trim( a1%mesh%name)     == trim( mesh1%name) .and. &
-      size( a1%s%H   ,1) == mesh1%pai_V%n_nih .and. &
-      size( a1%s%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
-      size( a1%s%u_3D,2) == nz &
+      size( a1%H   ,1) == mesh1%pai_V%n_nih .and. &
+      size( a1%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
+      size( a1%u_3D,2) == nz &
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
     call a1%initialise( a1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( a1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
+      minval( a1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
       minval( a1%till_friction_angle( mesh1%pai_V%i1: mesh1%pai_V%i2)) == till_friction_angle_uniform .and. &
       maxval( a1%till_friction_angle( mesh1%pai_V%i1: mesh1%pai_V%i2)) == till_friction_angle_uniform &
       ), trim( test_name) // '/initialise')
@@ -91,16 +91,16 @@ contains
     ! Run the demo model and test if that worked
     call a1%run( a1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( a1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
+      minval( a1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
     call a1%remap( a1%ct_remap( mesh2))
     call unit_test( ( &
       a1%mesh%name     == mesh2%name .and. &
-      size( a1%s%H   ,1) == mesh2%pai_V%n_nih .and. &
-      size( a1%s%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
-      size( a1%s%u_3D,2) == nz &
+      size( a1%H   ,1) == mesh2%pai_V%n_nih .and. &
+      size( a1%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
+      size( a1%u_3D,2) == nz &
       ), trim( test_name) // '/remap')
 
     ! Write the demo model to a restart file,
@@ -117,11 +117,11 @@ contains
       trim( a1%name()) == 'empty_model' .and. &
       trim( a1%region_name()) == '!!!' .and. &
       .not. associated( a1%mesh) .and. &
-      .not. associated( a1%s%H) .and. &
-      .not. associated( a1%s%u_3D) .and. &
-      .not. associated( a1%s%v_3D) .and. &
-      .not. associated( a1%s%mask_ice) .and. &
-      .not. associated( a1%s%T2m) .and. &
+      .not. associated( a1%H) .and. &
+      .not. associated( a1%u_3D) .and. &
+      .not. associated( a1%v_3D) .and. &
+      .not. associated( a1%mask_ice) .and. &
+      .not. associated( a1%T2m) .and. &
       .not. associated( a1%till_friction_angle) &
       ), trim( test_name) // '/deallocate')
 
@@ -164,15 +164,15 @@ contains
       trim( b1%name())        == 'demo_model_b1' .and. &
       trim( b1%region_name()) == 'aaa' .and. &
       trim( b1%mesh%name)     == trim( mesh1%name) .and. &
-      size( b1%s%H   ,1) == mesh1%pai_V%n_nih .and. &
-      size( b1%s%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
-      size( b1%s%u_3D,2) == nz &
+      size( b1%H   ,1) == mesh1%pai_V%n_nih .and. &
+      size( b1%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
+      size( b1%u_3D,2) == nz &
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
     call b1%initialise( b1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( b1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
+      minval( b1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
       minval( b1%beta_sq( mesh1%pai_V%i1: mesh1%pai_V%i2)) == beta_sq_uniform .and. &
       maxval( b1%beta_sq( mesh1%pai_V%i1: mesh1%pai_V%i2)) == beta_sq_uniform &
       ), trim( test_name) // '/initialise')
@@ -180,17 +180,17 @@ contains
     ! Run the demo model and test if that worked
     call b1%run( b1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( b1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new .and. &
-      maxval( b1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
+      minval( b1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new .and. &
+      maxval( b1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
     call b1%remap( b1%ct_remap( mesh2))
     call unit_test( ( &
       b1%mesh%name     == mesh2%name .and. &
-      size( b1%s%H   ,1) == mesh2%pai_V%n_nih .and. &
-      size( b1%s%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
-      size( b1%s%u_3D,2) == nz &
+      size( b1%H   ,1) == mesh2%pai_V%n_nih .and. &
+      size( b1%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
+      size( b1%u_3D,2) == nz &
       ), trim( test_name) // '/remap')
 
     ! Write the demo model to a restart file,
@@ -207,11 +207,11 @@ contains
       trim( b1%name()) == 'empty_model' .and. &
       trim( b1%region_name()) == '!!!' .and. &
       .not. associated( b1%mesh) .and. &
-      .not. associated( b1%s%H) .and. &
-      .not. associated( b1%s%u_3D) .and. &
-      .not. associated( b1%s%v_3D) .and. &
-      .not. associated( b1%s%mask_ice) .and. &
-      .not. associated( b1%s%T2m) .and. &
+      .not. associated( b1%H) .and. &
+      .not. associated( b1%u_3D) .and. &
+      .not. associated( b1%v_3D) .and. &
+      .not. associated( b1%mask_ice) .and. &
+      .not. associated( b1%T2m) .and. &
       .not. associated( b1%beta_sq) &
       ), trim( test_name) // '/deallocate')
 
@@ -255,30 +255,30 @@ contains
       trim( demo1%name())        == 'demo_model_a1' .and. &
       trim( demo1%region_name()) == 'aaa' .and. &
       trim( demo1%mesh%name)     == trim( mesh1%name) .and. &
-      size( demo1%s%H   ,1) == mesh1%pai_V%n_nih .and. &
-      size( demo1%s%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
-      size( demo1%s%u_3D,2) == nz &
+      size( demo1%H   ,1) == mesh1%pai_V%n_nih .and. &
+      size( demo1%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
+      size( demo1%u_3D,2) == nz &
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
     call demo1%initialise( demo1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
     call demo1%run( demo1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
     call demo1%remap( demo1%ct_remap( mesh2))
     call unit_test( ( &
       demo1%mesh%name     == mesh2%name .and. &
-      size( demo1%s%H   ,1) == mesh2%pai_V%n_nih .and. &
-      size( demo1%s%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
-      size( demo1%s%u_3D,2) == nz &
+      size( demo1%H   ,1) == mesh2%pai_V%n_nih .and. &
+      size( demo1%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
+      size( demo1%u_3D,2) == nz &
       ), trim( test_name) // '/remap')
 
     ! Write the demo model to a restart file,
@@ -296,11 +296,11 @@ contains
       trim( demo1%name()) == 'empty_model' .and. &
       trim( demo1%region_name()) == '!!!' .and. &
       .not. associated( demo1%mesh) .and. &
-      .not. associated( demo1%s%H) .and. &
-      .not. associated( demo1%s%u_3D) .and. &
-      .not. associated( demo1%s%v_3D) .and. &
-      .not. associated( demo1%s%mask_ice) .and. &
-      .not. associated( demo1%s%T2m) &
+      .not. associated( demo1%H) .and. &
+      .not. associated( demo1%u_3D) .and. &
+      .not. associated( demo1%v_3D) .and. &
+      .not. associated( demo1%mask_ice) .and. &
+      .not. associated( demo1%T2m) &
       ), trim( test_name) // '/deallocate')
 
     ! Clean up after yourself
@@ -343,30 +343,30 @@ contains
       trim( demo1%name())        == 'demo_model_b1' .and. &
       trim( demo1%region_name()) == 'aaa' .and. &
       trim( demo1%mesh%name)     == trim( mesh1%name) .and. &
-      size( demo1%s%H   ,1) == mesh1%pai_V%n_nih .and. &
-      size( demo1%s%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
-      size( demo1%s%u_3D,2) == nz &
+      size( demo1%H   ,1) == mesh1%pai_V%n_nih .and. &
+      size( demo1%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
+      size( demo1%u_3D,2) == nz &
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
     call demo1%initialise( demo1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
     call unit_test( (&
-      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
     call demo1%run( demo1%ct_run( H_new, dH))
     call unit_test( (&
-      minval( demo1%s%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
     call demo1%remap( demo1%ct_remap( mesh2))
     call unit_test( ( &
       demo1%mesh%name     == mesh2%name .and. &
-      size( demo1%s%H   ,1) == mesh2%pai_V%n_nih .and. &
-      size( demo1%s%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
-      size( demo1%s%u_3D,2) == nz &
+      size( demo1%H   ,1) == mesh2%pai_V%n_nih .and. &
+      size( demo1%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
+      size( demo1%u_3D,2) == nz &
       ), trim( test_name) // '/remap')
 
     ! Write the demo model to a restart file,
@@ -384,11 +384,11 @@ contains
       trim( demo1%name()) == 'empty_model' .and. &
       trim( demo1%region_name()) == '!!!' .and. &
       .not. associated( demo1%mesh) .and. &
-      .not. associated( demo1%s%H) .and. &
-      .not. associated( demo1%s%u_3D) .and. &
-      .not. associated( demo1%s%v_3D) .and. &
-      .not. associated( demo1%s%mask_ice) .and. &
-      .not. associated( demo1%s%T2m) &
+      .not. associated( demo1%H) .and. &
+      .not. associated( demo1%u_3D) .and. &
+      .not. associated( demo1%v_3D) .and. &
+      .not. associated( demo1%mask_ice) .and. &
+      .not. associated( demo1%T2m) &
       ), trim( test_name) // '/deallocate')
 
     ! Clean up after yourself

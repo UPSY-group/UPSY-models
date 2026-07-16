@@ -53,7 +53,7 @@ contains
     call init_routine( routine_name)
 
     ! Part common to all models of atype_demo_model
-    call allocate_model_common( self%mesh, self, self%s, context)
+    call allocate_model_common( self%mesh, self, context)
 
     ! Part specific to the model classes inheriting from atype_demo_model
     call self%allocate_demo_model( context)
@@ -63,12 +63,11 @@ contains
 
   end subroutine allocate_model
 
-  subroutine allocate_model_common( mesh, self, demo, context)
+  subroutine allocate_model_common( mesh, self, context)
 
     ! In/output variables:
     type(type_mesh),                                intent(in   ) :: mesh
     class(atype_demo_model),                        intent(inout) :: self
-    type(type_demo_model_state),                    intent(inout) :: demo
     type(type_demo_model_context_allocate), target, intent(in   ) :: context
 
     ! Local variables:
@@ -77,35 +76,35 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call self%create_field( demo%H, demo%wH, &
+    call self%create_field( self%H, self%wH, &
       mesh, Arakawa_grid%a(), &
       name      = 'H', &
       long_name = 'ice thickness', &
       units     = 'm', &
       remap_method = '2nd_order_conservative')
 
-    call self%create_field( demo%u_3D, demo%wu_3D, &
+    call self%create_field( self%u_3D, self%wu_3D, &
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( context%nz, 'regular'), &
       name      = 'u_3D', &
       long_name = 'depth-dependent horizontal ice velocity in x-direction', &
       units     = 'm yr^-1', &
       remap_method = '2nd_order_conservative')
 
-    call self%create_field( demo%v_3D, demo%wv_3D, &
+    call self%create_field( self%v_3D, self%wv_3D, &
       mesh, Arakawa_grid%b(), third_dimension%ice_zeta( context%nz, 'regular'), &
       name      = 'v_3D', &
       long_name = 'depth-dependent horizontal ice velocity in y-direction', &
       units     = 'm yr^-1', &
       remap_method = '2nd_order_conservative')
 
-    call self%create_field( demo%mask_ice, demo%wmask_ice, &
+    call self%create_field( self%mask_ice, self%wmask_ice, &
       mesh, Arakawa_grid%a(), &
       name      = 'mask_ice', &
       long_name = 'ice mask', &
       units     = '-', &
       remap_method = 'reallocate')
 
-    call self%create_field( demo%T2m, demo%wT2m, &
+    call self%create_field( self%T2m, self%wT2m, &
       mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'T2m', &
       long_name = 'Monthly 2-m air temperature', &
@@ -129,7 +128,7 @@ contains
     call init_routine( routine_name)
 
     ! Part common to all models of atype_demo_model
-    call deallocate_model_common( self%s)
+    call deallocate_model_common( self)
 
     ! Part specific to the model classes inheriting from atype_demo_model
     call self%deallocate_demo_model
@@ -139,10 +138,10 @@ contains
 
   end subroutine deallocate_model
 
-  subroutine deallocate_model_common( demo)
+  subroutine deallocate_model_common( self)
 
     ! In/output variables:
-    type(type_demo_model_state), intent(inout) :: demo
+    class(atype_demo_model), intent(inout) :: self
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'deallocate_model_common'
@@ -150,11 +149,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    nullify( demo%H)
-    nullify( demo%u_3D)
-    nullify( demo%v_3D)
-    nullify( demo%mask_ice)
-    nullify( demo%T2m)
+    nullify( self%H)
+    nullify( self%u_3D)
+    nullify( self%v_3D)
+    nullify( self%mask_ice)
+    nullify( self%T2m)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

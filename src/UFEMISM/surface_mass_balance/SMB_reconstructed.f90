@@ -26,7 +26,7 @@ module SMB_reconstructed
     contains
 
       procedure, public :: allocate   => SMB_model_reconstructed_allocate
-      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_reconstructed_abs
+      procedure, public :: deallocate => SMB_model_reconstructed_deallocate
       procedure, public :: initialise_SMB_model => initialise_SMB_model_reconstructed_abs
       procedure, public :: run_SMB_model        => run_SMB_model_reconstructed_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_reconstructed_abs
@@ -59,6 +59,28 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_reconstructed_allocate
+
+  subroutine SMB_model_reconstructed_deallocate( self)
+
+    ! In/output variables:
+    class(type_SMB_model_reconstructed), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_reconstructed_deallocate'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate all the stuff that is common to all SMB models
+    call self%deallocate_SMB_model()
+
+    ! Deallocate all the stuff that is specific to SMB model reconstructed
+
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_reconstructed_deallocate
 
   subroutine deallocate_SMB_model_reconstructed_abs( self)
 

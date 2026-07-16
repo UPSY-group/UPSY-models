@@ -40,13 +40,13 @@ module SMB_model_basic
       ! in the deferred procedures 'allocate_SMB_model', 'initialise_SMB_model', etc.
 
       procedure, public :: allocate_SMB_model
-      procedure, public :: deallocate_model => deallocate_model
+      procedure, public :: deallocate_SMB_model
       procedure, public :: initialise_model => initialise_model_abs
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(SMB_model_allocate_ifc),   deferred :: allocate
-      procedure(deallocate_SMB_model_ifc), deferred :: deallocate_SMB_model
+      procedure(SMB_model_deallocate_ifc), deferred :: deallocate
       procedure(initialise_SMB_model_ifc), deferred :: initialise_SMB_model
       procedure(run_SMB_model_ifc),        deferred :: run_SMB_model
       procedure(remap_SMB_model_ifc),      deferred :: remap_SMB_model
@@ -93,10 +93,10 @@ module SMB_model_basic
       type(type_mesh), target, intent(in   ) :: mesh
     end subroutine SMB_model_allocate_ifc
 
-    subroutine deallocate_SMB_model_ifc( self)
+    subroutine SMB_model_deallocate_ifc( self)
       import atype_SMB_model
       class(atype_SMB_model), intent(inout) :: self
-    end subroutine deallocate_SMB_model_ifc
+    end subroutine SMB_model_deallocate_ifc
 
     subroutine initialise_SMB_model_ifc( self, context)
       import atype_SMB_model, type_SMB_model_context_initialise
@@ -122,10 +122,6 @@ module SMB_model_basic
   ! =========================================================
 
   interface
-
-    module subroutine deallocate_model( self)
-      class(atype_SMB_model), intent(inout) :: self
-    end subroutine deallocate_model
 
     module subroutine initialise_model_abs( self, context)
       class(atype_SMB_model),                        intent(inout) :: self
@@ -202,5 +198,30 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine allocate_SMB_model
+
+  subroutine deallocate_SMB_model( self)
+    !< Deallocate stuff that is common to all SMB models
+    !< (call this from your SMB model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_SMB_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_SMB_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate stuff that is common to all models
+    call self%deallocate_model()
+
+    ! Deallocate stuff that is specific to SMB models
+
+    nullify( self%SMB)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_SMB_model
 
 end module SMB_model_basic

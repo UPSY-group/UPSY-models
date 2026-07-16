@@ -40,12 +40,11 @@ module models_basic
       ! in the deferred procedures 'allocate_model', 'initialise_model', etc.
 
       procedure, public :: allocate_model
-      procedure, public :: deallocate
+      procedure, public :: deallocate_model
       procedure, public :: initialise
       procedure, public :: run
       procedure, public :: remap
 
-      procedure(deallocate_model_ifc), deferred :: deallocate_model
       procedure(initialise_model_ifc), deferred :: initialise_model
       procedure(run_model_ifc),        deferred :: run_model
       procedure(remap_model_ifc),      deferred :: remap_model
@@ -450,5 +449,31 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine allocate_model
+
+  subroutine deallocate_model( self)
+    !< Deallocate stuff that is common to all models
+    !< (call this from your model-specific deallocation routine)
+
+    ! In/output variables:
+    class(atype_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Un-set model metadata and mesh
+    call self%set_name( 'empty_model')
+    call self%set_region_name( '!!!')
+    nullify( self%mesh)
+
+    ! Deallocate shared memory for all the fields
+    call self%flds_reg%destroy
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_model
 
 end module models_basic

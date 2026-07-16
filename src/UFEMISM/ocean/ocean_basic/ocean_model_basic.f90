@@ -38,13 +38,13 @@ module ocean_model_basic
       ! in the deferred procedures 'allocate_ocean_model', 'initialise_ocean_model', etc.
 
       procedure, public :: allocate_ocean_model
-      procedure, public :: deallocate_model => deallocate_model
+      procedure, public :: deallocate_ocean_model
       procedure, public :: initialise_model => initialise_model_abs
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(ocean_model_allocate_ifc),   deferred :: allocate
-      procedure(deallocate_ocean_model_ifc), deferred :: deallocate_ocean_model
+      procedure(ocean_model_deallocate_ifc), deferred :: deallocate
       procedure(initialise_ocean_model_ifc), deferred :: initialise_ocean_model
       procedure(run_ocean_model_ifc),        deferred :: run_ocean_model
       procedure(remap_ocean_model_ifc),      deferred :: remap_ocean_model
@@ -81,10 +81,10 @@ module ocean_model_basic
       type(type_mesh), target,  intent(in   ) :: mesh
     end subroutine ocean_model_allocate_ifc
 
-    subroutine deallocate_ocean_model_ifc( self)
+    subroutine ocean_model_deallocate_ifc( self)
       import atype_ocean_model
       class(atype_ocean_model), intent(inout) :: self
-    end subroutine deallocate_ocean_model_ifc
+    end subroutine ocean_model_deallocate_ifc
 
     subroutine initialise_ocean_model_ifc( self, context)
       import atype_ocean_model, type_ocean_model_context_initialise
@@ -110,10 +110,6 @@ module ocean_model_basic
   ! =========================================================
 
   interface
-
-    module subroutine deallocate_model( self)
-      class(atype_ocean_model), intent(inout) :: self
-    end subroutine deallocate_model
 
     module subroutine initialise_model_abs( self, context)
       class(atype_ocean_model),                      intent(inout) :: self
@@ -149,7 +145,7 @@ module ocean_model_basic
 contains
 
   subroutine allocate_ocean_model( self, name, region_name, mesh)
-    !< Allocate stuff that is common to all demo models
+    !< Allocate stuff that is common to all ocean models
     !< (call this from your ocean model-specific allocation routine)
 
     ! In/output variables:
@@ -203,5 +199,33 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine allocate_ocean_model
+
+  subroutine deallocate_ocean_model( self)
+    !< Deallocate stuff that is common to all ocean models
+    !< (call this from your ocean model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_ocean_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_ocean_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate stuff that is common to all models
+    call self%deallocate_model()
+
+    ! Deallocate stuff that is specific to ocean models
+
+    nullify( self%T)
+    nullify( self%S)
+    nullify( self%T_draft)
+    nullify( self%T_freezing_point)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_ocean_model
 
 end module ocean_model_basic

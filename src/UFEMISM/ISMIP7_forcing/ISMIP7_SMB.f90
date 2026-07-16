@@ -85,8 +85,8 @@ module ISMIP7_SMB
 
     contains
 
-      procedure, public :: allocate  => SMB_model_ISMIP7_allocate
-      procedure, public :: deallocate_SMB_model => deallocate_SMB_model_ISMIP7_abs
+      procedure, public :: allocate   => SMB_model_ISMIP7_allocate
+      procedure, public :: deallocate => SMB_model_ISMIP7_deallocate
       procedure, public :: initialise_SMB_model => initialise_SMB_model_ISMIP7_abs
       procedure, public :: run_SMB_model        => run_SMB_model_ISMIP7_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_ISMIP7_abs
@@ -100,22 +100,6 @@ module ISMIP7_SMB
   end type type_SMB_model_ISMIP7
 
 contains
-
-  subroutine deallocate_SMB_model_ISMIP7_abs( self)
-
-    ! In/output variables:
-    class(type_SMB_model_ISMIP7), intent(inout) :: self
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'deallocate_SMB_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine deallocate_SMB_model_ISMIP7_abs
 
   subroutine initialise_SMB_model_ISMIP7_abs( self, context)
 
@@ -269,6 +253,44 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_ISMIP7_allocate
+
+  subroutine SMB_model_ISMIP7_deallocate( self)
+
+    ! In/output variables:
+    class(type_SMB_model_ISMIP7), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_deallocate'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate all the stuff that is common to all SMB models
+    call self%deallocate_SMB_model()
+
+    ! Deallocate all the stuff that is specific to SMB model ISMIP7
+
+    ! Baseline SMB and surface elevation
+    nullify( self%SMB_baseline)
+    nullify( self%SMB_offset)
+    nullify( self%Hs_baseline)
+
+    ! ! ISMIP7-style input forcing fields
+    ! call self%acabf%deallocate()
+    ! call self%acabf_anomaly%deallocate()
+    ! call self%dacabfdz%deallocate()
+
+    ! Elevation-induced SMB change
+    nullify( self%delta_z)
+    nullify( self%delta_SMB)
+
+    ! Monthly SMB
+    nullify( self%SMB_monthly)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_ISMIP7_deallocate
 
   subroutine initialise_SMB_model_ISMIP7( self, mesh, refgeo_init, refgeo_PD, region_name)
 

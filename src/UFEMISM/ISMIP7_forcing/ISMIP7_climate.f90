@@ -97,7 +97,7 @@ module ISMIP7_climate
     contains
 
       procedure, public :: allocate   => climate_model_ISMIP7_allocate
-      procedure, public :: deallocate_climate_model => deallocate_climate_model_ISMIP7_abs
+      procedure, public :: deallocate => climate_model_ISMIP7_deallocate
       procedure, public :: initialise_climate_model => initialise_climate_model_ISMIP7_abs
       procedure, public :: run_climate_model        => run_climate_model_ISMIP7_abs
       procedure, public :: remap_climate_model      => remap_climate_model_ISMIP7_abs
@@ -111,22 +111,6 @@ module ISMIP7_climate
   end type type_climate_model_ISMIP7
 
 contains
-
-  subroutine deallocate_climate_model_ISMIP7_abs( self)
-
-    ! In/output variables:
-    class(type_climate_model_ISMIP7), intent(inout) :: self
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'deallocate_climate_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine deallocate_climate_model_ISMIP7_abs
 
   subroutine initialise_climate_model_ISMIP7_abs( self, context)
 
@@ -270,6 +254,44 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine climate_model_ISMIP7_allocate
+
+  subroutine climate_model_ISMIP7_deallocate( self)
+
+    ! In/output variables:
+    class(type_climate_model_ISMIP7), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'climate_model_ISMIP7_deallocate'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate all the stuff that is common to all climate models
+    call self%deallocate_climate_model()
+
+    ! Deallocate all the stuff that is specific to climate model ISMIP7
+
+    ! Baseline climate and surface elevation
+    nullify( self%T2m_baseline)
+    nullify( self%Precip_baseline)
+    nullify( self%Hs_baseline)
+
+    ! ISMIP7-style input forcing fields
+    ! call self%tas%deallocate()
+    ! call self%tas_anomaly%deallocate()
+    ! call self%pr%deallocate()
+    ! call self%pr_anomaly%deallocate()
+    ! call self%dtsdz%deallocate()
+
+    ! Elevation-based temperature correction
+    nullify( self%delta_z )
+    nullify( self%delta_ts)
+
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine climate_model_ISMIP7_deallocate
 
   subroutine initialise_climate_model_ISMIP7( self, mesh, refgeo_PD, refgeo_init, region_name)
 

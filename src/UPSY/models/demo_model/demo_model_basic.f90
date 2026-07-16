@@ -33,13 +33,13 @@ module demo_model_basic
       ! in the deferred procedures 'allocate_demo_model', 'initialise_demo_model', etc.
 
       procedure, public :: allocate_demo_model
-      procedure, public :: deallocate_model => deallocate_model
+      procedure, public :: deallocate_demo_model
       procedure, public :: initialise_model => initialise_model_abs
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(demo_model_allocate_ifc),   deferred :: allocate
-      procedure(deallocate_demo_model_ifc), deferred :: deallocate_demo_model
+      procedure(demo_model_deallocate_ifc), deferred :: deallocate
       procedure(initialise_demo_model_ifc), deferred :: initialise_demo_model
       procedure(run_demo_model_ifc),        deferred :: run_demo_model
       procedure(remap_demo_model_ifc),      deferred :: remap_demo_model
@@ -81,10 +81,10 @@ module demo_model_basic
       integer,                 intent(in   ) :: nz
     end subroutine demo_model_allocate_ifc
 
-    subroutine deallocate_demo_model_ifc( self)
+    subroutine demo_model_deallocate_ifc( self)
       import atype_demo_model
       class(atype_demo_model), intent(inout) :: self
-    end subroutine deallocate_demo_model_ifc
+    end subroutine demo_model_deallocate_ifc
 
     subroutine initialise_demo_model_ifc( self, context)
       import atype_demo_model, type_demo_model_context_initialise
@@ -110,10 +110,6 @@ module demo_model_basic
   ! =========================================================
 
   interface
-
-    module subroutine deallocate_model( self)
-      class(atype_demo_model), intent(inout) :: self
-    end subroutine deallocate_model
 
     module subroutine initialise_model_abs( self, context)
       class(atype_demo_model),                       intent(inout) :: self
@@ -213,5 +209,34 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine allocate_demo_model
+
+  subroutine deallocate_demo_model( self)
+    !< Deallocate stuff that is common to all demo models
+    !< (call this from your demo model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_demo_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_demo_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Deallocate stuff that is common to all models
+    call self%deallocate_model()
+
+    ! Deallocate stuff that is specific to demo models
+
+    nullify( self%H)
+    nullify( self%u_3D)
+    nullify( self%v_3D)
+    nullify( self%mask_ice)
+    nullify( self%T2m)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_demo_model
 
 end module demo_model_basic

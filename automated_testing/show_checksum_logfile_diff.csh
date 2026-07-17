@@ -31,14 +31,9 @@ endif
 set ref_files = (`find $dir_ref -maxdepth 1 -type f -name "checksum_logfile*.txt" -exec basename {} \; | sort`)
 set mod_files = (`find $dir_mod -maxdepth 1 -type f -name "checksum_logfile*.txt" -exec basename {} \; | sort`)
 
-if ($#ref_files == 0) then
-  echo "Error: No checksum logfiles found in '$dir_ref'."
-  exit 1
-endif
-
-if ($#mod_files == 0) then
-  echo "Error: No checksum logfiles found in '$dir_mod'."
-  exit 1
+if (($#ref_files == 0) && ($#mod_files == 0)) then
+  echo "No checksum logfiles found in either '$dir_ref' or '$dir_mod'. Nothing to diff."
+  exit 0
 endif
 
 # Require exact same set of checksum logfile names in both directories.

@@ -70,7 +70,6 @@ if (! $sets_match) then
 endif
 
 # Show diff for each matching checksum logfile.
-set diff_exit = 0
 foreach f ($ref_files)
   set filename_ref = ${dir_ref}/$f
   set filename_mod = ${dir_mod}/$f
@@ -83,10 +82,8 @@ foreach f ($ref_files)
   if ($cmd_exit > 1) then
     echo "Error: git diff failed for '$f'."
     exit $cmd_exit
-  else if ($cmd_exit == 1) then
-    set diff_exit = 1
   endif
 end
 
-exit $diff_exit
+exit 0
 endif

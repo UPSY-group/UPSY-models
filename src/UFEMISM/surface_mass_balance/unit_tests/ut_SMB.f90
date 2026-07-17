@@ -19,7 +19,7 @@ module ut_SMB
   use grid_types, only: type_grid
   use Halfar_SIA_solution, only: Halfar
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, &
-    MPI_WIN, MPI_MIN, MPI_MAX
+    MPI_WIN, MPI_MIN, MPI_MAX, MPI_DOUBLE_PRECISION
   use allocate_dist_shared_mod, only: allocate_dist_shared
   use deallocate_dist_shared_mod, only: deallocate_dist_shared
   use netcdf_io_main, only: create_new_netcdf_file_for_writing, &
@@ -276,10 +276,10 @@ contains
     call SMB%run       ( SMB%ct_run( 0._dp, ice, climate, grid_smooth))
 
     ! Verify that it worked
-    SMB_min = minval( SMB%SMB)
-    SMB_max = maxval( SMB%SMB)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, SMB_min, 1, MPI_LOGICAL, MPI_MIN, MPI_COMM_WORLD, ierr)
-    call MPI_ALLREDUCE( MPI_IN_PLACE, SMB_max, 1, MPI_LOGICAL, MPI_MAX, MPI_COMM_WORLD, ierr)
+    SMB_min = minval( SMB%SMB( mesh%vi1:mesh%vi2))
+    SMB_max = maxval( SMB%SMB( mesh%vi1:mesh%vi2))
+    call MPI_ALLREDUCE( MPI_IN_PLACE, SMB_min, 1, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, SMB_max, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
     call unit_test(&
       test_ge_le( SMB_min, -23._dp, -21._dp) .and. &
       test_ge_le( SMB_max,  3.4_dp,  3.7_dp), test_name)

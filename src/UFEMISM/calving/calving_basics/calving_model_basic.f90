@@ -88,7 +88,7 @@ module calving_model_basic
     end subroutine calving_model_deallocate_ifc
 
     subroutine calving_model_initialise_ifc( self)
-      import atype_calving_model, type_calving_model_context_initialise
+      import atype_calving_model
       class(atype_calving_model), intent(inout) :: self
     end subroutine calving_model_initialise_ifc
 

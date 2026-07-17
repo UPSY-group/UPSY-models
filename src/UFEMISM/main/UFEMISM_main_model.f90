@@ -557,7 +557,7 @@ CONTAINS
     end select
 
     call region%SMB%allocate( region%name, region%mesh)
-    call region%SMB%initialise( region%SMB%ct_initialise( region%ice, region%refgeo_init, region%refgeo_PD))
+    call region%SMB%initialise( region%ice, region%refgeo_init, region%refgeo_PD, region%name)
 
     call checksum( region%mesh%pai_V, region%SMB%SMB, 'region%SMB%SMB')
 

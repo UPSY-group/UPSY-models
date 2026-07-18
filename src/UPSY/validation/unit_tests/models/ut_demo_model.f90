@@ -80,7 +80,7 @@ contains
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
-    call a1%initialise( a1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
+    call a1%initialise( H0, till_friction_angle_uniform, beta_sq_uniform)
     call unit_test( (&
       minval( a1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
       minval( a1%till_friction_angle( mesh1%pai_V%i1: mesh1%pai_V%i2)) == till_friction_angle_uniform .and. &
@@ -167,7 +167,7 @@ contains
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
-    call b1%initialise( b1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
+    call b1%initialise( H0, till_friction_angle_uniform, beta_sq_uniform)
     call unit_test( (&
       minval( b1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 .and. &
       minval( b1%beta_sq( mesh1%pai_V%i1: mesh1%pai_V%i2)) == beta_sq_uniform .and. &
@@ -256,7 +256,7 @@ contains
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
-    call demo1%initialise( demo1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
+    call demo1%initialise( H0, till_friction_angle_uniform, beta_sq_uniform)
     call unit_test( (&
       minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/initialise')
@@ -342,7 +342,7 @@ contains
       ), trim( test_name) // '/allocate')
 
     ! Initialise the demo model and test if that worked
-    call demo1%initialise( demo1%ct_initialise( H0, till_friction_angle_uniform, beta_sq_uniform))
+    call demo1%initialise( H0, till_friction_angle_uniform, beta_sq_uniform)
     call unit_test( (&
       minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/initialise')

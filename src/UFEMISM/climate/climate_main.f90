@@ -214,7 +214,7 @@ CONTAINS
       ! No need to do anything (initialisation is handled by the SMB model)
     case ('ISMIP7')
       call climate%ISMIP7%allocate( region_name, mesh)
-      call climate%ISMIP7%initialise( climate%ISMIP7%ct_initialise( refgeo_init, refgeo_PD))
+      call climate%ISMIP7%initialise( refgeo_PD, refgeo_init)
     end select
 
     call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')

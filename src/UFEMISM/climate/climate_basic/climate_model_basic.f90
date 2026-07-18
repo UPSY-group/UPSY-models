@@ -8,7 +8,7 @@ module climate_model_basic
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
   use models_basic, only: atype_model, &
-    atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
+    atype_model_context_run, atype_model_context_remap
   use climate_model_data, only: atype_climate_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
@@ -19,7 +19,7 @@ module climate_model_basic
   private
 
   public :: atype_climate_model, &
-    type_climate_model_context_initialise, type_climate_model_context_run, &
+    type_climate_model_context_run, &
     type_climate_model_context_remap
 
   type, abstract, extends(atype_climate_model_data) :: atype_climate_model
@@ -39,18 +39,17 @@ module climate_model_basic
 
       procedure, public :: allocate_climate_model
       procedure, public :: deallocate_climate_model
-      procedure, public :: initialise_model => initialise_model_abs
+      procedure, public :: initialise_climate_model
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(climate_model_allocate_ifc),   deferred :: allocate
       procedure(climate_model_deallocate_ifc), deferred :: deallocate
-      procedure(initialise_climate_model_ifc), deferred :: initialise_climate_model
+      procedure(climate_model_initialise_ifc), deferred :: initialise
       procedure(run_climate_model_ifc),        deferred :: run_climate_model
       procedure(remap_climate_model_ifc),      deferred :: remap_climate_model
 
       ! Factory functions to create model context objects
-      procedure, nopass, public :: ct_initialise
       procedure, nopass, public :: ct_run
       procedure, nopass, public :: ct_remap
 
@@ -58,11 +57,6 @@ module climate_model_basic
 
   ! Context classes for allocate/initialise/run/remap
   ! =================================================
-
-  type, extends(atype_model_context_initialise) :: type_climate_model_context_initialise
-    type(type_reference_geometry), pointer :: refgeo_init
-    type(type_reference_geometry), pointer :: refgeo_PD
-  end type type_climate_model_context_initialise
 
   type, extends(atype_model_context_run) :: type_climate_model_context_run
     type(type_ice_model), pointer :: ice
@@ -88,11 +82,12 @@ module climate_model_basic
       class(atype_climate_model), intent(inout) :: self
     end subroutine climate_model_deallocate_ifc
 
-    subroutine initialise_climate_model_ifc( self, context)
-      import atype_climate_model, type_climate_model_context_initialise
-      class(atype_climate_model),                          intent(inout) :: self
-      type(type_climate_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_climate_model_ifc
+    subroutine climate_model_initialise_ifc( self, refgeo_PD, refgeo_init)
+      import atype_climate_model, type_reference_geometry
+      class(atype_climate_model),    intent(inout) :: self
+      type(type_reference_geometry), intent(in   ) :: refgeo_PD
+      type(type_reference_geometry), intent(in   ) :: refgeo_init
+    end subroutine climate_model_initialise_ifc
 
     subroutine run_climate_model_ifc( self, context)
       import atype_climate_model, type_climate_model_context_run
@@ -113,11 +108,6 @@ module climate_model_basic
 
   interface
 
-    module subroutine initialise_model_abs( self, context)
-      class(atype_climate_model),                    intent(inout) :: self
-      class(atype_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_model_abs
-
     module subroutine run_model_abs( self, context)
       class(atype_climate_model),             intent(inout) :: self
       class(atype_model_context_run), target, intent(in   ) :: context
@@ -127,11 +117,6 @@ module climate_model_basic
       class(atype_climate_model),               intent(inout) :: self
       class(atype_model_context_remap), target, intent(in   ) :: context
     end subroutine remap_model_abs
-
-    module function ct_initialise( refgeo_init, refgeo_PD) result( context)
-      type(type_reference_geometry), target, intent(in) :: refgeo_init, refgeo_PD
-      type(type_climate_model_context_initialise)       :: context
-    end function ct_initialise
 
     module function ct_run( time, ice) result( context)
       real(dp),                         intent(in) :: time
@@ -213,5 +198,32 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine deallocate_climate_model
+
+  subroutine initialise_climate_model( self)
+    !< Initialise stuff that is common to all climate models
+    !< (call this from your climate model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_climate_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_climate_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Initialise stuff that is common to all models
+    call self%initialise_model()
+
+    ! Initialise stuff that is specific to climate models
+
+    ! Right now, there's nothing that can be put here yet,
+    ! but it's useful to have the allocate/deallocate/initialise/run/remap
+    ! routines all follow the same general layout.
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_climate_model
 
 end module climate_model_basic

@@ -217,9 +217,8 @@ contains
 
     ! Initialise stuff that is specific to climate models
 
-    ! Right now, there's nothing that can be put here yet,
-    ! but it's useful to have the allocate/deallocate/initialise/run/remap
-    ! routines all follow the same general layout.
+    ! Set time of next calculation to start time
+    self%t_next = C%start_time_of_run
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

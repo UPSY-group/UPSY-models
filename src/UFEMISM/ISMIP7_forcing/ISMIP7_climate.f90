@@ -290,9 +290,6 @@ contains
 
     ! Initialise all the stuff that is specific to climate model ISMIP7
 
-    ! Set time of next calculation to start time
-    self%t_next = C%start_time_of_run
-
     ! Initialise fields and baseline climate
     select case (C%climate_ISMIP7_choice_baseline)
     case default

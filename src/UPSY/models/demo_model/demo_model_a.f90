@@ -7,7 +7,7 @@ module demo_model_a
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
   use demo_model_basic, only: atype_demo_model, &
-    type_demo_model_context_initialise, type_demo_model_context_run, &
+    type_demo_model_context_run, &
     type_demo_model_context_remap
   use mpi_f08, only: MPI_WIN
 
@@ -27,7 +27,7 @@ module demo_model_a
 
       procedure, public :: allocate   => demo_model_a_allocate
       procedure, public :: deallocate => demo_model_a_deallocate
-      procedure, public :: initialise_demo_model => initialise_demo_model_a_abs
+      procedure, public :: initialise => demo_model_a_initialise
       procedure, public :: run_demo_model        => run_demo_model_a_abs
       procedure, public :: remap_demo_model      => remap_demo_model_a_abs
 
@@ -89,45 +89,31 @@ contains
 
   end subroutine demo_model_a_deallocate
 
-  subroutine initialise_demo_model_a_abs( self, context)
+  subroutine demo_model_a_initialise( self, H0, till_friction_angle_uniform, beta_sq_uniform)
 
     ! In/output variables:
-    class(type_demo_model_a),                         intent(inout) :: self
-    type(type_demo_model_context_initialise), target, intent(in   ) :: context
+    class(type_demo_model_a), intent(inout) :: self
+    real(dp),                 intent(in   ) :: H0
+    real(dp),                 intent(in   ) :: till_friction_angle_uniform
+    real(dp),                 intent(in   ) :: beta_sq_uniform
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_demo_model_a_abs'
+    character(len=*), parameter :: routine_name = 'demo_model_a_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Retrieve input variables from context object
-    call initialise_demo_model_a( self%mesh, self, context%till_friction_angle_uniform)
+    ! Initialise all the stuff that is common to all demo models
+    call self%initialise_demo_model( H0)
+
+    ! Initialise all the stuff that is specific to demo model a
+
+    self%till_friction_angle( self%mesh%vi1: self%mesh%vi2) = till_friction_angle_uniform
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_demo_model_a_abs
-
-  subroutine initialise_demo_model_a( mesh, self, till_friction_angle_uniform)
-
-    ! In/output variables:
-    type(type_mesh),         intent(in   ) :: mesh
-    type(type_demo_model_a), intent(inout) :: self
-    real(dp),                intent(in   ) :: till_friction_angle_uniform
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_demo_model_a'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    self%till_friction_angle( mesh%vi1: mesh%vi2) = till_friction_angle_uniform
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_demo_model_a
+  end subroutine demo_model_a_initialise
 
   subroutine run_demo_model_a_abs( self, context)
 

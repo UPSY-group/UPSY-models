@@ -231,14 +231,17 @@ contains
     real(dp),                intent(in   ) :: H0
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_demo_model'
-    integer                        :: vi,ti,k,m
-    real(dp)                       :: x,y,cx,cy
+    character(len=*), parameter :: routine_name = 'initialise_demo_model'
+    integer                     :: vi,ti,k,m
+    real(dp)                    :: x,y,cx,cy
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise fields with simple analytical functions
+    ! Initialise stuff that is common to all models
+    call self%initialise_model()
+
+    ! Initialise stuff that is specific to demo models
 
     cx = self%mesh%xmax - self%mesh%xmin
     cy = self%mesh%ymax - self%mesh%ymin

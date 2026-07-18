@@ -41,6 +41,7 @@ module models_basic
 
       procedure, public :: allocate_model
       procedure, public :: deallocate_model
+      procedure, public :: initialise_model
       procedure, public :: run
       procedure, public :: remap
 
@@ -450,5 +451,27 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine deallocate_model
+
+  subroutine initialise_model( self)
+    !< Initialise stuff that is common to all models
+    !< (call this from your model-specific deallocation routine)
+
+    ! In/output variables:
+    class(atype_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Right now, there's nothing that can be put here yet,
+    ! but it's useful to have the allocate/deallocate/initialise/run/remap
+    ! routines all follow the same general layout.
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_model
 
 end module models_basic

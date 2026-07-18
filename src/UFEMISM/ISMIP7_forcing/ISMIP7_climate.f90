@@ -286,7 +286,7 @@ contains
     call init_routine( routine_name)
 
     ! Initialise all the stuff that is common to all climate models
-    call self%deallocate_climate_model()
+    call self%initialise_climate_model()
 
     ! Initialise all the stuff that is specific to climate model ISMIP7
 

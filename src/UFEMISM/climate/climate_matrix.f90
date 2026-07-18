@@ -825,7 +825,7 @@ contains
     ! SMB
     ! ===
     call SMB_dummy%allocate( region_name, mesh)
-    call SMB_dummy%initialise( SMB_dummy%ct_initialise( ice_dummy, refgeo_init_dummy, refgeo_PD_dummy))
+    call SMB_dummy%initialise( ice_dummy, refgeo_init_dummy, refgeo_PD_dummy)
 
     ! Initialisation choice
     if     (region_name == 'NAM') then

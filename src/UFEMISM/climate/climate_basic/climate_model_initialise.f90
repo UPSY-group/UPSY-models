@@ -22,9 +22,6 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Set time of next calculation to start time
-    self%t_next = C%start_time_of_run
-
     ! Downcast context class
     select type (ct => context)
     class default

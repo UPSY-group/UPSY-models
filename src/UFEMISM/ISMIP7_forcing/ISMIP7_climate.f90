@@ -309,6 +309,9 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Set time of next calculation to start time
+    self%t_next = C%start_time_of_run
+
     ! Initialise fields and baseline climate
     select case (C%climate_ISMIP7_choice_baseline)
     case default

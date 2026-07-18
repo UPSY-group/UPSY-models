@@ -84,10 +84,10 @@ contains
   subroutine SMB_model_idealised_initialise( self, ice, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(type_SMB_model_idealised),       intent(inout) :: self
-    type(type_ice_model),          target, intent(in   ) :: ice
-    type(type_reference_geometry), target, intent(in   ) :: refgeo_init
-    type(type_reference_geometry), target, intent(in   ) :: refgeo_PD
+    class(type_SMB_model_idealised), intent(inout) :: self
+    type(type_ice_model),            intent(in   ) :: ice
+    type(type_reference_geometry),   intent(in   ) :: refgeo_init
+    type(type_reference_geometry),   intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_idealised_initialise'

@@ -93,10 +93,10 @@ module SMB_model_basic
 
     subroutine SMB_model_initialise_ifc( self, ice, refgeo_init, refgeo_PD)
       import atype_SMB_model, type_ice_model, type_reference_geometry
-      class(atype_SMB_model),                intent(inout) :: self
-      type(type_ice_model),          target, intent(in   ) :: ice
-      type(type_reference_geometry), target, intent(in   ) :: refgeo_init
-      type(type_reference_geometry), target, intent(in   ) :: refgeo_PD
+      class(atype_SMB_model),        intent(inout) :: self
+      type(type_ice_model),          intent(in   ) :: ice
+      type(type_reference_geometry), intent(in   ) :: refgeo_init
+      type(type_reference_geometry), intent(in   ) :: refgeo_PD
     end subroutine SMB_model_initialise_ifc
 
     subroutine run_SMB_model_ifc( self, context)

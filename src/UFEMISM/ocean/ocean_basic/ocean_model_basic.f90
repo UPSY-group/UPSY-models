@@ -7,7 +7,7 @@ module ocean_model_basic
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
   use models_basic, only: atype_model, &
-    atype_model_context_initialise, atype_model_context_run, atype_model_context_remap
+    atype_model_context_run, atype_model_context_remap
   use ocean_model_data, only: atype_ocean_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
@@ -19,7 +19,7 @@ module ocean_model_basic
   private
 
   public :: atype_ocean_model, &
-    type_ocean_model_context_initialise, type_ocean_model_context_run, &
+    type_ocean_model_context_run, &
     type_ocean_model_context_remap
 
   type, abstract, extends(atype_ocean_model_data) :: atype_ocean_model
@@ -39,18 +39,17 @@ module ocean_model_basic
 
       procedure, public :: allocate_ocean_model
       procedure, public :: deallocate_ocean_model
-      procedure, public :: initialise_model => initialise_model_abs
+      procedure, public :: initialise_ocean_model
       procedure, public :: run_model        => run_model_abs
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(ocean_model_allocate_ifc),   deferred :: allocate
       procedure(ocean_model_deallocate_ifc), deferred :: deallocate
-      procedure(initialise_ocean_model_ifc), deferred :: initialise_ocean_model
+      procedure(ocean_model_initialise_ifc), deferred :: initialise
       procedure(run_ocean_model_ifc),        deferred :: run_ocean_model
       procedure(remap_ocean_model_ifc),      deferred :: remap_ocean_model
 
       ! Factory functions to create model context objects
-      procedure, nopass, public :: ct_initialise
       procedure, nopass, public :: ct_run
       procedure, nopass, public :: ct_remap
 
@@ -58,9 +57,6 @@ module ocean_model_basic
 
   ! Context classes for allocate/initialise/run/remap
   ! =================================================
-
-  type, extends(atype_model_context_initialise) :: type_ocean_model_context_initialise
-  end type type_ocean_model_context_initialise
 
   type, extends(atype_model_context_run) :: type_ocean_model_context_run
   end type type_ocean_model_context_run
@@ -86,11 +82,10 @@ module ocean_model_basic
       class(atype_ocean_model), intent(inout) :: self
     end subroutine ocean_model_deallocate_ifc
 
-    subroutine initialise_ocean_model_ifc( self, context)
-      import atype_ocean_model, type_ocean_model_context_initialise
-      class(atype_ocean_model),                          intent(inout) :: self
-      type(type_ocean_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_ocean_model_ifc
+    subroutine ocean_model_initialise_ifc( self)
+      import atype_ocean_model
+      class(atype_ocean_model), intent(inout) :: self
+    end subroutine ocean_model_initialise_ifc
 
     subroutine run_ocean_model_ifc( self, context)
       import atype_ocean_model, type_ocean_model_context_run
@@ -111,11 +106,6 @@ module ocean_model_basic
 
   interface
 
-    module subroutine initialise_model_abs( self, context)
-      class(atype_ocean_model),                      intent(inout) :: self
-      class(atype_model_context_initialise), target, intent(in   ) :: context
-    end subroutine initialise_model_abs
-
     module subroutine run_model_abs( self, context)
       class(atype_ocean_model),               intent(inout) :: self
       class(atype_model_context_run), target, intent(in   ) :: context
@@ -125,10 +115,6 @@ module ocean_model_basic
       class(atype_ocean_model),                 intent(inout) :: self
       class(atype_model_context_remap), target, intent(in   ) :: context
     end subroutine remap_model_abs
-
-    module function ct_initialise() result( context)
-      type(type_ocean_model_context_initialise)  :: context
-    end function ct_initialise
 
     module function ct_run( time) result( context)
       real(dp),               intent(in) :: time
@@ -227,5 +213,31 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine deallocate_ocean_model
+
+  subroutine initialise_ocean_model( self)
+    !< Initialise stuff that is common to all ocean models
+    !< (call this from your ocean model-specific allocation routine)
+
+    ! In/output variables:
+    class(atype_ocean_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_ocean_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Initialise stuff that is common to all models
+    call self%initialise_model()
+
+    ! Initialise stuff that is specific to ocean models
+
+    ! Set time of next calculation to start time
+    self%t_next = C%start_time_of_run
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_ocean_model
 
 end module ocean_model_basic

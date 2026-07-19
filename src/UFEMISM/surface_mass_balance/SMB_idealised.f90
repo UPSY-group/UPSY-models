@@ -5,12 +5,12 @@ module SMB_idealised
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_run, &
-    type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
   use Halfar_SIA_solution, only: Halfar
   use ice_model_types, only: type_ice_model
+  use climate_model_types, only: type_climate_model
   use reference_geometry_types, only: type_reference_geometry
+  use grid_types, only: type_grid
 
   implicit none
 
@@ -25,10 +25,9 @@ module SMB_idealised
       procedure, public :: allocate   => SMB_model_idealised_allocate
       procedure, public :: deallocate => SMB_model_idealised_deallocate
       procedure, public :: initialise => SMB_model_idealised_initialise
-      procedure, public :: run_SMB_model        => run_SMB_model_idealised_abs
+      procedure, public :: run        => SMB_model_idealised_run
       procedure, public :: remap_SMB_model      => remap_SMB_model_idealised_abs
 
-      procedure, private :: run_SMB_model_idealised
       procedure, private :: run_SMB_model_idealised_EISMINT1
       procedure, private :: run_SMB_model_idealised_Halfar_static
 
@@ -106,25 +105,47 @@ contains
 
   end subroutine SMB_model_idealised_initialise
 
-  subroutine run_SMB_model_idealised_abs( self, context)
+  subroutine SMB_model_idealised_run( self, time, ice, climate, grid_smooth)
 
     ! In/output variables:
-    class(type_SMB_model_idealised),          intent(inout) :: self
-    type(type_SMB_model_context_run), target, intent(in   ) :: context
+    class(type_SMB_model_idealised), intent(inout) :: self
+    real(dp),                        intent(in   ) :: time
+    type(type_ice_model),            intent(in   ) :: ice
+    type(type_climate_model),        intent(inout) :: climate
+    type(type_grid),                 intent(in   ) :: grid_smooth
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_idealised_abs'
+    character(len=*), parameter :: routine_name = 'run_SMB_model_idealised'
+    logical                     :: do_run_SMB_model
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Retrieve input variables from context object
-    call self%run_SMB_model_idealised( self%mesh, context%time)
+    ! Run all the stuff that is common to all SMB models
+    call self%run_SMB_model( time, do_run_SMB_model)
+    if (.not. do_run_SMB_model) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Run all the stuff that is specific to SMB model idealised
+
+    ! Run the chosen idealised SMB model
+    select case (C%choice_SMB_model_idealised)
+    case default
+      call crash('unknown choice_SMB_model_idealised "' // trim( C%choice_SMB_model_idealised) // '"')
+    case ('uniform')
+      self%SMB( self%mesh%vi1: self%mesh%vi2) = C%uniform_SMB
+    case ('EISMINT1_A', 'EISMINT1_B', 'EISMINT1_C', 'EISMINT1_D', 'EISMINT1_E', 'EISMINT1_F')
+      call self%run_SMB_model_idealised_EISMINT1( self%mesh, time)
+    case ('Halfar_static')
+      call self%run_SMB_model_idealised_Halfar_static( self%mesh)
+    end select
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_SMB_model_idealised_abs
+  end subroutine SMB_model_idealised_run
 
   subroutine remap_SMB_model_idealised_abs( self, context)
 
@@ -144,36 +165,6 @@ contains
   end subroutine remap_SMB_model_idealised_abs
 
 
-
-  subroutine run_SMB_model_idealised( self, mesh, time)
-
-    ! In/output variables:
-    class(type_SMB_model_idealised), intent(inout) :: self
-    type(type_mesh),                 intent(in   ) :: mesh
-    real(dp),                        intent(in   ) :: time
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_idealised'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Run the chosen idealised SMB model
-    select case (C%choice_SMB_model_idealised)
-    case default
-      call crash('unknown choice_SMB_model_idealised "' // trim( C%choice_SMB_model_idealised) // '"')
-    case ('uniform')
-      self%SMB( mesh%vi1: mesh%vi2) = C%uniform_SMB
-    case ('EISMINT1_A', 'EISMINT1_B', 'EISMINT1_C', 'EISMINT1_D', 'EISMINT1_E', 'EISMINT1_F')
-      call self%run_SMB_model_idealised_EISMINT1( mesh, time)
-    case ('Halfar_static')
-      call self%run_SMB_model_idealised_Halfar_static( mesh)
-    end select
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_SMB_model_idealised
 
   subroutine run_SMB_model_idealised_EISMINT1( self, mesh, time)
     ! Calculate the surface mass balance

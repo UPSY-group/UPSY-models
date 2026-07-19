@@ -6,13 +6,13 @@ module SMB_prescribed
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_run, &
-    type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
   use mpi_basic, only: par
   use netcdf_io_main, only: read_field_from_file_2D
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
+  use climate_model_types, only: type_climate_model
+  use grid_types, only: type_grid
 
   implicit none
 
@@ -28,10 +28,9 @@ module SMB_prescribed
       procedure, public :: allocate   => SMB_model_prescribed_allocate
       procedure, public :: deallocate => SMB_model_prescribed_deallocate
       procedure, public :: initialise => SMB_model_prescribed_initialise
-      procedure, public :: run_SMB_model        => run_SMB_model_prescribed_abs
+      procedure, public :: run        => SMB_model_prescribed_run
       procedure, public :: remap_SMB_model      => remap_SMB_model_prescribed_abs
 
-      procedure, private :: run_SMB_model_prescribed
       procedure, private :: initialise_SMB_model_prescribed_notime
 
   end type type_SMB_model_prescribed
@@ -130,48 +129,6 @@ contains
 
   end subroutine SMB_model_prescribed_initialise
 
-  subroutine run_SMB_model_prescribed_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_prescribed),         intent(inout) :: self
-    type(type_SMB_model_context_run), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_prescribed_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%run_SMB_model_prescribed( self%region_name())
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_SMB_model_prescribed_abs
-
-  subroutine remap_SMB_model_prescribed_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_prescribed),           intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_prescribed_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Re-initialise to read and remap the SMB from the input file again
-    call self%initialise( context%ice, context%refgeo_init, context%refgeo_PD)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_SMB_model_prescribed_abs
-
-
-
   subroutine initialise_SMB_model_prescribed_notime( self)
     ! Prescribe SMB from a file without a time dimension
 
@@ -229,23 +186,36 @@ contains
 
   end subroutine initialise_SMB_model_prescribed_notime
 
-  subroutine run_SMB_model_prescribed( self, region_name)
+  subroutine SMB_model_prescribed_run( self, time, ice, climate, grid_smooth)
 
     ! In/output variables:
     class(type_SMB_model_prescribed), intent(inout) :: self
-    character(len=3),                 intent(in   ) :: region_name
+    real(dp),                         intent(in   ) :: time
+    type(type_ice_model),             intent(in   ) :: ice
+    type(type_climate_model),         intent(inout) :: climate
+    type(type_grid),                  intent(in   ) :: grid_smooth
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_prescribed'
-    character(:), allocatable      :: choice_SMB_prescribed
+    character(len=*), parameter :: routine_name = 'SMB_model_prescribed_run'
+    logical                     :: do_run_SMB_model
+    character(:), allocatable   :: choice_SMB_prescribed
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Run all the stuff that is common to all SMB models
+    call self%run_SMB_model( time, do_run_SMB_model)
+    if (.not. do_run_SMB_model) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Run all the stuff that is specific to SMB model idealised
+
     ! Determine the type of prescribed SMB forcing for this region
-    select case (region_name)
+    select case (self%region_name())
     case default
-      call crash('unknown region_name "' // trim( region_name) // '"!')
+      call crash('unknown region_name "' // trim( self%region_name()) // '"!')
     case ('NAM')
       choice_SMB_prescribed  = trim( C%choice_SMB_prescribed_NAM)
     case ('EAS')
@@ -267,6 +237,26 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_SMB_model_prescribed
+  end subroutine SMB_model_prescribed_run
+
+  subroutine remap_SMB_model_prescribed_abs( self, context)
+
+    ! In/output variables:
+    class(type_SMB_model_prescribed),           intent(inout) :: self
+    type(type_SMB_model_context_remap), target, intent(in   ) :: context
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'remap_SMB_model_prescribed_abs'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Re-initialise to read and remap the SMB from the input file again
+    call self%initialise( context%ice, context%refgeo_init, context%refgeo_PD)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine remap_SMB_model_prescribed_abs
 
 end module SMB_prescribed

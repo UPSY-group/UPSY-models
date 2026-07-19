@@ -5,9 +5,7 @@ module SMB_snapshot_plus_anomalies
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_run, &
-    type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, check_time, &
@@ -17,6 +15,7 @@ module SMB_snapshot_plus_anomalies
   use climate_model_types, only: type_climate_model
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
+  use grid_types, only: type_grid
 
   implicit none
 
@@ -57,35 +56,14 @@ module SMB_snapshot_plus_anomalies
       procedure, public :: allocate   => SMB_model_snp_p_anml_allocate
       procedure, public :: deallocate => SMB_model_snp_p_anml_deallocate
       procedure, public :: initialise => SMB_model_snp_p_anml_initialise
-      procedure, public :: run_SMB_model        => run_SMB_model_snp_p_anml_abs
+      procedure, public :: run        => SMB_model_snp_p_anml_run
       procedure, public :: remap_SMB_model      => remap_SMB_model_snp_p_anml_abs
 
-      procedure, private :: run_SMB_model_snp_p_anml
       procedure, private :: update_timeframes
 
   end type type_SMB_model_snp_p_anml
 
 contains
-
-  subroutine run_SMB_model_snp_p_anml_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_snp_p_anml),          intent(inout) :: self
-    type(type_SMB_model_context_run), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_snp_p_anml_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%run_SMB_model_snp_p_anml( self%mesh, context%climate, context%time)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_SMB_model_snp_p_anml_abs
 
   subroutine remap_SMB_model_snp_p_anml_abs( self, context)
 
@@ -284,21 +262,32 @@ contains
 
   end subroutine SMB_model_snp_p_anml_initialise
 
-  subroutine run_SMB_model_snp_p_anml( self, mesh, climate, time)
+  subroutine SMB_model_snp_p_anml_run( self, time, ice, climate, grid_smooth)
 
     ! In/output variables:
     class(type_SMB_model_snp_p_anml), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
-    type(type_climate_model),         intent(inout) :: climate
     real(dp),                         intent(in   ) :: time
+    type(type_ice_model),             intent(in   ) :: ice
+    type(type_climate_model),         intent(inout) :: climate
+    type(type_grid),                  intent(in   ) :: grid_smooth
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_snp_p_anml'
-    real(dp)                       :: w0, w1
-    integer                        :: vi
+    character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_run'
+    logical                     :: do_run_SMB_model
+    real(dp)                    :: w0, w1
+    integer                     :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Run all the stuff that is common to all SMB models
+    call self%run_SMB_model( time, do_run_SMB_model)
+    if (.not. do_run_SMB_model) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Run all the stuff that is specific to SMB model idealised
 
     ! If the current model time falls outside the enveloping window
     ! of the two timeframes that have been read, update them
@@ -310,7 +299,7 @@ contains
     w0 = (self%anomaly_t1 - time) / (self%anomaly_t1 - self%anomaly_t0)
     w1 = 1._dp - w0
 
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Note that the baseline and the applied temperature are monthly, but the anomaly is annual
       self%T2m_anomaly( vi) = w0 * self%T2m_anomaly_0( vi) + w1 * self%T2m_anomaly_1( vi)
@@ -328,7 +317,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine run_SMB_model_snp_p_anml
+  end subroutine SMB_model_snp_p_anml_run
 
   subroutine update_timeframes( self, time)
 

@@ -7,8 +7,7 @@ module calving_model_basic
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use models_basic, only: atype_model, &
-    atype_model_context_run, atype_model_context_remap
+  use models_basic, only: atype_model, atype_model_context_remap
   use calving_model_data, only: atype_calving_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
@@ -21,9 +20,7 @@ module calving_model_basic
 
   private
 
-  public :: atype_calving_model, &
-    type_calving_model_context_run, &
-    type_calving_model_context_remap
+  public :: atype_calving_model, type_calving_model_context_remap
 
   type, abstract, extends(atype_calving_model_data) :: atype_calving_model
     !< Stuff that is common to all calving models
@@ -43,28 +40,22 @@ module calving_model_basic
       procedure, public :: allocate_calving_model
       procedure, public :: deallocate_calving_model
       procedure, public :: initialise_calving_model
-      procedure, public :: run_model        => run_model_abs
+      procedure, public :: run_calving_model
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(calving_model_allocate_ifc),   deferred :: allocate
       procedure(calving_model_deallocate_ifc), deferred :: deallocate
       procedure(calving_model_initialise_ifc), deferred :: initialise
-      procedure(run_calving_model_ifc),        deferred :: run_calving_model
+      procedure(calving_model_run_ifc),        deferred :: run
       procedure(remap_calving_model_ifc),      deferred :: remap_calving_model
 
       ! Factory functions to create model context objects
-      procedure, nopass, public :: ct_run
       procedure, nopass, public :: ct_remap
 
   end type atype_calving_model
 
   ! Context classes for allocate/initialise/run/remap
   ! =================================================
-
-  type, extends(atype_model_context_run) :: type_calving_model_context_run
-    type(type_ice_model),        pointer :: ice
-    type(type_ice_geometry),     pointer :: icegeom
-  end type type_calving_model_context_run
 
   type, extends(atype_model_context_remap) :: type_calving_model_context_remap
   end type type_calving_model_context_remap
@@ -92,11 +83,10 @@ module calving_model_basic
       class(atype_calving_model), intent(inout) :: self
     end subroutine calving_model_initialise_ifc
 
-    subroutine run_calving_model_ifc( self, context)
-      import atype_calving_model, type_calving_model_context_run
-      class(atype_calving_model),                   intent(inout) :: self
-      type(type_calving_model_context_run), target, intent(in   ) :: context
-    end subroutine run_calving_model_ifc
+    subroutine calving_model_run_ifc( self)
+      import atype_calving_model
+      class(atype_calving_model), intent(inout) :: self
+    end subroutine calving_model_run_ifc
 
     subroutine remap_calving_model_ifc( self, context)
       import atype_calving_model, type_calving_model_context_remap
@@ -111,22 +101,10 @@ module calving_model_basic
 
   interface
 
-    module subroutine run_model_abs( self, context)
-      class(atype_calving_model),             intent(inout) :: self
-      class(atype_model_context_run), target, intent(in   ) :: context
-    end subroutine run_model_abs
-
     module subroutine remap_model_abs( self, context)
       class(atype_calving_model),               intent(inout) :: self
       class(atype_model_context_remap), target, intent(in   ) :: context
     end subroutine remap_model_abs
-
-    module function ct_run( time, ice, icegeom) result( context)
-      real(dp),                         intent(in) :: time
-      type(type_ice_model),     target, intent(in) :: ice
-      type(type_ice_geometry),  target, intent(in) :: icegeom
-      type(type_calving_model_context_run)         :: context
-    end function ct_run
 
     module function ct_remap( mesh_new) result( context)
       type(type_mesh),               target, intent(in) :: mesh_new
@@ -139,7 +117,7 @@ contains
 
   subroutine allocate_calving_model( self, name, region_name, mesh, nz)
     !< Allocate stuff that is common to all calving models
-    !< (call this from your calving model-specific allocation routine)
+    !< (call this from your calving model-specific allocate routine)
 
     ! In/output variables:
     class(atype_calving_model), intent(inout) :: self
@@ -173,7 +151,7 @@ contains
 
   subroutine deallocate_calving_model( self)
     !< Deallocate stuff that is common to all calving models
-    !< (call this from your calving model-specific allocation routine)
+    !< (call this from your calving model-specific deallocate routine)
 
     ! In/output variables:
     class(atype_calving_model), intent(inout) :: self
@@ -197,6 +175,8 @@ contains
   end subroutine deallocate_calving_model
 
   subroutine initialise_calving_model( self)
+    !< Initialise stuff that is common to all calving models
+    !< (call this from your calving model-specific initiaise routine)
 
     ! In/output variables:
     class(atype_calving_model), intent(inout) :: self
@@ -219,5 +199,28 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_calving_model
+
+  subroutine run_calving_model( self)
+    !< Run stuff that is common to all calving models
+    !< (call this from your calving model-specific run routine)
+
+    ! In/output variables:
+    class(atype_calving_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'run_calving_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Run stuff that is common to all models
+    call self%run_model()
+
+    ! Run stuff that is specific to calving models
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_calving_model
 
 end module calving_model_basic

@@ -63,8 +63,7 @@ module ISMIP7_climate
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
-  use climate_model_basic, only: atype_climate_model, &
-    type_climate_model_context_run, type_climate_model_context_remap
+  use climate_model_basic, only: atype_climate_model, type_climate_model_context_remap
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
 
   implicit none
@@ -99,10 +98,9 @@ module ISMIP7_climate
       procedure, public :: allocate   => climate_model_ISMIP7_allocate
       procedure, public :: deallocate => climate_model_ISMIP7_deallocate
       procedure, public :: initialise => climate_model_ISMIP7_initialise
-      procedure, public :: run_climate_model        => run_climate_model_ISMIP7_abs
+      procedure, public :: run        => climate_model_ISMIP7_run
       procedure, public :: remap_climate_model      => remap_climate_model_ISMIP7_abs
 
-      procedure, private :: run_climate_model_ISMIP7
       ! procedure, private :: remap_climate_model_ISMIP7
 
       procedure, private :: initialise_climate_baseline_fixed
@@ -110,26 +108,6 @@ module ISMIP7_climate
   end type type_climate_model_ISMIP7
 
 contains
-
-  subroutine run_climate_model_ISMIP7_abs( self, context)
-
-    ! In/output variables:
-    class(type_climate_model_ISMIP7),             intent(inout) :: self
-    type(type_climate_model_context_run), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_climate_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%run_climate_model_ISMIP7( self%mesh, context%ice, context%time)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_climate_model_ISMIP7_abs
 
   subroutine remap_climate_model_ISMIP7_abs( self, context)
 
@@ -352,25 +330,34 @@ contains
 
   end subroutine initialise_climate_baseline_fixed
 
-  subroutine run_climate_model_ISMIP7( self, mesh, ice, time)
+  subroutine climate_model_ISMIP7_run( self, ice, time)
 
     ! In/output variables:
     class(type_climate_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
     type(type_ice_model),             intent(in   ) :: ice
     real(dp),                         intent(in   ) :: time
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_climate_model_ISMIP7'
+    character(len=*), parameter :: routine_name = 'climate_model_ISMIP7_run'
+    logical                     :: do_run_climate_model
     integer                     :: vi, mi
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Calculate elevation-based T2m correction
-    call self%dtsdz%update_and_interpolate( mesh, time)
+    ! Run all the stuff that is common to all climate models
+    call self%run_climate_model( time, do_run_climate_model)
+    if (.not. do_run_climate_model) then
+      call finalise_routine( routine_name)
+      return
+    end if
 
-    do vi = mesh%vi1, mesh%vi2
+    ! Run all the stuff that is specific to climate model ISMIP7
+
+    ! Calculate elevation-based T2m correction
+    call self%dtsdz%update_and_interpolate( self%mesh, time)
+
+    do vi = self%mesh%vi1, self%mesh%vi2
       self%delta_z ( vi) = ice%Hs( vi) - self%Hs_baseline ( vi)
       self%delta_ts( vi) = self%delta_z( vi) * self%dtsdz%val_interp( vi)
     end do
@@ -382,11 +369,11 @@ contains
     case ('yearly')
 
       ! Update and interpolate timeframes
-      call self%tas%update_and_interpolate( mesh, time)
-      call self%pr%update_and_interpolate ( mesh, time)
+      call self%tas%update_and_interpolate( self%mesh, time)
+      call self%pr%update_and_interpolate ( self%mesh, time)
 
       ! Calculate monthly climate
-      do vi = mesh%vi1, mesh%vi2
+      do vi = self%mesh%vi1, self%mesh%vi2
         do mi = 1, 12
           self%T2m   ( vi, mi) = self%tas%val_interp( vi, mi) + self%delta_ts( vi)
           self%Precip( vi, mi) = self%pr%val_interp ( vi, mi)
@@ -396,11 +383,11 @@ contains
     case ('fixed')
 
       ! Update and interpolate timeframes
-      call self%tas_anomaly%update_and_interpolate( mesh, time)
-      call self%pr_anomaly%update_and_interpolate ( mesh, time)
+      call self%tas_anomaly%update_and_interpolate( self%mesh, time)
+      call self%pr_anomaly%update_and_interpolate ( self%mesh, time)
 
       ! Calculate monthly climate
-      do vi = mesh%vi1, mesh%vi2
+      do vi = self%mesh%vi1, self%mesh%vi2
         do mi = 1, 12
           self%T2m   ( vi, mi) =             self%T2m_baseline   ( vi, mi) + self%tas_anomaly%val_interp( vi, mi) + self%delta_ts( vi)
           self%Precip( vi, mi) = max( 0._dp, self%Precip_baseline( vi, mi) + self%pr_anomaly%val_interp ( vi, mi))   ! Must be positive
@@ -412,6 +399,6 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_climate_model_ISMIP7
+  end subroutine climate_model_ISMIP7_run
 
 end module ISMIP7_climate

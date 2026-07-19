@@ -117,7 +117,7 @@ contains
     C%refgeo_idealised_Halfar_R0 = 500e3_dp
     C%uniform_Glens_flow_factor  = 1e-16_dp
     time = 0._dp
-    call SMB%run( SMB%ct_run( time, ice, climate, grid_smooth))
+    call SMB%run( time, ice, climate, grid_smooth)
 
     ! Verify that it worked
     test_result = .true.
@@ -224,6 +224,7 @@ contains
     integer                               :: vi, m
     real(dp)                              :: rp
     class(atype_SMB_model), allocatable   :: SMB
+    real(dp)                              :: time
     type(type_ice_model)         , target :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
@@ -273,7 +274,8 @@ contains
     call create_SMB_model( SMB, 'IMAU-ITM')
     call SMB%allocate( 'ANT', mesh)
     call SMB%initialise( ice, refgeo_init, refgeo_PD)
-    call SMB%run       ( SMB%ct_run( 0._dp, ice, climate, grid_smooth))
+    time = 0._dp
+    call SMB%run( time, ice, climate, grid_smooth)
 
     ! Verify that it worked
     SMB_min = minval( SMB%SMB)

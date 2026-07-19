@@ -115,10 +115,10 @@ CONTAINS
       class default
         call crash('choice_climate_model = SMB_snapshot_plus_anomalies only works when choice_SMB_model = snapshot_plus_anomalies')
       class is (type_SMB_model_snp_p_anml)
-        call snapshot_plus_anomalies%run( snapshot_plus_anomalies%ct_run( time, ice, climate, grid))
+        call snapshot_plus_anomalies%run( time, ice, climate, grid)
       end select
     case ('ISMIP7')
-      call climate%ISMIP7%run( climate%ISMIP7%ct_run( time, ice))
+      call climate%ISMIP7%run( ice, time)
       climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%ISMIP7%T2m   ( mesh%vi1:mesh%vi2,:)
       climate%Precip( mesh%vi1:mesh%vi2,:) = climate%ISMIP7%Precip( mesh%vi1:mesh%vi2,:)
     CASE DEFAULT

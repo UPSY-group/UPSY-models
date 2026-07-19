@@ -6,9 +6,7 @@ module SMB_IMAU_ITM
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_run, &
-    type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -19,6 +17,7 @@ module SMB_IMAU_ITM
   use climate_model_utilities, only: get_insolation_at_time
   use climate_realistic, only: initialise_insolation_forcing
   use reference_geometry_types, only: type_reference_geometry
+  use grid_types, only: type_grid
 
   implicit none
 
@@ -67,36 +66,15 @@ module SMB_IMAU_ITM
       procedure, public :: allocate   => SMB_model_IMAU_ITM_allocate
       procedure, public :: deallocate => SMB_model_IMAU_ITM_deallocate
       procedure, public :: initialise => SMB_model_IMAU_ITM_initialise
-      procedure, public :: run_SMB_model        => run_SMB_model_IMAU_ITM_abs
+      procedure, public :: run        => SMB_model_IMAU_ITM_run
       procedure, public :: remap_SMB_model      => remap_SMB_model_IMAU_ITM_abs
 
       procedure, private :: initialise_IMAU_ITM_firn_from_file
-      procedure, private :: run_SMB_model_IMAU_ITM
       procedure, private :: remap_SMB_model_IMAU_ITM
 
   end type type_SMB_model_IMAU_ITM
 
 contains
-
-  subroutine run_SMB_model_IMAU_ITM_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_IMAU_ITM),           intent(inout) :: self
-    type(type_SMB_model_context_run), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_IMAU_ITM_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%run_SMB_model_IMAU_ITM( self%mesh, context%ice, context%climate, context%time, self%region_name())
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_SMB_model_IMAU_ITM_abs
 
   subroutine remap_SMB_model_IMAU_ITM_abs( self, context)
 
@@ -410,42 +388,51 @@ contains
 
   end subroutine initialise_IMAU_ITM_firn_from_file
 
-  subroutine run_SMB_model_IMAU_ITM( self, mesh, ice, climate, time, region_name)
+  subroutine SMB_model_IMAU_ITM_run( self, time, ice, climate, grid_smooth)
 
     ! NOTE: all the SMB components are in meters of water equivalent;
     !       the end result (SMB_monthly and SMB) are in meters of ice equivalent.
 
     ! In/output variables:
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    type(type_mesh),                intent(in   ) :: mesh
+    real(dp),                       intent(in   ) :: time
     type(type_ice_model),           intent(in   ) :: ice
     type(type_climate_model),       intent(inout) :: climate
-    REAL(dp),                       intent(in   ) :: time
-    character(len=3),               intent(in   ) :: region_name
+    type(type_grid),                intent(in   ) :: grid_smooth
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_SMB_model_IMAU_ITM'
-    integer                        :: vi
-    integer                        :: m, mprev
-    real(dp)                       :: snowfrac, liquid_water, sup_imp_wat
-    real(dp)                       :: timeframe_init_insolation
+    character(len=*), parameter       :: routine_name = 'SMB_model_IMAU_ITM_run'
+    logical                           :: do_run_SMB_model
+    integer                           :: vi
+    integer                           :: m, mprev
+    real(dp)                          :: snowfrac, liquid_water, sup_imp_wat
+    real(dp)                          :: timeframe_init_insolation
     type(type_climate_model_snapshot) :: snapshot_dummy
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Run all the stuff that is common to all SMB models
+    call self%run_SMB_model( time, do_run_SMB_model)
+    if (.not. do_run_SMB_model) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Run all the stuff that is specific to SMB model idealised
+
     ! Initialise insolation if needed
     if (.not. allocated(climate%Q_TOA)) then
-      allocate( climate%Q_TOA  ( mesh%vi1:mesh%vi2, 12),source=0.0_dp)
-      CALL initialise_insolation_forcing( snapshot_dummy, mesh)
+      allocate( climate%Q_TOA  ( self%mesh%vi1:self%mesh%vi2, 12),source=0.0_dp)
+      CALL initialise_insolation_forcing( snapshot_dummy, self%mesh)
 
       IF (C%start_time_of_run < 0._dp) THEN
         timeframe_init_insolation = C%start_time_of_run
       ELSE
         timeframe_init_insolation = 0._dp
       END IF
-      CALL get_insolation_at_time( mesh, timeframe_init_insolation, snapshot_dummy)
-      do vi = mesh%vi1, mesh%vi2
+      CALL get_insolation_at_time( self%mesh, timeframe_init_insolation, snapshot_dummy)
+      do vi = self%mesh%vi1, self%mesh%vi2
         do m=1,12
           climate%Q_TOA(vi, m) = snapshot_dummy%Q_TOA(vi, m)
         end do
@@ -453,7 +440,7 @@ contains
     else
     end if
 
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Background albedo
       self%AlbedoSurf( vi) = self%albedo_soil
@@ -525,13 +512,13 @@ contains
     end do
 
     ! Convert final SMB from water to ice equivalent
-    self%SMB_monthly( mesh%vi1:mesh%vi2,:) = self%SMB_monthly(  mesh%vi1:mesh%vi2,:) * 1000._dp / ice_density
-    self%SMB(         mesh%vi1:mesh%vi2  ) = self%SMB(          mesh%vi1:mesh%vi2  ) * 1000._dp / ice_density
+    self%SMB_monthly( self%mesh%vi1:self%mesh%vi2,:) = self%SMB_monthly(  self%mesh%vi1:self%mesh%vi2,:) * 1000._dp / ice_density
+    self%SMB(         self%mesh%vi1:self%mesh%vi2  ) = self%SMB(          self%mesh%vi1:self%mesh%vi2  ) * 1000._dp / ice_density
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_SMB_model_IMAU_ITM
+  end subroutine SMB_model_IMAU_ITM_run
 
   subroutine remap_SMB_model_IMAU_ITM( self, mesh_new)
 

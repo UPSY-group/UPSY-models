@@ -7,8 +7,7 @@ module climate_model_basic
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use models_basic, only: atype_model, &
-    atype_model_context_run, atype_model_context_remap
+  use models_basic, only: atype_model, atype_model_context_remap
   use climate_model_data, only: atype_climate_model_data
   use mpi_f08, only: MPI_WIN
   use ice_model_types, only: type_ice_model
@@ -18,9 +17,7 @@ module climate_model_basic
 
   private
 
-  public :: atype_climate_model, &
-    type_climate_model_context_run, &
-    type_climate_model_context_remap
+  public :: atype_climate_model, type_climate_model_context_remap
 
   type, abstract, extends(atype_climate_model_data) :: atype_climate_model
     !< Stuff that is common to all climate models
@@ -40,27 +37,22 @@ module climate_model_basic
       procedure, public :: allocate_climate_model
       procedure, public :: deallocate_climate_model
       procedure, public :: initialise_climate_model
-      procedure, public :: run_model        => run_model_abs
+      procedure, public :: run_climate_model
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(climate_model_allocate_ifc),   deferred :: allocate
       procedure(climate_model_deallocate_ifc), deferred :: deallocate
       procedure(climate_model_initialise_ifc), deferred :: initialise
-      procedure(run_climate_model_ifc),        deferred :: run_climate_model
+      procedure(climate_model_run_ifc),        deferred :: run
       procedure(remap_climate_model_ifc),      deferred :: remap_climate_model
 
       ! Factory functions to create model context objects
-      procedure, nopass, public :: ct_run
       procedure, nopass, public :: ct_remap
 
   end type atype_climate_model
 
   ! Context classes for allocate/initialise/run/remap
   ! =================================================
-
-  type, extends(atype_model_context_run) :: type_climate_model_context_run
-    type(type_ice_model), pointer :: ice
-  end type type_climate_model_context_run
 
   type, extends(atype_model_context_remap) :: type_climate_model_context_remap
   end type type_climate_model_context_remap
@@ -89,11 +81,12 @@ module climate_model_basic
       type(type_reference_geometry), intent(in   ) :: refgeo_init
     end subroutine climate_model_initialise_ifc
 
-    subroutine run_climate_model_ifc( self, context)
-      import atype_climate_model, type_climate_model_context_run
-      class(atype_climate_model),                   intent(inout) :: self
-      type(type_climate_model_context_run), target, intent(in   ) :: context
-    end subroutine run_climate_model_ifc
+    subroutine climate_model_run_ifc( self, ice, time)
+      import atype_climate_model, type_ice_model, dp
+      class(atype_climate_model), intent(inout) :: self
+      type(type_ice_model),       intent(in   ) :: ice
+      real(dp),                   intent(in   ) :: time
+    end subroutine climate_model_run_ifc
 
     subroutine remap_climate_model_ifc( self, context)
       import atype_climate_model, type_climate_model_context_remap
@@ -108,21 +101,10 @@ module climate_model_basic
 
   interface
 
-    module subroutine run_model_abs( self, context)
-      class(atype_climate_model),             intent(inout) :: self
-      class(atype_model_context_run), target, intent(in   ) :: context
-    end subroutine run_model_abs
-
     module subroutine remap_model_abs( self, context)
       class(atype_climate_model),               intent(inout) :: self
       class(atype_model_context_remap), target, intent(in   ) :: context
     end subroutine remap_model_abs
-
-    module function ct_run( time, ice) result( context)
-      real(dp),                         intent(in) :: time
-      type(type_ice_model),     target, intent(in) :: ice
-      type(type_climate_model_context_run)         :: context
-    end function ct_run
 
     module function ct_remap( mesh_new) result( context)
       type(type_mesh), target,    intent(in) :: mesh_new
@@ -135,7 +117,7 @@ contains
 
   subroutine allocate_climate_model( self, name, region_name, mesh)
     !< Allocate stuff that is common to all climate models
-    !< (call this from your climate model-specific allocation routine)
+    !< (call this from your climate model-specific allocate routine)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
@@ -175,7 +157,7 @@ contains
 
   subroutine deallocate_climate_model( self)
     !< Deallocate stuff that is common to all climate models
-    !< (call this from your climate model-specific allocation routine)
+    !< (call this from your climate model-specific deallocate routine)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
@@ -201,7 +183,7 @@ contains
 
   subroutine initialise_climate_model( self)
     !< Initialise stuff that is common to all climate models
-    !< (call this from your climate model-specific allocation routine)
+    !< (call this from your climate model-specific initialise routine)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
@@ -224,5 +206,55 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_climate_model
+
+  subroutine run_climate_model( self, time, do_run_climate_model)
+    !< Run stuff that is common to all climate models
+    !< (call this from your climate model-specific run routine)
+
+    ! In/output variables:
+    class(atype_climate_model), intent(inout) :: self
+    real(dp),                   intent(in   ) :: time
+    logical,                    intent(  out) :: do_run_climate_model
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'run_climate_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Run stuff that is common to all models
+    call self%run_model()
+
+    ! Run stuff that is specific to climate models
+
+    ! Check if we need to calculate a new climate
+    do_run_climate_model = .false.
+    if (C%do_asynchronous_climate) then
+      ! Asynchronous coupling: do not calculate a new climate in
+      ! every model loop, but only at its own separate time step
+
+      ! Check if this is the next climate time step
+      if (time == self%t_next) then
+        ! Go on to calculate a new climate
+        do_run_climate_model = .true.
+        self%t_next = time + C%dt_climate
+      elseif (time > self%t_next) then
+        ! This should not be possible
+        call crash('overshot the climate time step')
+      else
+        ! It is not yet time to calculate a new climate
+        do_run_climate_model = .false.
+      end if
+
+    else
+      ! Synchronous coupling: calculate a new climate in every model loop
+      do_run_climate_model = .true.
+      self%t_next = time + C%dt_climate
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_climate_model
 
 end module climate_model_basic

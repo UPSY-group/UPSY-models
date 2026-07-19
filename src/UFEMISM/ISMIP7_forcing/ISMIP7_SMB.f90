@@ -42,9 +42,7 @@ module ISMIP7_SMB
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_run, &
-    type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -53,6 +51,8 @@ module ISMIP7_SMB
   use parameters, only: sec_per_year, ice_density, NaN, freshwater_density
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
   use netcdf_io_main, only: read_field_from_file_2d
+  use climate_model_types, only: type_climate_model
+  use grid_types, only: type_grid
 
   implicit none
 
@@ -88,10 +88,9 @@ module ISMIP7_SMB
       procedure, public :: allocate   => SMB_model_ISMIP7_allocate
       procedure, public :: deallocate => SMB_model_ISMIP7_deallocate
       procedure, public :: initialise => SMB_model_ISMIP7_initialise
-      procedure, public :: run_SMB_model        => run_SMB_model_ISMIP7_abs
+      procedure, public :: run        => SMB_model_ISMIP7_run
       procedure, public :: remap_SMB_model      => remap_SMB_model_ISMIP7_abs
 
-      procedure, private :: run_SMB_model_ISMIP7
       ! procedure, private :: remap_SMB_model_ISMIP7
 
       procedure, private :: initialise_SMB_baseline_fixed
@@ -99,26 +98,6 @@ module ISMIP7_SMB
   end type type_SMB_model_ISMIP7
 
 contains
-
-  subroutine run_SMB_model_ISMIP7_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_ISMIP7),             intent(inout) :: self
-    type(type_SMB_model_context_run), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_SMB_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%run_SMB_model_ISMIP7( self%mesh, context%ice, context%time)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_SMB_model_ISMIP7_abs
 
   subroutine remap_SMB_model_ISMIP7_abs( self, context)
 
@@ -367,26 +346,37 @@ contains
 
   end subroutine initialise_SMB_baseline_fixed
 
-  subroutine run_SMB_model_ISMIP7( self, mesh, ice, time)
+  subroutine SMB_model_ISMIP7_run( self, time, ice, climate, grid_smooth)
 
     ! In/output variables:
     class(type_SMB_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),              intent(in   ) :: mesh
-    type(type_ice_model),         intent(in   ) :: ice
     real(dp),                     intent(in   ) :: time
+    type(type_ice_model),         intent(in   ) :: ice
+    type(type_climate_model),     intent(inout) :: climate
+    type(type_grid),              intent(in   ) :: grid_smooth
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_SMB_model_ISMIP7'
+    character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_run'
+    logical                     :: do_run_SMB_model
     real(dp)                    :: delta_z
     integer                     :: vi, mi
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Calculate elevation-based T2m correction
-    call self%dacabfdz%update_and_interpolate( mesh, time)
+    ! Run all the stuff that is common to all SMB models
+    call self%run_SMB_model( time, do_run_SMB_model)
+    if (.not. do_run_SMB_model) then
+      call finalise_routine( routine_name)
+      return
+    end if
 
-    do vi = mesh%vi1, mesh%vi2
+    ! Run all the stuff that is specific to SMB model idealised
+
+    ! Calculate elevation-based T2m correction
+    call self%dacabfdz%update_and_interpolate( self%mesh, time)
+
+    do vi = self%mesh%vi1, self%mesh%vi2
       self%delta_z  ( vi) = ice%Hs( vi) - self%Hs_baseline ( vi)
       self%delta_SMB( vi) = self%delta_z( vi) * self%dacabfdz%val_interp( vi)
     end do
@@ -398,10 +388,10 @@ contains
     case ('yearly')
 
       ! Update and interpolate timeframes
-      call self%acabf%update_and_interpolate( mesh, time)
+      call self%acabf%update_and_interpolate( self%mesh, time)
 
       ! Calculate monthly SMB
-      do vi = mesh%vi1, mesh%vi2
+      do vi = self%mesh%vi1, self%mesh%vi2
         do mi = 1, 12
                                       ! Divide delta by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
           self%SMB_monthly( vi, mi) = self%acabf%val_interp( vi, mi) + self%delta_SMB( vi) / 12._dp
@@ -411,10 +401,10 @@ contains
     case ('fixed')
 
       ! Update and interpolate timeframes
-      call self%acabf_anomaly%update_and_interpolate( mesh, time)
+      call self%acabf_anomaly%update_and_interpolate( self%mesh, time)
 
       ! Calculate monthly climate
-      do vi = mesh%vi1, mesh%vi2
+      do vi = self%mesh%vi1, self%mesh%vi2
         do mi = 1, 12
                                       ! Divide baseline and delta by 12 to convert from [m.i.e. yr^-1] to [m.i.e. month^-1]
           self%SMB_monthly( vi, mi) = (self%SMB_baseline( vi) + self%delta_SMB( vi)) / 12._dp + self%acabf_anomaly%val_interp( vi, mi)
@@ -424,13 +414,13 @@ contains
     end select
 
     ! Calculate yearly SMB by summing all monthly values
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
       self%SMB( vi) = sum( self%SMB_monthly( vi,:))
     end do
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_SMB_model_ISMIP7
+  end subroutine SMB_model_ISMIP7_run
 
 end module ISMIP7_SMB

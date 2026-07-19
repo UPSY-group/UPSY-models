@@ -111,7 +111,7 @@ contains
     class(type_SMB_model_idealised), intent(inout) :: self
     real(dp),                        intent(in   ) :: time
     type(type_ice_model),            intent(in   ) :: ice
-    type(type_climate_model),        intent(in   ) :: climate
+    type(type_climate_model),        intent(inout) :: climate
     type(type_grid),                 intent(in   ) :: grid_smooth
 
     ! Local variables:

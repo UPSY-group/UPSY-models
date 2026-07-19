@@ -94,7 +94,7 @@ module SMB_model_basic
       class(atype_SMB_model),   intent(inout) :: self
       real(dp),                 intent(in   ) :: time
       type(type_ice_model),     intent(in   ) :: ice
-      type(type_climate_model), intent(in   ) :: climate
+      type(type_climate_model), intent(inout) :: climate
       type(type_grid),          intent(in   ) :: grid_smooth
     end subroutine SMB_model_run_ifc
 

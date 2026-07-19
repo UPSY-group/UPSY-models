@@ -6,7 +6,7 @@ module SMB_IMAU_ITM
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -67,35 +67,13 @@ module SMB_IMAU_ITM
       procedure, public :: deallocate => SMB_model_IMAU_ITM_deallocate
       procedure, public :: initialise => SMB_model_IMAU_ITM_initialise
       procedure, public :: run        => SMB_model_IMAU_ITM_run
-      procedure, public :: remap_SMB_model      => remap_SMB_model_IMAU_ITM_abs
+      procedure, public :: remap      => SMB_model_IMAU_ITM_remap
 
       procedure, private :: initialise_IMAU_ITM_firn_from_file
-      procedure, private :: remap_SMB_model_IMAU_ITM
 
   end type type_SMB_model_IMAU_ITM
 
 contains
-
-  subroutine remap_SMB_model_IMAU_ITM_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_IMAU_ITM),             intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_IMAU_ITM_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call self%remap_SMB_model_IMAU_ITM( context%mesh_new)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_SMB_model_IMAU_ITM_abs
-
-
 
   subroutine SMB_model_IMAU_ITM_allocate( self, region_name, mesh)
 
@@ -520,18 +498,25 @@ contains
 
   end subroutine SMB_model_IMAU_ITM_run
 
-  subroutine remap_SMB_model_IMAU_ITM( self, mesh_new)
+  subroutine SMB_model_IMAU_ITM_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
 
     ! In/output variables
-    class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    type(type_mesh),                intent(in   ) :: mesh_new
+    class(type_SMB_model_IMAU_ITM),        intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_IMAU_ITM'
-    character(:), allocatable      :: choice_SMB_IMAU_ITM
+    character(len=*), parameter :: routine_name = 'SMB_model_IMAU_ITM_remap'
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Remap all the stuff that is common to all SMB models
+    call self%remap_SMB_model( mesh_new)
+
+    ! Remap all the stuff that is specific to SMB model IMAU_ITM
 
     call self%remap_field( mesh_new, 'AlbedoSurf'      , self%AlbedoSurf       )
     call self%remap_field( mesh_new, 'MeltPreviousYear', self%MeltPreviousYear )
@@ -550,6 +535,6 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap_SMB_model_IMAU_ITM
+  end subroutine SMB_model_IMAU_ITM_remap
 
 end module SMB_IMAU_ITM

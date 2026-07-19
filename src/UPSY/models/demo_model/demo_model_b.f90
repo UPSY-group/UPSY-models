@@ -6,9 +6,7 @@ module demo_model_b
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use demo_model_basic, only: atype_demo_model, &
-    type_demo_model_context_run, &
-    type_demo_model_context_remap
+  use demo_model_basic, only: atype_demo_model, type_demo_model_context_remap
   use mpi_f08, only: MPI_WIN
 
   implicit none
@@ -28,7 +26,7 @@ module demo_model_b
       procedure, public :: allocate   => demo_model_b_allocate
       procedure, public :: deallocate => demo_model_b_deallocate
       procedure, public :: initialise => demo_model_b_initialise
-      procedure, public :: run_demo_model        => run_demo_model_b_abs
+      procedure, public :: run        => demo_model_b_run
       procedure, public :: remap_demo_model      => remap_demo_model_b_abs
 
   end type type_demo_model_b
@@ -115,45 +113,30 @@ contains
 
   end subroutine demo_model_b_initialise
 
-  subroutine run_demo_model_b_abs( self, context)
-
-    ! In/output variables:
-    class(type_demo_model_b),                  intent(inout) :: self
-    type(type_demo_model_context_run), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_demo_model_b_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call run_demo_model_b( self, self%mesh, context%H_new)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine run_demo_model_b_abs
-
-  subroutine run_demo_model_b( self, mesh, H_new)
+  subroutine demo_model_b_run( self, H_new, dH)
 
     ! In/output variables:
     class(type_demo_model_b), intent(inout) :: self
-    type(type_mesh),          intent(in   ) :: mesh
     real(dp),                 intent(in   ) :: H_new
+    real(dp),                 intent(in   ) :: dH
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'run_demo_model_b'
+    character(len=*), parameter :: routine_name = 'demo_model_b_run'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    self%H( mesh%vi1: mesh%vi2) = H_new
+    ! Run all the stuff that is common to all demo models
+    call self%run_demo_model()
+
+    ! Run all the stuff that is specific to demo model b
+
+    self%H( self%mesh%vi1: self%mesh%vi2) = H_new
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_demo_model_b
+  end subroutine demo_model_b_run
 
   subroutine remap_demo_model_b_abs( self, context)
 

@@ -258,13 +258,12 @@ contains
 
   end subroutine initialise_demo_model
 
-  subroutine run_demo_model( self, H0)
+  subroutine run_demo_model( self)
     !< Run stuff that is common to all demo models
     !< (call this from your demo model-specific run routine)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
-    real(dp),                intent(in   ) :: H0
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_demo_model'

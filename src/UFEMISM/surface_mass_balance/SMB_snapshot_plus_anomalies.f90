@@ -5,7 +5,7 @@ module SMB_snapshot_plus_anomalies
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, check_time, &
@@ -57,47 +57,13 @@ module SMB_snapshot_plus_anomalies
       procedure, public :: deallocate => SMB_model_snp_p_anml_deallocate
       procedure, public :: initialise => SMB_model_snp_p_anml_initialise
       procedure, public :: run        => SMB_model_snp_p_anml_run
-      procedure, public :: remap_SMB_model      => remap_SMB_model_snp_p_anml_abs
+      procedure, public :: remap      => SMB_model_snp_p_anml_remap
 
       procedure, private :: update_timeframes
 
   end type type_SMB_model_snp_p_anml
 
 contains
-
-  subroutine remap_SMB_model_snp_p_anml_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_snp_p_anml),           intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_snp_p_anml_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remap data fields
-    call self%remap_field( context%mesh_new, 'T2m_baseline' , self%T2m_baseline)
-    call self%remap_field( context%mesh_new, 'SMB_baseline' , self%SMB_baseline)
-    call self%remap_field( context%mesh_new, 'T2m_anomaly_0', self%T2m_anomaly_0)
-    call self%remap_field( context%mesh_new, 'SMB_anomaly_0', self%SMB_anomaly_0)
-    call self%remap_field( context%mesh_new, 'T2m_anomaly_1', self%T2m_anomaly_1)
-    call self%remap_field( context%mesh_new, 'SMB_anomaly_1', self%SMB_anomaly_1)
-    call self%remap_field( context%mesh_new, 'T2m_anomaly'  , self%T2m_anomaly)
-    call self%remap_field( context%mesh_new, 'SMB_anomaly'  , self%SMB_anomaly)
-    call self%remap_field( context%mesh_new, 'T2m'          , self%T2m)
-
-    ! Re-initialise and update timeframes
-    call self%initialise( context%ice, context%refgeo_init, context%refgeo_PD)
-    call self%update_timeframes( context%time)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_SMB_model_snp_p_anml_abs
-
-
 
   subroutine SMB_model_snp_p_anml_allocate( self, region_name, mesh)
 
@@ -386,5 +352,44 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine update_timeframes
+
+  subroutine SMB_model_snp_p_anml_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+
+    ! In/output variables:
+    class(type_SMB_model_snp_p_anml),      intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_remap'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remap all the stuff that is common to all SMB models
+    call self%remap_SMB_model( mesh_new)
+
+    ! Remap all the stuff that is specific to SMB model snp_p_anml
+
+    call self%remap_field( mesh_new, 'T2m_baseline' , self%T2m_baseline)
+    call self%remap_field( mesh_new, 'SMB_baseline' , self%SMB_baseline)
+    call self%remap_field( mesh_new, 'T2m_anomaly_0', self%T2m_anomaly_0)
+    call self%remap_field( mesh_new, 'SMB_anomaly_0', self%SMB_anomaly_0)
+    call self%remap_field( mesh_new, 'T2m_anomaly_1', self%T2m_anomaly_1)
+    call self%remap_field( mesh_new, 'SMB_anomaly_1', self%SMB_anomaly_1)
+    call self%remap_field( mesh_new, 'T2m_anomaly'  , self%T2m_anomaly)
+    call self%remap_field( mesh_new, 'SMB_anomaly'  , self%SMB_anomaly)
+    call self%remap_field( mesh_new, 'T2m'          , self%T2m)
+
+    ! Re-initialise and update timeframes
+    call self%initialise( ice, refgeo_init, refgeo_PD)
+    call self%update_timeframes( time)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_snp_p_anml_remap
 
 end module SMB_snapshot_plus_anomalies

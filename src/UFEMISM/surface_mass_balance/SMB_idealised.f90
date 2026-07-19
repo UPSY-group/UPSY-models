@@ -5,7 +5,7 @@ module SMB_idealised
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model
   use Halfar_SIA_solution, only: Halfar
   use ice_model_types, only: type_ice_model
   use climate_model_types, only: type_climate_model
@@ -26,7 +26,7 @@ module SMB_idealised
       procedure, public :: deallocate => SMB_model_idealised_deallocate
       procedure, public :: initialise => SMB_model_idealised_initialise
       procedure, public :: run        => SMB_model_idealised_run
-      procedure, public :: remap_SMB_model      => remap_SMB_model_idealised_abs
+      procedure, public :: remap      => SMB_model_idealised_remap
 
       procedure, private :: run_SMB_model_idealised_EISMINT1
       procedure, private :: run_SMB_model_idealised_Halfar_static
@@ -146,25 +146,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_idealised_run
-
-  subroutine remap_SMB_model_idealised_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_idealised),            intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_idealised_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_SMB_model_idealised_abs
-
-
 
   subroutine run_SMB_model_idealised_EISMINT1( self, mesh, time)
     ! Calculate the surface mass balance
@@ -314,5 +295,32 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_SMB_model_idealised_Halfar_static
+
+  subroutine SMB_model_idealised_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+
+    ! In/output variables:
+    class(type_SMB_model_idealised),       intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_idealised_remap'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remap all the stuff that is common to all SMB models
+    call self%remap_SMB_model( mesh_new)
+
+    ! Remap all the stuff that is specific to SMB model idealised
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_idealised_remap
+
+
 
 end module SMB_idealised

@@ -6,7 +6,7 @@ module SMB_prescribed
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model
   use mpi_basic, only: par
   use netcdf_io_main, only: read_field_from_file_2D
   use ice_model_types, only: type_ice_model
@@ -29,7 +29,7 @@ module SMB_prescribed
       procedure, public :: deallocate => SMB_model_prescribed_deallocate
       procedure, public :: initialise => SMB_model_prescribed_initialise
       procedure, public :: run        => SMB_model_prescribed_run
-      procedure, public :: remap_SMB_model      => remap_SMB_model_prescribed_abs
+      procedure, public :: remap      => SMB_model_prescribed_remap
 
       procedure, private :: initialise_SMB_model_prescribed_notime
 
@@ -239,24 +239,32 @@ contains
 
   end subroutine SMB_model_prescribed_run
 
-  subroutine remap_SMB_model_prescribed_abs( self, context)
+  subroutine SMB_model_prescribed_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
 
     ! In/output variables:
-    class(type_SMB_model_prescribed),           intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
+    class(type_SMB_model_prescribed),      intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_prescribed_abs'
+    character(len=*), parameter :: routine_name = 'SMB_model_prescribed_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Remap all the stuff that is common to all SMB models
+    call self%remap_SMB_model( mesh_new)
+
+    ! Remap all the stuff that is specific to SMB model prescriubed
+
     ! Re-initialise to read and remap the SMB from the input file again
-    call self%initialise( context%ice, context%refgeo_init, context%refgeo_PD)
+    call self%initialise( ice, refgeo_init, refgeo_PD)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_SMB_model_prescribed_abs
+  end subroutine SMB_model_prescribed_remap
 
 end module SMB_prescribed

@@ -89,9 +89,10 @@ module SMB_model_basic
       type(type_reference_geometry), intent(in   ) :: refgeo_PD
     end subroutine SMB_model_initialise_ifc
 
-    subroutine SMB_model_run_ifc( self, ice, climate, grid_smooth)
-      import atype_SMB_model, type_ice_model, type_climate_model, type_grid
+    subroutine SMB_model_run_ifc( self, time, ice, climate, grid_smooth)
+      import atype_SMB_model, dp, type_ice_model, type_climate_model, type_grid
       class(atype_SMB_model),   intent(inout) :: self
+      real(dp),                 intent(in   ) :: time
       type(type_ice_model),     intent(in   ) :: ice
       type(type_climate_model), intent(in   ) :: climate
       type(type_grid),          intent(in   ) :: grid_smooth

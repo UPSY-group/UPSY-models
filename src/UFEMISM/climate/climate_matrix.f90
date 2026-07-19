@@ -847,7 +847,7 @@ contains
     ! Run the SMB model for 10 years for this particular climate
     ! (experimentally determined to be long enough to converge)
     do i = 1, 10
-      call SMB_dummy%run( SMB_dummy%ct_run( C%start_time_of_run, ice_dummy, climate_dummy, grid_dummy))
+      call SMB_dummy%run( C%start_time_of_run, ice_dummy, climate_dummy, grid_dummy)
     end do
 
     ! Calculate yearly total absorbed insolation

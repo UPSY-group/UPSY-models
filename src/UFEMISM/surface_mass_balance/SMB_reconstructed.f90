@@ -6,7 +6,7 @@ module SMB_reconstructed
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model
   use grid_types, only: type_grid
   use ice_model_types, only: type_ice_model
   use mesh_data_smoothing, only: smooth_Gaussian
@@ -29,7 +29,7 @@ module SMB_reconstructed
       procedure, public :: deallocate => SMB_model_reconstructed_deallocate
       procedure, public :: initialise => SMB_model_reconstructed_initialise
       procedure, public :: run        => SMB_model_reconstructed_run
-      procedure, public :: remap_SMB_model      => remap_SMB_model_reconstructed_abs
+      procedure, public :: remap      => SMB_model_reconstructed_remap
 
   end type type_SMB_model_reconstructed
 
@@ -204,22 +204,33 @@ contains
 
   end subroutine SMB_model_reconstructed_run
 
-  subroutine remap_SMB_model_reconstructed_abs( self, context)
+  subroutine SMB_model_reconstructed_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
 
     ! In/output variables:
-    class(type_SMB_model_reconstructed),            intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
+    class(type_SMB_model_reconstructed),   intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_SMB_model_reconstructed_abs'
+    character(len=*), parameter :: routine_name = 'SMB_model_reconstructed_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Remap all the stuff that is common to all SMB models
+    call self%remap_SMB_model( mesh_new)
+
+    ! Remap all the stuff that is specific to SMB model idealised
+
+    ! DENK DROM
+    call crash('remapping of SMB model reconstructed not supported yet')
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_SMB_model_reconstructed_abs
+  end subroutine SMB_model_reconstructed_remap
 
 
 

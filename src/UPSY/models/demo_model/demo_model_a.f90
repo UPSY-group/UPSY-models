@@ -6,7 +6,7 @@ module demo_model_a
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use demo_model_basic, only: atype_demo_model, type_demo_model_context_remap
+  use demo_model_basic, only: atype_demo_model
   use mpi_f08, only: MPI_WIN
 
   implicit none
@@ -18,7 +18,7 @@ module demo_model_a
   type, extends(atype_demo_model) :: type_demo_model_a
 
       ! Some additional ice-model-esque data fields specific to demo_model_a
-      real(dp), dimension(:  ), contiguous, pointer :: till_friction_angle => null()
+      real(dp), dimension(:), contiguous, pointer :: till_friction_angle => null()
       type(MPI_WIN) :: wtill_friction_angle
 
     contains
@@ -27,7 +27,7 @@ module demo_model_a
       procedure, public :: deallocate => demo_model_a_deallocate
       procedure, public :: initialise => demo_model_a_initialise
       procedure, public :: run        => demo_model_a_run
-      procedure, public :: remap_demo_model      => remap_demo_model_a_abs
+      procedure, public :: remap      => demo_model_a_remap
 
   end type type_demo_model_a
 
@@ -138,43 +138,28 @@ contains
 
   end subroutine demo_model_a_run
 
-  subroutine remap_demo_model_a_abs( self, context)
+  subroutine demo_model_a_remap( self, mesh_new)
 
     ! In/output variables:
-    class(type_demo_model_a),                    intent(inout) :: self
-    type(type_demo_model_context_remap), target, intent(in   ) :: context
+    class(type_demo_model_a), intent(inout) :: self
+    type(type_mesh), target,  intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_demo_model_a_abs'
+    character(len=*), parameter :: routine_name = 'demo_model_a_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Retrieve input variables from context object
-    call remap_demo_model_a( self, context%mesh_new)
+    ! Remap all the stuff that is common to all demo models
+    call self%remap_demo_model( mesh_new)
 
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_demo_model_a_abs
-
-  subroutine remap_demo_model_a( self, mesh_new)
-
-    ! In/output variables:
-    type(type_demo_model_a), intent(inout) :: self
-    type(type_mesh),         intent(in   ) :: mesh_new
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_demo_model_a'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
+    ! Remap all the stuff that is specific to demo model a
 
     call self%remap_field( mesh_new, 'till_friction_angle', self%till_friction_angle)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_demo_model_a
+  end subroutine demo_model_a_remap
 
 end module demo_model_a

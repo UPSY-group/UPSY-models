@@ -6,7 +6,7 @@ module SMB_snapshot_plus_anomalies
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_run, &
     type_SMB_model_context_remap
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
@@ -15,6 +15,8 @@ module SMB_snapshot_plus_anomalies
     field_name_options_time, read_field_from_file_2D, read_field_from_file_2D_monthly
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use climate_model_types, only: type_climate_model
+  use ice_model_types, only: type_ice_model
+  use reference_geometry_types, only: type_reference_geometry
 
   implicit none
 
@@ -54,37 +56,16 @@ module SMB_snapshot_plus_anomalies
 
       procedure, public :: allocate   => SMB_model_snp_p_anml_allocate
       procedure, public :: deallocate => SMB_model_snp_p_anml_deallocate
-      procedure, public :: initialise_SMB_model => initialise_SMB_model_snp_p_anml_abs
+      procedure, public :: initialise => SMB_model_snp_p_anml_initialise
       procedure, public :: run_SMB_model        => run_SMB_model_snp_p_anml_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_snp_p_anml_abs
 
-      procedure, private :: initialise_SMB_model_snp_p_anml
       procedure, private :: run_SMB_model_snp_p_anml
       procedure, private :: update_timeframes
 
   end type type_SMB_model_snp_p_anml
 
 contains
-
-  subroutine initialise_SMB_model_snp_p_anml_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_snp_p_anml),                 intent(inout) :: self
-    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_snp_p_anml_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%initialise_SMB_model_snp_p_anml( self%mesh)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_SMB_model_snp_p_anml_abs
 
   subroutine run_SMB_model_snp_p_anml_abs( self, context)
 
@@ -130,8 +111,8 @@ contains
     call self%remap_field( context%mesh_new, 'T2m'          , self%T2m)
 
     ! Re-initialise and update timeframes
-    call self%initialise_SMB_model_snp_p_anml( self%mesh)
-    call self%update_timeframes( self%mesh, context%time)
+    call self%initialise( context%ice, context%refgeo_init, context%refgeo_PD)
+    call self%update_timeframes( context%time)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -268,33 +249,40 @@ contains
 
   end subroutine SMB_model_snp_p_anml_deallocate
 
-  subroutine initialise_SMB_model_snp_p_anml( self, mesh)
+  subroutine SMB_model_snp_p_anml_initialise( self, ice, refgeo_init, refgeo_PD)
 
     ! In/output variables:
     class(type_SMB_model_snp_p_anml), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
+    type(type_ice_model),             intent(in   ) :: ice
+    type(type_reference_geometry),    intent(in   ) :: refgeo_init
+    type(type_reference_geometry),    intent(in   ) :: refgeo_PD
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_snp_p_anml'
+    character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_initialise'
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Initialise all the stuff that is common to all SMB models
+    call self%initialise_SMB_model()
+
+    ! Initialise all the stuff that is specific to SMB model snp_p_anml
+
     ! Read baseline snapshot
     call read_field_from_file_2D_monthly( C%SMB_snp_p_anml_filename_snapshot_T2m, 'T2m', &
-      mesh, C%output_dir, self%T2m_baseline)
+      self%mesh, C%output_dir, self%T2m_baseline)
     call read_field_from_file_2D( C%SMB_snp_p_anml_filename_snapshot_SMB, 'SMB', &
-      mesh, C%output_dir, self%SMB_baseline)
+      self%mesh, C%output_dir, self%SMB_baseline)
 
     ! Initialise anomaly timeframes
     self%anomaly_t0 = C%start_time_of_run - 200._dp
     self%anomaly_t1 = C%start_time_of_run - 100._dp
-    call self%update_timeframes( mesh, C%start_time_of_run)
+    call self%update_timeframes( C%start_time_of_run)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_snp_p_anml
+  end subroutine SMB_model_snp_p_anml_initialise
 
   subroutine run_SMB_model_snp_p_anml( self, mesh, climate, time)
 
@@ -315,7 +303,7 @@ contains
     ! If the current model time falls outside the enveloping window
     ! of the two timeframes that have been read, update them
     if (time < self%anomaly_t0 .or. time > self%anomaly_t1) then
-      call self%update_timeframes( mesh, time)
+      call self%update_timeframes( time)
     end if
 
     ! Interpolate between the two timeframes to find the applied anomaly
@@ -342,11 +330,10 @@ contains
 
   end subroutine run_SMB_model_snp_p_anml
 
-  subroutine update_timeframes( self, mesh, time)
+  subroutine update_timeframes( self, time)
 
     ! In/output variables:
     class(type_SMB_model_snp_p_anml), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
     real(dp),                         intent(in   ) :: time
 
     ! Local variables:
@@ -394,16 +381,16 @@ contains
 
     ! Read the two timeframes
     call read_field_from_file_2D( filename, 'T2m_anomaly', &
-      mesh, C%output_dir, self%T2m_anomaly_0, &
+      self%mesh, C%output_dir, self%T2m_anomaly_0, &
       time_to_read = self%anomaly_t0)
     call read_field_from_file_2D( filename, 'T2m_anomaly', &
-      mesh, C%output_dir, self%T2m_anomaly_1, &
+      self%mesh, C%output_dir, self%T2m_anomaly_1, &
       time_to_read = self%anomaly_t1)
     call read_field_from_file_2D( filename, 'SMB_anomaly', &
-      mesh, C%output_dir, self%SMB_anomaly_0, &
+      self%mesh, C%output_dir, self%SMB_anomaly_0, &
       time_to_read = self%anomaly_t0)
     call read_field_from_file_2D( filename, 'SMB_anomaly', &
-      mesh, C%output_dir, self%SMB_anomaly_1, &
+      self%mesh, C%output_dir, self%SMB_anomaly_1, &
       time_to_read = self%anomaly_t1)
 
     ! Finalise routine path

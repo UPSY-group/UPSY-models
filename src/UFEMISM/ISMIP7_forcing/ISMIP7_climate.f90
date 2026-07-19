@@ -64,7 +64,7 @@ module ISMIP7_climate
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
   use climate_model_basic, only: atype_climate_model, &
-    type_climate_model_context_initialise, type_climate_model_context_run, type_climate_model_context_remap
+    type_climate_model_context_run, type_climate_model_context_remap
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
 
   implicit none
@@ -98,11 +98,10 @@ module ISMIP7_climate
 
       procedure, public :: allocate   => climate_model_ISMIP7_allocate
       procedure, public :: deallocate => climate_model_ISMIP7_deallocate
-      procedure, public :: initialise_climate_model => initialise_climate_model_ISMIP7_abs
+      procedure, public :: initialise => climate_model_ISMIP7_initialise
       procedure, public :: run_climate_model        => run_climate_model_ISMIP7_abs
       procedure, public :: remap_climate_model      => remap_climate_model_ISMIP7_abs
 
-      procedure, private :: initialise_climate_model_ISMIP7
       procedure, private :: run_climate_model_ISMIP7
       ! procedure, private :: remap_climate_model_ISMIP7
 
@@ -111,26 +110,6 @@ module ISMIP7_climate
   end type type_climate_model_ISMIP7
 
 contains
-
-  subroutine initialise_climate_model_ISMIP7_abs( self, context)
-
-    ! In/output variables:
-    class(type_climate_model_ISMIP7),                    intent(inout) :: self
-    type(type_climate_model_context_initialise), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_climate_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Retrieve input variables from context object
-    call self%initialise_climate_model_ISMIP7( self%mesh, context%refgeo_PD, context%refgeo_init, self%region_name())
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_climate_model_ISMIP7_abs
 
   subroutine run_climate_model_ISMIP7_abs( self, context)
 
@@ -293,21 +272,23 @@ contains
 
   end subroutine climate_model_ISMIP7_deallocate
 
-  subroutine initialise_climate_model_ISMIP7( self, mesh, refgeo_PD, refgeo_init, region_name)
+  subroutine climate_model_ISMIP7_initialise( self, refgeo_PD, refgeo_init)
 
     ! In/output variables:
     class(type_climate_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
     type(type_reference_geometry),    intent(in   ) :: refgeo_PD
     type(type_reference_geometry),    intent(in   ) :: refgeo_init
-    character(len=3),                 intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_climate_model_ISMIP7'
-    character(len=1024)            :: filename
+    character(len=1024), parameter :: routine_name = 'climate_model_ISMIP7_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Initialise all the stuff that is common to all climate models
+    call self%initialise_climate_model()
+
+    ! Initialise all the stuff that is specific to climate model ISMIP7
 
     ! Initialise fields and baseline climate
     select case (C%climate_ISMIP7_choice_baseline)
@@ -315,41 +296,40 @@ contains
       call crash('invalid climate_ISMIP7_choice_baseline "' // trim( C%climate_ISMIP7_choice_baseline) // '"')
     case ('yearly')
 
-      call self%tas%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh)
-      call self%pr%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh)
+      call self%tas%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
+      call self%pr%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
 
     case ('fixed')
 
-      call self%initialise_climate_baseline_fixed( mesh)
+      call self%initialise_climate_baseline_fixed()
 
-      call self%tas_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh)
-      call self%pr_anomaly%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh)
+      call self%tas_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
+      call self%pr_anomaly%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
 
     end select
 
     ! Initialise vertical gradient
-    call self%dtsdz%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, mesh)
+    call self%dtsdz%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
 
     ! Initialise the baseline surface elevation
     select case (C%climate_ISMIP7_choice_refgeo)
     case default
       call crash('invalid climate_ISMIP7_choice_refgeo "' // trim( C%climate_ISMIP7_choice_refgeo) // '"')
     case ('init')
-      self%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo_init%Hs( mesh%vi1: mesh%vi2)
+      self%Hs_baseline( self%mesh%vi1:self%mesh%vi2) = refgeo_init%Hs( self%mesh%vi1: self%mesh%vi2)
     case ('PD')
-      self%Hs_baseline( mesh%vi1:mesh%vi2) = refgeo_PD%Hs( mesh%vi1: mesh%vi2)
+      self%Hs_baseline( self%mesh%vi1:self%mesh%vi2) = refgeo_PD%Hs( self%mesh%vi1: self%mesh%vi2)
     end select
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_climate_model_ISMIP7
+  end subroutine climate_model_ISMIP7_initialise
 
-  subroutine initialise_climate_baseline_fixed( self, mesh)
+  subroutine initialise_climate_baseline_fixed( self)
 
     ! In/output variables:
     class(type_climate_model_ISMIP7), intent(inout) :: self
-    type(type_mesh),                  intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'initialise_climate_baseline_fixed'
@@ -364,8 +344,8 @@ contains
     end if
 
     ! Read the fixed baseline climate
-    call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'T2m'   , mesh, C%output_dir, self%T2m_baseline)
-    call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'Precip', mesh, C%output_dir, self%Precip_baseline)
+    call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
+    call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

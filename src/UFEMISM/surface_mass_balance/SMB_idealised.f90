@@ -6,9 +6,11 @@ module SMB_idealised
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model, &
-    type_SMB_model_context_initialise, type_SMB_model_context_run, &
+    type_SMB_model_context_run, &
     type_SMB_model_context_remap
   use Halfar_SIA_solution, only: Halfar
+  use ice_model_types, only: type_ice_model
+  use reference_geometry_types, only: type_reference_geometry
 
   implicit none
 
@@ -22,7 +24,7 @@ module SMB_idealised
 
       procedure, public :: allocate   => SMB_model_idealised_allocate
       procedure, public :: deallocate => SMB_model_idealised_deallocate
-      procedure, public :: initialise_SMB_model => initialise_SMB_model_idealised_abs
+      procedure, public :: initialise => SMB_model_idealised_initialise
       procedure, public :: run_SMB_model        => run_SMB_model_idealised_abs
       procedure, public :: remap_SMB_model      => remap_SMB_model_idealised_abs
 
@@ -79,22 +81,30 @@ contains
 
   end subroutine SMB_model_idealised_deallocate
 
-  subroutine initialise_SMB_model_idealised_abs( self, context)
+  subroutine SMB_model_idealised_initialise( self, ice, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(type_SMB_model_idealised),                 intent(inout) :: self
-    type(type_SMB_model_context_initialise), target, intent(in   ) :: context
+    class(type_SMB_model_idealised), intent(inout) :: self
+    type(type_ice_model),            intent(in   ) :: ice
+    type(type_reference_geometry),   intent(in   ) :: refgeo_init
+    type(type_reference_geometry),   intent(in   ) :: refgeo_PD
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_SMB_model_idealised_abs'
+    character(len=*), parameter :: routine_name = 'SMB_model_idealised_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Initialise all the stuff that is common to all SMB models
+    call self%initialise_SMB_model()
+
+    ! Initialise all the stuff that is specific to SMB model idealised
+
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model_idealised_abs
+  end subroutine SMB_model_idealised_initialise
 
   subroutine run_SMB_model_idealised_abs( self, context)
 

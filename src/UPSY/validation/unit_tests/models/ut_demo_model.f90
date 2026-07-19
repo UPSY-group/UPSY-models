@@ -94,7 +94,7 @@ contains
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
-    call a1%remap( a1%ct_remap( mesh2))
+    call a1%remap( mesh2)
     call unit_test( ( &
       a1%mesh%name     == mesh2%name .and. &
       size( a1%H   ,1) == mesh2%pai_V%n_nih .and. &
@@ -182,7 +182,7 @@ contains
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
-    call b1%remap( b1%ct_remap( mesh2))
+    call b1%remap( mesh2)
     call unit_test( ( &
       b1%mesh%name     == mesh2%name .and. &
       size( b1%H   ,1) == mesh2%pai_V%n_nih .and. &
@@ -268,7 +268,7 @@ contains
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
-    call demo1%remap( demo1%ct_remap( mesh2))
+    call demo1%remap( mesh2)
     call unit_test( ( &
       demo1%mesh%name     == mesh2%name .and. &
       size( demo1%H   ,1) == mesh2%pai_V%n_nih .and. &
@@ -354,7 +354,7 @@ contains
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked
-    call demo1%remap( demo1%ct_remap( mesh2))
+    call demo1%remap( mesh2)
     call unit_test( ( &
       demo1%mesh%name     == mesh2%name .and. &
       size( demo1%H   ,1) == mesh2%pai_V%n_nih .and. &

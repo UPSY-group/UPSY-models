@@ -42,7 +42,7 @@ module ISMIP7_SMB
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
-  use SMB_model_basic, only: atype_SMB_model, type_SMB_model_context_remap
+  use SMB_model_basic, only: atype_SMB_model
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
@@ -89,37 +89,13 @@ module ISMIP7_SMB
       procedure, public :: deallocate => SMB_model_ISMIP7_deallocate
       procedure, public :: initialise => SMB_model_ISMIP7_initialise
       procedure, public :: run        => SMB_model_ISMIP7_run
-      procedure, public :: remap_SMB_model      => remap_SMB_model_ISMIP7_abs
-
-      ! procedure, private :: remap_SMB_model_ISMIP7
+      procedure, public :: remap      => SMB_model_ISMIP7_remap
 
       procedure, private :: initialise_SMB_baseline_fixed
 
   end type type_SMB_model_ISMIP7
 
 contains
-
-  subroutine remap_SMB_model_ISMIP7_abs( self, context)
-
-    ! In/output variables:
-    class(type_SMB_model_ISMIP7),               intent(inout) :: self
-    type(type_SMB_model_context_remap), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_SMB_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call crash('remapping not yet supported for ISMIP7 SMB forcing')
-    ! call self%remap_SMB_model_ISMIP7( context%mesh_new)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_SMB_model_ISMIP7_abs
-
-
 
   subroutine SMB_model_ISMIP7_allocate( self, region_name, mesh)
 
@@ -422,5 +398,32 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_ISMIP7_run
+
+  subroutine SMB_model_ISMIP7_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+
+    ! In/output variables:
+    class(type_SMB_model_ISMIP7),          intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_remap'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remap all the stuff that is common to all SMB models
+    call self%remap_SMB_model( mesh_new)
+
+    ! Remap all the stuff that is specific to SMB model ISMIP7
+
+    call crash('remapping not yet supported for ISMIP7 SMB forcing')
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine SMB_model_ISMIP7_remap
 
 end module ISMIP7_SMB

@@ -14,8 +14,7 @@ module models_basic
 
   private
 
-  public :: atype_model, &
-    atype_model_context_remap
+  public :: atype_model
 
   ! Abstract basic model type
   ! =========================
@@ -43,9 +42,7 @@ module models_basic
       procedure, public :: deallocate_model
       procedure, public :: initialise_model
       procedure, public :: run_model
-      procedure, public :: remap
-
-      procedure(remap_model_ifc),      deferred :: remap_model
+      procedure, public :: remap_model
 
       ! i/o
 
@@ -107,38 +104,6 @@ module models_basic
       procedure, public :: is_region_name
 
   end type atype_model
-
-  ! Context classes for initialise/run/remap
-  ! =================================================
-
-  type, abstract :: atype_model_context_remap
-    type(type_mesh), pointer :: mesh_new
-  end type atype_model_context_remap
-
-  ! Abstract interfaces for deferred procedures
-  ! ===========================================
-
-  abstract interface
-
-    subroutine remap_model_ifc( self, context)
-      import atype_model, atype_model_context_remap
-      class(atype_model),                       intent(inout) :: self
-      class(atype_model_context_remap), target, intent(in   ) :: context
-    end subroutine remap_model_ifc
-
-  end interface
-
-  ! Interfaces to type-bound procedures defined in submodules
-  ! =========================================================
-
-  interface
-
-    module subroutine remap( self, context)
-      class(atype_model),                       intent(inout) :: self
-      class(atype_model_context_remap), target, intent(in   ) :: context
-    end subroutine remap
-
-  end interface
 
   ! create_field
   interface
@@ -479,5 +444,26 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_model
+
+  subroutine remap_model( self, mesh_new)
+    !< Remap stuff that is common to all models
+    !< (call this from your model-specific remap routine)
+
+    ! In/output variables:
+    class(atype_model),      intent(inout) :: self
+    type(type_mesh), target, intent(in   ) :: mesh_new
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'remap_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    self%mesh => mesh_new
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine remap_model
 
 end module models_basic

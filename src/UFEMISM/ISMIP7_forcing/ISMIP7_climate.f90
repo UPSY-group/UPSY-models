@@ -63,7 +63,7 @@ module ISMIP7_climate
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
-  use climate_model_basic, only: atype_climate_model, type_climate_model_context_remap
+  use climate_model_basic, only: atype_climate_model
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
 
   implicit none
@@ -99,37 +99,13 @@ module ISMIP7_climate
       procedure, public :: deallocate => climate_model_ISMIP7_deallocate
       procedure, public :: initialise => climate_model_ISMIP7_initialise
       procedure, public :: run        => climate_model_ISMIP7_run
-      procedure, public :: remap_climate_model      => remap_climate_model_ISMIP7_abs
-
-      ! procedure, private :: remap_climate_model_ISMIP7
+      procedure, public :: remap      => climate_model_ISMIP7_remap
 
       procedure, private :: initialise_climate_baseline_fixed
 
   end type type_climate_model_ISMIP7
 
 contains
-
-  subroutine remap_climate_model_ISMIP7_abs( self, context)
-
-    ! In/output variables:
-    class(type_climate_model_ISMIP7),               intent(inout) :: self
-    type(type_climate_model_context_remap), target, intent(in   ) :: context
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_climate_model_ISMIP7_abs'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call crash('remapping not yet supported for ISMIP7 climate forcing')
-    ! call self%remap_climate_model_ISMIP7( context%mesh_new)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_climate_model_ISMIP7_abs
-
-
 
   subroutine climate_model_ISMIP7_allocate( self, region_name, mesh)
 
@@ -400,5 +376,29 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine climate_model_ISMIP7_run
+
+  subroutine climate_model_ISMIP7_remap( self, mesh_new)
+
+    ! In/output variables:
+    class(type_climate_model_ISMIP7), intent(inout) :: self
+    type(type_mesh), target,          intent(in   ) :: mesh_new
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'climate_model_ISMIP7_remap'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remap all the stuff that is common to all climate models
+    call self%remap_climate_model( mesh_new)
+
+    ! Remap all the stuff that is specific to climate model ISMIP7
+
+    call crash('remapping not yet supported for ISMIP7 climate forcing')
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine climate_model_ISMIP7_remap
 
 end module ISMIP7_climate

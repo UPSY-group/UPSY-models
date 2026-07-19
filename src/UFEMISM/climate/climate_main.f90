@@ -495,7 +495,7 @@ CONTAINS
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
     elseif (choice_climate_model == 'ISMIP7') then
-      call climate%ISMIP7%remap( climate%ISMIP7%ct_remap( mesh_new))
+      call climate%ISMIP7%remap( mesh_new)
     ELSE
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END IF

@@ -6,8 +6,7 @@ module demo_model_basic
   use mesh_types, only: type_mesh
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_main, only: third_dimension
-  use models_basic, only: &
-    atype_model_context_run, atype_model_context_remap
+  use models_basic, only: atype_model_context_remap
   use demo_model_data, only: atype_demo_model_data
   use mpi_f08, only: MPI_WIN
 
@@ -15,9 +14,7 @@ module demo_model_basic
 
   private
 
-  public :: atype_demo_model, &
-    type_demo_model_context_run, &
-    type_demo_model_context_remap
+  public :: atype_demo_model, type_demo_model_context_remap
 
   type, abstract, extends(atype_demo_model_data) :: atype_demo_model
     !< Stuff that is common to all demo models
@@ -35,28 +32,22 @@ module demo_model_basic
       procedure, public :: allocate_demo_model
       procedure, public :: deallocate_demo_model
       procedure, public :: initialise_demo_model
-      procedure, public :: run_model        => run_model_abs
+      procedure, public :: run_demo_model
       procedure, public :: remap_model      => remap_model_abs
 
       procedure(demo_model_allocate_ifc),   deferred :: allocate
       procedure(demo_model_deallocate_ifc), deferred :: deallocate
       procedure(demo_model_initialise_ifc), deferred :: initialise
-      procedure(run_demo_model_ifc),        deferred :: run_demo_model
+      procedure(demo_model_run_ifc),        deferred :: run
       procedure(remap_demo_model_ifc),      deferred :: remap_demo_model
 
       ! Factory functions to create model context objects
-      procedure, nopass, public :: ct_run
       procedure, nopass, public :: ct_remap
 
   end type atype_demo_model
 
   ! Context classes for allocate/initialise/run/remap
   ! =================================================
-
-  type, extends(atype_model_context_run) :: type_demo_model_context_run
-    real(dp) :: H_new
-    real(dp) :: dH
-  end type type_demo_model_context_run
 
   type, extends(atype_model_context_remap) :: type_demo_model_context_remap
   end type type_demo_model_context_remap
@@ -87,11 +78,12 @@ module demo_model_basic
       real(dp),                intent(in   ) :: beta_sq_uniform
     end subroutine demo_model_initialise_ifc
 
-    subroutine run_demo_model_ifc( self, context)
-      import atype_demo_model, type_demo_model_context_run
-      class(atype_demo_model),                   intent(inout) :: self
-      type(type_demo_model_context_run), target, intent(in   ) :: context
-    end subroutine run_demo_model_ifc
+    subroutine demo_model_run_ifc( self, H_new, dH)
+      import atype_demo_model, dp
+      class(atype_demo_model), intent(inout) :: self
+      real(dp),                intent(in   ) :: H_new
+      real(dp),                intent(in   ) :: dH
+    end subroutine demo_model_run_ifc
 
     subroutine remap_demo_model_ifc( self, context)
       import atype_demo_model, type_demo_model_context_remap
@@ -106,21 +98,10 @@ module demo_model_basic
 
   interface
 
-    module subroutine run_model_abs( self, context)
-      class(atype_demo_model),                intent(inout) :: self
-      class(atype_model_context_run), target, intent(in   ) :: context
-    end subroutine run_model_abs
-
     module subroutine remap_model_abs( self, context)
       class(atype_demo_model),                  intent(inout) :: self
       class(atype_model_context_remap), target, intent(in   ) :: context
     end subroutine remap_model_abs
-
-    module function ct_run( H_new, dH) result( context)
-      real(dp),              intent(in) :: H_new
-      real(dp),              intent(in) :: dH
-      type(type_demo_model_context_run) :: context
-    end function ct_run
 
     module function ct_remap( mesh_new) result( context)
       type(type_mesh), target, intent(in) :: mesh_new
@@ -133,7 +114,7 @@ contains
 
   subroutine allocate_demo_model( self, name, region_name, mesh, nz)
     !< Allocate stuff that is common to all demo models
-    !< (call this from your demo model-specific allocation routine)
+    !< (call this from your demo model-specific allocate routine)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -195,7 +176,7 @@ contains
 
   subroutine deallocate_demo_model( self)
     !< Deallocate stuff that is common to all demo models
-    !< (call this from your demo model-specific allocation routine)
+    !< (call this from your demo model-specific deallocate routine)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -224,7 +205,7 @@ contains
 
   subroutine initialise_demo_model( self, H0)
     !< Initialise stuff that is common to all demo models
-    !< (call this from your demo model-specific allocation routine)
+    !< (call this from your demo model-specific initialise routine)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -276,5 +257,29 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_demo_model
+
+  subroutine run_demo_model( self, H0)
+    !< Run stuff that is common to all demo models
+    !< (call this from your demo model-specific run routine)
+
+    ! In/output variables:
+    class(atype_demo_model), intent(inout) :: self
+    real(dp),                intent(in   ) :: H0
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'run_demo_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Run stuff that is common to all models
+    call self%run_model()
+
+    ! Run stuff that is specific to demo models
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_demo_model
 
 end module demo_model_basic

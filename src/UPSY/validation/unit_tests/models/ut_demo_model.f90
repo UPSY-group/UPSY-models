@@ -88,7 +88,7 @@ contains
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
-    call a1%run( a1%ct_run( H_new, dH))
+    call a1%run( H_new, dH)
     call unit_test( (&
       minval( a1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
       ), trim( test_name) // '/run')
@@ -175,7 +175,7 @@ contains
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
-    call b1%run( b1%ct_run( H_new, dH))
+    call b1%run( H_new, dH)
     call unit_test( (&
       minval( b1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new .and. &
       maxval( b1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
@@ -262,7 +262,7 @@ contains
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
-    call demo1%run( demo1%ct_run( H_new, dH))
+    call demo1%run( H_new, dH)
     call unit_test( (&
       minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
       ), trim( test_name) // '/run')
@@ -348,7 +348,7 @@ contains
       ), trim( test_name) // '/initialise')
 
     ! Run the demo model and test if that worked
-    call demo1%run( demo1%ct_run( H_new, dH))
+    call demo1%run( H_new, dH)
     call unit_test( (&
       minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H_new &
       ), trim( test_name) // '/run')

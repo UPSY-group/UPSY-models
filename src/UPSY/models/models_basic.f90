@@ -15,7 +15,7 @@ module models_basic
   private
 
   public :: atype_model, &
-    atype_model_context_run, atype_model_context_remap
+    atype_model_context_remap
 
   ! Abstract basic model type
   ! =========================
@@ -42,10 +42,9 @@ module models_basic
       procedure, public :: allocate_model
       procedure, public :: deallocate_model
       procedure, public :: initialise_model
-      procedure, public :: run
+      procedure, public :: run_model
       procedure, public :: remap
 
-      procedure(run_model_ifc),        deferred :: run_model
       procedure(remap_model_ifc),      deferred :: remap_model
 
       ! i/o
@@ -112,10 +111,6 @@ module models_basic
   ! Context classes for initialise/run/remap
   ! =================================================
 
-  type, abstract :: atype_model_context_run
-    real(dp) :: time
-  end type atype_model_context_run
-
   type, abstract :: atype_model_context_remap
     type(type_mesh), pointer :: mesh_new
   end type atype_model_context_remap
@@ -124,12 +119,6 @@ module models_basic
   ! ===========================================
 
   abstract interface
-
-    subroutine run_model_ifc( self, context)
-      import atype_model, atype_model_context_run
-      class(atype_model),                     intent(inout) :: self
-      class(atype_model_context_run), target, intent(in   ) :: context
-    end subroutine run_model_ifc
 
     subroutine remap_model_ifc( self, context)
       import atype_model, atype_model_context_remap
@@ -143,11 +132,6 @@ module models_basic
   ! =========================================================
 
   interface
-
-    module subroutine run( self, context)
-      class(atype_model),                     intent(inout) :: self
-      class(atype_model_context_run), target, intent(in   ) :: context
-    end subroutine run
 
     module subroutine remap( self, context)
       class(atype_model),                       intent(inout) :: self
@@ -402,7 +386,7 @@ contains
 
   subroutine allocate_model( self, name, region_name, mesh)
     !< Allocate stuff that is common to all models
-    !< (call this from your model-specific allocation routine)
+    !< (call this from your model-specific allocate routine)
 
     ! In/output variables:
     class(atype_model),      intent(inout) :: self
@@ -428,7 +412,7 @@ contains
 
   subroutine deallocate_model( self)
     !< Deallocate stuff that is common to all models
-    !< (call this from your model-specific deallocation routine)
+    !< (call this from your model-specific deallocate routine)
 
     ! In/output variables:
     class(atype_model), intent(inout) :: self
@@ -454,7 +438,7 @@ contains
 
   subroutine initialise_model( self)
     !< Initialise stuff that is common to all models
-    !< (call this from your model-specific deallocation routine)
+    !< (call this from your model-specific initialise routine)
 
     ! In/output variables:
     class(atype_model), intent(inout) :: self
@@ -473,5 +457,27 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine initialise_model
+
+  subroutine run_model( self)
+    !< Run stuff that is common to all models
+    !< (call this from your model-specific run routine)
+
+    ! In/output variables:
+    class(atype_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'run_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Right now, there's nothing that can be put here yet,
+    ! but it's useful to have the allocate/deallocate/initialise/run/remap
+    ! routines all follow the same general layout.
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_model
 
 end module models_basic

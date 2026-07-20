@@ -5,6 +5,7 @@ module ice_geometry_model_basic
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use Arakawa_grid_mod, only: Arakawa_grid
   use mesh_types, only: type_mesh
+  use parameters, only: NaN
 
   implicit none
 
@@ -45,26 +46,31 @@ contains
 
     ! Allocate all the stuff that is specific to the ice_geometry model
 
-    call self%create_field( self%Hi, self%wHi, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'Hi', &
-      long_name = 'Ice thickness', &
-      units     = 'm', &
-      remap_method = 'reallocate')
+    ! DENK DROM
+    allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%SL( mesh%vi1:mesh%vi2), source = NaN)
 
-    call self%create_field( self%Hb, self%wHb, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'Hb', &
-      long_name = 'Bedrock elevation (w.r.t. PD sea level)', &
-      units     = 'm', &
-      remap_method = 'reallocate')
+    ! call self%create_field( self%Hi, self%wHi, &
+    !   self%mesh, Arakawa_grid%a(), &
+    !   name      = 'Hi', &
+    !   long_name = 'Ice thickness', &
+    !   units     = 'm', &
+    !   remap_method = 'reallocate')
 
-    call self%create_field( self%SL, self%wSL, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'SL', &
-      long_name = 'Geoid elevation (w.r.t. PD sea level)', &
-      units     = 'm', &
-      remap_method = 'reallocate')
+    ! call self%create_field( self%Hb, self%wHb, &
+    !   self%mesh, Arakawa_grid%a(), &
+    !   name      = 'Hb', &
+    !   long_name = 'Bedrock elevation (w.r.t. PD sea level)', &
+    !   units     = 'm', &
+    !   remap_method = 'reallocate')
+
+    ! call self%create_field( self%SL, self%wSL, &
+    !   self%mesh, Arakawa_grid%a(), &
+    !   name      = 'SL', &
+    !   long_name = 'Geoid elevation (w.r.t. PD sea level)', &
+    !   units     = 'm', &
+    !   remap_method = 'reallocate')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -82,13 +88,15 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! DENK DROM
+
     ! Deallocate stuff that is common to all models
-    call self%deallocate_model()
+    ! call self%deallocate_model()
 
     ! Deallocate stuff that is specific to the ice_geometry model
-    nullify( self%Hi)
-    nullify( self%Hb)
-    nullify( self%SL)
+    ! nullify( self%Hi)
+    ! nullify( self%Hb)
+    ! nullify( self%SL)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -111,9 +119,18 @@ contains
     call self%remap_model( mesh_new)
 
     ! Remap stuff that is specific to ice_geometry models
-    call self%remap_field( mesh_new, 'Hi', self%Hi)
-    call self%remap_field( mesh_new, 'Hb', self%Hb)
-    call self%remap_field( mesh_new, 'SL', self%SL)
+
+    ! DENK DROM
+    deallocate( self%Hi)
+    deallocate( self%Hb)
+    deallocate( self%SL)
+    allocate( self%Hi( mesh_new%vi1:mesh_new%vi2), source = NaN)
+    allocate( self%Hb( mesh_new%vi1:mesh_new%vi2), source = NaN)
+    allocate( self%SL( mesh_new%vi1:mesh_new%vi2), source = NaN)
+
+    ! call self%remap_field( mesh_new, 'Hi', self%Hi)
+    ! call self%remap_field( mesh_new, 'Hb', self%Hb)
+    ! call self%remap_field( mesh_new, 'SL', self%SL)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

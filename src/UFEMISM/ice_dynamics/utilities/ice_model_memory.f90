@@ -15,11 +15,12 @@ module ice_model_memory
 
 contains
 
-  subroutine allocate_ice_model( mesh, ice)
+  subroutine allocate_ice_model( mesh, ice, region_name)
 
     ! In- and output variables
     type(type_mesh),      intent(in   ) :: mesh
     type(type_ice_model), intent(  out) :: ice
+    character(len=*),     intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'allocate_ice_model'
@@ -31,6 +32,8 @@ contains
     ! ==========================
 
     ! Basic geometry
+    allocate( ice%geom)
+    call ice%geom%allocate( 'ice_geometry', region_name, mesh)
     allocate( ice%Hi      ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hb      ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hs      ( mesh%vi1:mesh%vi2), source = 0._dp)

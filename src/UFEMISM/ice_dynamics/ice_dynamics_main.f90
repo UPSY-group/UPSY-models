@@ -220,7 +220,7 @@ contains
     ! =========================
 
     ! allocate memory
-    call allocate_ice_model( mesh, ice)
+    call allocate_ice_model( mesh, ice, region_name)
 
     ! === Value initialisation ===
     ! ============================

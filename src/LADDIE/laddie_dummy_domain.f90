@@ -114,7 +114,7 @@ contains
     ! Set up ice and bed geometry
     ! ===========================
 
-    call allocate_ice_model( mesh, ice)
+    call allocate_ice_model( mesh, ice, 'ANT')
 
     ! Define Hi and Hb
     do vi = mesh%vi1, mesh%vi2

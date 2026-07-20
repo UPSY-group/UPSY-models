@@ -74,7 +74,7 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
   ! Set up ice and bed geometry
   ! ========
 
-  call allocate_ice_model( mesh, ice)
+  call allocate_ice_model( mesh, ice, 'ANT')
 
   do vi = mesh%vi1, mesh%vi2
     if (vi == 1) then

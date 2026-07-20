@@ -38,12 +38,13 @@ contains
 ! ===== Main routine =====
 ! ========================
 
-  subroutine initialise_forcing( mesh, forcing)
+  subroutine initialise_forcing( mesh, forcing, region_name)
     ! Set up all forcing
 
     ! In/output variables
     type(type_mesh)          ,  intent(out) :: mesh
     type(type_laddie_forcing),  intent(out) :: forcing
+    character(len=*),           intent(in ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'initialise_forcing'
@@ -81,7 +82,7 @@ contains
     ! Use ice model
     ! =============
 
-    call allocate_ice_model( mesh, ice)
+    call allocate_ice_model( mesh, ice, region_name)
 
     ! Basic geometry
     do vi = mesh%vi1, mesh%vi2

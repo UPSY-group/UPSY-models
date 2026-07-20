@@ -16,7 +16,6 @@ module ut_laddie
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use grid_basic, only: setup_square_grid
   use ice_model_types, only: type_ice_model
-  use ice_model_memory, only: allocate_ice_model
   use ice_geometry_basics, only: ice_surface_elevation
   use ocean_model_types, only: type_ocean_model
   use ocean_utilities , only: initialise_ocean_vertical_grid

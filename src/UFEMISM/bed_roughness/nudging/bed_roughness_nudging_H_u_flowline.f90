@@ -141,7 +141,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    deltaHs = ice%Hi - target_geometry%Hi
+    deltaHs = ice%geom%Hi - target_geometry%Hi
 
     deltau = 0._dp
     do ti = mesh%ti1, mesh%ti2
@@ -150,7 +150,7 @@ contains
       end if
     end do
 
-    call gather_to_all( ice%Hi     , Hi_tot     )
+    call gather_to_all( ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( deltau     , deltau_tot )
     call gather_to_all( ice%u_vav_b, u_b_tot    )
@@ -238,7 +238,7 @@ contains
       if (nudge%mask_calc_dCdt_from_nudging( vi)) then
 
         nudge%R( vi) = max( 0._dp, min( 1._dp, &
-          ((ice%uabs_vav( vi) * ice%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
+          ((ice%uabs_vav( vi) * ice%geom%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
 
         I1( vi) = -nudge%deltau_av_up  ( vi) / C%bednudge_H_u_flowline_u0
         I2( vi) = -nudge%deltau_av_down( vi) / C%bednudge_H_u_flowline_u0

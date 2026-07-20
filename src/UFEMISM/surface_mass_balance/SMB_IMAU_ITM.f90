@@ -276,7 +276,7 @@ contains
       ! Initialise with a uniform firn layer over the ice sheet
 
       do vi = self%mesh%vi1, self%mesh%vi2
-        if (ice%Hi( vi) > 0._dp) then
+        if (ice%geom%Hi( vi) > 0._dp) then
           self%FirnDepth       ( vi,:) = C%SMB_IMAUITM_initial_firn_thickness
           self%MeltPreviousYear( vi  ) = 0._dp
         else
@@ -294,12 +294,12 @@ contains
     do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Background albedo
-      if (ice%Hb( vi) < 0._dp) then
+      if (ice%geom%Hb( vi) < 0._dp) then
         self%AlbedoSurf( vi) = self%albedo_water
       else
         self%AlbedoSurf( vi) = self%albedo_soil
       end if
-      if (ice%Hi( vi) > 0._dp) then
+      if (ice%geom%Hi( vi) > 0._dp) then
         self%AlbedoSurf( vi) = self%albedo_snow
       end if
 

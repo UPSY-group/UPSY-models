@@ -431,7 +431,7 @@ module ut_tracer_tracking
 
 !     ! do vi = mesh%vi1, mesh%vi2
 !     !   call calc_idealised_geometry( mesh%V( vi,1), mesh%V( vi,2), &
-!     !     ice%Hi( vi), ice%Hb( vi), ice%Hs( vi), ice%SL( vi), choice_refgeo_idealised)
+!     !     ice%geom%Hi( vi), ice%geom%Hb( vi), ice%Hs( vi), ice%geom%SL( vi), choice_refgeo_idealised)
 !     ! end do
 
 !     ! ! Set up a very simple velocity field
@@ -553,9 +553,9 @@ module ut_tracer_tracking
 !     ! call allocate_ice_model( mesh, ice)
 
 !     ! ice%Hi = Hi
-!     ! ice%Hb = 0._dp
-!     ! ice%Hs = ice%Hb + ice%Hi
-!     ! ice%SL = -1000._dp
+!     ! ice%geom%Hb = 0._dp
+!     ! ice%Hs = ice%geom%Hb + ice%Hi
+!     ! ice%geom%SL = -1000._dp
 
 !     ! ! Set up a simple velocity field
 

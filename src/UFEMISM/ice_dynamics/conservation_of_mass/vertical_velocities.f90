@@ -153,7 +153,7 @@ contains
 
       ! Exception for very thin ice / ice margin: assume horizontal stretching
       ! is negligible, so that w( z) = w( z = b)
-      if (ice%Hi( vi) < 10._dp) then
+      if (ice%geom%Hi( vi) < 10._dp) then
         ice%w_3D( vi,:) = ice%w_3D( vi,C%nz)
         cycle
       end if ! if (ice%mask_margin_a( vi) == 1 .OR. ice%Hi_a( vi) < 10._dp) then
@@ -206,7 +206,7 @@ contains
     end do
 
     ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
-    call calc_dw_dz( mesh, ice%Hi, ice%Hs, mesh%zeta, &
+    call calc_dw_dz( mesh, ice%geom%Hi, ice%Hs, mesh%zeta, &
       ice%mask_grounded_ice, ice%mask_floating_ice, ice%w_3D, ice%dw_dz_3D)
 
     ! Finalise routine path

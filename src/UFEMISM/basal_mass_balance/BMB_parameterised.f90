@@ -88,7 +88,7 @@ CONTAINS
         BMB%BMB_shelf( vi) =  -1._dp * sec_per_year * C%BMB_Favier2019_gamma * sign(1._dp,dT) * (seawater_density * cp_ocean * dT / (ice_density * L_fusion))**2._dp
 
         ! Apply grounded fractions
-        if (ice%mask_gl_gr( vi) .and. ice%Hib(vi) < ice%SL(vi)) then
+        if (ice%mask_gl_gr( vi) .and. ice%Hib(vi) < ice%geom%SL(vi)) then
           ! Subgrid basal melt rate
           ! BMB%BMB_shelf( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
           ! Limit it to only melt (refreezing is tricky)
@@ -140,8 +140,8 @@ CONTAINS
     BMB%BMB_shelf = 0._dp
     allocate( dHb_dx(   mesh%vi1:mesh%vi2         ))
     allocate( dHb_dy(   mesh%vi1:mesh%vi2         ))
-    call ddx_a_a_2D( mesh, ice%Hb    , dHb_dx  )
-    call ddy_a_a_2D( mesh, ice%Hb    , dHb_dy  )
+    call ddx_a_a_2D( mesh, ice%geom%Hb    , dHb_dx  )
+    call ddy_a_a_2D( mesh, ice%geom%Hb    , dHb_dy  )
 
     DO vi = mesh%vi1, mesh%vi2
 
@@ -160,7 +160,7 @@ CONTAINS
       BMB%BMB_shelf( vi) = C_melt * dT**(1.5_dp) * SIN(slope_angle)**(0.5_dp)
 
       ! Apply grounded fractions
-      IF (ice%mask_gl_gr( vi) .AND. ice%Hib(vi) < ice%SL(vi)) THEN
+      IF (ice%mask_gl_gr( vi) .AND. ice%Hib(vi) < ice%geom%SL(vi)) THEN
         ! Subgrid basal melt rate
         ! BMB%BMB_shelf( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
         ! Limit it to only melt (refreezing is tricky)

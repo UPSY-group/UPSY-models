@@ -595,7 +595,7 @@ contains
       weight_gr = 1._dp
 
       ! Compute exponent for this vertex's weight based on ice thickness
-      exponent_hi = log10( max( 1._dp, ice%Hi( vi)))
+      exponent_hi = log10( max( 1._dp, ice%geom%Hi( vi)))
       ! Compute exponent for this vertex's weight based on surface gradients
       exponent_hs = ice%Hs_slope( vi) / 0.005_dp
       ! Compute final exponent for this vertex's weight

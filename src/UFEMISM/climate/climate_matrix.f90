@@ -787,8 +787,8 @@ contains
 
     ! Ice
     ! ===
-    allocate( ice_dummy%Hi( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%Hb( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%Hi( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%Hb( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_icefree_ocean( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_grounded_ice(   mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_floating_ice( mesh%vi1:mesh%vi2))
@@ -800,8 +800,8 @@ contains
    ! In IMAU-ICE SMB it uses region%mask_noice in UFE2 is ice%mask_noice, I will keep the masks from above for ice_dummy
    ! and make ice_dummy%mask_noice = ice%mask_noice to run the SMB using the dummy, following IMAU-ICE code..
       ice_dummy%mask_noice( vi) = ice%mask_noice( vi)
-      ice_dummy%Hi( vi) = ice%Hi( vi)
-      ice_dummy%Hb( vi) = ice%Hb( vi)
+      ice_dummy%geom%Hi( vi) = ice%geom%Hi( vi)
+      ice_dummy%geom%Hb( vi) = ice%geom%Hb( vi)
 
       if (snapshot%Hs( vi) == MINVAL(snapshot%Hs)) then
         ice_dummy%mask_icefree_ocean( vi) = .true.

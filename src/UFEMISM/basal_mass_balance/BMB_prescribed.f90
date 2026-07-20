@@ -52,7 +52,7 @@ CONTAINS
 
     ! To prevent compiler warnings
     dummy_dp   = mesh%xmin
-    dummy_dp   = ice%Hi( mesh%vi1)
+    dummy_dp   = ice%geom%Hi( mesh%vi1)
     dummy_dp   = BMB%BMB_shelf( mesh%vi1)
     dummy_char = region_name( 1:1)
     dummy_dp   = time

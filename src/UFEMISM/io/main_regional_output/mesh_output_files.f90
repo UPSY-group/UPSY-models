@@ -201,15 +201,15 @@ contains
     ! ====================================
 
       case ('Hi')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi', region%ice%Hi)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi', region%ice%geom%Hi)
       case ('Hb')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hb', region%ice%Hb)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hb', region%ice%geom%Hb)
       case ('Hs')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs', region%ice%Hs)
       case ('Hib')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%Hib)
       case ('SL')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%SL)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%geom%SL)
       case ('TAF')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%TAF)
       case ('Hi_eff')
@@ -1452,7 +1452,7 @@ contains
       case ('BMB_shelf')
         call add_field_mesh_dp_2D( filename, ncid, 'BMB_shelf', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance (floating ice)', units = 'm yr^-1')
       case ('BMB_sheet')
-        call add_field_mesh_dp_2D( filename, ncid, 'BMB_sheet', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance (grounded ice)', units = 'm yr^-1')        
+        call add_field_mesh_dp_2D( filename, ncid, 'BMB_sheet', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance (grounded ice)', units = 'm yr^-1')
       case ('BMB_inv')
         call add_field_mesh_dp_2D( filename, ncid, 'BMB_inv', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Basal mass balance - inverted', units = 'm yr^-1')
       case ('BMB_transition_phase')
@@ -1574,7 +1574,7 @@ contains
 
     ! Replace thickness above floatation with NaN in ice-free vertices so GL wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%Hi( vi) > 0.1_dp) then
+      if (ice%geom%Hi( vi) > 0.1_dp) then
         TAF_for_GL( vi) = ice%TAF( vi)
       else
         TAF_for_GL( vi) = NaN
@@ -1613,7 +1613,7 @@ contains
     ! Replace ice thickness with NaN in grounded vertices so CF wont be found there
     do vi = mesh%vi1, mesh%vi2
       if (ice%TAF( vi) < 0._dp) then
-        Hi_for_GL( vi) = ice%Hi( vi)
+        Hi_for_GL( vi) = ice%geom%Hi( vi)
       else
         Hi_for_GL( vi) = NaN
       end if
@@ -1648,7 +1648,7 @@ contains
 
     ! Calculate ice margin contour
     if (par%primary) allocate( CC( mesh%nE,2))
-    call calc_mesh_contour( mesh, ice%Hi, 0.05_dp, CC)
+    call calc_mesh_contour( mesh, ice%geom%Hi, 0.05_dp, CC)
 
     ! Write to NetCDF
     call write_contour_to_file( filename, ncid, mesh, CC, 'ice_margin')
@@ -1678,10 +1678,10 @@ contains
 
     ! Replace water depth with NaN in ice-covered vertices so coastline wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%Hi( vi) > 0.05_dp) then
+      if (ice%geom%Hi( vi) > 0.05_dp) then
         water_depth_for_coastline( vi) = NaN
       else
-        water_depth_for_coastline( vi) = ice%SL( vi) - ice%Hb( vi)
+        water_depth_for_coastline( vi) = ice%geom%SL( vi) - ice%geom%Hb( vi)
       end if
     end do
 
@@ -1717,7 +1717,7 @@ contains
     ! Remove floating ice
     do vi = mesh%vi1, mesh%vi2
       if (ice%mask_grounded_ice( vi)) then
-        Hi_grounded_only( vi) = ice%Hi( vi)
+        Hi_grounded_only( vi) = ice%geom%Hi( vi)
       else
         Hi_grounded_only( vi) = 0._dp
       end if

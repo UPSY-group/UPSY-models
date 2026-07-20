@@ -122,7 +122,7 @@ contains
     call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
 
     ! Run all the mapping tests with different test ice sheets
-    call allocate_ice_model( mesh, ice)
+    call allocate_ice_model( mesh, ice, 'ANT')
 
     allocate( Hi       (mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( u_vav_b  (mesh%ti1:mesh%ti2), source = 0._dp)

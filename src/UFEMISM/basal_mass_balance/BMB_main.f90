@@ -299,7 +299,7 @@ CONTAINS
 
     ! Allocate sheet BMB
     ALLOCATE( BMB%BMB_sheet( mesh%vi1:mesh%vi2))
-    BMB%BMB_sheet = 0._dp    
+    BMB%BMB_sheet = 0._dp
 
     ! Allocate inverted BMB
     ALLOCATE( BMB%BMB_inv( mesh%vi1:mesh%vi2))
@@ -800,9 +800,9 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%Hi                ( mesh%vi1:mesh%vi2  )
+    forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
     forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
-    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%Hb                ( mesh%vi1:mesh%vi2  )
+    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )

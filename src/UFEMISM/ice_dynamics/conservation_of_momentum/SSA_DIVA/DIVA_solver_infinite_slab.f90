@@ -326,7 +326,7 @@ contains
 
     ! Calculate the product term N = eta * H on the a-grid
     do vi = mesh%vi1, mesh%vi2
-      DIVA%N_a( vi) = DIVA%eta_vav_a( vi) * max( 0.1, ice%Hi( vi))
+      DIVA%N_a( vi) = DIVA%eta_vav_a( vi) * max( 0.1, ice%geom%Hi( vi))
     end do
 
     ! Calculate the product term N and its gradients on the b-grid
@@ -369,13 +369,13 @@ contains
       do k = 1, mesh%nz
         prof( k) = (mesh%zeta( k)    / DIVA%eta_3D_a( vi,k))
       end do
-      DIVA%F1_3D_a( vi,:) = -max( 0.1_dp, ice%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
+      DIVA%F1_3D_a( vi,:) = -max( 0.1_dp, ice%geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
 
       ! F2
       do k = 1, mesh%nz
         prof( k) = (mesh%zeta( k)**2 / DIVA%eta_3D_a( vi,k))
       end do
-      DIVA%F2_3D_a( vi,:) = -max( 0.1_dp, ice%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
+      DIVA%F2_3D_a( vi,:) = -max( 0.1_dp, ice%geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
 
     end do
 

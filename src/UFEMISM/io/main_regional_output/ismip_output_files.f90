@@ -214,7 +214,7 @@ contains
 
     ! Determine masks
     do vi = region%mesh%vi1, region%mesh%vi2
-      if (region%ice%Hi( vi) > 0._dp) then
+      if (region%ice%geom%Hi( vi) > 0._dp) then
         mask_ice_a( vi) = .true.
       else
         mask_ice_a( vi) = .false.
@@ -233,9 +233,9 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%Hi, vmin=0._dp)
+    call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%geom%Hi, vmin=0._dp)
     call write_to_file( region, region%ismip_output%orog,  inputfield_a=region%ice%Hs, vmin=0._dp)
-    call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%Hb)
+    call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%geom%Hb)
     call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%Hib)
 
     ! Geothermal heat flux
@@ -248,10 +248,10 @@ contains
 
     ! Thickness tendency
     do vi = region%mesh%vi1, region%mesh%vi2
-      region%ismip_output%dlithkdt%accum( vi) = (region%ice%Hi( vi) - region%ismip_output%dlithkdt%accum( vi)) / sec_per_year
+      region%ismip_output%dlithkdt%accum( vi) = (region%ice%geom%Hi( vi) - region%ismip_output%dlithkdt%accum( vi)) / sec_per_year
     end do
     call write_to_file_grid_FL( region, region%ismip_output%dlithkdt)
-    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
+    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
     call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=region%ice%u_surf_b / sec_per_year)
@@ -304,12 +304,12 @@ contains
         TF( vi) = region%ocean%T_draft( vi) - region%ocean%T_freezing_point( vi)
       end if
     end do
-    call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%mask_floating_ice) 
+    call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%mask_floating_ice)
 
     ! === Scalars ===
 
     ! State with provided inputfields and optional masks
-    call write_to_file( region, region%ismip_output%lim, region%ice%Hi * ice_density)
+    call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
     call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%TAF) * ice_density, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
@@ -486,7 +486,7 @@ contains
       ! Map from mesh vertices to grid
       call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
     else
-      call crash('write_to_file_grid_ST requires either inputfield_a or inputfield_b') 
+      call crash('write_to_file_grid_ST requires either inputfield_a or inputfield_b')
     end if
 
     ! Enforce bounds
@@ -942,7 +942,7 @@ contains
     call initialise_ISMIP_field( region, region%ismip_output%dlithkdt, 'dlithkdt' , &
       'Ice thickness imbalance', 'tendency_of_land_ice_thickness', 'm s-1', 'FL')
     ! Store snapshot ice thickness in accum
-    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi( region%mesh%vi1:region%mesh%vi2)
+    region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
     call initialise_ISMIP_field( region, region%ismip_output%xvelsurf, 'xvelsurf' , &
@@ -1152,7 +1152,7 @@ contains
     call reallocate_bounds( ismip_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
 
     ! Use accum to store current Hi for dHidt
-    ismip_output%dlithkdt%accum = ice%Hi
+    ismip_output%dlithkdt%accum = ice%geom%Hi
 
     ! Finalise routine path
     call finalise_routine( routine_name)

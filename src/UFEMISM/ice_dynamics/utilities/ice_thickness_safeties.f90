@@ -53,7 +53,7 @@ contains
 
     ! Calculate would-be effective thickness
     call calc_effective_thickness( mesh, Hi_new, Hb, SL, Hi_eff_new, fraction_margin_new)
-    
+
     ! == Mask conservation
     ! ====================
 
@@ -61,7 +61,7 @@ contains
     if (C%do_protect_grounded_mask .and. time <= C%protect_grounded_mask_t_end) then
       do vi = mesh%vi1, mesh%vi2
         if (ice%mask_grounded_ice( vi)) then
-          Hi_new( vi) = max( Hi_new( vi), (ice%SL( vi) - ice%Hb( vi)) * seawater_density/ice_density + .1_dp)
+          Hi_new( vi) = max( Hi_new( vi), (ice%geom%SL( vi) - ice%geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
         end if
       end do
     end if
@@ -79,7 +79,7 @@ contains
     ! if so specified, remove thin floating ice
     if (C%choice_calving_law == 'threshold_thickness') then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi)) .and. Hi_eff_new( vi) < C%calving_threshold_thickness_shelf) then
+        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi)) .and. Hi_eff_new( vi) < C%calving_threshold_thickness_shelf) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -97,7 +97,7 @@ contains
     ! if so specified, remove all floating ice
     if (C%do_remove_shelves) then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( Hi_eff_new( vi), ice%Hb( vi), ice%SL( vi))) then
+        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -317,11 +317,11 @@ contains
 
     call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
-    call gather_to_all( ice%Hb, Hb_tot)
+    call gather_to_all( ice%geom%Hb, Hb_tot)
 
     ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2
-  
+
       ! Determine upstream ice thickness
       if (ice%mask_cf_fl( vi) .or. ice%mask_cf_gr( vi)) then
 
@@ -364,11 +364,11 @@ contains
         Q_src( vi) = - (Hi_new( vi) - Hi_ups) * mesh%A( vi) / dt
 
         weight = 0._dp
-  
+
         ! Determine weights of surrounding ocean cells
         do ci = 1, mesh%nC( vi)
           vj = mesh%C( vi, ci)
-    
+
           if (mask_icefree_ocean_tot( vj)) then
             ! Define weight by outflow perpendicular velocity into ocean cells.
             ! Add small value to avoid division by 0 if no outflow velocity enters
@@ -405,18 +405,18 @@ contains
         do ci = 1, mesh%nC( vi)
           !Neighbouring cell which potentially has nonzero Q_src
           vj = mesh%C( vi, ci)
-  
+
           ! Connections of neighbouring cell
           do cj = 1, mesh%nC( vj)
-  
+
             if (mesh%C( vj, cj) == vi) then
             ! Yes, this connection is a match, receive fraction of Q_src
               if (Q_src_tot( vj) < -1.e-2_dp .and. relweight_tot( vj, cj) > 1.e-6_dp) then
                 Q_dst( vi) = Q_dst( vi) - Q_src_tot( vj) * relweight_tot( vj, cj)
-              end if  
+              end if
 
             end if
-  
+
           end do
 
       end do

@@ -120,7 +120,7 @@ CONTAINS
     ! and eventually u and v
     call calc_uv(mesh, ice, basal_hydro)
 
-    ! Get the timestep 
+    ! Get the timestep
     ! Mainly inspired by calc_critical_timestep_SIA subroutine in time_step_criteria.f90
     call get_basal_hydro_timestep(mesh, basal_hydro, dt, dt_hydro)
 
@@ -129,7 +129,7 @@ CONTAINS
 
     ! Compute how much goes in the water layer and how much goes in the till
     call calc_q_til(mesh, ice, basal_hydro, C%Salle2025_W_til_max)
-    
+
     ! If icefree set next timestep of P to 0, if floating set to overburden pressure
     ! If W at this timestep is 0 and if icefree and floating are both false, set next timestep of P to 0 (any sliding) or overburden pressure (no sliding)
     ! Otherwise, compute next timestep of P using the equation in the paper (Bueler and Van Pelt 2015)
@@ -252,7 +252,7 @@ CONTAINS
       !end if
 
       ! Initialise pressure with overburden pressure (for now at least)
-      !basal_hydro%P( vi) = rho_i * g * ice%Hi( vi)
+      !basal_hydro%P( vi) = rho_i * g * ice%geom%Hi( vi)
     end do
 
     ! Finalise routine path
@@ -279,9 +279,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       ! Convert ice velocities to m/s
-      basal_hydro%ice_u_base( vi) = ice%u_base( vi)/sec_per_year 
+      basal_hydro%ice_u_base( vi) = ice%u_base( vi)/sec_per_year
       basal_hydro%ice_v_base( vi) = ice%v_base( vi)/sec_per_year
-      basal_hydro%ice_w_base( vi) = ice%w_base( vi)/sec_per_year 
+      basal_hydro%ice_w_base( vi) = ice%w_base( vi)/sec_per_year
     end do
     !call checksum(mesh%pai_V, basal_hydro%ice_u_base, "ice_u_base after conversion to SI")
     !call checksum(mesh%pai_V, basal_hydro%ice_v_base, "ice_v_base after conversion to SI")
@@ -313,7 +313,7 @@ CONTAINS
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      basal_hydro%P_o( vi)     = rho_i * g * ice%Hi( vi) ! Calculate overburden pressure
+      basal_hydro%P_o( vi)     = rho_i * g * ice%geom%Hi( vi) ! Calculate overburden pressure
       basal_hydro%W( vi)       = min( max( basal_hydro%W( vi),       W_min),       W_max) ! Bueler and Van Pelt 2015 eq. 33 (In this case we also give a (very high) max W but this is not in the paper. Could theoretically be used to avoid getting extremely small timesteps due to very high W for example)
       basal_hydro%W_til( vi)   = min( max( basal_hydro%W_til( vi),   W_min_til),   W_max_til) ! Bueler and Van Pelt 2015 eq. 33
       basal_hydro%P( vi)       = min( max( basal_hydro%P( vi),       P_min),       basal_hydro%P_o( vi)) ! Bueler and Van Pelt 2015 eq. 33
@@ -447,7 +447,7 @@ CONTAINS
       D_nabla_W_x( vi) = basal_hydro%D( vi)*basal_hydro%dW_dx_a(vi)
       D_nabla_W_y( vi) = basal_hydro%D( vi)*basal_hydro%dW_dy_a(vi)
     end do
-    
+
     ! Take the derivative to use in the diffusion term
     call ddx_a_a_2D(mesh, D_nabla_W_x, dD_nabla_W_x)
     call ddy_a_a_2D(mesh, D_nabla_W_y, dD_nabla_W_y)
@@ -548,7 +548,7 @@ CONTAINS
         ! Compute next timestep of P using the equation in the paper
         basal_hydro%Z( vi) = basal_hydro%C( vi) - basal_hydro%O( vi) + basal_hydro%q_water_layer( vi)/basal_hydro%dt ! Bueler and Van Pelt 2015 eq. 48
         basal_hydro%P( vi) = basal_hydro%P( vi) + basal_hydro%dt * ((rho_w * g / phi) * (-basal_hydro%divQ( vi) + basal_hydro%Z( vi))) ! Bueler and Van Pelt 2015 eq. 49
-      
+
     ! 12) Make sure P is within its bounds
         basal_hydro%P( vi) = min( max( basal_hydro%P( vi), P_min), basal_hydro%P_o( vi))
       end if
@@ -913,9 +913,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       if (test) then                          ! For testing we take R without the pressure component
-        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g
-      else 
-        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi) ! Bueler and Van Pelt 2015 eq. 2
+        basal_hydro%R( vi) = (ice%geom%Hb( vi) + basal_hydro%W( vi))*rho_w*g
+      else
+        basal_hydro%R( vi) = (ice%geom%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi) ! Bueler and Van Pelt 2015 eq. 2
       end if
     end do
     !call checksum(mesh%pai_V, basal_hydro%R, "basal_hydro%R")
@@ -951,7 +951,7 @@ CONTAINS
 
     do ti = mesh%ti1, mesh%ti2
       if (basal_hydro%mask_b( ti)) then
-        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp & 
+        basal_hydro%K_b( ti) = k*basal_hydro%W_b( ti)**(alpha - 1._dp)*abs(basal_hydro%dR_dx_b( ti)**2._dp &
                                + basal_hydro%dR_dy_b( ti)**2._dp + 0.00000001_dp)**((beta - 2._dp)/2._dp) ! Bueler and Van Pelt 2015 eq. 9 (Taking R without approximating) Added small value to avoid dividing by 0
       else
         basal_hydro%K_b( ti) = 0.0_dp

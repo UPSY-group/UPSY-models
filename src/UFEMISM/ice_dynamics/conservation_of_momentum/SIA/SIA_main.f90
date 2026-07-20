@@ -99,7 +99,7 @@ contains
     call calc_ice_rheology_Glen( mesh, ice)
 
     ! Calculate ice thickness, surface elevation, surface slopes, and ice flow factor on the b-grid
-    call map_a_b_2D( mesh, ice%Hi    , Hi_b    )
+    call map_a_b_2D( mesh, ice%geom%Hi    , Hi_b    )
     call map_a_b_2D( mesh, ice%Hs    , Hs_b    )
     call ddx_a_a_2D( mesh, ice%Hs    , dHs_dx  )
     call ddy_a_a_2D( mesh, ice%Hs    , dHs_dy  )
@@ -141,7 +141,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       abs_grad_Hs = SQRT( dHs_dx( vi)**2 + dHs_dy( vi)**2)
-      z = ice%Hs( vi) - mesh%zeta * ice%Hi( vi)
+      z = ice%Hs( vi) - mesh%zeta * ice%geom%Hi( vi)
 
       do k = 1, mesh%nz
         SIA%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &

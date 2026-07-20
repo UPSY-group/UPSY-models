@@ -9,6 +9,7 @@ MODULE ice_model_types
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
   use basal_hydrology_model_types, only: type_basal_hydrology_model
+  use ice_geometry_model_basic, only: type_ice_geometry_model
 
   IMPLICIT NONE
 
@@ -300,8 +301,7 @@ MODULE ice_model_types
   ! ==========================
 
     ! Basic geometry
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hi                          ! [m] Ice thickness
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hb                          ! [m] Bedrock elevation (w.r.t. PD sea level)
+    type(type_ice_geometry_model) :: geom
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hs                          ! [m] Surface elevation (w.r.t. PD sea level)
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: SL                          ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hib                         ! [m] Ice base elevation (w.r.t. PD sea level)

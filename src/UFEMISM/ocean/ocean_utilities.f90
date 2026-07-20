@@ -48,7 +48,7 @@ CONTAINS
       ocean%T_draft( vi) = 0._dp
 
       ! Depth (positive downwards)
-      depth = ice%SL( vi) - ice%Hib( vi)
+      depth = ice%geom%SL( vi) - ice%Hib( vi)
 
       if (depth > 0._dp) then
 
@@ -95,7 +95,7 @@ CONTAINS
       ocean%T_freezing_point( vi) = 0._dp
 
       ! Depth (positive downwards)
-      depth = ice%SL( vi) - ice%Hib( vi)
+      depth = ice%geom%SL( vi) - ice%Hib( vi)
 
       if (depth > 0._dp) then
 

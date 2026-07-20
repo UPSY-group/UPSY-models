@@ -174,7 +174,7 @@ CONTAINS
     CALL interpolate_value_from_forcing_record(forcing%sl_t0, forcing%sl_t1, forcing%sl_at_t0, forcing%sl_at_t1, time, computed_sea_level) ! We might be calling this twice with no need, but might be worth keeping it like that to facilitate future impoementations
 
     do vi = mesh%vi1, mesh%vi2
-      ice%SL( vi) = computed_sea_level
+      ice%geom%SL( vi) = computed_sea_level
     end do
 
     ! Finalise routine path

@@ -196,13 +196,23 @@ contains
     n_node = n2_node + 1 - n1_node
 
     ! Find out which process/node owns each element
-    owning_process = -1
+    if (par%primary) owning_process = -1
+    call sync
     owning_process( n1:n2) = par%i
-    call MPI_ALLREDUCE( MPI_IN_PLACE, owning_process, size( owning_process), MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+    call sync
+    if (par%node_primary) then
+      call MPI_ALLREDUCE( MPI_IN_PLACE, owning_process, n, MPI_INTEGER, MPI_MAX, par%mpi_comm_node_primaries, ierr)
+    end if
+    call sync
 
-    owning_node = -1
-    owning_node( n1_node:n2_node) = par%node_ID
-    call MPI_ALLREDUCE( MPI_IN_PLACE, owning_node, size( owning_node), MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+    if (par%primary) owning_node = -1
+    call sync
+    owning_node( n1:n2) = par%node_ID
+    call sync
+    if (par%node_primary) then
+      call MPI_ALLREDUCE( MPI_IN_PLACE, owning_node, n, MPI_INTEGER, MPI_MAX, par%mpi_comm_node_primaries, ierr)
+    end if
+    call sync
 
     ! Finalise routine path
     call finalise_routine( routine_name)

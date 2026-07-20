@@ -19,10 +19,15 @@ module CSR_matrix_vector_multiplication
     multiply_CSR_matrix_with_vector_1D_wrapper, multiply_CSR_matrix_with_vector_2D_wrapper, &
     multiply_CSR_matrix_with_vector_local
 
+  interface is_hybrid
+    procedure :: is_hybrid_2D
+    procedure :: is_hybrid_3D
+  end interface is_hybrid
+
 contains
 
   subroutine multiply_CSR_matrix_with_vector_1D_wrapper( AA, pai_x, xx, pai_y, yy, &
-    xx_is_hybrid, yy_is_hybrid, buffer_xx_nih, buffer_yy_nih)
+    buffer_xx_nih, buffer_yy_nih)
     !< Interface between the old, purely distributed memory architecture,
     !< and the new, hybrid distributed/shared memory architecture.
 
@@ -32,12 +37,11 @@ contains
     real(dp), dimension(:), target,  intent(in   ) :: xx
     type(type_par_arr_info),         intent(in   ) :: pai_y
     real(dp), dimension(:), target,  intent(  out) :: yy
-    logical, optional,               intent(in   ) :: xx_is_hybrid, yy_is_hybrid
     real(dp), dimension(:), target, optional, intent(in   ) :: buffer_xx_nih, buffer_yy_nih
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'multiply_CSR_matrix_with_vector_1D_wrapper'
-    logical                         :: xx_is_hybrid_, yy_is_hybrid_
+    logical                         :: xx_is_hybrid, yy_is_hybrid
     real(dp), dimension(:), pointer :: xx_nih => null()
     real(dp), dimension(:), pointer :: yy_nih => null()
     type(MPI_WIN)                   :: wxx_nih, wyy_nih
@@ -45,20 +49,10 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    xx_is_hybrid = is_hybrid( pai_x, xx)
+    yy_is_hybrid = is_hybrid( pai_y, yy)
 
-    if (present( xx_is_hybrid)) then
-      xx_is_hybrid_ = xx_is_hybrid
-    else
-      xx_is_hybrid_ = .false.
-    end if
-
-    if (present( yy_is_hybrid)) then
-      yy_is_hybrid_ = yy_is_hybrid
-    else
-      yy_is_hybrid_ = .false.
-    end if
-
-    if (xx_is_hybrid_) then
+    if (xx_is_hybrid) then
       xx_nih => xx
     else
       if (present( buffer_xx_nih)) then
@@ -70,7 +64,7 @@ contains
       call basic_halo_exchange( pai_x, xx_nih)
     end if
 
-    if (yy_is_hybrid_) then
+    if (yy_is_hybrid) then
       yy_nih => yy
     else
       if (present( buffer_yy_nih)) then
@@ -83,7 +77,7 @@ contains
 
     call multiply_CSR_matrix_with_vector_1D( AA, pai_x, xx_nih, pai_y, yy_nih)
 
-    if (xx_is_hybrid_) then
+    if (xx_is_hybrid) then
       nullify( xx_nih)
     else
       if (.not. present( buffer_xx_nih)) then
@@ -93,7 +87,7 @@ contains
       end if
     end if
 
-    if (yy_is_hybrid_) then
+    if (yy_is_hybrid) then
       nullify( yy_nih)
     else
       call hybrid_to_dist( pai_y, yy_nih, yy)
@@ -110,7 +104,7 @@ contains
   end subroutine multiply_CSR_matrix_with_vector_1D_wrapper
 
   subroutine multiply_CSR_matrix_with_vector_2D_wrapper( AA, pai_x, xx, pai_y, yy, &
-    xx_is_hybrid, yy_is_hybrid, buffer_xx_nih, buffer_yy_nih)
+    buffer_xx_nih, buffer_yy_nih)
     !< Interface between the old, purely distributed memory architecture,
     !< and the new, hybrid distributed/shared memory architecture.
 
@@ -120,12 +114,11 @@ contains
     real(dp), dimension(:,:), target, intent(in   ) :: xx
     type(type_par_arr_info),          intent(in   ) :: pai_y
     real(dp), dimension(:,:), target, intent(  out) :: yy
-    logical, optional,                intent(in   ) :: xx_is_hybrid, yy_is_hybrid
     real(dp), dimension(:,:), target, optional, intent(in   ) :: buffer_xx_nih, buffer_yy_nih
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'multiply_CSR_matrix_with_vector_2D_wrapper'
-    logical                           :: xx_is_hybrid_, yy_is_hybrid_
+    logical                           :: xx_is_hybrid, yy_is_hybrid
     real(dp), dimension(:,:), pointer :: xx_nih => null()
     real(dp), dimension(:,:), pointer :: yy_nih => null()
     type(MPI_WIN)                     :: wxx_nih, wyy_nih
@@ -133,19 +126,10 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (present( xx_is_hybrid)) then
-      xx_is_hybrid_ = xx_is_hybrid
-    else
-      xx_is_hybrid_ = .false.
-    end if
+    xx_is_hybrid = is_hybrid( pai_x, xx)
+    yy_is_hybrid = is_hybrid( pai_y, yy)
 
-    if (present( yy_is_hybrid)) then
-      yy_is_hybrid_ = yy_is_hybrid
-    else
-      yy_is_hybrid_ = .false.
-    end if
-
-    if (xx_is_hybrid_) then
+    if (xx_is_hybrid) then
       xx_nih => xx
     else
       if (present( buffer_xx_nih)) then
@@ -157,7 +141,7 @@ contains
       call basic_halo_exchange( pai_x, size( xx,2), xx_nih)
     end if
 
-    if (yy_is_hybrid_) then
+    if (yy_is_hybrid) then
       yy_nih => yy
     else
       if (present( buffer_yy_nih)) then
@@ -170,7 +154,7 @@ contains
 
     call multiply_CSR_matrix_with_vector_2D( AA, pai_x, xx_nih, pai_y, yy_nih, size( xx,2))
 
-    if (xx_is_hybrid_) then
+    if (xx_is_hybrid) then
       nullify( xx_nih)
     else
       if (.not. present( buffer_xx_nih)) then
@@ -180,7 +164,7 @@ contains
       end if
     end if
 
-    if (yy_is_hybrid_) then
+    if (yy_is_hybrid) then
       nullify( yy_nih)
     else
       call hybrid_to_dist( pai_y, size( xx,2), yy_nih, yy)
@@ -406,5 +390,35 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine multiply_CSR_matrix_with_vector_local
+
+
+
+  logical function is_hybrid_2D( pai, d)
+    !< Check if an array d is stored as distributed memory,
+    !< or as hybrid distributed/shared memory
+    type(type_par_arr_info), intent(in) :: pai
+    real(dp), dimension(:),  intent(in) :: d
+    if (size( d,1) == pai%n_loc) then
+      is_hybrid_2D = .false.
+    elseif (size( d,1) == pai%n_nih) then
+      is_hybrid_2D = .true.
+    else
+      call crash('invalid size for d')
+    end if
+  end function is_hybrid_2D
+
+  logical function is_hybrid_3D( pai, d)
+    !< Check if an array d is stored as distributed memory,
+    !< or as hybrid distributed/shared memory
+    type(type_par_arr_info),   intent(in) :: pai
+    real(dp), dimension(:,:),  intent(in) :: d
+    if (size( d,1) == pai%n_loc) then
+      is_hybrid_3D = .false.
+    elseif (size( d,1) == pai%n_nih) then
+      is_hybrid_3D = .true.
+    else
+      call crash('invalid size for d')
+    end if
+  end function is_hybrid_3D
 
 end module CSR_matrix_vector_multiplication

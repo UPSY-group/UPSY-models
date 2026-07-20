@@ -180,7 +180,7 @@ contains
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
       ice%Hi , Hi_grid_vec_partial)
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
-      SMB%SMB, SMB_grid_vec_partial, d_mesh_is_hybrid = .true.)
+      SMB%SMB, SMB_grid_vec_partial)
 
     ! Gather data to all processes, so they can be interpolated to the particle positions
     ! (necessary, as a particle owned by process n will generally not be located in the

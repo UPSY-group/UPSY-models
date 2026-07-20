@@ -429,7 +429,7 @@ contains
 
     ! Apply the appropriate mapping object
     call apply_map_mesh_vertices_to_xy_grid_2D( mesh, grid, Atlas( mi), &
-      d_mesh_partial, d_grid_vec_partial, d_mesh_is_hybrid, d_grid_is_hybrid)
+      d_mesh_partial, d_grid_vec_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -488,7 +488,7 @@ contains
 
     ! Apply the appropriate mapping object
     call apply_map_mesh_vertices_to_xy_grid_3D( mesh, grid, Atlas( mi), &
-      d_mesh_partial, d_grid_vec_partial, d_mesh_is_hybrid, d_grid_is_hybrid)
+      d_mesh_partial, d_grid_vec_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -605,7 +605,7 @@ contains
 
     ! Apply the appropriate mapping object
     call apply_map_mesh_triangles_to_xy_grid_2D( mesh, grid, Atlas( mi), &
-      d_mesh_partial, d_grid_vec_partial, d_mesh_is_hybrid, d_grid_is_hybrid)
+      d_mesh_partial, d_grid_vec_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -664,7 +664,7 @@ contains
 
     ! Apply the appropriate mapping object
     call apply_map_mesh_triangles_to_xy_grid_3D( mesh, grid, Atlas( mi), &
-      d_mesh_partial, d_grid_vec_partial, d_mesh_is_hybrid, d_grid_is_hybrid)
+      d_mesh_partial, d_grid_vec_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

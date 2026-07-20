@@ -495,8 +495,8 @@ CONTAINS
     call map_H_a_c( mesh_new, laddie, npx%H, npx%H_c)
 
     ! Velocities to a and c grid
-    call map_b_a_2D( mesh_new, npx%U, npx%U_a, d_b_is_hybrid = .true., d_a_is_hybrid = .true.)
-    call map_b_a_2D( mesh_new, npx%V, npx%V_a, d_b_is_hybrid = .true., d_a_is_hybrid = .true.)
+    call map_b_a_2D( mesh_new, npx%U, npx%U_a)
+    call map_b_a_2D( mesh_new, npx%V, npx%V_a)
 
     call map_UV_b_c( mesh_new, laddie, npx%U, npx%V, npx%U_c, npx%V_c)
 

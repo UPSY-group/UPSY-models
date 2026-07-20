@@ -65,6 +65,8 @@ contains
     call enforce_contiguous_process_domains( mesh)
     call calc_all_secondary_mesh_data( mesh, 0._dp, -90._dp, 71._dp)
 
+call warning('beep')
+
     ! Test halo exchange on this mesh
     call test_halo_exchange_mesh_a_logical( test_name, mesh)
     call test_halo_exchange_mesh_a_int    ( test_name, mesh)

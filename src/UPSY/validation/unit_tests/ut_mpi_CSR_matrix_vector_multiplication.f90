@@ -103,8 +103,7 @@ contains
     ! ===============
 
     ! Perform matrix-vector multiplication
-    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x, pai, y, &
-      xx_is_hybrid = .false., yy_is_hybrid = .false.)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x, pai, y)
 
     ! Verify result
     test_result = test_tol( y, y_correct, 1e-10_dp)
@@ -115,8 +114,7 @@ contains
     ! =================
 
     ! Perform matrix-vector multiplication
-    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x, pai, y_nih, &
-      xx_is_hybrid = .false., yy_is_hybrid = .true.)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x, pai, y_nih)
 
     ! Convert y back to fully distributed array
     call hybrid_to_dist( pai, y_nih, y)
@@ -130,8 +128,7 @@ contains
     ! =================
 
     ! Perform matrix-vector multiplication
-    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x_nih, pai, y, &
-      xx_is_hybrid = .true., yy_is_hybrid = .false.)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x_nih, pai, y)
 
     ! Verify result
     test_result = test_tol( y, y_correct, 1e-10_dp)
@@ -142,8 +139,7 @@ contains
     ! ===================
 
     ! Perform matrix-vector multiplication
-    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x_nih, pai, y_nih, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true.)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( A, pai, x_nih, pai, y_nih)
 
     ! Convert y back to fully distributed array
     call hybrid_to_dist( pai, y_nih, y)

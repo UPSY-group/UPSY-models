@@ -378,7 +378,7 @@ contains
 
   ! From a mesh to an x/y-grid
   subroutine map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, output_dir, d_mesh_partial, d_grid_vec_partial, &
-    method, d_mesh_is_hybrid, d_grid_is_hybrid)
+    method)
     !< Map a 2-D data field from the vertices of a mesh to an x/y-grid
 
     ! In/output variables
@@ -388,7 +388,6 @@ contains
     real(dp), dimension(:    ), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:    ), intent(  out) :: d_grid_vec_partial
     character(len=*), optional, intent(in   ) :: method
-    logical, optional,          intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'map_from_mesh_vertices_to_xy_grid_2D'
@@ -437,7 +436,7 @@ contains
   end subroutine map_from_mesh_vertices_to_xy_grid_2D
 
   subroutine map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, output_dir, d_mesh_partial, d_grid_vec_partial, &
-    method, d_mesh_is_hybrid, d_grid_is_hybrid)
+    method)
     !< Map a 3-D data field from the vertices of a mesh to an x/y-grid
 
     ! In/output variables
@@ -447,7 +446,6 @@ contains
     real(dp), dimension(:,:  ), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:,:  ), intent(  out) :: d_grid_vec_partial
     character(len=*), optional, intent(in   ) :: method
-    logical, optional,          intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter                     :: routine_name = 'map_from_mesh_vertices_to_xy_grid_3D'
@@ -554,7 +552,7 @@ contains
   end subroutine map_from_mesh_vertices_to_xy_grid_2D_minval
 
   subroutine map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, output_dir, d_mesh_partial, d_grid_vec_partial, &
-    method, d_mesh_is_hybrid, d_grid_is_hybrid)
+    method)
     !< Map a 2-D data field from the triangles of a mesh to an x/y-grid
 
     ! In/output variables
@@ -564,7 +562,6 @@ contains
     real(dp), dimension(:    ), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:    ), intent(  out) :: d_grid_vec_partial
     character(len=*), optional, intent(in   ) :: method
-    logical, optional,          intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'map_from_mesh_triangles_to_xy_grid_2D'
@@ -613,7 +610,7 @@ contains
   end subroutine map_from_mesh_triangles_to_xy_grid_2D
 
   subroutine map_from_mesh_triangles_to_xy_grid_3D( mesh, grid, output_dir, d_mesh_partial, d_grid_vec_partial, &
-    method, d_mesh_is_hybrid, d_grid_is_hybrid)
+    method)
     !< Map a 3-D data field from the triangles of a mesh to an x/y-grid
 
     ! In/output variables
@@ -623,7 +620,6 @@ contains
     real(dp), dimension(:,:  ), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:,:  ), intent(  out) :: d_grid_vec_partial
     character(len=*), optional, intent(in   ) :: method
-    logical, optional,          intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter                     :: routine_name = 'map_from_mesh_triangles_to_xy_grid_3D'

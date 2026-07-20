@@ -12,7 +12,6 @@ module ice_thickness_safeties
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
   use mpi_basic, only: par, sync
-  use masks_mod, only: determine_masks
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
 
   implicit none

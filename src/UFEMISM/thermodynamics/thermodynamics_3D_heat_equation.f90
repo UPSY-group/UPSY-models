@@ -269,7 +269,7 @@ CONTAINS
 
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%Hi                  , 'Hi'                  )
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%Hi_eff              , 'Hi_eff'              )
-      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%Hb                  , 'Hb'                  )
+      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%Hb                  , 'Hb'                  )
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%SL                  , 'SL'                  )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dx_ak         , 'dzeta_dx_ak'         )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dy_ak         , 'dzeta_dy_ak'         )

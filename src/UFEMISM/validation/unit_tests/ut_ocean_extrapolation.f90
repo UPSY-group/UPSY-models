@@ -80,29 +80,29 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
     if (vi == 1) then
       ! Open ocean, deep bedrock
       ice%geom%Hi( vi) = 0._dp
-      ice%Hb( vi) = -2050._dp
+      ice%geom%Hb( vi) = -2050._dp
     elseif (vi == 2) then
       ! Open ocean, shallower bedrock
       ice%geom%Hi( vi) = 0._dp
-      ice%Hb( vi) = -1050._dp
+      ice%geom%Hb( vi) = -1050._dp
     elseif (vi == 3) then
       ! Grounded ice above sea level
       ice%geom%Hi( vi) = 1000._dp
-      ice%Hb( vi) = 150._dp
+      ice%geom%Hb( vi) = 150._dp
     elseif (vi == 4) then
       ! Grounded ice below sea level
       ice%geom%Hi( vi) = 1000._dp
-      ice%Hb( vi) = -150._dp
+      ice%geom%Hb( vi) = -150._dp
     elseif (vi == 5) then
       ! Cavity, intermediate bedrock
       ice%geom%Hi( vi) = 300._dp
-      ice%Hb( vi) = -1550._dp
+      ice%geom%Hb( vi) = -1550._dp
     end if
   end do
 
   ! Get surface and basal topography
   do vi = mesh%vi1, mesh%vi2
-    ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%Hb( vi), 0._dp)
+    ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), 0._dp)
     ice%Hib( vi) = ice%Hs( vi) - ice%geom%Hi( vi)
   end do
 

@@ -1276,7 +1276,7 @@ CONTAINS
     CALL create_mesh_from_meshed_geometry( region%name, new_mesh_name, &
       region%mesh, &
       region%ice%geom%Hi, &
-      region%ice%Hb, &
+      region%ice%geom%Hb, &
       region%ice%Hs, &
       region%ice%SL, &
       xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &

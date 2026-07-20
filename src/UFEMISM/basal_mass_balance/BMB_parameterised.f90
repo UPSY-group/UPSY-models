@@ -140,8 +140,8 @@ CONTAINS
     BMB%BMB_shelf = 0._dp
     allocate( dHb_dx(   mesh%vi1:mesh%vi2         ))
     allocate( dHb_dy(   mesh%vi1:mesh%vi2         ))
-    call ddx_a_a_2D( mesh, ice%Hb    , dHb_dx  )
-    call ddy_a_a_2D( mesh, ice%Hb    , dHb_dy  )
+    call ddx_a_a_2D( mesh, ice%geom%Hb    , dHb_dx  )
+    call ddy_a_a_2D( mesh, ice%geom%Hb    , dHb_dy  )
 
     DO vi = mesh%vi1, mesh%vi2
 

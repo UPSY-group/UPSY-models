@@ -234,7 +234,7 @@ contains
 
       ! Compute till friction angle based on Martin et al. (2011) Eq. 10
       weight_Hb = min( 1._dp, max( 0._dp, &
-        (ice%Hb( vi) - C%Martin2011till_phi_Hb_min) / (C%Martin2011till_phi_Hb_max - C%Martin2011till_phi_Hb_min) ))
+        (ice%geom%Hb( vi) - C%Martin2011till_phi_Hb_min) / (C%Martin2011till_phi_Hb_max - C%Martin2011till_phi_Hb_min) ))
 
       bed_roughness%till_friction_angle( vi) = (1._dp - weight_Hb) * C%Martin2011till_phi_min + weight_Hb * C%Martin2011till_phi_max
 

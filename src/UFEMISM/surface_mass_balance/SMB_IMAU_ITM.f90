@@ -294,7 +294,7 @@ contains
     do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Background albedo
-      if (ice%Hb( vi) < 0._dp) then
+      if (ice%geom%Hb( vi) < 0._dp) then
         self%AlbedoSurf( vi) = self%albedo_water
       else
         self%AlbedoSurf( vi) = self%albedo_soil

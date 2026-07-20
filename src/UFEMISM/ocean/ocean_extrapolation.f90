@@ -66,7 +66,7 @@ contains
     ! Set values below bedrock to NaN
     do vi = mesh%vi1, mesh%vi2
       do k = 1, C%nz_ocean
-        if (C%z_ocean( k) > -ice%Hb( vi)) then
+        if (C%z_ocean( k) > -ice%geom%Hb( vi)) then
           d( vi, k) = NaN
         end if
       end do
@@ -102,7 +102,7 @@ contains
         ! Check for NaNs
         if (isnan(d( vi, k))) then
           ! Check whether in cavity
-          if ((C%z_ocean( k) > -ice%Hib( vi)) .and. (C%z_ocean( k) < -ice%Hb( vi))) then
+          if ((C%z_ocean( k) > -ice%Hib( vi)) .and. (C%z_ocean( k) < -ice%geom%Hb( vi))) then
             ! In cavity, so extrapolate here
             mask_fill( vi) = 1
           else

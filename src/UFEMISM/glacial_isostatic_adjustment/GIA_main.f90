@@ -93,7 +93,7 @@ CONTAINS
 !    END DO
 
     DO vi = region%mesh%vi1, region%mesh%vi2
-  	  region%ice%Hb( vi) = region%refgeo_GIAeq%Hb( vi) + region%ice%dHb( vi)
+  	  region%ice%geom%Hb( vi) = region%refgeo_GIAeq%Hb( vi) + region%ice%dHb( vi)
 	END DO
 
     call checksum( region%mesh%pai_V  , region%GIA%relative_surface_load_mesh, 'region%GIA%relative_surface_load_mesh')

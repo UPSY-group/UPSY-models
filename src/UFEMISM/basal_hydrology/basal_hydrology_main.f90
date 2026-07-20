@@ -54,7 +54,7 @@ contains
           CALL finalise_routine( routine_name)
           RETURN
         END IF
-      
+
       ELSE ! IF (C%do_asynchronous_basal_hydro) THEN
         ! Synchronous coupling: calculate a new basal hydrology in every model loop
         basal_hydro%t_next = time + C%dt_basal_hydro
@@ -228,7 +228,7 @@ contains
 
       ! Pore water pressure scaling factor (Martin et al., 2011, Eq. 12)
       ice%pore_water_fraction( vi) = min( 1._dp, max( 0._dp, &
-        1._dp - (ice%Hb( vi) - ice%SL( vi) - C%Martin2011_hydro_Hb_min) / (C%Martin2011_hydro_Hb_max - C%Martin2011_hydro_Hb_min) ))
+        1._dp - (ice%geom%Hb( vi) - ice%SL( vi) - C%Martin2011_hydro_Hb_min) / (C%Martin2011_hydro_Hb_max - C%Martin2011_hydro_Hb_min) ))
 
       ! Pore water pressure (Martin et al., 2011, Eq. 11)
       ice%pore_water_pressure( vi) = 0.96_dp * ice_density * grav * ice%Hi_eff( vi) * ice%pore_water_fraction( vi)
@@ -296,7 +296,7 @@ contains
           ice%effective_pressure( vi) = 0.0_dp
         else
           ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
-          Hi_f = max(0._dp, - seawater_density/ice_density * ice%Hb( vi))
+          Hi_f = max(0._dp, - seawater_density/ice_density * ice%geom%Hb( vi))
           ! if (Hi_f == 0._dp) then
           !   ice%effective_pressure( vi) = 0.0_dp
           ! else

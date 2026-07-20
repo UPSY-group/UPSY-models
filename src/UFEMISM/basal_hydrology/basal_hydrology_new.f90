@@ -913,9 +913,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       if (test) then                          ! For testing we take R without the pressure component
-        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g
+        basal_hydro%R( vi) = (ice%geom%Hb( vi) + basal_hydro%W( vi))*rho_w*g
       else
-        basal_hydro%R( vi) = (ice%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi) ! Bueler and Van Pelt 2015 eq. 2
+        basal_hydro%R( vi) = (ice%geom%Hb( vi) + basal_hydro%W( vi))*rho_w*g + basal_hydro%P( vi) ! Bueler and Van Pelt 2015 eq. 2
       end if
     end do
     !call checksum(mesh%pai_V, basal_hydro%R, "basal_hydro%R")

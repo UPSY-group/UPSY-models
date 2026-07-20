@@ -20,6 +20,8 @@ module ice_geometry_model_basic
       procedure, public :: deallocate => deallocate_ice_geometry_model
       procedure, public :: remap      => remap_ice_geometry_model
 
+      final :: finalise_ice_geometry_model
+
   end type type_ice_geometry_model
 
 contains
@@ -117,5 +119,23 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine remap_ice_geometry_model
+
+  subroutine finalise_ice_geometry_model( self)
+
+    ! In/output variables:
+    type(type_ice_geometry_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'finalise_ice_geometry_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    call self%deallocate()
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine finalise_ice_geometry_model
 
 end module ice_geometry_model_basic

@@ -15,25 +15,22 @@ module mesh_disc_apply_operators
 
 contains
 
-  subroutine ddx_a_a_2D( mesh, d_a, ddx_a, d_a_is_hybrid, ddx_a_is_hybrid)
+  subroutine ddx_a_a_2D( mesh, d_a, ddx_a)
     ! ddx a 2-D data field from the a-grid (vertices) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_a
     real(dp), dimension(:    ), intent(  out) :: ddx_a
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddx_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddx_a_a_2D'
+    character(len=*), parameter :: routine_name = 'ddx_a_a_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddxping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_ddx_a_a, &
       mesh%pai_V, d_a, mesh%pai_V, ddx_a, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddx_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Finalise routine path
@@ -41,25 +38,22 @@ contains
 
   end subroutine ddx_a_a_2D
 
-  subroutine ddx_a_a_3D( mesh, d_a, ddx_a, d_a_is_hybrid, ddx_a_is_hybrid)
+  subroutine ddx_a_a_3D( mesh, d_a, ddx_a)
     ! ddx a 3-D data field from the a-grid (vertices) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_a
     real(dp), dimension(:,:  ), intent(out  ) :: ddx_a
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddx_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddx_a_a_3D'
+    character(len=*), parameter :: routine_name = 'ddx_a_a_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddxping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_ddx_a_a, &
       mesh%pai_V, d_a, mesh%pai_V, ddx_a, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddx_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_ak_nih, buffer_yy_nih = mesh%buffer2_d_ak_nih)
 
     ! Finalise routine path
@@ -67,25 +61,22 @@ contains
 
   end subroutine ddx_a_a_3D
 
-  subroutine ddy_a_a_2D( mesh, d_a, ddy_a, d_a_is_hybrid, ddy_a_is_hybrid)
+  subroutine ddy_a_a_2D( mesh, d_a, ddy_a)
     ! ddy a 2-D data field from the a-grid (vertices) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_a
     real(dp), dimension(:    ), intent(out  ) :: ddy_a
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddy_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddy_a_a_2D'
+    character(len=*), parameter :: routine_name = 'ddy_a_a_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddyping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_ddy_a_a, &
       mesh%pai_V, d_a, mesh%pai_V, ddy_a, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddy_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Finalise routine path
@@ -93,24 +84,22 @@ contains
 
   end subroutine ddy_a_a_2D
 
-  subroutine ddy_a_a_3D( mesh, d_a, ddy_a, d_a_is_hybrid, ddy_a_is_hybrid)
+  subroutine ddy_a_a_3D( mesh, d_a, ddy_a)
     ! ddy a 3-D data field from the a-grid (vertices) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),              intent(in   ) :: mesh
     real(dp), dimension(:,:  ),   intent(in   ) :: d_a
     real(dp), dimension(:,:  ),   intent(out  ) :: ddy_a
-    logical, optional,            intent(in   ) :: d_a_is_hybrid, ddy_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddy_a_a_3D'
+    character(len=*), parameter :: routine_name = 'ddy_a_a_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_ddy_a_a, &
       mesh%pai_V, d_a, mesh%pai_V, ddy_a, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddy_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_ak_nih, buffer_yy_nih = mesh%buffer2_d_ak_nih)
 
     ! Finalise routine path
@@ -118,25 +107,22 @@ contains
 
   end subroutine ddy_a_a_3D
 
-  subroutine map_a_b_2D( mesh, d_a, d_b, d_a_is_hybrid, d_b_is_hybrid)
+  subroutine map_a_b_2D( mesh, d_a, d_b)
     ! Map a 2-D data field from the a-grid (vertices) to the b-grid (triangles)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_a
     real(dp), dimension(:    ), intent(out  ) :: d_b
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, d_b_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'map_a_b_2D'
+    character(len=*), parameter :: routine_name = 'map_a_b_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the mapping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_map_a_b, &
       mesh%pai_V, d_a, mesh%pai_Tri, d_b, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = d_b_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_b_nih)
 
     ! Finalise routine path
@@ -144,25 +130,22 @@ contains
 
   end subroutine map_a_b_2D
 
-  subroutine map_a_b_3D( mesh, d_a, d_b, d_a_is_hybrid, d_b_is_hybrid)
+  subroutine map_a_b_3D( mesh, d_a, d_b)
     ! Map a 3-D data field from the a-grid (vertices) to the b-grid (triangles)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_a
     real(dp), dimension(:,:  ), intent(out  ) :: d_b
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, d_b_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'map_a_b_3D'
+    character(len=*), parameter :: routine_name = 'map_a_b_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the mapping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_map_a_b, &
       mesh%pai_V, d_a, mesh%pai_Tri, d_b, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = d_b_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_ak_nih, buffer_yy_nih = mesh%buffer2_d_bk_nih)
 
     ! Finalise routine path
@@ -170,25 +153,22 @@ contains
 
   end subroutine map_a_b_3D
 
-  subroutine map_b_a_2D( mesh, d_b, d_a, d_b_is_hybrid, d_a_is_hybrid)
+  subroutine map_b_a_2D( mesh, d_b, d_a)
     ! Map a 2-D data field from the b-grid (triangles) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_b
     real(dp), dimension(:    ), intent(out  ) :: d_a
-    logical, optional,          intent(in   ) :: d_b_is_hybrid, d_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'map_b_a_2D'
+    character(len=*), parameter :: routine_name = 'map_b_a_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the mapping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_map_b_a, &
       mesh%pai_Tri, d_b, mesh%pai_V, d_a, &
-      xx_is_hybrid = d_b_is_hybrid, yy_is_hybrid = d_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_b_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Finalise routine path
@@ -196,25 +176,22 @@ contains
 
   end subroutine map_b_a_2D
 
-  subroutine map_b_a_3D( mesh, d_b, d_a, d_b_is_hybrid, d_a_is_hybrid)
+  subroutine map_b_a_3D( mesh, d_b, d_a)
     ! Map a 3-D data field from the b-grid (triangles) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_b
     real(dp), dimension(:,:  ), intent(out  ) :: d_a
-    logical, optional,          intent(in   ) :: d_b_is_hybrid, d_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'map_b_a_3D'
+    character(len=*), parameter :: routine_name = 'map_b_a_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the mapping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_map_b_a, &
       mesh%pai_Tri, d_b, mesh%pai_V, d_a, &
-      xx_is_hybrid = d_b_is_hybrid, yy_is_hybrid = d_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_bk_nih, buffer_yy_nih = mesh%buffer2_d_ak_nih)
 
     ! Finalise routine path
@@ -222,25 +199,22 @@ contains
 
   end subroutine map_b_a_3D
 
-  subroutine ddx_a_b_2D( mesh, d_a, ddx_b, d_a_is_hybrid, ddx_b_is_hybrid)
+  subroutine ddx_a_b_2D( mesh, d_a, ddx_b)
     ! ddx a 2-D data field from the a-grid (vertices) to the b-grid (triangles)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_a
     real(dp), dimension(:    ), intent(out  ) :: ddx_b
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddx_b_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddx_a_b_2D'
+    character(len=*), parameter :: routine_name = 'ddx_a_b_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddxping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_ddx_a_b, &
       mesh%pai_V, d_a, mesh%pai_Tri, ddx_b, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddx_b_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_b_nih)
 
     ! Finalise routine path
@@ -248,25 +222,22 @@ contains
 
   end subroutine ddx_a_b_2D
 
-  subroutine ddx_a_b_3D( mesh, d_a, ddx_b, d_a_is_hybrid, ddx_b_is_hybrid)
+  subroutine ddx_a_b_3D( mesh, d_a, ddx_b)
     ! ddx a 3-D data field from the a-grid (vertices) to the b-grid (triangles)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_a
     real(dp), dimension(:,:  ), intent(out  ) :: ddx_b
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddx_b_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddx_a_b_3D'
+    character(len=*), parameter :: routine_name = 'ddx_a_b_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddxping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_ddx_a_b, &
       mesh%pai_V, d_a, mesh%pai_Tri, ddx_b, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddx_b_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_ak_nih, buffer_yy_nih = mesh%buffer2_d_bk_nih)
 
     ! Finalise routine path
@@ -274,25 +245,22 @@ contains
 
   end subroutine ddx_a_b_3D
 
-  subroutine ddx_b_a_2D( mesh, d_b, ddx_a, d_b_is_hybrid, ddx_a_is_hybrid)
+  subroutine ddx_b_a_2D( mesh, d_b, ddx_a)
     ! ddx a 2-D data field from the b-grid (triangles) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_b
     real(dp), dimension(:    ), intent(out  ) :: ddx_a
-    logical, optional,          intent(in   ) :: d_b_is_hybrid, ddx_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddx_b_a_2D'
+    character(len=*), parameter :: routine_name = 'ddx_b_a_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddxping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_ddx_b_a, &
       mesh%pai_Tri, d_b, mesh%pai_V, ddx_a, &
-      xx_is_hybrid = d_b_is_hybrid, yy_is_hybrid = ddx_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_b_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Finalise routine path
@@ -300,25 +268,22 @@ contains
 
   end subroutine ddx_b_a_2D
 
-  subroutine ddx_b_a_3D( mesh, d_b, ddx_a, d_b_is_hybrid, ddx_a_is_hybrid)
+  subroutine ddx_b_a_3D( mesh, d_b, ddx_a)
     ! ddx a 3-D data field from the b-grid (triangles) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_b
     real(dp), dimension(:,:  ), intent(out  ) :: ddx_a
-    logical, optional,          intent(in   ) :: d_b_is_hybrid, ddx_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddx_b_a_3D'
+    character(len=*), parameter :: routine_name = 'ddx_b_a_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddxping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_ddx_b_a, &
       mesh%pai_Tri, d_b, mesh%pai_V, ddx_a, &
-      xx_is_hybrid = d_b_is_hybrid, yy_is_hybrid = ddx_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_bk_nih, buffer_yy_nih = mesh%buffer2_d_ak_nih)
 
     ! Finalise routine path
@@ -326,25 +291,22 @@ contains
 
   end subroutine ddx_b_a_3D
 
-  subroutine ddy_a_b_2D( mesh, d_a, ddy_b, d_a_is_hybrid, ddy_b_is_hybrid)
+  subroutine ddy_a_b_2D( mesh, d_a, ddy_b)
     ! ddy a 2-D data field from the a-grid (vertices) to the b-grid (triangles)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_a
     real(dp), dimension(:    ), intent(out  ) :: ddy_b
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddy_b_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddy_a_b_2D'
+    character(len=*), parameter :: routine_name = 'ddy_a_b_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddyping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_ddy_a_b, &
       mesh%pai_V, d_a, mesh%pai_Tri, ddy_b, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddy_b_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_b_nih)
 
     ! Finalise routine path
@@ -352,25 +314,22 @@ contains
 
   end subroutine ddy_a_b_2D
 
-  subroutine ddy_a_b_3D( mesh, d_a, ddy_b, d_a_is_hybrid, ddy_b_is_hybrid)
+  subroutine ddy_a_b_3D( mesh, d_a, ddy_b)
     ! ddy a 3-D data field from the a-grid (vertices) to the b-grid (triangles)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_a
     real(dp), dimension(:,:  ), intent(out  ) :: ddy_b
-    logical, optional,          intent(in   ) :: d_a_is_hybrid, ddy_b_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddy_a_b_3D'
+    character(len=*), parameter :: routine_name = 'ddy_a_b_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddyping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_ddy_a_b, &
       mesh%pai_V, d_a, mesh%pai_Tri, ddy_b, &
-      xx_is_hybrid = d_a_is_hybrid, yy_is_hybrid = ddy_b_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_ak_nih, buffer_yy_nih = mesh%buffer2_d_bk_nih)
 
     ! Finalise routine path
@@ -378,25 +337,22 @@ contains
 
   end subroutine ddy_a_b_3D
 
-  subroutine ddy_b_a_2D( mesh, d_b, ddy_a, d_b_is_hybrid, ddy_a_is_hybrid)
+  subroutine ddy_b_a_2D( mesh, d_b, ddy_a)
     ! ddy a 2-D data field from the b-grid (triangles) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:    ), intent(in   ) :: d_b
     real(dp), dimension(:    ), intent(out  ) :: ddy_a
-    logical, optional,          intent(in   ) :: d_b_is_hybrid, ddy_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddy_b_a_2D'
+    character(len=*), parameter :: routine_name = 'ddy_b_a_2D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddyping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_1D_wrapper( mesh%M_ddy_b_a, &
       mesh%pai_Tri, d_b, mesh%pai_V, ddy_a, &
-      xx_is_hybrid = d_b_is_hybrid, yy_is_hybrid = ddy_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_b_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Finalise routine path
@@ -404,25 +360,22 @@ contains
 
   end subroutine ddy_b_a_2D
 
-  subroutine ddy_b_a_3D( mesh, d_b, ddy_a, d_b_is_hybrid, ddy_a_is_hybrid)
+  subroutine ddy_b_a_3D( mesh, d_b, ddy_a)
     ! ddy a 3-D data field from the b-grid (triangles) to the a-grid (vertices)
 
     ! In/output variables:
     type(type_mesh),            intent(in   ) :: mesh
     real(dp), dimension(:,:  ), intent(in   ) :: d_b
     real(dp), dimension(:,:  ), intent(out  ) :: ddy_a
-    logical, optional,          intent(in   ) :: d_b_is_hybrid, ddy_a_is_hybrid
 
     ! Local variables:
-    character(len=256), parameter :: routine_name = 'ddy_b_a_3D'
+    character(len=*), parameter :: routine_name = 'ddy_b_a_3D'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Perform the ddyping operation as a matrix multiplication
     call multiply_CSR_matrix_with_vector_2D_wrapper( mesh%M_ddy_b_a, &
       mesh%pai_Tri, d_b, mesh%pai_V, ddy_a, &
-      xx_is_hybrid = d_b_is_hybrid, yy_is_hybrid = ddy_a_is_hybrid, &
       buffer_xx_nih = mesh%buffer1_d_bk_nih, buffer_yy_nih = mesh%buffer2_d_ak_nih)
 
     ! Finalise routine path

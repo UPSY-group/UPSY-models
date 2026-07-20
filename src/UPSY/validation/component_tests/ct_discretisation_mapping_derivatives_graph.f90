@@ -246,23 +246,18 @@ contains
 
     ! Calculate discretised approximations
     call multiply_CSR_matrix_with_vector_1D_wrapper( M2_ddx, graph%pai, d_ex, graph%pai, ddx_disc, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = graph%buffer1_g_nih, buffer_yy_nih = graph%buffer2_g_nih)
 
     call multiply_CSR_matrix_with_vector_1D_wrapper( M2_ddy, graph%pai, d_ex, graph%pai, ddy_disc, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = graph%buffer1_g_nih, buffer_yy_nih = graph%buffer2_g_nih)
 
     call multiply_CSR_matrix_with_vector_1D_wrapper( M2_d2dx2, graph%pai, d_ex, graph%pai, d2dx2_disc, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = graph%buffer1_g_nih, buffer_yy_nih = graph%buffer2_g_nih)
 
     call multiply_CSR_matrix_with_vector_1D_wrapper( M2_d2dxdy, graph%pai, d_ex, graph%pai, d2dxdy_disc, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = graph%buffer1_g_nih, buffer_yy_nih = graph%buffer2_g_nih)
 
     call multiply_CSR_matrix_with_vector_1D_wrapper( M2_d2dy2, graph%pai, d_ex, graph%pai, d2dy2_disc, &
-      xx_is_hybrid = .true., yy_is_hybrid = .true., &
       buffer_xx_nih = graph%buffer1_g_nih, buffer_yy_nih = graph%buffer2_g_nih)
 
     ! Write results to NetCDF

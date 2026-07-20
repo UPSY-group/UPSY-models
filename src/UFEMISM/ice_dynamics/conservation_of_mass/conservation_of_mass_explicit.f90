@@ -84,7 +84,6 @@ contains
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &
       mesh%pai_V, Hi, mesh%pai_V, divQ, &
-      xx_is_hybrid = .false., yy_is_hybrid = .false., &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Calculate rate of ice thickness change dHi/dt

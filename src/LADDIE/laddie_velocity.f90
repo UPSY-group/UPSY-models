@@ -65,7 +65,7 @@ CONTAINS
     call exchange_halos( mesh, laddie%detr     )
     call exchange_halos( mesh, laddie%Hdrho_amb)
     ! call exchange_halos( mesh, Hstar) ! Already done in integrate_fbrk3
-    CALL map_a_b_2D( mesh, laddie%detr, laddie%detr_b, d_a_is_hybrid = .true., d_b_is_hybrid = .true.)
+    CALL map_a_b_2D( mesh, laddie%detr, laddie%detr_b)
     CALL map_H_a_b( mesh, laddie, laddie%Hdrho_amb, laddie%Hdrho_amb_b)
     CALL map_H_a_b( mesh, laddie, Hstar, laddie%Hstar_b)
     CALL map_H_a_c( mesh, laddie, Hstar, laddie%Hstar_c)
@@ -81,10 +81,10 @@ CONTAINS
 
     ! Bunch of derivatives
     call exchange_halos( mesh, laddie%drho_amb)
-    CALL ddx_a_b_2D( mesh, laddie%drho_amb, laddie%ddrho_amb_dx_b, d_a_is_hybrid = .true., ddx_b_is_hybrid = .true.)
-    CALL ddy_a_b_2D( mesh, laddie%drho_amb, laddie%ddrho_amb_dy_b, d_a_is_hybrid = .true., ddy_b_is_hybrid = .true.)
-    CALL ddx_a_b_2D( mesh, Hstar, laddie%dH_dx_b, d_a_is_hybrid = .true., ddx_b_is_hybrid = .true.)
-    CALL ddy_a_b_2D( mesh, Hstar, laddie%dH_dy_b, d_a_is_hybrid = .true., ddy_b_is_hybrid = .true.)
+    CALL ddx_a_b_2D( mesh, laddie%drho_amb, laddie%ddrho_amb_dx_b)
+    CALL ddy_a_b_2D( mesh, laddie%drho_amb, laddie%ddrho_amb_dy_b)
+    CALL ddx_a_b_2D( mesh, Hstar, laddie%dH_dx_b)
+    CALL ddy_a_b_2D( mesh, Hstar, laddie%dH_dy_b)
 
     call checksum( mesh%pai_V  , laddie%drho_amb      , 'laddie%drho_amb      ')
     call checksum( mesh%pai_Tri, laddie%ddrho_amb_dx_b, 'laddie%ddrho_amb_dx_b')
@@ -195,8 +195,8 @@ CONTAINS
     call exchange_halos( mesh, npx_new%U)
     call exchange_halos( mesh, npx_new%V)
     CALL map_UV_b_c( mesh, laddie, npx_new%U, npx_new%V, npx_new%U_c, npx_new%V_c)
-    CALL map_b_a_2D( mesh, npx_new%U, npx_new%U_a, d_b_is_hybrid = .true., d_a_is_hybrid = .true.)
-    CALL map_b_a_2D( mesh, npx_new%V, npx_new%V_a, d_b_is_hybrid = .true., d_a_is_hybrid = .true.)
+    CALL map_b_a_2D( mesh, npx_new%U, npx_new%U_a)
+    CALL map_b_a_2D( mesh, npx_new%V, npx_new%V_a)
 
     call checksum( mesh%pai_E, npx_new%U_c, 'npx_new%U_c')
     call checksum( mesh%pai_E, npx_new%V_c, 'npx_new%V_c')

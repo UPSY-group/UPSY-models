@@ -5,6 +5,8 @@ module parallel_array_info_type
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use netcdf_basic_wrappers, only: create_and_write_to_scalar_variable_dist_int, &
     read_scalar_variable_dist_int
+  use crash_mod, only: crash
+  use precisions, only: dp
 
   implicit none
 
@@ -13,6 +15,7 @@ module parallel_array_info_type
   public :: type_par_arr_info
 
   type type_par_arr_info
+
     integer :: n                             ! Global number of elements
     integer :: i1,      i2,       n_loc      ! Range owned by this process
     integer :: i1_node, i2_node,  n_node     ! Range owned by this shared-memory node
@@ -21,11 +24,29 @@ module parallel_array_info_type
     integer :: i1_hli,  i2_hli,   n_hli      ! Range of left  interior halo
     integer :: i1_hre,  i2_hre,   n_hre      ! Range of right exterior halo
     integer :: i1_hri,  i2_hri,   n_hri      ! Range of right interior halo
+
   contains
+
     generic,   public  :: operator(==) => eq
     procedure, private :: eq => test_pai_equality
+
     procedure, public  :: setup_in_netcdf_file
     procedure, public  :: read_from_netcdf_file
+
+    generic,   public  :: is_hybrid => &
+      is_hybrid_logical_2D, &
+      is_hybrid_logical_3D, &
+      is_hybrid_int_2D, &
+      is_hybrid_int_3D, &
+      is_hybrid_dp_2D, &
+      is_hybrid_dp_3D
+    procedure, private :: is_hybrid_logical_2D
+    procedure, private :: is_hybrid_logical_3D
+    procedure, private :: is_hybrid_int_2D
+    procedure, private :: is_hybrid_int_3D
+    procedure, private :: is_hybrid_dp_2D
+    procedure, private :: is_hybrid_dp_3D
+
   end type type_par_arr_info
 
 contains
@@ -148,5 +169,89 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine read_from_netcdf_file
+
+  function is_hybrid_logical_2D( self, d) result( isso)
+    class(type_par_arr_info), intent(in) :: self
+    logical, dimension(:),    intent(in) :: d
+    logical :: isso
+    isso = .false.
+    if (size( d,1) == self%n_loc) then
+      isso = .false.
+    elseif (size( d,1) == self%n_nih) then
+      isso = .true.
+    else
+      call crash('array doesnt meet expected size for either distributed or hybrid distributed/shared memory')
+    end if
+  end function is_hybrid_logical_2D
+
+  function is_hybrid_logical_3D( self, d) result( isso)
+    class(type_par_arr_info), intent(in) :: self
+    logical, dimension(:,:),  intent(in) :: d
+    logical :: isso
+    isso = .false.
+    if (size( d,1) == self%n_loc) then
+      isso = .false.
+    elseif (size( d,1) == self%n_nih) then
+      isso = .true.
+    else
+      call crash('array doesnt meet expected size for either distributed or hybrid distributed/shared memory')
+    end if
+  end function is_hybrid_logical_3D
+
+  function is_hybrid_int_2D( self, d) result( isso)
+    class(type_par_arr_info), intent(in) :: self
+    integer, dimension(:),    intent(in) :: d
+    logical :: isso
+    isso = .false.
+    if (size( d,1) == self%n_loc) then
+      isso = .false.
+    elseif (size( d,1) == self%n_nih) then
+      isso = .true.
+    else
+      call crash('array doesnt meet expected size for either distributed or hybrid distributed/shared memory')
+    end if
+  end function is_hybrid_int_2D
+
+  function is_hybrid_int_3D( self, d) result( isso)
+    class(type_par_arr_info), intent(in) :: self
+    integer, dimension(:,:),  intent(in) :: d
+    logical :: isso
+    isso = .false.
+    if (size( d,1) == self%n_loc) then
+      isso = .false.
+    elseif (size( d,1) == self%n_nih) then
+      isso = .true.
+    else
+      call crash('array doesnt meet expected size for either distributed or hybrid distributed/shared memory')
+    end if
+  end function is_hybrid_int_3D
+
+  function is_hybrid_dp_2D( self, d) result( isso)
+    class(type_par_arr_info), intent(in) :: self
+    real(dp), dimension(:),   intent(in) :: d
+    logical :: isso
+    isso = .false.
+    if (size( d,1) == self%n_loc) then
+      isso = .false.
+    elseif (size( d,1) == self%n_nih) then
+      isso = .true.
+    else
+      call crash('array doesnt meet expected size for either distributed or hybrid distributed/shared memory')
+    end if
+  end function is_hybrid_dp_2D
+
+  function is_hybrid_dp_3D( self, d) result( isso)
+    class(type_par_arr_info), intent(in) :: self
+    real(dp), dimension(:,:), intent(in) :: d
+    logical :: isso
+    isso = .false.
+    if (size( d,1) == self%n_loc) then
+      isso = .false.
+    elseif (size( d,1) == self%n_nih) then
+      isso = .true.
+    else
+      call crash('array doesnt meet expected size for either distributed or hybrid distributed/shared memory')
+    end if
+  end function is_hybrid_dp_3D
 
 end module parallel_array_info_type

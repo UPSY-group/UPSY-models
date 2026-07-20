@@ -49,18 +49,9 @@ contains
     type(MPI_WIN)                         :: wd_nih
     integer,  dimension(:  ), allocatable :: d_tot
     integer,  dimension(:,:), allocatable :: d_tot_with_time
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial ({int_01})', int_01 = size( d_partial,1))
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -72,7 +63,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
@@ -100,7 +91,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, ti /), count = (/ mesh%nV, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -133,18 +124,9 @@ contains
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:  ), allocatable :: d_tot
     real(dp), dimension(:,:), allocatable :: d_tot_with_time
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial ({int_01})', int_01 = size( d_partial,1))
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -156,7 +138,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
@@ -184,7 +166,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, ti /), count = (/ mesh%nV, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -217,18 +199,9 @@ contains
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:  ), allocatable :: d_tot
     real(dp), dimension(:,:), allocatable :: d_tot_with_time
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -240,7 +213,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
@@ -268,7 +241,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, ti /), count = (/ mesh%nTri, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -301,18 +274,9 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -324,7 +288,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, 12])
@@ -352,7 +316,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nV, 12, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -385,18 +349,9 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -408,7 +363,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, mesh%nz])
@@ -436,7 +391,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nV, mesh%nz, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -469,18 +424,9 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -492,7 +438,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1, mesh%nz])
@@ -520,7 +466,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nTri, mesh%nz, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -553,20 +499,11 @@ contains
     type(MPI_WIN)                           :: wd_nih
     real(dp), dimension(:,:  ), allocatable :: d_tot
     real(dp), dimension(:,:,:), allocatable :: d_tot_with_time
-    logical                                 :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
     nz_ocean = size( d_partial,2)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -578,7 +515,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, nz_ocean])
@@ -606,7 +543,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot_with_time, start = (/ 1, 1, ti /), count = (/ mesh%nV, nz_ocean, 1 /) )
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -636,18 +573,9 @@ contains
     integer, dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                      :: wd_nih
     integer, dimension(:), allocatable :: d_tot
-    logical                            :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -659,7 +587,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
@@ -681,7 +609,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -711,18 +639,9 @@ contains
     integer, dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                      :: wd_nih
     integer, dimension(:), allocatable :: d_tot
-    logical                            :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -734,7 +653,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
@@ -756,7 +675,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -786,18 +705,9 @@ contains
     integer, dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                      :: wd_nih
     integer, dimension(:), allocatable :: d_tot
-    logical                            :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_E%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_E%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -809,7 +719,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_E%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
@@ -831,7 +741,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_E%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -861,18 +771,9 @@ contains
     real(dp), dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                       :: wd_nih
     real(dp), dimension(:), allocatable :: d_tot
-    logical                             :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -884,7 +785,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih])
@@ -906,7 +807,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -936,18 +837,9 @@ contains
     real(dp), dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                       :: wd_nih
     real(dp), dimension(:), allocatable :: d_tot
-    logical                             :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -959,7 +851,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih])
@@ -981,7 +873,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1011,18 +903,9 @@ contains
     real(dp), dimension(:), pointer     :: d_nih => null()
     type(MPI_WIN)                       :: wd_nih
     real(dp), dimension(:), allocatable :: d_tot
-    logical                             :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_E%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_E%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -1034,7 +917,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_E%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_E%i1_nih, mesh%pai_E%i2_nih])
@@ -1056,7 +939,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_E%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1086,18 +969,9 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -1109,7 +983,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, 12])
@@ -1131,7 +1005,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1161,18 +1035,9 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -1184,7 +1049,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, mesh%nz])
@@ -1206,7 +1071,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1236,18 +1101,9 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    if (size( d_partial,1) == mesh%pai_Tri%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_Tri%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -1259,7 +1115,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_Tri%i1_nih, mesh%pai_Tri%i2_nih], [1, mesh%nz])
@@ -1281,7 +1137,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_Tri%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)
@@ -1311,20 +1167,11 @@ contains
     real(dp), dimension(:,:), pointer     :: d_nih => null()
     type(MPI_WIN)                         :: wd_nih
     real(dp), dimension(:,:), allocatable :: d_tot
-    logical                               :: d_is_hybrid
 
     ! Add routine to path
     call init_routine( routine_name)
 
     nz_ocean = size( d_partial,2)
-
-    if (size( d_partial,1) == mesh%pai_V%n_loc) then
-      d_is_hybrid = .false.
-    elseif (size( d_partial,1) == mesh%pai_V%n_nih) then
-      d_is_hybrid = .true.
-    else
-      call crash('invalid size for d_partial')
-    end if
 
     ! Inquire the variable
     call inquire_var_multopt( filename, ncid, field_name_options, id_var, var_name = var_name)
@@ -1336,7 +1183,7 @@ contains
 #endif
 
     ! Convert from distributed to hybrid distributed/shared memory if necessary
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       d_nih => d_partial
     else
       call allocate_dist_shared( d_nih, wd_nih, [mesh%pai_V%i1_nih, mesh%pai_V%i2_nih], [1, nz_ocean])
@@ -1358,7 +1205,7 @@ contains
     call write_var_primary( filename, ncid, id_var, d_tot)
 
     ! Clean up after yourself
-    if (d_is_hybrid) then
+    if (mesh%pai_V%is_hybrid( d_partial)) then
       nullify( d_nih)
     else
       call deallocate_dist_shared( d_nih, wd_nih)

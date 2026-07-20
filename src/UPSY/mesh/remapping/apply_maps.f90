@@ -227,8 +227,7 @@ contains
   ! ===== mesh to x/y-grid =====
   ! ============================
 
-  subroutine apply_map_mesh_vertices_to_xy_grid_2D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial, &
-    d_mesh_is_hybrid, d_grid_is_hybrid)
+  subroutine apply_map_mesh_vertices_to_xy_grid_2D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial)
     !< Map a 2-D data field from the vertices of a mesh to an x/y-grid.
 
     ! In/output variables
@@ -237,7 +236,6 @@ contains
     type(type_map),         intent(in   )  :: map
     real(dp), dimension(:), intent(in   )  :: d_mesh_partial
     real(dp), dimension(:), intent(  out) :: d_grid_vec_partial
-    logical, optional,      intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'apply_map_mesh_vertices_to_xy_grid_2D'
@@ -251,7 +249,7 @@ contains
     call mat_petsc2CSR( map%M, M_CSR)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
       mesh%pai_V, d_mesh_partial, grid%pai, d_grid_vec_partial, &
-      xx_is_hybrid = d_mesh_is_hybrid, yy_is_hybrid = d_grid_is_hybrid)
+      buffer_xx_nih = mesh%buffer1_d_a_nih)
 
     ! == Because the remapping operators are sometimes inaccurate at the
     !     domain boundary, set values in the outermost row of grid cells
@@ -288,8 +286,7 @@ contains
 
   end subroutine apply_map_mesh_vertices_to_xy_grid_2D
 
-  subroutine apply_map_mesh_vertices_to_xy_grid_3D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial, &
-    d_mesh_is_hybrid, d_grid_is_hybrid)
+  subroutine apply_map_mesh_vertices_to_xy_grid_3D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial)
     !< Map a 3-D data field from the vertices of a mesh to an x/y-grid.
 
     ! In/output variables
@@ -298,7 +295,6 @@ contains
     type(type_map),           intent(in   ) :: map
     real(dp), dimension(:,:), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:,:), intent(  out) :: d_grid_vec_partial
-    logical, optional,        intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'apply_map_mesh_vertices_to_xy_grid_3D'
@@ -312,7 +308,7 @@ contains
     call mat_petsc2CSR( map%M, M_CSR)
     call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
       mesh%pai_V, d_mesh_partial, grid%pai, d_grid_vec_partial, &
-      xx_is_hybrid = d_mesh_is_hybrid, yy_is_hybrid = d_grid_is_hybrid)
+      buffer_xx_nih = mesh%buffer1_d_ak_nih)
 
     ! == Because the remapping operators are sometimes inaccurate at the
     !     domain boundary, set values in the outermost row of grid cells
@@ -403,8 +399,7 @@ contains
 
   end subroutine apply_map_mesh_vertices_to_xy_grid_2D_minval
 
-  subroutine apply_map_mesh_triangles_to_xy_grid_2D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial, &
-    d_mesh_is_hybrid, d_grid_is_hybrid)
+  subroutine apply_map_mesh_triangles_to_xy_grid_2D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial)
     !< Map a 2-D data field from the triangles of a mesh to an x/y-grid.
 
     ! In/output variables
@@ -413,7 +408,6 @@ contains
     type(type_map),         intent(in   ) :: map
     real(dp), dimension(:), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:), intent(  out) :: d_grid_vec_partial
-    logical, optional,      intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'apply_map_mesh_triangles_to_xy_grid_2D'
@@ -427,7 +421,7 @@ contains
     call mat_petsc2CSR( map%M, M_CSR)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
       mesh%pai_Tri, d_mesh_partial, grid%pai, d_grid_vec_partial, &
-      xx_is_hybrid = d_mesh_is_hybrid, yy_is_hybrid = d_grid_is_hybrid)
+      buffer_xx_nih = mesh%buffer1_d_b_nih)
 
     ! == Because the remapping operators are sometimes inaccurate at the
     !     domain boundary, set values in the outermost row of grid cells
@@ -464,8 +458,7 @@ contains
 
   end subroutine apply_map_mesh_triangles_to_xy_grid_2D
 
-  subroutine apply_map_mesh_triangles_to_xy_grid_3D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial, &
-    d_mesh_is_hybrid, d_grid_is_hybrid)
+  subroutine apply_map_mesh_triangles_to_xy_grid_3D( mesh, grid, map, d_mesh_partial, d_grid_vec_partial)
     !< Map a 3-D data field from the triangles of a mesh to an x/y-grid.
 
     ! In/output variables
@@ -474,7 +467,6 @@ contains
     type(type_map),           intent(in   ) :: map
     real(dp), dimension(:,:), intent(in   ) :: d_mesh_partial
     real(dp), dimension(:,:), intent(  out) :: d_grid_vec_partial
-    logical, optional,        intent(in   ) :: d_mesh_is_hybrid, d_grid_is_hybrid
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'apply_map_mesh_triangles_to_xy_grid_3D'
@@ -488,7 +480,7 @@ contains
     call mat_petsc2CSR( map%M, M_CSR)
     call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
       mesh%pai_Tri, d_mesh_partial, grid%pai, d_grid_vec_partial, &
-      xx_is_hybrid = d_mesh_is_hybrid, yy_is_hybrid = d_grid_is_hybrid)
+      buffer_xx_nih = mesh%buffer1_d_bk_nih)
 
     ! == Because the remapping operators are sometimes inaccurate at the
     !     domain boundary, set values in the outermost row of grid cells

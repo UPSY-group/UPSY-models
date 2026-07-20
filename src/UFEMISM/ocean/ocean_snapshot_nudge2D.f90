@@ -234,8 +234,7 @@ contains
 
     ! Map deltaT to reference grid
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, snapshot_nudge2D%grid_ref, trim( C%output_dir), &
-      snapshot_nudge2D%deltaT_nudge, snapshot_nudge2D%deltaT_nudge_grid, '2nd_order_conservative', &
-      d_mesh_is_hybrid = .false., d_grid_is_hybrid = .false.)
+      snapshot_nudge2D%deltaT_nudge, snapshot_nudge2D%deltaT_nudge_grid, '2nd_order_conservative')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

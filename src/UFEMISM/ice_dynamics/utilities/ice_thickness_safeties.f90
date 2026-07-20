@@ -8,7 +8,6 @@ module ice_thickness_safeties
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
   use mpi_basic, only: par, sync
@@ -51,7 +50,7 @@ contains
     Hi_save = Hi_new
 
     ! Calculate would-be effective thickness
-    call calc_effective_thickness( mesh, Hi_new, Hb, SL, Hi_eff_new, fraction_margin_new)
+    call ice%geom%calc_effective_thickness( mesh, Hi_new, Hb, SL, Hi_eff_new, fraction_margin_new)
 
     ! == Mask conservation
     ! ====================

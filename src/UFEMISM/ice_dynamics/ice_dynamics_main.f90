@@ -24,7 +24,6 @@ module ice_dynamics_main
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, &
     Hi_from_Hb_Hs_and_SL, height_of_water_column_at_ice_front
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
-  use subgrid_ice_margin, only: calc_effective_thickness
   use zeta_gradients, only: calc_zeta_gradients
   use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
@@ -165,7 +164,7 @@ contains
     call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
     ! Calculate new effective thickness
-    call calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+    call region%ice%geom%calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( region%mesh, region%ice)
@@ -341,7 +340,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call calc_effective_thickness( mesh, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( mesh, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)
@@ -820,7 +819,7 @@ contains
     ! =======================
 
     ! Calculate new effective thickness
-     call calc_effective_thickness( mesh_new, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( mesh_new, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Surface gradients
     ! =================
@@ -1476,7 +1475,7 @@ contains
       call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
       ! Calculate new effective thickness
-      call calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+      call region%ice%geom%calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance

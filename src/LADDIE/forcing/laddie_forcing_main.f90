@@ -26,7 +26,6 @@ module laddie_forcing_main
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
-  use subgrid_ice_margin, only: calc_effective_thickness
   use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection
@@ -126,7 +125,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call calc_effective_thickness( mesh, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( mesh, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)

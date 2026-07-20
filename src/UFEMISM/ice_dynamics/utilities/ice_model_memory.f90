@@ -32,9 +32,7 @@ contains
     ! ==========================
 
     ! Basic geometry
-    allocate( ice%geom)
     call ice%geom%allocate( 'ice_geometry', region_name, mesh)
-    allocate( ice%Hi      ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hb      ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hs      ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%SL      ( mesh%vi1:mesh%vi2), source = 0._dp)

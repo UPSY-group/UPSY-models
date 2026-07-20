@@ -178,14 +178,14 @@ contains
 
     ! Map ice thickness and SMB to the particle creation grid
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
-      ice%Hi , Hi_grid_vec_partial)
+      ice%geom%Hi , Hi_grid_vec_partial)
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
       SMB%SMB, SMB_grid_vec_partial)
 
     ! Gather data to all processes, so they can be interpolated to the particle positions
     ! (necessary, as a particle owned by process n will generally not be located in the
     ! domain of that process)
-    call gather_to_all( ice%Hi    , Hi_tot)
+    call gather_to_all( ice%geom%Hi    , Hi_tot)
     call gather_to_all( ice%Hs    , Hs_tot)
     call gather_to_all( ice%u_3D_b, u_3D_b_tot)
     call gather_to_all( ice%v_3D_b, v_3D_b_tot)

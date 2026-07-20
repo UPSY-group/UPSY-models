@@ -1,7 +1,7 @@
 module ut_SMB
 
   use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning
   use ut_basic, only: unit_test
   use tests_main, only: test_tol, test_ge_le
   use model_configuration, only: C
@@ -252,7 +252,7 @@ contains
     end do
 
     ! Set up simple ice model fields
-    allocate( ice%Hi( mesh%vi1: mesh%vi2), source = 0._dp)
+    allocate( ice%geom%Hi( mesh%vi1: mesh%vi2), source = 0._dp)
     allocate( ice%Hb( mesh%vi1: mesh%vi2), source = 10._dp)
     allocate( ice%Hs( mesh%vi1: mesh%vi2), source = 10._dp)
     allocate( ice%mask_icefree_ocean( mesh%vi1: mesh%vi2), source = .false.)
@@ -264,8 +264,8 @@ contains
       rp = 1.5_dp * hypot( mesh%V( vi,1), mesh%V( vi,2)) / (mesh%xmax - mesh%xmin)
       if (rp < 0.5_dp) then
         ice%mask_grounded_ice( vi) = .true.
-        ice%Hi( vi) = max( 0._dp, 1000._dp - 2000._dp * rp)
-        ice%Hs( vi) = ice%Hb( vi) + ice% Hi( vi)
+        ice%geom%Hi( vi) = max( 0._dp, 1000._dp - 2000._dp * rp)
+        ice%Hs( vi) = ice%Hb( vi) + ice%geom%Hi( vi)
         climate%T2m( vi,:) = climate%T2m( vi,:) - ice%Hs( vi) * 0.008_dp
       end if
     end do

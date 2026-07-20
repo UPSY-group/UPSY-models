@@ -37,7 +37,7 @@ contains
 
     ! Calculate the ice mask
     do vi = mesh%vi1, mesh%vi2
-      mask_ice_a( vi) = ice%Hi( vi) > 0._dp
+      mask_ice_a( vi) = ice%geom%Hi( vi) > 0._dp
     end do
 
     ! Create graphs from the masked vertices and triangles

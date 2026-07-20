@@ -65,7 +65,7 @@ contains
           Hi_target_tot( vi) = wH_sum / w_sum
         else
           ! No available surrounding shelf values, assume ice thickness here is fine
-          Hi_target_tot( vi) = ice%Hi( vi)
+          Hi_target_tot( vi) = ice%geom%Hi( vi)
         end if
       end if
     end do
@@ -84,7 +84,7 @@ contains
 
         if (BMB_inv%target_mask_shelf( vi) .or. ice%mask_floating_ice( vi)) then
 
-          deltaH = ice%Hi( vi) - Hi_target_tot( vi)
+          deltaH = ice%geom%Hi( vi) - Hi_target_tot( vi)
           dHdt   = ice%dHi_dt( vi)
 
           dBMBdt = c_H * deltaH + c_dHdt * dHdt

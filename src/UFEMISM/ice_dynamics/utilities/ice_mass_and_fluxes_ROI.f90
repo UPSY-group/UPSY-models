@@ -162,11 +162,11 @@ contains
       if (ice%mask_ROI( vi) == i_ROI) then
 
         if (ice%mask_grounded_ice( vi) .or. ice%mask_floating_ice( vi)) then
-          scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
+          scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
           scalars%ice_area         = scalars%ice_area         + mesh%A( vi)! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
           scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
           scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi))! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
-          scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))! * 1.0E-09_dp ! [m^3]; uncomment multiplier to revert to km^3
+          scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))! * 1.0E-09_dp ! [m^3]; uncomment multiplier to revert to km^3
         end if
       end if
     end do
@@ -387,7 +387,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather ice thickness from all processes
-    call gather_to_all( ice%Hi, Hi_tot)
+    call gather_to_all( ice%geom%Hi, Hi_tot)
     call gather_to_all( ice%fraction_margin, fraction_margin_tot)
 
     ! Gather basic masks to all processes

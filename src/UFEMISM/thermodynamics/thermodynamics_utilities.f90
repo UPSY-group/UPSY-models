@@ -71,7 +71,7 @@ CONTAINS
     DO k = 1, C%nz
 
       ! No ice means no heating
-      IF (ice%Hi( vi) < 0.1_dp) THEN
+      IF (ice%geom%Hi( vi) < 0.1_dp) THEN
         ice%internal_heating( vi,k) = 0._dp
         CYCLE
       END IF
@@ -389,7 +389,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       ! Exception for the trivial case of no ice
-      IF (ice%Hi( vi) < 1._dp) THEN
+      IF (ice%geom%Hi( vi) < 1._dp) THEN
         u_times_dTdxp_upwind( vi,:) = 0._dp
         v_times_dTdyp_upwind( vi,:) = 0._dp
         CYCLE
@@ -459,7 +459,7 @@ CONTAINS
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
     TYPE(type_ice_model),                INTENT(IN)    :: ice
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
-    
+
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER          :: routine_name = 'calc_grounded_basal_melt_rates_from_temp'
     real(dp)                               :: dz, L_base, hf_up, melting_temp_base, melting_temp_above
@@ -469,15 +469,15 @@ CONTAINS
 
     ! Add routine to path
     CALL init_routine( routine_name)
-        
-    DO vi = mesh%vi1, mesh%vi2    
+
+    DO vi = mesh%vi1, mesh%vi2
     ! we only compute BMB over grounded ice, and where it is at PMP
     if (ice%mask_grounded_ice(vi) .OR. ice%mask_gl_gr( vi)) then
       if (ice%Ti_hom( vi) >= 0.0_dp) then
 
           d_zeta_temp = ice%Ti( vi, :)                                                            ! Extract vertical array of Ti
           call multiply_CSR_matrix_with_vector_local( mesh%M_ddzeta_k_k_1D, d_zeta_temp, dTdzeta) ! Compute the vertical gradients dT/dzeta
-          dTdz = -1._dp / ice%Hi( vi) * dTdzeta( mesh%nz)                                         ! Extract actual vertical gradient at bottom in dT/dz
+          dTdz = -1._dp / ice%geom%Hi( vi) * dTdzeta( mesh%nz)                                         ! Extract actual vertical gradient at bottom in dT/dz
           hf_up = -1._dp * ice%Ki( vi, C%nz) * dTdz                                               ! computes upwards heat flux
           L_base = L_fusion + (cp_water - cp_ice) * (ice%Ti( vi, C%nz) - 273.15_dp)               ! computes latent heat of bottom ice layer
 

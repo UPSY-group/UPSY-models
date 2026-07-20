@@ -92,13 +92,13 @@ contains
     end do
 
     ! Update masks
-    call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+    call determine_masks( region%mesh, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
       ! Update sub-grid grounded fractions
-    call calc_grounded_fractions( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+    call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
 
       ! Update effective ice thickness
-    call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+    call calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! == Time step iteration: if, at the end of the PC timestep, the truncation error
     !    turns out to be too large, run it again with a smaller dt, until the truncation
@@ -126,7 +126,7 @@ contains
       ! ====================
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
       ! Making sure verticies in no ice mask have zero thinning rates
@@ -156,27 +156,27 @@ contains
       ! =================
 
       ! Set model geometry to predicted
-      region%ice%Hi = region%ice%pc%Hi_star_np1
+      region%ice%geom%Hi = region%ice%pc%Hi_star_np1
 
       ! Set thinning rates to predicted
-      region%ice%dHi_dt = (region%ice%Hi - region%ice%Hi_prev) / region%ice%pc%dt_np1
+      region%ice%dHi_dt = (region%ice%geom%Hi - region%ice%Hi_prev) / region%ice%pc%dt_np1
 
       ! Set model geometry to predicted
       do vi = region%mesh%vi1, region%mesh%vi2
         ! Basic geometry
-        region%ice%Hs ( vi) = ice_surface_elevation( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
-        region%ice%Hib( vi) = region%ice%Hs(  vi) - region%ice%Hi( vi)
+        region%ice%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
+        region%ice%Hib( vi) = region%ice%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
 
       ! Update masks
-      call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+      call determine_masks( region%mesh, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate zeta gradients
       ! call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Update sub-grid grounded fractions
-      call calc_grounded_fractions( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate the basal mass balance
@@ -196,22 +196,22 @@ contains
 
       ! Set model geometry back to original
       do vi = region%mesh%vi1, region%mesh%vi2
-        region%ice%Hi(  vi) = region%ice%Hi_prev( vi)
-        region%ice%Hs(  vi) = ice_surface_elevation( region%ice%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
-        region%ice%Hib( vi) = region%ice%Hs(  vi) - region%ice%Hi( vi)
+        region%ice%geom%Hi(  vi) = region%ice%Hi_prev( vi)
+        region%ice%Hs(  vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%Hb( vi), region%ice%SL( vi))
+        region%ice%Hib( vi) = region%ice%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
 
       ! Update masks
-      call determine_masks( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+      call determine_masks( region%mesh, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
       ! Update sub-grid grounded fractions
-      call calc_grounded_fractions( region%mesh, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
 
       ! Update effective ice thickness
-      call calc_effective_thickness( region%mesh, region%ice%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+      call calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%Hb,region%ice%SL,region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! Calculate thinning rates for the current ice thickness and predicted velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%Hb, region%ice%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
       ! Making sure verticies in no ice mask have zero thinning rates

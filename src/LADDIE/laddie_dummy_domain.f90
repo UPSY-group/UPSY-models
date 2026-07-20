@@ -119,58 +119,58 @@ contains
     ! Define Hi and Hb
     do vi = mesh%vi1, mesh%vi2
       if (vi == 1) then
-        ice%Hi( vi) = 1000._dp
+        ice%geom%Hi( vi) = 1000._dp
         ice%Hb( vi) = 0._dp
       elseif (vi == 2) then
-        ice%Hi( vi) = 1000._dp
+        ice%geom%Hi( vi) = 1000._dp
         ice%Hb( vi) = 0._dp
       elseif (vi == 3) then
-        ice%Hi( vi) = 1000._dp
+        ice%geom%Hi( vi) = 1000._dp
         ice%Hb( vi) = 0._dp
       elseif (vi == 4) then
-        ice%Hi( vi) = 1000._dp
+        ice%geom%Hi( vi) = 1000._dp
         ice%Hb( vi) = 0._dp
       elseif (vi == 5) then
-        ice%Hi( vi) = 1000._dp
+        ice%geom%Hi( vi) = 1000._dp
         ice%Hb( vi) = -800._dp
       elseif (vi == 6) then
-        ice%Hi( vi) = 400._dp
+        ice%geom%Hi( vi) = 400._dp
         ice%Hb( vi) = -600._dp
       elseif (vi == 7) then
-        ice%Hi( vi) = 100._dp
+        ice%geom%Hi( vi) = 100._dp
         ice%Hb( vi) = -400._dp
       elseif (vi == 8) then
-        ice%Hi( vi) = 0._dp
+        ice%geom%Hi( vi) = 0._dp
         ice%Hb( vi) = -600._dp
       elseif (vi == 9) then
-        ice%Hi( vi) = 400._dp
+        ice%geom%Hi( vi) = 400._dp
         ice%Hb( vi) = 0._dp
       elseif (vi == 10) then
-        ice%Hi( vi) = 200._dp
+        ice%geom%Hi( vi) = 200._dp
         ice%Hb( vi) = -400._dp
       elseif (vi == 11) then
-        ice%Hi( vi) = 100._dp
+        ice%geom%Hi( vi) = 100._dp
         ice%Hb( vi) = -400._dp
       elseif (vi == 12) then
-        ice%Hi( vi) = 0._dp
+        ice%geom%Hi( vi) = 0._dp
         ice%Hb( vi) = -1000._dp
       elseif (vi == 13) then
-        ice%Hi( vi) = 400._dp
+        ice%geom%Hi( vi) = 400._dp
         ice%Hb( vi) = 0._dp
       elseif (vi == 14) then
-        ice%Hi( vi) = 100._dp
+        ice%geom%Hi( vi) = 100._dp
         ice%Hb( vi) = -600._dp
       elseif (vi == 15) then
-        ice%Hi( vi) = 0._dp
+        ice%geom%Hi( vi) = 0._dp
         ice%Hb( vi) = -1000._dp
       elseif (vi == 16) then
-        ice%Hi( vi) = 0._dp
+        ice%geom%Hi( vi) = 0._dp
         ice%Hb( vi) = 1000._dp
       end if
     end do
 
     ! Compute masks
-    call determine_masks( mesh, ice%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call determine_masks( mesh, ice%geom%Hi, ice%Hb, ice%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Extract dHib_dx_b and dHib_dy_b
     call calc_ice_shelf_base_slopes( mesh, ice)

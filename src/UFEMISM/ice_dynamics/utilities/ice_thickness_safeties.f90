@@ -61,7 +61,7 @@ contains
     if (C%do_protect_grounded_mask .and. time <= C%protect_grounded_mask_t_end) then
       do vi = mesh%vi1, mesh%vi2
         if (ice%mask_grounded_ice( vi)) then
-          Hi_new( vi) = max( Hi_new( vi), (ice%SL( vi) - ice%geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
+          Hi_new( vi) = max( Hi_new( vi), (ice%geom%SL( vi) - ice%geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
         end if
       end do
     end if
@@ -79,7 +79,7 @@ contains
     ! if so specified, remove thin floating ice
     if (C%choice_calving_law == 'threshold_thickness') then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%SL( vi)) .and. Hi_eff_new( vi) < C%calving_threshold_thickness_shelf) then
+        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi)) .and. Hi_eff_new( vi) < C%calving_threshold_thickness_shelf) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -97,7 +97,7 @@ contains
     ! if so specified, remove all floating ice
     if (C%do_remove_shelves) then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%SL( vi))) then
+        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) then
           Hi_new( vi) = 0._dp
         end if
       end do

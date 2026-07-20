@@ -87,8 +87,8 @@ contains
     DO vi = mesh%vi1, mesh%vi2
 
       ! Absolute surface load
-      IF (is_floating( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%SL( vi))) THEN
-        ELRA%surface_load_mesh( vi) = (ice%SL( vi) - ice%geom%Hb( vi)) * grid%dx**2 * seawater_density
+      IF (is_floating( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) THEN
+        ELRA%surface_load_mesh( vi) = (ice%geom%SL( vi) - ice%geom%Hb( vi)) * grid%dx**2 * seawater_density
       ELSEIF (ice%geom%Hi( vi) > 0._dp) THEN
         ELRA%surface_load_mesh( vi) =  ice%geom%Hi( vi) * grid%dx**2 * ice_density
       ELSE

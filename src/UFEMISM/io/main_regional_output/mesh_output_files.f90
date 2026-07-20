@@ -209,7 +209,7 @@ contains
       case ('Hib')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%Hib)
       case ('SL')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%SL)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%geom%SL)
       case ('TAF')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%TAF)
       case ('Hi_eff')
@@ -1681,7 +1681,7 @@ contains
       if (ice%geom%Hi( vi) > 0.05_dp) then
         water_depth_for_coastline( vi) = NaN
       else
-        water_depth_for_coastline( vi) = ice%SL( vi) - ice%geom%Hb( vi)
+        water_depth_for_coastline( vi) = ice%geom%SL( vi) - ice%geom%Hb( vi)
       end if
     end do
 

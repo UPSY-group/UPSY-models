@@ -207,7 +207,7 @@ contains
       case ('Hs')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs', region%ice%geom%Hs)
       case ('Hib')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%Hib)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%geom%Hib)
       case ('SL')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%geom%SL)
       case ('TAF')

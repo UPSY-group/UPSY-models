@@ -803,7 +803,7 @@ CONTAINS
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
     forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hs                ( mesh%vi1:mesh%vi2  )
     forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
-    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
+    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%geom%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
     forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
@@ -824,7 +824,7 @@ CONTAINS
     ! The resultant BMB will be multiplied by floating fractions when applying the subgrid scheme
     if (C%choice_BMB_subgrid == 'PMP') then
       do vi = mesh%vi1, mesh%vi2
-        if (ice%geom%mask_gl_gr( vi) .and. ice%Hib( vi) < 0._dp) then
+        if (ice%geom%mask_gl_gr( vi) .and. ice%geom%Hib( vi) < 0._dp) then
           forcing%mask_grounded_ice( vi) = .false.
           forcing%mask_floating_ice( vi) = .true.
         end if

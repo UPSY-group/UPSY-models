@@ -236,7 +236,7 @@ contains
     call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%geom%Hi, vmin=0._dp)
     call write_to_file( region, region%ismip_output%orog,  inputfield_a=region%ice%geom%Hs, vmin=0._dp)
     call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%geom%Hb)
-    call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%Hib)
+    call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%geom%Hib)
 
     ! Geothermal heat flux
     call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, vmin=0._dp)

@@ -103,7 +103,7 @@ contains
 
       ! Derived geometry
       ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
       ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
     end do
@@ -151,7 +151,7 @@ contains
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
     forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hs                ( mesh%vi1:mesh%vi2  )
     forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
-    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
+    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%geom%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
     forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )

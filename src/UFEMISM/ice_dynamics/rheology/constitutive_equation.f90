@@ -140,7 +140,7 @@ contains
 
       case ('interp')
 
-        if (ice%geom%Hi( vi) > 0._dp .and. ice%Hib( vi) < ice%geom%SL( vi)) then
+        if (ice%geom%Hi( vi) > 0._dp .and. ice%geom%Hib( vi) < ice%geom%SL( vi)) then
           ! Interpolation between grounded and floating values depending on grounded fraction
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * &
             (       ice%fraction_gr( vi)  * C%m_enh_sheet + &

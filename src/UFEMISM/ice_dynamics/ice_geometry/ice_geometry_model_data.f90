@@ -20,7 +20,7 @@ module ice_geometry_model_data
 
     ! Secondary ice geometry fields
     real(dp), dimension(:  ), allocatable :: Hs                      ! [m]       Ice surface elevation (w.r.t. PD sea level)
-    ! real(dp), dimension(:  ), allocatable :: Hib                     ! [m]       Ice base elevation    (w.r.t. PD sea level)
+    real(dp), dimension(:  ), allocatable :: Hib                     ! [m]       Ice base elevation    (w.r.t. PD sea level)
     ! real(dp), dimension(:  ), allocatable :: TAF                     ! [m]       Thickness above floatation
     ! real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Height of water column at ice front
     ! real(dp), dimension(:  ), allocatable :: Hi_eff                  ! [m]       Effective ice thickness

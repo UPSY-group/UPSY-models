@@ -125,7 +125,7 @@ contains
 
       ! Basic geometry
       region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-      region%ice%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
+      region%ice%geom%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
       region%ice%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
       region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 
@@ -133,7 +133,7 @@ contains
       region%ice%dHi ( vi)  = region%ice%geom%Hi ( vi) - region%refgeo_PD%Hi ( vi)
       region%ice%dHb ( vi)  = region%ice%geom%Hb ( vi) - region%refgeo_PD%Hb ( vi)
       region%ice%dHs ( vi)  = region%ice%geom%Hs ( vi) - region%refgeo_PD%Hs ( vi)
-      region%ice%dHib( vi)  = region%ice%Hib( vi) - (region%refgeo_PD%Hs ( vi) - region%refgeo_PD%Hi( vi))
+      region%ice%dHib( vi)  = region%ice%geom%Hib( vi) - (region%refgeo_PD%Hs ( vi) - region%refgeo_PD%Hi( vi))
 
       ! Rates of change
       region%ice%dHi_dt( vi) = (region%ice%Hi_next( vi) - region%ice%Hi_prev( vi)) / (region%ice%t_Hi_next - region%ice%t_Hi_prev)
@@ -150,7 +150,7 @@ contains
     end do
 
     call checksum( region%mesh%pai_V, region%ice%geom%Hs     , 'region%ice%geom%Hs')
-    call checksum( region%mesh%pai_V, region%ice%Hib    , 'region%ice%Hib')
+    call checksum( region%mesh%pai_V, region%ice%geom%Hib    , 'region%ice%geom%Hib')
     call checksum( region%mesh%pai_V, region%ice%TAF    , 'region%ice%TAF')
     call checksum( region%mesh%pai_V, region%ice%Ho     , 'region%ice%Ho')
     call checksum( region%mesh%pai_V, region%ice%dHi    , 'region%ice%dHi')
@@ -285,7 +285,7 @@ contains
 
       ! Derived geometry
       ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
       ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       ice%HO ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
@@ -293,7 +293,7 @@ contains
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
       ice%dHb ( vi)  = ice%geom%Hb ( vi) - refgeo_PD%Hb ( vi)
       ice%dHs ( vi)  = ice%geom%Hs ( vi) - refgeo_PD%Hs ( vi)
-      ice%dHib( vi)  = ice%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
+      ice%dHib( vi)  = ice%geom%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
 
       ! Rates of change
       ice%dHi_dt ( vi) = 0._dp
@@ -304,7 +304,7 @@ contains
     end do ! do vi = mesh%vi1, mesh%vi2
 
     call checksum( mesh%pai_V, ice%geom%Hs     , 'ice%geom%Hs'     )
-    call checksum( mesh%pai_V, ice%Hib    , 'ice%Hib'    )
+    call checksum( mesh%pai_V, ice%geom%Hib    , 'ice%geom%Hib'    )
     call checksum( mesh%pai_V, ice%TAF    , 'ice%TAF'    )
     call checksum( mesh%pai_V, ice%HO     , 'ice%HO'     )
     call checksum( mesh%pai_V, ice%dHi    , 'ice%dHi'    )
@@ -551,7 +551,7 @@ contains
     ! call reallocate_bounds( ice%geom%Hb    , mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
     ! call reallocate_bounds( ice%geom%Hs    , mesh_new%vi1, mesh_new%vi2)  ! [m] Surface elevation (w.r.t. PD sea level)
     ! call reallocate_bounds( ice%geom%SL    , mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
-    call reallocate_bounds( ice%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
+    call reallocate_bounds( ice%geom%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
     call reallocate_bounds( ice%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
     call reallocate_bounds( ice%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
     call reallocate_bounds( ice%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
@@ -752,7 +752,7 @@ contains
       ! ice%geom%Hi ( vi) = refgeo_init%Hi( vi)
       ! ice%geom%Hb ( vi) = refgeo_init%Hb( vi)
       ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
       ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
@@ -760,7 +760,7 @@ contains
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
       ice%dHb ( vi)  = ice%geom%Hb ( vi) - refgeo_PD%Hb ( vi)
       ice%dHs ( vi)  = ice%geom%Hs ( vi) - refgeo_PD%Hs ( vi)
-      ice%dHib( vi)  = ice%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
+      ice%dHib( vi)  = ice%geom%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
 
       ! Rates of change
       ice%dHi_dt ( vi) = 0._dp
@@ -1310,7 +1310,7 @@ contains
       ! Update basic geometry
       do vi = mesh%vi1, mesh%vi2
         ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-        ice%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+        ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
         ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
         ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       end do
@@ -1452,7 +1452,7 @@ contains
 
         ! Basic geometry
         region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-        region%ice%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
+        region%ice%geom%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
         region%ice%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
         region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 

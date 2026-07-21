@@ -1742,8 +1742,8 @@ contains
     ! Calculate dh/dx, dh/dy, db/dx, db/dy on the b-grid
     call ddx_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dx_b)
     call ddy_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dy_b)
-    call ddx_a_b_2D( mesh, ice%Hib, BPA%db_dx_b)
-    call ddy_a_b_2D( mesh, ice%Hib, BPA%db_dy_b)
+    call ddx_a_b_2D( mesh, ice%geom%Hib, BPA%db_dx_b)
+    call ddy_a_b_2D( mesh, ice%geom%Hib, BPA%db_dy_b)
 
     ! Calculate the driving stress
     do ti = mesh%ti1, mesh%ti2

@@ -113,8 +113,8 @@ contains
     end do ! do vi = mesh%vi1, mesh%vi2
 
     ! Calculate slopes of the ice base
-    call ddx_a_a_2D( mesh, ice%Hib, dHib_dx)
-    call ddy_a_a_2D( mesh, ice%Hib, dHib_dy)
+    call ddx_a_a_2D( mesh, ice%geom%Hib, dHib_dx)
+    call ddy_a_a_2D( mesh, ice%geom%Hib, dHib_dy)
 
     ! Calculate u,v on the c-grid (edges)
     call map_velocities_from_b_to_c_3D( mesh, ice%u_3D_b, ice%v_3D_b, u_3D_c, v_3D_c)

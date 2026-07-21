@@ -123,7 +123,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call ice%geom%calc_effective_thickness( ice%geom%Hi_eff)
+     call ice%geom%calc_effective_thickness()
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)

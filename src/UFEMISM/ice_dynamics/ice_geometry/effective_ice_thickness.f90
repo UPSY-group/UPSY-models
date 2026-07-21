@@ -2,12 +2,11 @@ submodule( ice_geometry_model_basic) effective_ice_thickness
 
 contains
 
-  subroutine calc_effective_thickness( self, Hi_eff)
+  subroutine calc_effective_thickness( self)
     !< Determine the ice-filled fraction and effective ice thickness of floating margin pixels
 
     ! In- and output variables
-    class(type_ice_geometry_model),                   intent(inout) :: self
-    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: Hi_eff
+    class(type_ice_geometry_model), intent(inout) :: self
 
     ! Local variables:
     character(len=*), parameter                      :: routine_name = 'calc_effective_thickness'
@@ -68,15 +67,15 @@ contains
       ! margin fraction to let it get SMB in the ice thickness equation
       if (.not. mask_floating( vi)) then
         self%fraction_margin( vi) = 1._dp
-        Hi_eff( vi) = Hi_tot( vi)
+        self%Hi_eff( vi) = Hi_tot( vi)
       ! Old and new floating regions
       elseif (Hi_tot( vi) > 0._dp) then
         self%fraction_margin( vi) = 1._dp
-        Hi_eff( vi) = Hi_tot( vi)
+        self%Hi_eff( vi) = Hi_tot( vi)
       ! New ice-free ocean regions
       else
         self%fraction_margin( vi) = 0._dp
-        Hi_eff( vi) = 0._dp
+        self%Hi_eff( vi) = 0._dp
       end if
     end do
 
@@ -119,13 +118,13 @@ contains
       ! this vertex. Otherwise, simply use initialised values.
       if (Hi_neighbour_max > Hi_tot( vi)) then
         ! Calculate sub-grid ice-filled fraction
-        Hi_eff( vi) = Hi_neighbour_max
+        self%Hi_eff( vi) = Hi_neighbour_max
         self%fraction_margin( vi) = Hi_tot( vi) / Hi_neighbour_max
       end if
 
     end do
 
-    call checksum( self%mesh%pai_V, Hi_eff         , 'Hi_eff')
+    call checksum( self%mesh%pai_V, self%Hi_eff         , 'Hi_eff')
     call checksum( self%mesh%pai_V, self%fraction_margin, 'fraction_margin')
 
     ! Finalise routine path

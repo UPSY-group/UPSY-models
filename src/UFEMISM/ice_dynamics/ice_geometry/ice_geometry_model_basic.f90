@@ -53,6 +53,9 @@ contains
 
     ! Allocate all the stuff that is specific to the ice_geometry model
 
+    ! Primary ice geometry fields
+    ! ===========================
+
     ! DENK DROM
     allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
@@ -79,6 +82,26 @@ contains
     !   units     = 'm', &
     !   remap_method = 'reallocate')
 
+    ! Secondary ice geometry fields
+    ! =============================
+
+
+    ! Ice masks
+    ! =========
+
+    ! DENK DROM
+    allocate( self%mask_icefree_land ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_icefree_ocean( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_grounded_ice ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_floating_ice ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_margin       ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_gl_gr        ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_gl_fl        ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_cf_gr        ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_cf_fl        ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask_coastline    ( mesh%vi1:mesh%vi2), source = .false.)
+    allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -101,6 +124,7 @@ contains
     ! call self%deallocate_model()
 
     ! Deallocate stuff that is specific to the ice_geometry model
+
     ! nullify( self%Hi)
     ! nullify( self%Hb)
     ! nullify( self%SL)

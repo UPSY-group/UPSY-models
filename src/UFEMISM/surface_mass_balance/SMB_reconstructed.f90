@@ -155,12 +155,12 @@ contains
       ! Check if point lies within our reconstruction polygon
       if (is_in_polygon(poly_ROI, p)) then
         ! If yes, check whether point lies above or below estimated transitional line altitude
-        if (ice%Hs( vi) <= Hs_tla) then
+        if (ice%geom%Hs( vi) <= Hs_tla) then
           ! If below, SMB goes from 0 at the ELA to its estimated maximum at the TLA
-          self%SMB( vi) = SMB_max * max( 0._dp, min( 1._dp, (ice%Hs( vi) - Hs_ela)/(Hs_tla - Hs_ela)))
+          self%SMB( vi) = SMB_max * max( 0._dp, min( 1._dp, (ice%geom%Hs( vi) - Hs_ela)/(Hs_tla - Hs_ela)))
         else
           ! If above, SMB goes from estimated maximum at the TLA to 0 at the DLA
-          self%SMB( vi) = SMB_max * (1._dp - max( 0._dp, min( 1._dp, (ice%Hs( vi) - Hs_tla)/(Hs_dla - Hs_tla))))
+          self%SMB( vi) = SMB_max * (1._dp - max( 0._dp, min( 1._dp, (ice%geom%Hs( vi) - Hs_tla)/(Hs_dla - Hs_tla))))
         end if
       else
         ! If vertex lies outside of the reconstructed polygon, assume a negative
@@ -182,7 +182,7 @@ contains
       ! Check if point lies inside polygon
       if (is_in_polygon(poly_ROI, p)) then
         ! Compute a weight based on Hs: the higher, the less smoothing
-        w_smooth = max( 0._dp, min( 1._dp, ice%Hs( vi) / Hs_dla))
+        w_smooth = max( 0._dp, min( 1._dp, ice%geom%Hs( vi) / Hs_dla))
         ! Apply weighed smoothing
         self%SMB( vi) = w_smooth * self%SMB( vi) + (1._dp - w_smooth) * SMB_smoothed( vi)
       end if

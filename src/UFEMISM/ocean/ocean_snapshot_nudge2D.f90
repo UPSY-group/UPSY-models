@@ -119,8 +119,8 @@ contains
     ! is often wrong (because of the difficulty of remapping a discontinuous
     ! field), so instead use the mean of the neighbouring non-front shelf
     ! vertices.
-    call gather_to_all( ice%mask_floating_ice, mask_floating_ice_tot)
-    call gather_to_all( ice%mask_cf_fl       , mask_cf_fl_tot)
+    call gather_to_all( ice%geom%mask_floating_ice, mask_floating_ice_tot)
+    call gather_to_all( ice%geom%mask_cf_fl       , mask_cf_fl_tot)
     call gather_to_all( Hi_target_corr       , Hi_target_tot)
 
     do vi = mesh%vi1, mesh% vi2
@@ -173,7 +173,7 @@ contains
 
       ! Only apply nudging to fully floating shelf vertices,
       ! skipping the grounding line and calving front.
-      if (ice%fraction_gr( vi) < 0.01_dp .and. ice%geom%Hi( vi) > 0.1_dp .and. .not. ice%mask_margin( vi)) then
+      if (ice%geom%fraction_gr( vi) < 0.01_dp .and. ice%geom%Hi( vi) > 0.1_dp .and. .not. ice%geom%mask_margin( vi)) then
 
         mask_extrapolation( vi) = 2
 

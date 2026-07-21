@@ -81,7 +81,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, no need (in fact, no way) to solve the DIVA
-    grounded_ice_exists = any( ice%mask_grounded_ice)
+    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       DIVA%u_vav_b  = 0._dp
@@ -439,7 +439,7 @@ contains
     if (C%do_GL_subgrid_friction) then
       ! On the b-grid
       do ti = mesh%ti1, mesh%ti2
-        DIVA%beta_eff_b( ti) = DIVA%beta_eff_b( ti) * ice%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        DIVA%beta_eff_b( ti) = DIVA%beta_eff_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

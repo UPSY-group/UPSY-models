@@ -117,7 +117,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, or no sliding, no need to solve the SSA
-    grounded_ice_exists = any( ice%mask_grounded_ice)
+    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists .or. C%choice_sliding_law == 'no_sliding') then
       SSA%u_b = 0._dp
@@ -423,7 +423,7 @@ contains
     ! Apply the sub-grid grounded fraction, and limit the friction coefficient to improve stability
     if (C%do_GL_subgrid_friction) then
       do ti = mesh%ti1, mesh%ti2
-        SSA%basal_friction_coefficient_b( ti) = SSA%basal_friction_coefficient_b( ti) * ice%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        SSA%basal_friction_coefficient_b( ti) = SSA%basal_friction_coefficient_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

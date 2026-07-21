@@ -68,7 +68,7 @@ CONTAINS
       CASE ('uniform')
         LMB%LMB = 0._dp
         DO vi = mesh%vi1, mesh%vi2
-          IF (ice%mask_cf_fl( vi) .OR. ice%mask_cf_gr( vi)) THEN
+          IF (ice%geom%mask_cf_fl( vi) .OR. ice%geom%mask_cf_gr( vi)) THEN
             LMB%LMB( vi) = C%uniform_LMB
           END IF
         END DO

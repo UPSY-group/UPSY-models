@@ -1277,7 +1277,7 @@ CONTAINS
       region%mesh, &
       region%ice%geom%Hi, &
       region%ice%geom%Hb, &
-      region%ice%Hs, &
+      region%ice%geom%Hs, &
       region%ice%geom%SL, &
       xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
       mesh_new)
@@ -1380,38 +1380,38 @@ CONTAINS
       ! Check resolution criteria for the different lines
 
       ! Grounding line
-      IF (ice%mask_gl_gr( vi) .OR. ice%mask_gl_fl( vi)) THEN
+      IF (ice%geom%mask_gl_gr( vi) .OR. ice%geom%mask_gl_fl( vi)) THEN
         nV_grounding_line_tot = nV_grounding_line_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_grounding_line * C%mesh_resolution_tolerance) THEN
           nV_grounding_line_bad = nV_grounding_line_bad + 1
         END IF
-      END IF ! IF (ice%mask_gl_gr( vi) .OR. ice%mask_gl_fl( vi)) THEN
+      END IF
 
       ! Calving front
-      IF (ice%mask_cf_gr( vi) .OR. ice%mask_cf_fl( vi)) THEN
+      IF (ice%geom%mask_cf_gr( vi) .OR. ice%geom%mask_cf_fl( vi)) THEN
         nV_calving_front_tot = nV_calving_front_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_calving_front * C%mesh_resolution_tolerance) THEN
           nV_calving_front_bad = nV_calving_front_bad + 1
         END IF
-      END IF ! IF (ice%mask_gl_gr( vi) .OR. ice%mask_gl_fl( vi)) THEN
+      END IF
 
       ! Ice front
-      IF (ice%mask_margin( vi)) THEN
+      IF (ice%geom%mask_margin( vi)) THEN
         nV_ice_front_tot = nV_ice_front_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_ice_front * C%mesh_resolution_tolerance) THEN
           nV_ice_front_bad = nV_ice_front_bad + 1
         END IF
-      END IF ! IF (ice%mask_gl_gr( vi) .OR. ice%mask_gl_fl( vi)) THEN
+      END IF
 
       ! Coastline
-      IF (ice%mask_coastline( vi)) THEN
+      IF (ice%geom%mask_coastline( vi)) THEN
         nV_coastline_tot = nV_coastline_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_coastline * C%mesh_resolution_tolerance) THEN
           nV_coastline_bad = nV_coastline_bad + 1
         END IF
-      END IF ! IF (ice%mask_gl_gr( vi) .OR. ice%mask_gl_fl( vi)) THEN
+      END IF
 
-    END DO ! DO vi = mesh%vi1, mesh%vi2
+    END DO
 
     ! Gather data from all processes
     CALL MPI_ALLREDUCE( MPI_IN_PLACE, nV_grounding_line_tot, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)

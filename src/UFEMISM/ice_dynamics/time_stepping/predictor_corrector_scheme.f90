@@ -16,7 +16,6 @@ module predictor_corrector_scheme
   use conservation_of_mass_main, only: calc_dHi_dt
   use ice_thickness_safeties, only: alter_ice_thickness
   use ice_geometry_basics, only: ice_surface_elevation
-  use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use conservation_of_momentum_main, only: solve_stress_balance
   use checksum_mod, only: checksum
 
@@ -90,10 +89,10 @@ contains
     end do
 
     ! Update masks
-    call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+    call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-    call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! Update effective ice thickness
     call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -162,19 +161,19 @@ contains
       ! Set model geometry to predicted
       do vi = region%mesh%vi1, region%mesh%vi2
         ! Basic geometry
-        region%ice%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-        region%ice%Hib( vi) = region%ice%Hs(  vi) - region%ice%geom%Hi( vi)
+        region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+        region%ice%geom%Hib( vi) = region%ice%geom%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
 
       ! Update masks
-      call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+      call region%ice%geom%determine_masks()
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate zeta gradients
       ! call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Update sub-grid grounded fractions
-      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate the basal mass balance
@@ -195,15 +194,15 @@ contains
       ! Set model geometry back to original
       do vi = region%mesh%vi1, region%mesh%vi2
         region%ice%geom%Hi(  vi) = region%ice%Hi_prev( vi)
-        region%ice%Hs(  vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-        region%ice%Hib( vi) = region%ice%Hs(  vi) - region%ice%geom%Hi( vi)
+        region%ice%geom%Hs(  vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+        region%ice%geom%Hib( vi) = region%ice%geom%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
 
       ! Update masks
-      call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+      call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! Update effective ice thickness
       call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -258,7 +257,7 @@ contains
       ! Determine number of unstable vertices
       do vi = region%mesh%vi1, region%mesh%vi2
         ! Only consider fully grounded vertices
-        if (region%ice%fraction_gr( vi) < 1._dp) CYCLE
+        if (region%ice%geom%fraction_gr( vi) < 1._dp) CYCLE
         ! if so, add to total vertex count
         n_tot = n_tot + 1
         ! if this vertex's error is larger than tolerance
@@ -347,7 +346,7 @@ contains
     ! Calculate the maximum truncation error eta over grounded ice only
     pc%eta_np1 = C%pc_eta_min
     do vi = mesh%vi1, mesh%vi2
-      if (ice%mask_grounded_ice( vi) .and. .not. ice%mask_gl_gr( vi) .and. ice%fraction_gr( vi) == 1._dp) then
+      if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi) .and. ice%geom%fraction_gr( vi) == 1._dp) then
         pc%eta_np1 = MAX( pc%eta_np1, pc%tau_np1( vi))
       end if
     end do

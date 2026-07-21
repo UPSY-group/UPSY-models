@@ -122,7 +122,7 @@ contains
       pp   = qq
       TAFp = TAFq
       qq = pp + [C%maximum_resolution_grounding_line, 0._dp]
-      call interpolate_to_point_dp_2D( mesh, ice%TAF, qq, ti_in, TAFq)
+      call interpolate_to_point_dp_2D( mesh, ice%geom%TAF, qq, ti_in, TAFq)
     end do
 
     lambda_GL = TAFp / (TAFp - TAFq)

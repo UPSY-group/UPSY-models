@@ -25,7 +25,6 @@ module ice_dynamics_main
     Hi_from_Hb_Hs_and_SL, height_of_water_column_at_ice_front
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use zeta_gradients, only: calc_zeta_gradients
-  use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
   use remapping_main, only: map_from_mesh_to_mesh_2D, map_from_mesh_to_mesh_with_reallocation_2D, &
     map_from_mesh_to_mesh_with_reallocation_3D
@@ -124,20 +123,20 @@ contains
     do vi = region%mesh%vi1, region%mesh%vi2
 
       ! Basic geometry
-      region%ice%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-      region%ice%Hib( vi) = region%ice%Hs( vi) - region%ice%geom%Hi( vi)
-      region%ice%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+      region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+      region%ice%geom%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
+      region%ice%geom%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
       region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       region%ice%dHi ( vi)  = region%ice%geom%Hi ( vi) - region%refgeo_PD%Hi ( vi)
       region%ice%dHb ( vi)  = region%ice%geom%Hb ( vi) - region%refgeo_PD%Hb ( vi)
-      region%ice%dHs ( vi)  = region%ice%Hs ( vi) - region%refgeo_PD%Hs ( vi)
-      region%ice%dHib( vi)  = region%ice%Hib( vi) - (region%refgeo_PD%Hs ( vi) - region%refgeo_PD%Hi( vi))
+      region%ice%dHs ( vi)  = region%ice%geom%Hs ( vi) - region%refgeo_PD%Hs ( vi)
+      region%ice%dHib( vi)  = region%ice%geom%Hib( vi) - (region%refgeo_PD%Hs ( vi) - region%refgeo_PD%Hi( vi))
 
       ! Rates of change
       region%ice%dHi_dt( vi) = (region%ice%Hi_next( vi) - region%ice%Hi_prev( vi)) / (region%ice%t_Hi_next - region%ice%t_Hi_prev)
-      if (region%ice%TAF( vi) > 0._dp) then
+      if (region%ice%geom%TAF( vi) > 0._dp) then
         ! Grounded ice
         region%ice%dHs_dt ( vi) = region%ice%dHb_dt( vi) + region%ice%dHi_dt( vi)
         region%ice%dHib_dt( vi) = region%ice%dHb_dt( vi)
@@ -149,9 +148,9 @@ contains
 
     end do
 
-    call checksum( region%mesh%pai_V, region%ice%Hs     , 'region%ice%Hs')
-    call checksum( region%mesh%pai_V, region%ice%Hib    , 'region%ice%Hib')
-    call checksum( region%mesh%pai_V, region%ice%TAF    , 'region%ice%TAF')
+    call checksum( region%mesh%pai_V, region%ice%geom%Hs     , 'region%ice%geom%Hs')
+    call checksum( region%mesh%pai_V, region%ice%geom%Hib    , 'region%ice%geom%Hib')
+    call checksum( region%mesh%pai_V, region%ice%geom%TAF    , 'region%ice%geom%TAF')
     call checksum( region%mesh%pai_V, region%ice%Ho     , 'region%ice%Ho')
     call checksum( region%mesh%pai_V, region%ice%dHi    , 'region%ice%dHi')
     call checksum( region%mesh%pai_V, region%ice%dHb    , 'region%ice%dHb')
@@ -161,7 +160,7 @@ contains
     call checksum( region%mesh%pai_V, region%ice%dHib_dt, 'region%ice%dHib_dt')
 
     ! Update masks
-    call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+    call region%ice%geom%determine_masks()
 
     ! Calculate new effective thickness
     call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -170,8 +169,8 @@ contains
     call calc_ice_shelf_base_slopes( region%mesh, region%ice)
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( region%mesh, region%ice%Hs, dHs_dx)
-    call ddy_a_a_2D( region%mesh, region%ice%Hs, dHs_dy)
+    call ddx_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dx)
+    call ddy_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dy)
     region%ice%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
 
     call checksum( region%mesh%pai_V, dHs_dx             , 'dHs_dx')
@@ -184,7 +183,7 @@ contains
     call calc_zeta_gradients( region%mesh, region%ice)
 
     ! Calculate sub-grid grounded-area fractions
-    call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -261,8 +260,8 @@ contains
     ! Basic geometry
     do vi = mesh%vi1, mesh%vi2
       ice%geom%Hb( vi) = refgeo_GIAeq%Hb( vi)
-      ice%Hs( vi) = refgeo_init%Hs ( vi)
-      ice%geom%Hi( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), ice%Hs( vi), ice%geom%SL( vi))
+      ice%geom%Hs( vi) = refgeo_init%Hs ( vi)
+      ice%geom%Hi( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), ice%geom%Hs( vi), ice%geom%SL( vi))
     end do
 
     ! Calculate the no-ice mask
@@ -276,22 +275,22 @@ contains
 
     call checksum( mesh%pai_V, ice%geom%Hi, 'ice%geom%Hi')
     call checksum( mesh%pai_V, ice%geom%Hb, 'ice%geom%Hb')
-    call checksum( mesh%pai_V, ice%Hs, 'ice%Hs')
+    call checksum( mesh%pai_V, ice%geom%Hs, 'ice%geom%Hs')
     call checksum( mesh%pai_V, ice%geom%SL, 'ice%geom%SL')
 
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
-      ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%Hs( vi) - ice%geom%Hi( vi)
-      ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       ice%HO ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
       ice%dHb ( vi)  = ice%geom%Hb ( vi) - refgeo_PD%Hb ( vi)
-      ice%dHs ( vi)  = ice%Hs ( vi) - refgeo_PD%Hs ( vi)
-      ice%dHib( vi)  = ice%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
+      ice%dHs ( vi)  = ice%geom%Hs ( vi) - refgeo_PD%Hs ( vi)
+      ice%dHib( vi)  = ice%geom%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
 
       ! Rates of change
       ice%dHi_dt ( vi) = 0._dp
@@ -301,9 +300,9 @@ contains
 
     end do ! do vi = mesh%vi1, mesh%vi2
 
-    call checksum( mesh%pai_V, ice%Hs     , 'ice%Hs'     )
-    call checksum( mesh%pai_V, ice%Hib    , 'ice%Hib'    )
-    call checksum( mesh%pai_V, ice%TAF    , 'ice%TAF'    )
+    call checksum( mesh%pai_V, ice%geom%Hs     , 'ice%geom%Hs'     )
+    call checksum( mesh%pai_V, ice%geom%Hib    , 'ice%geom%Hib'    )
+    call checksum( mesh%pai_V, ice%geom%TAF    , 'ice%geom%TAF'    )
     call checksum( mesh%pai_V, ice%HO     , 'ice%HO'     )
     call checksum( mesh%pai_V, ice%dHi    , 'ice%dHi'    )
     call checksum( mesh%pai_V, ice%dHb    , 'ice%dHb'    )
@@ -326,9 +325,7 @@ contains
     ! Initialise masks
     ! ================
 
-    ! call it twice so also the "prev" versions are set
-    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
-    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks()
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, region_name)
@@ -349,8 +346,8 @@ contains
     ! =================
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( mesh, ice%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh, ice%Hs, dHs_dy)
+    call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
+    call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
     ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
 
     call checksum( mesh%pai_V, dHs_dx      , 'dHs_dx'      )
@@ -372,8 +369,9 @@ contains
 
     ! Initialise bedrock cumulative density functions
     call initialise_bedrock_CDFs( mesh, refgeo_PD, ice, region_name)
+
     ! Initialise sub-grid grounded-area fractions
-    call calc_grounded_fractions( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%dHb,  ice%fraction_gr, ice%fraction_gr_b, ice%mask_floating_ice, ice%bedrock_cdf, ice%bedrock_cdf_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb)
 
     ! Basal conditions
     ! ================
@@ -548,10 +546,10 @@ contains
     call ice%geom%remap( mesh_new)
     ! call reallocate_bounds( ice%geom%Hi    , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness
     ! call reallocate_bounds( ice%geom%Hb    , mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
-    ! call reallocate_bounds( ice%Hs    , mesh_new%vi1, mesh_new%vi2)  ! [m] Surface elevation (w.r.t. PD sea level)
+    ! call reallocate_bounds( ice%geom%Hs    , mesh_new%vi1, mesh_new%vi2)  ! [m] Surface elevation (w.r.t. PD sea level)
     ! call reallocate_bounds( ice%geom%SL    , mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
-    call reallocate_bounds( ice%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
-    call reallocate_bounds( ice%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
+    call reallocate_bounds( ice%geom%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
+    call reallocate_bounds( ice%geom%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
     call reallocate_bounds( ice%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
     call reallocate_bounds( ice%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
     call reallocate_bounds( ice%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
@@ -578,34 +576,30 @@ contains
     call reallocate_bounds( ice%dHi_dt_target   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Target ice thickness rate of change for inversions
 
     ! Masks
-    call reallocate_bounds( ice%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land , F: otherwise
-    call reallocate_bounds( ice%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free ocean, F: otherwise
-    call reallocate_bounds( ice%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice  , F: otherwise
-    call reallocate_bounds( ice%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice  , F: otherwise
-    call reallocate_bounds( ice%mask_icefree_land_prev , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land , F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_icefree_ocean_prev, mesh_new%vi1, mesh_new%vi2)  ! T: ice-free ocean, F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_grounded_ice_prev , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice  , F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_floating_ice_prev , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice  , F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_margin            , mesh_new%vi1, mesh_new%vi2)  ! T: ice next to ice-free, F: otherwise
-    call reallocate_bounds( ice%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to floating ice, F: otherwise
-    call reallocate_bounds( ice%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to grounded ice, F: otherwise
-    call reallocate_bounds( ice%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
-    call reallocate_bounds( ice%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to ice-free water (sea or lake), F: otherwise
-    call reallocate_bounds( ice%mask_coastline         , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land next to ice-free ocean, F: otherwise
+    call reallocate_bounds( ice%geom%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land , F: otherwise
+    call reallocate_bounds( ice%geom%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free ocean, F: otherwise
+    call reallocate_bounds( ice%geom%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice  , F: otherwise
+    call reallocate_bounds( ice%geom%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice  , F: otherwise
+    call reallocate_bounds( ice%geom%mask_margin            , mesh_new%vi1, mesh_new%vi2)  ! T: ice next to ice-free, F: otherwise
+    call reallocate_bounds( ice%geom%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to floating ice, F: otherwise
+    call reallocate_bounds( ice%geom%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to grounded ice, F: otherwise
+    call reallocate_bounds( ice%geom%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
+    call reallocate_bounds( ice%geom%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to ice-free water (sea or lake), F: otherwise
+    call reallocate_bounds( ice%geom%mask_coastline         , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land next to ice-free ocean, F: otherwise
     call reallocate_bounds( ice%mask_ROI               , mesh_new%vi1, mesh_new%vi2)  ! T: located in ROI, F: otherwise
     call reallocate_bounds( ice%mask_SGD               , mesh_new%vi1, mesh_new%vi2)  ! T: Area where subglacial discharge can be applied, F: otherwise
     ! call reallocate_bounds( ice%mask_noice           , mesh_new%vi1, mesh_new%vi2)  ! T: no ice is allowed here, F: ice is allowed here
-    call reallocate_bounds( ice%mask                   , mesh_new%vi1, mesh_new%vi2)  ! Diagnostic, only meant for quick visual inspection in output
+    call reallocate_bounds( ice%geom%mask                   , mesh_new%vi1, mesh_new%vi2)  ! Diagnostic, only meant for quick visual inspection in output
     call reallocate_bounds( ice%basin_ID               , mesh_new%vi1, mesh_new%vi2)  ! The drainage basin to which each vertex belongs
 
     ! Area fractions
-    call reallocate_bounds( ice%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
-    call reallocate_bounds( ice%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
+    call reallocate_bounds( ice%geom%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
+    call reallocate_bounds( ice%geom%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
     call reallocate_bounds( ice%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    call reallocate_bounds( ice%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
-    call reallocate_bounds( ice%bedrock_cdf_b, mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
+    call reallocate_bounds( ice%geom%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
+    call reallocate_bounds( ice%geom%bedrock_cdf_b, mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
 
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================
@@ -754,16 +748,16 @@ contains
       ! Basic geometry
       ! ice%geom%Hi ( vi) = refgeo_init%Hi( vi)
       ! ice%geom%Hb ( vi) = refgeo_init%Hb( vi)
-      ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%Hs( vi) - ice%geom%Hi( vi)
-      ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
       ice%dHb ( vi)  = ice%geom%Hb ( vi) - refgeo_PD%Hb ( vi)
-      ice%dHs ( vi)  = ice%Hs ( vi) - refgeo_PD%Hs ( vi)
-      ice%dHib( vi)  = ice%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
+      ice%dHs ( vi)  = ice%geom%Hs ( vi) - refgeo_PD%Hs ( vi)
+      ice%dHib( vi)  = ice%geom%Hib( vi) - (refgeo_PD%Hs ( vi) - refgeo_PD%Hi( vi))
 
       ! Rates of change
       ice%dHi_dt ( vi) = 0._dp
@@ -802,9 +796,7 @@ contains
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%geom%Hi)
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%dHi_dt)
 
-    ! call it twice so also the "prev" versions are set
-    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
-    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks()
 
     ! Compute mask_ROI
     call calc_mask_ROI( mesh_new, ice, region_name)
@@ -825,8 +817,8 @@ contains
     ! =================
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( mesh_new, ice%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh_new, ice%Hs, dHs_dy)
+    call ddx_a_a_2D( mesh_new, ice%geom%Hs, dHs_dx)
+    call ddy_a_a_2D( mesh_new, ice%geom%Hs, dHs_dy)
     ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
 
     ! Sub-grid fractions
@@ -837,8 +829,9 @@ contains
       ! Compute bedrock cumulative density function
       call calc_bedrock_CDFs( mesh_new, refgeo_PD, ice)
     end if
+
     ! Initialise sub-grid grounded-area fractions
-    call calc_grounded_fractions( mesh_new, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%dHb,  ice%fraction_gr, ice%fraction_gr_b, ice%mask_floating_ice, ice%bedrock_cdf, ice%bedrock_cdf_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb)
 
     ! Basal conditions
     ! ================
@@ -938,12 +931,12 @@ contains
 
     ! Gather global ice thickness and masks
     call gather_to_all( ice%geom%Hi, Hi_old_tot)
-    call gather_to_all( ice%mask_floating_ice , mask_floating_ice_tot )
-    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
+    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
 
     ! First, naively remap ice thickness and surface elevation without any restrictions
     call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, ice%geom%Hi, Hi_new, '2nd_order_conservative')
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, ice%Hs, Hs_new, '2nd_order_conservative')
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, ice%geom%Hs, Hs_new, '2nd_order_conservative')
 
     ! Calculate remapped ice thickness as the difference between new bedrock and remapped surface elevation
     do vi = mesh_new%vi1, mesh_new%vi2
@@ -1057,9 +1050,9 @@ contains
     end do ! do vi_new = mesh_new%vi1, mesh_new%vi2
 
     ! Recalculate Hs
-    call reallocate_bounds( ice%Hs, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%geom%Hs, mesh_new%vi1, mesh_new%vi2)
     do vi = mesh_new%vi1, mesh_new%vi2
-      ice%Hs( vi) = ice_surface_elevation( Hi_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hs( vi) = ice_surface_elevation( Hi_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
     end do
 
     ! Move Hi_new to ice%geom%Hi
@@ -1146,9 +1139,9 @@ contains
     call init_routine( routine_name)
 
     ! Gather global masks
-    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
-    call gather_to_all( ice%mask_floating_ice , mask_floating_ice_tot )
-    call gather_to_all( ice%mask_cf_fl        , mask_cf_fl_tot        )
+    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
+    call gather_to_all( ice%geom%mask_cf_fl        , mask_cf_fl_tot        )
 
     ! == Create the relaxation mask
     ! =============================
@@ -1303,7 +1296,8 @@ contains
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
       ! Calculate dH/dt around the calving front
-      call calc_dHi_dt( mesh, ice, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%fraction_margin, ice%mask_noice, C%dt_ice_min, &
+      call calc_dHi_dt( mesh, ice, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, &
+        ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%fraction_margin, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1312,9 +1306,9 @@ contains
 
       ! Update basic geometry
       do vi = mesh%vi1, mesh%vi2
-        ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-        ice%Hib( vi) = ice%Hs( vi) - ice%geom%Hi( vi)
-        ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+        ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+        ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+        ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
         ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       end do
 
@@ -1407,7 +1401,7 @@ contains
       ! Ignore any target thinning rates
       dHi_dt_target_dummy = 0._dp
 
-      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%Hi_eff) * region%ice%fraction_gr
+      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%Hi_eff) * region%ice%geom%fraction_gr
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
@@ -1420,11 +1414,11 @@ contains
       ! Set ice model ice thickness to relaxed field
       do vi = region%mesh%vi1, region%mesh%vi2
         ! Apply relaxation over ice shelves and grounding lines
-        if (region%ice%mask_floating_ice( vi) .OR. region%ice%mask_gl_gr( vi)) then
+        if (region%ice%geom%mask_floating_ice( vi) .OR. region%ice%geom%mask_gl_gr( vi)) then
           region%ice%geom%Hi( vi) = Hi_new( vi)
           region%ice%dHi_dt( vi) = dHi_dt_new( vi)
         ! Also over steep-sloped interior ice sheet points
-        elseif (region%ice%mask_grounded_ice( vi) .and. region%ice%Hs_slope( vi) >= 0.03_dp) then
+        elseif (region%ice%geom%mask_grounded_ice( vi) .and. region%ice%Hs_slope( vi) >= 0.03_dp) then
           region%ice%geom%Hi( vi) = Hi_new( vi)
           region%ice%dHi_dt( vi) = dHi_dt_new( vi)
         end if
@@ -1433,7 +1427,7 @@ contains
       ! Apply some specific corrections
       do vi = region%mesh%vi1, region%mesh%vi2
         ! don't let grounded ice cross the floatation threshold
-        ! if (region%ice%mask_grounded_ice( vi)) then
+        ! if (region%ice%geom%mask_grounded_ice( vi)) then
         !   region%ice%geom%Hi( vi) = MAX( region%ice%geom%Hi( vi), (region%ice%geom%SL( vi) - region%ice%geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
         ! end if
         ! Remove very thin ice
@@ -1454,12 +1448,12 @@ contains
       do vi = region%mesh%vi1, region%mesh%vi2
 
         ! Basic geometry
-        region%ice%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-        region%ice%Hib( vi) = region%ice%Hs( vi) - region%ice%geom%Hi( vi)
-        region%ice%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+        region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+        region%ice%geom%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
+        region%ice%geom%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
         region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 
-        if (region%ice%TAF( vi) > 0._dp) then
+        if (region%ice%geom%TAF( vi) > 0._dp) then
           ! Grounded ice
           region%ice%dHs_dt ( vi) = region%ice%dHb_dt( vi) + region%ice%dHi_dt( vi)
           region%ice%dHib_dt( vi) = region%ice%dHb_dt( vi)
@@ -1472,7 +1466,7 @@ contains
       end do
 
       ! Update masks
-      call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+      call region%ice%geom%determine_masks()
 
       ! Calculate new effective thickness
       call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -1483,13 +1477,13 @@ contains
       call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Calculate sub-grid grounded-area fractions
-      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! Reference geometry
       ! ==================
 
       region%refgeo_PD%Hi  = region%ice%geom%Hi
-      region%refgeo_PD%Hs  = region%ice%Hs
+      region%refgeo_PD%Hs  = region%ice%geom%Hs
       region%refgeo_PD%Hb  = region%ice%geom%Hb
 
       ! Differences w.r.t. present-day

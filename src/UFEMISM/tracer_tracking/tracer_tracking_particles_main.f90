@@ -186,7 +186,7 @@ contains
     ! (necessary, as a particle owned by process n will generally not be located in the
     ! domain of that process)
     call gather_to_all( ice%geom%Hi    , Hi_tot)
-    call gather_to_all( ice%Hs    , Hs_tot)
+    call gather_to_all( ice%geom%Hs    , Hs_tot)
     call gather_to_all( ice%u_3D_b, u_3D_b_tot)
     call gather_to_all( ice%v_3D_b, v_3D_b_tot)
     call gather_to_all( ice%w_3D  , w_3D_tot)

@@ -122,7 +122,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, or no sliding, no need to solve the BPA
-    grounded_ice_exists = any( ice%mask_grounded_ice)
+    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       BPA%u_bk = 0._dp
@@ -1740,10 +1740,10 @@ contains
     call init_routine( routine_name)
 
     ! Calculate dh/dx, dh/dy, db/dx, db/dy on the b-grid
-    call ddx_a_b_2D( mesh, ice%Hs , BPA%dh_dx_b)
-    call ddy_a_b_2D( mesh, ice%Hs , BPA%dh_dy_b)
-    call ddx_a_b_2D( mesh, ice%Hib, BPA%db_dx_b)
-    call ddy_a_b_2D( mesh, ice%Hib, BPA%db_dy_b)
+    call ddx_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dx_b)
+    call ddy_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dy_b)
+    call ddx_a_b_2D( mesh, ice%geom%Hib, BPA%db_dx_b)
+    call ddy_a_b_2D( mesh, ice%geom%Hib, BPA%db_dy_b)
 
     ! Calculate the driving stress
     do ti = mesh%ti1, mesh%ti2
@@ -1970,7 +1970,7 @@ contains
     ! Apply the sub-grid grounded fraction, and limit the friction coefficient to improve stability
     if (C%do_GL_subgrid_friction) then
       do ti = mesh%ti1, mesh%ti2
-        BPA%basal_friction_coefficient_b( ti) = BPA%basal_friction_coefficient_b( ti) * ice%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        BPA%basal_friction_coefficient_b( ti) = BPA%basal_friction_coefficient_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

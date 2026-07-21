@@ -211,8 +211,8 @@ CONTAINS
       do vi = mesh%vi1, mesh%vi2
 
         ! we only apply corrections where it is not open ocean
-        if (ice%mask_icefree_ocean( vi) .eqv. .FALSE.) then
-          deltaT  = (ice%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
+        if (ice%geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
+          deltaT  = (ice%geom%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
           do m = 1, 12
             ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
             climate%T2m( vi, m)    = climate%T2m( vi, m)    + deltaT
@@ -220,7 +220,7 @@ CONTAINS
 
             ! Calculate inversion-layer temperatures
             T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
-            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot%lapse_rate_temp * (ice%Hs( vi) - climate%snapshot%Hs( vi)))
+            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot%lapse_rate_temp * (ice%geom%Hs( vi) - climate%snapshot%Hs( vi)))
             ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
             ! Same as implemented in IMAU-ICE
             climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))

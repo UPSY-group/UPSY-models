@@ -28,8 +28,8 @@ contains
     call init_routine( routine_name)
 
     ! Straightforward calculation everywhere
-    call ddx_a_b_2D( mesh, ice%Hib, ice%dHib_dx_b)
-    call ddy_a_b_2D( mesh, ice%Hib, ice%dHib_dy_b)
+    call ddx_a_b_2D( mesh, ice%geom%Hib, ice%dHib_dx_b)
+    call ddy_a_b_2D( mesh, ice%geom%Hib, ice%dHib_dy_b)
 
     call checksum( mesh%pai_Tri, ice%dHib_dx_b, 'ice%dHib_dx_b')
     call checksum( mesh%pai_Tri, ice%dHib_dy_b, 'ice%dHib_dy_b')

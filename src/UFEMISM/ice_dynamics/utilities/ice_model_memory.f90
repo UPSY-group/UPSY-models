@@ -33,9 +33,6 @@ contains
 
     ! Basic geometry
     call ice%geom%allocate( 'ice_geometry', region_name, mesh)
-    allocate( ice%Hs      ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%Hib     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%TAF     ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hi_eff  ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Hs_slope( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Ho      ( mesh%vi1:mesh%vi2), source = 0._dp)
@@ -62,34 +59,13 @@ contains
     allocate( ice%dHi_dt_target   ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! Masks
-    allocate( ice%mask_icefree_land      ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_icefree_ocean     ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_grounded_ice      ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_floating_ice      ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_icefree_land_prev ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_icefree_ocean_prev( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_grounded_ice_prev ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_floating_ice_prev ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_margin            ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_gl_gr             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_gl_fl             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_cf_gr             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_cf_fl             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_coastline         ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_SGD               ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_noice             ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_ROI               ( mesh%vi1:mesh%vi2), source = 0)
-    allocate( ice%mask                   ( mesh%vi1:mesh%vi2), source = 0)
     allocate( ice%basin_ID               ( mesh%vi1:mesh%vi2), source = 0)
 
     ! Area fractions
-    allocate( ice%fraction_gr    ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = 0._dp)
     allocate( ice%fraction_margin( mesh%vi1:mesh%vi2), source = 0._dp)
-
-    ! Sub-grid bedrock cumulative density functions (CDFs)
-    allocate( ice%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = 0._dp)
-    allocate( ice%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = 0._dp)
 
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================

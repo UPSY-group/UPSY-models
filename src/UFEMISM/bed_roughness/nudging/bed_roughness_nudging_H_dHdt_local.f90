@@ -64,7 +64,7 @@ contains
 
         ! Tim's big equation
         nudge%dC_dt( vi) = -bed_roughness_prev( vi) * (&
-            (ice%Hs( vi) - target_geometry%Hs( vi)) / (C%bednudge_H_dHdt_local_H0 * C%bednudge_H_dHdt_local_tau) &
+            (ice%geom%Hs( vi) - target_geometry%Hs( vi)) / (C%bednudge_H_dHdt_local_H0 * C%bednudge_H_dHdt_local_tau) &
           + (2._dp / C%bednudge_H_dHdt_local_H0 * ice%dHs_dt( vi)) &
           ! - C%bednudge_H_dHdt_local_r / C%bednudge_H_dHdt_local_tau * log( bed_roughness_prev( vi) / bed_roughness_target( vi) &
           - C%bednudge_H_dHdt_local_L**2 / C%bednudge_H_dHdt_local_tau * nudge%Laplac_C( vi))

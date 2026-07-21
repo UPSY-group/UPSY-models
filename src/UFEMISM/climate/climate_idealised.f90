@@ -130,7 +130,7 @@ CONTAINS
 
       DO vi = mesh%vi1, mesh%vi2
         ! Calculate baseline temperature
-        climate%T2m( vi,:) = 270._dp - 0.01_dp * ice%Hs( vi)
+        climate%T2m( vi,:) = 270._dp - 0.01_dp * ice%geom%Hs( vi)
       END DO
 
     ELSEIF (C%choice_climate_model_idealised == 'EISMINT1_D' .OR. &

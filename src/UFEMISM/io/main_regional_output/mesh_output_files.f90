@@ -205,13 +205,13 @@ contains
       case ('Hb')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hb', region%ice%geom%Hb)
       case ('Hs')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs', region%ice%Hs)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs', region%ice%geom%Hs)
       case ('Hib')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%Hib)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%geom%Hib)
       case ('SL')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%geom%SL)
       case ('TAF')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%TAF)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%geom%TAF)
       case ('Hi_eff')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%Hi_eff)
       case ('Hs_slope')
@@ -231,17 +231,17 @@ contains
     ! ==============================================
 
       case ('Hs_b')
-        call map_a_b_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D_b)
+        call map_a_b_2D( region%mesh, region%ice%geom%Hs, d_mesh_vec_partial_2D_b)
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'Hs_b', d_mesh_vec_partial_2D_b)
 
     ! ===== Geometry gradients for hillshade =====
     ! ============================================
 
       case ('dHs_dx')
-        call ddx_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call ddx_a_a_2D( region%mesh, region%ice%geom%Hs, d_mesh_vec_partial_2D)
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dx', d_mesh_vec_partial_2D)
       case ('dHs_dy')
-        call ddy_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call ddy_a_a_2D( region%mesh, region%ice%geom%Hs, d_mesh_vec_partial_2D)
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dy', d_mesh_vec_partial_2D)
 
     ! ===== Geometry changes w.r.t. reference =====
@@ -282,70 +282,70 @@ contains
     ! =================
 
       case ('mask_icefree_land')
-        where (region%ice%mask_icefree_land)
+        where (region%ice%geom%mask_icefree_land)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_icefree_land', mask_int)
       case ('mask_icefree_ocean')
-        where (region%ice%mask_icefree_ocean)
+        where (region%ice%geom%mask_icefree_ocean)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_icefree_ocean', mask_int)
       case ('mask_grounded_ice')
-        where (region%ice%mask_grounded_ice)
+        where (region%ice%geom%mask_grounded_ice)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_grounded_ice', mask_int)
       case ('mask_floating_ice')
-        where (region%ice%mask_floating_ice)
+        where (region%ice%geom%mask_floating_ice)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_floating_ice', mask_int)
       case ('mask_margin')
-        where (region%ice%mask_margin)
+        where (region%ice%geom%mask_margin)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_margin', mask_int)
       case ('mask_gl_gr')
-        where (region%ice%mask_gl_gr)
+        where (region%ice%geom%mask_gl_gr)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_gr', mask_int)
       case ('mask_gl_fl')
-        where (region%ice%mask_gl_fl)
+        where (region%ice%geom%mask_gl_fl)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_fl', mask_int)
       case ('mask_cf_gr')
-        where (region%ice%mask_cf_gr)
+        where (region%ice%geom%mask_cf_gr)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_cf_gr', mask_int)
       case ('mask_cf_fl')
-        where (region%ice%mask_cf_fl)
+        where (region%ice%geom%mask_cf_fl)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_cf_fl', mask_int)
       case ('mask_coastline')
-        where (region%ice%mask_coastline)
+        where (region%ice%geom%mask_coastline)
           mask_int = 1
         elsewhere
           mask_int = 0
@@ -361,7 +361,7 @@ contains
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_SGD', mask_int)
       case ('mask')
-        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask', region%ice%mask)
+        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask', region%ice%geom%mask)
       case ('basin_ID')
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'basin_ID', region%ice%basin_ID)
 
@@ -369,9 +369,9 @@ contains
     ! ==========================
 
       case ('fraction_gr')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_gr', region%ice%fraction_gr)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_gr', region%ice%geom%fraction_gr)
       case ('fraction_gr_b')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'fraction_gr_b', region%ice%fraction_gr_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'fraction_gr_b', region%ice%geom%fraction_gr_b)
       case ('fraction_margin')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_margin', region%ice%fraction_margin)
 
@@ -1575,7 +1575,7 @@ contains
     ! Replace thickness above floatation with NaN in ice-free vertices so GL wont be found there
     do vi = mesh%vi1, mesh%vi2
       if (ice%geom%Hi( vi) > 0.1_dp) then
-        TAF_for_GL( vi) = ice%TAF( vi)
+        TAF_for_GL( vi) = ice%geom%TAF( vi)
       else
         TAF_for_GL( vi) = NaN
       end if
@@ -1612,7 +1612,7 @@ contains
 
     ! Replace ice thickness with NaN in grounded vertices so CF wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%TAF( vi) < 0._dp) then
+      if (ice%geom%TAF( vi) < 0._dp) then
         Hi_for_GL( vi) = ice%geom%Hi( vi)
       else
         Hi_for_GL( vi) = NaN
@@ -1716,7 +1716,7 @@ contains
 
     ! Remove floating ice
     do vi = mesh%vi1, mesh%vi2
-      if (ice%mask_grounded_ice( vi)) then
+      if (ice%geom%mask_grounded_ice( vi)) then
         Hi_grounded_only( vi) = ice%geom%Hi( vi)
       else
         Hi_grounded_only( vi) = 0._dp

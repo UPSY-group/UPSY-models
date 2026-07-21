@@ -40,7 +40,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Only perform the inversion on (partially) grounded vertices
-      if (ice%fraction_gr( vi) > 0.01_dp .and. ice%geom%Hi( vi) > 50._dp) then
+      if (ice%geom%fraction_gr( vi) > 0.01_dp .and. ice%geom%Hi( vi) > 50._dp) then
 
         mask_calc_dCdt_from_nudging      ( vi) = .true.
         mask_calc_dCdt_from_extrapolation( vi) = .false.

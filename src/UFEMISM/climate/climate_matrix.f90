@@ -193,7 +193,7 @@ contains
 
       ! Adapt temperature to model orography using matrix-derived lapse-rate
       do m = 1, 12
-        climate%T2m( vi,m) = T_ref_GCM( vi, m) - lambda_GCM( vi) * (ice%Hs( vi) - Hs_GCM( vi))  ! Berends et al., 2018 - Eq. 11
+        climate%T2m( vi,m) = T_ref_GCM( vi, m) - lambda_GCM( vi) * (ice%geom%Hs( vi) - Hs_GCM( vi))  ! Berends et al., 2018 - Eq. 11
       end do
 
     end do
@@ -326,7 +326,7 @@ contains
     ! =====================================================
     ! First calculate the total ice volume term (second term in the equation)
     w_tot = MAX(-w_cutoff, MIN(1._dp + w_cutoff, &
-      (SUM( ice%Hs) - SUM( climate%matrix%GCM_warm%Hs)) / (SUM( climate%matrix%GCM_cold%Hs) - SUM( climate%matrix%GCM_warm%Hs)) ))
+      (SUM( ice%geom%Hs) - SUM( climate%matrix%GCM_warm%Hs)) / (SUM( climate%matrix%GCM_cold%Hs) - SUM( climate%matrix%GCM_warm%Hs)) ))
 
     call weighting_fields_matrix_precipitation( climate, mesh, grid, ice, region_name, forcing, w_tot, w_warm, w_cold)
 
@@ -352,10 +352,10 @@ contains
     if (region_name == 'NAM' .OR. region_name == 'EAS') then
       ! Use the Roe&Lindzen precipitation model to do this; Berends et al., 2018, Eqs. A3-A7
       call adapt_precip_Roe( mesh, Hs_GCM,   T_ref_GCM  , climate%matrix%PD_obs%Wind_LR, climate%matrix%PD_obs%Wind_DU, P_ref_GCM, &
-                                   ice%Hs, climate%T2m, climate%matrix%PD_obs%Wind_LR, climate%matrix%PD_obs%Wind_DU, climate%Precip)
+                                   ice%geom%Hs, climate%T2m, climate%matrix%PD_obs%Wind_LR, climate%matrix%PD_obs%Wind_DU, climate%Precip)
     elseif (region_name == 'GRL' .OR. region_name == 'ANT') then
       ! Use a simpler temperature-based correction; Berends et al., 2018, Eq. 14
-      call adapt_precip_CC( mesh, ice%Hs, Hs_GCM, T_ref_GCM, P_ref_GCM, climate%Precip, region_name)
+      call adapt_precip_CC( mesh, ice%geom%Hs, Hs_GCM, T_ref_GCM, P_ref_GCM, climate%Precip, region_name)
     end if
 
     ! Finalise routine path
@@ -397,12 +397,12 @@ contains
             w_warm( vi) = 1._dp - w_cold( vi)
           else
             ! No ice in warm climate, ice in cold climate. Linear inter- / extrapolation.
-            w_cold( vi) = MAX(-w_cutoff, MIN(1._dp + w_cutoff, ((ice%Hs( vi) - climate%matrix%GCM_PI%Hs( vi)) / (climate%matrix%GCM_cold%Hs( vi) - climate%matrix%GCM_PI%Hs( vi))) * w_tot ))
+            w_cold( vi) = MAX(-w_cutoff, MIN(1._dp + w_cutoff, ((ice%geom%Hs( vi) - climate%matrix%GCM_PI%Hs( vi)) / (climate%matrix%GCM_cold%Hs( vi) - climate%matrix%GCM_PI%Hs( vi))) * w_tot ))
             w_warm( vi)  = 1._dp - w_cold( vi)
           end if
         else
           ! Ice in both GCM states.  Linear inter- / extrapolation
-          w_cold( vi) = MAX(-w_cutoff, MIN(1._dp + w_cutoff, ((ice%Hs( vi) - climate%matrix%GCM_PI%Hs( vi)) / (climate%matrix%GCM_cold%Hs( vi) - climate%matrix%GCM_PI%Hs( vi))) * w_tot ))
+          w_cold( vi) = MAX(-w_cutoff, MIN(1._dp + w_cutoff, ((ice%geom%Hs( vi) - climate%matrix%GCM_PI%Hs( vi)) / (climate%matrix%GCM_cold%Hs( vi) - climate%matrix%GCM_PI%Hs( vi))) * w_tot ))
           w_warm( vi)  = 1._dp - w_cold( vi)
         end if
 
@@ -789,9 +789,9 @@ contains
     ! ===
     allocate( ice_dummy%geom%Hi( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%geom%Hb( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_icefree_ocean( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_grounded_ice(   mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_floating_ice( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%mask_grounded_ice(   mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%mask_floating_ice( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_noice(        mesh%vi1:mesh%vi2))
 
     ! Fill in masks for the SMB model
@@ -804,21 +804,21 @@ contains
       ice_dummy%geom%Hb( vi) = ice%geom%Hb( vi)
 
       if (snapshot%Hs( vi) == MINVAL(snapshot%Hs)) then
-        ice_dummy%mask_icefree_ocean( vi) = .true.
+        ice_dummy%geom%mask_icefree_ocean( vi) = .true.
       else
-        ice_dummy%mask_icefree_ocean( vi) = .false.
+        ice_dummy%geom%mask_icefree_ocean( vi) = .false.
       end if
 
       ! this IF is like (climate%Mask_ice( vi) > .3_dp) in Ufe1.x
       if (snapshot%Hs( vi) > 100._dp .AND. SUM(snapshot%T2m( vi,:)) / 12._dp < 0._dp) then
-        ice_dummy%mask_grounded_ice(   vi) = .true.
+        ice_dummy%geom%mask_grounded_ice(   vi) = .true.
       else
-        ice_dummy%mask_grounded_ice(   vi) = .false.
+        ice_dummy%geom%mask_grounded_ice(   vi) = .false.
       end if
 
       ! mask_shelf is used in the SMB model only to find open ocean; since mask_ocean
       ! in this case already marks only open ocean, no need to look for shelves
-      ice_dummy%mask_floating_ice( vi) = .false.
+      ice_dummy%geom%mask_floating_ice( vi) = .false.
 
     end do
 

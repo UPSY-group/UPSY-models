@@ -334,7 +334,7 @@ contains
     call self%dtsdz%update_and_interpolate( self%mesh, time)
 
     do vi = self%mesh%vi1, self%mesh%vi2
-      self%delta_z ( vi) = ice%Hs( vi) - self%Hs_baseline ( vi)
+      self%delta_z ( vi) = ice%geom%Hs( vi) - self%Hs_baseline ( vi)
       self%delta_ts( vi) = self%delta_z( vi) * self%dtsdz%val_interp( vi)
     end do
 

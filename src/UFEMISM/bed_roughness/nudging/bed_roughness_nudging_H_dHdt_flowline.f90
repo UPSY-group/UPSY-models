@@ -126,7 +126,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    deltaHs = ice%Hs - target_geometry%Hs
+    deltaHs = ice%geom%Hs - target_geometry%Hs
 
     call gather_to_all( ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)
@@ -239,8 +239,8 @@ contains
     call init_routine( routine_name)
 
     ! Calculate surface slopes
-    call ddx_a_a_2D( mesh, ice%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh, ice%Hs, dHs_dy)
+    call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
+    call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
 
     ! Calculate absolute surface gradient
     abs_grad_Hs = sqrt( dHs_dx**2 + dHs_dy**2)
@@ -249,13 +249,13 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Ice margin and grounding lines
-      if (ice%mask_grounded_ice( vi)) then
+      if (ice%geom%mask_grounded_ice( vi)) then
 
         ! Strengthen the effect of grounded fractions for steep slopes
         fg_exp_mod = min( 1.0_dp, max( 0._dp, max( 0._dp, abs_grad_Hs( vi) - 0.02_dp) / (0.06_dp - 0.02_dp) ))
 
         ! Scale based on grounded fraction
-        dC_dt( vi) = dC_dt( vi) * ice%fraction_gr( vi) ** (1._dp + fg_exp_mod)
+        dC_dt( vi) = dC_dt( vi) * ice%geom%fraction_gr( vi) ** (1._dp + fg_exp_mod)
 
       end if
 

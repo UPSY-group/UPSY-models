@@ -602,22 +602,22 @@ contains
       exponent_gr = max( 0._dp, exponent_hi - exponent_hs)
 
       ! Compute a weight based on the grounded area fractions
-      if (ice%mask_gl_gr( vi)) then
-        weight_gr = ice%fraction_gr( vi)**exponent_gr
+      if (ice%geom%mask_gl_gr( vi)) then
+        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
 
-      elseif (ice%mask_cf_gr( vi)) then
-        weight_gr = ice%fraction_gr( vi)**exponent_gr
+      elseif (ice%geom%mask_cf_gr( vi)) then
+        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
 
-      elseif (ice%mask_gl_fl( vi)) then
-        weight_gr = ice%fraction_gr( vi)**exponent_gr
+      elseif (ice%geom%mask_gl_fl( vi)) then
+        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
 
-      elseif (ice%mask_grounded_ice( vi)) then
+      elseif (ice%geom%mask_grounded_ice( vi)) then
         weight_gr = 1._dp
 
-      elseif (ice%mask_floating_ice( vi)) then
+      elseif (ice%geom%mask_floating_ice( vi)) then
         weight_gr = 0._dp
 
-      elseif (ice%mask_icefree_ocean( vi)) then
+      elseif (ice%geom%mask_icefree_ocean( vi)) then
         weight_gr = 0._dp
 
       end if
@@ -654,13 +654,13 @@ contains
     call init_routine( routine_name)
 
     ! Gather data from all processes
-    call gather_to_all( ice%mask_grounded_ice, mask_grounded_ice_tot)
+    call gather_to_all( ice%geom%mask_grounded_ice, mask_grounded_ice_tot)
     call gather_to_all( ice%till_yield_stress, till_yield_stress_tot)
 
     do vi = mesh%vi1, mesh%vi2
 
       ! Skip if not ice-free land
-      if (.not. ice%mask_icefree_land( vi)) cycle
+      if (.not. ice%geom%mask_icefree_land( vi)) cycle
 
       ! Initialise
       found_grounded_neighbour = .false.

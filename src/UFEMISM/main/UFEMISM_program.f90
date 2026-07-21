@@ -114,7 +114,7 @@ program UFEMISM_program
     ! MISMIP+ flow factor tuning for GL position
     if (C%refgeo_idealised_MISMIPplus_tune_A) then
       Hs_prev = Hs_cur
-      Hs_cur  = MAXVAL( ANT%ice%Hs)
+      Hs_cur  = MAXVAL( ANT%ice%geom%Hs)
       call MPI_ALLREDUCE( MPI_IN_PLACE, Hs_cur, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
       if (ABS( 1._dp - Hs_cur / Hs_prev) < 5.0E-3_dp) then
         ! The model has converged to a steady state; adapt the flow factor

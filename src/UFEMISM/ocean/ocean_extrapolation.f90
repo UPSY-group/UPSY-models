@@ -102,7 +102,7 @@ contains
         ! Check for NaNs
         if (isnan(d( vi, k))) then
           ! Check whether in cavity
-          if ((C%z_ocean( k) > -ice%Hib( vi)) .and. (C%z_ocean( k) < -ice%geom%Hb( vi))) then
+          if ((C%z_ocean( k) > -ice%geom%Hib( vi)) .and. (C%z_ocean( k) < -ice%geom%Hb( vi))) then
             ! In cavity, so extrapolate here
             mask_fill( vi) = 1
           else

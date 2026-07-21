@@ -422,8 +422,8 @@ contains
 
       ! Background albedo
       self%AlbedoSurf( vi) = self%albedo_soil
-      if ((ice%mask_icefree_ocean( vi) .eqv. .true. .and. ice%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_water
-      if (ice%mask_grounded_ice(   vi) .eqv. .true. .or.  ice%mask_floating_ice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_ice
+      if ((ice%geom%mask_icefree_ocean( vi) .eqv. .true. .and. ice%geom%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_water
+      if (ice%geom%mask_grounded_ice(   vi) .eqv. .true. .or.  ice%geom%mask_floating_ice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_ice
 
       do m = 1, 12  ! Month loop
 
@@ -432,7 +432,7 @@ contains
 
         self%Albedo( vi,m) = min( self%albedo_snow, max( self%AlbedoSurf( vi), self%albedo_snow - (self%albedo_snow - self%AlbedoSurf( vi))  * &
                              exp(-15._dp * self%FirnDepth( vi,mprev)) - 0.015_dp * self%MeltPreviousYear( vi)))
-        if ((ice%mask_icefree_ocean( vi) .eqv. .true. .and. ice%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%Albedo( vi,m) = self%albedo_water
+        if ((ice%geom%mask_icefree_ocean( vi) .eqv. .true. .and. ice%geom%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%Albedo( vi,m) = self%albedo_water
 
         ! Determine ablation as a function of surface temperature and albedo/insolation according to Bintanja et al. (2002)
         self%Melt( vi,m) = max(0._dp, ( self%C_abl_Ts         * (climate%T2m( vi,m) - T0) + &
@@ -472,8 +472,8 @@ contains
       self%Refreezing_year( vi) = min( min( min( sup_imp_wat, liquid_water), sum(climate%Precip( vi,:))), 0.25_dp * sum( self%FirnDepth( vi,:) / 12._dp)) ! version from IMAU-ICE dev branch
       !SMB%Refreezing_year( vi) = min( min( sup_imp_wat, liquid_water), sum( climate%Precip( vi,:))) ! outdated version on main branch
 
-      if (ice%mask_grounded_ice( vi)  .eqv. .false. .or. ice%mask_floating_ice( vi) .eqv. .false.) self%Refreezing_year( vi) = 0._dp
-      if (ice%mask_icefree_ocean( vi) .eqv. .true.)                                                self%AddedFirn( vi,:)     = 0._dp ! Does it make sense to add firn over the ocean?!
+      if (ice%geom%mask_grounded_ice( vi)  .eqv. .false. .or. ice%geom%mask_floating_ice( vi) .eqv. .false.) self%Refreezing_year( vi) = 0._dp
+      if (ice%geom%mask_icefree_ocean( vi) .eqv. .true.)                                                self%AddedFirn( vi,:)     = 0._dp ! Does it make sense to add firn over the ocean?!
 
       do m = 1, 12
         self%Refreezing(  vi,m) = self%Refreezing_year( vi) / 12._dp
@@ -482,7 +482,7 @@ contains
       end do
 
       self%SMB( vi) = sum( self%SMB_monthly( vi,:))
-      !if (ice%mask_icefree_ocean( vi) .eqv. .true.) SMB%SMB( vi) = 0._dp ! should we limit SMB over open ocean?
+      !if (ice%geom%mask_icefree_ocean( vi) .eqv. .true.) SMB%SMB( vi) = 0._dp ! should we limit SMB over open ocean?
 
       ! Calculate total melt over this year, to be used for determining next year's albedo
       self%MeltPreviousYear( vi) = sum( self%Melt( vi,:))

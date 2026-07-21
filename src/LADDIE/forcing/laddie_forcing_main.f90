@@ -86,8 +86,8 @@ contains
     ! Basic geometry
     do vi = mesh%vi1, mesh%vi2
       ice%geom%Hb( vi) = refgeo%Hb( vi)
-      ice%Hs( vi) = refgeo%Hs ( vi)
-      ice%geom%Hi( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), ice%Hs( vi), ice%geom%SL( vi))
+      ice%geom%Hs( vi) = refgeo%Hs ( vi)
+      ice%geom%Hi( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), ice%geom%Hs( vi), ice%geom%SL( vi))
     end do
 
     ! Calculate the no-ice mask
@@ -102,18 +102,16 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
-      ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%Hs( vi) - ice%geom%Hi( vi)
-      ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
     end do
 
     ! Initialise masks
     ! ================
 
-    ! call it twice so also the "prev" versions are set
-    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
-    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks()
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, 'ANT')
@@ -151,20 +149,20 @@ contains
     ! ===========================
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
-    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hs                ( mesh%vi1:mesh%vi2  )
     forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
-    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
-    forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
+    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%geom%Hib               ( mesh%vi1:mesh%vi2  )
+    forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%geom%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
     forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
-    forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = ice%mask_icefree_land ( mesh%vi1:mesh%vi2  )
-    forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = ice%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
-    forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = ice%mask_grounded_ice ( mesh%vi1:mesh%vi2  )
-    forcing%mask_floating_ice ( mesh%vi1:mesh%vi2  ) = ice%mask_floating_ice ( mesh%vi1:mesh%vi2  )
+    forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_land ( mesh%vi1:mesh%vi2  )
+    forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
+    forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_grounded_ice ( mesh%vi1:mesh%vi2  )
+    forcing%mask_floating_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_floating_ice ( mesh%vi1:mesh%vi2  )
 
-    forcing%mask_gl_fl        ( mesh%vi1:mesh%vi2  ) = ice%mask_gl_fl        ( mesh%vi1:mesh%vi2  )
+    forcing%mask_gl_fl        ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_gl_fl        ( mesh%vi1:mesh%vi2  )
     forcing%mask_SGD          ( mesh%vi1:mesh%vi2  ) = ice%mask_SGD          ( mesh%vi1:mesh%vi2  )
-    forcing%mask              ( mesh%vi1:mesh%vi2  ) = ice%mask              ( mesh%vi1:mesh%vi2  )
+    forcing%mask              ( mesh%vi1:mesh%vi2  ) = ice%geom%mask              ( mesh%vi1:mesh%vi2  )
 
     forcing%Ti                ( mesh%vi1:mesh%vi2,:) = ice%Ti                ( mesh%vi1:mesh%vi2,:) - 273.15 ! [degC]
     forcing%T_ocean           ( mesh%vi1:mesh%vi2,:) = ocean%T               ( mesh%vi1:mesh%vi2,:)

@@ -255,7 +255,7 @@ contains
         fg_exp_mod = min( 1.0_dp, max( 0._dp, max( 0._dp, abs_grad_Hs( vi) - 0.02_dp) / (0.06_dp - 0.02_dp) ))
 
         ! Scale based on grounded fraction
-        dC_dt( vi) = dC_dt( vi) * ice%fraction_gr( vi) ** (1._dp + fg_exp_mod)
+        dC_dt( vi) = dC_dt( vi) * ice%geom%fraction_gr( vi) ** (1._dp + fg_exp_mod)
 
       end if
 

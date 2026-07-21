@@ -450,7 +450,7 @@ contains
     call map_mesh_vertices_to_graph ( mesh, ice%geom%Hi                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hi_a                        )
     call map_mesh_vertices_to_graph ( mesh, ice%geom%Hs                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hs_a                        )
     call map_mesh_vertices_to_graph ( mesh, ice%Ho                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Ho_a                        )
-    call map_mesh_triangles_to_graph( mesh, ice%fraction_gr_b                , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%fraction_gr_b               )
+    call map_mesh_triangles_to_graph( mesh, ice%geom%fraction_gr_b                , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%fraction_gr_b               )
 
     ! Solution
     call map_mesh_triangles_to_graph( mesh, DIVA%u_vav_b                     , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%u_vav_b                     )

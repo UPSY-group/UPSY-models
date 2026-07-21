@@ -65,8 +65,8 @@ contains
     allocate( ice%basin_ID               ( mesh%vi1:mesh%vi2), source = 0)
 
     ! Area fractions
-    allocate( ice%fraction_gr    ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = 0._dp)
+    allocate( ice%geom%fraction_gr    ( mesh%vi1:mesh%vi2), source = 0._dp)
+    allocate( ice%geom%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = 0._dp)
     allocate( ice%fraction_margin( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! === Terrain-following coordinate zeta gradients ===

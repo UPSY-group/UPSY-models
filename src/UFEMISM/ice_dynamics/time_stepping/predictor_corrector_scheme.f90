@@ -92,7 +92,7 @@ contains
     call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
 
       ! Update effective ice thickness
     call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -173,7 +173,7 @@ contains
       ! call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Update sub-grid grounded fractions
-      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate the basal mass balance
@@ -202,7 +202,7 @@ contains
       call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
 
       ! Update effective ice thickness
       call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -257,7 +257,7 @@ contains
       ! Determine number of unstable vertices
       do vi = region%mesh%vi1, region%mesh%vi2
         ! Only consider fully grounded vertices
-        if (region%ice%fraction_gr( vi) < 1._dp) CYCLE
+        if (region%ice%geom%fraction_gr( vi) < 1._dp) CYCLE
         ! if so, add to total vertex count
         n_tot = n_tot + 1
         ! if this vertex's error is larger than tolerance
@@ -346,7 +346,7 @@ contains
     ! Calculate the maximum truncation error eta over grounded ice only
     pc%eta_np1 = C%pc_eta_min
     do vi = mesh%vi1, mesh%vi2
-      if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi) .and. ice%fraction_gr( vi) == 1._dp) then
+      if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi) .and. ice%geom%fraction_gr( vi) == 1._dp) then
         pc%eta_np1 = MAX( pc%eta_np1, pc%tau_np1( vi))
       end if
     end do

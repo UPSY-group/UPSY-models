@@ -32,6 +32,10 @@ module ice_geometry_model_data
     real(dp), dimension(:,:), allocatable :: bedrock_cdf             ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
     real(dp), dimension(:,:), allocatable :: bedrock_cdf_b           ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
 
+    ! Area fractions
+    real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1] Grounded area fractions of vertices
+    real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1] Grounded area fractions of triangles
+
     ! Ice masks
     logical,  dimension(:  ), allocatable :: mask_icefree_land       ! T: ice-free land , F: otherwise
     logical,  dimension(:  ), allocatable :: mask_icefree_ocean      ! T: ice-free ocean, F: otherwise

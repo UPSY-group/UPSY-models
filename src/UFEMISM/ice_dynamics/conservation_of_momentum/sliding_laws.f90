@@ -603,13 +603,13 @@ contains
 
       ! Compute a weight based on the grounded area fractions
       if (ice%geom%mask_gl_gr( vi)) then
-        weight_gr = ice%fraction_gr( vi)**exponent_gr
+        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
 
       elseif (ice%geom%mask_cf_gr( vi)) then
-        weight_gr = ice%fraction_gr( vi)**exponent_gr
+        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
 
       elseif (ice%geom%mask_gl_fl( vi)) then
-        weight_gr = ice%fraction_gr( vi)**exponent_gr
+        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
 
       elseif (ice%geom%mask_grounded_ice( vi)) then
         weight_gr = 1._dp

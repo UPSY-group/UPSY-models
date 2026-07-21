@@ -766,16 +766,16 @@ CONTAINS
           BMB%BMB( vi) = 0._dp
         end if
       case ('NMP')
-        if (ice%geom%mask_floating_ice( vi) .and. ice%fraction_gr( vi) == 0._dp) then
+        if (ice%geom%mask_floating_ice( vi) .and. ice%geom%fraction_gr( vi) == 0._dp) then
           BMB%BMB( vi) = BMB%BMB_shelf( vi)
-        elseif (ice%fraction_gr( vi) > 0._dp) then
+        elseif (ice%geom%fraction_gr( vi) > 0._dp) then
           BMB%BMB( vi) = BMB%BMB_sheet( vi)
         else
           BMB%BMB( vi) = 0._dp
         end if
       case ('PMP')
         if (ice%geom%mask_floating_ice( vi) .or. ice%geom%mask_grounded_ice( vi)) then
-          BMB%BMB( vi) = ice%fraction_gr( vi) * BMB%BMB_sheet( vi) + (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+          BMB%BMB( vi) = ice%geom%fraction_gr( vi) * BMB%BMB_sheet( vi) + (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
         else
           BMB%BMB( vi) = 0._dp
         end if

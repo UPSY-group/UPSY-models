@@ -90,7 +90,7 @@ CONTAINS
         ! Apply grounded fractions
         if (ice%geom%mask_gl_gr( vi) .and. ice%geom%Hib(vi) < ice%geom%SL(vi)) then
           ! Subgrid basal melt rate
-          ! BMB%BMB_shelf( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+          ! BMB%BMB_shelf( vi) = (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
           ! Limit it to only melt (refreezing is tricky)
           BMB%BMB_shelf( vi) = max( BMB%BMB_shelf( vi), 0._dp)
         end if
@@ -162,7 +162,7 @@ CONTAINS
       ! Apply grounded fractions
       IF (ice%geom%mask_gl_gr( vi) .AND. ice%geom%Hib(vi) < ice%geom%SL(vi)) THEN
         ! Subgrid basal melt rate
-        ! BMB%BMB_shelf( vi) = (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+        ! BMB%BMB_shelf( vi) = (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
         ! Limit it to only melt (refreezing is tricky)
         BMB%BMB_shelf( vi) = MAX( BMB%BMB_shelf( vi), 0._dp)
       END IF

@@ -34,7 +34,7 @@ module ice_geometry_model_basic
 
   end type type_ice_geometry_model
 
-  ! create_field
+  ! Interfaces for procedures defined in submodules
   interface
 
     module subroutine calc_grounded_fractions( self, dHb, fraction_gr, fraction_gr_b)
@@ -44,7 +44,7 @@ module ice_geometry_model_basic
       real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
     end subroutine calc_grounded_fractions
 
-    end interface
+  end interface
 
 contains
 
@@ -67,39 +67,10 @@ contains
 
     ! Allocate all the stuff that is specific to the ice_geometry model
 
-    ! Primary ice geometry fields
-    ! ===========================
-
-    ! DENK DROM
     allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%SL( mesh%vi1:mesh%vi2), source = NaN)
 
-    ! call self%create_field( self%Hi, self%wHi, &
-    !   self%mesh, Arakawa_grid%a(), &
-    !   name      = 'Hi', &
-    !   long_name = 'Ice thickness', &
-    !   units     = 'm', &
-    !   remap_method = 'reallocate')
-
-    ! call self%create_field( self%Hb, self%wHb, &
-    !   self%mesh, Arakawa_grid%a(), &
-    !   name      = 'Hb', &
-    !   long_name = 'Bedrock elevation (w.r.t. PD sea level)', &
-    !   units     = 'm', &
-    !   remap_method = 'reallocate')
-
-    ! call self%create_field( self%SL, self%wSL, &
-    !   self%mesh, Arakawa_grid%a(), &
-    !   name      = 'SL', &
-    !   long_name = 'Geoid elevation (w.r.t. PD sea level)', &
-    !   units     = 'm', &
-    !   remap_method = 'reallocate')
-
-    ! Secondary ice geometry fields
-    ! =============================
-
-    ! DENK DROM
     allocate( self%Hs ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hib( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%TAF( mesh%vi1:mesh%vi2), source = NaN)
@@ -108,10 +79,11 @@ contains
     allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)
     allocate( self%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = NaN)
 
-    ! Ice masks
-    ! =========
+    ! Area fractions
+    allocate( self%fraction_gr  ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%fraction_gr_b( mesh%ti1:mesh%ti2), source = NaN)
 
-    ! DENK DROM
+    ! Ice masks
     allocate( self%mask_icefree_land ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask_icefree_ocean( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask_grounded_ice ( mesh%vi1:mesh%vi2), source = .false.)

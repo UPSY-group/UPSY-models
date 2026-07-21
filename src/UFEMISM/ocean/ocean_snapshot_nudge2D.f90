@@ -173,7 +173,7 @@ contains
 
       ! Only apply nudging to fully floating shelf vertices,
       ! skipping the grounding line and calving front.
-      if (ice%fraction_gr( vi) < 0.01_dp .and. ice%geom%Hi( vi) > 0.1_dp .and. .not. ice%geom%mask_margin( vi)) then
+      if (ice%geom%fraction_gr( vi) < 0.01_dp .and. ice%geom%Hi( vi) > 0.1_dp .and. .not. ice%geom%mask_margin( vi)) then
 
         mask_extrapolation( vi) = 2
 

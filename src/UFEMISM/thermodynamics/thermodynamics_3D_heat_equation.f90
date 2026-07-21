@@ -196,7 +196,7 @@ CONTAINS
                   ! Use solution that assumes a fully grounded ice column (already assigned)
                 CASE ('subgrid')
                   ! Interpolate grounded and floating solutions based on grounded fraction
-                  icecol_Ti_tplusdt = ice%fraction_gr( vi) * icecol_Ti_tplusdt + (1._dp - ice%fraction_gr( vi)) * icecol_Ti_tplusdt_gl_fl
+                  icecol_Ti_tplusdt = ice%geom%fraction_gr( vi) * icecol_Ti_tplusdt + (1._dp - ice%geom%fraction_gr( vi)) * icecol_Ti_tplusdt_gl_fl
                 CASE ('pmp')
                   ! Use solution that assumes ice base is at pressure melting point
                   icecol_Ti_tplusdt = icecol_Ti_tplusdt_gl_fl

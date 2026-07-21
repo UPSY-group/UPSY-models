@@ -369,9 +369,9 @@ contains
     ! ==========================
 
       case ('fraction_gr')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_gr', region%ice%fraction_gr)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_gr', region%ice%geom%fraction_gr)
       case ('fraction_gr_b')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'fraction_gr_b', region%ice%fraction_gr_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'fraction_gr_b', region%ice%geom%fraction_gr_b)
       case ('fraction_margin')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_margin', region%ice%fraction_margin)
 

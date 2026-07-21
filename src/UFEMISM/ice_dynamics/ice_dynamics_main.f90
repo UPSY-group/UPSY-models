@@ -183,7 +183,7 @@ contains
     call calc_zeta_gradients( region%mesh, region%ice)
 
     ! Calculate sub-grid grounded-area fractions
-    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -371,7 +371,7 @@ contains
     call initialise_bedrock_CDFs( mesh, refgeo_PD, ice, region_name)
 
     ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( ice%dHb,  ice%fraction_gr, ice%fraction_gr_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb,  ice%geom%fraction_gr, ice%geom%fraction_gr_b)
 
     ! Basal conditions
     ! ================
@@ -593,8 +593,8 @@ contains
     call reallocate_bounds( ice%basin_ID               , mesh_new%vi1, mesh_new%vi2)  ! The drainage basin to which each vertex belongs
 
     ! Area fractions
-    call reallocate_bounds( ice%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
-    call reallocate_bounds( ice%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
+    call reallocate_bounds( ice%geom%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
+    call reallocate_bounds( ice%geom%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
     call reallocate_bounds( ice%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
@@ -831,7 +831,7 @@ contains
     end if
 
     ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( ice%dHb, ice%fraction_gr, ice%fraction_gr_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb, ice%geom%fraction_gr, ice%geom%fraction_gr_b)
 
     ! Basal conditions
     ! ================
@@ -1401,7 +1401,7 @@ contains
       ! Ignore any target thinning rates
       dHi_dt_target_dummy = 0._dp
 
-      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%Hi_eff) * region%ice%fraction_gr
+      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%Hi_eff) * region%ice%geom%fraction_gr
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
@@ -1477,7 +1477,7 @@ contains
       call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Calculate sub-grid grounded-area fractions
-      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
 
       ! Reference geometry
       ! ==================

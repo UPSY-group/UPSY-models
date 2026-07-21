@@ -97,10 +97,10 @@ contains
             BMB_gr( vi) = 0._dp
           end if
         case ('NMP')
-          if (region%ice%geom%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
+          if (region%ice%geom%mask_floating_ice( vi) .and. region%ice%geom%fraction_gr( vi) == 0._dp) then
             BMB_fl( vi) = region%BMB%BMB_shelf( vi)
             BMB_gr( vi) = 0._dp
-          elseif (region%ice%fraction_gr( vi) > 0._dp) then
+          elseif (region%ice%geom%fraction_gr( vi) > 0._dp) then
             BMB_fl( vi) = 0._dp
             BMB_gr( vi) = region%BMB%BMB_sheet( vi)
           else
@@ -109,8 +109,8 @@ contains
           end if
         case ('PMP')
           if (region%ice%geom%mask_floating_ice( vi) .or. region%ice%geom%mask_grounded_ice( vi)) then
-            BMB_fl( vi) = (1._dp - region%ice%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
-            BMB_gr( vi) = region%ice%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
+            BMB_fl( vi) = (1._dp - region%ice%geom%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
+            BMB_gr( vi) = region%ice%geom%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
           else
             BMB_fl( vi) = 0._dp
             BMB_gr( vi) = 0._dp
@@ -222,7 +222,7 @@ contains
     end do
 
     do ti = region%mesh%ti1, region%mesh%ti2
-      if (region%ice%fraction_gr_b( ti) > 0._dp) then
+      if (region%ice%geom%fraction_gr_b( ti) > 0._dp) then
         mask_gr_b( ti) = .true.
       else
         mask_gr_b( ti) = .false.
@@ -291,8 +291,8 @@ contains
 
     ! Area fractions
     call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%fraction_gr, vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%fraction_margin - region%ice%fraction_gr, &
+    call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%geom%fraction_gr, vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%fraction_margin - region%ice%geom%fraction_gr, &
       vmin=0._dp, vmax=1._dp)
 
     ! Other stuff
@@ -311,8 +311,8 @@ contains
     ! State with provided inputfields and optional masks
     call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
     call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%geom%TAF) * ice_density, mask=mask_ice_a)
-    call write_to_file( region, region%ismip_output%iareagr, region%ice%fraction_gr, mask=mask_ice_a)
-    call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%fraction_gr, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%iareagr, region%ice%geom%fraction_gr, mask=mask_ice_a)
+    call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%geom%fraction_gr, mask=mask_ice_a)
 
     ! Fluxes
     call write_to_file( region, region%ismip_output%tendacabf)

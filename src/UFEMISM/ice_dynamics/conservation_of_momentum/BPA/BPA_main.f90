@@ -1970,7 +1970,7 @@ contains
     ! Apply the sub-grid grounded fraction, and limit the friction coefficient to improve stability
     if (C%do_GL_subgrid_friction) then
       do ti = mesh%ti1, mesh%ti2
-        BPA%basal_friction_coefficient_b( ti) = BPA%basal_friction_coefficient_b( ti) * ice%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        BPA%basal_friction_coefficient_b( ti) = BPA%basal_friction_coefficient_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

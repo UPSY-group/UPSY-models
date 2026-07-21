@@ -165,8 +165,8 @@ contains
           scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
           scalars%ice_area         = scalars%ice_area         + mesh%A( vi)! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
           scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%geom%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
-          scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi))! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
-          scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))! * 1.0E-09_dp ! [m^3]; uncomment multiplier to revert to km^3
+          scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%geom%fraction_gr( vi))! * 1.0E-06_dp ! [m^2]; uncomment multiplier to revert to km^2
+          scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * (1._dp - ice%geom%fraction_gr( vi))))! * 1.0E-09_dp ! [m^3]; uncomment multiplier to revert to km^3
         end if
       end if
     end do
@@ -241,15 +241,15 @@ contains
               scalars%BMB_gr = scalars%BMB_gr + BMB%BMB_sheet( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
             end if
           case ('NMP')
-            if (ice%geom%mask_floating_ice( vi) .and. ice%fraction_gr( vi) == 0._dp) then
+            if (ice%geom%mask_floating_ice( vi) .and. ice%geom%fraction_gr( vi) == 0._dp) then
               scalars%BMB_fl = scalars%BMB_fl + BMB%BMB_shelf( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
-            elseif (ice%fraction_gr( vi) > 0._dp) then
+            elseif (ice%geom%fraction_gr( vi) > 0._dp) then
               scalars%BMB_gr = scalars%BMB_gr + BMB%BMB_sheet( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
             end if
           case ('PMP')
             if (ice%geom%mask_floating_ice( vi) .or. ice%geom%mask_grounded_ice( vi)) then
-              scalars%BMB_fl = scalars%BMB_fl + (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
-              scalars%BMB_gr = scalars%BMB_gr + ice%fraction_gr( vi) * BMB%BMB_sheet( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+              scalars%BMB_fl = scalars%BMB_fl + (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+              scalars%BMB_gr = scalars%BMB_gr + ice%geom%fraction_gr( vi) * BMB%BMB_sheet( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
             end if
         end select
 

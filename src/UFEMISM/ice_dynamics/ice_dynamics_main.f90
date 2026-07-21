@@ -183,9 +183,7 @@ contains
     call calc_zeta_gradients( region%mesh, region%ice)
 
     ! Calculate sub-grid grounded-area fractions
-    call region%ice%geom%calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
-      region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-      region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -371,9 +369,9 @@ contains
 
     ! Initialise bedrock cumulative density functions
     call initialise_bedrock_CDFs( mesh, refgeo_PD, ice, region_name)
+
     ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%dHb,  &
-      ice%fraction_gr, ice%fraction_gr_b, ice%geom%mask_floating_ice, ice%geom%bedrock_cdf, ice%geom%bedrock_cdf_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb,  ice%fraction_gr, ice%fraction_gr_b)
 
     ! Basal conditions
     ! ================
@@ -831,9 +829,9 @@ contains
       ! Compute bedrock cumulative density function
       call calc_bedrock_CDFs( mesh_new, refgeo_PD, ice)
     end if
+
     ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( mesh_new, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%dHb,  &
-      ice%fraction_gr, ice%fraction_gr_b, ice%geom%mask_floating_ice, ice%geom%bedrock_cdf, ice%geom%bedrock_cdf_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb, ice%fraction_gr, ice%fraction_gr_b)
 
     ! Basal conditions
     ! ================
@@ -1479,9 +1477,7 @@ contains
       call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Calculate sub-grid grounded-area fractions
-      call region%ice%geom%calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
-        region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-        region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b)
 
       ! Reference geometry
       ! ==================

@@ -10,39 +10,31 @@ submodule( ice_geometry_model_basic) subgrid_grounded_fractions_main
 
 contains
 
-  subroutine calc_grounded_fractions( self, mesh, Hi, Hb, SL, dHb, fraction_gr, fraction_gr_b, mask_floating_ice, bedrock_cdf, bedrock_cdf_b)
+  subroutine calc_grounded_fractions( self, dHb, fraction_gr, fraction_gr_b)
     !< Calculate the sub-grid grounded-area fractions
 
     ! In- and output variables
-    class(type_ice_geometry_model),                                      intent(in   ) :: self
-    type(type_mesh),                                                     intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hi
-    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hb
-    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: SL
-    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: dHb
-    logical,  dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: mask_floating_ice
-    real(dp), dimension(mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf
-    real(dp), dimension(mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf_b
-    real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(  out) :: fraction_gr
-    real(dp), dimension(mesh%ti1:mesh%ti2),                              intent(  out) :: fraction_gr_b
+    class(type_ice_geometry_model),                   intent(in   ) :: self
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
 
     ! Local variables:
-    character(len=*), parameter            :: routine_name = 'calc_grounded_fractions'
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: TAF
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: fraction_gr_TAF_a
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: fraction_gr_CDF_a
-    real(dp), dimension(mesh%ti1:mesh%ti2) :: fraction_gr_TAF_b
-    real(dp), dimension(mesh%ti1:mesh%ti2) :: fraction_gr_CDF_b
-    logical,  dimension(mesh%nV)           :: mask_floating_ice_tot
-    integer                                :: ti, via, vib, vic, vi
+    character(len=*), parameter                      :: routine_name = 'calc_grounded_fractions'
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: TAF
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: fraction_gr_TAF_a
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: fraction_gr_CDF_a
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: fraction_gr_TAF_b
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: fraction_gr_CDF_b
+    logical,  dimension(self%mesh%nV)                :: mask_floating_ice_tot
+    integer                                          :: ti, via, vib, vic, vi
 
 
     ! Add routine to path
     call init_routine( routine_name)
 
-
-    do vi = mesh%vi1, mesh%vi2
-      TAF(vi) = thickness_above_floatation( Hi( vi), Hb( vi), SL( vi))
+    do vi = self%mesh%vi1, self%mesh%vi2
+      TAF(vi) = thickness_above_floatation( self%Hi( vi), self%Hb( vi), self%SL( vi))
     end do
 
     ! Use the specified way of calculating sub-grid grounded fractions
@@ -53,8 +45,8 @@ contains
     case('bilin_interp_TAF')
       ! Bilinearly interpolate the thickness above floatation to calculate the grounded fractions
 
-      call calc_grounded_fractions_bilin_interp_TAF_a( mesh, TAF, fraction_gr_TAF_a)
-      call calc_grounded_fractions_bilin_interp_TAF_b( mesh, TAF, fraction_gr_TAF_b)
+      call calc_grounded_fractions_bilin_interp_TAF_a( self%mesh, TAF, fraction_gr_TAF_a)
+      call calc_grounded_fractions_bilin_interp_TAF_b( self%mesh, TAF, fraction_gr_TAF_b)
 
       fraction_gr   = fraction_gr_TAF_a
       fraction_gr_b = fraction_gr_TAF_b
@@ -62,8 +54,8 @@ contains
     case ('bedrock_CDF')
       ! Use the sub-grid bedrock cumulative density functions to calculate the grounded fractions
 
-      call calc_grounded_fractions_bedrock_CDF_a( mesh, Hi, SL, dHb, bedrock_cdf, fraction_gr_CDF_a)
-      call calc_grounded_fractions_bedrock_CDF_b( mesh, Hi, SL, dHb, TAF, bedrock_cdf_b, fraction_gr_CDF_b)
+      call calc_grounded_fractions_bedrock_CDF_a( self%mesh, self%Hi, self%SL, dHb,      self%bedrock_cdf  , fraction_gr_CDF_a)
+      call calc_grounded_fractions_bedrock_CDF_b( self%mesh, self%Hi, self%SL, dHb, TAF, self%bedrock_cdf_b, fraction_gr_CDF_b)
 
       fraction_gr   = fraction_gr_CDF_a
       fraction_gr_b = fraction_gr_CDF_b
@@ -71,25 +63,25 @@ contains
     case ('bilin_interp_TAF+bedrock_CDF')
       ! Use the TAF method at the grounding line, and the CDF method inland
 
-      call calc_grounded_fractions_bilin_interp_TAF_a( mesh, TAF, fraction_gr_TAF_a)
-      call calc_grounded_fractions_bilin_interp_TAF_b( mesh, TAF, fraction_gr_TAF_b)
+      call calc_grounded_fractions_bilin_interp_TAF_a( self%mesh, TAF, fraction_gr_TAF_a)
+      call calc_grounded_fractions_bilin_interp_TAF_b( self%mesh, TAF, fraction_gr_TAF_b)
 
-      call calc_grounded_fractions_bedrock_CDF_a( mesh, Hi, SL, dHb, bedrock_cdf, fraction_gr_CDF_a)
-      call calc_grounded_fractions_bedrock_CDF_b( mesh, Hi, SL, dHb,TAF, bedrock_cdf_b, fraction_gr_CDF_b)
+      call calc_grounded_fractions_bedrock_CDF_a( self%mesh, self%Hi, self%SL, dHb,      self%bedrock_cdf  , fraction_gr_CDF_a)
+      call calc_grounded_fractions_bedrock_CDF_b( self%mesh, self%Hi, self%SL, dHb, TAF, self%bedrock_cdf_b, fraction_gr_CDF_b)
 
       ! Gather global floating ice mask
-      call gather_to_all( mask_floating_ice, mask_floating_ice_tot)
+      call gather_to_all( self%mask_floating_ice, mask_floating_ice_tot)
 
       ! a-grid (vertices): take the smallest value (used for basal melt?)
       fraction_gr = min( fraction_gr_TAF_a, fraction_gr_CDF_a)
 
       ! b-grid (triangles): take CDF inland, TAF at grounding line (used for basal friction)
-      do ti = mesh%ti1, mesh%ti2
+      do ti = self%mesh%ti1, self%mesh%ti2
 
         ! The three vertices spanning triangle ti
-        via = mesh%Tri( ti,1)
-        vib = mesh%Tri( ti,2)
-        vic = mesh%Tri( ti,3)
+        via = self%mesh%Tri( ti,1)
+        vib = self%mesh%Tri( ti,2)
+        vic = self%mesh%Tri( ti,3)
 
         if (mask_floating_ice_tot( via) .OR. mask_floating_ice_tot( vib) .OR. mask_floating_ice_tot( vic)) then
           ! At least one corner of this triangle is afloat; grounding line
@@ -103,8 +95,8 @@ contains
 
     end select
 
-    call checksum( mesh%pai_V  , fraction_gr  , 'fraction_gr'  )
-    call checksum( mesh%pai_Tri, fraction_gr_b, 'fraction_gr_b')
+    call checksum( self%mesh%pai_V  , fraction_gr  , 'fraction_gr'  )
+    call checksum( self%mesh%pai_Tri, fraction_gr_b, 'fraction_gr_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -37,19 +37,12 @@ module ice_geometry_model_basic
   ! create_field
   interface
 
-    module subroutine calc_grounded_fractions( self, mesh, Hi, Hb, SL, dHb, fraction_gr, fraction_gr_b, mask_floating_ice, bedrock_cdf, bedrock_cdf_b)
-      class(type_ice_geometry_model),                                      intent(in   ) :: self
-      type(type_mesh),                                                     intent(in   ) :: mesh
-      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hi
-      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hb
-      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: SL
-      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: dHb
-      logical,  dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: mask_floating_ice
-      real(dp), dimension(mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf
-      real(dp), dimension(mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf_b
-      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(  out) :: fraction_gr
-      real(dp), dimension(mesh%ti1:mesh%ti2),                              intent(  out) :: fraction_gr_b
-    end subroutine
+    module subroutine calc_grounded_fractions( self, dHb, fraction_gr, fraction_gr_b)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
+    end subroutine calc_grounded_fractions
 
     end interface
 

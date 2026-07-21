@@ -1,4 +1,4 @@
-submodule( ice_geometry_model_basic) determine_masks_mod
+submodule( ice_geometry_model_basic) ice_masks
 
 contains
 
@@ -175,4 +175,4 @@ contains
 
   end subroutine determine_masks
 
-end submodule determine_masks_mod
+end submodule ice_masks

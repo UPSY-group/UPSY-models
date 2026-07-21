@@ -83,7 +83,7 @@ CONTAINS
               BMB%BMB( vi) = 0._dp
 
               ! Copy values from temporary BMB to all floating / grounding cells within ROI
-              IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_fl( vi) .OR. ice%mask_gl_gr( vi)) THEN
+              IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_gl_fl( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
                 BMB%BMB_shelf( vi) = temporary_BMB(vi)
                 BMB%BMB( vi)       = BMB%BMB_shelf( vi)
               END IF
@@ -110,7 +110,7 @@ CONTAINS
               BMB%BMB( vi) = 0._dp
 
               ! Copy values from temporary BMB to all floating / grounding cells within ROI
-              IF (ice%mask_floating_ice( vi) .OR. ice%mask_gl_fl( vi) .OR. ice%mask_gl_gr( vi)) THEN
+              IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_gl_fl( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
                 BMB%BMB_shelf( vi) = temporary_BMB(vi)
                 BMB%BMB( vi)       = BMB%BMB_shelf( vi)
               END IF

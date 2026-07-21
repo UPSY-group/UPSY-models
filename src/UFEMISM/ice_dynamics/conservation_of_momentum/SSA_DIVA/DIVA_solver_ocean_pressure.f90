@@ -80,7 +80,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, no need (in fact, no way) to solve the DIVA
-    grounded_ice_exists = any( ice%mask_grounded_ice)
+    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       DIVA%u_vav_b  = 0._dp

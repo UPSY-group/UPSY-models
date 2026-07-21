@@ -147,7 +147,7 @@ CONTAINS
         BMB%BMB_shelf = 0._dp
         if (time > C%uniform_BMB_t_start) then
           DO vi = mesh%vi1, mesh%vi2
-            IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
+            IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_icefree_ocean( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
               BMB%BMB_shelf( vi) = C%uniform_BMB
             END IF
           END DO
@@ -169,12 +169,12 @@ CONTAINS
         BMB%BMB = BMB%inv%BMB
         ! Separate into BMB_sheet and BMB_shelf for scalar diagnostics
         do vi = mesh%vi1, mesh%vi2
-          if (ice%mask_floating_ice( vi)) then
+          if (ice%geom%mask_floating_ice( vi)) then
             BMB%BMB_shelf( vi) = BMB%BMB( vi)
           else
             BMB%BMB_shelf( vi) = 0._dp
           end if
-          if (ice%mask_grounded_ice( vi)) then
+          if (ice%geom%mask_grounded_ice( vi)) then
             BMB%BMB_sheet( vi) = BMB%BMB( vi)
           else
             BMB%BMB_sheet( vi) = 0._dp
@@ -201,7 +201,7 @@ CONTAINS
         ! Update BMB only for cells in ROI
         DO vi = mesh%vi1, mesh%vi2
           IF (ice%mask_ROI(vi) > 0) THEN
-            IF (ice%mask_floating_ice( vi) .OR. ice%mask_icefree_ocean( vi) .OR. ice%mask_gl_gr( vi)) THEN
+            IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_icefree_ocean( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
               BMB%BMB_shelf( vi) = C%uniform_BMB_ROI
             END IF
           END IF
@@ -758,15 +758,15 @@ CONTAINS
       case default
         call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
       case ('FCMP')
-        if (ice%mask_floating_ice( vi) .or. ice%mask_gl_fl( vi)) then
+        if (ice%geom%mask_floating_ice( vi) .or. ice%geom%mask_gl_fl( vi)) then
           BMB%BMB( vi) = BMB%BMB_shelf( vi)
-        elseif (ice%mask_grounded_ice( vi) .or. ice%mask_gl_gr( vi)) then
+        elseif (ice%geom%mask_grounded_ice( vi) .or. ice%geom%mask_gl_gr( vi)) then
           BMB%BMB( vi) = BMB%BMB_sheet( vi)
         else
           BMB%BMB( vi) = 0._dp
         end if
       case ('NMP')
-        if (ice%mask_floating_ice( vi) .and. ice%fraction_gr( vi) == 0._dp) then
+        if (ice%geom%mask_floating_ice( vi) .and. ice%fraction_gr( vi) == 0._dp) then
           BMB%BMB( vi) = BMB%BMB_shelf( vi)
         elseif (ice%fraction_gr( vi) > 0._dp) then
           BMB%BMB( vi) = BMB%BMB_sheet( vi)
@@ -774,7 +774,7 @@ CONTAINS
           BMB%BMB( vi) = 0._dp
         end if
       case ('PMP')
-        if (ice%mask_floating_ice( vi) .or. ice%mask_grounded_ice( vi)) then
+        if (ice%geom%mask_floating_ice( vi) .or. ice%geom%mask_grounded_ice( vi)) then
           BMB%BMB( vi) = ice%fraction_gr( vi) * BMB%BMB_sheet( vi) + (1._dp - ice%fraction_gr( vi)) * BMB%BMB_shelf( vi)
         else
           BMB%BMB( vi) = 0._dp
@@ -807,14 +807,14 @@ CONTAINS
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )
     forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
     forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
-    forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = ice%mask_icefree_land ( mesh%vi1:mesh%vi2  )
-    forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = ice%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
-    forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = ice%mask_grounded_ice ( mesh%vi1:mesh%vi2  )
-    forcing%mask_floating_ice ( mesh%vi1:mesh%vi2  ) = ice%mask_floating_ice ( mesh%vi1:mesh%vi2  )
+    forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_land ( mesh%vi1:mesh%vi2  )
+    forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
+    forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_grounded_ice ( mesh%vi1:mesh%vi2  )
+    forcing%mask_floating_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_floating_ice ( mesh%vi1:mesh%vi2  )
 
-    forcing%mask_gl_fl        ( mesh%vi1:mesh%vi2  ) = ice%mask_gl_fl        ( mesh%vi1:mesh%vi2  )
+    forcing%mask_gl_fl        ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_gl_fl        ( mesh%vi1:mesh%vi2  )
     forcing%mask_SGD          ( mesh%vi1:mesh%vi2  ) = ice%mask_SGD          ( mesh%vi1:mesh%vi2  )
-    forcing%mask              ( mesh%vi1:mesh%vi2  ) = ice%mask              ( mesh%vi1:mesh%vi2  )
+    forcing%mask              ( mesh%vi1:mesh%vi2  ) = ice%geom%mask              ( mesh%vi1:mesh%vi2  )
 
     forcing%Ti                ( mesh%vi1:mesh%vi2,:) = ice%Ti                ( mesh%vi1:mesh%vi2,:) - 273.15 ! [degC]
     forcing%T_ocean           ( mesh%vi1:mesh%vi2,:) = ocean%T               ( mesh%vi1:mesh%vi2,:)
@@ -824,7 +824,7 @@ CONTAINS
     ! The resultant BMB will be multiplied by floating fractions when applying the subgrid scheme
     if (C%choice_BMB_subgrid == 'PMP') then
       do vi = mesh%vi1, mesh%vi2
-        if (ice%mask_gl_gr( vi) .and. ice%Hib( vi) < 0._dp) then
+        if (ice%geom%mask_gl_gr( vi) .and. ice%Hib( vi) < 0._dp) then
           forcing%mask_grounded_ice( vi) = .false.
           forcing%mask_floating_ice( vi) = .true.
         end if
@@ -960,9 +960,9 @@ CONTAINS
     ! do vi = region%mesh%vi1, region%mesh%vi2
 
     !   ! Skip vertices where BMB does not operate
-    !   if (.not. region%ice%mask_gl_gr( vi) .and. &
-    !       .not. region%ice%mask_floating_ice( vi) .and. &
-    !       .not. region%ice%mask_cf_fl( vi)) cycle
+    !   if (.not. region%ice%geom%mask_gl_gr( vi) .and. &
+    !       .not. region%ice%geom%mask_floating_ice( vi) .and. &
+    !       .not. region%ice%geom%mask_cf_fl( vi)) cycle
 
     !   if (C%do_BMB_transition_phase) then
     !     ! If BMB_transition_phase is turned ON, use weight 'w' to compute BMB field

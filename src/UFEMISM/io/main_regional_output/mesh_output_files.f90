@@ -282,70 +282,70 @@ contains
     ! =================
 
       case ('mask_icefree_land')
-        where (region%ice%mask_icefree_land)
+        where (region%ice%geom%mask_icefree_land)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_icefree_land', mask_int)
       case ('mask_icefree_ocean')
-        where (region%ice%mask_icefree_ocean)
+        where (region%ice%geom%mask_icefree_ocean)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_icefree_ocean', mask_int)
       case ('mask_grounded_ice')
-        where (region%ice%mask_grounded_ice)
+        where (region%ice%geom%mask_grounded_ice)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_grounded_ice', mask_int)
       case ('mask_floating_ice')
-        where (region%ice%mask_floating_ice)
+        where (region%ice%geom%mask_floating_ice)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_floating_ice', mask_int)
       case ('mask_margin')
-        where (region%ice%mask_margin)
+        where (region%ice%geom%mask_margin)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_margin', mask_int)
       case ('mask_gl_gr')
-        where (region%ice%mask_gl_gr)
+        where (region%ice%geom%mask_gl_gr)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_gr', mask_int)
       case ('mask_gl_fl')
-        where (region%ice%mask_gl_fl)
+        where (region%ice%geom%mask_gl_fl)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_fl', mask_int)
       case ('mask_cf_gr')
-        where (region%ice%mask_cf_gr)
+        where (region%ice%geom%mask_cf_gr)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_cf_gr', mask_int)
       case ('mask_cf_fl')
-        where (region%ice%mask_cf_fl)
+        where (region%ice%geom%mask_cf_fl)
           mask_int = 1
         elsewhere
           mask_int = 0
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_cf_fl', mask_int)
       case ('mask_coastline')
-        where (region%ice%mask_coastline)
+        where (region%ice%geom%mask_coastline)
           mask_int = 1
         elsewhere
           mask_int = 0
@@ -361,7 +361,7 @@ contains
         end where
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_SGD', mask_int)
       case ('mask')
-        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask', region%ice%mask)
+        call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask', region%ice%geom%mask)
       case ('basin_ID')
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'basin_ID', region%ice%basin_ID)
 
@@ -1716,7 +1716,7 @@ contains
 
     ! Remove floating ice
     do vi = mesh%vi1, mesh%vi2
-      if (ice%mask_grounded_ice( vi)) then
+      if (ice%geom%mask_grounded_ice( vi)) then
         Hi_grounded_only( vi) = ice%geom%Hi( vi)
       else
         Hi_grounded_only( vi) = 0._dp

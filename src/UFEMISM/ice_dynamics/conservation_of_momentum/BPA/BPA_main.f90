@@ -122,7 +122,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, or no sliding, no need to solve the BPA
-    grounded_ice_exists = any( ice%mask_grounded_ice)
+    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       BPA%u_bk = 0._dp

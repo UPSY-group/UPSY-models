@@ -99,10 +99,10 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Calculate rate of change of ice base elevation
-      if     (ice%mask_grounded_ice( vi)) then
+      if     (ice%geom%mask_grounded_ice( vi)) then
         ! For grounded ice, the ice base simply moves with the bedrock
         dHib_dt( vi) =  ice%dHb_dt( vi)
-      elseif (ice%mask_floating_ice( vi)) then
+      elseif (ice%geom%mask_floating_ice( vi)) then
         ! For floating ice, the ice base moves according to the thinning rate times the density fraction
         dHib_dt( vi) = -ice%dHi_dt( vi) * ice_density / seawater_density
       else
@@ -125,7 +125,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! No ice means no velocity
-      if (.not. (ice%mask_grounded_ice( vi) .or. ice%mask_floating_ice( vi))) then
+      if (.not. (ice%geom%mask_grounded_ice( vi) .or. ice%geom%mask_floating_ice( vi))) then
         ice%w_3D( vi,:) = 0._dp
         cycle
       end if
@@ -136,7 +136,7 @@ contains
       !       at the ice base, that means that a positive BMB means a positive
       !       value of w
 
-      if (ice%mask_floating_ice( vi)) then
+      if (ice%geom%mask_floating_ice( vi)) then
 
         ice%w_3D( vi,C%nz) = (ice%u_3D( vi,C%nz) * dHib_dx( vi)) + &
                             (ice%v_3D( vi,C%nz) * dHib_dy( vi)) + &
@@ -156,7 +156,7 @@ contains
       if (ice%geom%Hi( vi) < 10._dp) then
         ice%w_3D( vi,:) = ice%w_3D( vi,C%nz)
         cycle
-      end if ! if (ice%mask_margin_a( vi) == 1 .OR. ice%Hi_a( vi) < 10._dp) then
+      end if
 
       ! Calculate vertical velocities by integrating dw/dz over the vertical column
 
@@ -207,7 +207,7 @@ contains
 
     ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
     call calc_dw_dz( mesh, ice%geom%Hi, ice%Hs, mesh%zeta, &
-      ice%mask_grounded_ice, ice%mask_floating_ice, ice%w_3D, ice%dw_dz_3D)
+      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%w_3D, ice%dw_dz_3D)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

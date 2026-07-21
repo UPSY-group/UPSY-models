@@ -132,9 +132,9 @@ contains
       case ('separate')
 
         ! Totally separate values for grounded and floating areas
-        if (ice%mask_grounded_ice( vi)) then
+        if (ice%geom%mask_grounded_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_sheet
-        elseif (ice%mask_floating_ice( vi)) then
+        elseif (ice%geom%mask_floating_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_shelf
         end if
 
@@ -145,9 +145,9 @@ contains
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * &
             (       ice%fraction_gr( vi)  * C%m_enh_sheet + &
              (1._dp-ice%fraction_gr( vi)) * C%m_enh_shelf)
-        elseif (ice%mask_grounded_ice( vi)) then
+        elseif (ice%geom%mask_grounded_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_sheet
-        elseif (ice%mask_floating_ice( vi)) then
+        elseif (ice%geom%mask_floating_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_shelf
         end if
 

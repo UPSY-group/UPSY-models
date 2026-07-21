@@ -120,7 +120,7 @@ CONTAINS
 
     ! Calculate frictional heating
     DO vi = mesh%vi1, mesh%vi2
-      IF (ice%mask_grounded_ice( vi)) THEN
+      IF (ice%geom%mask_grounded_ice( vi)) THEN
         ice%frictional_heating( vi) = ice%basal_friction_coefficient( vi) * ice%uabs_base( vi)
       ELSE
         ice%frictional_heating( vi) = 0._dp
@@ -308,7 +308,7 @@ CONTAINS
     IF (ice%Hi_eff( vi) > C%Hi_min_thermo) THEN
       ! This vertex has enough ice to have a noticeable temperature profile
 
-      IF (ice%mask_grounded_ice( vi)) THEN
+      IF (ice%geom%mask_grounded_ice( vi)) THEN
         ! This vertex has more than 1m of grounded ice
 
         IF (SMB%SMB( vi) > 0._dp) THEN
@@ -329,13 +329,13 @@ CONTAINS
 
         END IF ! IF (SMB%SMB( vi) > 0._dp) THEN
 
-      ELSEIF( ice%mask_floating_ice( vi)) THEN
+      ELSEIF( ice%geom%mask_floating_ice( vi)) THEN
         ! This vertex has more than 1m of floating ice
         ! Set a linear profile between T_surf and Ti_pmp_base
 
         Ti( vi,:) = Ts + mesh%zeta * (ice%Ti_pmp( vi,mesh%nz) - Ts)
 
-      END IF ! IF (ice%mask_grounded_ice( vi)) THEN
+      END IF
 
     ELSE ! IF (ice%Hi_eff( vi) > C%Hi_min_thermo) THEN
       ! No (significant) ice present; set temperature to annual mean surface temperature
@@ -472,7 +472,7 @@ CONTAINS
 
     DO vi = mesh%vi1, mesh%vi2
     ! we only compute BMB over grounded ice, and where it is at PMP
-    if (ice%mask_grounded_ice(vi) .OR. ice%mask_gl_gr( vi)) then
+    if (ice%geom%mask_grounded_ice(vi) .OR. ice%geom%mask_gl_gr( vi)) then
       if (ice%Ti_hom( vi) >= 0.0_dp) then
 
           d_zeta_temp = ice%Ti( vi, :)                                                            ! Extract vertical array of Ti

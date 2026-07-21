@@ -52,7 +52,7 @@ subroutine run_LMB_model_GlacialIndex(mesh, ice, LMB, time)
   LMB_at_time = LMB%GI%LMB_warm + GI_at_time * (LMB%GI%LMB_cold - LMB%GI%LMB_warm)
 
   do vi = mesh%vi1, mesh%vi2
-    if (ice%mask_cf_fl( vi) .OR. ice%mask_cf_gr( vi)) then
+    if (ice%geom%mask_cf_fl( vi) .OR. ice%geom%mask_cf_gr( vi)) then
       LMB%LMB(vi) = LMB_at_time
     else
       LMB%LMB(vi) = 0._dp

@@ -290,7 +290,7 @@ contains
 
     do vi = mesh%vi1, mesh%vi2
       ! check if ice is grounded first
-      if (ice%mask_grounded_ice( vi) .eqv. .TRUE.) then
+      if (ice%geom%mask_grounded_ice( vi) .eqv. .TRUE.) then
          ! prevent division by zero
         if (ice%Hi_eff( vi) == 0._dp) then
           ice%effective_pressure( vi) = 0.0_dp

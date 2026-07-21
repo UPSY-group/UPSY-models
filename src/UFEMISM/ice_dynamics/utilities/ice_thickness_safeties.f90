@@ -66,7 +66,7 @@ contains
     ! if desired, don't let grounded ice cross the floatation threshold
     if (C%do_protect_grounded_mask .and. time <= C%protect_grounded_mask_t_end) then
       do vi = mesh%vi1, mesh%vi2
-        if (ice%mask_grounded_ice( vi)) then
+        if (ice%geom%mask_grounded_ice( vi)) then
           Hi_new( vi) = max( Hi_new( vi), (ice%geom%SL( vi) - ice%geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
         end if
       end do
@@ -219,7 +219,7 @@ contains
 
     case ('no_thick_inland')
       do vi = mesh%vi1, mesh%vi2
-        if (ice%mask_grounded_ice( vi) .and. .not. ice%mask_gl_gr( vi)) then
+        if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi)) then
           modiness_up( vi) = 1._dp
         end if
       end do
@@ -227,7 +227,7 @@ contains
 
     case ('no_thin_inland')
       do vi = mesh%vi1, mesh%vi2
-        if (ice%mask_grounded_ice( vi) .and. .not. ice%mask_gl_gr( vi)) then
+        if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi)) then
           modiness_down( vi) = 1._dp
         end if
       end do
@@ -248,27 +248,27 @@ contains
       fix_H_applied   = 0._dp
       limit_H_applied = 0._dp
 
-      if (    ice%mask_gl_gr( vi)) then
+      if (    ice%geom%mask_gl_gr( vi)) then
         fix_H_applied   = C%fixiness_H_gl_gr * fixiness
         limit_H_applied = C%limitness_H_gl_gr * limitness
 
-      elseif (ice%mask_gl_fl( vi)) then
+      elseif (ice%geom%mask_gl_fl( vi)) then
         fix_H_applied   = C%fixiness_H_gl_fl * fixiness
         limit_H_applied = C%limitness_H_gl_fl * limitness
 
-      elseif (ice%mask_grounded_ice( vi)) then
+      elseif (ice%geom%mask_grounded_ice( vi)) then
         fix_H_applied   = C%fixiness_H_grounded * fixiness
         limit_H_applied = C%limitness_H_grounded * limitness
 
-      elseif (ice%mask_floating_ice( vi)) then
+      elseif (ice%geom%mask_floating_ice( vi)) then
         fix_H_applied   = C%fixiness_H_floating * fixiness
         limit_H_applied = C%limitness_H_floating * limitness
 
-      elseif (ice%mask_icefree_land( vi)) then
+      elseif (ice%geom%mask_icefree_land( vi)) then
         if (C%fixiness_H_freeland .and. fixiness > 0._dp) fix_H_applied = 1._dp
         limit_H_applied = C%limitness_H_grounded * limitness
 
-      elseif (ice%mask_icefree_ocean( vi)) then
+      elseif (ice%geom%mask_icefree_ocean( vi)) then
         if (C%fixiness_H_freeocean .and. fixiness > 0._dp) fix_H_applied = 1._dp
         limit_H_applied = C%limitness_H_floating * limitness
       else
@@ -321,7 +321,7 @@ contains
     Q_dst      = 0._dp
     relweight  = 0._dp
 
-    call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
     call gather_to_all( ice%geom%Hb, Hb_tot)
 
@@ -329,7 +329,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Determine upstream ice thickness
-      if (ice%mask_cf_fl( vi) .or. ice%mask_cf_gr( vi)) then
+      if (ice%geom%mask_cf_fl( vi) .or. ice%geom%mask_cf_gr( vi)) then
 
         ! Find connection with the strongest inflow into this cell
         cm = 0
@@ -364,7 +364,7 @@ contains
       end if
 
       ! Only compute spill-over when ice thickness exceeds effective ice thickness
-      if ((ice%mask_cf_gr( vi) .or. ice%mask_cf_fl( vi)) .and. Hi_new( vi) > Hi_ups) then
+      if ((ice%geom%mask_cf_gr( vi) .or. ice%geom%mask_cf_fl( vi)) .and. Hi_new( vi) > Hi_ups) then
 
         ! Determine source flux of spill-over ice in m^3/yr
         Q_src( vi) = - (Hi_new( vi) - Hi_ups) * mesh%A( vi) / dt

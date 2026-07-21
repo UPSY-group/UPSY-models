@@ -249,7 +249,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Ice margin and grounding lines
-      if (ice%mask_grounded_ice( vi)) then
+      if (ice%geom%mask_grounded_ice( vi)) then
 
         ! Strengthen the effect of grounded fractions for steep slopes
         fg_exp_mod = min( 1.0_dp, max( 0._dp, max( 0._dp, abs_grad_Hs( vi) - 0.02_dp) / (0.06_dp - 0.02_dp) ))

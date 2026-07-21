@@ -211,7 +211,7 @@ CONTAINS
       do vi = mesh%vi1, mesh%vi2
 
         ! we only apply corrections where it is not open ocean
-        if (ice%mask_icefree_ocean( vi) .eqv. .FALSE.) then
+        if (ice%geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
           deltaT  = (ice%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
           do m = 1, 12
             ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM

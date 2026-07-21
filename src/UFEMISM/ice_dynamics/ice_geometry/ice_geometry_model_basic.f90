@@ -181,22 +181,22 @@ contains
 
   subroutine determine_masks( self, &
     mask, mask_icefree_land, mask_icefree_ocean, mask_grounded_ice, mask_floating_ice, &
-    mask_margin, mask_gl_fl, mask_gl_gr, mask_cf_gr, mask_cf_fl,mask_coastline)
+    mask_margin, mask_gl_fl, mask_gl_gr, mask_cf_gr, mask_cf_fl, mask_coastline)
     !< Determine the different masks
 
     ! In/output variables:
     class(type_ice_geometry_model),                   intent(inout) :: self
+    integer,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_icefree_land       ! T: ice-free land , F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_icefree_ocean      ! T: ice-free ocean, F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_grounded_ice       ! T: grounded ice  , F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_floating_ice       ! T: floating ice  , F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_margin             ! T: ice next to ice-free, F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_gl_gr              ! T: grounded ice next to floating ice, F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_gl_fl              ! T: floating ice next to grounded ice, F: otherwise
+    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_gl_gr              ! T: grounded ice next to floating ice, F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_cf_gr              ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
     logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
-    integer,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask
 
     ! Local variables:
     character(len=*), parameter      :: routine_name = 'determine_masks'

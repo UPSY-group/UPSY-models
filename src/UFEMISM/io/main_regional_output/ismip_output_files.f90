@@ -86,10 +86,10 @@ contains
         case default
           call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
         case ('FCMP')
-          if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_gl_fl( vi)) then
+          if (region%ice%geom%mask_floating_ice( vi) .or. region%ice%geom%mask_gl_fl( vi)) then
             BMB_fl( vi) = region%BMB%BMB_shelf( vi)
             BMB_gr( vi) = 0._dp
-          elseif (region%ice%mask_grounded_ice( vi) .or. region%ice%mask_gl_gr( vi)) then
+          elseif (region%ice%geom%mask_grounded_ice( vi) .or. region%ice%geom%mask_gl_gr( vi)) then
             BMB_fl( vi) = 0._dp
             BMB_gr( vi) = region%BMB%BMB_sheet( vi)
           else
@@ -97,7 +97,7 @@ contains
             BMB_gr( vi) = 0._dp
           end if
         case ('NMP')
-          if (region%ice%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
+          if (region%ice%geom%mask_floating_ice( vi) .and. region%ice%fraction_gr( vi) == 0._dp) then
             BMB_fl( vi) = region%BMB%BMB_shelf( vi)
             BMB_gr( vi) = 0._dp
           elseif (region%ice%fraction_gr( vi) > 0._dp) then
@@ -108,7 +108,7 @@ contains
             BMB_gr( vi) = 0._dp
           end if
         case ('PMP')
-          if (region%ice%mask_floating_ice( vi) .or. region%ice%mask_grounded_ice( vi)) then
+          if (region%ice%geom%mask_floating_ice( vi) .or. region%ice%geom%mask_grounded_ice( vi)) then
             BMB_fl( vi) = (1._dp - region%ice%fraction_gr( vi)) * region%BMB%BMB_shelf( vi)
             BMB_gr( vi) = region%ice%fraction_gr( vi) * region%BMB%BMB_sheet( vi)
           else
@@ -278,8 +278,8 @@ contains
       end if
     end do
     call write_to_file( region, region%ismip_output%litempavg,    inputfield_a=T_vav)
-    call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_grounded_ice)
-    call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%litempbotgr,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%geom%mask_grounded_ice)
+    call write_to_file( region, region%ismip_output%litempbotfl,  inputfield_a=region%ice%Ti( :, C%nz), mask_a=region%ice%geom%mask_floating_ice)
 
     ! Basal drag
     call write_to_file( region, region%ismip_output%strbasemag, inputfield_b=region%ice%basal_shear_stress, mask_b=mask_gr_b, vmin=0._dp)
@@ -304,7 +304,7 @@ contains
         TF( vi) = region%ocean%T_draft( vi) - region%ocean%T_freezing_point( vi)
       end if
     end do
-    call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%mask_floating_ice)
+    call write_to_file( region, region%ismip_output%tfbase, inputfield_a=TF, mask_a=region%ice%geom%mask_floating_ice)
 
     ! === Scalars ===
 

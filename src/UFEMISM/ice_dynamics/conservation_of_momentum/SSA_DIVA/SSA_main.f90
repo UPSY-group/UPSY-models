@@ -117,7 +117,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, or no sliding, no need to solve the SSA
-    grounded_ice_exists = any( ice%mask_grounded_ice)
+    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists .or. C%choice_sliding_law == 'no_sliding') then
       SSA%u_b = 0._dp

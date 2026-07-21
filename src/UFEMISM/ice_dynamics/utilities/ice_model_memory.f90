@@ -62,20 +62,9 @@ contains
     allocate( ice%dHi_dt_target   ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! Masks
-    allocate( ice%mask_icefree_land      ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_icefree_ocean     ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_grounded_ice      ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_floating_ice      ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_margin            ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_gl_gr             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_gl_fl             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_cf_gr             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_cf_fl             ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( ice%mask_coastline         ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_SGD               ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_noice             ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_ROI               ( mesh%vi1:mesh%vi2), source = 0)
-    allocate( ice%mask                   ( mesh%vi1:mesh%vi2), source = 0)
     allocate( ice%basin_ID               ( mesh%vi1:mesh%vi2), source = 0)
 
     ! Area fractions

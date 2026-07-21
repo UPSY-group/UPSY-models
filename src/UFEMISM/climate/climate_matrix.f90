@@ -789,9 +789,9 @@ contains
     ! ===
     allocate( ice_dummy%geom%Hi( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%geom%Hb( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_icefree_ocean( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_grounded_ice(   mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_floating_ice( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%mask_grounded_ice(   mesh%vi1:mesh%vi2))
+    allocate( ice_dummy%geom%mask_floating_ice( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%mask_noice(        mesh%vi1:mesh%vi2))
 
     ! Fill in masks for the SMB model
@@ -804,21 +804,21 @@ contains
       ice_dummy%geom%Hb( vi) = ice%geom%Hb( vi)
 
       if (snapshot%Hs( vi) == MINVAL(snapshot%Hs)) then
-        ice_dummy%mask_icefree_ocean( vi) = .true.
+        ice_dummy%geom%mask_icefree_ocean( vi) = .true.
       else
-        ice_dummy%mask_icefree_ocean( vi) = .false.
+        ice_dummy%geom%mask_icefree_ocean( vi) = .false.
       end if
 
       ! this IF is like (climate%Mask_ice( vi) > .3_dp) in Ufe1.x
       if (snapshot%Hs( vi) > 100._dp .AND. SUM(snapshot%T2m( vi,:)) / 12._dp < 0._dp) then
-        ice_dummy%mask_grounded_ice(   vi) = .true.
+        ice_dummy%geom%mask_grounded_ice(   vi) = .true.
       else
-        ice_dummy%mask_grounded_ice(   vi) = .false.
+        ice_dummy%geom%mask_grounded_ice(   vi) = .false.
       end if
 
       ! mask_shelf is used in the SMB model only to find open ocean; since mask_ocean
       ! in this case already marks only open ocean, no need to look for shelves
-      ice_dummy%mask_floating_ice( vi) = .false.
+      ice_dummy%geom%mask_floating_ice( vi) = .false.
 
     end do
 

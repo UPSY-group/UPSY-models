@@ -434,7 +434,7 @@ CONTAINS
 
     ! This is very similar to what is done in laddie_thickness.90 in the compute_divQH subroutine
 
-    call gather_to_all(ice%mask_grounded_ice, mask_grounded_ice_tot)
+    call gather_to_all(ice%geom%mask_grounded_ice, mask_grounded_ice_tot)
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)
@@ -460,7 +460,7 @@ CONTAINS
       ! Initialise divQ with zeros
       basal_hydro%divQ( vi) = 0.0_dp
 
-      if (.not. ice%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
+      if (.not. ice%geom%mask_grounded_ice( vi)) cycle ! No flux divergence calculation for non-grounded ice
 
       ! Loop over all connections of vertex vi
       DO ci = 1, mesh%nC( vi)
@@ -534,9 +534,9 @@ CONTAINS
 
     ! Calculate next timestep of P
     do vi = mesh%vi1, mesh%vi2
-      if (ice%mask_icefree_land( vi)) then
+      if (ice%geom%mask_icefree_land( vi)) then
         basal_hydro%P( vi) =  0.0_dp
-      else if (ice%mask_floating_ice( vi)) then
+      else if (ice%geom%mask_floating_ice( vi)) then
         basal_hydro%P( vi) = basal_hydro%P_o( vi)
       else if (basal_hydro%W( vi) == 0.0_dp .and. basal_hydro%mask_a( vi)) then
         if (sliding) then
@@ -839,7 +839,7 @@ CONTAINS
     ! Define a-grid mask directly from ice model grounded ice mask
     do vi = mesh%vi1, mesh%vi2
       basal_hydro%mask_a( vi) = .false.
-      basal_hydro%mask_a( vi) = ice%mask_grounded_ice( vi)
+      basal_hydro%mask_a( vi) = ice%geom%mask_grounded_ice( vi)
     end do
 
     call gather_to_all(basal_hydro%mask_a, mask_a_tot)
@@ -1276,7 +1276,7 @@ CONTAINS
 
     call gather_to_all(basal_hydro%mask_W, mask_W_tot)
     call gather_to_all(basal_hydro%W, W_tot)
-    call gather_to_all(ice%mask_gl_gr, mask_gl_gr_tot)
+    call gather_to_all(ice%geom%mask_gl_gr, mask_gl_gr_tot)
     call gather_to_all(basal_hydro%mask_a, mask_a_tot)
 
     ! Slightly adjusted version of calc_n_interior_neighbours
@@ -1298,7 +1298,7 @@ CONTAINS
     ! ===========================================================================
 
     do vi = mesh%vi1, mesh%vi2
-      if (ice%mask_gl_gr( vi)) then
+      if (ice%geom%mask_gl_gr( vi)) then
         ! For now at least just hard-coded to infinite
         BC_H = 'infinite'
 
@@ -1327,7 +1327,7 @@ CONTAINS
           end if
 
         end select
-      else !ice%mask_gl_gr( vi)
+      else
         cycle
       end if
 
@@ -1339,7 +1339,7 @@ CONTAINS
 
 
     do vi = mesh%vi1, mesh%vi2
-      if (ice%mask_gl_gr( vi)) then
+      if (ice%geom%mask_gl_gr( vi)) then
         BC_H = 'infinite'
 
         select case (BC_H)
@@ -1366,11 +1366,11 @@ CONTAINS
           end if
 
         end select
-      else !ice%mask_gl_gr( vi)
+      else
         cycle
       end if
 
-    end do ! do vi = mesh%vi1, mesh%vi2
+    end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)

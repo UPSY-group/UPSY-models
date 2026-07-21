@@ -582,10 +582,6 @@ contains
     call reallocate_bounds( ice%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free ocean, F: otherwise
     call reallocate_bounds( ice%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice  , F: otherwise
     call reallocate_bounds( ice%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice  , F: otherwise
-    call reallocate_bounds( ice%mask_icefree_land_prev , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land , F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_icefree_ocean_prev, mesh_new%vi1, mesh_new%vi2)  ! T: ice-free ocean, F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_grounded_ice_prev , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice  , F: otherwise (during previous time step)
-    call reallocate_bounds( ice%mask_floating_ice_prev , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice  , F: otherwise (during previous time step)
     call reallocate_bounds( ice%mask_margin            , mesh_new%vi1, mesh_new%vi2)  ! T: ice next to ice-free, F: otherwise
     call reallocate_bounds( ice%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to floating ice, F: otherwise
     call reallocate_bounds( ice%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to grounded ice, F: otherwise

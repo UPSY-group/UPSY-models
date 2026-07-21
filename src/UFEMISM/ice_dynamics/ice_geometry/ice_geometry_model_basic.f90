@@ -28,7 +28,7 @@ module ice_geometry_model_basic
       final :: finalise_ice_geometry_model
 
       procedure, public :: determine_masks
-      procedure, public, nopass :: calc_effective_thickness
+      procedure, public :: calc_effective_thickness
 
   end type type_ice_geometry_model
 
@@ -341,35 +341,29 @@ contains
 
   end subroutine determine_masks
 
-  subroutine calc_effective_thickness( mesh, Hi, Hb, SL, Hi_eff, fraction_margin)
+  subroutine calc_effective_thickness( self, Hi_eff, fraction_margin)
     !< Determine the ice-filled fraction and effective ice thickness of floating margin pixels
 
     ! In- and output variables
-    type(type_mesh),      intent(in   )                 :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in)  :: Hi
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in)  :: Hb
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in)  :: SL
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(out) :: Hi_eff
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(out) :: fraction_margin
+    class(type_ice_geometry_model),                   intent(inout) :: self
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: Hi_eff
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_margin
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_effective_thickness'
-    integer                                :: vi, ci, vc
-    real(dp)                               :: Hi_neighbour_max
-    real(dp), dimension(mesh%nV)           :: Hi_tot, Hb_tot, SL_tot
-    logical,  dimension(mesh%vi1:mesh%vi2) :: mask_margin, mask_floating
-    logical,  dimension(mesh%nV)           :: mask_margin_tot, mask_floating_tot
-
-    ! == Initialisation
-    ! =================
+    character(len=*), parameter                      :: routine_name = 'calc_effective_thickness'
+    integer                                          :: vi, ci, vc
+    real(dp)                                         :: Hi_neighbour_max
+    real(dp), dimension(self%mesh%nV)                :: Hi_tot, Hb_tot, SL_tot
+    logical,  dimension(self%mesh%vi1:self%mesh%vi2) :: mask_margin, mask_floating
+    logical,  dimension(self%mesh%nV)                :: mask_margin_tot, mask_floating_tot
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Collect Hi from all processes
-    call gather_to_all( Hi, Hi_tot)
-    call gather_to_all( Hb, Hb_tot)
-    call gather_to_all( SL, SL_tot)
+    call gather_to_all( self%Hi, Hi_tot)
+    call gather_to_all( self%Hb, Hb_tot)
+    call gather_to_all( self%SL, SL_tot)
 
     ! == Margin mask
     ! ==============
@@ -377,9 +371,9 @@ contains
     ! Initialise
     mask_margin = .false.
 
-    do vi = mesh%vi1, mesh%vi2
-      do ci = 1, mesh%nC( vi)
-        vc = mesh%C( vi,ci)
+    do vi = self%mesh%vi1, self%mesh%vi2
+      do ci = 1, self%mesh%nC( vi)
+        vc = self%mesh%C( vi,ci)
         if (Hi_tot( vi) > 0._dp .and. Hi_tot( vc) == 0._dp) then
           mask_margin( vi) = .true.
         end if
@@ -395,8 +389,8 @@ contains
     ! Initialise
     mask_floating = .false.
 
-    do vi = mesh%vi1, mesh%vi2
-      if (is_floating( Hi_tot( vi), Hb( vi), SL( vi))) then
+    do vi = self%mesh%vi1, self%mesh%vi2
+      if (is_floating( self%Hi( vi), self%Hb( vi), self%SL( vi))) then
         mask_floating( vi) = .true.
       end if
     end do
@@ -408,7 +402,7 @@ contains
     ! =================
 
     ! Initialise values
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
       ! Grounded regions: ice-free land and grounded ice
       ! NOTE: important to let ice-free land have a non-zero
       ! margin fraction to let it get SMB in the ice thickness equation
@@ -429,7 +423,7 @@ contains
     ! === Compute ===
     ! ===============
 
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Only check margin vertices
       if (.not. mask_margin_tot( vi)) then
@@ -443,8 +437,8 @@ contains
       ! Find the max ice thickness among non-margin neighbours
       Hi_neighbour_max = 0._dp
 
-      do ci = 1, mesh%nC( vi)
-        vc = mesh%C( vi,ci)
+      do ci = 1, self%mesh%nC( vi)
+        vc = self%mesh%C( vi,ci)
 
         ! Ignore margin neighbours
         if (mask_margin_tot( vc)) then
@@ -471,11 +465,8 @@ contains
 
     end do
 
-    call checksum( mesh%pai_V, Hi_eff         , 'Hi_eff')
-    call checksum( mesh%pai_V, fraction_margin, 'fraction_margin')
-
-    ! === Finalisation ===
-    ! ====================
+    call checksum( self%mesh%pai_V, Hi_eff         , 'Hi_eff')
+    call checksum( self%mesh%pai_V, fraction_margin, 'fraction_margin')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

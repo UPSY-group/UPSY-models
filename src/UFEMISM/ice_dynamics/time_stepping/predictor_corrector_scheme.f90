@@ -96,7 +96,7 @@ contains
     call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
 
       ! Update effective ice thickness
-    call region%ice%geom%calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+    call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! == Time step iteration: if, at the end of the PC timestep, the truncation error
     !    turns out to be too large, run it again with a smaller dt, until the truncation
@@ -206,7 +206,7 @@ contains
       call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%mask_floating_ice, region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
 
       ! Update effective ice thickness
-      call region%ice%geom%calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+      call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! Calculate thinning rates for the current ice thickness and predicted velocity
       call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%fraction_margin, &

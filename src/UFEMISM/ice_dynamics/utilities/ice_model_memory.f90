@@ -23,7 +23,7 @@ contains
     character(len=*),     intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_ice_model'
+    character(len=*), parameter :: routine_name = 'allocate_ice_model'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -31,9 +31,7 @@ contains
     ! === Ice-sheet geometry ===
     ! ==========================
 
-    ! Basic geometry
     call ice%geom%allocate( 'ice_geometry', region_name, mesh)
-    allocate( ice%Ho      ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! Geometry changes
     allocate( ice%dHi ( mesh%vi1:mesh%vi2), source = 0._dp)

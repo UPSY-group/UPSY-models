@@ -302,7 +302,6 @@ MODULE ice_model_types
 
     ! Basic geometry
     type(type_ice_geometry_model) :: geom
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Ho                          ! [m] Depth of ocean column adjacent to the ice front
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)

@@ -179,24 +179,11 @@ contains
   end subroutine finalise_ice_geometry_model
 
 
-  subroutine determine_masks( self, &
-    mask, mask_icefree_land, mask_icefree_ocean, mask_grounded_ice, mask_floating_ice, &
-    mask_margin, mask_gl_fl, mask_gl_gr, mask_cf_gr, mask_cf_fl, mask_coastline)
+  subroutine determine_masks( self)
     !< Determine the different masks
 
     ! In/output variables:
-    class(type_ice_geometry_model),                   intent(inout) :: self
-    integer,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_icefree_land       ! T: ice-free land , F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_icefree_ocean      ! T: ice-free ocean, F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_grounded_ice       ! T: grounded ice  , F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_floating_ice       ! T: floating ice  , F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_margin             ! T: ice next to ice-free, F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_gl_fl              ! T: floating ice next to grounded ice, F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_gl_gr              ! T: grounded ice next to floating ice, F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_cf_gr              ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
-    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
+    class(type_ice_geometry_model),intent(inout) :: self
 
     ! Local variables:
     character(len=*), parameter      :: routine_name = 'determine_masks'
@@ -213,11 +200,11 @@ contains
     ! ===================
 
     ! Initialise basic masks
-    mask_icefree_land  = .false.
-    mask_icefree_ocean = .false.
-    mask_grounded_ice  = .false.
-    mask_floating_ice  = .false.
-    mask               = 0
+    self%mask_icefree_land  = .false.
+    self%mask_icefree_ocean = .false.
+    self%mask_grounded_ice  = .false.
+    self%mask_floating_ice  = .false.
+    self%mask               = 0
 
     ! Calculate
     do vi = self%mesh%vi1, self%mesh%vi2
@@ -228,14 +215,14 @@ contains
         if (self%Hi( vi) > 0._dp) then
           ! Floating ice
 
-          mask_floating_ice( vi) = .true.
-          mask( vi) = C%type_floating_ice
+          self%mask_floating_ice( vi) = .true.
+          self%mask( vi) = C%type_floating_ice
 
         else
           ! Ice-free ocean
 
-          mask_icefree_ocean( vi) = .true.
-          mask( vi) = C%type_icefree_ocean
+          self%mask_icefree_ocean( vi) = .true.
+          self%mask( vi) = C%type_icefree_ocean
 
         end if
 
@@ -245,14 +232,14 @@ contains
         if (self%Hi( vi) > 0._dp) then
           ! Grounded ice
 
-          mask_grounded_ice( vi) = .true.
-          mask( vi) = C%type_grounded_ice
+          self%mask_grounded_ice( vi) = .true.
+          self%mask( vi) = C%type_grounded_ice
 
         else
           ! Ice-free land
 
-          mask_icefree_land( vi) = .true.
-          mask( vi) = C%type_icefree_land
+          self%mask_icefree_land( vi) = .true.
+          self%mask( vi) = C%type_icefree_land
 
         end if
 
@@ -260,28 +247,28 @@ contains
 
     end do
 
-    call checksum( self%mesh%pai_V, mask_icefree_land , 'mask_icefree_land')
-    call checksum( self%mesh%pai_V, mask_icefree_ocean, 'mask_icefree_ocean')
-    call checksum( self%mesh%pai_V, mask_grounded_ice , 'mask_grounded_ice')
-    call checksum( self%mesh%pai_V, mask_floating_ice , 'mask_floating_ice')
-    call checksum( self%mesh%pai_V, mask              , 'mask')
+    call checksum( self%mesh%pai_V, self%mask_icefree_land , 'mask_icefree_land')
+    call checksum( self%mesh%pai_V, self%mask_icefree_ocean, 'mask_icefree_ocean')
+    call checksum( self%mesh%pai_V, self%mask_grounded_ice , 'mask_grounded_ice')
+    call checksum( self%mesh%pai_V, self%mask_floating_ice , 'mask_floating_ice')
+    call checksum( self%mesh%pai_V, self%mask              , 'mask')
 
     ! === Transitional masks ===
     ! ==========================
 
     ! Gather basic masks to all processes
-    call gather_to_all( mask_icefree_land , mask_icefree_land_tot )
-    call gather_to_all( mask_icefree_ocean, mask_icefree_ocean_tot)
-    call gather_to_all( mask_grounded_ice , mask_grounded_ice_tot )
-    call gather_to_all( mask_floating_ice , mask_floating_ice_tot )
+    call gather_to_all( self%mask_icefree_land , mask_icefree_land_tot )
+    call gather_to_all( self%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( self%mask_grounded_ice , mask_grounded_ice_tot )
+    call gather_to_all( self%mask_floating_ice , mask_floating_ice_tot )
 
     ! Initialise transitional masks
-    mask_margin    = .false.
-    mask_gl_gr     = .false.
-    mask_gl_fl     = .false.
-    mask_cf_gr     = .false.
-    mask_cf_fl     = .false.
-    mask_coastline = .false.
+    self%mask_margin    = .false.
+    self%mask_gl_gr     = .false.
+    self%mask_gl_fl     = .false.
+    self%mask_cf_gr     = .false.
+    self%mask_cf_fl     = .false.
+    self%mask_coastline = .false.
 
     do vi = self%mesh%vi1, self%mesh%vi2
 
@@ -290,8 +277,8 @@ contains
         do ci = 1, self%mesh%nC( vi)
           vj = self%mesh%C( vi,ci)
           if (.not. (mask_grounded_ice_tot( vj) .OR. mask_floating_ice_tot( vj))) then
-            mask_margin( vi) = .true.
-            mask( vi) = C%type_margin
+            self%mask_margin( vi) = .true.
+            self%mask( vi) = C%type_margin
           end if
         end do
       end if
@@ -301,8 +288,8 @@ contains
         do ci = 1, self%mesh%nC( vi)
           vj = self%mesh%C( vi,ci)
           if (mask_floating_ice_tot( vj)) then
-            mask_gl_gr( vi) = .true.
-            mask( vi) = C%type_groundingline_gr
+            self%mask_gl_gr( vi) = .true.
+            self%mask( vi) = C%type_groundingline_gr
           end if
         end do
       end if
@@ -312,8 +299,8 @@ contains
         do ci = 1, self%mesh%nC( vi)
           vj = self%mesh%C( vi,ci)
           if (mask_grounded_ice_tot( vj)) then
-            mask_gl_fl( vi) = .true.
-            mask( vi) = C%type_groundingline_fl
+            self%mask_gl_fl( vi) = .true.
+            self%mask( vi) = C%type_groundingline_fl
           end if
         end do
       end if
@@ -323,8 +310,8 @@ contains
         do ci = 1, self%mesh%nC(vi)
           vj = self%mesh%C( vi,ci)
           if (mask_icefree_ocean_tot( vj)) then
-            mask_cf_gr( vi) = .true.
-            mask( vi) = C%type_calvingfront_gr
+            self%mask_cf_gr( vi) = .true.
+            self%mask( vi) = C%type_calvingfront_gr
           end if
         end do
       end if
@@ -334,8 +321,8 @@ contains
         do ci = 1, self%mesh%nC(vi)
           vj = self%mesh%C( vi,ci)
           if (mask_icefree_ocean_tot( vj)) then
-            mask_cf_fl( vi) = .true.
-            mask( vi) = C%type_calvingfront_fl
+            self%mask_cf_fl( vi) = .true.
+            self%mask( vi) = C%type_calvingfront_fl
           end if
         end do
       end if
@@ -345,20 +332,20 @@ contains
         do ci = 1, self%mesh%nC(vi)
           vj = self%mesh%C( vi,ci)
           if (mask_icefree_ocean_tot( vj)) then
-            mask_coastline( vi) = .true.
-            mask( vi) = C%type_coastline
+            self%mask_coastline( vi) = .true.
+            self%mask( vi) = C%type_coastline
           end if
         end do
       end if
 
-    end do ! do vi = self%mesh%vi1, self%mesh%vi2
+    end do
 
-    call checksum( self%mesh%pai_V, mask_margin   , 'mask_margin')
-    call checksum( self%mesh%pai_V, mask_gl_gr    , 'mask_gl_gr')
-    call checksum( self%mesh%pai_V, mask_gl_fl    , 'mask_gl_fl')
-    call checksum( self%mesh%pai_V, mask_cf_gr    , 'mask_cf_gr')
-    call checksum( self%mesh%pai_V, mask_cf_fl    , 'mask_cf_fl')
-    call checksum( self%mesh%pai_V, mask_coastline, 'mask_coastline')
+    call checksum( self%mesh%pai_V, self%mask_margin   , 'mask_margin')
+    call checksum( self%mesh%pai_V, self%mask_gl_gr    , 'mask_gl_gr')
+    call checksum( self%mesh%pai_V, self%mask_gl_fl    , 'mask_gl_fl')
+    call checksum( self%mesh%pai_V, self%mask_cf_gr    , 'mask_cf_gr')
+    call checksum( self%mesh%pai_V, self%mask_cf_fl    , 'mask_cf_fl')
+    call checksum( self%mesh%pai_V, self%mask_coastline, 'mask_coastline')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

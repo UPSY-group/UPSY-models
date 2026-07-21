@@ -169,9 +169,7 @@ contains
     end do
 
     ! Compute masks
-    call ice%geom%determine_masks( ice%geom%mask, ice%geom%mask_icefree_land, ice%geom%mask_icefree_ocean, &
-      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%geom%mask_margin, ice%geom%mask_gl_fl, &
-      ice%geom%mask_gl_gr,ice%geom%mask_cf_gr, ice%geom%mask_cf_fl, ice%geom%mask_coastline)
+    call ice%geom%determine_masks()
 
     ! Extract dHib_dx_b and dHib_dy_b
     call calc_ice_shelf_base_slopes( mesh, ice)

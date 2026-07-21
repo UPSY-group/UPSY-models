@@ -111,10 +111,7 @@ contains
     ! Initialise masks
     ! ================
 
-    ! call it twice so also the "prev" versions are set
-    call ice%geom%determine_masks( ice%geom%mask, ice%geom%mask_icefree_land, ice%geom%mask_icefree_ocean, &
-      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%geom%mask_margin, ice%geom%mask_gl_fl, &
-      ice%geom%mask_gl_gr,ice%geom%mask_cf_gr, ice%geom%mask_cf_fl, ice%geom%mask_coastline)
+    call ice%geom%determine_masks()
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, 'ANT')

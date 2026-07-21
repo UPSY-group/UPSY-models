@@ -211,7 +211,7 @@ contains
       case ('SL')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SL', region%ice%geom%SL)
       case ('TAF')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%TAF)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%geom%TAF)
       case ('Hi_eff')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%Hi_eff)
       case ('Hs_slope')
@@ -1575,7 +1575,7 @@ contains
     ! Replace thickness above floatation with NaN in ice-free vertices so GL wont be found there
     do vi = mesh%vi1, mesh%vi2
       if (ice%geom%Hi( vi) > 0.1_dp) then
-        TAF_for_GL( vi) = ice%TAF( vi)
+        TAF_for_GL( vi) = ice%geom%TAF( vi)
       else
         TAF_for_GL( vi) = NaN
       end if
@@ -1612,7 +1612,7 @@ contains
 
     ! Replace ice thickness with NaN in grounded vertices so CF wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%TAF( vi) < 0._dp) then
+      if (ice%geom%TAF( vi) < 0._dp) then
         Hi_for_GL( vi) = ice%geom%Hi( vi)
       else
         Hi_for_GL( vi) = NaN

@@ -88,6 +88,7 @@ contains
     ! DENK DROM
     allocate( self%Hs ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hib( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%TAF( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Ice masks
     ! =========

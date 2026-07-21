@@ -158,7 +158,7 @@ contains
       if (ice%geom%mask_grounded_ice( vi) .or. ice%geom%mask_floating_ice( vi)) then
         scalars%ice_volume       = scalars%ice_volume       + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area)))
         scalars%ice_area         = scalars%ice_area         + mesh%A( vi)
-        scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
+        scalars%ice_volume_af    = scalars%ice_volume_af    + max( 0._dp, ice%geom%TAF( vi) * mesh%A( vi) * ice_density / (seawater_density * ocean_area))
         scalars%ice_shelf_area   = scalars%ice_shelf_area   + mesh%A( vi) * (1._dp - ice%fraction_gr( vi))
         scalars%ice_shelf_volume = scalars%ice_shelf_volume + max( 0._dp, (ice%geom%Hi( vi) * mesh%A( vi) * (1._dp - ice%fraction_gr( vi))))
       end if

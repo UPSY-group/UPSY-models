@@ -169,13 +169,7 @@ contains
     call calc_ice_shelf_base_slopes( region%mesh, region%ice)
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dy)
-    region%ice%geom%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
-
-    call checksum( region%mesh%pai_V, dHs_dx             , 'dHs_dx')
-    call checksum( region%mesh%pai_V, dHs_dy             , 'dHs_dy')
-    call checksum( region%mesh%pai_V, region%ice%geom%Hs_slope, 'region%ice%geom%Hs_slope')
+    call region%ice%geom%calc_absolute_surface_slope()
 
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
@@ -346,13 +340,7 @@ contains
     ! =================
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
-    ice%geom%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
-
-    call checksum( mesh%pai_V, dHs_dx      , 'dHs_dx'      )
-    call checksum( mesh%pai_V, dHs_dy      , 'dHs_dy'      )
-    call checksum( mesh%pai_V, ice%geom%Hs_slope, 'ice%geom%Hs_slope')
+    call ice%geom%calc_absolute_surface_slope()
 
     ! Target thinning rates
     ! =====================
@@ -817,9 +805,7 @@ contains
     ! =================
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( mesh_new, ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh_new, ice%geom%Hs, dHs_dy)
-    ice%geom%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
+    call ice%geom%calc_absolute_surface_slope()
 
     ! Sub-grid fractions
     ! ==================

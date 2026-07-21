@@ -11,6 +11,7 @@ module ice_geometry_model_basic
   use mpi_distributed_memory, only: gather_to_all
   use ice_geometry_basics, only: is_floating, thickness_above_floatation
   use crash_mod, only: crash
+  use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
 
   implicit none
 
@@ -31,6 +32,7 @@ module ice_geometry_model_basic
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
       procedure, public :: calc_grounded_fractions
+      procedure, public :: calc_absolute_surface_slope
 
   end type type_ice_geometry_model
 
@@ -49,6 +51,10 @@ module ice_geometry_model_basic
       class(type_ice_geometry_model),                   intent(inout) :: self
       real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
     end subroutine calc_grounded_fractions
+
+    module subroutine calc_absolute_surface_slope( self)
+      class(type_ice_geometry_model), intent(inout) :: self
+    end subroutine calc_absolute_surface_slope
 
   end interface
 

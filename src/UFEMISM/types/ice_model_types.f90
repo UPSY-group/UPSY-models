@@ -339,10 +339,6 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: fraction_gr_b               ! [0-1] Grounded area fractions of triangles
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: fraction_margin             ! [0-1] Ice-covered area fractions of ice margins
 
-    ! Sub-grid bedrock cumulative density functions (CDFs)
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: bedrock_cdf                 ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: bedrock_cdf_b               ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
-
   ! === Terrain-following coordinate zeta gradients ===
   ! ===================================================
 

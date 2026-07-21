@@ -95,7 +95,7 @@ contains
       ! Update sub-grid grounded fractions
     call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
       region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-      region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
       ! Update effective ice thickness
     call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -178,7 +178,7 @@ contains
       ! Update sub-grid grounded fractions
       call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-        region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+        region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate the basal mass balance
@@ -209,7 +209,7 @@ contains
       ! Update sub-grid grounded fractions
       call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-        region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+        region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
       ! Update effective ice thickness
       call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)

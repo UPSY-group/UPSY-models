@@ -41,8 +41,8 @@ contains
       allocate( bedrock_cdf_tot  ( mesh%nV  , C%subgrid_bedrock_cdf_nbins))
       allocate( bedrock_cdf_b_tot( mesh%nTri, C%subgrid_bedrock_cdf_nbins))
     end if
-    call gather_to_primary( ice%bedrock_cdf  , d_tot = bedrock_cdf_tot)
-    call gather_to_primary( ice%bedrock_cdf_b, d_tot = bedrock_cdf_b_tot)
+    call gather_to_primary( ice%geom%bedrock_cdf  , d_tot = bedrock_cdf_tot)
+    call gather_to_primary( ice%geom%bedrock_cdf_b, d_tot = bedrock_cdf_b_tot)
 
     ! Create CDF bin dimension
     call create_dimension( filename, ncid, 'bin', C%subgrid_bedrock_cdf_nbins, id_dim_bin)

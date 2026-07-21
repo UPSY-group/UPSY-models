@@ -69,10 +69,6 @@ contains
     allocate( ice%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = 0._dp)
     allocate( ice%fraction_margin( mesh%vi1:mesh%vi2), source = 0._dp)
 
-    ! Sub-grid bedrock cumulative density functions (CDFs)
-    allocate( ice%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = 0._dp)
-    allocate( ice%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = 0._dp)
-
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================
 

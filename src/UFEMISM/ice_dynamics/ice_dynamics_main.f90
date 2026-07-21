@@ -186,7 +186,7 @@ contains
     ! Calculate sub-grid grounded-area fractions
     call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
       region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-      region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+      region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -374,7 +374,7 @@ contains
     call initialise_bedrock_CDFs( mesh, refgeo_PD, ice, region_name)
     ! Initialise sub-grid grounded-area fractions
     call calc_grounded_fractions( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%dHb,  &
-      ice%fraction_gr, ice%fraction_gr_b, ice%geom%mask_floating_ice, ice%bedrock_cdf, ice%bedrock_cdf_b)
+      ice%fraction_gr, ice%fraction_gr_b, ice%geom%mask_floating_ice, ice%geom%bedrock_cdf, ice%geom%bedrock_cdf_b)
 
     ! Basal conditions
     ! ================
@@ -601,8 +601,8 @@ contains
     call reallocate_bounds( ice%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    call reallocate_bounds( ice%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
-    call reallocate_bounds( ice%bedrock_cdf_b, mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
+    call reallocate_bounds( ice%geom%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
+    call reallocate_bounds( ice%geom%bedrock_cdf_b, mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
 
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================
@@ -834,7 +834,7 @@ contains
     end if
     ! Initialise sub-grid grounded-area fractions
     call calc_grounded_fractions( mesh_new, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%dHb,  &
-      ice%fraction_gr, ice%fraction_gr_b, ice%geom%mask_floating_ice, ice%bedrock_cdf, ice%bedrock_cdf_b)
+      ice%fraction_gr, ice%fraction_gr_b, ice%geom%mask_floating_ice, ice%geom%bedrock_cdf, ice%geom%bedrock_cdf_b)
 
     ! Basal conditions
     ! ================
@@ -1482,7 +1482,7 @@ contains
       ! Calculate sub-grid grounded-area fractions
       call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
-        region%ice%bedrock_cdf, region%ice%bedrock_cdf_b)
+        region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
       ! Reference geometry
       ! ==================

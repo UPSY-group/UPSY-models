@@ -95,8 +95,8 @@ contains
       call calc_bedrock_CDFs( mesh, refgeo, ice)
     end if
 
-    call checksum( mesh%pai_V  , ice%bedrock_cdf  , 'ice%bedrock_cdf'  )
-    call checksum( mesh%pai_Tri, ice%bedrock_cdf_b, 'ice%bedrock_cdf_b')
+    call checksum( mesh%pai_V  , ice%geom%bedrock_cdf  , 'ice%geom%bedrock_cdf'  )
+    call checksum( mesh%pai_Tri, ice%geom%bedrock_cdf_b, 'ice%geom%bedrock_cdf_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -145,8 +145,8 @@ contains
     end if
 
     ! Read meshed data
-    call read_field_from_mesh_file_CDF(   filename, 'bedrock_cdf',   ice%bedrock_cdf   )
-    call read_field_from_mesh_file_CDF_b( filename, 'bedrock_cdf_b', ice%bedrock_cdf_b )
+    call read_field_from_mesh_file_CDF(   filename, 'bedrock_cdf',   ice%geom%bedrock_cdf   )
+    call read_field_from_mesh_file_CDF_b( filename, 'bedrock_cdf_b', ice%geom%bedrock_cdf_b )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -245,7 +245,7 @@ contains
     Hb_list = 0._dp
 
     ! Initialise cumulative density function (CDF)
-    ice%bedrock_cdf = 0._dp
+    ice%geom%bedrock_cdf = 0._dp
 
     do vi = mesh%vi1, mesh%vi2
 
@@ -284,8 +284,8 @@ contains
 
       ! Set first (0%) and last bins (100%) of the CDF to the minimum
       ! and maximum bedrock elevations scanned, respectively
-      ice%bedrock_cdf( vi, 1                          ) = Hb_list( 1)
-      ice%bedrock_cdf( vi, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
+      ice%geom%bedrock_cdf( vi, 1                          ) = Hb_list( 1)
+      ice%geom%bedrock_cdf( vi, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
 
       ! Compute the bedrock elevation for each of the other CDF bins
       do i = 2, C%subgrid_bedrock_cdf_nbins - 1
@@ -294,7 +294,7 @@ contains
         ii1  = ceiling( isc)
         wii0 = real( ii1,dp) - isc
         wii1 = 1.0 - wii0
-        ice%bedrock_cdf( vi,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
+        ice%geom%bedrock_cdf( vi,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
       end do
 
     end do
@@ -364,7 +364,7 @@ contains
     Hb_list = 0._dp
 
     ! Initialise cumulative density function (CDF)
-    ice%bedrock_cdf_b = 0._dp
+    ice%geom%bedrock_cdf_b = 0._dp
 
     do ti = mesh%ti1, mesh%ti2
 
@@ -403,8 +403,8 @@ contains
 
       ! Set first (0%) and last bins (100%) of the CDF to the minimum
       ! and maximum bedrock elevations scanned, respectively
-      ice%bedrock_cdf_b( ti, 1                          ) = Hb_list( 1)
-      ice%bedrock_cdf_b( ti, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
+      ice%geom%bedrock_cdf_b( ti, 1                          ) = Hb_list( 1)
+      ice%geom%bedrock_cdf_b( ti, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
 
       ! Compute the bedrock elevation for each of the other CDF bins
       do i = 2, C%subgrid_bedrock_cdf_nbins - 1
@@ -413,7 +413,7 @@ contains
         ii1  = ceiling( isc)
         wii0 = real( ii1,dp) - isc
         wii1 = 1.0 - wii0
-        ice%bedrock_cdf_b( ti,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
+        ice%geom%bedrock_cdf_b( ti,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
       end do
 
     end do

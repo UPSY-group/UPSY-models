@@ -84,8 +84,8 @@ subroutine unit_tests_bedrock_CDFs_main( test_name_parent)
 
   ! Use 5 bins for  now, including first and last
   C%subgrid_bedrock_cdf_nbins = 5
-  allocate( ice%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins))
-  allocate( ice%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins))
+  allocate( ice%geom%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins))
+  allocate( ice%geom%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins))
 
   call calc_bedrock_CDFs( mesh, refgeo, ice)
 
@@ -97,25 +97,25 @@ subroutine unit_tests_bedrock_CDFs_main( test_name_parent)
   do vi = mesh%vi1, mesh%vi2
     if (vi == 1 .or. vi == 2) then
       test_result = test_result .and. &
-        test_tol( ice%bedrock_cdf( vi,1), -500._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,2), -435._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,3), -355._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,4), -250._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,5),    0._dp, 10._dp)
+        test_tol( ice%geom%bedrock_cdf( vi,1), -500._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,2), -435._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,3), -355._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,4), -250._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,5),    0._dp, 10._dp)
     elseif (vi == 3 .or. vi == 4) then
       test_result = test_result .and. &
-        test_tol( ice%bedrock_cdf( vi,1),    0._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,2),  250._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,3),  355._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,4),  435._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,5),  500._dp, 10._dp)
+        test_tol( ice%geom%bedrock_cdf( vi,1),    0._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,2),  250._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,3),  355._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,4),  435._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,5),  500._dp, 10._dp)
     elseif (vi == 5) then
       test_result = test_result .and. &
-        test_tol( ice%bedrock_cdf( vi,1), -500._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,2), -145._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,3),    0._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,4),  145._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf( vi,5),  500._dp, 10._dp)
+        test_tol( ice%geom%bedrock_cdf( vi,1), -500._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,2), -145._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,3),    0._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,4),  145._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf( vi,5),  500._dp, 10._dp)
     end if
   end do
   call MPI_ALLREDUCE( MPI_IN_PLACE, test_result, 1, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, ierr)
@@ -130,25 +130,25 @@ subroutine unit_tests_bedrock_CDFs_main( test_name_parent)
   do ti = mesh%ti1, mesh%ti2
     if (ti == 1) then
       test_result = test_result .and. &
-        test_tol( ice%bedrock_cdf_b( ti,1), -500._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,2), -435._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,3), -355._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,4), -250._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,5),    0._dp, 10._dp)
+        test_tol( ice%geom%bedrock_cdf_b( ti,1), -500._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,2), -435._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,3), -355._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,4), -250._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,5),    0._dp, 10._dp)
     elseif (ti == 2 .or. ti == 4) then
       test_result = test_result .and. &
-        test_tol( ice%bedrock_cdf_b( ti,1), -500._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,2), -150._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,3),    0._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,4),  150._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,5),  500._dp, 10._dp)
+        test_tol( ice%geom%bedrock_cdf_b( ti,1), -500._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,2), -150._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,3),    0._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,4),  150._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,5),  500._dp, 10._dp)
     elseif (ti == 3) then
       test_result = test_result .and. &
-        test_tol( ice%bedrock_cdf_b( ti,1),    0._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,2),  250._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,3),  355._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,4),  435._dp, 10._dp) .and. &
-        test_tol( ice%bedrock_cdf_b( ti,5),  500._dp, 10._dp)
+        test_tol( ice%geom%bedrock_cdf_b( ti,1),    0._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,2),  250._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,3),  355._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,4),  435._dp, 10._dp) .and. &
+        test_tol( ice%geom%bedrock_cdf_b( ti,5),  500._dp, 10._dp)
     end if
   end do
   call MPI_ALLREDUCE( MPI_IN_PLACE, test_result, 1, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, ierr)

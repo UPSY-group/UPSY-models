@@ -1,29 +1,20 @@
-module subgrid_grounded_fractions_main
+submodule( ice_geometry_model_basic) subgrid_grounded_fractions_main
   !< Routines for calculating sub-grid grounded fractions
 
-  use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use model_configuration, only: C
-  use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
-  use mpi_distributed_memory, only: gather_to_all
-  use subgrid_grounded_fractions_bedrock_CDF
-  use subgrid_grounded_fractions_bilin_TAF
-  use ice_geometry_basics, only: thickness_above_floatation
-  use checksum_mod, only: checksum
-
-  implicit none
-
-  private
-
-  public :: calc_grounded_fractions
+  use subgrid_grounded_fractions_bedrock_CDF, only: &
+    calc_grounded_fractions_bedrock_CDF_a, &
+    calc_grounded_fractions_bedrock_CDF_b
+  use subgrid_grounded_fractions_bilin_TAF, only: &
+    calc_grounded_fractions_bilin_interp_TAF_a, &
+    calc_grounded_fractions_bilin_interp_TAF_b
 
 contains
 
-  subroutine calc_grounded_fractions( mesh, Hi, Hb, SL, dHb, fraction_gr, fraction_gr_b, mask_floating_ice, bedrock_cdf, bedrock_cdf_b)
+  subroutine calc_grounded_fractions( self, mesh, Hi, Hb, SL, dHb, fraction_gr, fraction_gr_b, mask_floating_ice, bedrock_cdf, bedrock_cdf_b)
     !< Calculate the sub-grid grounded-area fractions
 
     ! In- and output variables
+    class(type_ice_geometry_model),                                      intent(in   ) :: self
     type(type_mesh),                                                     intent(in   ) :: mesh
     real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hi
     real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hb
@@ -36,7 +27,7 @@ contains
     real(dp), dimension(mesh%ti1:mesh%ti2),                              intent(  out) :: fraction_gr_b
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_grounded_fractions'
+    character(len=*), parameter            :: routine_name = 'calc_grounded_fractions'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: TAF
     real(dp), dimension(mesh%vi1:mesh%vi2) :: fraction_gr_TAF_a
     real(dp), dimension(mesh%vi1:mesh%vi2) :: fraction_gr_CDF_a
@@ -120,4 +111,4 @@ contains
 
   end subroutine calc_grounded_fractions
 
-end module subgrid_grounded_fractions_main
+end submodule subgrid_grounded_fractions_main

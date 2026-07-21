@@ -16,7 +16,6 @@ module predictor_corrector_scheme
   use conservation_of_mass_main, only: calc_dHi_dt
   use ice_thickness_safeties, only: alter_ice_thickness
   use ice_geometry_basics, only: ice_surface_elevation
-  use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use conservation_of_momentum_main, only: solve_stress_balance
   use checksum_mod, only: checksum
 
@@ -93,7 +92,7 @@ contains
     call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-    call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
+    call region%ice%geom%calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
       region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
       region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
@@ -176,7 +175,7 @@ contains
       ! call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Update sub-grid grounded fractions
-      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
+      call region%ice%geom%calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
         region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 
@@ -207,7 +206,7 @@ contains
       call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-      call calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
+      call region%ice%geom%calc_grounded_fractions( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%dHb, region%ice%fraction_gr, region%ice%fraction_gr_b, region%ice%geom%mask_floating_ice, &
         region%ice%geom%bedrock_cdf, region%ice%geom%bedrock_cdf_b)
 

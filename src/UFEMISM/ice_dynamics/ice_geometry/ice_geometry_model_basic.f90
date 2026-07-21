@@ -9,7 +9,8 @@ module ice_geometry_model_basic
   use checksum_mod, only: checksum
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all
-  use ice_geometry_basics, only: is_floating
+  use ice_geometry_basics, only: is_floating, thickness_above_floatation
+  use crash_mod, only: crash
 
   implicit none
 
@@ -29,8 +30,28 @@ module ice_geometry_model_basic
 
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
+      procedure, public :: calc_grounded_fractions
 
   end type type_ice_geometry_model
+
+  ! create_field
+  interface
+
+    module subroutine calc_grounded_fractions( self, mesh, Hi, Hb, SL, dHb, fraction_gr, fraction_gr_b, mask_floating_ice, bedrock_cdf, bedrock_cdf_b)
+      class(type_ice_geometry_model),                                      intent(in   ) :: self
+      type(type_mesh),                                                     intent(in   ) :: mesh
+      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hi
+      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: Hb
+      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: SL
+      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: dHb
+      logical,  dimension(mesh%vi1:mesh%vi2),                              intent(in   ) :: mask_floating_ice
+      real(dp), dimension(mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf
+      real(dp), dimension(mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), intent(in   ) :: bedrock_cdf_b
+      real(dp), dimension(mesh%vi1:mesh%vi2),                              intent(  out) :: fraction_gr
+      real(dp), dimension(mesh%ti1:mesh%ti2),                              intent(  out) :: fraction_gr_b
+    end subroutine
+
+    end interface
 
 contains
 

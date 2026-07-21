@@ -33,7 +33,6 @@ contains
 
     ! Basic geometry
     call ice%geom%allocate( 'ice_geometry', region_name, mesh)
-    allocate( ice%Hs_slope( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%Ho      ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! Geometry changes

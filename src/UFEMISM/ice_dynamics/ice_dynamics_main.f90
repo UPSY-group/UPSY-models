@@ -171,11 +171,11 @@ contains
     ! Calculate absolute surface gradient
     call ddx_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dx)
     call ddy_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dy)
-    region%ice%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
+    region%ice%geom%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
 
     call checksum( region%mesh%pai_V, dHs_dx             , 'dHs_dx')
     call checksum( region%mesh%pai_V, dHs_dy             , 'dHs_dy')
-    call checksum( region%mesh%pai_V, region%ice%Hs_slope, 'region%ice%Hs_slope')
+    call checksum( region%mesh%pai_V, region%ice%geom%Hs_slope, 'region%ice%geom%Hs_slope')
 
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
@@ -348,11 +348,11 @@ contains
     ! Calculate absolute surface gradient
     call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
     call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
-    ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
+    ice%geom%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
 
     call checksum( mesh%pai_V, dHs_dx      , 'dHs_dx'      )
     call checksum( mesh%pai_V, dHs_dy      , 'dHs_dy'      )
-    call checksum( mesh%pai_V, ice%Hs_slope, 'ice%Hs_slope')
+    call checksum( mesh%pai_V, ice%geom%Hs_slope, 'ice%geom%Hs_slope')
 
     ! Target thinning rates
     ! =====================
@@ -551,7 +551,7 @@ contains
     call reallocate_bounds( ice%geom%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
     call reallocate_bounds( ice%geom%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
     call reallocate_bounds( ice%geom%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
-    call reallocate_bounds( ice%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
+    call reallocate_bounds( ice%geom%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
     call reallocate_bounds( ice%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
 
     ! Geometry changes
@@ -819,7 +819,7 @@ contains
     ! Calculate absolute surface gradient
     call ddx_a_a_2D( mesh_new, ice%geom%Hs, dHs_dx)
     call ddy_a_a_2D( mesh_new, ice%geom%Hs, dHs_dy)
-    ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
+    ice%geom%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
 
     ! Sub-grid fractions
     ! ==================
@@ -1418,7 +1418,7 @@ contains
           region%ice%geom%Hi( vi) = Hi_new( vi)
           region%ice%dHi_dt( vi) = dHi_dt_new( vi)
         ! Also over steep-sloped interior ice sheet points
-        elseif (region%ice%geom%mask_grounded_ice( vi) .and. region%ice%Hs_slope( vi) >= 0.03_dp) then
+        elseif (region%ice%geom%mask_grounded_ice( vi) .and. region%ice%geom%Hs_slope( vi) >= 0.03_dp) then
           region%ice%geom%Hi( vi) = Hi_new( vi)
           region%ice%dHi_dt( vi) = dHi_dt_new( vi)
         end if

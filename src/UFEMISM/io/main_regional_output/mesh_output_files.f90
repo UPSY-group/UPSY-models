@@ -215,7 +215,7 @@ contains
       case ('Hi_eff')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%geom%Hi_eff)
       case ('Hs_slope')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs_slope', region%ice%Hs_slope)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs_slope', region%ice%geom%Hs_slope)
       case ('grounding_line')
         call write_grounding_line_to_file( filename, ncid, region%mesh, region%ice)
       case ('ice_margin')

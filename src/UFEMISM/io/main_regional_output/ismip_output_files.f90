@@ -77,7 +77,7 @@ contains
 
     ! Extract SMB only over ice-covered fraction
     do vi = region%mesh%vi1, region%mesh%vi2
-      SMB_loc( vi) = SMB_loc( vi) * min(1._dp,max(0._dp,(region%ice%fraction_margin( vi))))
+      SMB_loc( vi) = SMB_loc( vi) * min(1._dp,max(0._dp,(region%ice%geom%fraction_margin( vi))))
     end do
 
     ! Determine BMB_gr and BMB_fl, dependent on subgrid scheme
@@ -290,9 +290,9 @@ contains
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
-    call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%fraction_margin, vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%geom%fraction_margin, vmin=0._dp, vmax=1._dp)
     call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%geom%fraction_gr, vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%fraction_margin - region%ice%geom%fraction_gr, &
+    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%geom%fraction_margin - region%ice%geom%fraction_gr, &
       vmin=0._dp, vmax=1._dp)
 
     ! Other stuff
@@ -500,7 +500,7 @@ contains
     ! For velocity fields, mask regions with ice fraction < 0.5
     if (present(inputfield_b)) then
       allocate( mask_grid( region%output_grid%n_loc ))
-      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%fraction_margin, mask_grid)
+      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%geom%fraction_margin, mask_grid)
       where (mask_grid < 0.5_dp)
         d_grid_vec_partial_2D = NF90_FILL_DOUBLE
       end where

@@ -163,7 +163,7 @@ contains
     call region%ice%geom%determine_masks()
 
     ! Calculate new effective thickness
-    call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
+    call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%geom%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( region%mesh, region%ice)
@@ -337,7 +337,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%geom%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)
@@ -595,7 +595,7 @@ contains
     ! Area fractions
     call reallocate_bounds( ice%geom%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
     call reallocate_bounds( ice%geom%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
-    call reallocate_bounds( ice%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
+    call reallocate_bounds( ice%geom%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     call reallocate_bounds( ice%geom%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
@@ -811,7 +811,7 @@ contains
     ! =======================
 
     ! Calculate new effective thickness
-     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%geom%fraction_margin)
 
     ! Surface gradients
     ! =================
@@ -1297,7 +1297,7 @@ contains
 
       ! Calculate dH/dt around the calving front
       call calc_dHi_dt( mesh, ice, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, &
-        ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%fraction_margin, ice%mask_noice, C%dt_ice_min, &
+        ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%geom%fraction_margin, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1408,7 +1408,7 @@ contains
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%geom%fraction_margin, &
                         region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy)
 
       ! Set ice model ice thickness to relaxed field
@@ -1469,7 +1469,7 @@ contains
       call region%ice%geom%determine_masks()
 
       ! Calculate new effective thickness
-      call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
+      call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%geom%fraction_margin)
 
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance

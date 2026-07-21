@@ -378,7 +378,7 @@ contains
 
     ! Gather ice thickness from all processes
     call gather_to_all( ice%geom%Hi, Hi_tot)
-    call gather_to_all( ice%fraction_margin, fraction_margin_tot)
+    call gather_to_all( ice%geom%fraction_margin, fraction_margin_tot)
 
     ! Gather basic masks to all processes
     call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
@@ -488,7 +488,7 @@ contains
 
       ! Gather ice thickness from all processes
       call gather_to_all( ice%geom%Hi, Hi_tot)
-      call gather_to_all( ice%fraction_margin, fraction_margin_tot)
+      call gather_to_all( ice%geom%fraction_margin, fraction_margin_tot)
 
       ! Gather basic masks to all processes
       call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )

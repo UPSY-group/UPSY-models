@@ -334,9 +334,6 @@ MODULE ice_model_types
     INTEGER,  DIMENSION(:    ), ALLOCATABLE :: basin_ID                    ! The drainage basin to which each vertex belongs
     INTEGER                                 :: nROI                        ! Number of ROI masks in the ice model type
 
-    ! Area fractions
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: fraction_margin             ! [0-1] Ice-covered area fractions of ice margins
-
   ! === Terrain-following coordinate zeta gradients ===
   ! ===================================================
 

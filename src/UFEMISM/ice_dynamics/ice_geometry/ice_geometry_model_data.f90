@@ -35,6 +35,7 @@ module ice_geometry_model_data
     ! Area fractions
     real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1] Grounded area fractions of vertices
     real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1] Grounded area fractions of triangles
+    real(dp), dimension(:  ), allocatable :: fraction_margin         ! [0-1] Ice-covered area fractions of ice margins
 
     ! Ice masks
     logical,  dimension(:  ), allocatable :: mask_icefree_land       ! T: ice-free land , F: otherwise

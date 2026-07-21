@@ -88,8 +88,9 @@ contains
     allocate( self%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = NaN)
 
     ! Area fractions
-    allocate( self%fraction_gr  ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%fraction_gr_b( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%fraction_gr    ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%fraction_margin( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Ice masks
     allocate( self%mask_icefree_land ( mesh%vi1:mesh%vi2), source = .false.)

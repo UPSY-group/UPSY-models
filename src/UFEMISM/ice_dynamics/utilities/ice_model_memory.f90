@@ -64,9 +64,6 @@ contains
     allocate( ice%mask_ROI               ( mesh%vi1:mesh%vi2), source = 0)
     allocate( ice%basin_ID               ( mesh%vi1:mesh%vi2), source = 0)
 
-    ! Area fractions
-    allocate( ice%fraction_margin( mesh%vi1:mesh%vi2), source = 0._dp)
-
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================
 

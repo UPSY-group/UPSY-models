@@ -205,7 +205,7 @@ contains
       case ('Hb')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hb', region%ice%geom%Hb)
       case ('Hs')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs', region%ice%Hs)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs', region%ice%geom%Hs)
       case ('Hib')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hib', region%ice%Hib)
       case ('SL')
@@ -231,17 +231,17 @@ contains
     ! ==============================================
 
       case ('Hs_b')
-        call map_a_b_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D_b)
+        call map_a_b_2D( region%mesh, region%ice%geom%Hs, d_mesh_vec_partial_2D_b)
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'Hs_b', d_mesh_vec_partial_2D_b)
 
     ! ===== Geometry gradients for hillshade =====
     ! ============================================
 
       case ('dHs_dx')
-        call ddx_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call ddx_a_a_2D( region%mesh, region%ice%geom%Hs, d_mesh_vec_partial_2D)
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dx', d_mesh_vec_partial_2D)
       case ('dHs_dy')
-        call ddy_a_a_2D( region%mesh, region%ice%Hs, d_mesh_vec_partial_2D)
+        call ddy_a_a_2D( region%mesh, region%ice%geom%Hs, d_mesh_vec_partial_2D)
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'dHs_dy', d_mesh_vec_partial_2D)
 
     ! ===== Geometry changes w.r.t. reference =====

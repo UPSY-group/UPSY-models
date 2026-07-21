@@ -862,7 +862,7 @@ contains
     ! Map ice model data to transect
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hi,       tHi_partial,     'trilin')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hb,       tHb_partial,     'trilin')
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%Hs,       tHs_partial,     'trilin')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hs,       tHs_partial,     'trilin')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%Hib,      tHib_partial,    'trilin')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%SL,       tSL_partial,     'trilin')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%Hi_eff,   tHi_eff_partial, 'nearest_neighbour')

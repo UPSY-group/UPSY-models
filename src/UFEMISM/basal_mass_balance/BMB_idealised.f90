@@ -77,7 +77,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
       IF (ice%geom%mask_floating_ice( vi)) THEN
 
-        zd = ice%Hs( vi) - ice%geom%Hi( vi)
+        zd = ice%geom%Hs( vi) - ice%geom%Hi( vi)
         cavity_thickness = MAX( 0._dp, zd - ice%geom%Hb( vi))
 
         ! Cornford et al. (2020), Eq. 7

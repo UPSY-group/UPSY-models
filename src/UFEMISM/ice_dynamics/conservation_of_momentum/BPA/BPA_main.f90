@@ -1740,8 +1740,8 @@ contains
     call init_routine( routine_name)
 
     ! Calculate dh/dx, dh/dy, db/dx, db/dy on the b-grid
-    call ddx_a_b_2D( mesh, ice%Hs , BPA%dh_dx_b)
-    call ddy_a_b_2D( mesh, ice%Hs , BPA%dh_dy_b)
+    call ddx_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dx_b)
+    call ddy_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dy_b)
     call ddx_a_b_2D( mesh, ice%Hib, BPA%db_dx_b)
     call ddy_a_b_2D( mesh, ice%Hib, BPA%db_dy_b)
 

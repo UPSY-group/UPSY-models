@@ -801,7 +801,7 @@ CONTAINS
     call init_routine( routine_name)
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
-    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hs                ( mesh%vi1:mesh%vi2  )
     forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )

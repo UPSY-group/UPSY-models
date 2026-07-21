@@ -126,7 +126,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    deltaHs = ice%Hs - target_geometry%Hs
+    deltaHs = ice%geom%Hs - target_geometry%Hs
 
     call gather_to_all( ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)
@@ -239,8 +239,8 @@ contains
     call init_routine( routine_name)
 
     ! Calculate surface slopes
-    call ddx_a_a_2D( mesh, ice%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh, ice%Hs, dHs_dy)
+    call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
+    call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
 
     ! Calculate absolute surface gradient
     abs_grad_Hs = sqrt( dHs_dx**2 + dHs_dy**2)

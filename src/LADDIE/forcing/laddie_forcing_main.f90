@@ -86,8 +86,8 @@ contains
     ! Basic geometry
     do vi = mesh%vi1, mesh%vi2
       ice%geom%Hb( vi) = refgeo%Hb( vi)
-      ice%Hs( vi) = refgeo%Hs ( vi)
-      ice%geom%Hi( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), ice%Hs( vi), ice%geom%SL( vi))
+      ice%geom%Hs( vi) = refgeo%Hs ( vi)
+      ice%geom%Hi( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), ice%geom%Hs( vi), ice%geom%SL( vi))
     end do
 
     ! Calculate the no-ice mask
@@ -102,8 +102,8 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
-      ice%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Hib( vi) = ice%Hs( vi) - ice%geom%Hi( vi)
+      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      ice%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
       ice%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
     end do
@@ -149,7 +149,7 @@ contains
     ! ===========================
 
     forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
-    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hs                ( mesh%vi1:mesh%vi2  )
     forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%TAF               ( mesh%vi1:mesh%vi2  )

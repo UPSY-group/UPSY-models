@@ -254,7 +254,7 @@ contains
     ! Set up simple ice model fields
     allocate( ice%geom%Hi( mesh%vi1: mesh%vi2), source = 0._dp)
     allocate( ice%geom%Hb( mesh%vi1: mesh%vi2), source = 10._dp)
-    allocate( ice%Hs( mesh%vi1: mesh%vi2), source = 10._dp)
+    allocate( ice%geom%Hs( mesh%vi1: mesh%vi2), source = 10._dp)
     allocate( ice%geom%mask_icefree_ocean( mesh%vi1: mesh%vi2), source = .false.)
     allocate( ice%geom%mask_floating_ice ( mesh%vi1: mesh%vi2), source = .false.)
     allocate( ice%mask_noice        ( mesh%vi1: mesh%vi2), source = .false.)
@@ -265,8 +265,8 @@ contains
       if (rp < 0.5_dp) then
         ice%geom%mask_grounded_ice( vi) = .true.
         ice%geom%Hi( vi) = max( 0._dp, 1000._dp - 2000._dp * rp)
-        ice%Hs( vi) = ice%geom%Hb( vi) + ice%geom%Hi( vi)
-        climate%T2m( vi,:) = climate%T2m( vi,:) - ice%Hs( vi) * 0.008_dp
+        ice%geom%Hs( vi) = ice%geom%Hb( vi) + ice%geom%Hi( vi)
+        climate%T2m( vi,:) = climate%T2m( vi,:) - ice%geom%Hs( vi) * 0.008_dp
       end if
     end do
 

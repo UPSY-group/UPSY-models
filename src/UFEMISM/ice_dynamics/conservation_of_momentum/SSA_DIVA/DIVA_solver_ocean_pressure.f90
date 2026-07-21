@@ -448,7 +448,7 @@ contains
 
     ! Ice model forcing data
     call map_mesh_vertices_to_graph ( mesh, ice%geom%Hi                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hi_a                        )
-    call map_mesh_vertices_to_graph ( mesh, ice%Hs                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hs_a                        )
+    call map_mesh_vertices_to_graph ( mesh, ice%geom%Hs                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hs_a                        )
     call map_mesh_vertices_to_graph ( mesh, ice%Ho                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Ho_a                        )
     call map_mesh_triangles_to_graph( mesh, ice%fraction_gr_b                , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%fraction_gr_b               )
 

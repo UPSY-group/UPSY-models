@@ -85,6 +85,8 @@ contains
     ! Secondary ice geometry fields
     ! =============================
 
+    ! DENK DROM
+    allocate( self%Hs( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Ice masks
     ! =========

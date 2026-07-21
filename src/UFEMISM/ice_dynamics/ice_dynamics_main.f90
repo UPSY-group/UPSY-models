@@ -163,7 +163,7 @@ contains
     call region%ice%geom%determine_masks()
 
     ! Calculate new effective thickness
-    call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff)
+    call region%ice%geom%calc_effective_thickness( region%ice%geom%Hi_eff)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( region%mesh, region%ice)
@@ -337,7 +337,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call ice%geom%calc_effective_thickness( ice%Hi_eff)
+     call ice%geom%calc_effective_thickness( ice%geom%Hi_eff)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)
@@ -550,7 +550,7 @@ contains
     ! call reallocate_bounds( ice%geom%SL    , mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
     call reallocate_bounds( ice%geom%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
     call reallocate_bounds( ice%geom%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
-    call reallocate_bounds( ice%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
+    call reallocate_bounds( ice%geom%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
     call reallocate_bounds( ice%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
     call reallocate_bounds( ice%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
 
@@ -811,7 +811,7 @@ contains
     ! =======================
 
     ! Calculate new effective thickness
-     call ice%geom%calc_effective_thickness( ice%Hi_eff)
+     call ice%geom%calc_effective_thickness( ice%geom%Hi_eff)
 
     ! Surface gradients
     ! =================
@@ -1401,7 +1401,7 @@ contains
       ! Ignore any target thinning rates
       dHi_dt_target_dummy = 0._dp
 
-      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%Hi_eff) * region%ice%geom%fraction_gr
+      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%geom%Hi_eff) * region%ice%geom%fraction_gr
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
@@ -1469,7 +1469,7 @@ contains
       call region%ice%geom%determine_masks()
 
       ! Calculate new effective thickness
-      call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff)
+      call region%ice%geom%calc_effective_thickness( region%ice%geom%Hi_eff)
 
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance

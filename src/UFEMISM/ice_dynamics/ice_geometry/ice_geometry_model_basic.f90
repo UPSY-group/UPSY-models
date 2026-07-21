@@ -74,13 +74,16 @@ contains
 
     ! Allocate all the stuff that is specific to the ice_geometry model
 
+    ! Primary ice geometry variables
     allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%SL( mesh%vi1:mesh%vi2), source = NaN)
 
-    allocate( self%Hs ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%Hib( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%TAF( mesh%vi1:mesh%vi2), source = NaN)
+    ! Derived ice geometry variables
+    allocate( self%Hs    ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Hib   ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%TAF   ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Hi_eff( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)

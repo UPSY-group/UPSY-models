@@ -213,7 +213,7 @@ contains
       case ('TAF')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%geom%TAF)
       case ('Hi_eff')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%Hi_eff)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%geom%Hi_eff)
       case ('Hs_slope')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs_slope', region%ice%Hs_slope)
       case ('grounding_line')

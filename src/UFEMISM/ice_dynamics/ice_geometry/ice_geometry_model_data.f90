@@ -21,8 +21,8 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: Hs                      ! [m]       Ice surface elevation (w.r.t. PD sea level)
     real(dp), dimension(:  ), allocatable :: Hib                     ! [m]       Ice base elevation    (w.r.t. PD sea level)
     real(dp), dimension(:  ), allocatable :: TAF                     ! [m]       Thickness above floatation
+    real(dp), dimension(:  ), allocatable :: Hi_eff                  ! [m]       Effective ice thickness
     ! real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Height of water column at ice front
-    ! real(dp), dimension(:  ), allocatable :: Hi_eff                  ! [m]       Effective ice thickness
     ! real(dp), dimension(:  ), allocatable :: dHb                     ! [m]       Change in bedrock elevation w.r.t. reference geometry
     ! real(dp), dimension(:  ), allocatable :: fraction_margin         ! [0-1]     Sub-grid ice-filled fraction
     ! real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1]     Sub-grid grounded fraction

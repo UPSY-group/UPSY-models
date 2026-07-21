@@ -344,7 +344,7 @@ contains
         ! If there is no inflow at all, for example during initialisation,
         ! use effective thickness
         if (ice%u_perp( vi, cm) >= 0._dp) then
-          Hi_ups = ice%Hi_eff( vi)
+          Hi_ups = ice%geom%Hi_eff( vi)
         end if
 
         ! Find vertex index of strongest inflow cell
@@ -359,7 +359,7 @@ contains
       else
 
         ! Default: use effective ice thickness
-        Hi_ups = ice%Hi_eff( vi)
+        Hi_ups = ice%geom%Hi_eff( vi)
 
       end if
 

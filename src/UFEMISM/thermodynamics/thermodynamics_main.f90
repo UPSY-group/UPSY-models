@@ -324,7 +324,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       T_surf_annual = MIN( T0, SUM( climate%T2m( vi,:)) / REAL( SIZE( climate%T2m( vi,:),1),dp))
-      T_PMP_base    = T0 - Clausius_Clapeyron_gradient * ice%Hi_eff( vi)
+      T_PMP_base    = T0 - Clausius_Clapeyron_gradient * ice%geom%Hi_eff( vi)
 
       IF (ice%geom%Hi( vi) > 0._dp) THEN
         DO k = 1, mesh%nz

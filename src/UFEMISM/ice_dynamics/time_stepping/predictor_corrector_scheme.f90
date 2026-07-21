@@ -92,7 +92,7 @@ contains
     call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! Update effective ice thickness
     call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
@@ -173,7 +173,7 @@ contains
       ! call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Update sub-grid grounded fractions
-      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! DENK DROM : assess whether this is important for the velocitiy computation below
       ! ! Calculate the basal mass balance
@@ -202,7 +202,7 @@ contains
       call region%ice%geom%determine_masks()
 
       ! Update sub-grid grounded fractions
-      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! Update effective ice thickness
       call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)

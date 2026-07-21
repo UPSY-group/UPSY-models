@@ -183,7 +183,7 @@ contains
     call calc_zeta_gradients( region%mesh, region%ice)
 
     ! Calculate sub-grid grounded-area fractions
-    call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
+    call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -371,7 +371,7 @@ contains
     call initialise_bedrock_CDFs( mesh, refgeo_PD, ice, region_name)
 
     ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( ice%dHb,  ice%geom%fraction_gr, ice%geom%fraction_gr_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb)
 
     ! Basal conditions
     ! ================
@@ -831,7 +831,7 @@ contains
     end if
 
     ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( ice%dHb, ice%geom%fraction_gr, ice%geom%fraction_gr_b)
+    call ice%geom%calc_grounded_fractions( ice%dHb)
 
     ! Basal conditions
     ! ================
@@ -1477,7 +1477,7 @@ contains
       call calc_zeta_gradients( region%mesh, region%ice)
 
       ! Calculate sub-grid grounded-area fractions
-      call region%ice%geom%calc_grounded_fractions( region%ice%dHb, region%ice%geom%fraction_gr, region%ice%geom%fraction_gr_b)
+      call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
 
       ! Reference geometry
       ! ==================

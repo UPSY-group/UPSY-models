@@ -37,11 +37,9 @@ module ice_geometry_model_basic
   ! Interfaces for procedures defined in submodules
   interface
 
-    module subroutine calc_grounded_fractions( self, dHb, fraction_gr, fraction_gr_b)
-      class(type_ice_geometry_model),                   intent(in   ) :: self
+    module subroutine calc_grounded_fractions( self, dHb)
+      class(type_ice_geometry_model),                   intent(inout) :: self
       real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
-      real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
     end subroutine calc_grounded_fractions
 
   end interface

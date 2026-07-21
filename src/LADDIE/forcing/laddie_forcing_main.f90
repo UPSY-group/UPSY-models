@@ -23,10 +23,9 @@ module laddie_forcing_main
   use mesh_creation_main, only: create_mesh_from_gridded_geometry, create_mesh_from_meshed_geometry, write_mesh_success
   use ice_model_memory, only: allocate_ice_model
   use thermodynamics_main, only: initialise_ice_temperature_uniform
-  use masks_mod, only: determine_masks, calc_mask_ROI, calc_mask_noice, calc_mask_SGD
+  use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
-  use subgrid_ice_margin, only: calc_effective_thickness
   use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection
@@ -113,8 +112,8 @@ contains
     ! ================
 
     ! call it twice so also the "prev" versions are set
-    call determine_masks( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
-    call determine_masks( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, 'ANT')
@@ -126,7 +125,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call calc_effective_thickness( mesh, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)

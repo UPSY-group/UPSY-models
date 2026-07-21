@@ -8,12 +8,11 @@ module ice_thickness_safeties
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
-  use subgrid_ice_margin, only: calc_effective_thickness
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
   use mpi_basic, only: par, sync
-  use masks_mod, only: determine_masks
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
+  use ice_geometry_model_basic, only: type_ice_geometry_model
 
   implicit none
 
@@ -44,15 +43,22 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2) :: modiness_up, modiness_down
     real(dp), dimension(mesh%vi1:mesh%vi2) :: Hi_save, Hi_eff_new, fraction_margin_new
     real(dp)                               :: floating_area, calving_area, mass_lost
+    type(type_ice_geometry_model)          :: geom_new   ! Not the most beautiful solution, but the best that can be done for now...
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! DENK DROM
+    call geom_new%allocate( 'geom_new', ice%geom%region_name(), mesh)
+    geom_new%Hi = Hi_new
+    geom_new%Hb = ice%geom%Hb
+    geom_new%SL = ice%geom%SL
 
     ! Save predicted ice thickness for future reference
     Hi_save = Hi_new
 
     ! Calculate would-be effective thickness
-    call calc_effective_thickness( mesh, Hi_new, Hb, SL, Hi_eff_new, fraction_margin_new)
+    call geom_new%calc_effective_thickness( Hi_eff_new, fraction_margin_new)
 
     ! == Mask conservation
     ! ====================

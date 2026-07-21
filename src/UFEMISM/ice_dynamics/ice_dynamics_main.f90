@@ -23,8 +23,7 @@ module ice_dynamics_main
     apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, &
     Hi_from_Hb_Hs_and_SL, height_of_water_column_at_ice_front
-  use masks_mod, only: determine_masks, calc_mask_ROI, calc_mask_noice, calc_mask_SGD
-  use subgrid_ice_margin, only: calc_effective_thickness
+  use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use zeta_gradients, only: calc_zeta_gradients
   use subgrid_grounded_fractions_main, only: calc_grounded_fractions
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
@@ -162,10 +161,10 @@ contains
     call checksum( region%mesh%pai_V, region%ice%dHib_dt, 'region%ice%dHib_dt')
 
     ! Update masks
-    call determine_masks( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+    call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
     ! Calculate new effective thickness
-    call calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+    call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( region%mesh, region%ice)
@@ -328,8 +327,8 @@ contains
     ! ================
 
     ! call it twice so also the "prev" versions are set
-    call determine_masks( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
-    call determine_masks( mesh, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
     call calc_mask_ROI( mesh, ice, region_name)
@@ -341,7 +340,7 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call calc_effective_thickness( mesh, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
 
     ! Calculate ice shelf draft gradients
     call calc_ice_shelf_base_slopes( mesh, ice)
@@ -546,6 +545,7 @@ contains
     ! ==========================
 
     ! Basic geometry
+    call ice%geom%remap( mesh_new)
     ! call reallocate_bounds( ice%geom%Hi    , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness
     ! call reallocate_bounds( ice%geom%Hb    , mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
     ! call reallocate_bounds( ice%Hs    , mesh_new%vi1, mesh_new%vi2)  ! [m] Surface elevation (w.r.t. PD sea level)
@@ -803,8 +803,8 @@ contains
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%dHi_dt)
 
     ! call it twice so also the "prev" versions are set
-    call determine_masks( mesh_new, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
-    call determine_masks( mesh_new, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
+    call ice%geom%determine_masks( ice%mask, ice%mask_icefree_land, ice%mask_icefree_ocean, ice%mask_grounded_ice, ice%mask_floating_ice, ice%mask_margin, ice%mask_gl_fl, ice%mask_gl_gr,ice%mask_cf_gr, ice%mask_cf_fl, ice%mask_coastline)
 
     ! Compute mask_ROI
     call calc_mask_ROI( mesh_new, ice, region_name)
@@ -819,7 +819,7 @@ contains
     ! =======================
 
     ! Calculate new effective thickness
-     call calc_effective_thickness( mesh_new, ice%geom%Hi,ice%geom%Hb,ice%geom%SL, ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
 
     ! Surface gradients
     ! =================
@@ -937,7 +937,7 @@ contains
     end select
 
     ! Gather global ice thickness and masks
-    call gather_to_all(      ice%geom%Hi                , Hi_old_tot            )
+    call gather_to_all( ice%geom%Hi, Hi_old_tot)
     call gather_to_all( ice%mask_floating_ice , mask_floating_ice_tot )
     call gather_to_all( ice%mask_icefree_ocean, mask_icefree_ocean_tot)
 
@@ -1472,10 +1472,10 @@ contains
       end do
 
       ! Update masks
-      call determine_masks( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
+      call region%ice%geom%determine_masks( region%ice%mask, region%ice%mask_icefree_land, region%ice%mask_icefree_ocean, region%ice%mask_grounded_ice, region%ice%mask_floating_ice, region%ice%mask_margin, region%ice%mask_gl_fl, region%ice%mask_gl_gr,region%ice%mask_cf_gr, region%ice%mask_cf_fl, region%ice%mask_coastline)
 
       ! Calculate new effective thickness
-      call calc_effective_thickness( region%mesh, region%ice%geom%Hi, region%ice%geom%Hb,region%ice%geom%SL,region%ice%Hi_eff, region%ice%fraction_margin)
+      call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
 
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance

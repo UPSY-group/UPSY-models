@@ -41,7 +41,7 @@ contains
     real(dp)                               :: decay_start, decay_end
     real(dp)                               :: fixiness, limitness, fix_H_applied, limit_H_applied
     real(dp), dimension(mesh%vi1:mesh%vi2) :: modiness_up, modiness_down
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: Hi_save, Hi_eff_new, fraction_margin_new
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: Hi_save, Hi_eff_new
     real(dp)                               :: floating_area, calving_area, mass_lost
     type(type_ice_geometry_model)          :: geom_new   ! Not the most beautiful solution, but the best that can be done for now...
 
@@ -58,7 +58,7 @@ contains
     Hi_save = Hi_new
 
     ! Calculate would-be effective thickness
-    call geom_new%calc_effective_thickness( Hi_eff_new, fraction_margin_new)
+    call geom_new%calc_effective_thickness( Hi_eff_new)
 
     ! == Mask conservation
     ! ====================

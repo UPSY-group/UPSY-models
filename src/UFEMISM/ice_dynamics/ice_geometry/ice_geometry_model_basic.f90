@@ -41,10 +41,9 @@ module ice_geometry_model_basic
       class(type_ice_geometry_model),intent(inout) :: self
     end subroutine determine_masks
 
-    module subroutine calc_effective_thickness( self, Hi_eff, fraction_margin)
+    module subroutine calc_effective_thickness( self, Hi_eff)
       class(type_ice_geometry_model),                   intent(inout) :: self
       real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: Hi_eff
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_margin
     end subroutine calc_effective_thickness
 
     module subroutine calc_grounded_fractions( self, dHb)

@@ -27,7 +27,6 @@ contains
     logical,  dimension(self%mesh%nV)                :: mask_floating_ice_tot
     integer                                          :: ti, via, vib, vic, vi
 
-
     ! Add routine to path
     call init_routine( routine_name)
 

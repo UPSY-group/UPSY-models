@@ -31,6 +31,7 @@ module ice_geometry_model_basic
 
       procedure, public :: calc_surface_elevation
       procedure, public :: calc_ice_base_elevation
+      procedure, public :: calc_thickness_above_floatation
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
       procedure, public :: calc_grounded_fractions
@@ -48,6 +49,10 @@ module ice_geometry_model_basic
     module subroutine calc_ice_base_elevation( self)
       class(type_ice_geometry_model),intent(inout) :: self
     end subroutine calc_ice_base_elevation
+
+    module subroutine calc_thickness_above_floatation( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_thickness_above_floatation
 
     module subroutine determine_masks( self)
       class(type_ice_geometry_model),intent(inout) :: self

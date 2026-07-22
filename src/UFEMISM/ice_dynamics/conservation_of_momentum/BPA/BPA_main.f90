@@ -1962,7 +1962,8 @@ contains
     ! Map velocities to the a-grid
     call map_b_a_2D( mesh, u_base_b, u_base_a)
     call map_b_a_2D( mesh, v_base_b, v_base_a)
-    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_base_a, v_base_a)
+    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_base_a, v_base_a, &
+      ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
 
     ! Map basal friction coefficient beta_b to the b-grid
     call map_a_b_2D( mesh, ice%basal_friction_coefficient, BPA%basal_friction_coefficient_b)

@@ -415,7 +415,8 @@ contains
     ! This is where the sliding law is called!
     call map_b_a_2D( mesh, SSA%u_b, u_a)
     call map_b_a_2D( mesh, SSA%v_b, v_a)
-    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_a, v_a)
+    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_a, v_a, &
+      ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
 
     ! Map the basal friction coefficient to the b-grid
     call map_a_b_2D( mesh, ice%basal_friction_coefficient, SSA%basal_friction_coefficient_b)

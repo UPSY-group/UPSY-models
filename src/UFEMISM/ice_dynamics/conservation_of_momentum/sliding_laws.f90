@@ -6,13 +6,14 @@ module sliding_laws
   use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use bed_roughness_model_types, only: type_bed_roughness_model
   use parameters
   use mesh_disc_apply_operators, only: map_b_a_2D
   use mesh_utilities, only: extrapolate_Gaussian
   use mpi_distributed_memory, only: gather_to_all
   use Schoof_SSA_solution, only: Schoof2006_icestream
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -22,18 +23,21 @@ module sliding_laws
 
 contains
 
-  subroutine calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_a, v_a)
+  subroutine calc_basal_friction_coefficient( mesh, geom, bed_roughness, u_a, v_a, &
+    effective_pressure, till_yield_stress, basal_friction_coefficient)
     ! Calculate the effective basal friction coefficient using the specified sliding law
 
     ! In/output variables:
-    type(type_mesh),                intent(in   ) :: mesh
-    type(type_ice_model),           intent(inout) :: ice
-    type(type_bed_roughness_model), intent(in   ) :: bed_roughness
-    real(dp), dimension(:),         intent(in   ) :: u_a
-    real(dp), dimension(:),         intent(in   ) :: v_a
+    type(type_mesh),                        intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: effective_pressure
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: till_yield_stress
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_basal_friction_coefficient'
+    character(len=*), parameter :: routine_name = 'calc_basal_friction_coefficient'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -43,32 +47,38 @@ contains
       call crash('unknown choice_sliding_law "' // trim( C%choice_sliding_law) // '"')
     case ('no_sliding')
       ! No sliding allowed (implemented directly in linear equations of momentum balance; choice of beta is trivial)
-      ice%basal_friction_coefficient = 0._dp
+      basal_friction_coefficient = 0._dp
     case ('idealised')
       ! Sliding laws for some idealised experiments
-      call calc_sliding_law_idealised(   mesh, ice, u_a, v_a)
+      call calc_sliding_law_idealised( mesh, geom, u_a, v_a, &
+        till_yield_stress, basal_friction_coefficient)
     case ('Weertman')
       ! Weertman-type ("power law") sliding law
-      call calc_sliding_law_Weertman(    mesh, ice, bed_roughness, u_a, v_a)
+      call calc_sliding_law_Weertman( mesh, geom, bed_roughness, u_a, v_a, basal_friction_coefficient)
     case ('Coulomb')
       ! Coulomb-type sliding law
-      call calc_sliding_law_Coulomb(     mesh, ice, bed_roughness, u_a, v_a)
+      call calc_sliding_law_Coulomb( mesh, geom, bed_roughness, u_a, v_a, &
+        effective_pressure, till_yield_stress, basal_friction_coefficient)
     case ('Budd')
       ! Regularised Coulomb-type sliding law
-      call calc_sliding_law_Budd(        mesh, ice, bed_roughness, u_a, v_a)
+      call calc_sliding_law_Budd( mesh, geom, bed_roughness, u_a, v_a, &
+        effective_pressure, till_yield_stress, basal_friction_coefficient)
     case ('Tsai2015')
       ! Modified power-law relation according to Tsai et al. (2015)
-      call calc_sliding_law_Tsai2015(    mesh, ice, bed_roughness, u_a, v_a)
+      call calc_sliding_law_Tsai2015( mesh, geom, bed_roughness, u_a, v_a, &
+        effective_pressure, basal_friction_coefficient)
     case ('Schoof2005')
       ! Modified power-law relation according to Schoof (2005)
-      call calc_sliding_law_Schoof2005(  mesh, ice, bed_roughness, u_a, v_a)
+      call calc_sliding_law_Schoof2005( mesh, geom, bed_roughness, u_a, v_a, &
+        effective_pressure, basal_friction_coefficient)
     case ('Zoet-Iverson')
       ! Zoet-Iverson sliding law (Zoet & Iverson, 2020)
-      call calc_sliding_law_ZoetIverson( mesh, ice, bed_roughness, u_a, v_a)
+      call calc_sliding_law_ZoetIverson( mesh, geom, bed_roughness, u_a, v_a, &
+        effective_pressure, till_yield_stress, basal_friction_coefficient)
     end select
 
     ! Limit basal friction coefficient to improve stability
-    ice%basal_friction_coefficient = min( C%slid_beta_max, ice%basal_friction_coefficient)
+    basal_friction_coefficient = min( C%slid_beta_max, basal_friction_coefficient)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -78,17 +88,18 @@ contains
 ! == Different sliding laws
 ! =========================
 
-  subroutine calc_sliding_law_Weertman( mesh, ice, bed_roughness, u_a, v_a)
+  subroutine calc_sliding_law_Weertman( mesh, geom, bed_roughness, u_a, v_a, basal_friction_coefficient)
     ! Weertman-type ("power law") sliding law
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_sliding_law_Weertman'
+    character(len=*), parameter            :: routine_name = 'calc_sliding_law_Weertman'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bed_roughness_applied
     integer                                :: vi
     real(dp)                               :: uabs
@@ -102,7 +113,7 @@ contains
     ! Assume that bed roughness is represented by the beta_sq field
 
     ! Scale bed roughness based on grounded area fractions
-    call apply_grounded_fractions_to_bed_roughness( mesh, ice, &
+    call apply_grounded_fractions_to_bed_roughness( mesh, geom, &
       bed_roughness%beta_sq, bed_roughness_applied)
 
     ! == Basal friction field
@@ -115,7 +126,7 @@ contains
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
       ! Asay-Davis et al. (2016), Eq. 6; replacing beta_sq by the bed roughness field from above
-      ice%basal_friction_coefficient( vi) = bed_roughness_applied( vi) * uabs ** (1._dp / C%slid_Weertman_m - 1._dp)
+      basal_friction_coefficient( vi) = bed_roughness_applied( vi) * uabs ** (1._dp / C%slid_Weertman_m - 1._dp)
 
     end do
 
@@ -124,17 +135,21 @@ contains
 
   end subroutine calc_sliding_law_Weertman
 
-  subroutine calc_sliding_law_Coulomb( mesh, ice, bed_roughness, u_a, v_a)
+  subroutine calc_sliding_law_Coulomb( mesh, geom, bed_roughness, u_a, v_a, &
+    effective_pressure, till_yield_stress, basal_friction_coefficient)
     ! Coulomb-type sliding law
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: effective_pressure
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: till_yield_stress
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_sliding_law_Coulomb'
+    character(len=*), parameter            :: routine_name = 'calc_sliding_law_Coulomb'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bed_roughness_applied
     integer                                :: vi
     real(dp)                               :: uabs
@@ -148,19 +163,19 @@ contains
     ! Compute bed roughness based on till friction angle
 
     ! Scale bed roughness based on grounded area fractions
-    call apply_grounded_fractions_to_bed_roughness( mesh, ice, &
+    call apply_grounded_fractions_to_bed_roughness( mesh, geom, &
       bed_roughness%till_friction_angle, bed_roughness_applied)
 
     ! == Till yield stress
     ! ====================
 
     ! Calculate the till yield stress from the effective pressure and bed roughness
-    ice%till_yield_stress = ice%effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
+    till_yield_stress = effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
 
     ! == Extend till yield stress over ice-free land neighbours
     ! =========================================================
 
-    call extend_till_yield_stress_to_neighbours( mesh, ice)
+    call extend_till_yield_stress_to_neighbours( mesh, geom, till_yield_stress)
 
     ! == Basal friction field
     ! =======================
@@ -171,7 +186,7 @@ contains
       ! Include a normalisation term following Bueler & Brown (2009) to prevent divide-by-zero errors.
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
-      ice%basal_friction_coefficient( vi) = ice%till_yield_stress( vi) / uabs
+      basal_friction_coefficient( vi) = till_yield_stress( vi) / uabs
 
     end do
 
@@ -180,17 +195,21 @@ contains
 
   end subroutine calc_sliding_law_Coulomb
 
-  subroutine calc_sliding_law_Budd( mesh, ice, bed_roughness, u_a, v_a)
+  subroutine calc_sliding_law_Budd( mesh, geom, bed_roughness, u_a, v_a, &
+    effective_pressure, till_yield_stress, basal_friction_coefficient)
     ! Budd-type sliding law (formerly known as regularised Coulomb-type sliding law)
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: effective_pressure
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: till_yield_stress
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_sliding_law_Budd'
+    character(len=*), parameter            :: routine_name = 'calc_sliding_law_Budd'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bed_roughness_applied
     integer                                :: vi
     real(dp)                               :: uabs
@@ -204,19 +223,19 @@ contains
     ! Compute bed roughness based on till friction angle
 
     ! Scale bed roughness based on grounded area fractions
-    call apply_grounded_fractions_to_bed_roughness( mesh, ice, &
+    call apply_grounded_fractions_to_bed_roughness( mesh, geom, &
       bed_roughness%till_friction_angle, bed_roughness_applied)
 
     ! == Till yield stress
     ! ====================
 
     ! Calculate the till yield stress from the effective pressure and bed roughness
-    ice%till_yield_stress = ice%effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
+    till_yield_stress = effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
 
     ! == Extend till yield stress over ice-free land neighbours
     ! =========================================================
 
-    call extend_till_yield_stress_to_neighbours( mesh, ice)
+    call extend_till_yield_stress_to_neighbours( mesh, geom, till_yield_stress)
 
     ! == Basal friction field
     ! =======================
@@ -227,7 +246,8 @@ contains
       ! Include a normalisation term following Bueler & Brown (2009) to prevent divide-by-zero errors.
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
-      ice%basal_friction_coefficient( vi) = ice%till_yield_stress( vi) * uabs ** (C%slid_Budd_q_plastic - 1._dp) / (C%slid_Budd_u_threshold ** C%slid_Budd_q_plastic)
+      basal_friction_coefficient( vi) = till_yield_stress( vi) * &
+        uabs ** (C%slid_Budd_q_plastic - 1._dp) / (C%slid_Budd_u_threshold ** C%slid_Budd_q_plastic)
 
     end do
 
@@ -236,7 +256,8 @@ contains
 
   end subroutine calc_sliding_law_Budd
 
-  subroutine calc_sliding_law_Tsai2015(  mesh, ice, bed_roughness, u_a, v_a)
+  subroutine calc_sliding_law_Tsai2015( mesh, geom, bed_roughness, u_a, v_a, &
+    effective_pressure, basal_friction_coefficient)
     ! Modified power-law relation according to Tsai et al. (2015)
     ! (implementation based on equations provided by Asay-Davis et al., 2016)
     !
@@ -249,12 +270,14 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: effective_pressure
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_sliding_law_Tsai2015'
+    character(len=*), parameter            :: routine_name = 'calc_sliding_law_Tsai2015'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bed_roughness_applied
     integer                                :: vi
     real(dp)                               :: uabs
@@ -268,7 +291,7 @@ contains
     ! Assume that bed roughness is represented by the beta_sq field
 
     ! Scale bed roughness based on grounded area fractions
-    call apply_grounded_fractions_to_bed_roughness( mesh, ice, &
+    call apply_grounded_fractions_to_bed_roughness( mesh, geom, &
       bed_roughness%beta_sq, bed_roughness_applied)
 
     ! == Basal friction field
@@ -281,7 +304,7 @@ contains
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
       ! Asay-Davis et al. (2016), Eq. 7; replacing beta_sq by the bed roughness field from above
-      ice%basal_friction_coefficient( vi) = min( bed_roughness%alpha_sq( vi) * ice%effective_pressure( vi), &
+      basal_friction_coefficient( vi) = min( bed_roughness%alpha_sq( vi) * effective_pressure( vi), &
         bed_roughness_applied( vi) * uabs ** (1._dp / C%slid_Weertman_m)) * uabs**(-1._dp)
 
     end do
@@ -291,8 +314,9 @@ contains
 
   end subroutine calc_sliding_law_Tsai2015
 
-  subroutine calc_sliding_law_Schoof2005(  mesh, ice, bed_roughness, u_a, v_a)
-    ! Modified power-law relation according to Tsai et al. (2015)
+  subroutine calc_sliding_law_Schoof2005( mesh, geom, bed_roughness, u_a, v_a, &
+    effective_pressure, basal_friction_coefficient)
+    ! Modified power-law relation according to Schoof (2005)
     ! (implementation based on equations provided by Asay-Davis et al., 2016)
     !
     ! Asay-Davis et al.: Experimental design for three interrelated marine ice sheet and ocean model
@@ -303,12 +327,14 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: effective_pressure
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_sliding_law_Schoof2005'
+    character(len=*), parameter            :: routine_name = 'calc_sliding_law_Schoof2005'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bed_roughness_applied
     integer                                :: vi
     real(dp)                               :: uabs
@@ -322,7 +348,7 @@ contains
     ! Assume that bed roughness is represented by the beta_sq field
 
     ! Scale bed roughness based on grounded area fractions
-    call apply_grounded_fractions_to_bed_roughness( mesh, ice, &
+    call apply_grounded_fractions_to_bed_roughness( mesh, geom, &
       bed_roughness%beta_sq, bed_roughness_applied)
 
     ! == Basal friction field
@@ -335,8 +361,10 @@ contains
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
       ! Asay-Davis et al. (2016), Eq. 11; replacing beta_sq by the bed roughness field from above
-      ice%basal_friction_coefficient( vi) = ((bed_roughness_applied( vi) * uabs**(1._dp / C%slid_Weertman_m) * bed_roughness%alpha_sq( vi) * ice%effective_pressure( vi)) / &
-        ((bed_roughness_applied( vi)**C%slid_Weertman_m * uabs + (bed_roughness%alpha_sq( vi) * ice%effective_pressure( vi))**C%slid_Weertman_m)**(1._dp / C%slid_Weertman_m))) * uabs**(-1._dp)
+      basal_friction_coefficient( vi) = &
+        ((bed_roughness_applied( vi) * uabs**(1._dp / C%slid_Weertman_m) * bed_roughness%alpha_sq( vi) * effective_pressure( vi)) / &
+         ((bed_roughness_applied( vi)**C%slid_Weertman_m * uabs + (bed_roughness%alpha_sq( vi) * &
+           effective_pressure( vi))**C%slid_Weertman_m)**(1._dp / C%slid_Weertman_m))) * uabs**(-1._dp)
 
     end do
 
@@ -345,17 +373,21 @@ contains
 
   end subroutine calc_sliding_law_Schoof2005
 
-  subroutine calc_sliding_law_ZoetIverson( mesh, ice, bed_roughness, u_a, v_a)
+  subroutine calc_sliding_law_ZoetIverson( mesh, geom, bed_roughness, u_a, v_a, &
+    effective_pressure, till_yield_stress, basal_friction_coefficient)
     ! Zoet-Iverson sliding law (Zoet & Iverson, 2020)
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: effective_pressure
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: till_yield_stress
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_sliding_law_ZoetIverson'
+    character(len=*), parameter            :: routine_name = 'calc_sliding_law_ZoetIverson'
     real(dp), dimension(mesh%vi1:mesh%vi2) :: bed_roughness_applied
     integer                                :: vi
     real(dp)                               :: uabs
@@ -369,19 +401,19 @@ contains
     ! Compute bed roughness based on till friction angle
 
     ! Scale bed roughness based on grounded area fractions
-    call apply_grounded_fractions_to_bed_roughness( mesh, ice, &
+    call apply_grounded_fractions_to_bed_roughness( mesh, geom, &
       bed_roughness%till_friction_angle, bed_roughness_applied)
 
     ! == Till yield stress
     ! ====================
 
     ! Calculate the till yield stress from the effective pressure and bed roughness
-    ice%till_yield_stress = ice%effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
+    till_yield_stress = effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
 
     ! == Extend till yield stress over ice-free land neighbours
     ! =========================================================
 
-    call extend_till_yield_stress_to_neighbours( mesh, ice)
+    call extend_till_yield_stress_to_neighbours( mesh, geom, till_yield_stress)
 
     ! == Basal friction field
     ! =======================
@@ -393,7 +425,7 @@ contains
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
       ! Zoet & Iverson (2020), Eq. (3) (divided by u to give beta = tau_b / u)
-      ice%basal_friction_coefficient( vi) = ice%till_yield_stress( vi) * &
+      basal_friction_coefficient( vi) = till_yield_stress( vi) * &
         (uabs**(1._dp / C%slid_ZI_p - 1._dp)) * ((uabs + C%slid_ZI_ut)**(-1._dp / C%slid_ZI_p))
 
     end do
@@ -403,16 +435,19 @@ contains
 
   end subroutine calc_sliding_law_ZoetIverson
 
-  subroutine calc_sliding_law_idealised(  mesh, ice, u_a, v_a)
+  subroutine calc_sliding_law_idealised( mesh, geom, u_a, v_a, &
+    till_yield_stress, basal_friction_coefficient)
     ! Sliding laws for some idealised experiments
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: till_yield_stress
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_sliding_law_idealised'
+    character(len=*), parameter :: routine_name = 'calc_sliding_law_idealised'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -422,19 +457,20 @@ contains
     case default
       call crash('unknown choice_idealised_sliding_law "' // trim( C%choice_idealised_sliding_law) // '"')
     case ('SSA_icestream')
-      call calc_sliding_law_idealised_SSA_icestream( mesh, ice, u_a, v_a)
+      call calc_sliding_law_idealised_SSA_icestream( mesh, u_a, v_a, &
+        till_yield_stress, basal_friction_coefficient)
     case ('ISMIP-HOM_C')
       ! ISMIP-HOM experiment C
-      call calc_sliding_law_idealised_ISMIP_HOM_C( mesh, ice)
+      call calc_sliding_law_idealised_ISMIP_HOM_C( mesh, basal_friction_coefficient)
     case ('ISMIP-HOM_D')
       ! ISMIP-HOM experiment D
-      call calc_sliding_law_idealised_ISMIP_HOM_D( mesh, ice)
+      call calc_sliding_law_idealised_ISMIP_HOM_D( mesh, basal_friction_coefficient)
     case ('ISMIP-HOM_E')
       ! ISMIP-HOM experiment E
       call crash('the Glacier Arolla experiment is not implemented in UFEMISM')
     case ('ISMIP-HOM_F')
       ! ISMIP-HOM experiment F
-      call calc_sliding_law_idealised_ISMIP_HOM_F( mesh, ice)
+      call calc_sliding_law_idealised_ISMIP_HOM_F( mesh, basal_friction_coefficient)
     end select
 
     ! Finalise routine path
@@ -442,20 +478,22 @@ contains
 
   end subroutine calc_sliding_law_idealised
 
-  subroutine calc_sliding_law_idealised_SSA_icestream( mesh, ice, u_a, v_a)
+  subroutine calc_sliding_law_idealised_SSA_icestream( mesh, u_a, v_a, &
+    till_yield_stress, basal_friction_coefficient)
     ! Sliding laws for some idealised experiments
     !
     ! SSA_icestream
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: u_a, v_a
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: till_yield_stress
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter:: routine_name = 'calc_sliding_law_idealised_SSA_icestream'
-    integer                       :: vi
-    real(dp)                      :: y, u, uabs
+    character(len=*), parameter :: routine_name = 'calc_sliding_law_idealised_SSA_icestream'
+    integer                     :: vi
+    real(dp)                    :: y, u, uabs
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -465,12 +503,12 @@ contains
       y = mesh%V( vi,2)
       call Schoof2006_icestream( C%uniform_Glens_flow_factor, C%Glens_flow_law_exponent, C%refgeo_idealised_SSA_icestream_Hi, &
         C%refgeo_idealised_SSA_icestream_dhdx, C%refgeo_idealised_SSA_icestream_L, C%refgeo_idealised_SSA_icestream_m, &
-        y, u, ice%till_yield_stress( vi))
+        y, u, till_yield_stress( vi))
 
       ! Include a normalisation term following Bueler & Brown (2009) to prevent divide-by-zero errors.
       uabs = sqrt( C%slid_delta_v**2 + u_a( vi)**2 + v_a( vi)**2)
 
-      ice%basal_friction_coefficient( vi) = ice%till_yield_stress( vi) / uabs
+      basal_friction_coefficient( vi) = till_yield_stress( vi) / uabs
 
     end do
 
@@ -479,19 +517,19 @@ contains
 
   end subroutine calc_sliding_law_idealised_SSA_icestream
 
-  subroutine calc_sliding_law_idealised_ISMIP_HOM_C( mesh, ice)
+  subroutine calc_sliding_law_idealised_ISMIP_HOM_C( mesh, basal_friction_coefficient)
     ! Sliding laws for some idealised experiments
     !
     ! ISMIP-HOM experiment C
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                        intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter                     :: routine_name = 'calc_sliding_law_idealised_ISMIP_HOM_C'
-    integer                                            :: vi
-    real(dp)                                           :: x,y
+    character(len=*), parameter :: routine_name = 'calc_sliding_law_idealised_ISMIP_HOM_C'
+    integer                     :: vi
+    real(dp)                    :: x,y
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -499,7 +537,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
       x = mesh%V( vi,1)
       y = mesh%V( vi,2)
-      ice%basal_friction_coefficient( vi) = 1000._dp + &
+      basal_friction_coefficient( vi) = 1000._dp + &
         1000._dp * sin( 2._dp * pi * x / C%refgeo_idealised_ISMIP_HOM_L) * &
                    sin( 2._dp * pi * y / C%refgeo_idealised_ISMIP_HOM_L)
     end do
@@ -509,26 +547,26 @@ contains
 
   end subroutine calc_sliding_law_idealised_ISMIP_HOM_C
 
-  subroutine calc_sliding_law_idealised_ISMIP_HOM_D( mesh, ice)
+  subroutine calc_sliding_law_idealised_ISMIP_HOM_D( mesh, basal_friction_coefficient)
     ! Sliding laws for some idealised experiments
     !
     ! ISMIP-HOM experiment D
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                        intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_sliding_law_idealised_ISMIP_HOM_D'
-    integer                        :: vi
-    real(dp)                       :: x
+    character(len=*), parameter :: routine_name = 'calc_sliding_law_idealised_ISMIP_HOM_D'
+    integer                     :: vi
+    real(dp)                    :: x
 
     ! Add routine to path
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
       x = mesh%V( vi,1)
-      ice%basal_friction_coefficient( vi) = 1000._dp + &
+      basal_friction_coefficient( vi) = 1000._dp + &
         1000._dp * sin( 2._dp * pi * x / C%refgeo_idealised_ISMIP_HOM_L)
     end do
 
@@ -537,14 +575,14 @@ contains
 
   end subroutine calc_sliding_law_idealised_ISMIP_HOM_D
 
-  subroutine calc_sliding_law_idealised_ISMIP_HOM_F( mesh, ice)
+  subroutine calc_sliding_law_idealised_ISMIP_HOM_F( mesh, basal_friction_coefficient)
     ! Sliding laws for some idealised experiments
     !
     ! ISMIP-HOM experiment F
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                        intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: basal_friction_coefficient
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_sliding_law_idealised_ISMIP_HOM_F'
@@ -554,7 +592,7 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      ice%basal_friction_coefficient( vi) = (C%uniform_Glens_flow_factor * 1000._dp)**(-1._dp)
+      basal_friction_coefficient( vi) = (C%uniform_Glens_flow_factor * 1000._dp)**(-1._dp)
     end do
 
     ! Finalise routine path
@@ -565,12 +603,12 @@ contains
 ! == Utilities
 ! ============
 
-  subroutine apply_grounded_fractions_to_bed_roughness( mesh, ice, bed_roughness, bed_roughness_applied)
+  subroutine apply_grounded_fractions_to_bed_roughness( mesh, geom, bed_roughness, bed_roughness_applied)
     ! Scale bed roughness based on grounded area fractions
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: bed_roughness_applied
 
@@ -595,29 +633,29 @@ contains
       weight_gr = 1._dp
 
       ! Compute exponent for this vertex's weight based on ice thickness
-      exponent_hi = log10( max( 1._dp, ice%geom%Hi( vi)))
+      exponent_hi = log10( max( 1._dp, geom%Hi( vi)))
       ! Compute exponent for this vertex's weight based on surface gradients
-      exponent_hs = ice%geom%Hs_slope( vi) / 0.005_dp
+      exponent_hs = geom%Hs_slope( vi) / 0.005_dp
       ! Compute final exponent for this vertex's weight
       exponent_gr = max( 0._dp, exponent_hi - exponent_hs)
 
       ! Compute a weight based on the grounded area fractions
-      if (ice%geom%mask_gl_gr( vi)) then
-        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
+      if (geom%mask_gl_gr( vi)) then
+        weight_gr = geom%fraction_gr( vi)**exponent_gr
 
-      elseif (ice%geom%mask_cf_gr( vi)) then
-        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
+      elseif (geom%mask_cf_gr( vi)) then
+        weight_gr = geom%fraction_gr( vi)**exponent_gr
 
-      elseif (ice%geom%mask_gl_fl( vi)) then
-        weight_gr = ice%geom%fraction_gr( vi)**exponent_gr
+      elseif (geom%mask_gl_fl( vi)) then
+        weight_gr = geom%fraction_gr( vi)**exponent_gr
 
-      elseif (ice%geom%mask_grounded_ice( vi)) then
+      elseif (geom%mask_grounded_ice( vi)) then
         weight_gr = 1._dp
 
-      elseif (ice%geom%mask_floating_ice( vi)) then
+      elseif (geom%mask_floating_ice( vi)) then
         weight_gr = 0._dp
 
-      elseif (ice%geom%mask_icefree_ocean( vi)) then
+      elseif (geom%mask_icefree_ocean( vi)) then
         weight_gr = 0._dp
 
       end if
@@ -635,12 +673,13 @@ contains
 
   end subroutine apply_grounded_fractions_to_bed_roughness
 
-  subroutine extend_till_yield_stress_to_neighbours( mesh, ice)
+  subroutine extend_till_yield_stress_to_neighbours( mesh, geom, till_yield_stress)
     ! Extend till yield stress over ice-free land neighbours
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                        intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: till_yield_stress
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'extend_till_yield_stress_to_neighbours'
@@ -654,13 +693,13 @@ contains
     call init_routine( routine_name)
 
     ! Gather data from all processes
-    call gather_to_all( ice%geom%mask_grounded_ice, mask_grounded_ice_tot)
-    call gather_to_all( ice%till_yield_stress, till_yield_stress_tot)
+    call gather_to_all( geom%mask_grounded_ice, mask_grounded_ice_tot)
+    call gather_to_all( till_yield_stress, till_yield_stress_tot)
 
     do vi = mesh%vi1, mesh%vi2
 
       ! Skip if not ice-free land
-      if (.not. ice%geom%mask_icefree_land( vi)) cycle
+      if (.not. geom%mask_icefree_land( vi)) cycle
 
       ! Initialise
       found_grounded_neighbour = .false.
@@ -681,10 +720,10 @@ contains
 
       if (found_grounded_neighbour) then
         ! Use the minimum value among neighbours
-        ice%till_yield_stress( vi) = min_neighbour
+        till_yield_stress( vi) = min_neighbour
       else
         ! Use a default minimum value to avoid 0 friction
-        ice%till_yield_stress( vi) = C%Hi_min * ice_density * grav
+        till_yield_stress( vi) = C%Hi_min * ice_density * grav
       end if
 
     end do

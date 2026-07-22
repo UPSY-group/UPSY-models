@@ -58,7 +58,7 @@ contains
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter                       :: routine_name = 'run_ice_dynamics_model'
+    character(len=*), parameter                          :: routine_name = 'run_ice_dynamics_model'
     real(dp)                                             :: wt_prev, wt_next
     integer                                              :: vi
     real(dp)                                             :: dt_max

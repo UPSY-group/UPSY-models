@@ -12,17 +12,17 @@ KEY_PATTERN = re.compile(
     r"^(?P<prefix>\s*end_time_of_run_config\s*=\s*)(?P<value>.*?)(?P<suffix>\s*(?:!.*)?)$"
 )
 
-VISC_IT_NIT_PATTERN = re.compile(
-    r"^(?P<prefix>\s*visc_it_nit_config\s*=\s*)(?P<value>.*?)(?P<suffix>\s*(?:!.*)?)$"
+STRESS_BALANCE_PATTERN = re.compile(
+    r"^(?P<prefix>\s*choice_stress_balance_approximation_config\s*=\s*)(?P<value>.*?)(?P<suffix>\s*(?:!.*)?)$"
 )
 
 
 def update_config_file(config_path: Path) -> bool:
-    """Set end_time_of_run_config to start_time_of_run_config + 10.0 and visc_it_nit_config to 5."""
+    """Set end_time_of_run_config to start_time_of_run_config + 10.0 and stress balance to none."""
     lines = config_path.read_text(encoding="utf-8").splitlines()
     start_time: float | None = None
     updated_end_time = False
-    updated_visc_it_nit = False
+    updated_stress_balance = False
 
     for line in lines:
         stripped = line.strip()
@@ -47,22 +47,22 @@ def update_config_file(config_path: Path) -> bool:
             updated_end_time = True
             continue
 
-        match = VISC_IT_NIT_PATTERN.match(line)
+        match = STRESS_BALANCE_PATTERN.match(line)
         if match:
-            lines[index] = f"{match.group('prefix')}5{match.group('suffix')}"
-            updated_visc_it_nit = True
+            lines[index] = f"{match.group('prefix')}'none'{match.group('suffix')}"
+            updated_stress_balance = True
 
     if not updated_end_time:
         raise ValueError(f"end_time_of_run_config not found in {config_path}")
-    if not updated_visc_it_nit:
-        raise ValueError(f"visc_it_nit_config not found in {config_path}")
+    if not updated_stress_balance:
+        raise ValueError(f"choice_stress_balance_approximation_config not found in {config_path}")
 
     config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return True
 
 
 def iter_config_files(test_dir: Path) -> list[Path]:
-    """Find all config_*.cfg files below one UFEMISM test directory."""
+    """Find all .cfg files below one UFEMISM test directory."""
     return sorted(path for path in test_dir.rglob("*.cfg") if path.is_file())
 
 
@@ -77,7 +77,7 @@ def main() -> None:
 
     config_files = iter_config_files(test_dir)
     if not config_files:
-        raise FileNotFoundError(f"No config_*.cfg files found under {test_dir}")
+        raise FileNotFoundError(f"No .cfg files found under {test_dir}")
 
     for config_file in config_files:
         update_config_file(config_file)

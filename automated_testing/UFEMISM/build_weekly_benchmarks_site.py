@@ -10,26 +10,7 @@ from html import escape
 from pathlib import Path
 
 
-UFEMISM_TESTS_DIR = Path(__file__).resolve().parent / "UFEMISM"
-
-
-def known_test_dir_names() -> list[str]:
-    """Return known UFEMISM integrated test directory names, longest first."""
-    if not UFEMISM_TESTS_DIR.exists():
-        return []
-    return sorted(
-        (path.name for path in UFEMISM_TESTS_DIR.iterdir() if path.is_dir()),
-        key=len,
-        reverse=True,
-    )
-
-
-def infer_test_dir_name(text: str, test_dir_names: list[str]) -> str | None:
-    """Infer UFEMISM test directory name present in text."""
-    for test_dir_name in test_dir_names:
-        if test_dir_name in text:
-            return test_dir_name
-    return None
+UFEMISM_TESTS_DIR = Path(__file__).resolve().parent
 
 
 def parse_benchmark_info(info_path: Path) -> tuple[str | None, list[str], list[str], str]:
@@ -142,30 +123,27 @@ def render_artifact_section(
     parts.append("  </section>")
 
 
-def copy_artifact_images(artifacts_dir: Path, site_images_dir: Path) -> None:
-    """Copy benchmark PNG files into site/images from folders or a flat PNG directory."""
+def copy_artifact_images(artifacts_dir: Path, site_images_dir: Path, test_names: list[str]) -> None:
+    """Copy benchmark PNG files into site/images using explicit test names."""
     site_images_dir.mkdir(parents=True, exist_ok=True)
 
-    artifact_dirs = sorted(path for path in artifacts_dir.iterdir() if path.is_dir()) if artifacts_dir.exists() else []
-    flat_png_paths = sorted(path for path in artifacts_dir.iterdir() if path.suffix.lower() == ".png") if artifacts_dir.exists() else []
     copied_any = False
 
-    for artifact_dir in artifact_dirs:
+    for test_name in test_names:
+        artifact_dir = artifacts_dir / f"benchmark_figures_{test_name}"
+        if not artifact_dir.exists():
+            artifact_dir = artifacts_dir / test_name
+        if not artifact_dir.exists():
+            continue
+
         png_paths = sorted(path for path in artifact_dir.iterdir() if path.suffix.lower() == ".png")
         if not png_paths:
             continue
 
-        destination_dir = site_images_dir / artifact_dir.name
+        destination_dir = site_images_dir / test_name
         destination_dir.mkdir(parents=True, exist_ok=True)
 
         for png_path in png_paths:
-            shutil.copy2(png_path, destination_dir / png_path.name)
-            copied_any = True
-
-    if flat_png_paths:
-        destination_dir = site_images_dir / artifacts_dir.name
-        destination_dir.mkdir(parents=True, exist_ok=True)
-        for png_path in flat_png_paths:
             shutil.copy2(png_path, destination_dir / png_path.name)
             copied_any = True
 
@@ -175,11 +153,8 @@ def copy_artifact_images(artifacts_dir: Path, site_images_dir: Path) -> None:
         )
 
 
-def build_index_html(site_dir: Path) -> None:
+def build_index_html(site_dir: Path, test_names: list[str]) -> None:
     """Write the benchmark gallery index.html based on copied images."""
-    images_dir = site_dir / "images"
-    artifact_dirs = sorted(path for path in images_dir.iterdir() if path.is_dir()) if images_dir.exists() else []
-
     run_number = os.environ.get("GITHUB_RUN_NUMBER", "unknown")
     run_id = os.environ.get("GITHUB_RUN_ID", "unknown")
     sha = os.environ.get("GITHUB_SHA", "unknown")
@@ -219,37 +194,13 @@ def build_index_html(site_dir: Path) -> None:
         f'  <p class="meta">Repository: <code>{escape(repository)}</code><br>Run number: <code>{escape(run_number)}</code><br>Run ID: <code>{escape(run_id)}</code><br>Commit: <code>{escape(sha[:12])}</code></p>',
     ]
 
-    if not artifact_dirs:
+    if not test_names:
         parts.append('  <div class="empty">No benchmark figures were available for this run.</div>')
 
-    test_dir_names = known_test_dir_names()
-
-    for artifact_dir in artifact_dirs:
-        images = sorted(path for path in artifact_dir.iterdir() if path.suffix.lower() == ".png")
-
-        # Local runs may put all test figures in a single flat folder (e.g. images/figures).
-        if artifact_dir.name == "figures":
-            grouped_images: dict[str, list[Path]] = {}
-            ungrouped: list[Path] = []
-
-            for image in images:
-                inferred_test = infer_test_dir_name(image.stem, test_dir_names)
-                if inferred_test is None:
-                    ungrouped.append(image)
-                    continue
-                grouped_images.setdefault(inferred_test, []).append(image)
-
-            for test_name in sorted(grouped_images):
-                render_artifact_section(parts, test_name, grouped_images[test_name], site_dir, test_name)
-
-            if ungrouped:
-                render_artifact_section(parts, artifact_dir.name, ungrouped, site_dir, artifact_dir.name)
-            continue
-
-        inferred_test = infer_test_dir_name(artifact_dir.name, test_dir_names)
-        section_title = inferred_test if inferred_test else artifact_dir.name
-        benchmark_key = inferred_test if inferred_test else artifact_dir.name
-        render_artifact_section(parts, section_title, images, site_dir, benchmark_key)
+    for test_name in test_names:
+        artifact_dir = site_dir / "images" / test_name
+        images = sorted(path for path in artifact_dir.iterdir() if path.suffix.lower() == ".png") if artifact_dir.exists() else []
+        render_artifact_section(parts, test_name, images, site_dir, test_name)
 
     parts.extend(["</body>", "</html>"])
     (site_dir / "index.html").write_text("\n".join(parts), encoding="utf-8")
@@ -262,6 +213,12 @@ def main() -> None:
         required=True,
         help="Directory containing benchmark artifact folders or local PNG files",
     )
+    parser.add_argument(
+        "--test-names",
+        nargs="+",
+        required=True,
+        help="Ordered list of UFEMISM test directory names",
+    )
     parser.add_argument("--site-dir", required=True, help="Output site directory")
     args = parser.parse_args()
 
@@ -270,8 +227,8 @@ def main() -> None:
     site_images_dir = site_dir / "images"
 
     site_dir.mkdir(parents=True, exist_ok=True)
-    copy_artifact_images(artifacts_dir, site_images_dir)
-    build_index_html(site_dir)
+    copy_artifact_images(artifacts_dir, site_images_dir, args.test_names)
+    build_index_html(site_dir, args.test_names)
 
 
 if __name__ == "__main__":

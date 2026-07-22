@@ -7,6 +7,11 @@ on:
         description: Path to test directory
         required: true
         type: string
+      short_test:
+        description: Shorten all configs in the test directory before running
+        required: false
+        default: false
+        type: boolean
 
 jobs:
   run_test:
@@ -38,7 +43,12 @@ jobs:
 
       - name: Compile model code
         shell: micromamba-shell {0}
-        run: csh compile_UFEMISM.csh  dev  clean
+        run: csh compile_UFEMISM.csh  perf  clean
+
+      - name: Shorten test configs
+        if: inputs.short_test
+        shell: micromamba-shell {0}
+        run: python automated_testing/UFEMISM/set_configs_to_short_test.py ${{ inputs.test_path }}
 
     # Run the test and check its results against the reference
     # ========================================================
@@ -51,7 +61,7 @@ jobs:
         shell: micromamba-shell {0}
         env:
           MPLBACKEND: Agg
-        run: python ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }} --output-dir automated_testing/figures
+        run: python ${{ inputs.test_path }}/make_figures.py --results-root ${{ inputs.test_path }} --output-dir ${{ inputs.test_path }}
 
       - name: Derive artifact name
         id: artifact_name
@@ -63,5 +73,5 @@ jobs:
         uses: actions/upload-artifact@v4.3.4
         with:
           name: benchmark_figures_${{ steps.artifact_name.outputs.value }}
-          path: automated_testing/figures/*.png
+          path: ${{ inputs.test_path }}/*.png
           if-no-files-found: warn

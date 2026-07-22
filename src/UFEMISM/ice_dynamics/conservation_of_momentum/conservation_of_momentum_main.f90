@@ -109,7 +109,12 @@ contains
         call crash('unknown choice_stress_balance_approximation "' // TRIM( C%choice_stress_balance_approximation) // '"!')
 
       case ('none')
-        ! No need to do anything
+
+        ice%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        ice%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+
+        n_visc_its = 0
+        n_Axb_its  = 0
 
       case ('SIA')
         ! Calculate velocities according to the Shallow Ice Approximation

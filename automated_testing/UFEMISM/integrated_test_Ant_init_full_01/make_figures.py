@@ -177,7 +177,29 @@ def plot_uabs_surf_panel(ax, dataset):
     )
     finite_values = uabs_plot[np.isfinite(uabs_plot)]
     if finite_values.size == 0:
-        raise ValueError('uabs_surf contains no positive finite values at the final time step')
+        xmin = float(np.asarray(dataset['xmin'][:])) / 1e3
+        xmax = float(np.asarray(dataset['xmax'][:])) / 1e3
+        ymin = float(np.asarray(dataset['ymin'][:])) / 1e3
+        ymax = float(np.asarray(dataset['ymax'][:])) / 1e3
+
+        ax.set_xlim(xmin, xmax)
+        ax.set_ylim(ymin, ymax)
+        ax.set_aspect('equal')
+        ax.set_xticks([])
+        ax.set_yticks([])
+        ax.set_title('Final surface velocity (uabs_surf)', fontsize=11)
+        ax.grid(False)
+        ax.text(
+            0.5,
+            0.5,
+            'No non-zero surface velocity\n(stress balance set to none)',
+            transform=ax.transAxes,
+            ha='center',
+            va='center',
+            fontsize=10,
+            color='0.35',
+        )
+        return
 
     poly = PolyCollection(
         triangles,

@@ -1,0 +1,14 @@
+Title: Antarctica initialisation 01
+
+Keywords:
+- full Antarctic simulation
+- steady-state initialisation
+- model intercomparison
+
+URLs:
+
+Description:
+This is a low-resolution version of a basic Antarctic initialisation.
+It runs for 20,000 years, nudging the basal friction using the H_dHdt_flowline
+scheme. Sub-shelf melt rates are also nudged. The resulting ice sheet is
+quite stable, and shows a reasonable match to satellite observations.

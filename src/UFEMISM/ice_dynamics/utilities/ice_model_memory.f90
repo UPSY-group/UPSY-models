@@ -23,7 +23,7 @@ contains
     character(len=*),     intent(in   ) :: region_name
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'allocate_ice_model'
+    character(len=*), parameter :: routine_name = 'allocate_ice_model'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -31,11 +31,7 @@ contains
     ! === Ice-sheet geometry ===
     ! ==========================
 
-    ! Basic geometry
     call ice%geom%allocate( 'ice_geometry', region_name, mesh)
-    allocate( ice%Hi_eff  ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%Hs_slope( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%Ho      ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! Geometry changes
     allocate( ice%dHi ( mesh%vi1:mesh%vi2), source = 0._dp)
@@ -51,10 +47,6 @@ contains
     allocate( ice%dHi_dt_raw     ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%dHi_dt_residual( mesh%vi1:mesh%vi2), source = 0._dp)
 
-    ! Horizontal derivatives
-    allocate( ice%dHib_dx_b( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%dHib_dy_b( mesh%ti1:mesh%ti2), source = 0._dp)
-
     ! Target quantities
     allocate( ice%dHi_dt_target   ( mesh%vi1:mesh%vi2), source = 0._dp)
 
@@ -63,9 +55,6 @@ contains
     allocate( ice%mask_noice             ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( ice%mask_ROI               ( mesh%vi1:mesh%vi2), source = 0)
     allocate( ice%basin_ID               ( mesh%vi1:mesh%vi2), source = 0)
-
-    ! Area fractions
-    allocate( ice%fraction_margin( mesh%vi1:mesh%vi2), source = 0._dp)
 
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================

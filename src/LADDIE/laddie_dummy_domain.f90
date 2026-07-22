@@ -12,7 +12,6 @@ module laddie_dummy_domain
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use ice_model_memory, only: allocate_ice_model
-  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_model_types, only: type_ocean_model
   use ocean_main, only: initialise_ocean_vertical_grid
   use laddie_model_types, only: type_laddie_model, type_laddie_timestep
@@ -172,7 +171,7 @@ contains
     call ice%geom%determine_masks()
 
     ! Extract dHib_dx_b and dHib_dy_b
-    call calc_ice_shelf_base_slopes( mesh, ice)
+    call ice%geom%calc_ice_base_slopes()
 
     ! Define Ti
     do vi = mesh%vi1, mesh%vi2

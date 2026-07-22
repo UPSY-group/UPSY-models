@@ -68,7 +68,7 @@ contains
       call calc_pore_water_pressure_none( mesh, ice)
       ! Calculate overburden and effective pressure
       do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
+        ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
         ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
       end do
     case ('Martin2011')
@@ -89,7 +89,7 @@ contains
     ! ===========================================
 
     do vi = mesh%vi1, mesh%vi2
-      ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
+      ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
       ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
     end do
 
@@ -202,7 +202,7 @@ contains
     ! Compute pore water pressure based on the pore water fraction as
     ! the fraction of the overburden pressure supported by basal water
     do vi = mesh%vi1, mesh%vi2
-      ice%pore_water_pressure( vi) = ice%pore_water_fraction(vi) * ice_density * grav * ice%Hi_eff( vi)
+      ice%pore_water_pressure( vi) = ice%pore_water_fraction(vi) * ice_density * grav * ice%geom%Hi_eff( vi)
     end do
 
     ! Finalise routine path
@@ -231,7 +231,7 @@ contains
         1._dp - (ice%geom%Hb( vi) - ice%geom%SL( vi) - C%Martin2011_hydro_Hb_min) / (C%Martin2011_hydro_Hb_max - C%Martin2011_hydro_Hb_min) ))
 
       ! Pore water pressure (Martin et al., 2011, Eq. 11)
-      ice%pore_water_pressure( vi) = 0.96_dp * ice_density * grav * ice%Hi_eff( vi) * ice%pore_water_fraction( vi)
+      ice%pore_water_pressure( vi) = 0.96_dp * ice_density * grav * ice%geom%Hi_eff( vi) * ice%pore_water_fraction( vi)
 
     end do
 
@@ -256,7 +256,7 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
+        ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
         effective_pressure_max = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
 
         if (effective_pressure_max == 0._dp) then
@@ -292,15 +292,15 @@ contains
       ! check if ice is grounded first
       if (ice%geom%mask_grounded_ice( vi) .eqv. .TRUE.) then
          ! prevent division by zero
-        if (ice%Hi_eff( vi) == 0._dp) then
+        if (ice%geom%Hi_eff( vi) == 0._dp) then
           ice%effective_pressure( vi) = 0.0_dp
         else
-          ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
+          ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
           Hi_f = max(0._dp, - seawater_density/ice_density * ice%geom%Hb( vi))
           ! if (Hi_f == 0._dp) then
           !   ice%effective_pressure( vi) = 0.0_dp
           ! else
-          ice%effective_pressure( vi) = ice%overburden_pressure( vi) * ((1 - Hi_f/ice%Hi_eff( vi)) ** C%Leguy2014_hydro_connect_exponent)
+          ice%effective_pressure( vi) = ice%overburden_pressure( vi) * ((1 - Hi_f/ice%geom%Hi_eff( vi)) ** C%Leguy2014_hydro_connect_exponent)
           ! end if
         end if
       else
@@ -327,7 +327,7 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%Hi_eff( vi)
+        ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
         ice%effective_pressure(  vi) = error_function(ice%overburden_pressure( vi)*sqrt(pi)/2._dp/C%error_function_max_effective_pressure)*C%error_function_max_effective_pressure
     end do
 

@@ -25,8 +25,7 @@ module laddie_forcing_main
   use thermodynamics_main, only: initialise_ice_temperature_uniform
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
-  use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
-  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
+  use ice_geometry_basics, only: Hi_from_Hb_Hs_and_SL
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection
 
@@ -99,14 +98,9 @@ contains
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%geom%Hb, ice%geom%SL, ice%geom%Hi)
 
-    do vi = mesh%vi1, mesh%vi2
-
-      ! Derived geometry
-      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
-      ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-
-    end do
+    call ice%geom%calc_surface_elevation()
+    call ice%geom%calc_ice_base_elevation()
+    call ice%geom%calc_thickness_above_floatation()
 
     ! Initialise masks
     ! ================
@@ -123,10 +117,10 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness()
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes( mesh, ice)
+    call ice%geom%calc_ice_base_slopes()
 
     ! Ice temperature
     ! ===============
@@ -153,8 +147,8 @@ contains
     forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
     forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%geom%Hib               ( mesh%vi1:mesh%vi2  )
     forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%geom%TAF               ( mesh%vi1:mesh%vi2  )
-    forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
-    forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
+    forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%geom%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
+    forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%geom%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
     forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_land ( mesh%vi1:mesh%vi2  )
     forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
     forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_grounded_ice ( mesh%vi1:mesh%vi2  )

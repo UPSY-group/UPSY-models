@@ -21,8 +21,8 @@ module ice_dynamics_main
     create_restart_file_ice_velocity, write_to_restart_file_ice_velocity, initialise_velocity_solver
   use conservation_of_mass_main, only: calc_dHi_dt, apply_ice_thickness_BC_explicit, &
     apply_mask_noice_direct
-  use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, &
-    Hi_from_Hb_Hs_and_SL, height_of_water_column_at_ice_front
+  use ice_geometry_basics, only: ice_surface_elevation, &
+    Hi_from_Hb_Hs_and_SL
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use zeta_gradients, only: calc_zeta_gradients
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
@@ -40,7 +40,6 @@ module ice_dynamics_main
   use ice_model_memory, only: allocate_ice_model
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D
   use global_forcings_main, only: update_sealevel_in_model
-  use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use bed_roughness_model_types, only: type_bed_roughness_model
   use checksum_mod, only: checksum
 
@@ -120,13 +119,12 @@ contains
 
     ! Calculate all other ice geometry quantities
     ! ===========================================
-    do vi = region%mesh%vi1, region%mesh%vi2
 
-      ! Basic geometry
-      region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-      region%ice%geom%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
-      region%ice%geom%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-      region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
+    call region%ice%geom%calc_surface_elevation()
+    call region%ice%geom%calc_ice_base_elevation()
+    call region%ice%geom%calc_thickness_above_floatation()
+    call region%ice%geom%calc_height_of_water_column()
+    do vi = region%mesh%vi1, region%mesh%vi2
 
       ! Differences w.r.t. present-day
       region%ice%dHi ( vi)  = region%ice%geom%Hi ( vi) - region%refgeo_PD%Hi ( vi)
@@ -151,7 +149,7 @@ contains
     call checksum( region%mesh%pai_V, region%ice%geom%Hs     , 'region%ice%geom%Hs')
     call checksum( region%mesh%pai_V, region%ice%geom%Hib    , 'region%ice%geom%Hib')
     call checksum( region%mesh%pai_V, region%ice%geom%TAF    , 'region%ice%geom%TAF')
-    call checksum( region%mesh%pai_V, region%ice%Ho     , 'region%ice%Ho')
+    call checksum( region%mesh%pai_V, region%ice%geom%Ho     , 'region%ice%geom%Ho')
     call checksum( region%mesh%pai_V, region%ice%dHi    , 'region%ice%dHi')
     call checksum( region%mesh%pai_V, region%ice%dHb    , 'region%ice%dHb')
     call checksum( region%mesh%pai_V, region%ice%dHs    , 'region%ice%dHs')
@@ -163,19 +161,13 @@ contains
     call region%ice%geom%determine_masks()
 
     ! Calculate new effective thickness
-    call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
+    call region%ice%geom%calc_effective_thickness()
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes( region%mesh, region%ice)
+    call region%ice%geom%calc_ice_base_slopes()
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( region%mesh, region%ice%geom%Hs, dHs_dy)
-    region%ice%Hs_slope = SQRT( dHs_dx**2 + dHs_dy**2)
-
-    call checksum( region%mesh%pai_V, dHs_dx             , 'dHs_dx')
-    call checksum( region%mesh%pai_V, dHs_dy             , 'dHs_dy')
-    call checksum( region%mesh%pai_V, region%ice%Hs_slope, 'region%ice%Hs_slope')
+    call region%ice%geom%calc_absolute_surface_slope()
 
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
@@ -278,13 +270,11 @@ contains
     call checksum( mesh%pai_V, ice%geom%Hs, 'ice%geom%Hs')
     call checksum( mesh%pai_V, ice%geom%SL, 'ice%geom%SL')
 
+    call ice%geom%calc_surface_elevation()
+    call ice%geom%calc_ice_base_elevation()
+    call ice%geom%calc_thickness_above_floatation()
+    call ice%geom%calc_height_of_water_column()
     do vi = mesh%vi1, mesh%vi2
-
-      ! Derived geometry
-      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
-      ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%HO ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
@@ -303,7 +293,7 @@ contains
     call checksum( mesh%pai_V, ice%geom%Hs     , 'ice%geom%Hs'     )
     call checksum( mesh%pai_V, ice%geom%Hib    , 'ice%geom%Hib'    )
     call checksum( mesh%pai_V, ice%geom%TAF    , 'ice%geom%TAF'    )
-    call checksum( mesh%pai_V, ice%HO     , 'ice%HO'     )
+    call checksum( mesh%pai_V, ice%geom%Ho     , 'ice%geom%Ho'     )
     call checksum( mesh%pai_V, ice%dHi    , 'ice%dHi'    )
     call checksum( mesh%pai_V, ice%dHb    , 'ice%dHb'    )
     call checksum( mesh%pai_V, ice%dHs    , 'ice%dHs'    )
@@ -337,22 +327,16 @@ contains
     ! =======================
 
     ! Compute effective thickness at calving fronts
-     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness()
 
     ! Calculate ice shelf draft gradients
-    call calc_ice_shelf_base_slopes( mesh, ice)
+    call ice%geom%calc_ice_base_slopes()
 
     ! Surface gradients
     ! =================
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
-    ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
-
-    call checksum( mesh%pai_V, dHs_dx      , 'dHs_dx'      )
-    call checksum( mesh%pai_V, dHs_dy      , 'dHs_dy'      )
-    call checksum( mesh%pai_V, ice%Hs_slope, 'ice%Hs_slope')
+    call ice%geom%calc_absolute_surface_slope()
 
     ! Target thinning rates
     ! =====================
@@ -550,9 +534,9 @@ contains
     ! call reallocate_bounds( ice%geom%SL    , mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
     call reallocate_bounds( ice%geom%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
     call reallocate_bounds( ice%geom%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
-    call reallocate_bounds( ice%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
-    call reallocate_bounds( ice%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
-    call reallocate_bounds( ice%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
+    call reallocate_bounds( ice%geom%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
+    call reallocate_bounds( ice%geom%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
+    call reallocate_bounds( ice%geom%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
 
     ! Geometry changes
     call reallocate_bounds( ice%dHi  , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness difference (w.r.t. reference)
@@ -569,8 +553,8 @@ contains
     call reallocate_bounds( ice%dHi_dt_residual, mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Residual ice thickness rate of change after imposed modifications
 
     ! Horizontal derivatives
-    call reallocate_bounds( ice%dHib_dx_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
-    call reallocate_bounds( ice%dHib_dy_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
+    call reallocate_bounds( ice%geom%dHib_dx_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
+    call reallocate_bounds( ice%geom%dHib_dy_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
 
     ! Target quantities
     call reallocate_bounds( ice%dHi_dt_target   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Target ice thickness rate of change for inversions
@@ -595,7 +579,7 @@ contains
     ! Area fractions
     call reallocate_bounds( ice%geom%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
     call reallocate_bounds( ice%geom%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
-    call reallocate_bounds( ice%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
+    call reallocate_bounds( ice%geom%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     call reallocate_bounds( ice%geom%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
@@ -743,15 +727,11 @@ contains
     ! Initialise ice geometry
     ! =======================
 
+    call ice%geom%calc_surface_elevation()
+    call ice%geom%calc_ice_base_elevation()
+    call ice%geom%calc_thickness_above_floatation()
+    call ice%geom%calc_height_of_water_column()
     do vi = mesh_new%vi1, mesh_new%vi2
-
-      ! Basic geometry
-      ! ice%geom%Hi ( vi) = refgeo_init%Hi( vi)
-      ! ice%geom%Hb ( vi) = refgeo_init%Hb( vi)
-      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
-      ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
@@ -768,7 +748,7 @@ contains
     end do ! do vi = mesh_new%vi1, mesh_new%vi2
 
     ! Horizontal derivatives
-    call calc_ice_shelf_base_slopes( mesh_new, ice)
+    call ice%geom%calc_ice_base_slopes()
 
     ! Calculate zeta gradients
     call calc_zeta_gradients( mesh_new, ice)
@@ -811,15 +791,13 @@ contains
     ! =======================
 
     ! Calculate new effective thickness
-     call ice%geom%calc_effective_thickness( ice%Hi_eff, ice%fraction_margin)
+     call ice%geom%calc_effective_thickness()
 
     ! Surface gradients
     ! =================
 
     ! Calculate absolute surface gradient
-    call ddx_a_a_2D( mesh_new, ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh_new, ice%geom%Hs, dHs_dy)
-    ice%Hs_slope = sqrt( dHs_dx**2 + dHs_dy**2)
+    call ice%geom%calc_absolute_surface_slope()
 
     ! Sub-grid fractions
     ! ==================
@@ -1297,7 +1275,7 @@ contains
 
       ! Calculate dH/dt around the calving front
       call calc_dHi_dt( mesh, ice, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, &
-        ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%fraction_margin, ice%mask_noice, C%dt_ice_min, &
+        ice%u_vav_b, ice%v_vav_b, SMB_new, BMB_new, LMB_new, AMB_new, ice%geom%fraction_margin, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1305,12 +1283,10 @@ contains
       t_pseudo = t_pseudo + C%dt_ice_min
 
       ! Update basic geometry
-      do vi = mesh%vi1, mesh%vi2
-        ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-        ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
-        ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-        ice%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      end do
+      call ice%geom%calc_surface_elevation()
+      call ice%geom%calc_ice_base_elevation()
+      call ice%geom%calc_thickness_above_floatation()
+      call ice%geom%calc_height_of_water_column()
 
     end do pseudo_time ! do while (t_pseudo < dt_relax)
 
@@ -1401,14 +1377,14 @@ contains
       ! Ignore any target thinning rates
       dHi_dt_target_dummy = 0._dp
 
-      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%Hi_eff) * region%ice%geom%fraction_gr
+      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%geom%Hi_eff) * region%ice%geom%fraction_gr
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%geom%fraction_margin, &
                         region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy)
 
       ! Set ice model ice thickness to relaxed field
@@ -1418,7 +1394,7 @@ contains
           region%ice%geom%Hi( vi) = Hi_new( vi)
           region%ice%dHi_dt( vi) = dHi_dt_new( vi)
         ! Also over steep-sloped interior ice sheet points
-        elseif (region%ice%geom%mask_grounded_ice( vi) .and. region%ice%Hs_slope( vi) >= 0.03_dp) then
+        elseif (region%ice%geom%mask_grounded_ice( vi) .and. region%ice%geom%Hs_slope( vi) >= 0.03_dp) then
           region%ice%geom%Hi( vi) = Hi_new( vi)
           region%ice%dHi_dt( vi) = dHi_dt_new( vi)
         end if
@@ -1445,13 +1421,11 @@ contains
       ! Calculate all other ice geometry quantities
       ! ===========================================
 
+      call region%ice%geom%calc_surface_elevation()
+      call region%ice%geom%calc_ice_base_elevation()
+      call region%ice%geom%calc_thickness_above_floatation()
+      call region%ice%geom%calc_height_of_water_column()
       do vi = region%mesh%vi1, region%mesh%vi2
-
-        ! Basic geometry
-        region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-        region%ice%geom%Hib( vi) = region%ice%geom%Hs( vi) - region%ice%geom%Hi( vi)
-        region%ice%geom%TAF( vi) = thickness_above_floatation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
-        region%ice%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 
         if (region%ice%geom%TAF( vi) > 0._dp) then
           ! Grounded ice
@@ -1469,7 +1443,7 @@ contains
       call region%ice%geom%determine_masks()
 
       ! Calculate new effective thickness
-      call region%ice%geom%calc_effective_thickness( region%ice%Hi_eff, region%ice%fraction_margin)
+      call region%ice%geom%calc_effective_thickness()
 
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance

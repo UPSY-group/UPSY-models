@@ -9,8 +9,11 @@ module ice_geometry_model_basic
   use checksum_mod, only: checksum
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all
-  use ice_geometry_basics, only: is_floating, thickness_above_floatation
+  use ice_geometry_basics, only: is_floating, thickness_above_floatation, &
+    ice_surface_elevation, height_of_water_column_at_ice_front
   use crash_mod, only: crash
+  use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, &
+    ddx_a_b_2D, ddy_a_b_2D
 
   implicit none
 
@@ -28,29 +31,57 @@ module ice_geometry_model_basic
 
       final :: finalise_ice_geometry_model
 
+      procedure, public :: calc_surface_elevation
+      procedure, public :: calc_ice_base_elevation
+      procedure, public :: calc_thickness_above_floatation
+      procedure, public :: calc_height_of_water_column
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
       procedure, public :: calc_grounded_fractions
+      procedure, public :: calc_absolute_surface_slope
+      procedure, public :: calc_ice_base_slopes
 
   end type type_ice_geometry_model
 
   ! Interfaces for procedures defined in submodules
   interface
 
+    module subroutine calc_surface_elevation( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_surface_elevation
+
+    module subroutine calc_ice_base_elevation( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_ice_base_elevation
+
+    module subroutine calc_thickness_above_floatation( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_thickness_above_floatation
+
+    module subroutine calc_height_of_water_column( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_height_of_water_column
+
     module subroutine determine_masks( self)
       class(type_ice_geometry_model),intent(inout) :: self
     end subroutine determine_masks
 
-    module subroutine calc_effective_thickness( self, Hi_eff, fraction_margin)
-      class(type_ice_geometry_model),                   intent(inout) :: self
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: Hi_eff
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_margin
+    module subroutine calc_effective_thickness( self)
+      class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_effective_thickness
 
     module subroutine calc_grounded_fractions( self, dHb)
       class(type_ice_geometry_model),                   intent(inout) :: self
       real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
     end subroutine calc_grounded_fractions
+
+    module subroutine calc_absolute_surface_slope( self)
+      class(type_ice_geometry_model), intent(inout) :: self
+    end subroutine calc_absolute_surface_slope
+
+    module subroutine calc_ice_base_slopes( self)
+      class(type_ice_geometry_model), intent(inout) :: self
+    end subroutine calc_ice_base_slopes
 
   end interface
 
@@ -75,21 +106,31 @@ contains
 
     ! Allocate all the stuff that is specific to the ice_geometry model
 
+    ! Primary ice geometry variables
     allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%SL( mesh%vi1:mesh%vi2), source = NaN)
 
-    allocate( self%Hs ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%Hib( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%TAF( mesh%vi1:mesh%vi2), source = NaN)
+    ! Derived ice geometry variables
+    allocate( self%Hs      ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Hib     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%TAF     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Hi_eff  ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Hs_slope( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%Ho      ( mesh%vi1:mesh%vi2), source = NaN)
+
+    ! Horizontal derivatives
+    allocate( self%dHib_dx_b( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%dHib_dy_b( mesh%ti1:mesh%ti2), source = NaN)
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)
     allocate( self%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = NaN)
 
     ! Area fractions
-    allocate( self%fraction_gr  ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%fraction_gr_b( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%fraction_gr    ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%fraction_margin( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Ice masks
     allocate( self%mask_icefree_land ( mesh%vi1:mesh%vi2), source = .false.)

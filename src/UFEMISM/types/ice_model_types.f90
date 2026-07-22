@@ -302,9 +302,6 @@ MODULE ice_model_types
 
     ! Basic geometry
     type(type_ice_geometry_model) :: geom
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hi_eff                      ! [m] Effective thickness of ice margins
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Hs_slope                    ! [-] Absolute surface gradient
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: Ho                          ! [m] Depth of ocean column adjacent to the ice front
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)
@@ -320,10 +317,6 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi_dt_raw                  ! [m yr^-1] Ice thickness rate of change before any ice thickness modifications
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi_dt_residual             ! [m yr^-1] Residual ice thickness rate of change for inversions
 
-    ! Horizontal derivatives
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHib_dx_b                   ! [] Horizontal derivative of ice draft on b-grid
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHib_dy_b                   ! [] Horizontal derivative of ice draft on b-grid
-
     ! Target quantities
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi_dt_target               ! [m yr^-1] Target ice thickness rate of change for inversions
 
@@ -333,9 +326,6 @@ MODULE ice_model_types
     INTEGER,  DIMENSION(:    ), ALLOCATABLE :: mask_ROI                    ! list respective ROI number, zero otherwise (all zero when no ROI is specified)
     INTEGER,  DIMENSION(:    ), ALLOCATABLE :: basin_ID                    ! The drainage basin to which each vertex belongs
     INTEGER                                 :: nROI                        ! Number of ROI masks in the ice model type
-
-    ! Area fractions
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: fraction_margin             ! [0-1] Ice-covered area fractions of ice margins
 
   ! === Terrain-following coordinate zeta gradients ===
   ! ===================================================

@@ -230,7 +230,7 @@ CONTAINS
 
     DO vi = mesh%vi1, mesh%vi2
     DO k = 1, mesh%nz
-      ice%Ti_pmp( vi,k) = T0 - Clausius_Clapeyron_gradient * ice%Hi_eff( vi) * mesh%zeta( k)
+      ice%Ti_pmp( vi,k) = T0 - Clausius_Clapeyron_gradient * ice%geom%Hi_eff( vi) * mesh%zeta( k)
     END DO
     END DO
 
@@ -305,7 +305,7 @@ CONTAINS
 
     Ts = MIN( T0, SUM( climate%T2m( vi,:)) / REAL( SIZE( climate%T2m,2),dp))
 
-    IF (ice%Hi_eff( vi) > C%Hi_min_thermo) THEN
+    IF (ice%geom%Hi_eff( vi) > C%Hi_min_thermo) THEN
       ! This vertex has enough ice to have a noticeable temperature profile
 
       IF (ice%geom%mask_grounded_ice( vi)) THEN
@@ -314,18 +314,18 @@ CONTAINS
         IF (SMB%SMB( vi) > 0._dp) THEN
           ! The Robin solution can be used to estimate the subsurface temperature profile in an accumulation area
 
-          thermal_length_scale = SQRT( 2._dp * thermal_diffusivity_Robin * ice%Hi_eff( vi) / SMB%SMB( vi))
+          thermal_length_scale = SQRT( 2._dp * thermal_diffusivity_Robin * ice%geom%Hi_eff( vi) / SMB%SMB( vi))
           DO k = 1, C%nz
-            distance_above_bed = (1._dp - mesh%zeta( k)) * ice%Hi_eff( vi)
+            distance_above_bed = (1._dp - mesh%zeta( k)) * ice%geom%Hi_eff( vi)
             erf1 = erf( distance_above_bed / thermal_length_scale)
-            erf2 = erf( ice%Hi_eff( vi) / thermal_length_scale)
+            erf2 = erf( ice%geom%Hi_eff( vi) / thermal_length_scale)
             Ti( vi,k) = Ts + SQRT(pi) / 2._dp * thermal_length_scale * bottom_temperature_gradient_Robin * (erf1 - erf2)
           END DO
 
         ELSE ! IF (SMB%SMB( vi) > 0._dp) THEN
 
           ! Ablation area: use linear temperature profile from Ts to (offset below) T_pmp
-          Ti( vi,:) = Ts + ((T0 - Clausius_Clapeyron_gradient * ice%Hi_eff( vi)) - Ts) * mesh%zeta
+          Ti( vi,:) = Ts + ((T0 - Clausius_Clapeyron_gradient * ice%geom%Hi_eff( vi)) - Ts) * mesh%zeta
 
         END IF ! IF (SMB%SMB( vi) > 0._dp) THEN
 
@@ -337,12 +337,12 @@ CONTAINS
 
       END IF
 
-    ELSE ! IF (ice%Hi_eff( vi) > C%Hi_min_thermo) THEN
+    ELSE ! IF (ice%geom%Hi_eff( vi) > C%Hi_min_thermo) THEN
       ! No (significant) ice present; set temperature to annual mean surface temperature
 
       Ti( vi,:) = Ts
 
-    END IF ! IF (ice%Hi_eff( vi) > C%Hi_min_thermo) THEN
+    END IF ! IF (ice%geom%Hi_eff( vi) > C%Hi_min_thermo) THEN
 
     ! Safety: limit temperatures to the pressure melting point
     DO k = 1, mesh%nz

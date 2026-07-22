@@ -134,7 +134,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       ! For very thin ice, just let the profile equal the surface temperature
-      IF (ice%Hi_eff( vi) < C%Hi_min_thermo) THEN
+      IF (ice%geom%Hi_eff( vi) < C%Hi_min_thermo) THEN
         is_unstable( vi) = 0
         Ti_tplusdt( vi,:) = T_surf_annual( vi)
         CYCLE
@@ -268,7 +268,7 @@ CONTAINS
       ! An unacceptably large number of grid cells was unstable; throw an error.
 
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%Hi                  , 'Hi'                  )
-      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%Hi_eff              , 'Hi_eff'              )
+      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%Hi_eff              , 'Hi_eff'              )
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%Hb                  , 'Hb'                  )
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%SL                  , 'SL'                  )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dx_ak         , 'dzeta_dx_ak'         )

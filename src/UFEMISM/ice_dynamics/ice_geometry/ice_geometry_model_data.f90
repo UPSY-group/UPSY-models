@@ -21,20 +21,22 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: Hs                      ! [m]       Ice surface elevation (w.r.t. PD sea level)
     real(dp), dimension(:  ), allocatable :: Hib                     ! [m]       Ice base elevation    (w.r.t. PD sea level)
     real(dp), dimension(:  ), allocatable :: TAF                     ! [m]       Thickness above floatation
-    ! real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Height of water column at ice front
-    ! real(dp), dimension(:  ), allocatable :: Hi_eff                  ! [m]       Effective ice thickness
-    ! real(dp), dimension(:  ), allocatable :: dHb                     ! [m]       Change in bedrock elevation w.r.t. reference geometry
-    ! real(dp), dimension(:  ), allocatable :: fraction_margin         ! [0-1]     Sub-grid ice-filled fraction
-    ! real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1]     Sub-grid grounded fraction
-    ! real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1]     Sub-grid grounded fraction on b-grid (triangles)
+    real(dp), dimension(:  ), allocatable :: Hi_eff                  ! [m]       Effective ice thickness
+    real(dp), dimension(:  ), allocatable :: Hs_slope                ! [-]       Absolute surface gradient
+    real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Depth of ocean column adjacent to the ice front
+
+    ! Horizontal derivatives
+    real(dp), dimension(:  ), allocatable :: dHib_dx_b               ! [-]       Horizontal derivative of ice draft on b-grid
+    real(dp), dimension(:  ), allocatable :: dHib_dy_b               ! [-]       Horizontal derivative of ice draft on b-grid
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    real(dp), dimension(:,:), allocatable :: bedrock_cdf             ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
-    real(dp), dimension(:,:), allocatable :: bedrock_cdf_b           ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
+    real(dp), dimension(:,:), allocatable :: bedrock_cdf             ! [-]       Sub-grid bedrock cumulative density functions on the a-grid (vertices)
+    real(dp), dimension(:,:), allocatable :: bedrock_cdf_b           ! [-]       Sub-grid bedrock cumulative density functions on the b-grid (triangles)
 
     ! Area fractions
-    real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1] Grounded area fractions of vertices
-    real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1] Grounded area fractions of triangles
+    real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1]     Grounded area fractions of vertices
+    real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1]     Grounded area fractions of triangles
+    real(dp), dimension(:  ), allocatable :: fraction_margin         ! [0-1]     Ice-covered area fractions of ice margins
 
     ! Ice masks
     logical,  dimension(:  ), allocatable :: mask_icefree_land       ! T: ice-free land , F: otherwise

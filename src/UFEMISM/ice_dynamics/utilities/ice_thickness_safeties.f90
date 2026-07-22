@@ -41,7 +41,7 @@ contains
     real(dp)                               :: decay_start, decay_end
     real(dp)                               :: fixiness, limitness, fix_H_applied, limit_H_applied
     real(dp), dimension(mesh%vi1:mesh%vi2) :: modiness_up, modiness_down
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: Hi_save, Hi_eff_new, fraction_margin_new
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: Hi_save
     real(dp)                               :: floating_area, calving_area, mass_lost
     type(type_ice_geometry_model)          :: geom_new   ! Not the most beautiful solution, but the best that can be done for now...
 
@@ -58,7 +58,7 @@ contains
     Hi_save = Hi_new
 
     ! Calculate would-be effective thickness
-    call geom_new%calc_effective_thickness( Hi_eff_new, fraction_margin_new)
+    call geom_new%calc_effective_thickness()
 
     ! == Mask conservation
     ! ====================
@@ -77,7 +77,7 @@ contains
 
     ! if so specified, remove very thin ice
     do vi = mesh%vi1, mesh%vi2
-      if (Hi_eff_new( vi) < C%Hi_min) then
+      if (geom_new%Hi_eff( vi) < C%Hi_min) then
         Hi_new( vi) = 0._dp
       end if
     end do
@@ -85,7 +85,7 @@ contains
     ! if so specified, remove thin floating ice
     if (C%choice_calving_law == 'threshold_thickness') then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi)) .and. Hi_eff_new( vi) < C%calving_threshold_thickness_shelf) then
+        if (is_floating( geom_new%Hi_eff( vi), ice%geom%Hb( vi), ice%geom%SL( vi)) .and. geom_new%Hi_eff( vi) < C%calving_threshold_thickness_shelf) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -103,7 +103,7 @@ contains
     ! if so specified, remove all floating ice
     if (C%do_remove_shelves) then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( Hi_eff_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) then
+        if (is_floating( geom_new%Hi_eff( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -344,7 +344,7 @@ contains
         ! If there is no inflow at all, for example during initialisation,
         ! use effective thickness
         if (ice%u_perp( vi, cm) >= 0._dp) then
-          Hi_ups = ice%Hi_eff( vi)
+          Hi_ups = ice%geom%Hi_eff( vi)
         end if
 
         ! Find vertex index of strongest inflow cell
@@ -359,7 +359,7 @@ contains
       else
 
         ! Default: use effective ice thickness
-        Hi_ups = ice%Hi_eff( vi)
+        Hi_ups = ice%geom%Hi_eff( vi)
 
       end if
 

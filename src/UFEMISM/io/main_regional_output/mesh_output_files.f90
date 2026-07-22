@@ -213,9 +213,9 @@ contains
       case ('TAF')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'TAF', region%ice%geom%TAF)
       case ('Hi_eff')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%Hi_eff)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hi_eff', region%ice%geom%Hi_eff)
       case ('Hs_slope')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs_slope', region%ice%Hs_slope)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs_slope', region%ice%geom%Hs_slope)
       case ('grounding_line')
         call write_grounding_line_to_file( filename, ncid, region%mesh, region%ice)
       case ('ice_margin')
@@ -373,7 +373,7 @@ contains
       case ('fraction_gr_b')
         call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'fraction_gr_b', region%ice%geom%fraction_gr_b)
       case ('fraction_margin')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_margin', region%ice%fraction_margin)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'fraction_margin', region%ice%geom%fraction_margin)
 
     ! === Thermodynamics and rheology ===
     ! ===================================

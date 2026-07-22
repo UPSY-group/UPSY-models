@@ -8,6 +8,17 @@ on:
         required: false
         default: benchmark_figures_*
         type: string
+      test_names:
+        description: Ordered list of UFEMISM test directory names to include in the generated site
+        required: false
+        default: >-
+          integrated_test_Halfar_dome_full
+          integrated_test_MISMIPplus_full
+          integrated_test_MISMIP_mod_full
+          integrated_test_SSA_icestream_full
+          integrated_test_ISMIP_HOM_full
+          integrated_test_Ant_init_full_01
+        type: string
       site_artifact_name:
         description: Name of the artifact that will contain the generated static site
         required: false
@@ -38,6 +49,7 @@ jobs:
           set -euo pipefail
           python automated_testing/UFEMISM/build_weekly_benchmarks_site.py \
             --artifacts-dir downloaded_artifacts \
+            --test-names ${{ inputs.test_names }} \
             --site-dir site
 
       - name: Upload generated site artifact

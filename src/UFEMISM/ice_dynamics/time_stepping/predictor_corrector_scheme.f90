@@ -122,7 +122,7 @@ contains
       ! ====================
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%geom%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_perp, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%geom%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
       ! Making sure verticies in no ice mask have zero thinning rates
@@ -204,7 +204,7 @@ contains
       call region%ice%geom%calc_effective_thickness()
 
       ! Calculate thinning rates for the current ice thickness and predicted velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_vav_b, region%ice%v_vav_b, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%geom%fraction_margin, &
+      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_perp, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, region%ice%geom%fraction_margin, &
                         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, region%ice%divQ, region%ice%dHi_dt_target)
 
       ! Making sure verticies in no ice mask have zero thinning rates

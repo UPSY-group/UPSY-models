@@ -20,7 +20,7 @@ module conservation_of_mass_semiimplicit
 
 contains
 
-  subroutine calc_dHi_dt_semiimplicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+  subroutine calc_dHi_dt_semiimplicit( mesh, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
     fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a semi-implicit time discretisation scheme for the ice fluxes
@@ -68,26 +68,24 @@ contains
     ! to limit melt to the available ice mass.
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   )           :: mesh                  ! [-]       The model mesh
-    type(type_ice_model),                   intent(inout)           :: ice                   ! [-]       The ice model
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hi                    ! [m]       Ice thickness at time t
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hb                    ! [m]       Bedrock elevation at time t
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   )           :: u_vav_b               ! [m yr^-1] Vertically averaged ice velocities in the x-direction on the b-grid (triangles)
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   )           :: v_vav_b               ! [m yr^-1] Vertically averaged ice velocities in the y-direction on the b-grid (triangles)
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: AMB                   ! [m yr^-1] Artificial mass balance
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: fraction_margin       ! [0-1]     Sub-grid ice-filled fraction
-    logical,  dimension(mesh%vi1:mesh%vi2), intent(in   )           :: mask_noice            ! [-]       Mask of vertices where no ice is allowed
-    real(dp),                               intent(inout)           :: dt                    ! [dt]      Time step
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out)           :: dHi_dt                ! [m yr^-1] Ice thickness rate of change
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out)           :: Hi_tplusdt            ! [m]       Ice thickness at time t + dt
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out)           :: divQ                  ! [m yr^-1] Horizontal ice flux divergence
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: dHi_dt_target         ! [m yr^-1] Target ice thickness rate of change
-    integer,  dimension(mesh%vi1:mesh%vi2), intent(in   ), optional :: BC_prescr_mask        ! [-]       Mask of vertices where thickness is prescribed
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ), optional :: BC_prescr_Hi          ! [m]       Prescribed thicknesses
+    type(type_mesh),                                     intent(in   )           :: mesh                  ! [-]       The model mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: Hi                    ! [m]       Ice thickness at time t
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: Hb                    ! [m]       Bedrock elevation at time t
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   )           :: u_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(inout)           :: AMB                   ! [m yr^-1] Artificial mass balance
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: fraction_margin       ! [0-1]     Sub-grid ice-filled fraction
+    logical,  dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: mask_noice            ! [-]       Mask of vertices where no ice is allowed
+    real(dp),                                            intent(inout)           :: dt                    ! [dt]      Time step
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out)           :: dHi_dt                ! [m yr^-1] Ice thickness rate of change
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out)           :: Hi_tplusdt            ! [m]       Ice thickness at time t + dt
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out)           :: divQ                  ! [m yr^-1] Horizontal ice flux divergence
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: dHi_dt_target         ! [m yr^-1] Target ice thickness rate of change
+    integer,  dimension(mesh%vi1:mesh%vi2),              intent(in   ), optional :: BC_prescr_mask        ! [-]       Mask of vertices where thickness is prescribed
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   ), optional :: BC_prescr_Hi          ! [m]       Prescribed thicknesses
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_dHi_dt_semiimplicit'
@@ -106,13 +104,13 @@ contains
     ! First calculate the explicit solution (used to estimate the time step,
     ! and to apply boundary conditions at the domain border)
     dt_ex = dt
-    call calc_dHi_dt_explicit( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB_ex, &
+    call calc_dHi_dt_explicit( mesh, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB_ex, &
       fraction_margin, mask_noice, dt_ex, dHi_dt_ex, Hi_tplusdt_ex, divQ_ex, &
       dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     dt_max = dt_ex
 
     ! Calculate the ice flux divergence matrix M_divQ using an upwind scheme
-    call calc_ice_flux_divergence_matrix_upwind( mesh, ice, u_vav_b, v_vav_b, fraction_margin, M_divQ)
+    call calc_ice_flux_divergence_matrix_upwind( mesh, u_perp, fraction_margin, M_divQ)
 
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &

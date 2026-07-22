@@ -102,9 +102,7 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
 
   ! Get surface and basal topography
   call ice%geom%calc_surface_elevation()
-  do vi = mesh%vi1, mesh%vi2
-    ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
-  end do
+  call ice%geom%calc_ice_base_elevation()
 
   ! Set up offshore ocean forcing
   ! ========

@@ -9,7 +9,7 @@ module ice_geometry_model_basic
   use checksum_mod, only: checksum
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all
-  use ice_geometry_basics, only: is_floating, thickness_above_floatation
+  use ice_geometry_basics, only: is_floating, thickness_above_floatation, ice_surface_elevation
   use crash_mod, only: crash
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
 
@@ -30,6 +30,7 @@ module ice_geometry_model_basic
       final :: finalise_ice_geometry_model
 
       procedure, public :: calc_surface_elevation
+      procedure, public :: calc_ice_base_elevation
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
       procedure, public :: calc_grounded_fractions
@@ -43,6 +44,10 @@ module ice_geometry_model_basic
     module subroutine calc_surface_elevation( self)
       class(type_ice_geometry_model),intent(inout) :: self
     end subroutine calc_surface_elevation
+
+    module subroutine calc_ice_base_elevation( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_ice_base_elevation
 
     module subroutine determine_masks( self)
       class(type_ice_geometry_model),intent(inout) :: self

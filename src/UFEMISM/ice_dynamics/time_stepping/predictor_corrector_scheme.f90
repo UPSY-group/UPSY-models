@@ -159,10 +159,7 @@ contains
 
       ! Set model geometry to predicted
       call region%ice%geom%calc_surface_elevation()
-      do vi = region%mesh%vi1, region%mesh%vi2
-        ! Basic geometry
-        region%ice%geom%Hib( vi) = region%ice%geom%Hs(  vi) - region%ice%geom%Hi( vi)
-      end do
+      call region%ice%geom%calc_ice_base_elevation()
 
       ! Update masks
       call region%ice%geom%determine_masks()
@@ -191,11 +188,11 @@ contains
       ! ====================
 
       ! Set model geometry back to original
-      call region%ice%geom%calc_surface_elevation()
       do vi = region%mesh%vi1, region%mesh%vi2
         region%ice%geom%Hi(  vi) = region%ice%Hi_prev( vi)
-        region%ice%geom%Hib( vi) = region%ice%geom%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
+      call region%ice%geom%calc_surface_elevation()
+      call region%ice%geom%calc_ice_base_elevation()
 
       ! Update masks
       call region%ice%geom%determine_masks()

@@ -100,10 +100,10 @@ contains
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%geom%Hb, ice%geom%SL, ice%geom%Hi)
 
     call ice%geom%calc_surface_elevation()
+    call ice%geom%calc_ice_base_elevation()
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
-      ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
       ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
     end do

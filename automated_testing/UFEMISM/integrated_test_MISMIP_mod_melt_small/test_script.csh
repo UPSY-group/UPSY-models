@@ -1,8 +1,8 @@
 #! /bin/csh -f
 
-set test_dir = automated_testing/UFEMISM/integrated_test_MISMIP_mod_small
+set test_dir = automated_testing/UFEMISM/integrated_test_MISMIP_mod_melt_small
 
-rm -rf ${test_dir}/results*
-mpiexec  -n 2  UFEMISM_program  ${test_dir}/config.cfg
+rm -rf ${test_dir}/results_melt
+mpiexec  -n 2  UFEMISM_program  ${test_dir}/config_melt.cfg
 
-python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}
+# python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

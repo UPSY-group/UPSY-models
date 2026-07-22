@@ -53,7 +53,7 @@ def update_config_file(config_path: Path) -> bool:
 
 def iter_config_files(test_dir: Path) -> list[Path]:
     """Find all config_*.cfg files below one UFEMISM test directory."""
-    return sorted(path for path in test_dir.rglob("config_*.cfg") if path.is_file())
+    return sorted(path for path in test_dir.rglob("*.cfg") if path.is_file())
 
 
 def main() -> None:

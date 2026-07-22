@@ -17,6 +17,7 @@ module ct_mass_conservation
   use conservation_of_mass_main, only: calc_dHi_dt
   use parameters, only: pi
   use ice_model_memory, only: allocate_ice_model
+  use conservation_of_momentum_main, only: calc_u_perp
 
   implicit none
 
@@ -165,6 +166,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'run_mass_cons_test_on_mesh_with_function'
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem) :: u_perp
     real(dp), dimension(mesh%vi1:mesh%vi2) :: Hb, Hs, SL
     real(dp), dimension(mesh%vi1:mesh%vi2) :: SMB
     real(dp), dimension(mesh%vi1:mesh%vi2) :: BMB, LMB, AMB
@@ -193,30 +195,32 @@ contains
     dHi_dt_target   = 0._dp
     dt              = 0.1_dp
 
+    call calc_u_perp( mesh, u_vav_b, v_vav_b, u_perp)
+
     ! Calculate modelled thinning rates using different solvers
     ! =========================================================
 
     ! Explicit
     C%choice_ice_integration_method = 'explicit'
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_expl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Semi-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 0.5_dp
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_semiimpl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1._dp
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_impl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Over-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1.5_dp
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_vav_b, v_vav_b, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
       fraction_margin, mask_noice, dt, dHi_dt_overimpl, Hi_tplusdt, divQ, dHi_dt_target)
 
     ! Write results to output

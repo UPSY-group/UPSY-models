@@ -235,6 +235,8 @@ contains
       ice%uabs_vav(  vi) = sqrt( ice%u_vav(  vi)**2 + ice%v_vav(  vi)**2)
     end do
 
+    call calc_u_perp( mesh, ice%u_vav_b, ice%v_vav_b, ice%u_perp)
+
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2
       ice%R_shear( vi) = (ice%uabs_base( vi) + 0.1_dp) / (ice%uabs_surf( vi) + 0.1_dp)
@@ -244,6 +246,49 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine calc_secondary_velocities
+
+  subroutine calc_u_perp( mesh, u_vav_b, v_vav_b, u_perp)
+    !< Calculate the vertically averaged ice velocity component
+    !< perpendicular to the shared Voronoi cell boundaries
+
+    ! In/output variables:
+    type(type_mesh),                                     intent(in   ) :: mesh
+    real(dp), dimension(mesh%ti1:mesh%ti1),              intent(in   ) :: u_vav_b
+    real(dp), dimension(mesh%ti1:mesh%ti1),              intent(in   ) :: v_vav_b
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(  out) :: u_perp
+
+    ! Local variables:
+    character(len=*), parameter            :: routine_name = 'calc_u_perp'
+    real(dp), dimension(mesh%ei1:mesh%ei2) :: u_vav_c, v_vav_c
+    real(dp), dimension(mesh%nE)           :: u_vav_c_tot, v_vav_c_tot
+    integer                                :: vi, ci, ei, vj
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate vertically averaged ice velocities on the edges
+    call map_velocities_from_b_to_c_2D( mesh, u_vav_b, v_vav_b, u_vav_c, v_vav_c)
+    call gather_to_all( u_vav_c, u_vav_c_tot)
+    call gather_to_all( v_vav_c, v_vav_c_tot)
+
+    do vi = mesh%vi1, mesh%vi2
+      do ci = 1, mesh%nC( vi)
+
+        ! Connection ci from vertex vi leads through edge ei to vertex vj
+        ei = mesh%VE( vi,ci)
+
+        ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
+        u_perp( vi, ci) = &
+          u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + &
+          v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
+
+      end do
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_u_perp
 
   subroutine remap_velocity_solver( mesh_old, mesh_new, ice)
     !< Remap the velocity solver for the chosen stress balance approximation

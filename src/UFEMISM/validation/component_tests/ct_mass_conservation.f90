@@ -202,26 +202,26 @@ contains
 
     ! Explicit
     C%choice_ice_integration_method = 'explicit'
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
-      fraction_margin, mask_noice, dt, dHi_dt_expl, Hi_tplusdt, divQ, dHi_dt_target)
+    call calc_dHi_dt( mesh, ice%geom, u_perp, SMB, BMB, LMB, AMB, &
+      mask_noice, dt, dHi_dt_expl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Semi-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 0.5_dp
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
-      fraction_margin, mask_noice, dt, dHi_dt_semiimpl, Hi_tplusdt, divQ, dHi_dt_target)
+    call calc_dHi_dt( mesh, ice%geom, u_perp, SMB, BMB, LMB, AMB, &
+      mask_noice, dt, dHi_dt_semiimpl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1._dp
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
-      fraction_margin, mask_noice, dt, dHi_dt_impl, Hi_tplusdt, divQ, dHi_dt_target)
+    call calc_dHi_dt( mesh, ice%geom, u_perp, SMB, BMB, LMB, AMB, &
+      mask_noice, dt, dHi_dt_impl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Over-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1.5_dp
-    call calc_dHi_dt( mesh, ice, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
-      fraction_margin, mask_noice, dt, dHi_dt_overimpl, Hi_tplusdt, divQ, dHi_dt_target)
+    call calc_dHi_dt( mesh, ice%geom, u_perp, SMB, BMB, LMB, AMB, &
+      mask_noice, dt, dHi_dt_overimpl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Write results to output
     call write_mass_cons_test_results_to_file( &

@@ -58,7 +58,7 @@ contains
     type(type_model_region), intent(inout) :: region
 
     ! Local variables:
-    character(len=1024), parameter                       :: routine_name = 'run_ice_dynamics_model'
+    character(len=*), parameter                          :: routine_name = 'run_ice_dynamics_model'
     real(dp)                                             :: wt_prev, wt_next
     integer                                              :: vi
     real(dp)                                             :: dt_max
@@ -1274,9 +1274,9 @@ contains
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
       ! Calculate dH/dt around the calving front
-      call calc_dHi_dt( mesh, ice, ice%geom%Hi, ice%geom%Hb, ice%geom%SL, &
-        ice%u_perp, SMB_new, BMB_new, LMB_new, AMB_new, ice%geom%fraction_margin, ice%mask_noice, C%dt_ice_min, &
-        ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
+      call calc_dHi_dt( mesh, ice%geom, &
+        ice%u_perp, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
+        ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
       ice%geom%Hi = Hi_tplusdt
@@ -1384,8 +1384,8 @@ contains
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice, region%ice%geom%Hi, region%ice%geom%Hb, region%ice%geom%SL, region%ice%u_perp, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, region%ice%geom%fraction_margin, &
-                        region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy)
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%u_perp, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
+                        region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy, region%ice%Qspill)
 
       ! Set ice model ice thickness to relaxed field
       do vi = region%mesh%vi1, region%mesh%vi2

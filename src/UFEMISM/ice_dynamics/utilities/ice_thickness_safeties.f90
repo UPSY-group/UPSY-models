@@ -7,6 +7,7 @@ module ice_thickness_safeties
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
@@ -293,13 +294,15 @@ contains
 
   end subroutine alter_ice_thickness
 
-  subroutine calc_and_apply_spill_over_flux( mesh, ice, Hi_new, dt)
+  subroutine calc_and_apply_spill_over_flux( mesh, geom, u_perp, Qspill, Hi_new, dt)
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
-    real(dp),                               intent(in   ) :: dt
+    type(type_mesh),                                     intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data),                intent(in   ) :: geom
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   ) :: u_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out) :: Qspill
+    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(inout) :: Hi_new
+    real(dp),                                            intent(in   ) :: dt
 
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
@@ -316,35 +319,35 @@ contains
     real(dp), dimension(mesh%nV)                         :: Hi_new_tot, Hb_tot
 
     ! Initialise
-    ice%Qspill = 0._dp
-    Q_src      = 0._dp
-    Q_dst      = 0._dp
-    relweight  = 0._dp
+    Qspill   ( mesh%vi1:mesh%vi2  ) = 0._dp
+    Q_src    ( mesh%vi1:mesh%vi2  ) = 0._dp
+    Q_dst    ( mesh%vi1:mesh%vi2  ) = 0._dp
+    relweight( mesh%vi1:mesh%vi2,:) = 0._dp
 
-    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( geom%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
-    call gather_to_all( ice%geom%Hb, Hb_tot)
+    call gather_to_all( geom%Hb, Hb_tot)
 
     ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2
 
       ! Determine upstream ice thickness
-      if (ice%geom%mask_cf_fl( vi) .or. ice%geom%mask_cf_gr( vi)) then
+      if (geom%mask_cf_fl( vi) .or. geom%mask_cf_gr( vi)) then
 
         ! Find connection with the strongest inflow into this cell
         cm = 0
         u_perp_min = huge( u_perp_min)
         do ci = 1, mesh%nC( vi)
-          if (ice%u_perp( vi,ci) < u_perp_min) then
-            u_perp_min = ice%u_perp( vi,ci)
+          if (u_perp( vi,ci) < u_perp_min) then
+            u_perp_min = u_perp( vi,ci)
             cm = ci
           end if
         end do
 
         ! If there is no inflow at all, for example during initialisation,
         ! use effective thickness
-        if (ice%u_perp( vi, cm) >= 0._dp) then
-          Hi_ups = ice%geom%Hi_eff( vi)
+        if (u_perp( vi, cm) >= 0._dp) then
+          Hi_ups = geom%Hi_eff( vi)
         end if
 
         ! Find vertex index of strongest inflow cell
@@ -359,12 +362,12 @@ contains
       else
 
         ! Default: use effective ice thickness
-        Hi_ups = ice%geom%Hi_eff( vi)
+        Hi_ups = geom%Hi_eff( vi)
 
       end if
 
       ! Only compute spill-over when ice thickness exceeds effective ice thickness
-      if ((ice%geom%mask_cf_gr( vi) .or. ice%geom%mask_cf_fl( vi)) .and. Hi_new( vi) > Hi_ups) then
+      if ((geom%mask_cf_gr( vi) .or. geom%mask_cf_fl( vi)) .and. Hi_new( vi) > Hi_ups) then
 
         ! Determine source flux of spill-over ice in m^3/yr
         Q_src( vi) = - (Hi_new( vi) - Hi_ups) * mesh%A( vi) / dt
@@ -380,7 +383,7 @@ contains
             ! Add small value to avoid division by 0 if no outflow velocity enters
             ! any ocean cell. In that case, weights will be equally distributed
             ! over all neighbouring ocean cells.
-            weight( ci) = max(0._dp, ice%u_perp( vi, ci)) + w_eps
+            weight( ci) = max(0._dp, u_perp( vi, ci)) + w_eps
           end if
         end do
 
@@ -433,10 +436,10 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Combine source and destination and convert to thickness rate in m/yr
-      ice%Qspill( vi) = (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
+      Qspill( vi) = (Q_src( vi) + Q_dst( vi)) / mesh%A( vi)
 
       ! Update ice thickness
-      Hi_new( vi) = Hi_new( vi) + ice%Qspill( vi) * dt
+      Hi_new( vi) = Hi_new( vi) + Qspill( vi) * dt
 
     end do
 

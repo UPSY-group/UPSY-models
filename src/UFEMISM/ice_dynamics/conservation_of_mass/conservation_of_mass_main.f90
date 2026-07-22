@@ -80,7 +80,7 @@ contains
     end select
 
     ! Apply spill over from overfilled margin cells
-    call calc_and_apply_spill_over_flux( mesh, ice, Hi_tplusdt, dt)
+    call calc_and_apply_spill_over_flux( mesh, ice%geom, ice%u_perp, ice%Qspill, Hi_tplusdt, dt)
 
     ! Limit Hi( t+dt) to zero; throw a warning if negative thickness are encountered
     found_negative_vals = .false.

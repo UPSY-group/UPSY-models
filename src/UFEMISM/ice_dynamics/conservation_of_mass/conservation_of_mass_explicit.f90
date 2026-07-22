@@ -4,7 +4,7 @@ module conservation_of_mass_explicit
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use ice_geometry_basics, only: ice_surface_elevation, Hi_from_Hb_Hs_and_SL
   use mpi_distributed_memory, only: gather_to_all
@@ -21,8 +21,8 @@ module conservation_of_mass_explicit
 
 contains
 
-  subroutine calc_dHi_dt_explicit( mesh, Hi, Hb, SL, u_perp, SMB, BMB, LMB, AMB, &
-    fraction_margin, mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
+  subroutine calc_dHi_dt_explicit( mesh, geom, u_perp, SMB, BMB, LMB, AMB, &
+    mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a time-explicit discretisation scheme for the ice fluxes
 
@@ -49,15 +49,12 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   )           :: mesh                  ! [-]       The model mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: Hi                    ! [m]       Ice thickness at time t
-    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: Hb                    ! [m]       Bedrock elevation at time t
-    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: SL                    ! [m]       Water surface elevation at time t
+    class(atype_ice_geometry_model_data),                intent(in   )           :: geom                  !           The ice-sheet geometry
     real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   )           :: u_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(inout)           :: AMB                   ! [m yr^-1] Artificial mass balance
-    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: fraction_margin       ! [0-1]     Sub-grid ice-filled fraction
     logical,  dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: mask_noice            ! [-]       Mask of vertices where no ice is allowed
     real(dp),                                            intent(inout)           :: dt                    ! [dt]      Time step
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out)           :: dHi_dt                ! [m yr^-1] Ice thickness rate of change
@@ -68,25 +65,25 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   ), optional :: BC_prescr_Hi          ! [m]       Prescribed thicknesses
 
     ! Local variables:
-    character(len=1024), parameter  :: routine_name = 'calc_dHi_dt_explicit'
-    type(type_CSR_matrix_dp) :: M_divQ
-    real(dp)                        :: dt_max
-    integer                         :: vi
+    character(len=*), parameter  :: routine_name = 'calc_dHi_dt_explicit'
+    type(type_CSR_matrix_dp)     :: M_divQ
+    real(dp)                     :: dt_max
+    integer                      :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Calculate the ice flux divergence matrix M_divQ using an upwind scheme
-    call calc_ice_flux_divergence_matrix_upwind( mesh, u_perp, fraction_margin, M_divQ)
+    call calc_ice_flux_divergence_matrix_upwind( mesh, u_perp, geom%fraction_margin, M_divQ)
 
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &
-      mesh%pai_V, Hi, mesh%pai_V, divQ, &
+      mesh%pai_V, geom%Hi, mesh%pai_V, divQ, &
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Calculate rate of ice thickness change dHi/dt
     dHi_dt( mesh%vi1: mesh%vi2) = -divQ( mesh%vi1: mesh%vi2) &
-      + fraction_margin( mesh%vi1: mesh%vi2) * ( &
+      + geom%fraction_margin( mesh%vi1: mesh%vi2) * ( &
           SMB( mesh%vi1: mesh%vi2) &
         + BMB( mesh%vi1: mesh%vi2) &
         - dHi_dt_target( mesh%vi1: mesh%vi2)) &
@@ -96,16 +93,16 @@ contains
     AMB( mesh%vi1: mesh%vi2) = dHi_dt( mesh%vi1: mesh%vi2)
 
     ! Calculate largest time step possible based on dHi_dt
-    call calc_flux_limited_timestep( mesh, Hi, dHi_dt, dt_max)
+    call calc_flux_limited_timestep( mesh, geom%Hi, dHi_dt, dt_max)
 
     ! Constrain dt based on new limit
     dt = min( dt, dt_max)
 
     ! Calculate ice thickness at t+dt
-    Hi_tplusdt( mesh%vi1: mesh%vi2) = max( 0._dp, Hi( mesh%vi1: mesh%vi2) + dHi_dt( mesh%vi1: mesh%vi2) * dt)
+    Hi_tplusdt( mesh%vi1: mesh%vi2) = max( 0._dp, geom%Hi( mesh%vi1: mesh%vi2) + dHi_dt( mesh%vi1: mesh%vi2) * dt)
 
     ! Apply boundary conditions at the domain border
-    call apply_ice_thickness_BC_explicit( mesh, mask_noice, Hb, SL, Hi_tplusdt)
+    call apply_ice_thickness_BC_explicit( mesh, mask_noice, geom%Hb, geom%SL, Hi_tplusdt)
 
     ! Set predicted ice thickness to prescribed values where told to do so
     if (present( BC_prescr_mask) .or. present( BC_prescr_Hi)) then
@@ -124,7 +121,7 @@ contains
     call apply_mask_noice_direct( mesh, mask_noice, Hi_tplusdt)
 
     ! Recalculate dH/dt, accounting for limit of no negative ice thickness
-    dHi_dt( mesh%vi1: mesh%vi2) = (Hi_tplusdt( mesh%vi1: mesh%vi2) - Hi( mesh%vi1: mesh%vi2)) / dt
+    dHi_dt( mesh%vi1: mesh%vi2) = (Hi_tplusdt( mesh%vi1: mesh%vi2) - geom%Hi( mesh%vi1: mesh%vi2)) / dt
 
     ! Remove the final dH/dt field, which now includes some
     ! artificial ice modifications, from the original field

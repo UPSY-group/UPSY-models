@@ -12,12 +12,17 @@ KEY_PATTERN = re.compile(
     r"^(?P<prefix>\s*end_time_of_run_config\s*=\s*)(?P<value>.*?)(?P<suffix>\s*(?:!.*)?)$"
 )
 
+VISC_IT_NIT_PATTERN = re.compile(
+    r"^(?P<prefix>\s*visc_it_nit_config\s*=\s*)(?P<value>.*?)(?P<suffix>\s*(?:!.*)?)$"
+)
+
 
 def update_config_file(config_path: Path) -> bool:
-    """Set end_time_of_run_config to start_time_of_run_config + 10.0 in one config file."""
+    """Set end_time_of_run_config to start_time_of_run_config + 10.0 and visc_it_nit_config to 5."""
     lines = config_path.read_text(encoding="utf-8").splitlines()
     start_time: float | None = None
-    updated = False
+    updated_end_time = False
+    updated_visc_it_nit = False
 
     for line in lines:
         stripped = line.strip()
@@ -37,15 +42,20 @@ def update_config_file(config_path: Path) -> bool:
 
     for index, line in enumerate(lines):
         match = KEY_PATTERN.match(line)
-        if not match:
+        if match:
+            lines[index] = f"{match.group('prefix')}{end_time:.1f}{match.group('suffix')}"
+            updated_end_time = True
             continue
 
-        lines[index] = f"{match.group('prefix')}{end_time:.1f}{match.group('suffix')}"
-        updated = True
-        break
+        match = VISC_IT_NIT_PATTERN.match(line)
+        if match:
+            lines[index] = f"{match.group('prefix')}5{match.group('suffix')}"
+            updated_visc_it_nit = True
 
-    if not updated:
+    if not updated_end_time:
         raise ValueError(f"end_time_of_run_config not found in {config_path}")
+    if not updated_visc_it_nit:
+        raise ValueError(f"visc_it_nit_config not found in {config_path}")
 
     config_path.write_text("\n".join(lines) + "\n", encoding="utf-8")
     return True

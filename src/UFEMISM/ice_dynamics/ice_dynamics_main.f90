@@ -554,8 +554,8 @@ contains
     call reallocate_bounds( ice%dHi_dt_residual, mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Residual ice thickness rate of change after imposed modifications
 
     ! Horizontal derivatives
-    call reallocate_bounds( ice%dHib_dx_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
-    call reallocate_bounds( ice%dHib_dy_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
+    call reallocate_bounds( ice%geom%dHib_dx_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
+    call reallocate_bounds( ice%geom%dHib_dy_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
 
     ! Target quantities
     call reallocate_bounds( ice%dHi_dt_target   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Target ice thickness rate of change for inversions

@@ -47,10 +47,6 @@ contains
     allocate( ice%dHi_dt_raw     ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%dHi_dt_residual( mesh%vi1:mesh%vi2), source = 0._dp)
 
-    ! Horizontal derivatives
-    allocate( ice%dHib_dx_b( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%dHib_dy_b( mesh%ti1:mesh%ti2), source = 0._dp)
-
     ! Target quantities
     allocate( ice%dHi_dt_target   ( mesh%vi1:mesh%vi2), source = 0._dp)
 

@@ -317,10 +317,6 @@ MODULE ice_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi_dt_raw                  ! [m yr^-1] Ice thickness rate of change before any ice thickness modifications
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi_dt_residual             ! [m yr^-1] Residual ice thickness rate of change for inversions
 
-    ! Horizontal derivatives
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHib_dx_b                   ! [] Horizontal derivative of ice draft on b-grid
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHib_dy_b                   ! [] Horizontal derivative of ice draft on b-grid
-
     ! Target quantities
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi_dt_target               ! [m yr^-1] Target ice thickness rate of change for inversions
 

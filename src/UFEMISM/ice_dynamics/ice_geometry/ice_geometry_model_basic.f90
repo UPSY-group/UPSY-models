@@ -113,6 +113,10 @@ contains
     allocate( self%Hs_slope( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Ho      ( mesh%vi1:mesh%vi2), source = NaN)
 
+    ! Horizontal derivatives
+    allocate( self%dHib_dx_b( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%dHib_dy_b( mesh%ti1:mesh%ti2), source = NaN)
+
     ! Sub-grid bedrock cumulative density functions (CDFs)
     allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)
     allocate( self%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = NaN)

@@ -17,7 +17,6 @@ module ut_ocean_extrapolation
   use grid_basic, only: setup_square_grid
   use ice_model_types, only: type_ice_model
   use ice_model_memory, only: allocate_ice_model
-  use ice_geometry_basics, only: ice_surface_elevation
   use ocean_model_types, only: type_ocean_model
   use ocean_utilities , only: initialise_ocean_vertical_grid
   use ocean_extrapolation, only: extrapolate_ocean_forcing_preparation, &
@@ -76,6 +75,7 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
 
   call allocate_ice_model( mesh, ice, 'ANT')
 
+  ice%geom%SL( mesh%vi1: mesh%vi2) = 0._dp
   do vi = mesh%vi1, mesh%vi2
     if (vi == 1) then
       ! Open ocean, deep bedrock
@@ -101,8 +101,8 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
   end do
 
   ! Get surface and basal topography
+  call ice%geom%calc_surface_elevation()
   do vi = mesh%vi1, mesh%vi2
-    ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), 0._dp)
     ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
   end do
 

@@ -29,6 +29,7 @@ module ice_geometry_model_basic
 
       final :: finalise_ice_geometry_model
 
+      procedure, public :: calc_surface_elevation
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
       procedure, public :: calc_grounded_fractions
@@ -38,6 +39,10 @@ module ice_geometry_model_basic
 
   ! Interfaces for procedures defined in submodules
   interface
+
+    module subroutine calc_surface_elevation( self)
+      class(type_ice_geometry_model),intent(inout) :: self
+    end subroutine calc_surface_elevation
 
     module subroutine determine_masks( self)
       class(type_ice_geometry_model),intent(inout) :: self

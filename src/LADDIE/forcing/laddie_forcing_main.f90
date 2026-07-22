@@ -25,7 +25,7 @@ module laddie_forcing_main
   use thermodynamics_main, only: initialise_ice_temperature_uniform
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
-  use ice_geometry_basics, only: ice_surface_elevation, thickness_above_floatation, Hi_from_Hb_Hs_and_SL
+  use ice_geometry_basics, only: thickness_above_floatation, Hi_from_Hb_Hs_and_SL
   use ice_shelf_base_slopes, only: calc_ice_shelf_base_slopes
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection
@@ -99,10 +99,10 @@ contains
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%geom%Hb, ice%geom%SL, ice%geom%Hi)
 
+    call ice%geom%calc_surface_elevation()
     do vi = mesh%vi1, mesh%vi2
 
       ! Derived geometry
-      ice%geom%Hs ( vi) = ice_surface_elevation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
       ice%geom%Hib( vi) = ice%geom%Hs( vi) - ice%geom%Hi( vi)
       ice%geom%TAF( vi) = thickness_above_floatation( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 

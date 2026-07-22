@@ -15,7 +15,6 @@ module predictor_corrector_scheme
   use time_step_criteria, only: calc_critical_timestep_adv
   use conservation_of_mass_main, only: calc_dHi_dt
   use ice_thickness_safeties, only: alter_ice_thickness
-  use ice_geometry_basics, only: ice_surface_elevation
   use conservation_of_momentum_main, only: solve_stress_balance
   use checksum_mod, only: checksum
 
@@ -159,9 +158,9 @@ contains
       region%ice%dHi_dt = (region%ice%geom%Hi - region%ice%Hi_prev) / region%ice%pc%dt_np1
 
       ! Set model geometry to predicted
+      call region%ice%geom%calc_surface_elevation()
       do vi = region%mesh%vi1, region%mesh%vi2
         ! Basic geometry
-        region%ice%geom%Hs ( vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
         region%ice%geom%Hib( vi) = region%ice%geom%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
 
@@ -192,9 +191,9 @@ contains
       ! ====================
 
       ! Set model geometry back to original
+      call region%ice%geom%calc_surface_elevation()
       do vi = region%mesh%vi1, region%mesh%vi2
         region%ice%geom%Hi(  vi) = region%ice%Hi_prev( vi)
-        region%ice%geom%Hs(  vi) = ice_surface_elevation( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
         region%ice%geom%Hib( vi) = region%ice%geom%Hs(  vi) - region%ice%geom%Hi( vi)
       end do
 

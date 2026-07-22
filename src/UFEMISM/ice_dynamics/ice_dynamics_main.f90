@@ -22,7 +22,7 @@ module ice_dynamics_main
   use conservation_of_mass_main, only: calc_dHi_dt, apply_ice_thickness_BC_explicit, &
     apply_mask_noice_direct
   use ice_geometry_basics, only: ice_surface_elevation, &
-    Hi_from_Hb_Hs_and_SL, height_of_water_column_at_ice_front
+    Hi_from_Hb_Hs_and_SL
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use zeta_gradients, only: calc_zeta_gradients
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
@@ -124,10 +124,8 @@ contains
     call region%ice%geom%calc_surface_elevation()
     call region%ice%geom%calc_ice_base_elevation()
     call region%ice%geom%calc_thickness_above_floatation()
+    call region%ice%geom%calc_height_of_water_column()
     do vi = region%mesh%vi1, region%mesh%vi2
-
-      ! Basic geometry
-      region%ice%geom%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       region%ice%dHi ( vi)  = region%ice%geom%Hi ( vi) - region%refgeo_PD%Hi ( vi)
@@ -276,10 +274,8 @@ contains
     call ice%geom%calc_surface_elevation()
     call ice%geom%calc_ice_base_elevation()
     call ice%geom%calc_thickness_above_floatation()
+    call ice%geom%calc_height_of_water_column()
     do vi = mesh%vi1, mesh%vi2
-
-      ! Derived geometry
-      ice%geom%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
@@ -735,12 +731,8 @@ contains
     call ice%geom%calc_surface_elevation()
     call ice%geom%calc_ice_base_elevation()
     call ice%geom%calc_thickness_above_floatation()
+    call ice%geom%calc_height_of_water_column()
     do vi = mesh_new%vi1, mesh_new%vi2
-
-      ! Basic geometry
-      ! ice%geom%Hi ( vi) = refgeo_init%Hi( vi)
-      ! ice%geom%Hb ( vi) = refgeo_init%Hb( vi)
-      ice%geom%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
 
       ! Differences w.r.t. present-day
       ice%dHi ( vi)  = ice%geom%Hi ( vi) - refgeo_PD%Hi ( vi)
@@ -1295,9 +1287,7 @@ contains
       call ice%geom%calc_surface_elevation()
       call ice%geom%calc_ice_base_elevation()
       call ice%geom%calc_thickness_above_floatation()
-      do vi = mesh%vi1, mesh%vi2
-        ice%geom%Ho ( vi) = height_of_water_column_at_ice_front( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
-      end do
+      call ice%geom%calc_height_of_water_column()
 
     end do pseudo_time ! do while (t_pseudo < dt_relax)
 
@@ -1435,10 +1425,8 @@ contains
       call region%ice%geom%calc_surface_elevation()
       call region%ice%geom%calc_ice_base_elevation()
       call region%ice%geom%calc_thickness_above_floatation()
+      call region%ice%geom%calc_height_of_water_column()
       do vi = region%mesh%vi1, region%mesh%vi2
-
-        ! Basic geometry
-        region%ice%geom%Ho ( vi) = height_of_water_column_at_ice_front( region%ice%geom%Hi( vi), region%ice%geom%Hb( vi), region%ice%geom%SL( vi))
 
         if (region%ice%geom%TAF( vi) > 0._dp) then
           ! Grounded ice

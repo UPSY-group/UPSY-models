@@ -12,7 +12,8 @@ module ice_geometry_model_basic
   use ice_geometry_basics, only: is_floating, thickness_above_floatation, &
     ice_surface_elevation, height_of_water_column_at_ice_front
   use crash_mod, only: crash
-  use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
+  use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, &
+    ddx_a_b_2D, ddy_a_b_2D
 
   implicit none
 
@@ -38,6 +39,7 @@ module ice_geometry_model_basic
       procedure, public :: calc_effective_thickness
       procedure, public :: calc_grounded_fractions
       procedure, public :: calc_absolute_surface_slope
+      procedure, public :: calc_ice_base_slopes
 
   end type type_ice_geometry_model
 
@@ -76,6 +78,10 @@ module ice_geometry_model_basic
     module subroutine calc_absolute_surface_slope( self)
       class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_absolute_surface_slope
+
+    module subroutine calc_ice_base_slopes( self)
+      class(type_ice_geometry_model), intent(inout) :: self
+    end subroutine calc_ice_base_slopes
 
   end interface
 

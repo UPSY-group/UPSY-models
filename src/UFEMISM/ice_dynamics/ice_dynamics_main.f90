@@ -1269,7 +1269,7 @@ contains
     pseudo_time: do while (t_pseudo < dt_relax)
 
       ! Update velocity solution around the calving front
-      call solve_stress_balance( mesh, ice, bed_roughness, BMB_new, region_name, &
+      call solve_stress_balance( mesh, ice, ice%geom, bed_roughness, BMB_new, region_name, &
         n_visc_its, n_Axb_its, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
@@ -1380,7 +1380,7 @@ contains
       region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%geom%Hi_eff) * region%ice%geom%fraction_gr
 
       ! Calculate ice velocities for the predicted geometry
-      call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
+      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%bed_roughness, &
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity

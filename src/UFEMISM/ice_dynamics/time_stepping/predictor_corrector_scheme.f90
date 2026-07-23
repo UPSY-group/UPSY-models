@@ -176,7 +176,7 @@ contains
       ! call run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, region%time)
 
       ! Calculate ice velocities for the predicted geometry
-      call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
+      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%bed_roughness, &
         region%BMB%BMB, region%name, n_visc_its, n_Axb_its)
 
       ! Update stability info

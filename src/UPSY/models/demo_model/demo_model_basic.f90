@@ -26,14 +26,14 @@ module demo_model_basic
       ! Procedures for model memory management and operation
       procedure, public :: allocate   => demo_model_allocate
       procedure, public :: deallocate => demo_model_deallocate
-      procedure, public :: initialise_demo_model
+      procedure, public :: initialise => demo_model_initialise
       procedure, public :: run_demo_model
       procedure, public :: remap_demo_model
 
       ! Deferred procedures that must be defined by each individual demo model implementation
       procedure(demo_model_allocate_ifc),   deferred :: allocate_demo_model
       procedure(demo_model_deallocate_ifc), deferred :: deallocate_demo_model
-      procedure(demo_model_initialise_ifc), deferred :: initialise
+      procedure(demo_model_initialise_ifc), deferred :: initialise_demo_model
       procedure(demo_model_run_ifc),        deferred :: run
       procedure(demo_model_remap_ifc),      deferred :: remap
 
@@ -172,16 +172,18 @@ contains
 
   end subroutine demo_model_deallocate
 
-  subroutine initialise_demo_model( self, H0)
+  subroutine demo_model_initialise( self, H0, till_friction_angle_uniform, beta_sq_uniform)
     !< Initialise stuff that is common to all demo models
     !< (call this from your demo model-specific initialise routine)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
     real(dp),                intent(in   ) :: H0
+    real(dp),                intent(in   ) :: till_friction_angle_uniform
+    real(dp),                intent(in   ) :: beta_sq_uniform
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_initialise'
     integer                     :: vi,ti,k,m
     real(dp)                    :: x,y,cx,cy
 
@@ -191,7 +193,7 @@ contains
     ! Initialise stuff that is common to all models
     call self%initialise_model()
 
-    ! Initialise stuff that is specific to demo models
+    ! Initialise stuff that is common to all demo models
 
     cx = self%mesh%xmax - self%mesh%xmin
     cy = self%mesh%ymax - self%mesh%ymin
@@ -222,10 +224,13 @@ contains
 
     end do
 
+    ! Initialise stuff that is specific to each individual demo model implementation
+    call self%initialise_demo_model( H0, till_friction_angle_uniform, beta_sq_uniform)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_demo_model
+  end subroutine demo_model_initialise
 
   subroutine run_demo_model( self)
     !< Run stuff that is common to all demo models

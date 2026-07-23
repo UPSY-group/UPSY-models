@@ -26,7 +26,7 @@ module demo_model_b
       ! Overriding deferred procedures for model memory management and operation
       procedure, public :: allocate_demo_model   => demo_model_b_allocate
       procedure, public :: deallocate_demo_model => demo_model_b_deallocate
-      procedure, public :: initialise => demo_model_b_initialise
+      procedure, public :: initialise_demo_model => demo_model_b_initialise
       procedure, public :: run        => demo_model_b_run
       procedure, public :: remap      => demo_model_b_remap
 
@@ -92,11 +92,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is common to all demo models
-    call self%initialise_demo_model( H0)
-
-    ! Initialise all the stuff that is specific to demo model a
-
+    ! Initialise all the stuff that is specific to demo_model_b
     self%beta_sq( self%mesh%vi1: self%mesh%vi2) = beta_sq_uniform
 
     ! Remove routine from call stack

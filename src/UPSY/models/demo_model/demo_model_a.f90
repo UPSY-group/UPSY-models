@@ -26,7 +26,7 @@ module demo_model_a
       ! Overriding deferred procedures for model memory management and operation
       procedure, public :: allocate_demo_model   => demo_model_a_allocate
       procedure, public :: deallocate_demo_model => demo_model_a_deallocate
-      procedure, public :: initialise => demo_model_a_initialise
+      procedure, public :: initialise_demo_model => demo_model_a_initialise
       procedure, public :: run        => demo_model_a_run
       procedure, public :: remap      => demo_model_a_remap
 
@@ -67,6 +67,9 @@ contains
     ! Local variables:
     character(len=*), parameter :: routine_name = 'demo_model_a_deallocate'
 
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
     ! Deallocate all the stuff that is specific to demo_model_a
     nullify( self%till_friction_angle)
 
@@ -89,11 +92,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is common to all demo models
-    call self%initialise_demo_model( H0)
-
-    ! Initialise all the stuff that is specific to demo model a
-
+    ! Initialise all the stuff that is specific to demo_model_a
     self%till_friction_angle( self%mesh%vi1: self%mesh%vi2) = till_friction_angle_uniform
 
     ! Remove routine from call stack

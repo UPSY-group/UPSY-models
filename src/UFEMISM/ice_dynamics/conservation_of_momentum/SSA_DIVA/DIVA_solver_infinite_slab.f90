@@ -412,7 +412,8 @@ contains
     ! This is where the sliding law is called!
     call map_b_a_2D( mesh, DIVA%u_base_b, u_base_a)
     call map_b_a_2D( mesh, DIVA%v_base_b, v_base_a)
-    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_base_a, v_base_a)
+    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_base_a, v_base_a, &
+      ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
 
     ! Calculate beta_eff on the a-grid
     if (C%choice_sliding_law == 'no_sliding') then

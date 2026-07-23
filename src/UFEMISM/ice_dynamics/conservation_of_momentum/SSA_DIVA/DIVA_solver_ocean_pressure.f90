@@ -1078,7 +1078,8 @@ contains
     ! This is where the sliding law is called!
     call map_graph_to_mesh_vertices( DIVA%graphs%graph_a, u_base_a, mesh, u_base_a_m)
     call map_graph_to_mesh_vertices( DIVA%graphs%graph_a, v_base_a, mesh, v_base_a_m)
-    call calc_basal_friction_coefficient( mesh, ice, bed_roughness, u_base_a_m, v_base_a_m)
+    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_base_a_m, v_base_a_m, &
+      ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
     call map_mesh_vertices_to_graph( mesh, ice%basal_friction_coefficient, DIVA%graphs%graph_a, DIVA%basal_friction_coefficient_a)
 
     ! DENK DROM

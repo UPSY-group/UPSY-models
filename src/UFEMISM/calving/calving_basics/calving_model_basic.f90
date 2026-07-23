@@ -26,14 +26,14 @@ module calving_model_basic
 
     contains
 
-      ! Type-bound procedures that apply to all demo models
+      ! Procedures for model memory management and operation
       procedure, public :: allocate   => calving_model_allocate
       procedure, public :: deallocate => calving_model_deallocate
       procedure, public :: initialise => calving_model_initialise
       procedure, public :: run        => calving_model_run
       procedure, public :: remap      => calving_model_remap
 
-      ! Deferred procedures that must be defined by each individual demo model
+      ! Deferred procedures that must be overridden by each individual demo model implementation
       procedure(calving_model_allocate_ifc),   deferred :: allocate_calving_model
       procedure(calving_model_deallocate_ifc), deferred :: deallocate_calving_model
       procedure(calving_model_initialise_ifc), deferred :: initialise_calving_model

@@ -28,14 +28,14 @@ module climate_model_basic
 
     contains
 
-      ! Type-bound procedures that apply to all climate models
+      ! Procedures for model memory management and operation
       procedure, public :: allocate   => climate_model_allocate
       procedure, public :: deallocate => climate_model_deallocate
       procedure, public :: initialise => climate_model_initialise
       procedure, public :: run        => climate_model_run
       procedure, public :: remap      => climate_model_remap
 
-      ! Deferred procedures that must be defined by each individual climate model
+      ! Deferred procedures that must be overridden by each individual demo model implementation
       procedure(climate_model_allocate_ifc),   deferred :: allocate_climate_model
       procedure(climate_model_deallocate_ifc), deferred :: deallocate_climate_model
       procedure(climate_model_initialise_ifc), deferred :: initialise_climate_model
@@ -143,8 +143,8 @@ contains
     nullify( self%T2m)
     nullify( self%Precip)
 
-    ! Allocate stuff that is specific to each individual climate model implementation
-    call self%allocate_climate_model()
+    ! Deallocate stuff that is specific to each individual climate model implementation
+    call self%deallocate_climate_model()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -172,8 +172,8 @@ contains
     ! Set time of next calculation to start time
     self%t_next = C%start_time_of_run
 
-    ! Allocate stuff that is specific to each individual climate model implementation
-    call self%allocate_climate_model()
+    ! Initialise stuff that is specific to each individual climate model implementation
+    call self%initialise_climate_model()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

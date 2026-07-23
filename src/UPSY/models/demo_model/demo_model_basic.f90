@@ -30,7 +30,7 @@ module demo_model_basic
       procedure, public :: run        => demo_model_run
       procedure, public :: remap      => demo_model_remap
 
-      ! Deferred procedures that must be defined by each individual demo model implementation
+      ! Deferred procedures that must be overridden by each individual demo model implementation
       procedure(demo_model_allocate_ifc),   deferred :: allocate_demo_model
       procedure(demo_model_deallocate_ifc), deferred :: deallocate_demo_model
       procedure(demo_model_initialise_ifc), deferred :: initialise_demo_model

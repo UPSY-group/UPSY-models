@@ -23,15 +23,15 @@ module demo_model_basic
 
     contains
 
-      ! Type-bound procedures that apply to all demo models
-      procedure, public :: allocate_demo_model
+      ! Procedures for model memory management and operation
+      procedure, public :: allocate => demo_model_allocate
       procedure, public :: deallocate_demo_model
       procedure, public :: initialise_demo_model
       procedure, public :: run_demo_model
       procedure, public :: remap_demo_model
 
-      ! Deferred procedures that must be defined by each individual demo model
-      procedure(demo_model_allocate_ifc),   deferred :: allocate
+      ! Deferred procedures that must be defined by each individual demo model implementation
+      procedure(demo_model_allocate_ifc),   deferred :: allocate_demo_model
       procedure(demo_model_deallocate_ifc), deferred :: deallocate
       procedure(demo_model_initialise_ifc), deferred :: initialise
       procedure(demo_model_run_ifc),        deferred :: run
@@ -44,11 +44,9 @@ module demo_model_basic
 
   abstract interface
 
-    subroutine demo_model_allocate_ifc( self, region_name, mesh, nz)
+    subroutine demo_model_allocate_ifc( self, nz)
       import atype_demo_model, type_mesh
       class(atype_demo_model), intent(inout) :: self
-      character(len=*),        intent(in   ) :: region_name
-      type(type_mesh), target, intent(in   ) :: mesh
       integer,                 intent(in   ) :: nz
     end subroutine demo_model_allocate_ifc
 
@@ -82,9 +80,7 @@ module demo_model_basic
 
 contains
 
-  subroutine allocate_demo_model( self, name, region_name, mesh, nz)
-    !< Allocate stuff that is common to all demo models
-    !< (call this from your demo model-specific allocate routine)
+  subroutine demo_model_allocate( self, name, region_name, mesh, nz)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -94,7 +90,7 @@ contains
     integer,                 intent(in   ) :: nz
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'allocate_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -102,7 +98,7 @@ contains
     ! Allocate stuff that is common to all models
     call self%allocate_model( name, region_name, mesh)
 
-    ! Allocate stuff that is specific to demo models
+    ! Allocate stuff that is common to all demo models
 
     call self%create_field( self%H, self%wH, &
       mesh, Arakawa_grid%a(), &
@@ -139,10 +135,13 @@ contains
       units     = 'K', &
       remap_method = '2nd_order_conservative')
 
+    ! Allocate stuff that is specific to each individual demo model implementation
+    call self%allocate_demo_model( nz)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine allocate_demo_model
+  end subroutine demo_model_allocate
 
   subroutine deallocate_demo_model( self)
     !< Deallocate stuff that is common to all demo models

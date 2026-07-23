@@ -23,7 +23,8 @@ module demo_model_b
 
     contains
 
-      procedure, public :: allocate   => demo_model_b_allocate
+      ! Overriding deferred procedures for model memory management and operation
+      procedure, public :: allocate_demo_model   => demo_model_b_allocate
       procedure, public :: deallocate => demo_model_b_deallocate
       procedure, public :: initialise => demo_model_b_initialise
       procedure, public :: run        => demo_model_b_run
@@ -33,12 +34,10 @@ module demo_model_b
 
 contains
 
-  subroutine demo_model_b_allocate( self, region_name, mesh, nz)
+  subroutine demo_model_b_allocate( self, nz)
 
     ! In/output variables:
     class(type_demo_model_b), intent(inout) :: self
-    character(len=*),         intent(in   ) :: region_name
-    type(type_mesh), target,  intent(in   ) :: mesh
     integer,                  intent(in   ) :: nz
 
     ! Local variables:
@@ -47,13 +46,8 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Allocate all the stuff that is common to all demo models
-    call self%allocate_demo_model( 'demo_b', region_name, mesh, nz)
-
-    ! Allocate all the stuff that is specific to demo model b
-
     call self%create_field( self%beta_sq, self%wbeta_sq, &
-      mesh, Arakawa_grid%a(), &
+      self%mesh, Arakawa_grid%a(), &
       name      = 'beta_sq', &
       long_name = 'bed friction coefficient', &
       units     = 'Pa m^−1/m yr^1/m', &

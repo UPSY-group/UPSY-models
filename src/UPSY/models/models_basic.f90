@@ -33,11 +33,7 @@ module models_basic
 
     contains
 
-      ! These routines all consist of two parts: a 'common' part that is executed for
-      ! all models inheriting from atype_model, and a 'specific' part that is
-      ! only executed for each specific model class. The specific parts are defined
-      ! in the deferred procedures 'allocate_model', 'initialise_model', etc.
-
+      ! Procedures for model memory management and operation
       procedure, public :: allocate_model
       procedure, public :: deallocate_model
       procedure, public :: initialise_model
@@ -45,12 +41,10 @@ module models_basic
       procedure, public :: remap_model
 
       ! i/o
-
       procedure, public :: write_to_restart_file
       procedure, public :: read_from_restart_file
 
       ! Memory management for fields
-
       generic,   public  :: create_field => &
         create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
         create_field_logical_3D, create_field_int_3D, create_field_dp_3D
@@ -89,8 +83,7 @@ module models_basic
       procedure, private :: remap_field_dp_2D
       procedure, private :: remap_field_dp_3D
 
-      ! ===== Basics
-
+      ! Model equality test
       generic,   public  :: operator(==) => eq
       procedure, private :: eq => test_model_equality
 

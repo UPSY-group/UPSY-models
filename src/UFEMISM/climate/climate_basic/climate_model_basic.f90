@@ -173,7 +173,7 @@ contains
     self%t_next = C%start_time_of_run
 
     ! Initialise stuff that is specific to each individual climate model implementation
-    call self%initialise_climate_model()
+    call self%initialise_climate_model( refgeo_PD, refgeo_init)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

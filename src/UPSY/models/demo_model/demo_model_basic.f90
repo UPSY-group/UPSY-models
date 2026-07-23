@@ -24,15 +24,15 @@ module demo_model_basic
     contains
 
       ! Procedures for model memory management and operation
-      procedure, public :: allocate => demo_model_allocate
-      procedure, public :: deallocate_demo_model
+      procedure, public :: allocate   => demo_model_allocate
+      procedure, public :: deallocate => demo_model_deallocate
       procedure, public :: initialise_demo_model
       procedure, public :: run_demo_model
       procedure, public :: remap_demo_model
 
       ! Deferred procedures that must be defined by each individual demo model implementation
       procedure(demo_model_allocate_ifc),   deferred :: allocate_demo_model
-      procedure(demo_model_deallocate_ifc), deferred :: deallocate
+      procedure(demo_model_deallocate_ifc), deferred :: deallocate_demo_model
       procedure(demo_model_initialise_ifc), deferred :: initialise
       procedure(demo_model_run_ifc),        deferred :: run
       procedure(demo_model_remap_ifc),      deferred :: remap
@@ -143,15 +143,13 @@ contains
 
   end subroutine demo_model_allocate
 
-  subroutine deallocate_demo_model( self)
-    !< Deallocate stuff that is common to all demo models
-    !< (call this from your demo model-specific deallocate routine)
+  subroutine demo_model_deallocate( self)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'deallocate_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -159,18 +157,20 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is specific to demo models
-
+    ! Deallocate stuff that is common to all demo models
     nullify( self%H)
     nullify( self%u_3D)
     nullify( self%v_3D)
     nullify( self%mask_ice)
     nullify( self%T2m)
 
+    ! Deallocate stuff that is specific to each individual demo model implementation
+    call self%deallocate_demo_model()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine deallocate_demo_model
+  end subroutine demo_model_deallocate
 
   subroutine initialise_demo_model( self, H0)
     !< Initialise stuff that is common to all demo models

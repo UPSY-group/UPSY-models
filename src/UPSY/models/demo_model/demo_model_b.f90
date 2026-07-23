@@ -25,7 +25,7 @@ module demo_model_b
 
       ! Overriding deferred procedures for model memory management and operation
       procedure, public :: allocate_demo_model   => demo_model_b_allocate
-      procedure, public :: deallocate => demo_model_b_deallocate
+      procedure, public :: deallocate_demo_model => demo_model_b_deallocate
       procedure, public :: initialise => demo_model_b_initialise
       procedure, public :: run        => demo_model_b_run
       procedure, public :: remap      => demo_model_b_remap
@@ -46,6 +46,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
+    ! Allocate all the stuff that is specific to demo_model_b
     call self%create_field( self%beta_sq, self%wbeta_sq, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'beta_sq', &
@@ -69,11 +70,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is common to all demo models
-    call self%deallocate_demo_model()
-
-    ! Deallocate all the stuff that is specific to demo model b
-
+    ! Deallocate all the stuff that is specific to demo_model_b
     nullify( self%beta_sq)
 
     ! Remove routine from call stack

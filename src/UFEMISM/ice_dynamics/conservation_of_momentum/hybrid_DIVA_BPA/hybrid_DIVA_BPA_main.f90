@@ -13,6 +13,7 @@ module hybrid_DIVA_BPA_main
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
   use DIVA_main, only: allocate_DIVA_solver, remap_DIVA_solver
@@ -106,7 +107,7 @@ contains
 
   end subroutine initialise_hybrid_DIVA_BPA_solver
 
-  subroutine solve_hybrid_DIVA_BPA( mesh, ice, bed_roughness, hybrid, region_name, &
+  subroutine solve_hybrid_DIVA_BPA( mesh, ice, geom, bed_roughness, hybrid, region_name, &
     n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Calculate ice velocities by solving the hybrid DIVA/BPA
@@ -114,6 +115,7 @@ contains
     ! In/output variables:
     type(type_mesh),                       intent(inout) :: mesh
     type(type_ice_model),                  intent(inout) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     type(type_bed_roughness_model),        intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
     character(len=3),                      intent(in   ) :: region_name
@@ -143,7 +145,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, no need (in fact, no way) to solve the velocities
-    grounded_ice_exists = ANY( ice%geom%mask_grounded_ice)
+    grounded_ice_exists = ANY( geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       hybrid%u_vav_b = 0._dp
@@ -173,7 +175,7 @@ contains
     end if
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh, ice, ice%geom)
+    call calc_zeta_gradients( mesh, ice, geom)
 
     ! Calculate 3-D matrix operators for the current ice geometry
     call calc_3D_matrix_operators_mesh( mesh, &
@@ -182,8 +184,8 @@ contains
       ice%d2zeta_dx2_bk, ice%d2zeta_dxdy_bk, ice%d2zeta_dy2_bk)
 
     ! Calculate the driving stress
-    call calc_driving_stress_DIVA( mesh, ice%geom, hybrid%DIVA%tau_dx_b, hybrid%DIVA%tau_dy_b)
-    call calc_driving_stress_BPA ( mesh, ice, hybrid%BPA )
+    call calc_driving_stress_DIVA( mesh, geom, hybrid%DIVA%tau_dx_b, hybrid%DIVA%tau_dy_b)
+    call calc_driving_stress_BPA ( mesh, geom, hybrid%BPA )
 
     ! Calculate the solving masks for the hybrid solver
     call calc_hybrid_solver_masks_basic( mesh, hybrid, region_name)
@@ -215,13 +217,13 @@ contains
       call calc_vertical_shear_strain_rates_DIVA( mesh, hybrid%DIVA)
 
       ! Calculate the effective viscosity for the current velocity solution
-      call calc_effective_viscosity_DIVA( mesh, ice, ice%geom, hybrid%DIVA, Glens_flow_law_epsilon_sq_0_applied)
+      call calc_effective_viscosity_DIVA( mesh, ice, geom, hybrid%DIVA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the F-integrals
-      call calc_F_integrals_DIVA( mesh, ice%geom, hybrid%DIVA)
+      call calc_F_integrals_DIVA( mesh, geom, hybrid%DIVA)
 
       ! Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
-      call calc_effective_basal_friction_coefficient_DIVA( mesh, ice, ice%geom, bed_roughness, hybrid%DIVA)
+      call calc_effective_basal_friction_coefficient_DIVA( mesh, ice, geom, bed_roughness, hybrid%DIVA)
 
       ! == Calculate secondary terms in the BPA
       ! =======================================
@@ -233,7 +235,7 @@ contains
       call calc_effective_viscosity_BPA( mesh, ice, hybrid%BPA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the basal friction coefficient betab for the current velocity solution
-      call calc_applied_basal_friction_coefficient_BPA( mesh, ice, ice%geom, bed_roughness, hybrid%BPA)
+      call calc_applied_basal_friction_coefficient_BPA( mesh, ice, geom, bed_roughness, hybrid%BPA)
 
       ! == Solve the linearised hybrid DIVA/BPA
       ! =======================================

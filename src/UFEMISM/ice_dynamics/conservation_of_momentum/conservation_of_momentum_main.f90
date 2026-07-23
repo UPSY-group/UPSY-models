@@ -161,7 +161,7 @@ contains
       case ('hybrid DIVA/BPA')
         ! Calculate velocities according to the hybrid DIVA/BPA
 
-        call solve_hybrid_DIVA_BPA( mesh, ice, bed_roughness, ice%hybrid, region_name, &
+        call solve_hybrid_DIVA_BPA( mesh, ice, ice%geom, bed_roughness, ice%hybrid, region_name, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
         call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, ice, ice%hybrid)

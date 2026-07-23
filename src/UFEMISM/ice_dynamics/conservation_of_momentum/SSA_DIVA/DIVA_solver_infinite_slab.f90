@@ -444,7 +444,7 @@ contains
     if (C%do_GL_subgrid_friction) then
       ! On the b-grid
       do ti = mesh%ti1, mesh%ti2
-        DIVA%beta_eff_b( ti) = DIVA%beta_eff_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        DIVA%beta_eff_b( ti) = DIVA%beta_eff_b( ti) * geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

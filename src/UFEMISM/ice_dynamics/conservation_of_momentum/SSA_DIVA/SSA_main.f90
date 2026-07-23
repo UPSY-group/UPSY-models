@@ -12,6 +12,7 @@ module SSA_main
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SSA
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, ddx_b_a_2D, ddy_b_a_2D, map_b_a_2D
@@ -82,13 +83,14 @@ contains
 
   end subroutine initialise_SSA_solver
 
-  subroutine solve_SSA( mesh, ice, bed_roughness, SSA, n_visc_its, n_Axb_its, &
+  subroutine solve_SSA( mesh, ice, geom, bed_roughness, SSA, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Calculate ice velocities by solving the Shallow Shelf Approximation
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
     type(type_ice_model),               intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
     integer,                            intent(  out) :: n_visc_its            ! Number of non-linear viscosity iterations
@@ -117,7 +119,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, or no sliding, no need to solve the SSA
-    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
+    grounded_ice_exists = any( geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists .or. C%choice_sliding_law == 'no_sliding') then
       SSA%u_b = 0._dp
@@ -145,7 +147,7 @@ contains
     end if
 
     ! Calculate the driving stress
-    call calc_driving_stress( mesh, ice%geom, SSA%tau_dx_b, SSA%tau_dy_b)
+    call calc_driving_stress( mesh, geom, SSA%tau_dx_b, SSA%tau_dy_b)
 
     ! Adaptive relaxation parameter for the viscosity iteration
     L2_uv                               = 1E9_dp
@@ -168,10 +170,10 @@ contains
         SSA%du_dx_a, SSA%du_dy_a, SSA%dv_dx_a, SSA%dv_dy_a)
 
       ! Calculate the effective viscosity for the current velocity solution
-      call calc_effective_viscosity( mesh, ice, SSA, Glens_flow_law_epsilon_sq_0_applied)
+      call calc_effective_viscosity( mesh, ice, geom, SSA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the basal friction coefficient betab for the current velocity solution
-      call calc_applied_basal_friction_coefficient( mesh, ice, bed_roughness, SSA)
+      call calc_applied_basal_friction_coefficient( mesh, ice, geom, bed_roughness, SSA)
 
       ! Solve the linearised SSA to calculate a new velocity solution
       call solve_SSA_DIVA_linearised( mesh, SSA%u_b, SSA%v_b, SSA%N_b, &
@@ -336,12 +338,13 @@ contains
 
   end subroutine calc_vertically_averaged_flow_parameter
 
-  subroutine calc_effective_viscosity( mesh, ice, SSA, Glens_flow_law_epsilon_sq_0_applied)
+  subroutine calc_effective_viscosity( mesh, ice, geom, SSA, Glens_flow_law_epsilon_sq_0_applied)
     !< Calculate the effective viscosity eta, the product term N = eta*H, and the gradients of N
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
     type(type_ice_model),               intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
     real(dp),                           intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
@@ -379,7 +382,7 @@ contains
     SSA%eta_a = min( max( SSA%eta_a, C%visc_eff_min), eta_max)
 
     ! Calculate the product term N = eta * H on the a-grid
-    SSA%N_a = SSA%eta_a * max( 0.1_dp, ice%geom%Hi)
+    SSA%N_a = SSA%eta_a * max( 0.1_dp, geom%Hi)
 
     ! Calculate the product term N and its gradients on the b-grid
     call map_a_b_2D( mesh, SSA%N_a, SSA%N_b    )
@@ -391,7 +394,7 @@ contains
 
   end subroutine calc_effective_viscosity
 
-  subroutine calc_applied_basal_friction_coefficient( mesh, ice, bed_roughness, SSA)
+  subroutine calc_applied_basal_friction_coefficient( mesh, ice, geom, bed_roughness, SSA)
     !< Calculate the applied basal friction coefficient beta_b, i.e. on the b-grid
     !< and scaled with the sub-grid grounded fraction
 
@@ -400,6 +403,7 @@ contains
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
     type(type_ice_model),               intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
 
@@ -415,7 +419,7 @@ contains
     ! This is where the sliding law is called!
     call map_b_a_2D( mesh, SSA%u_b, u_a)
     call map_b_a_2D( mesh, SSA%v_b, v_a)
-    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_a, v_a, &
+    call calc_basal_friction_coefficient( mesh, geom, bed_roughness, u_a, v_a, &
       ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
 
     ! Map the basal friction coefficient to the b-grid
@@ -424,7 +428,7 @@ contains
     ! Apply the sub-grid grounded fraction, and limit the friction coefficient to improve stability
     if (C%do_GL_subgrid_friction) then
       do ti = mesh%ti1, mesh%ti2
-        SSA%basal_friction_coefficient_b( ti) = SSA%basal_friction_coefficient_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        SSA%basal_friction_coefficient_b( ti) = SSA%basal_friction_coefficient_b( ti) * geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

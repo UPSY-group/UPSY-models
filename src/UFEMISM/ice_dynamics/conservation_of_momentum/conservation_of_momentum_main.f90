@@ -128,7 +128,7 @@ contains
       case ('SSA')
         ! Calculate velocities according to the Shallow Shelf Approximation
 
-        call solve_SSA( mesh, ice, bed_roughness, ice%SSA, &
+        call solve_SSA( mesh, ice, ice%geom, bed_roughness, ice%SSA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
         call set_ice_velocities_to_SSA_results( mesh, ice, ice%SSA)
@@ -137,7 +137,7 @@ contains
         ! Calculate velocities according to the hybrid SIA/SSA
 
         call solve_SIA( mesh, ice, ice%SIA)
-        call solve_SSA( mesh, ice, bed_roughness, ice%SSA, &
+        call solve_SSA( mesh, ice, ice%geom, bed_roughness, ice%SSA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
         call set_ice_velocities_to_SIASSA_results( mesh, ice, ice%SIA, ice%SSA)

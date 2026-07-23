@@ -45,7 +45,7 @@ module demo_model_basic
   abstract interface
 
     subroutine demo_model_allocate_ifc( self, nz)
-      import atype_demo_model, type_mesh
+      import atype_demo_model
       class(atype_demo_model), intent(inout) :: self
       integer,                 intent(in   ) :: nz
     end subroutine demo_model_allocate_ifc

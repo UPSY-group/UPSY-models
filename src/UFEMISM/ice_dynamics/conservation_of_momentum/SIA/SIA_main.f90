@@ -7,6 +7,7 @@ module SIA_main
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SIA
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use parameters, only: grav, ice_density
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
@@ -62,12 +63,13 @@ contains
 
   end subroutine allocate_SIA_solver
 
-  subroutine solve_SIA( mesh, ice, SIA)
+  subroutine solve_SIA( mesh, ice, geom, SIA)
     !< Calculate ice velocities by solving the Shallow Ice Approximation with Glen's flow law
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
     type(type_ice_model),                intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     type(type_ice_velocity_solver_SIA),  intent(inout) :: SIA
 
     ! Local variables:
@@ -99,12 +101,12 @@ contains
     call calc_ice_rheology_Glen( mesh, ice)
 
     ! Calculate ice thickness, surface elevation, surface slopes, and ice flow factor on the b-grid
-    call map_a_b_2D( mesh, ice%geom%Hi    , Hi_b    )
-    call map_a_b_2D( mesh, ice%geom%Hs    , Hs_b    )
-    call ddx_a_a_2D( mesh, ice%geom%Hs    , dHs_dx  )
-    call ddy_a_a_2D( mesh, ice%geom%Hs    , dHs_dy  )
-    call ddx_a_b_2D( mesh, ice%geom%Hs    , dHs_dx_b)
-    call ddy_a_b_2D( mesh, ice%geom%Hs    , dHs_dy_b)
+    call map_a_b_2D( mesh, geom%Hi    , Hi_b    )
+    call map_a_b_2D( mesh, geom%Hs    , Hs_b    )
+    call ddx_a_a_2D( mesh, geom%Hs    , dHs_dx  )
+    call ddy_a_a_2D( mesh, geom%Hs    , dHs_dy  )
+    call ddx_a_b_2D( mesh, geom%Hs    , dHs_dx_b)
+    call ddy_a_b_2D( mesh, geom%Hs    , dHs_dy_b)
     call map_a_b_3D( mesh, ice%A_flow, A_flow_b)
 
     ! Calculate velocities and strain rates according to the analytical solution of the SIA:
@@ -141,13 +143,13 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       abs_grad_Hs = SQRT( dHs_dx( vi)**2 + dHs_dy( vi)**2)
-      z = ice%geom%Hs( vi) - mesh%zeta * ice%geom%Hi( vi)
+      z = geom%Hs( vi) - mesh%zeta * geom%Hi( vi)
 
       do k = 1, mesh%nz
         SIA%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
-          ice%A_flow( vi,k) * (ice%geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dx( vi)
+          ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dx( vi)
         SIA%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
-          ice%A_flow( vi,k) * (ice%geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dy( vi)
+          ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dy( vi)
       end do
 
     end do

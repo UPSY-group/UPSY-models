@@ -121,7 +121,7 @@ contains
       case ('SIA')
         ! Calculate velocities according to the Shallow Ice Approximation
 
-        call solve_SIA( mesh, ice, ice%SIA)
+        call solve_SIA( mesh, ice, geom, ice%SIA)
         call set_ice_velocities_to_SIA_results( mesh, ice, ice%SIA)
 
         n_visc_its = 0
@@ -138,7 +138,7 @@ contains
       case ('SIA/SSA')
         ! Calculate velocities according to the hybrid SIA/SSA
 
-        call solve_SIA( mesh, ice, ice%SIA)
+        call solve_SIA( mesh, ice, geom, ice%SIA)
         call solve_SSA( mesh, ice, geom, bed_roughness, ice%SSA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)

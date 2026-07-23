@@ -6,7 +6,7 @@ module SSA_DIVA_utilities
   use model_configuration, only: C
   use parameters, only: ice_density, grav
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, ddx_b_a_2D, ddy_b_a_2D
   use checksum_mod, only: checksum
 
@@ -21,11 +21,11 @@ module SSA_DIVA_utilities
 
 contains
 
-  subroutine calc_driving_stress( mesh, ice, tau_dx_b, tau_dy_b)
+  subroutine calc_driving_stress( mesh, geom, tau_dx_b, tau_dy_b)
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: tau_dx_b, tau_dy_b
 
     ! Local variables:
@@ -44,9 +44,9 @@ contains
     allocate( dHs_dy_b( mesh%ti1:mesh%ti2))
 
     ! Calculate Hi, dHs/dx, and dHs/dy on the b-grid
-    call map_a_b_2D( mesh, ice%geom%Hi, Hi_b    )
-    call ddx_a_b_2D( mesh, ice%geom%Hs, dHs_dx_b)
-    call ddy_a_b_2D( mesh, ice%geom%Hs, dHs_dy_b)
+    call map_a_b_2D( mesh, geom%Hi, Hi_b    )
+    call ddx_a_b_2D( mesh, geom%Hs, dHs_dx_b)
+    call ddy_a_b_2D( mesh, geom%Hs, dHs_dy_b)
 
     ! Calculate the driving stress
     do ti = mesh%ti1, mesh%ti2

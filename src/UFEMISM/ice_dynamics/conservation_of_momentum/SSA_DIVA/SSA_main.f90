@@ -145,7 +145,7 @@ contains
     end if
 
     ! Calculate the driving stress
-    call calc_driving_stress( mesh, ice, SSA%tau_dx_b, SSA%tau_dy_b)
+    call calc_driving_stress( mesh, ice%geom, SSA%tau_dx_b, SSA%tau_dy_b)
 
     ! Adaptive relaxation parameter for the viscosity iteration
     L2_uv                               = 1E9_dp

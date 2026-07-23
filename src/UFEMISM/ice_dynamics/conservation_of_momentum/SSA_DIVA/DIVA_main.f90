@@ -9,6 +9,7 @@ module DIVA_main
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_io_main
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, map_b_a_2D, map_b_a_3D
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
@@ -75,20 +76,21 @@ contains
 
   end subroutine initialise_DIVA_solver
 
-  subroutine solve_DIVA( mesh, ice, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
+  subroutine solve_DIVA( mesh, ice, geom, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Calculate ice velocities by solving the Depth-Integrated Viscosity Approximation
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_bed_roughness_model),      intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
-    integer,                             intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
-    integer,                             intent(  out) :: n_Axb_its                ! Number of iterations in iterative solver for linearised momentum balance
-    integer,  dimension(:), optional,    intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:), optional,    intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
-    real(dp), dimension(:), optional,    intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
+    integer,                              intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
+    integer,                              intent(  out) :: n_Axb_its                ! Number of iterations in iterative solver for linearised momentum balance
+    integer,  dimension(:), optional,     intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:), optional,     intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
+    real(dp), dimension(:), optional,     intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_DIVA'
@@ -100,10 +102,10 @@ contains
     case default
       call crash('unknown BC_ice_front "' // trim( C%BC_ice_front) // '"')
     case ('infinite_slab')
-      call solve_DIVA_infinite_slab( mesh, ice, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
+      call solve_DIVA_infinite_slab( mesh, ice, geom, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     case ('ocean_pressure')
-      call solve_DIVA_ocean_pressure( mesh, ice, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
+      call solve_DIVA_ocean_pressure( mesh, ice, geom, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     end select
 

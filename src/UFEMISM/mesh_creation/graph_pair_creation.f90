@@ -4,7 +4,7 @@ module graph_pair_creation
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use create_graphs_from_masked_mesh, only: create_graph_from_masked_mesh_a, &
     create_graph_from_masked_mesh_b
   use graph_operators, only: calc_graph_matrix_operators_2nd_order, &
@@ -20,12 +20,12 @@ module graph_pair_creation
 
 contains
 
-  subroutine create_ice_only_graph_pair( mesh, ice, graphs)
+  subroutine create_ice_only_graph_pair( mesh, geom, graphs)
 
     ! In/output variables:
-    type(type_mesh),       intent(in   ) :: mesh
-    type(type_ice_model),  intent(in   ) :: ice
-    type(type_graph_pair), intent(  out) :: graphs
+    type(type_mesh),                       intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
+    type(type_graph_pair),                 intent(  out) :: graphs
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'create_ice_only_graph_pair'
@@ -37,7 +37,7 @@ contains
 
     ! Calculate the ice mask
     do vi = mesh%vi1, mesh%vi2
-      mask_ice_a( vi) = ice%geom%Hi( vi) > 0._dp
+      mask_ice_a( vi) = geom%Hi( vi) > 0._dp
     end do
 
     ! Create graphs from the masked vertices and triangles

@@ -13,6 +13,7 @@ module DIVA_solver_infinite_slab
   use graph_types, only: type_graph_pair
   use graph_pair_creation, only: create_ice_only_graph_pair, deallocate_graph_pair
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
@@ -46,20 +47,21 @@ contains
 
   ! == Main routines
 
-  subroutine solve_DIVA_infinite_slab( mesh, ice, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
+  subroutine solve_DIVA_infinite_slab( mesh, ice, geom, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Calculate ice velocities by solving the Depth-Integrated Viscosity Approximation
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_bed_roughness_model),      intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
-    integer,                             intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
-    integer,                             intent(  out) :: n_Axb_its                ! Number of iterations in iterative solver for linearised momentum balance
-    integer,  dimension(:), optional,    intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:), optional,    intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
-    real(dp), dimension(:), optional,    intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
+    integer,                              intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
+    integer,                              intent(  out) :: n_Axb_its                ! Number of iterations in iterative solver for linearised momentum balance
+    integer,  dimension(:), optional,     intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:), optional,     intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
+    real(dp), dimension(:), optional,     intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_DIVA_infinite_slab'
@@ -113,7 +115,7 @@ contains
     end if
 
     ! Calculate the driving stress
-    call calc_driving_stress( mesh, ice, DIVA%tau_dx_b, DIVA%tau_dy_b)
+    call calc_driving_stress( mesh, geom, DIVA%tau_dx_b, DIVA%tau_dy_b)
 
     ! Adaptive relaxation parameter for the viscosity iteration
     L2_uv                               = 1E9_dp
@@ -139,13 +141,13 @@ contains
       call calc_vertical_shear_strain_rates( mesh, DIVA)
 
       ! Calculate the effective viscosity for the current velocity solution
-      call calc_effective_viscosity( mesh, ice, DIVA, Glens_flow_law_epsilon_sq_0_applied)
+      call calc_effective_viscosity( mesh, ice, geom, DIVA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the F-integrals (Lipscomb et al. (2019), Eq. 30)
-      call calc_F_integrals( mesh, ice, DIVA)
+      call calc_F_integrals( mesh, geom, DIVA)
 
       ! Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
-      call calc_effective_basal_friction_coefficient( mesh, ice, bed_roughness, DIVA)
+      call calc_effective_basal_friction_coefficient( mesh, ice, geom, bed_roughness, DIVA)
 
       ! Solve the linearised DIVA to calculate a new velocity solution
       call solve_SSA_DIVA_linearised( mesh, DIVA%u_vav_b, DIVA%v_vav_b, &
@@ -269,14 +271,15 @@ contains
 
   end subroutine calc_vertical_shear_strain_rates
 
-  subroutine calc_effective_viscosity( mesh, ice, &
+  subroutine calc_effective_viscosity( mesh, ice, geom, &
     DIVA, Glens_flow_law_epsilon_sq_0_applied)
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
-    real(dp),                            intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
+    real(dp),                             intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_viscosity'
@@ -326,7 +329,7 @@ contains
 
     ! Calculate the product term N = eta * H on the a-grid
     do vi = mesh%vi1, mesh%vi2
-      DIVA%N_a( vi) = DIVA%eta_vav_a( vi) * max( 0.1, ice%geom%Hi( vi))
+      DIVA%N_a( vi) = DIVA%eta_vav_a( vi) * max( 0.1_dp, geom%Hi( vi))
     end do
 
     ! Calculate the product term N and its gradients on the b-grid
@@ -347,13 +350,13 @@ contains
 
   end subroutine calc_effective_viscosity
 
-  subroutine calc_F_integrals( mesh, ice, DIVA)
+  subroutine calc_F_integrals( mesh, geom, DIVA)
     !< Calculate the F-integrals on the a-grid (Lipscomb et al. (2019), Eq. 30)
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(in   ) :: ice
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_F_integrals'
@@ -369,13 +372,13 @@ contains
       do k = 1, mesh%nz
         prof( k) = (mesh%zeta( k)    / DIVA%eta_3D_a( vi,k))
       end do
-      DIVA%F1_3D_a( vi,:) = -max( 0.1_dp, ice%geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
+      DIVA%F1_3D_a( vi,:) = -max( 0.1_dp, geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
 
       ! F2
       do k = 1, mesh%nz
         prof( k) = (mesh%zeta( k)**2 / DIVA%eta_3D_a( vi,k))
       end do
-      DIVA%F2_3D_a( vi,:) = -max( 0.1_dp, ice%geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
+      DIVA%F2_3D_a( vi,:) = -max( 0.1_dp, geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( mesh%zeta, prof)
 
     end do
 
@@ -391,14 +394,15 @@ contains
 
   end subroutine calc_F_integrals
 
-  subroutine calc_effective_basal_friction_coefficient( mesh, ice, bed_roughness, DIVA)
+  subroutine calc_effective_basal_friction_coefficient( mesh, ice, geom, bed_roughness, DIVA)
     !< Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_bed_roughness_model),      intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_effective_basal_friction_coefficient'

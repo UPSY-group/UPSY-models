@@ -182,7 +182,7 @@ contains
       ice%d2zeta_dx2_bk, ice%d2zeta_dxdy_bk, ice%d2zeta_dy2_bk)
 
     ! Calculate the driving stress
-    call calc_driving_stress_DIVA( mesh, ice, hybrid%DIVA%tau_dx_b, hybrid%DIVA%tau_dy_b)
+    call calc_driving_stress_DIVA( mesh, ice%geom, hybrid%DIVA%tau_dx_b, hybrid%DIVA%tau_dy_b)
     call calc_driving_stress_BPA ( mesh, ice, hybrid%BPA )
 
     ! Calculate the solving masks for the hybrid solver
@@ -215,13 +215,13 @@ contains
       call calc_vertical_shear_strain_rates_DIVA( mesh, hybrid%DIVA)
 
       ! Calculate the effective viscosity for the current velocity solution
-      call calc_effective_viscosity_DIVA( mesh, ice, hybrid%DIVA, Glens_flow_law_epsilon_sq_0_applied)
+      call calc_effective_viscosity_DIVA( mesh, ice, ice%geom, hybrid%DIVA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the F-integrals
-      call calc_F_integrals_DIVA( mesh, ice, hybrid%DIVA)
+      call calc_F_integrals_DIVA( mesh, ice%geom, hybrid%DIVA)
 
       ! Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
-      call calc_effective_basal_friction_coefficient_DIVA( mesh, ice, bed_roughness, hybrid%DIVA)
+      call calc_effective_basal_friction_coefficient_DIVA( mesh, ice, ice%geom, bed_roughness, hybrid%DIVA)
 
       ! == Calculate secondary terms in the BPA
       ! =======================================

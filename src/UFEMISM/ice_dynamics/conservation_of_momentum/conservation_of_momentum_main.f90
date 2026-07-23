@@ -145,7 +145,7 @@ contains
       case ('DIVA')
         ! Calculate velocities according to the Depth-Integrated Viscosity Approximation
 
-        call solve_DIVA( mesh, ice, bed_roughness, ice%DIVA, &
+        call solve_DIVA( mesh, ice, ice%geom, bed_roughness, ice%DIVA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
         call set_ice_velocities_to_DIVA_results( mesh, ice, ice%DIVA)

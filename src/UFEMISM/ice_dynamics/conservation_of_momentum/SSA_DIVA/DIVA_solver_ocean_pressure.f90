@@ -14,6 +14,7 @@ module DIVA_solver_ocean_pressure
   use graph_pair_creation, only: create_ice_only_graph_pair, deallocate_graph_pair
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA, &
     type_ice_velocity_solver_DIVA_graphs
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
@@ -43,20 +44,21 @@ contains
 
   ! == Main routines
 
-  subroutine solve_DIVA_ocean_pressure( mesh, ice, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
+  subroutine solve_DIVA_ocean_pressure( mesh, ice, geom, bed_roughness, DIVA, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Calculate ice velocities by solving the Depth-Integrated Viscosity Approximation
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_bed_roughness_model),      intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
-    integer,                             intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
-    integer,                             intent(  out) :: n_Axb_its                ! Number of iterations in iterative solver for linearised momentum balance
-    integer,  dimension(:), optional,    intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:), optional,    intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
-    real(dp), dimension(:), optional,    intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
+    integer,                              intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
+    integer,                              intent(  out) :: n_Axb_its                ! Number of iterations in iterative solver for linearised momentum balance
+    integer,  dimension(:), optional,     intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:), optional,     intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
+    real(dp), dimension(:), optional,     intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=1024), parameter      :: routine_name = 'solve_DIVA_ocean_pressure'
@@ -80,7 +82,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, no need (in fact, no way) to solve the DIVA
-    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
+    grounded_ice_exists = any( geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       DIVA%u_vav_b  = 0._dp
@@ -111,7 +113,7 @@ contains
       BC_prescr_v_b_applied    = 0._dp
     end if
 
-    call setup_DIVA_solver_on_graphs( mesh, ice, DIVA)
+    call setup_DIVA_solver_on_graphs( mesh, geom, DIVA)
 
     ! Calculate the driving stress and ocean back pressure
     call calc_driving_stress( DIVA%DIVA_graphs)
@@ -151,7 +153,7 @@ contains
       call calc_F_integrals( mesh, DIVA%DIVA_graphs)
 
       ! Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
-      call calc_effective_basal_friction_coefficient( mesh, ice, bed_roughness, DIVA%DIVA_graphs)
+      call calc_effective_basal_friction_coefficient( mesh, ice, geom, bed_roughness, DIVA%DIVA_graphs)
 
       ! Solve the linearised DIVA to calculate a new velocity solution
       call solve_SSA_DIVA_linearised_ocean_pressure( DIVA%DIVA_graphs, &
@@ -251,12 +253,12 @@ contains
 
   end subroutine solve_DIVA_ocean_pressure
 
-  subroutine setup_DIVA_solver_on_graphs( mesh, ice, DIVA)
+  subroutine setup_DIVA_solver_on_graphs( mesh, geom, DIVA)
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_DIVA_solver_on_graphs'
@@ -264,9 +266,9 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call create_ice_only_graph_pair( mesh, ice, DIVA%DIVA_graphs%graphs)
+    call create_ice_only_graph_pair( mesh, geom, DIVA%DIVA_graphs%graphs)
     call allocate_DIVA_solver_on_graphs( mesh, DIVA%DIVA_graphs)
-    call map_DIVA_from_mesh_to_graphs( mesh, ice, DIVA)
+    call map_DIVA_from_mesh_to_graphs( mesh, geom, DIVA)
 
     ! Finalise routine path
     call finalise_routine( routine_name, n_extra_MPI_windows_expected = 55)
@@ -433,12 +435,12 @@ contains
 
   end subroutine deallocate_DIVA_solver_on_graphs
 
-  subroutine map_DIVA_from_mesh_to_graphs( mesh, ice, DIVA)
+  subroutine map_DIVA_from_mesh_to_graphs( mesh, geom, DIVA)
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(in   ) :: ice
-    type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_velocity_solver_DIVA),  intent(inout) :: DIVA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'map_DIVA_from_mesh_to_graphs'
@@ -447,10 +449,10 @@ contains
     call init_routine( routine_name)
 
     ! Ice model forcing data
-    call map_mesh_vertices_to_graph ( mesh, ice%geom%Hi                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hi_a                        )
-    call map_mesh_vertices_to_graph ( mesh, ice%geom%Hs                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hs_a                        )
-    call map_mesh_vertices_to_graph ( mesh, ice%geom%Ho                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Ho_a                        )
-    call map_mesh_triangles_to_graph( mesh, ice%geom%fraction_gr_b                , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%fraction_gr_b               )
+    call map_mesh_vertices_to_graph ( mesh, geom%Hi                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hi_a                        )
+    call map_mesh_vertices_to_graph ( mesh, geom%Hs                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Hs_a                        )
+    call map_mesh_vertices_to_graph ( mesh, geom%Ho                           , DIVA%DIVA_graphs%graphs%graph_a, DIVA%DIVA_graphs%Ho_a                        )
+    call map_mesh_triangles_to_graph( mesh, geom%fraction_gr_b                , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%fraction_gr_b               )
 
     ! Solution
     call map_mesh_triangles_to_graph( mesh, DIVA%u_vav_b                     , DIVA%DIVA_graphs%graphs%graph_b, DIVA%DIVA_graphs%u_vav_b                     )
@@ -1031,12 +1033,13 @@ contains
 
   end subroutine calc_F_integrals
 
-  subroutine calc_effective_basal_friction_coefficient( mesh, ice, bed_roughness, DIVA)
+  subroutine calc_effective_basal_friction_coefficient( mesh, ice, geom, bed_roughness, DIVA)
     !< Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
 
     ! In/output variables:
     type(type_mesh),                            intent(in   ) :: mesh
     type(type_ice_model),                       intent(inout) :: ice
+    class(atype_ice_geometry_model_data),       intent(in   ) :: geom
     type(type_bed_roughness_model),             intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_DIVA_graphs), intent(inout) :: DIVA
 
@@ -1078,7 +1081,7 @@ contains
     ! This is where the sliding law is called!
     call map_graph_to_mesh_vertices( DIVA%graphs%graph_a, u_base_a, mesh, u_base_a_m)
     call map_graph_to_mesh_vertices( DIVA%graphs%graph_a, v_base_a, mesh, v_base_a_m)
-    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_base_a_m, v_base_a_m, &
+    call calc_basal_friction_coefficient( mesh, geom, bed_roughness, u_base_a_m, v_base_a_m, &
       ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
     call map_mesh_vertices_to_graph( mesh, ice%basal_friction_coefficient, DIVA%graphs%graph_a, DIVA%basal_friction_coefficient_a)
 

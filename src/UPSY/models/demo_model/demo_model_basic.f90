@@ -27,15 +27,15 @@ module demo_model_basic
       procedure, public :: allocate   => demo_model_allocate
       procedure, public :: deallocate => demo_model_deallocate
       procedure, public :: initialise => demo_model_initialise
-      procedure, public :: run_demo_model
-      procedure, public :: remap_demo_model
+      procedure, public :: run        => demo_model_run
+      procedure, public :: remap      => demo_model_remap
 
       ! Deferred procedures that must be defined by each individual demo model implementation
       procedure(demo_model_allocate_ifc),   deferred :: allocate_demo_model
       procedure(demo_model_deallocate_ifc), deferred :: deallocate_demo_model
       procedure(demo_model_initialise_ifc), deferred :: initialise_demo_model
-      procedure(demo_model_run_ifc),        deferred :: run
-      procedure(demo_model_remap_ifc),      deferred :: remap
+      procedure(demo_model_run_ifc),        deferred :: run_demo_model
+      procedure(demo_model_remap_ifc),      deferred :: remap_demo_model
 
   end type atype_demo_model
 
@@ -173,8 +173,6 @@ contains
   end subroutine demo_model_deallocate
 
   subroutine demo_model_initialise( self, H0, till_friction_angle_uniform, beta_sq_uniform)
-    !< Initialise stuff that is common to all demo models
-    !< (call this from your demo model-specific initialise routine)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -232,15 +230,15 @@ contains
 
   end subroutine demo_model_initialise
 
-  subroutine run_demo_model( self)
-    !< Run stuff that is common to all demo models
-    !< (call this from your demo model-specific run routine)
+  subroutine demo_model_run( self, H_new, dH)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
+    real(dp),                intent(in   ) :: H_new
+    real(dp),                intent(in   ) :: dH
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_run'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -248,23 +246,24 @@ contains
     ! Run stuff that is common to all models
     call self%run_model()
 
-    ! Run stuff that is specific to demo models
+    ! Run stuff that is common to all demo models
+
+    ! Run stuff that is specific to each individual demo model implementation
+    call self%run_demo_model( H_new, dH)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_demo_model
+  end subroutine demo_model_run
 
-  subroutine remap_demo_model( self, mesh_new)
-    !< Remap stuff that is common to all demo models
-    !< (call this from your demo model-specific remap routine)
+  subroutine demo_model_remap( self, mesh_new)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
     type(type_mesh), target, intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -272,17 +271,19 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is specific to demo models
-
+    ! Remap stuff that is common to all demo models
     call self%remap_field( mesh_new, 'H'       , self%H       )
     call self%remap_field( mesh_new, 'u_3D'    , self%u_3D    )
     call self%remap_field( mesh_new, 'v_3D'    , self%v_3D    )
     call self%remap_field( mesh_new, 'mask_ice', self%mask_ice)
     call self%remap_field( mesh_new, 'T2m'     , self%T2m     )
 
+    ! Remap stuff that is specific to each individual demo model implementation
+    call self%remap_demo_model( mesh_new)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_demo_model
+  end subroutine demo_model_remap
 
 end module demo_model_basic

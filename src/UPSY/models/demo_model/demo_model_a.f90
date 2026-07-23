@@ -27,8 +27,8 @@ module demo_model_a
       procedure, public :: allocate_demo_model   => demo_model_a_allocate
       procedure, public :: deallocate_demo_model => demo_model_a_deallocate
       procedure, public :: initialise_demo_model => demo_model_a_initialise
-      procedure, public :: run        => demo_model_a_run
-      procedure, public :: remap      => demo_model_a_remap
+      procedure, public :: run_demo_model        => demo_model_a_run
+      procedure, public :: remap_demo_model      => demo_model_a_remap
 
   end type type_demo_model_a
 
@@ -113,11 +113,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Run all the stuff that is common to all demo models
-    call self%run_demo_model()
-
     ! Run all the stuff that is specific to demo model a
-
     self%H( self%mesh%vi1: self%mesh%vi2) = self%H( self%mesh%vi1: self%mesh%vi2) + dH
 
     ! Remove routine from call stack
@@ -137,11 +133,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is common to all demo models
-    call self%remap_demo_model( mesh_new)
-
     ! Remap all the stuff that is specific to demo model a
-
     call self%remap_field( mesh_new, 'till_friction_angle', self%till_friction_angle)
 
     ! Remove routine from call stack

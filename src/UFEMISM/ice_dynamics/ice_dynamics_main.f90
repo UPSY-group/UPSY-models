@@ -172,7 +172,7 @@ contains
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
     ! Calculate zeta gradients
-    call calc_zeta_gradients( region%mesh, region%ice)
+    call calc_zeta_gradients( region%mesh, region%ice, region%ice%geom)
 
     ! Calculate sub-grid grounded-area fractions
     call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
@@ -304,7 +304,7 @@ contains
     call checksum( mesh%pai_V, ice%dHib_dt, 'ice%dHib_dt')
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh, ice)
+    call calc_zeta_gradients( mesh, ice, ice%geom)
 
     ! Model states for ice dynamics model
     ice%t_Hi_prev = C%start_time_of_run
@@ -751,7 +751,7 @@ contains
     call ice%geom%calc_ice_base_slopes()
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh_new, ice)
+    call calc_zeta_gradients( mesh_new, ice, ice%geom)
 
     ! Load target dHi_dt for inversions
     if (C%do_target_dHi_dt) then
@@ -1448,7 +1448,7 @@ contains
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
       ! Calculate zeta gradients
-      call calc_zeta_gradients( region%mesh, region%ice)
+      call calc_zeta_gradients( region%mesh, region%ice, region%ice%geom)
 
       ! Calculate sub-grid grounded-area fractions
       call region%ice%geom%calc_grounded_fractions( region%ice%dHb)

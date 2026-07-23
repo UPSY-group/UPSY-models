@@ -173,7 +173,7 @@ contains
     end if
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh, ice)
+    call calc_zeta_gradients( mesh, ice, ice%geom)
 
     ! Calculate 3-D matrix operators for the current ice geometry
     call calc_3D_matrix_operators_mesh( mesh, &
@@ -233,7 +233,7 @@ contains
       call calc_effective_viscosity_BPA( mesh, ice, hybrid%BPA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the basal friction coefficient betab for the current velocity solution
-      call calc_applied_basal_friction_coefficient_BPA( mesh, ice, bed_roughness, hybrid%BPA)
+      call calc_applied_basal_friction_coefficient_BPA( mesh, ice, ice%geom, bed_roughness, hybrid%BPA)
 
       ! == Solve the linearised hybrid DIVA/BPA
       ! =======================================

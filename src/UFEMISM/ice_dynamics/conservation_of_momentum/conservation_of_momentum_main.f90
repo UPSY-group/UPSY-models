@@ -153,7 +153,7 @@ contains
       case ('BPA')
         ! Calculate velocities according to the Blatter-Pattyn Approximation
 
-        call solve_BPA( mesh, ice, bed_roughness, ice%BPA, &
+        call solve_BPA( mesh, ice, ice%geom, bed_roughness, ice%BPA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
         call set_ice_velocities_to_BPA_results( mesh, ice, ice%BPA)

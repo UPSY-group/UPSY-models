@@ -5,6 +5,7 @@ module zeta_gradients
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_2D, ddy_b_a_2D
 
@@ -16,13 +17,14 @@ module zeta_gradients
 
 contains
 
-  subroutine calc_zeta_gradients( mesh, ice)
+  subroutine calc_zeta_gradients( mesh, ice, geom)
     !< Calculate all the gradients of zeta,
     !< needed to perform the scaled vertical coordinate transformation
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
     type(type_ice_model), intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'calc_zeta_gradients'
@@ -88,11 +90,11 @@ contains
     ! Calculate gradients of Hi and Hs on both grids
 
     ! call map_a_a_2D( mesh, ice%geom%Hi,   Hi_a       )
-    call ddx_a_a_2D( mesh, ice%geom%Hi  , dHi_dx_a   )
-    call ddy_a_a_2D( mesh, ice%geom%Hi  , dHi_dy_a   )
-    call map_a_b_2D( mesh, ice%geom%Hi  , Hi_b       )
-    call ddx_a_b_2D( mesh, ice%geom%Hi  , dHi_dx_b   )
-    call ddy_a_b_2D( mesh, ice%geom%Hi  , dHi_dy_b   )
+    call ddx_a_a_2D( mesh, geom%Hi  , dHi_dx_a   )
+    call ddy_a_a_2D( mesh, geom%Hi  , dHi_dy_a   )
+    call map_a_b_2D( mesh, geom%Hi  , Hi_b       )
+    call ddx_a_b_2D( mesh, geom%Hi  , dHi_dx_b   )
+    call ddy_a_b_2D( mesh, geom%Hi  , dHi_dy_b   )
     call ddx_b_a_2D( mesh, dHi_dx_b, d2Hi_dx2_a )
     call ddy_b_a_2D( mesh, dHi_dx_b, d2Hi_dxdy_a)
     call ddy_b_a_2D( mesh, dHi_dy_b, d2Hi_dy2_a )
@@ -101,11 +103,11 @@ contains
     call ddy_a_b_2D( mesh, dHi_dy_a, d2Hi_dy2_b )
 
     ! call map_a_a_2D( mesh, ice%geom%Hs_a, Hs_a       )
-    call ddx_a_a_2D( mesh, ice%geom%Hs  , dHs_dx_a   )
-    call ddy_a_a_2D( mesh, ice%geom%Hs  , dHs_dy_a   )
-    call map_a_b_2D( mesh, ice%geom%Hs  , Hs_b       )
-    call ddx_a_b_2D( mesh, ice%geom%Hs  , dHs_dx_b   )
-    call ddy_a_b_2D( mesh, ice%geom%Hs  , dHs_dy_b   )
+    call ddx_a_a_2D( mesh, geom%Hs  , dHs_dx_a   )
+    call ddy_a_a_2D( mesh, geom%Hs  , dHs_dy_a   )
+    call map_a_b_2D( mesh, geom%Hs  , Hs_b       )
+    call ddx_a_b_2D( mesh, geom%Hs  , dHs_dx_b   )
+    call ddy_a_b_2D( mesh, geom%Hs  , dHs_dy_b   )
     call ddx_b_a_2D( mesh, dHs_dx_b, d2Hs_dx2_a )
     call ddy_b_a_2D( mesh, dHs_dx_b, d2Hs_dxdy_a)
     call ddy_b_a_2D( mesh, dHs_dy_b, d2Hs_dy2_a )
@@ -118,7 +120,7 @@ contains
     ! ak
     do vi = mesh%vi1, mesh%vi2
 
-      Hi = max( 10._dp, ice%geom%Hi( vi))
+      Hi = max( 10._dp, geom%Hi( vi))
 
       do k = 1, mesh%nz
 

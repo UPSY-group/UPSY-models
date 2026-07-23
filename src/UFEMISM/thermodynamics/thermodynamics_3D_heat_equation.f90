@@ -93,7 +93,7 @@ CONTAINS
     ALLOCATE( is_unstable         ( mesh%vi1:mesh%vi2        ), source = 0    )
 
     ! Calculate zeta gradients
-    CALL calc_zeta_gradients( mesh, ice)
+    CALL calc_zeta_gradients( mesh, ice, ice%geom)
 
     ! Calculate temperature-dependent heat capacity
     CALL calc_heat_capacity( mesh, ice)

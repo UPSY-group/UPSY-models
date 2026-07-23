@@ -30,19 +30,19 @@ module SMB_model_basic
 
     contains
 
-      ! Type-bound procedures that apply to all demo models
-      procedure, public :: allocate_SMB_model
-      procedure, public :: deallocate_SMB_model
-      procedure, public :: initialise_SMB_model
-      procedure, public :: run_SMB_model
-      procedure, public :: remap_SMB_model
+      ! Procedures for model memory management and operation
+      procedure, public :: allocate   => SMB_model_allocate
+      procedure, public :: deallocate => SMB_model_deallocate
+      procedure, public :: initialise => SMB_model_initialise
+      procedure, public :: run        => SMB_model_run
+      procedure, public :: remap      => SMB_model_remap
 
-      ! Deferred procedures that must be defined by each individual demo model
-      procedure(SMB_model_allocate_ifc),   deferred :: allocate
-      procedure(SMB_model_deallocate_ifc), deferred :: deallocate
-      procedure(SMB_model_initialise_ifc), deferred :: initialise
-      procedure(SMB_model_run_ifc),        deferred :: run
-      procedure(SMB_model_remap_ifc),      deferred :: remap
+      ! Deferred procedures that must be overridden by each individual SMB model implementation
+      procedure(SMB_model_allocate_ifc),   deferred :: allocate_SMB_model
+      procedure(SMB_model_deallocate_ifc), deferred :: deallocate_SMB_model
+      procedure(SMB_model_initialise_ifc), deferred :: initialise_SMB_model
+      procedure(SMB_model_run_ifc),        deferred :: run_SMB_model
+      procedure(SMB_model_remap_ifc),      deferred :: remap_SMB_model
 
   end type atype_SMB_model
 
@@ -51,11 +51,9 @@ module SMB_model_basic
 
   abstract interface
 
-    subroutine SMB_model_allocate_ifc( self, region_name, mesh)
-      import atype_SMB_model, type_mesh
+    subroutine SMB_model_allocate_ifc( self)
+      import atype_SMB_model
       class(atype_SMB_model),  intent(inout) :: self
-      character(len=*),        intent(in   ) :: region_name
-      type(type_mesh), target, intent(in   ) :: mesh
     end subroutine SMB_model_allocate_ifc
 
     subroutine SMB_model_deallocate_ifc( self)
@@ -93,9 +91,7 @@ module SMB_model_basic
 
 contains
 
-  subroutine allocate_SMB_model( self, name, region_name, mesh)
-    !< Allocate stuff that is common to all SMB models
-    !< (call this from your demo model-specific allocate routine)
+  subroutine SMB_model_allocate( self, name, region_name, mesh)
 
     ! In/output variables:
     class(atype_SMB_model),  intent(inout) :: self
@@ -104,7 +100,7 @@ contains
     type(type_mesh), target, intent(in   ) :: mesh
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'allocate_SMB_model'
+    character(len=*), parameter :: routine_name = 'SMB_model_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -112,7 +108,7 @@ contains
     ! Allocate stuff that is common to all models
     call self%allocate_model( name, region_name, mesh)
 
-    ! Allocate stuff that is specific to demo models
+    ! Allocate stuff that is common to all SMB models
 
     ! Allocate generic fields
     call self%create_field( self%SMB, self%wSMB, &
@@ -122,20 +118,21 @@ contains
       units     = 'm yr^-1', &
       remap_method = 'reallocate')
 
+    ! Allocate stuff that is specific to each individual SMB model implementation
+    call self%allocate_SMB_model()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine allocate_SMB_model
+  end subroutine SMB_model_allocate
 
-  subroutine deallocate_SMB_model( self)
-    !< Deallocate stuff that is common to all SMB models
-    !< (call this from your SMB model-specific deallocate routine)
+  subroutine SMB_model_deallocate( self)
 
     ! In/output variables:
     class(atype_SMB_model), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'deallocate_SMB_model'
+    character(len=*), parameter :: routine_name = 'SMB_model_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -143,24 +140,28 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is specific to SMB models
+    ! Deallocate stuff that is common to all SMB models
 
     nullify( self%SMB)
+
+    ! Deallocate stuff that is specific to each individual SMB model implementation
+    call self%deallocate_SMB_model()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine deallocate_SMB_model
+  end subroutine SMB_model_deallocate
 
-  subroutine initialise_SMB_model( self)
-    !< Initialise stuff that is common to all SMB models
-    !< (call this from your SMB model-specific initialise routine)
+  subroutine SMB_model_initialise( self, ice, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(atype_SMB_model), intent(inout) :: self
+    class(atype_SMB_model),        intent(inout) :: self
+    type(type_ice_model),          intent(in   ) :: ice
+    type(type_reference_geometry), intent(in   ) :: refgeo_init
+    type(type_reference_geometry), intent(in   ) :: refgeo_PD
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_SMB_model'
+    character(len=*), parameter :: routine_name = 'SMB_model_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -168,27 +169,30 @@ contains
     ! Initialise stuff that is common to all models
     call self%initialise_model()
 
-    ! Initialise stuff that is specific to SMB models
+    ! Initialise stuff that is common to all SMB models
 
     ! Set time of next calculation to start time
     self%t_next = C%start_time_of_run
 
+    ! Initialise stuff that is specific to each individual SMB model implementation
+    call self%initialise_SMB_model( ice, refgeo_init, refgeo_PD)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SMB_model
+  end subroutine SMB_model_initialise
 
-  subroutine run_SMB_model( self, time, do_run_SMB_model)
-    !< Run stuff that is common to all SMB models
-    !< (call this from your SMB model-specific run routine)
+  subroutine SMB_model_run( self, time, ice, climate, grid_smooth)
 
     ! In/output variables:
-    class(atype_SMB_model), intent(inout) :: self
-    real(dp),                   intent(in   ) :: time
-    logical,                    intent(  out) :: do_run_SMB_model
+    class(atype_SMB_model),   intent(inout) :: self
+    real(dp),                 intent(in   ) :: time
+    type(type_ice_model),     intent(in   ) :: ice
+    type(type_climate_model), intent(inout) :: climate
+    type(type_grid),          intent(in   ) :: grid_smooth
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_SMB_model'
+    character(len=*), parameter :: routine_name = 'SMB_model_run'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -196,10 +200,9 @@ contains
     ! Run stuff that is common to all models
     call self%run_model()
 
-    ! Run stuff that is specific to SMB models
+    ! Run stuff that is common to all SMB models
 
     ! Check if we need to calculate a new SMB
-    do_run_SMB_model = .false.
     if (C%do_asynchronous_SMB) then
       ! Asynchronous coupling: do not calculate a new SMB in
       ! every model loop, but only at its own separate time step
@@ -207,37 +210,43 @@ contains
       ! Check if this is the next SMB time step
       if (time == self%t_next) then
         ! Go on to calculate a new SMB
-        do_run_SMB_model = .true.
         self%t_next = time + C%dt_SMB
+
+        ! Run stuff that is specific to each individual SMB model implementation
+        call self%run_SMB_model( time, ice, climate, grid_smooth)
+
       elseif (time > self%t_next) then
         ! This should not be possible
         call crash('overshot the SMB time step')
       else
         ! It is not yet time to calculate a new SMB
-        do_run_SMB_model = .false.
       end if
 
     else
       ! Synchronous coupling: calculate a new SMB in every model loop
-      do_run_SMB_model = .true.
       self%t_next = time + C%dt_SMB
+
+      ! Run stuff that is specific to each individual SMB model implementation
+      call self%run_SMB_model( time, ice, climate, grid_smooth)
+
     end if
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_SMB_model
+  end subroutine SMB_model_run
 
-  subroutine remap_SMB_model( self, mesh_new)
-    !< Remap stuff that is common to all SMB models
-    !< (call this from your SMB model-specific remap routine)
+  subroutine SMB_model_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
 
     ! In/output variables:
-    class(atype_SMB_model),  intent(inout) :: self
-    type(type_mesh), target, intent(in   ) :: mesh_new
+    class(atype_SMB_model),                intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    real(dp),                              intent(in   ) :: time
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    type(type_ice_model),          target, intent(in   ) :: ice
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_SMB_model'
+    character(len=*), parameter :: routine_name = 'SMB_model_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -245,13 +254,16 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is specific to SMB models
+    ! Remap stuff that is common to all SMB models
 
     call self%remap_field( mesh_new, 'SMB', self%SMB)
+
+    ! Remap stuff that is specific to each individual SMB model implementation
+    call self%remap_SMB_model( mesh_new, time, refgeo_init, refgeo_PD, ice)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_SMB_model
+  end subroutine SMB_model_remap
 
 end module SMB_model_basic

@@ -226,7 +226,7 @@ contains
   function get_model_name( self) result( model_name)
     class(atype_calving_model), intent(in) :: self
     character(len=:), allocatable          :: model_name
-    model_name = 'calving_model_' // self%get_calving_model_name()
+    model_name = 'calving_' // self%get_calving_model_name()
   end function get_model_name
 
 end module calving_model_basic

@@ -257,7 +257,7 @@ contains
   function get_model_name( self) result( model_name)
     class(atype_ocean_model), intent(in) :: self
     character(len=:), allocatable        :: model_name
-    model_name = 'ocean_model_' // self%get_ocean_model_name()
+    model_name = 'ocean_' // self%get_ocean_model_name()
   end function get_model_name
 
 end module ocean_model_basic

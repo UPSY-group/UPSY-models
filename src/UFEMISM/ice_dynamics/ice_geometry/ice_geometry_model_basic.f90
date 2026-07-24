@@ -225,7 +225,7 @@ contains
   function get_model_name( self) result( model_name)
     class(type_ice_geometry_model), intent(in) :: self
     character(len=:), allocatable              :: model_name
-    model_name = 'ice_geometry_model'
+    model_name = 'ice_geometry'
   end function get_model_name
 
 end module ice_geometry_model_basic

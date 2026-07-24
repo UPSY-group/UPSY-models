@@ -271,7 +271,7 @@ contains
   function get_model_name( self) result( model_name)
     class(atype_climate_model), intent(in) :: self
     character(len=:), allocatable          :: model_name
-    model_name = 'climate_model_' // self%get_climate_model_name()
+    model_name = 'climate_' // self%get_climate_model_name()
   end function get_model_name
 
 end module climate_model_basic

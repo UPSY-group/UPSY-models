@@ -85,11 +85,11 @@ module ISMIP7_SMB
 
     contains
 
-      procedure, public :: allocate   => SMB_model_ISMIP7_allocate
-      procedure, public :: deallocate => SMB_model_ISMIP7_deallocate
-      procedure, public :: initialise => SMB_model_ISMIP7_initialise
-      procedure, public :: run        => SMB_model_ISMIP7_run
-      procedure, public :: remap      => SMB_model_ISMIP7_remap
+      procedure, public :: allocate_SMB_model   => SMB_model_ISMIP7_allocate
+      procedure, public :: deallocate_SMB_model => SMB_model_ISMIP7_deallocate
+      procedure, public :: initialise_SMB_model => SMB_model_ISMIP7_initialise
+      procedure, public :: run_SMB_model        => SMB_model_ISMIP7_run
+      procedure, public :: remap_SMB_model      => SMB_model_ISMIP7_remap
 
       procedure, private :: initialise_SMB_baseline_fixed
 
@@ -97,21 +97,16 @@ module ISMIP7_SMB
 
 contains
 
-  subroutine SMB_model_ISMIP7_allocate( self, region_name, mesh)
+  subroutine SMB_model_ISMIP7_allocate( self)
 
     ! In/output variables:
     class(type_SMB_model_ISMIP7), intent(inout) :: self
-    character(len=*),             intent(in   ) :: region_name
-    type(type_mesh), target,      intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Allocate all the stuff that is common to all SMB models
-    call self%allocate_SMB_model( 'SMB_ISMIP7', region_name, mesh)
 
     ! Allocate all the stuff that is specific to the ISMIP7 SMB model
 
@@ -199,9 +194,6 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is common to all SMB models
-    call self%deallocate_SMB_model()
-
     ! Deallocate all the stuff that is specific to SMB model ISMIP7
 
     ! Baseline SMB and surface elevation
@@ -240,10 +232,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is common to all SMB models
-    call self%initialise_SMB_model()
-
-    ! Deallocate all the stuff that is specific to SMB model ISMIP7
+    ! Initialise all the stuff that is specific to SMB model ISMIP7
 
     ! Initialise fields and baseline climate
     select case (C%SMB_ISMIP7_choice_SMB_baseline)
@@ -333,19 +322,11 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_run'
-    logical                     :: do_run_SMB_model
     real(dp)                    :: delta_z
     integer                     :: vi, mi
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Run all the stuff that is common to all SMB models
-    call self%run_SMB_model( time, do_run_SMB_model)
-    if (.not. do_run_SMB_model) then
-      call finalise_routine( routine_name)
-      return
-    end if
 
     ! Run all the stuff that is specific to SMB model idealised
 
@@ -413,9 +394,6 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Remap all the stuff that is common to all SMB models
-    call self%remap_SMB_model( mesh_new)
 
     ! Remap all the stuff that is specific to SMB model ISMIP7
 

@@ -22,11 +22,11 @@ module SMB_idealised
 
     contains
 
-      procedure, public :: allocate   => SMB_model_idealised_allocate
-      procedure, public :: deallocate => SMB_model_idealised_deallocate
-      procedure, public :: initialise => SMB_model_idealised_initialise
-      procedure, public :: run        => SMB_model_idealised_run
-      procedure, public :: remap      => SMB_model_idealised_remap
+      procedure, public :: allocate_SMB_model   => SMB_model_idealised_allocate
+      procedure, public :: deallocate_SMB_model => SMB_model_idealised_deallocate
+      procedure, public :: initialise_SMB_model => SMB_model_idealised_initialise
+      procedure, public :: run_SMB_model        => SMB_model_idealised_run
+      procedure, public :: remap_SMB_model      => SMB_model_idealised_remap
 
       procedure, private :: run_SMB_model_idealised_EISMINT1
       procedure, private :: run_SMB_model_idealised_Halfar_static
@@ -35,21 +35,16 @@ module SMB_idealised
 
 contains
 
-  subroutine SMB_model_idealised_allocate( self, region_name, mesh)
+  subroutine SMB_model_idealised_allocate( self)
 
     ! In/output variables:
     class(type_SMB_model_idealised), intent(inout) :: self
-    character(len=*),                intent(in   ) :: region_name
-    type(type_mesh), target,         intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_idealised_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Allocate all the stuff that is common to all SMB models
-    call self%allocate_SMB_model( 'SMB_idealised', region_name, mesh)
 
     ! Allocate all the stuff that is specific to the idealised SMB model
 
@@ -68,9 +63,6 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Deallocate all the stuff that is common to all SMB models
-    call self%deallocate_SMB_model()
 
     ! Deallocate all the stuff that is specific to SMB model idealised
 
@@ -94,9 +86,6 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is common to all SMB models
-    call self%initialise_SMB_model()
-
     ! Initialise all the stuff that is specific to SMB model idealised
 
 
@@ -116,17 +105,9 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_SMB_model_idealised'
-    logical                     :: do_run_SMB_model
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Run all the stuff that is common to all SMB models
-    call self%run_SMB_model( time, do_run_SMB_model)
-    if (.not. do_run_SMB_model) then
-      call finalise_routine( routine_name)
-      return
-    end if
 
     ! Run all the stuff that is specific to SMB model idealised
 
@@ -311,16 +292,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is common to all SMB models
-    call self%remap_SMB_model( mesh_new)
-
     ! Remap all the stuff that is specific to SMB model idealised
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_idealised_remap
-
-
 
 end module SMB_idealised

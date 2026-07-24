@@ -16,6 +16,13 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Calculate only when necessary
+    if (self%is_uptodate_Hs_slope) then
+      call finalise_routine( routine_name)
+      return
+    end if
+    self%is_uptodate_Hs_slope = .true.
+
     call ddx_a_a_2D( self%mesh, self%Hs, dHs_dx)
     call ddy_a_a_2D( self%mesh, self%Hs, dHs_dy)
 

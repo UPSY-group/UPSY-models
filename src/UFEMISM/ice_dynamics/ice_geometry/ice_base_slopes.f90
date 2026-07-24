@@ -13,6 +13,13 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Calculate only when necessary
+    if (self%is_uptodate_ice_base_slopes) then
+      call finalise_routine( routine_name)
+      return
+    end if
+    self%is_uptodate_ice_base_slopes = .true.
+
     call ddx_a_b_2D( self%mesh, self%Hib, self%dHib_dx_b)
     call ddy_a_b_2D( self%mesh, self%Hib, self%dHib_dy_b)
 

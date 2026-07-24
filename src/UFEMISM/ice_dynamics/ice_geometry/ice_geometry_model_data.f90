@@ -25,9 +25,18 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: Hs_slope                ! [-]       Absolute surface gradient
     real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Depth of ocean column adjacent to the ice front
 
+    logical :: is_uptodate_Hs       = .false.
+    logical :: is_uptodate_Hib      = .false.
+    logical :: is_uptodate_TAF      = .false.
+    logical :: is_uptodate_Hi_eff   = .false.
+    logical :: is_uptodate_Hs_slope = .false.
+    logical :: is_uptodate_Ho       = .false.
+
     ! Horizontal derivatives
     real(dp), dimension(:  ), allocatable :: dHib_dx_b               ! [-]       Horizontal derivative of ice draft on b-grid
     real(dp), dimension(:  ), allocatable :: dHib_dy_b               ! [-]       Horizontal derivative of ice draft on b-grid
+
+    logical :: is_uptodate_ice_base_slopes = .false.
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     real(dp), dimension(:,:), allocatable :: bedrock_cdf             ! [-]       Sub-grid bedrock cumulative density functions on the a-grid (vertices)
@@ -37,6 +46,8 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1]     Grounded area fractions of vertices
     real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1]     Grounded area fractions of triangles
     real(dp), dimension(:  ), allocatable :: fraction_margin         ! [0-1]     Ice-covered area fractions of ice margins
+
+    logical :: is_uptodate_grounded_fractions = .false.
 
     ! Ice masks
     logical,  dimension(:  ), allocatable :: mask_icefree_land       ! T: ice-free land , F: otherwise
@@ -50,6 +61,8 @@ module ice_geometry_model_data
     logical,  dimension(:  ), allocatable :: mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
     logical,  dimension(:  ), allocatable :: mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
     integer,  dimension(:  ), allocatable :: mask
+
+    logical :: is_uptodate_masks = .false.
 
   end type atype_ice_geometry_model_data
 

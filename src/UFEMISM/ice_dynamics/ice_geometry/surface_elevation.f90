@@ -14,6 +14,13 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Calculate only when necessary
+    if (self%is_uptodate_Hs) then
+      call finalise_routine( routine_name)
+      return
+    end if
+    self%is_uptodate_Hs = .true.
+
     do vi = self%mesh%vi1, self%mesh%vi2
       self%Hs( vi) = ice_surface_elevation( self%Hi( vi), self%Hb( vi), self%SL( vi))
     end do

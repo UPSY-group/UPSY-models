@@ -44,6 +44,9 @@ module SMB_model_basic
       procedure(SMB_model_run_ifc),        deferred :: run_SMB_model
       procedure(SMB_model_remap_ifc),      deferred :: remap_SMB_model
 
+      procedure, public                           :: get_model_name
+      procedure(get_SMB_model_name_ifc), deferred :: get_SMB_model_name
+
   end type atype_SMB_model
 
   ! Abstract interfaces for deferred procedures
@@ -87,15 +90,20 @@ module SMB_model_basic
       type(type_ice_model),          target, intent(in   ) :: ice
     end subroutine SMB_model_remap_ifc
 
+    function get_SMB_model_name_ifc( self) result( SMB_model_name)
+      import atype_SMB_model
+      class(atype_SMB_model), intent(in) :: self
+      character(len=:), allocatable      :: SMB_model_name
+    end function get_SMB_model_name_ifc
+
   end interface
 
 contains
 
-  subroutine SMB_model_allocate( self, name, region_name, mesh)
+  subroutine SMB_model_allocate( self, region_name, mesh)
 
     ! In/output variables:
     class(atype_SMB_model),  intent(inout) :: self
-    character(len=*),        intent(in   ) :: name
     character(len=*),        intent(in   ) :: region_name
     type(type_mesh), target, intent(in   ) :: mesh
 
@@ -106,7 +114,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
     ! Allocate stuff that is common to all SMB models
 
@@ -265,5 +273,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_remap
+
+  function get_model_name( self) result( model_name)
+    class(atype_SMB_model), intent(in) :: self
+    character(len=:), allocatable      :: model_name
+    model_name = 'SMB_model_' // self%get_SMB_model_name()
+  end function get_model_name
 
 end module SMB_model_basic

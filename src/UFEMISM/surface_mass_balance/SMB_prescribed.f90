@@ -31,6 +31,8 @@ module SMB_prescribed
       procedure, public :: run_SMB_model        => SMB_model_prescribed_run
       procedure, public :: remap_SMB_model      => SMB_model_prescribed_remap
 
+      procedure, public :: get_SMB_model_name
+
       procedure, private :: initialise_SMB_model_prescribed_notime
 
   end type type_SMB_model_prescribed
@@ -245,5 +247,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_prescribed_remap
+
+  function get_SMB_model_name( self) result( SMB_model_name)
+    class(type_SMB_model_prescribed), intent(in) :: self
+    character(len=:), allocatable :: SMB_model_name
+    SMB_model_name = 'prescribed'
+  end function get_SMB_model_name
 
 end module SMB_prescribed

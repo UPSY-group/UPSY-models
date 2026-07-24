@@ -28,6 +28,8 @@ module SMB_idealised
       procedure, public :: run_SMB_model        => SMB_model_idealised_run
       procedure, public :: remap_SMB_model      => SMB_model_idealised_remap
 
+      procedure, public :: get_SMB_model_name
+
       procedure, private :: run_SMB_model_idealised_EISMINT1
       procedure, private :: run_SMB_model_idealised_Halfar_static
 
@@ -298,5 +300,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_idealised_remap
+
+  function get_SMB_model_name( self) result( SMB_model_name)
+    class(type_SMB_model_idealised), intent(in) :: self
+    character(len=:), allocatable :: SMB_model_name
+    SMB_model_name = 'idealised'
+  end function get_SMB_model_name
 
 end module SMB_idealised

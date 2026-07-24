@@ -50,7 +50,7 @@ contains
     call init_routine( routine_name)
 
     ! DENK DROM
-    call geom_new%allocate( 'geom_new', ice%geom%region_name(), mesh)
+    call geom_new%allocate( ice%geom%region_name(), mesh)
     geom_new%Hi = Hi_new
     geom_new%Hb = ice%geom%Hb
     geom_new%SL = ice%geom%SL

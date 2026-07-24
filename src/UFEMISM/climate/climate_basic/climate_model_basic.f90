@@ -42,6 +42,9 @@ module climate_model_basic
       procedure(climate_model_run_ifc),        deferred :: run_climate_model
       procedure(climate_model_remap_ifc),      deferred :: remap_climate_model
 
+      procedure, public                               :: get_model_name
+      procedure(get_climate_model_name_ifc), deferred :: get_climate_model_name
+
   end type atype_climate_model
 
   ! Abstract interfaces for deferred procedures
@@ -79,15 +82,20 @@ module climate_model_basic
       type(type_mesh), target,    intent(in   ) :: mesh_new
     end subroutine climate_model_remap_ifc
 
+    function get_climate_model_name_ifc( self) result( climate_model_name)
+      import atype_climate_model
+      class(atype_climate_model), intent(in) :: self
+      character(len=:), allocatable          :: climate_model_name
+    end function get_climate_model_name_ifc
+
   end interface
 
 contains
 
-  subroutine climate_model_allocate( self, name, region_name, mesh)
+  subroutine climate_model_allocate( self, region_name, mesh)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
-    character(len=*),           intent(in   ) :: name
     character(len=*),           intent(in   ) :: region_name
     type(type_mesh), target,    intent(in   ) :: mesh
 
@@ -98,7 +106,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
     ! Allocate all the stuff that is common to all climate models
 
@@ -259,5 +267,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine climate_model_remap
+
+  function get_model_name( self) result( model_name)
+    class(atype_climate_model), intent(in) :: self
+    character(len=:), allocatable          :: model_name
+    model_name = 'climate_model_' // self%get_climate_model_name()
+  end function get_model_name
 
 end module climate_model_basic

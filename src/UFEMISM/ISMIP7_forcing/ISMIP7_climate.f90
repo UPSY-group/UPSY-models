@@ -101,6 +101,8 @@ module ISMIP7_climate
       procedure, public :: run_climate_model        => climate_model_ISMIP7_run
       procedure, public :: remap_climate_model      => climate_model_ISMIP7_remap
 
+      procedure, public :: get_climate_model_name
+
       procedure, private :: initialise_climate_baseline_fixed
 
   end type type_climate_model_ISMIP7
@@ -377,5 +379,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine climate_model_ISMIP7_remap
+
+  function get_climate_model_name( self) result( climate_model_name)
+    class(type_climate_model_ISMIP7), intent(in) :: self
+    character(len=:), allocatable :: climate_model_name
+    climate_model_name = 'ISMIP7'
+  end function get_climate_model_name
 
 end module ISMIP7_climate

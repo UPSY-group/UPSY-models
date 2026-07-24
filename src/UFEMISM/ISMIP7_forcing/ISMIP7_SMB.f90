@@ -91,6 +91,8 @@ module ISMIP7_SMB
       procedure, public :: run_SMB_model        => SMB_model_ISMIP7_run
       procedure, public :: remap_SMB_model      => SMB_model_ISMIP7_remap
 
+      procedure, public :: get_SMB_model_name
+
       procedure, private :: initialise_SMB_baseline_fixed
 
   end type type_SMB_model_ISMIP7
@@ -403,5 +405,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_ISMIP7_remap
+
+  function get_SMB_model_name( self) result( SMB_model_name)
+    class(type_SMB_model_ISMIP7), intent(in) :: self
+    character(len=:), allocatable :: SMB_model_name
+    SMB_model_name = 'ISMIP7'
+  end function get_SMB_model_name
 
 end module ISMIP7_SMB

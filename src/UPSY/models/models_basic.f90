@@ -92,11 +92,11 @@ module models_basic
       procedure, public :: name => get_name
       procedure, public :: is_name
 
-      procedure(get_model_name_ifc), deferred :: get_model_name
-
       procedure, public :: set_region_name
       procedure, public :: region_name => get_region_name
       procedure, public :: is_region_name
+
+      procedure(get_model_name_ifc), deferred :: get_model_name
 
   end type atype_model
 

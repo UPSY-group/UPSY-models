@@ -59,6 +59,8 @@ module SMB_snapshot_plus_anomalies
       procedure, public :: run_SMB_model        => SMB_model_snp_p_anml_run
       procedure, public :: remap_SMB_model      => SMB_model_snp_p_anml_remap
 
+      procedure, public :: get_SMB_model_name
+
       procedure, private :: update_timeframes
 
   end type type_SMB_model_snp_p_anml
@@ -369,5 +371,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_snp_p_anml_remap
+
+  function get_SMB_model_name( self) result( SMB_model_name)
+    class(type_SMB_model_snp_p_anml), intent(in) :: self
+    character(len=:), allocatable :: SMB_model_name
+    SMB_model_name = 'snapshot_plus_anomalies'
+  end function get_SMB_model_name
 
 end module SMB_snapshot_plus_anomalies

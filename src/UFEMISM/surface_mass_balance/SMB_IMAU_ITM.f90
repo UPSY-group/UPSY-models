@@ -69,6 +69,8 @@ module SMB_IMAU_ITM
       procedure, public :: run_SMB_model        => SMB_model_IMAU_ITM_run
       procedure, public :: remap_SMB_model      => SMB_model_IMAU_ITM_remap
 
+      procedure, public :: get_SMB_model_name
+
       procedure, private :: initialise_IMAU_ITM_firn_from_file
 
   end type type_SMB_model_IMAU_ITM
@@ -514,5 +516,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_IMAU_ITM_remap
+
+  function get_SMB_model_name( self) result( SMB_model_name)
+    class(type_SMB_model_IMAU_ITM), intent(in) :: self
+    character(len=:), allocatable :: SMB_model_name
+    SMB_model_name = 'IMAU_ITM'
+  end function get_SMB_model_name
 
 end module SMB_IMAU_ITM

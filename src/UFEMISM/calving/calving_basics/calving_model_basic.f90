@@ -40,6 +40,9 @@ module calving_model_basic
       procedure(calving_model_run_ifc),        deferred :: run_calving_model
       procedure(calving_model_remap_ifc),      deferred :: remap_calving_model
 
+      procedure, public                               :: get_model_name
+      procedure(get_calving_model_name_ifc), deferred :: get_calving_model_name
+
   end type atype_calving_model
 
   ! Abstract interfaces for deferred procedures
@@ -47,12 +50,9 @@ module calving_model_basic
 
   abstract interface
 
-    subroutine calving_model_allocate_ifc( self, name, region_name, mesh)
-      import atype_calving_model, type_mesh
+    subroutine calving_model_allocate_ifc( self)
+      import atype_calving_model
       class(atype_calving_model), intent(inout) :: self
-      character(len=*),           intent(in   ) :: name
-      character(len=*),           intent(in   ) :: region_name
-      type(type_mesh), target,    intent(in   ) :: mesh
     end subroutine calving_model_allocate_ifc
 
     subroutine calving_model_deallocate_ifc( self)
@@ -76,15 +76,20 @@ module calving_model_basic
       type(type_mesh), target,    intent(in   ) :: mesh_new
     end subroutine calving_model_remap_ifc
 
+    function get_calving_model_name_ifc( self) result( calving_model_name)
+      import atype_calving_model
+      class(atype_calving_model), intent(in) :: self
+      character(len=:), allocatable          :: calving_model_name
+    end function get_calving_model_name_ifc
+
   end interface
 
 contains
 
-  subroutine calving_model_allocate( self, name, region_name, mesh)
+  subroutine calving_model_allocate( self, region_name, mesh)
 
     ! In/output variables:
     class(atype_calving_model), intent(inout) :: self
-    character(len=*),           intent(in   ) :: name
     character(len=*),           intent(in   ) :: region_name
     type(type_mesh), target,    intent(in   ) :: mesh
 
@@ -95,7 +100,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
     ! Allocate stuff that is common to all calving models
     call self%create_field( self%Hi_calved, self%wHi_calved, &
@@ -106,7 +111,7 @@ contains
       remap_method = 'reallocate')
 
     ! Allocate stuff that is specific to each individual calving model implementation
-    call self%allocate_calving_model( name, region_name, mesh)
+    call self%allocate_calving_model()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -217,5 +222,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine calving_model_remap
+
+  function get_model_name( self) result( model_name)
+    class(atype_calving_model), intent(in) :: self
+    character(len=:), allocatable          :: model_name
+    model_name = 'calving_model_' // self%get_calving_model_name()
+  end function get_model_name
 
 end module calving_model_basic

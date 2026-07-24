@@ -28,19 +28,22 @@ module climate_model_basic
 
     contains
 
-      ! Type-bound procedures that apply to all climate models
-      procedure, public :: allocate_climate_model
-      procedure, public :: deallocate_climate_model
-      procedure, public :: initialise_climate_model
-      procedure, public :: run_climate_model
-      procedure, public :: remap_climate_model
+      ! Procedures for model memory management and operation
+      procedure, public :: allocate   => climate_model_allocate
+      procedure, public :: deallocate => climate_model_deallocate
+      procedure, public :: initialise => climate_model_initialise
+      procedure, public :: run        => climate_model_run
+      procedure, public :: remap      => climate_model_remap
 
-      ! Deferred procedures that must be defined by each individual climate model
-      procedure(climate_model_allocate_ifc),   deferred :: allocate
-      procedure(climate_model_deallocate_ifc), deferred :: deallocate
-      procedure(climate_model_initialise_ifc), deferred :: initialise
-      procedure(climate_model_run_ifc),        deferred :: run
-      procedure(climate_model_remap_ifc),      deferred :: remap
+      ! Deferred procedures that must be overridden by each individual demo model implementation
+      procedure(climate_model_allocate_ifc),   deferred :: allocate_climate_model
+      procedure(climate_model_deallocate_ifc), deferred :: deallocate_climate_model
+      procedure(climate_model_initialise_ifc), deferred :: initialise_climate_model
+      procedure(climate_model_run_ifc),        deferred :: run_climate_model
+      procedure(climate_model_remap_ifc),      deferred :: remap_climate_model
+
+      procedure, public                               :: get_model_name
+      procedure(get_climate_model_name_ifc), deferred :: get_climate_model_name
 
   end type atype_climate_model
 
@@ -49,11 +52,9 @@ module climate_model_basic
 
   abstract interface
 
-    subroutine climate_model_allocate_ifc( self, region_name, mesh)
-      import atype_climate_model, type_mesh
+    subroutine climate_model_allocate_ifc( self)
+      import atype_climate_model
       class(atype_climate_model), intent(inout) :: self
-      character(len=*),           intent(in   ) :: region_name
-      type(type_mesh), target,    intent(in   ) :: mesh
     end subroutine climate_model_allocate_ifc
 
     subroutine climate_model_deallocate_ifc( self)
@@ -81,30 +82,33 @@ module climate_model_basic
       type(type_mesh), target,    intent(in   ) :: mesh_new
     end subroutine climate_model_remap_ifc
 
+    function get_climate_model_name_ifc( self) result( climate_model_name)
+      import atype_climate_model
+      class(atype_climate_model), intent(in) :: self
+      character(len=:), allocatable          :: climate_model_name
+    end function get_climate_model_name_ifc
+
   end interface
 
 contains
 
-  subroutine allocate_climate_model( self, name, region_name, mesh)
-    !< Allocate stuff that is common to all climate models
-    !< (call this from your climate model-specific allocate routine)
+  subroutine climate_model_allocate( self, region_name, mesh)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
-    character(len=*),           intent(in   ) :: name
     character(len=*),           intent(in   ) :: region_name
     type(type_mesh), target,    intent(in   ) :: mesh
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'allocate_climate_model'
+    character(len=*), parameter :: routine_name = 'climate_model_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
-    ! Allocate all the stuff that is specific to climate models
+    ! Allocate all the stuff that is common to all climate models
 
     call self%create_field( self%T2m, self%wT2m, &
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
@@ -120,20 +124,21 @@ contains
       units     = 'm.w.e.', &
       remap_method = 'reallocate')
 
+    ! Allocate stuff that is specific to each individual climate model implementation
+    call self%allocate_climate_model()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine allocate_climate_model
+  end subroutine climate_model_allocate
 
-  subroutine deallocate_climate_model( self)
-    !< Deallocate stuff that is common to all climate models
-    !< (call this from your climate model-specific deallocate routine)
+  subroutine climate_model_deallocate( self)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'deallocate_climate_model'
+    character(len=*), parameter :: routine_name = 'climate_model_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -141,25 +146,28 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is specific to climate models
+    ! Deallocate stuff that is common to all climate models
 
     nullify( self%T2m)
     nullify( self%Precip)
 
+    ! Deallocate stuff that is specific to each individual climate model implementation
+    call self%deallocate_climate_model()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine deallocate_climate_model
+  end subroutine climate_model_deallocate
 
-  subroutine initialise_climate_model( self)
-    !< Initialise stuff that is common to all climate models
-    !< (call this from your climate model-specific initialise routine)
+  subroutine climate_model_initialise( self, refgeo_PD, refgeo_init)
 
     ! In/output variables:
-    class(atype_climate_model), intent(inout) :: self
+    class(atype_climate_model),    intent(inout) :: self
+    type(type_reference_geometry), intent(in   ) :: refgeo_PD
+    type(type_reference_geometry), intent(in   ) :: refgeo_init
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_climate_model'
+    character(len=*), parameter :: routine_name = 'climate_model_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -167,27 +175,28 @@ contains
     ! Initialise stuff that is common to all models
     call self%initialise_model()
 
-    ! Initialise stuff that is specific to climate models
+    ! Initialise stuff that is common to all climate models
 
     ! Set time of next calculation to start time
     self%t_next = C%start_time_of_run
 
+    ! Initialise stuff that is specific to each individual climate model implementation
+    call self%initialise_climate_model( refgeo_PD, refgeo_init)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_climate_model
+  end subroutine climate_model_initialise
 
-  subroutine run_climate_model( self, time, do_run_climate_model)
-    !< Run stuff that is common to all climate models
-    !< (call this from your climate model-specific run routine)
+  subroutine climate_model_run( self, ice, time)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
+    type(type_ice_model),       intent(in   ) :: ice
     real(dp),                   intent(in   ) :: time
-    logical,                    intent(  out) :: do_run_climate_model
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_climate_model'
+    character(len=*), parameter :: routine_name = 'climate_model_run'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -195,10 +204,9 @@ contains
     ! Run stuff that is common to all models
     call self%run_model()
 
-    ! Run stuff that is specific to climate models
+    ! Run stuff that is common to all climate models
 
     ! Check if we need to calculate a new climate
-    do_run_climate_model = .false.
     if (C%do_asynchronous_climate) then
       ! Asynchronous coupling: do not calculate a new climate in
       ! every model loop, but only at its own separate time step
@@ -206,37 +214,40 @@ contains
       ! Check if this is the next climate time step
       if (time == self%t_next) then
         ! Go on to calculate a new climate
-        do_run_climate_model = .true.
         self%t_next = time + C%dt_climate
+
+        ! Run stuff that is specific to each individual climate model implementation
+        call self%run_climate_model( ice, time)
+
       elseif (time > self%t_next) then
         ! This should not be possible
         call crash('overshot the climate time step')
       else
         ! It is not yet time to calculate a new climate
-        do_run_climate_model = .false.
       end if
 
     else
       ! Synchronous coupling: calculate a new climate in every model loop
-      do_run_climate_model = .true.
       self%t_next = time + C%dt_climate
+
+      ! Run stuff that is specific to each individual climate model implementation
+      call self%run_climate_model( ice, time)
+
     end if
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_climate_model
+  end subroutine climate_model_run
 
-  subroutine remap_climate_model( self, mesh_new)
-    !< Remap stuff that is common to all climate models
-    !< (call this from your climate model-specific remap routine)
+  subroutine climate_model_remap( self, mesh_new)
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
     type(type_mesh), target,    intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_climate_model'
+    character(len=*), parameter :: routine_name = 'climate_model_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -244,14 +255,23 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is specific to climate models
+    ! Remap stuff that is common to all climate models
 
     call self%remap_field( mesh_new, 'T2m'   , self%T2m)
     call self%remap_field( mesh_new, 'Precip', self%Precip)
 
+    ! Remap stuff that is specific to each individual climate model implementation
+    call self%remap_climate_model( mesh_new)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_climate_model
+  end subroutine climate_model_remap
+
+  function get_model_name( self) result( model_name)
+    class(atype_climate_model), intent(in) :: self
+    character(len=:), allocatable          :: model_name
+    model_name = 'climate_' // self%get_climate_model_name()
+  end function get_model_name
 
 end module climate_model_basic

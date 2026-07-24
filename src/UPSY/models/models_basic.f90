@@ -33,11 +33,7 @@ module models_basic
 
     contains
 
-      ! These routines all consist of two parts: a 'common' part that is executed for
-      ! all models inheriting from atype_model, and a 'specific' part that is
-      ! only executed for each specific model class. The specific parts are defined
-      ! in the deferred procedures 'allocate_model', 'initialise_model', etc.
-
+      ! Procedures for model memory management and operation
       procedure, public :: allocate_model
       procedure, public :: deallocate_model
       procedure, public :: initialise_model
@@ -45,12 +41,10 @@ module models_basic
       procedure, public :: remap_model
 
       ! i/o
-
       procedure, public :: write_to_restart_file
       procedure, public :: read_from_restart_file
 
       ! Memory management for fields
-
       generic,   public  :: create_field => &
         create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
         create_field_logical_3D, create_field_int_3D, create_field_dp_3D
@@ -89,8 +83,7 @@ module models_basic
       procedure, private :: remap_field_dp_2D
       procedure, private :: remap_field_dp_3D
 
-      ! ===== Basics
-
+      ! Model equality test
       generic,   public  :: operator(==) => eq
       procedure, private :: eq => test_model_equality
 
@@ -102,6 +95,8 @@ module models_basic
       procedure, public :: set_region_name
       procedure, public :: region_name => get_region_name
       procedure, public :: is_region_name
+
+      procedure(get_model_name_ifc), deferred :: get_model_name
 
   end type atype_model
 
@@ -347,15 +342,23 @@ module models_basic
 
   end interface
 
+  ! Abstract interfaces for deferred procedures
+  abstract interface
+    function get_model_name_ifc( self) result( model_name)
+      import atype_model
+      class(atype_model), intent(in) :: self
+      character(len=:), allocatable  :: model_name
+    end function get_model_name_ifc
+  end interface
+
 contains
 
-  subroutine allocate_model( self, name, region_name, mesh)
+  subroutine allocate_model( self, region_name, mesh)
     !< Allocate stuff that is common to all models
     !< (call this from your model-specific allocate routine)
 
     ! In/output variables:
     class(atype_model),      intent(inout) :: self
-    character(len=*),        intent(in   ) :: name
     character(len=*),        intent(in   ) :: region_name
     type(type_mesh), target, intent(in   ) :: mesh
 
@@ -366,7 +369,7 @@ contains
     call init_routine( routine_name)
 
     ! Set model metadata and mesh
-    call self%set_name       ( name)
+    call self%set_name( self%get_model_name())
     call self%set_region_name( region_name)
     self%mesh => mesh
 

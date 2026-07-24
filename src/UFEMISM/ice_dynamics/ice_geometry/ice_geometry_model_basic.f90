@@ -41,6 +41,8 @@ module ice_geometry_model_basic
       procedure, public :: calc_absolute_surface_slope
       procedure, public :: calc_ice_base_slopes
 
+      procedure, public :: get_model_name
+
   end type type_ice_geometry_model
 
   ! Interfaces for procedures defined in submodules
@@ -87,11 +89,10 @@ module ice_geometry_model_basic
 
 contains
 
-  subroutine allocate_ice_geometry_model( self, name, region_name, mesh)
+  subroutine allocate_ice_geometry_model( self, region_name, mesh)
 
     ! In/output variables:
     class(type_ice_geometry_model), intent(inout) :: self
-    character(len=*),               intent(in   ) :: name
     character(len=*),               intent(in   ) :: region_name
     type(type_mesh), target,        intent(in   ) :: mesh
 
@@ -102,7 +103,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
     ! Allocate all the stuff that is specific to the ice_geometry model
 
@@ -220,5 +221,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine finalise_ice_geometry_model
+
+  function get_model_name( self) result( model_name)
+    class(type_ice_geometry_model), intent(in) :: self
+    character(len=:), allocatable              :: model_name
+    model_name = 'ice_geometry'
+  end function get_model_name
 
 end module ice_geometry_model_basic

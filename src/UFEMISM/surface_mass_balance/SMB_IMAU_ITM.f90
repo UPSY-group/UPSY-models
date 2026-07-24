@@ -63,11 +63,13 @@ module SMB_IMAU_ITM
 
     contains
 
-      procedure, public :: allocate   => SMB_model_IMAU_ITM_allocate
-      procedure, public :: deallocate => SMB_model_IMAU_ITM_deallocate
-      procedure, public :: initialise => SMB_model_IMAU_ITM_initialise
-      procedure, public :: run        => SMB_model_IMAU_ITM_run
-      procedure, public :: remap      => SMB_model_IMAU_ITM_remap
+      procedure, public :: allocate_SMB_model   => SMB_model_IMAU_ITM_allocate
+      procedure, public :: deallocate_SMB_model => SMB_model_IMAU_ITM_deallocate
+      procedure, public :: initialise_SMB_model => SMB_model_IMAU_ITM_initialise
+      procedure, public :: run_SMB_model        => SMB_model_IMAU_ITM_run
+      procedure, public :: remap_SMB_model      => SMB_model_IMAU_ITM_remap
+
+      procedure, public :: get_SMB_model_name
 
       procedure, private :: initialise_IMAU_ITM_firn_from_file
 
@@ -75,21 +77,16 @@ module SMB_IMAU_ITM
 
 contains
 
-  subroutine SMB_model_IMAU_ITM_allocate( self, region_name, mesh)
+  subroutine SMB_model_IMAU_ITM_allocate( self)
 
     ! In/output variables:
     class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    character(len=*),               intent(in   ) :: region_name
-    type(type_mesh), target,        intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_IMAU_ITM_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Allocate all the stuff that is common to all SMB models
-    call self%allocate_SMB_model( 'SMB_IMAU_ITM', region_name, mesh)
 
     ! Allocate all the stuff that is specific to the IMAU_ITM SMB model
 
@@ -187,9 +184,6 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is common to all SMB models
-    call self%deallocate_SMB_model()
-
     ! Deallocate all the stuff that is specific to SMB model IMAU_ITM
 
     nullify( self%AlbedoSurf)
@@ -226,9 +220,6 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    ! Initialise all the stuff that is common to all SMB models
-    call self%initialise_SMB_model()
 
     ! Initialise all the stuff that is specific to SMB model IMAU_ITM
 
@@ -380,7 +371,6 @@ contains
 
     ! Local variables:
     character(len=*), parameter       :: routine_name = 'SMB_model_IMAU_ITM_run'
-    logical                           :: do_run_SMB_model
     integer                           :: vi
     integer                           :: m, mprev
     real(dp)                          :: snowfrac, liquid_water, sup_imp_wat
@@ -389,13 +379,6 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Run all the stuff that is common to all SMB models
-    call self%run_SMB_model( time, do_run_SMB_model)
-    if (.not. do_run_SMB_model) then
-      call finalise_routine( routine_name)
-      return
-    end if
 
     ! Run all the stuff that is specific to SMB model idealised
 
@@ -513,9 +496,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is common to all SMB models
-    call self%remap_SMB_model( mesh_new)
-
     ! Remap all the stuff that is specific to SMB model IMAU_ITM
 
     call self%remap_field( mesh_new, 'AlbedoSurf'      , self%AlbedoSurf       )
@@ -536,5 +516,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_IMAU_ITM_remap
+
+  function get_SMB_model_name( self) result( SMB_model_name)
+    class(type_SMB_model_IMAU_ITM), intent(in) :: self
+    character(len=:), allocatable :: SMB_model_name
+    SMB_model_name = 'IMAU_ITM'
+  end function get_SMB_model_name
 
 end module SMB_IMAU_ITM

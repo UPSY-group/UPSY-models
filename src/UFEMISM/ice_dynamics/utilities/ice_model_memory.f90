@@ -31,7 +31,7 @@ contains
     ! === Ice-sheet geometry ===
     ! ==========================
 
-    call ice%geom%allocate( 'ice_geometry', region_name, mesh)
+    call ice%geom%allocate( region_name, mesh)
 
     ! Geometry changes
     allocate( ice%dHi ( mesh%vi1:mesh%vi2), source = 0._dp)

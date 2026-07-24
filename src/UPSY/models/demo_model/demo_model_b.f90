@@ -23,22 +23,23 @@ module demo_model_b
 
     contains
 
-      procedure, public :: allocate   => demo_model_b_allocate
-      procedure, public :: deallocate => demo_model_b_deallocate
-      procedure, public :: initialise => demo_model_b_initialise
-      procedure, public :: run        => demo_model_b_run
-      procedure, public :: remap      => demo_model_b_remap
+      ! Overriding deferred procedures for model memory management and operation
+      procedure, public :: allocate_demo_model   => demo_model_b_allocate
+      procedure, public :: deallocate_demo_model => demo_model_b_deallocate
+      procedure, public :: initialise_demo_model => demo_model_b_initialise
+      procedure, public :: run_demo_model        => demo_model_b_run
+      procedure, public :: remap_demo_model      => demo_model_b_remap
+
+      procedure, public :: get_demo_model_name
 
   end type type_demo_model_b
 
 contains
 
-  subroutine demo_model_b_allocate( self, region_name, mesh, nz)
+  subroutine demo_model_b_allocate( self, nz)
 
     ! In/output variables:
     class(type_demo_model_b), intent(inout) :: self
-    character(len=*),         intent(in   ) :: region_name
-    type(type_mesh), target,  intent(in   ) :: mesh
     integer,                  intent(in   ) :: nz
 
     ! Local variables:
@@ -47,13 +48,9 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Allocate all the stuff that is common to all demo models
-    call self%allocate_demo_model( 'demo_b', region_name, mesh, nz)
-
-    ! Allocate all the stuff that is specific to demo model b
-
+    ! Allocate all the stuff that is specific to demo_model_b
     call self%create_field( self%beta_sq, self%wbeta_sq, &
-      mesh, Arakawa_grid%a(), &
+      self%mesh, Arakawa_grid%a(), &
       name      = 'beta_sq', &
       long_name = 'bed friction coefficient', &
       units     = 'Pa m^−1/m yr^1/m', &
@@ -75,11 +72,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is common to all demo models
-    call self%deallocate_demo_model()
-
-    ! Deallocate all the stuff that is specific to demo model b
-
+    ! Deallocate all the stuff that is specific to demo_model_b
     nullify( self%beta_sq)
 
     ! Remove routine from call stack
@@ -101,11 +94,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is common to all demo models
-    call self%initialise_demo_model( H0)
-
-    ! Initialise all the stuff that is specific to demo model a
-
+    ! Initialise all the stuff that is specific to demo_model_b
     self%beta_sq( self%mesh%vi1: self%mesh%vi2) = beta_sq_uniform
 
     ! Remove routine from call stack
@@ -126,11 +115,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Run all the stuff that is common to all demo models
-    call self%run_demo_model()
-
     ! Run all the stuff that is specific to demo model b
-
     self%H( self%mesh%vi1: self%mesh%vi2) = H_new
 
     ! Remove routine from call stack
@@ -150,16 +135,18 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is common to all demo models
-    call self%remap_demo_model( mesh_new)
-
     ! Remap all the stuff that is specific to demo model b
-
     call self%remap_field( mesh_new, 'beta_sq', self%beta_sq)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine demo_model_b_remap
+
+  function get_demo_model_name( self) result( demo_model_name)
+    class(type_demo_model_b), intent(in) :: self
+    character(len=:), allocatable :: demo_model_name
+    demo_model_name = 'b'
+  end function get_demo_model_name
 
 end module demo_model_b

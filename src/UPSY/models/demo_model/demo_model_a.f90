@@ -23,22 +23,23 @@ module demo_model_a
 
     contains
 
-      procedure, public :: allocate   => demo_model_a_allocate
-      procedure, public :: deallocate => demo_model_a_deallocate
-      procedure, public :: initialise => demo_model_a_initialise
-      procedure, public :: run        => demo_model_a_run
-      procedure, public :: remap      => demo_model_a_remap
+      ! Overriding deferred procedures for model memory management and operation
+      procedure, public :: allocate_demo_model   => demo_model_a_allocate
+      procedure, public :: deallocate_demo_model => demo_model_a_deallocate
+      procedure, public :: initialise_demo_model => demo_model_a_initialise
+      procedure, public :: run_demo_model        => demo_model_a_run
+      procedure, public :: remap_demo_model      => demo_model_a_remap
+
+      procedure, public :: get_demo_model_name
 
   end type type_demo_model_a
 
 contains
 
-  subroutine demo_model_a_allocate( self, region_name, mesh, nz)
+  subroutine demo_model_a_allocate( self, nz)
 
     ! In/output variables:
     class(type_demo_model_a), intent(inout) :: self
-    character(len=*),         intent(in   ) :: region_name
-    type(type_mesh), target,  intent(in   ) :: mesh
     integer,                  intent(in   ) :: nz
 
     ! Local variables:
@@ -47,13 +48,9 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Allocate all the stuff that is common to all demo models
-    call self%allocate_demo_model( 'demo_a', region_name, mesh, nz)
-
-    ! Allocate all the stuff that is specific to demo model a
-
+    ! Allocate all the stuff that is specific to demo_model_a
     call self%create_field( self%till_friction_angle, self%wtill_friction_angle, &
-      mesh, Arakawa_grid%a(), &
+      self%mesh, Arakawa_grid%a(), &
       name      = 'till_friction_angle', &
       long_name = 'till friction angle', &
       units     = 'degrees', &
@@ -75,11 +72,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is common to all demo models
-    call self%deallocate_demo_model()
-
-    ! Deallocate all the stuff that is specific to demo model a
-
+    ! Deallocate all the stuff that is specific to demo_model_a
     nullify( self%till_friction_angle)
 
     ! Remove routine from call stack
@@ -101,11 +94,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is common to all demo models
-    call self%initialise_demo_model( H0)
-
-    ! Initialise all the stuff that is specific to demo model a
-
+    ! Initialise all the stuff that is specific to demo_model_a
     self%till_friction_angle( self%mesh%vi1: self%mesh%vi2) = till_friction_angle_uniform
 
     ! Remove routine from call stack
@@ -126,11 +115,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Run all the stuff that is common to all demo models
-    call self%run_demo_model()
-
     ! Run all the stuff that is specific to demo model a
-
     self%H( self%mesh%vi1: self%mesh%vi2) = self%H( self%mesh%vi1: self%mesh%vi2) + dH
 
     ! Remove routine from call stack
@@ -150,16 +135,18 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is common to all demo models
-    call self%remap_demo_model( mesh_new)
-
     ! Remap all the stuff that is specific to demo model a
-
     call self%remap_field( mesh_new, 'till_friction_angle', self%till_friction_angle)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine demo_model_a_remap
+
+  function get_demo_model_name( self) result( demo_model_name)
+    class(type_demo_model_a), intent(in) :: self
+    character(len=:), allocatable :: demo_model_name
+    demo_model_name = 'a'
+  end function get_demo_model_name
 
 end module demo_model_a

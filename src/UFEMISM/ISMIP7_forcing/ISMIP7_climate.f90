@@ -95,11 +95,13 @@ module ISMIP7_climate
 
     contains
 
-      procedure, public :: allocate   => climate_model_ISMIP7_allocate
-      procedure, public :: deallocate => climate_model_ISMIP7_deallocate
-      procedure, public :: initialise => climate_model_ISMIP7_initialise
-      procedure, public :: run        => climate_model_ISMIP7_run
-      procedure, public :: remap      => climate_model_ISMIP7_remap
+      procedure, public :: allocate_climate_model   => climate_model_ISMIP7_allocate
+      procedure, public :: deallocate_climate_model => climate_model_ISMIP7_deallocate
+      procedure, public :: initialise_climate_model => climate_model_ISMIP7_initialise
+      procedure, public :: run_climate_model        => climate_model_ISMIP7_run
+      procedure, public :: remap_climate_model      => climate_model_ISMIP7_remap
+
+      procedure, public :: get_climate_model_name
 
       procedure, private :: initialise_climate_baseline_fixed
 
@@ -107,21 +109,16 @@ module ISMIP7_climate
 
 contains
 
-  subroutine climate_model_ISMIP7_allocate( self, region_name, mesh)
+  subroutine climate_model_ISMIP7_allocate( self)
 
     ! In/output variables:
     class(type_climate_model_ISMIP7), intent(inout) :: self
-    character(len=*),                 intent(in   ) :: region_name
-    type(type_mesh), target,          intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_ISMIP7_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Allocate all the stuff that is common to all climate models
-    call self%allocate_climate_model( 'climate_ISMIP7', region_name, mesh)
 
     ! Allocate all the stuff that is specific to the ISMIP7 climate model
 
@@ -199,9 +196,6 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is common to all climate models
-    call self%deallocate_climate_model()
-
     ! Deallocate all the stuff that is specific to climate model ISMIP7
 
     ! Baseline climate and surface elevation
@@ -238,9 +232,6 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Initialise all the stuff that is common to all climate models
-    call self%initialise_climate_model()
 
     ! Initialise all the stuff that is specific to climate model ISMIP7
 
@@ -315,18 +306,10 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_ISMIP7_run'
-    logical                     :: do_run_climate_model
     integer                     :: vi, mi
 
     ! Add routine to call stack
     call init_routine( routine_name)
-
-    ! Run all the stuff that is common to all climate models
-    call self%run_climate_model( time, do_run_climate_model)
-    if (.not. do_run_climate_model) then
-      call finalise_routine( routine_name)
-      return
-    end if
 
     ! Run all the stuff that is specific to climate model ISMIP7
 
@@ -389,16 +372,18 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is common to all climate models
-    call self%remap_climate_model( mesh_new)
-
     ! Remap all the stuff that is specific to climate model ISMIP7
-
     call crash('remapping not yet supported for ISMIP7 climate forcing')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine climate_model_ISMIP7_remap
+
+  function get_climate_model_name( self) result( climate_model_name)
+    class(type_climate_model_ISMIP7), intent(in) :: self
+    character(len=:), allocatable :: climate_model_name
+    climate_model_name = 'ISMIP7'
+  end function get_climate_model_name
 
 end module ISMIP7_climate

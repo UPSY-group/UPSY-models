@@ -23,19 +23,22 @@ module demo_model_basic
 
     contains
 
-      ! Type-bound procedures that apply to all demo models
-      procedure, public :: allocate_demo_model
-      procedure, public :: deallocate_demo_model
-      procedure, public :: initialise_demo_model
-      procedure, public :: run_demo_model
-      procedure, public :: remap_demo_model
+      ! Procedures for model memory management and operation
+      procedure, public :: allocate   => demo_model_allocate
+      procedure, public :: deallocate => demo_model_deallocate
+      procedure, public :: initialise => demo_model_initialise
+      procedure, public :: run        => demo_model_run
+      procedure, public :: remap      => demo_model_remap
 
-      ! Deferred procedures that must be defined by each individual demo model
-      procedure(demo_model_allocate_ifc),   deferred :: allocate
-      procedure(demo_model_deallocate_ifc), deferred :: deallocate
-      procedure(demo_model_initialise_ifc), deferred :: initialise
-      procedure(demo_model_run_ifc),        deferred :: run
-      procedure(demo_model_remap_ifc),      deferred :: remap
+      ! Deferred procedures that must be overridden by each individual demo model implementation
+      procedure(demo_model_allocate_ifc),   deferred :: allocate_demo_model
+      procedure(demo_model_deallocate_ifc), deferred :: deallocate_demo_model
+      procedure(demo_model_initialise_ifc), deferred :: initialise_demo_model
+      procedure(demo_model_run_ifc),        deferred :: run_demo_model
+      procedure(demo_model_remap_ifc),      deferred :: remap_demo_model
+
+      procedure, public                            :: get_model_name
+      procedure(get_demo_model_name_ifc), deferred :: get_demo_model_name
 
   end type atype_demo_model
 
@@ -44,11 +47,9 @@ module demo_model_basic
 
   abstract interface
 
-    subroutine demo_model_allocate_ifc( self, region_name, mesh, nz)
-      import atype_demo_model, type_mesh
+    subroutine demo_model_allocate_ifc( self, nz)
+      import atype_demo_model
       class(atype_demo_model), intent(inout) :: self
-      character(len=*),        intent(in   ) :: region_name
-      type(type_mesh), target, intent(in   ) :: mesh
       integer,                 intent(in   ) :: nz
     end subroutine demo_model_allocate_ifc
 
@@ -78,31 +79,34 @@ module demo_model_basic
       type(type_mesh), target, intent(in   ) :: mesh_new
     end subroutine demo_model_remap_ifc
 
+    function get_demo_model_name_ifc( self) result( demo_model_name)
+      import atype_demo_model
+      class(atype_demo_model), intent(in) :: self
+      character(len=:), allocatable       :: demo_model_name
+    end function get_demo_model_name_ifc
+
   end interface
 
 contains
 
-  subroutine allocate_demo_model( self, name, region_name, mesh, nz)
-    !< Allocate stuff that is common to all demo models
-    !< (call this from your demo model-specific allocate routine)
+  subroutine demo_model_allocate( self, region_name, mesh, nz)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
-    character(len=*),        intent(in   ) :: name
     character(len=*),        intent(in   ) :: region_name
     type(type_mesh), target, intent(in   ) :: mesh
     integer,                 intent(in   ) :: nz
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'allocate_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
     ! Allocate stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
-    ! Allocate stuff that is specific to demo models
+    ! Allocate stuff that is common to all demo models
 
     call self%create_field( self%H, self%wH, &
       mesh, Arakawa_grid%a(), &
@@ -139,20 +143,21 @@ contains
       units     = 'K', &
       remap_method = '2nd_order_conservative')
 
+    ! Allocate stuff that is specific to each individual demo model implementation
+    call self%allocate_demo_model( nz)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine allocate_demo_model
+  end subroutine demo_model_allocate
 
-  subroutine deallocate_demo_model( self)
-    !< Deallocate stuff that is common to all demo models
-    !< (call this from your demo model-specific deallocate routine)
+  subroutine demo_model_deallocate( self)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'deallocate_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -160,29 +165,31 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is specific to demo models
-
+    ! Deallocate stuff that is common to all demo models
     nullify( self%H)
     nullify( self%u_3D)
     nullify( self%v_3D)
     nullify( self%mask_ice)
     nullify( self%T2m)
 
+    ! Deallocate stuff that is specific to each individual demo model implementation
+    call self%deallocate_demo_model()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine deallocate_demo_model
+  end subroutine demo_model_deallocate
 
-  subroutine initialise_demo_model( self, H0)
-    !< Initialise stuff that is common to all demo models
-    !< (call this from your demo model-specific initialise routine)
+  subroutine demo_model_initialise( self, H0, till_friction_angle_uniform, beta_sq_uniform)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
     real(dp),                intent(in   ) :: H0
+    real(dp),                intent(in   ) :: till_friction_angle_uniform
+    real(dp),                intent(in   ) :: beta_sq_uniform
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_initialise'
     integer                     :: vi,ti,k,m
     real(dp)                    :: x,y,cx,cy
 
@@ -192,7 +199,7 @@ contains
     ! Initialise stuff that is common to all models
     call self%initialise_model()
 
-    ! Initialise stuff that is specific to demo models
+    ! Initialise stuff that is common to all demo models
 
     cx = self%mesh%xmax - self%mesh%xmin
     cy = self%mesh%ymax - self%mesh%ymin
@@ -223,20 +230,23 @@ contains
 
     end do
 
+    ! Initialise stuff that is specific to each individual demo model implementation
+    call self%initialise_demo_model( H0, till_friction_angle_uniform, beta_sq_uniform)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_demo_model
+  end subroutine demo_model_initialise
 
-  subroutine run_demo_model( self)
-    !< Run stuff that is common to all demo models
-    !< (call this from your demo model-specific run routine)
+  subroutine demo_model_run( self, H_new, dH)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
+    real(dp),                intent(in   ) :: H_new
+    real(dp),                intent(in   ) :: dH
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'run_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_run'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -244,23 +254,24 @@ contains
     ! Run stuff that is common to all models
     call self%run_model()
 
-    ! Run stuff that is specific to demo models
+    ! Run stuff that is common to all demo models
+
+    ! Run stuff that is specific to each individual demo model implementation
+    call self%run_demo_model( H_new, dH)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine run_demo_model
+  end subroutine demo_model_run
 
-  subroutine remap_demo_model( self, mesh_new)
-    !< Remap stuff that is common to all demo models
-    !< (call this from your demo model-specific remap routine)
+  subroutine demo_model_remap( self, mesh_new)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
     type(type_mesh), target, intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_demo_model'
+    character(len=*), parameter :: routine_name = 'demo_model_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -268,17 +279,25 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is specific to demo models
-
+    ! Remap stuff that is common to all demo models
     call self%remap_field( mesh_new, 'H'       , self%H       )
     call self%remap_field( mesh_new, 'u_3D'    , self%u_3D    )
     call self%remap_field( mesh_new, 'v_3D'    , self%v_3D    )
     call self%remap_field( mesh_new, 'mask_ice', self%mask_ice)
     call self%remap_field( mesh_new, 'T2m'     , self%T2m     )
 
+    ! Remap stuff that is specific to each individual demo model implementation
+    call self%remap_demo_model( mesh_new)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_demo_model
+  end subroutine demo_model_remap
+
+  function get_model_name( self) result( model_name)
+    class(atype_demo_model), intent(in) :: self
+    character(len=:), allocatable       :: model_name
+    model_name = 'demo_' // self%get_demo_model_name()
+  end function get_model_name
 
 end module demo_model_basic

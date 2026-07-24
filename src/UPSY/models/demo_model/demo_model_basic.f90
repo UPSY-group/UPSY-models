@@ -37,6 +37,9 @@ module demo_model_basic
       procedure(demo_model_run_ifc),        deferred :: run_demo_model
       procedure(demo_model_remap_ifc),      deferred :: remap_demo_model
 
+      procedure, public                            :: get_model_name
+      procedure(get_demo_model_name_ifc), deferred :: get_demo_model_name
+
   end type atype_demo_model
 
   ! Abstract interfaces for deferred procedures
@@ -76,15 +79,20 @@ module demo_model_basic
       type(type_mesh), target, intent(in   ) :: mesh_new
     end subroutine demo_model_remap_ifc
 
+    function get_demo_model_name_ifc( self) result( demo_model_name)
+      import atype_demo_model
+      class(atype_demo_model), intent(in) :: self
+      character(len=:), allocatable       :: demo_model_name
+    end function get_demo_model_name_ifc
+
   end interface
 
 contains
 
-  subroutine demo_model_allocate( self, name, region_name, mesh, nz)
+  subroutine demo_model_allocate( self, region_name, mesh, nz)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
-    character(len=*),        intent(in   ) :: name
     character(len=*),        intent(in   ) :: region_name
     type(type_mesh), target, intent(in   ) :: mesh
     integer,                 intent(in   ) :: nz
@@ -96,7 +104,7 @@ contains
     call init_routine( routine_name)
 
     ! Allocate stuff that is common to all models
-    call self%allocate_model( name, region_name, mesh)
+    call self%allocate_model( region_name, mesh)
 
     ! Allocate stuff that is common to all demo models
 
@@ -285,5 +293,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine demo_model_remap
+
+  function get_model_name( self) result( model_name)
+    class(atype_demo_model), intent(in) :: self
+    character(len=:), allocatable       :: model_name
+    model_name = 'demo_model_' // self%get_demo_model_name()
+  end function get_model_name
 
 end module demo_model_basic

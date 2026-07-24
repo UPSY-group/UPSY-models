@@ -30,6 +30,8 @@ module demo_model_a
       procedure, public :: run_demo_model        => demo_model_a_run
       procedure, public :: remap_demo_model      => demo_model_a_remap
 
+      procedure, public :: get_demo_model_name
+
   end type type_demo_model_a
 
 contains
@@ -140,5 +142,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine demo_model_a_remap
+
+  function get_demo_model_name( self) result( demo_model_name)
+    class(type_demo_model_a), intent(in) :: self
+    character(len=:), allocatable :: demo_model_name
+    demo_model_name = 'a'
+  end function get_demo_model_name
 
 end module demo_model_a

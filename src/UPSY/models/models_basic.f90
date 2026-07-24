@@ -92,6 +92,8 @@ module models_basic
       procedure, public :: name => get_name
       procedure, public :: is_name
 
+      procedure(get_model_name_ifc), deferred :: get_model_name
+
       procedure, public :: set_region_name
       procedure, public :: region_name => get_region_name
       procedure, public :: is_region_name
@@ -340,15 +342,23 @@ module models_basic
 
   end interface
 
+  ! Abstract interfaces for deferred procedures
+  abstract interface
+    function get_model_name_ifc( self) result( model_name)
+      import atype_model
+      class(atype_model), intent(in) :: self
+      character(len=:), allocatable  :: model_name
+    end function get_model_name_ifc
+  end interface
+
 contains
 
-  subroutine allocate_model( self, name, region_name, mesh)
+  subroutine allocate_model( self, region_name, mesh)
     !< Allocate stuff that is common to all models
     !< (call this from your model-specific allocate routine)
 
     ! In/output variables:
     class(atype_model),      intent(inout) :: self
-    character(len=*),        intent(in   ) :: name
     character(len=*),        intent(in   ) :: region_name
     type(type_mesh), target, intent(in   ) :: mesh
 
@@ -359,7 +369,7 @@ contains
     call init_routine( routine_name)
 
     ! Set model metadata and mesh
-    call self%set_name       ( name)
+    call self%set_name( self%get_model_name())
     call self%set_region_name( region_name)
     self%mesh => mesh
 

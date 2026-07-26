@@ -30,13 +30,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Calculate only when necessary
-    if (self%is_uptodate_grounded_fractions) then
-      call finalise_routine( routine_name)
-      return
-    end if
-    self%is_uptodate_grounded_fractions = .true.
-
     do vi = self%mesh%vi1, self%mesh%vi2
       TAF(vi) = thickness_above_floatation( self%Hi( vi), self%Hb( vi), self%SL( vi))
     end do

@@ -14,13 +14,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Calculate only when necessary
-    if (self%is_uptodate_TAF) then
-      call finalise_routine( routine_name)
-      return
-    end if
-    self%is_uptodate_TAF = .true.
-
     do vi = self%mesh%vi1, self%mesh%vi2
       self%TAF( vi) = thickness_above_floatation( self%Hi( vi), self%Hb( vi), self%SL( vi))
     end do

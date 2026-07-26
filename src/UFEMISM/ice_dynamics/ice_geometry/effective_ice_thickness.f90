@@ -19,13 +19,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Calculate only when necessary
-    if (self%is_uptodate_Hi_eff) then
-      call finalise_routine( routine_name)
-      return
-    end if
-    self%is_uptodate_Hi_eff = .true.
-
     ! Collect Hi from all processes
     call gather_to_all( self%Hi, Hi_tot)
     call gather_to_all( self%Hb, Hb_tot)

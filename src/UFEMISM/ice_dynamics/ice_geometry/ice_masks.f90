@@ -19,13 +19,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Calculate only when necessary
-    if (self%is_uptodate_masks) then
-      call finalise_routine( routine_name)
-      return
-    end if
-    self%is_uptodate_masks = .true.
-
     ! === Basic masks ===
     ! ===================
 

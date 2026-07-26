@@ -31,65 +31,41 @@ module ice_geometry_model_basic
 
       final :: finalise_ice_geometry_model
 
-      procedure, public  :: set_Hi
-      procedure, public  :: set_Hb
-      procedure, public  :: set_SL
-      procedure, private :: mark_all_secondary_fields_as_no_longer_uptodate
+      procedure, public :: calc_surface_elevation
+      procedure, public :: calc_ice_base_elevation
+      procedure, public :: calc_thickness_above_floatation
+      procedure, public :: calc_height_of_water_column
+      procedure, public :: determine_masks
+      procedure, public :: calc_effective_thickness
+      procedure, public :: calc_grounded_fractions
+      procedure, public :: calc_absolute_surface_slope
+      procedure, public :: calc_ice_base_slopes
 
-      procedure, public  :: calc_surface_elevation
-      procedure, public  :: calc_ice_base_elevation
-      procedure, public  :: calc_thickness_above_floatation
-      procedure, public  :: calc_height_of_water_column
-      procedure, public  :: determine_masks
-      procedure, public  :: calc_effective_thickness
-      procedure, public  :: calc_grounded_fractions
-      procedure, public  :: calc_absolute_surface_slope
-      procedure, public  :: calc_ice_base_slopes
-
-      procedure, public  :: get_model_name
+      procedure, public :: get_model_name
 
   end type type_ice_geometry_model
 
   ! Interfaces for procedures defined in submodules
   interface
 
-    module subroutine set_Hi( self, Hi)
-      class(type_ice_geometry_model),                   intent(inout) :: self
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: Hi
-    end subroutine set_Hi
-
-    module subroutine set_Hb( self, Hb)
-      class(type_ice_geometry_model),                   intent(inout) :: self
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: Hb
-    end subroutine set_Hb
-
-    module subroutine set_SL( self, SL)
-      class(type_ice_geometry_model),                   intent(inout) :: self
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: SL
-    end subroutine set_SL
-
-    module subroutine mark_all_secondary_fields_as_no_longer_uptodate( self)
-      class(type_ice_geometry_model), intent(inout) :: self
-    end subroutine mark_all_secondary_fields_as_no_longer_uptodate
-
     module subroutine calc_surface_elevation( self)
-      class(type_ice_geometry_model), intent(inout) :: self
+      class(type_ice_geometry_model),intent(inout) :: self
     end subroutine calc_surface_elevation
 
     module subroutine calc_ice_base_elevation( self)
-      class(type_ice_geometry_model), intent(inout) :: self
+      class(type_ice_geometry_model),intent(inout) :: self
     end subroutine calc_ice_base_elevation
 
     module subroutine calc_thickness_above_floatation( self)
-      class(type_ice_geometry_model), intent(inout) :: self
+      class(type_ice_geometry_model),intent(inout) :: self
     end subroutine calc_thickness_above_floatation
 
     module subroutine calc_height_of_water_column( self)
-      class(type_ice_geometry_model), intent(inout) :: self
+      class(type_ice_geometry_model),intent(inout) :: self
     end subroutine calc_height_of_water_column
 
     module subroutine determine_masks( self)
-      class(type_ice_geometry_model), intent(inout) :: self
+      class(type_ice_geometry_model),intent(inout) :: self
     end subroutine determine_masks
 
     module subroutine calc_effective_thickness( self)

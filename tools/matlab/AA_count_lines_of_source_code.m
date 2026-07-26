@@ -32,6 +32,30 @@ for i = 1: length( henk)
   end
 end
 
+%% automated_testing
+
+main_path = '../../automated_testing';
+henk = dir( main_path);
+
+for i = 1: length( henk)
+  if henk( i).isdir
+    if strcmpi( henk( i).name,'.') || strcmpi( henk( i).name,'..'); continue; end
+    code_files = find_all_code_files( [main_path '/' henk( i).name], '.m');
+    if ~isempty( code_files)
+      R.names{ end+1} = henk( i).name;
+
+      [n_modules, n_lines, n_comments] = count_lines( code_files);
+
+      n_lines_UFE = n_lines_UFE + n_lines;
+
+      R.n_modules(  end+1,1) = n_modules;
+      R.n_lines(    end+1,1) = n_lines;
+      R.n_comments( end+1,1) = n_comments;
+      R.r_comments( end+1,1) = n_comments / (n_lines - n_comments);
+    end
+  end
+end
+
 %% plot
 
 disp(['UFEMISM v2.0 contains ' num2str( n_lines_UFE) ' lines of code, spread over ' ...

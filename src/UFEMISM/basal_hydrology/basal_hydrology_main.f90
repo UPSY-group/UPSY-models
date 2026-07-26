@@ -61,20 +61,33 @@ contains
       END IF
     end if ! IF (C%choice_basal_hydrology_model == "Salle2025") THEN
 
+    ! Calculate overburden pressure
+    ! ===========================================
+
+    do vi = mesh%vi1, mesh%vi2
+      ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
+    end do
+
     select case (C%choice_basal_hydrology_model)
     case default
       call crash('unknown choice_basal_hydrology_model "' // trim( C%choice_basal_hydrology_model) // '"')
     case ('none')
       call calc_pore_water_pressure_none( mesh, ice)
-      ! Calculate overburden and effective pressure
+      ! Calculate effective pressure
       do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
         ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
       end do
     case ('Martin2011')
       call calc_pore_water_pressure_Martin2011( mesh, ice)
+      ! Calculate effective pressure
+      do vi = mesh%vi1, mesh%vi2
+        ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
+      end do
     case ('Salle2025')
       call basal_hydrology_leg(mesh, ice, ice%hydro_Salle2025, time)
+      do vi = mesh%vi1, mesh%vi2
+        ice%effective_pressure( vi) = basal_hydro%N_til( vi)
+      end do
     case ('Leguy2014')
       call calc_pore_water_pressure_none( mesh, ice)
       call calc_effective_pressure_Leguy2014(mesh, ice)
@@ -84,20 +97,6 @@ contains
     case ('error_function_constant')
       call calc_effective_pressure_error_function_constant(mesh, ice)
     end select
-
-    ! Calculate overburden and effective pressure
-    ! ===========================================
-
-    do vi = mesh%vi1, mesh%vi2
-      ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
-      ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
-    end do
-
-    if (C%choice_basal_hydrology_model == 'Salle2025') then
-      do vi = mesh%vi1, mesh%vi2
-        ice%effective_pressure( vi) = basal_hydro%N_til( vi)
-      end do
-    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -297,11 +296,7 @@ contains
         else
           ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
           Hi_f = max(0._dp, - seawater_density/ice_density * ice%geom%Hb( vi))
-          ! if (Hi_f == 0._dp) then
-          !   ice%effective_pressure( vi) = 0.0_dp
-          ! else
-          ice%effective_pressure( vi) = ice%overburden_pressure( vi) * ((1 - Hi_f/ice%geom%Hi_eff( vi)) ** C%Leguy2014_hydro_connect_exponent)
-          ! end if
+          ice%effective_pressure( vi) = max( 0._dp, ice%overburden_pressure( vi) * ((1 - Hi_f/ice%geom%Hi_eff( vi)) ** C%Leguy2014_hydro_connect_exponent))
         end if
       else
         ice%effective_pressure( vi) = 0.0_dp

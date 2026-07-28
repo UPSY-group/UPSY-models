@@ -145,16 +145,8 @@ contains
       ! Update masks
       call region%ice%geom%determine_masks()
 
-      ! DENK DROM : assess whether this is important for the velocitiy computation below
-      ! ! Calculate zeta gradients
-      ! call calc_zeta_gradients( region%mesh, region%ice)
-
       ! Update sub-grid grounded fractions
       call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
-
-      ! DENK DROM : assess whether this is important for the velocitiy computation below
-      ! ! Calculate the basal mass balance
-      ! call run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, region%time)
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &

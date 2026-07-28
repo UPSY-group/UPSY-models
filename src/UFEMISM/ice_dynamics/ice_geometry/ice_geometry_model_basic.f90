@@ -41,6 +41,8 @@ module ice_geometry_model_basic
       procedure, public :: calc_absolute_surface_slope
       procedure, public :: calc_ice_base_slopes
 
+      procedure, public :: calc_all_secondary_geometry_variables
+
       procedure, public :: get_model_name
 
   end type type_ice_geometry_model
@@ -227,5 +229,32 @@ contains
     character(len=:), allocatable              :: model_name
     model_name = 'ice_geometry'
   end function get_model_name
+
+  subroutine calc_all_secondary_geometry_variables( self, dHb)
+
+    ! In/output variables:
+    class(type_ice_geometry_model), intent(inout) :: self
+    real(dp), dimension(:),         intent(in   ) :: dHb
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_all_secondary_geometry_variables'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    call self%calc_surface_elevation()
+    call self%calc_ice_base_elevation()
+    call self%calc_thickness_above_floatation()
+    call self%calc_height_of_water_column()
+    call self%determine_masks()
+    call self%calc_effective_thickness()
+    call self%calc_grounded_fractions( dHb)
+    call self%calc_absolute_surface_slope()
+    call self%calc_ice_base_slopes()
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine calc_all_secondary_geometry_variables
 
 end module ice_geometry_model_basic

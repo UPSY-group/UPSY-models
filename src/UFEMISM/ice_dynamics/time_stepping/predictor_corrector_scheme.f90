@@ -35,8 +35,7 @@ contains
     real(dp),                intent(in   ) :: dt_max
 
     ! Local variables:
-    character(len=1024), parameter                       :: routine_name = 'run_ice_dynamics_model_pc'
-    real(dp)                                             :: dt_crit_adv
+    character(len=*), parameter                          :: routine_name = 'run_ice_dynamics_model_pc'
     integer                                              :: pc_it
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: Hi_dummy
     integer                                              :: vi, n_guilty, n_tot
@@ -52,29 +51,11 @@ contains
     region%ice%t_Hi_prev  = region%ice%t_Hi_next
     region%ice%Hi_prev    = region%ice%Hi_next
 
-    ! == Calculate time step ==
-    ! =========================
-
     ! Store previous time step
     region%ice%pc%dt_n = region%ice%pc%dt_np1
 
-    ! Calculate new time step (Robinson et al., 2020, Eq. 33)
-    region%ice%pc%dt_np1 = (C%pc_epsilon / region%ice%pc%eta_np1)**(C%pc_k_I + C%pc_k_p) * &
-      (C%pc_epsilon / region%ice%pc%eta_n)**(-C%pc_k_p) * region%ice%pc%dt_n
-
-    ! Limit time step to maximum allowed value
-    region%ice%pc%dt_np1 = MIN( region%ice%pc%dt_np1, dt_max)
-
-    ! Limit time step to 1.2 times the previous time step
-    region%ice%pc%dt_np1 = MIN( region%ice%pc%dt_np1, C%pc_max_time_step_increase * region%ice%pc%dt_n)
-
-    ! Limit time step to minimum allowed value
-    region%ice%pc%dt_np1 = MAX( region%ice%pc%dt_np1, C%dt_ice_min)
-
-    ! Limit time step to critical advective time step
-    call calc_critical_timestep_adv( region%mesh, region%ice, dt_crit_adv)
-
-    region%ice%pc%dt_np1 = MIN( region%ice%pc%dt_np1, dt_crit_adv)
+    ! Calculate time step
+    call calc_dt_np1( region, dt_max, region%ice%pc%dt_n, region%ice%pc%dt_np1)
 
     ! == Ice masks for domain or for calving thresholds ==
     ! ====================================================
@@ -312,6 +293,44 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_ice_dynamics_model_pc
+
+  subroutine calc_dt_np1( region, dt_max, dt_n, dt_np1)
+
+    ! In/output variables:
+    type(type_model_region), intent(in   ) :: region
+    real(dp),                intent(in   ) :: dt_max
+    real(dp),                intent(in   ) :: dt_n
+    real(dp),                intent(  out) :: dt_np1
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_dt_np1'
+    real(dp)                    :: dt_crit_adv
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate new time step (Robinson et al., 2020, Eq. 33)
+    dt_np1 = (C%pc_epsilon / region%ice%pc%eta_np1)**(C%pc_k_I + C%pc_k_p) * &
+      (C%pc_epsilon / region%ice%pc%eta_n)**(-C%pc_k_p) * dt_n
+
+    ! Limit time step to maximum allowed value
+    dt_np1 = min( dt_np1, dt_max)
+
+    ! Limit time step to 1.2 times the previous time step
+    dt_np1 = min( dt_np1, C%pc_max_time_step_increase * dt_n)
+
+    ! Limit time step to minimum allowed value
+    dt_np1 = max( dt_np1, C%dt_ice_min)
+
+    ! Limit time step to critical advective time step
+    call calc_critical_timestep_adv( region%mesh, region%ice, dt_crit_adv)
+
+    dt_np1 = min( dt_np1, dt_crit_adv)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_dt_np1
 
   subroutine calc_pc_truncation_error( mesh, ice, pc)
     !< Calculate the truncation error tau in the ice thickness

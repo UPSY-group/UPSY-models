@@ -303,15 +303,10 @@ contains
     region%ice%t_Hi_next = region%ice%t_Hi_prev + region%ice%pc%dt_np1
     region%ice%Hi_next   = region%ice%pc%Hi_np1
 
-#if (DO_ASSERTIONS)
     ! Safety
-    do vi = region%mesh%vi1, region%mesh%vi2
-      if (region%ice%Hi_next(vi) < 0._dp) then
-        call crash('Hi became negative in the PC scheme with a value of {dp_01} at vertex {int_01}!', &
-          dp_01 = region%ice%Hi_next(vi), int_01 = vi)
-      end if
-    end do
-#endif
+    if (any( region%ice%Hi_next < 0._dp)) then
+      call crash('negative ice thicknesses detected at the end of the P/C scheme')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

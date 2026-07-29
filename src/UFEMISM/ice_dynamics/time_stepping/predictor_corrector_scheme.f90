@@ -17,6 +17,7 @@ module predictor_corrector_scheme
   use ice_thickness_safeties, only: alter_ice_thickness
   use conservation_of_momentum_main, only: solve_stress_balance
   use checksum_mod, only: checksum
+  use remove_unconnected_shelves_mod, only: remove_unconnected_shelves
 
   implicit none
 
@@ -93,6 +94,7 @@ contains
         beta_2 * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_star_np1)
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_star_np1)
+      call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_star_np1)
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
       call checksum( region%mesh%pai_V, region%ice%pc%Hi_star_np1, 'region%ice%pc%Hi_star_np1')
@@ -131,6 +133,7 @@ contains
         (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_np1)
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
+      call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
       call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%geom%Hb, region%ice%geom%SL, &
         region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
       call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')

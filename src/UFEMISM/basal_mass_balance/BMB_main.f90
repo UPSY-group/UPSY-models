@@ -62,9 +62,17 @@ CONTAINS
     CHARACTER(LEN=256)                                    :: choice_BMB_model
     CHARACTER(LEN=256)                                    :: choice_BMB_model_ROI
     INTEGER                                               :: vi
+    logical                                               :: do_long_initialisation
 
     ! Add routine to path
     CALL init_routine( routine_name)
+
+    ! Determine whether long initialisation is needed
+    if (C%choice_laddi_model_initialisation == 'uniform') then
+      do_long_initialisation = is_initial
+    else
+      do_long_initialisation = .false.
+    end if
 
     ! Determine which BMB model to run for this region
     SELECT CASE (region_name)
@@ -184,7 +192,7 @@ CONTAINS
         CALL run_BMB_model_laddie( mesh, ice, BMB, time, .FALSE.)
       case ('laddie')
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
-        call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, is_initial, .false.)
+        call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, do_long_initialisation, .false.)
         BMB%BMB_shelf = 0._dp
         do vi = mesh%vi1, mesh%vi2
           BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year

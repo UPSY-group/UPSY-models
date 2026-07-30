@@ -7,6 +7,7 @@ module LADDIE_main_model
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_SUM, MPI_WTIME
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration                                    , ONLY: C
@@ -308,7 +309,15 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (par%primary) write (0,'(A)') '   Initialising laddie model... '
+    select case (C%choice_laddie_model_initialisation)
+    case default
+      call crash('laddie model initialisation method choice_laddie_model_initialisation_config = "' // TRIM( C%choice_laddie_model_initialisation) // '" invalid!')
+    case ('uniform')
+      if (par%primary) write (0,'(A)') '   Initialising laddie model using uniform values... '
+    case ('read_from_file')
+      if (par%primary) write (0,'(A)') '   Initialising laddie model from file "' // &
+        UPSY%stru%colour_string( trim( C%filename_laddie_restart),'light blue') // '"...'
+    end select
 
     ! Allocate variables
     call allocate_laddie_model( mesh, laddie)

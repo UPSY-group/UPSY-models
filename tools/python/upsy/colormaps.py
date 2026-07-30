@@ -1,6 +1,8 @@
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import cmasher as cmr
+import cmcrameri as cmc
 import cmocean as cmo
 from copy import copy
 
@@ -126,8 +128,8 @@ def get_cmap(varname):
         cmap = copy(plt.get_cmap('cmo.speed'))
         norm = mpl.colors.Normalize(vmin=0,vmax=0.5,clip=True)
 
-    elif varname in ['uabs_surf', 'uabs_vav', 'bed_roughness_nudge_H_u_target_velocity']:
-        cmap = copy(plt.get_cmap('turbo'))
+    elif varname in ['uabs_surf', 'uabs_vav', 'uabs_base', 'bed_roughness_nudge_H_u_target_velocity']:
+        cmap = copy(plt.get_cmap('cmr.pride'))
         #norm = mpl.colors.Normalize(vmin=0,vmax=2000,clip=True)
         norm = mpl.colors.LogNorm(vmin=1.,vmax=4000,clip=True)
 
@@ -160,8 +162,8 @@ def get_cmap(varname):
         norm = mpl.colors.SymLogNorm(0.05, vmin=-6, vmax=6, linscale=.01)
 
     elif varname == 'till_friction_angle':
-        cmap = copy(plt.get_cmap('cmo.turbid'))
-        norm = mpl.colors.Normalize(vmin=0,vmax=45,clip=True)
+        cmap = copy(plt.get_cmap('cmc.lipari'))
+        norm = mpl.colors.PowerNorm(gamma=0.3,clip=True)
 
     elif varname == 'dHi_dt':
         cmap = copy(plt.get_cmap('cmo.balance_r'))
@@ -182,6 +184,17 @@ def get_cmap(varname):
     elif varname == 'dHi_eff':
         cmap = copy(plt.get_cmap('cmo.balance'))
         norm = mpl.colors.SymLogNorm(.01, vmin=-100, vmax=100, linscale=.01)
+
+    elif varname == 'basal_shear_stress':
+        cmap = copy(plt.get_cmap('cmr.savanna'))
+        cmap.set_over('m')
+        norm = mpl.colors.Normalize(vmin=0,vmax=3e5)
+
+    elif varname == 'basal_friction_coefficient':
+        cmap = copy(plt.get_cmap('cmr.dusk'))
+        cmap.set_bad('k')
+        cmap.set_under('k')
+        norm = mpl.colors.LogNorm(vmin=1,vmax=1e9)
 
     else:
         print(f'ERROR: no colormap available yet for {varname}, add one to colormaps.py')

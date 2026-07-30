@@ -39,6 +39,8 @@ module LADDIE_main_model
   use mesh_halo_exchange, only: exchange_halos
   use mesh_repartitioning, only: repartition_mesh
   use checksum_mod, only: checksum
+  use dist_to_hybrid_mod, only: dist_to_hybrid
+
 
   implicit none
 
@@ -313,9 +315,9 @@ contains
     case default
       call crash('laddie model initialisation method choice_laddie_model_initialisation_config = "' // TRIM( C%choice_laddie_model_initialisation) // '" invalid!')
     case ('uniform')
-      if (par%primary) write (0,'(A)') '   Initialising laddie model using uniform values... '
+      if (par%primary) write (0,'(A)') '     Initialising laddie model using uniform values... '
     case ('read_from_file')
-      if (par%primary) write (0,'(A)') '   Initialising laddie model from file "' // &
+      if (par%primary) write (0,'(A)') '     Initialising laddie model from file "' // &
         UPSY%stru%colour_string( trim( C%filename_laddie_restart),'light blue') // '"...'
     end select
 
@@ -360,6 +362,8 @@ contains
       if (C%do_write_laddie_output_fields) call create_laddie_mesh_output_file( mesh, laddie, is_standalone)
       if (C%do_write_laddie_output_scalar) call create_laddie_scalar_output_file( laddie)
     end if
+
+    if (par%primary) write (0,'(A)') '     Finished full laddie initialisation.'
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -468,6 +472,8 @@ contains
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'initialise_laddie_model_timestep_from_file'
     integer                                               :: vi
+    real(dp), dimension(mesh%vi1:mesh%vi2)                :: d_dist
+    real(dp), dimension(mesh%ti1:mesh%ti2)                :: d_dist_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -476,11 +482,16 @@ contains
     call allocate_laddie_timestep( mesh, npx)
 
     ! Read main variables directly
-    call read_field_from_file_2D(   C%filename_laddie_restart, 'H_lad', mesh, C%output_dir, npx%H, time_to_read = C%timeframe_laddie_restart)
-    call read_field_from_file_2D_b( C%filename_laddie_restart, 'U_lad', mesh, C%output_dir, npx%U, time_to_read = C%timeframe_laddie_restart)
-    call read_field_from_file_2D_b( C%filename_laddie_restart, 'V_lad', mesh, C%output_dir, npx%V, time_to_read = C%timeframe_laddie_restart)
-    call read_field_from_file_2D(   C%filename_laddie_restart, 'T_lad', mesh, C%output_dir, npx%T, time_to_read = C%timeframe_laddie_restart)
-    call read_field_from_file_2D(   C%filename_laddie_restart, 'S_lad', mesh, C%output_dir, npx%S, time_to_read = C%timeframe_laddie_restart)
+    call read_field_from_mesh_file_dp_2D(   C%filename_laddie_restart, 'H_lad' , d_dist,   time_to_read = C%timeframe_laddie_restart)
+    call dist_to_hybrid( mesh%pai_V, d_dist, npx%H)
+    call read_field_from_mesh_file_dp_2D_b( C%filename_laddie_restart, 'U_lad' , d_dist_b, time_to_read = C%timeframe_laddie_restart)
+    call dist_to_hybrid( mesh%pai_V, d_dist_b, npx%U)
+    call read_field_from_mesh_file_dp_2D_b( C%filename_laddie_restart, 'V_lad' , d_dist_b, time_to_read = C%timeframe_laddie_restart)
+    call dist_to_hybrid( mesh%pai_V, d_dist_b, npx%V)
+    call read_field_from_mesh_file_dp_2D(   C%filename_laddie_restart, 'T_lad' , d_dist,   time_to_read = C%timeframe_laddie_restart)
+    call dist_to_hybrid( mesh%pai_V, d_dist, npx%T)
+    call read_field_from_mesh_file_dp_2D(   C%filename_laddie_restart, 'S_lad' , d_dist,   time_to_read = C%timeframe_laddie_restart)
+    call dist_to_hybrid( mesh%pai_V, d_dist, npx%S)
 
     call exchange_halos( mesh, npx%H)
     call exchange_halos( mesh, npx%U)
@@ -488,11 +499,11 @@ contains
     call exchange_halos( mesh, npx%T)
     call exchange_halos( mesh, npx%S)
 
-    call checksum( mesh%pai_V, npx%H, 'npx%H')
-    call checksum( mesh%pai_V, npx%U, 'npx%U')
-    call checksum( mesh%pai_V, npx%V, 'npx%V')
-    call checksum( mesh%pai_V, npx%T, 'npx%T')
-    call checksum( mesh%pai_V, npx%S, 'npx%S')
+    call checksum( mesh%pai_V,   npx%H, 'npx%H')
+    call checksum( mesh%pai_Tri, npx%U, 'npx%U')
+    call checksum( mesh%pai_Tri, npx%V, 'npx%V')
+    call checksum( mesh%pai_V,   npx%T, 'npx%T')
+    call checksum( mesh%pai_V,   npx%S, 'npx%S')
 
     ! Layer thickness on b and c grid
     call map_H_a_b( mesh, laddie, npx%H, npx%H_b)

@@ -68,7 +68,7 @@ CONTAINS
     CALL init_routine( routine_name)
 
     ! Determine whether long initialisation is needed
-    if (C%choice_laddi_model_initialisation == 'uniform') then
+    if (C%choice_laddie_model_initialisation == 'uniform') then
       do_long_initialisation = is_initial
     else
       do_long_initialisation = .false.
@@ -699,6 +699,7 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE create_restart_file_BMB_laddie_region
+
   SUBROUTINE remap_BMB_model( mesh_old, mesh_new, ice, ocean, BMB, region_name, time)
     ! Remap the BMB model
 

@@ -377,6 +377,40 @@ contains
     ! Allocate timestep
     call allocate_laddie_timestep( mesh, npx)
 
+    select case (C%choice_laddie_model_initialisation)
+    case default
+      call crash('laddie model initialisation method choice_laddie_model_initialisation_config = "' // TRIM( C%choice_laddie_model_initialisation) // '" invalid!')
+    case ('uniform')
+      call initialise_laddie_model_timestep_uniform( mesh, laddie, forcing, npx)
+    case ('read_from_file')
+      call initialise_laddie_model_timestep_from_file( mesh, laddie, forcing, npx)
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_laddie_model_timestep
+
+  subroutine initialise_laddie_model_timestep_uniform( mesh, laddie, forcing, npx)
+    ! Initialise the laddie model for given timestep
+
+    ! In- and output variables
+
+    type(type_mesh),                        intent(in)    :: mesh
+    type(type_laddie_model),                intent(inout) :: laddie
+    type(type_laddie_forcing),              intent(in   ) :: forcing
+    type(type_laddie_timestep),             intent(inout) :: npx
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'initialise_laddie_model_timestep_uniform'
+    integer                                               :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Allocate timestep
+    call allocate_laddie_timestep( mesh, npx)
+
     ! Layer thickness
     do vi = mesh%vi1, mesh%vi2
        if (laddie%mask_a( vi)) then
@@ -405,9 +439,64 @@ contains
     call checksum( mesh%pai_V, npx%T, 'npx%T')
     call checksum( mesh%pai_V, npx%S, 'npx%S')
 
+    ! U and V initialised as zeros during allocation
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_laddie_model_timestep
+  end subroutine initialise_laddie_model_timestep_uniform
+
+  subroutine initialise_laddie_model_timestep_from_file( mesh, laddie, forcing, npx)
+    ! Initialise the laddie model for given timestep from a restart file
+
+    ! In- and output variables
+
+    type(type_mesh),                        intent(in)    :: mesh
+    type(type_laddie_model),                intent(inout) :: laddie
+    type(type_laddie_forcing),              intent(in   ) :: forcing
+    type(type_laddie_timestep),             intent(inout) :: npx
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'initialise_laddie_model_timestep_from_file'
+    integer                                               :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Allocate timestep
+    call allocate_laddie_timestep( mesh, npx)
+
+    ! Read main variables directly
+    call read_field_from_file_2D(   C%filename_laddie_restart, 'H_lad', mesh, C%output_dir, npx%H, time_to_read = C%timeframe_laddie_restart)
+    call read_field_from_file_2D_b( C%filename_laddie_restart, 'U_lad', mesh, C%output_dir, npx%U, time_to_read = C%timeframe_laddie_restart)
+    call read_field_from_file_2D_b( C%filename_laddie_restart, 'V_lad', mesh, C%output_dir, npx%V, time_to_read = C%timeframe_laddie_restart)
+    call read_field_from_file_2D(   C%filename_laddie_restart, 'T_lad', mesh, C%output_dir, npx%T, time_to_read = C%timeframe_laddie_restart)
+    call read_field_from_file_2D(   C%filename_laddie_restart, 'S_lad', mesh, C%output_dir, npx%S, time_to_read = C%timeframe_laddie_restart)
+
+    call exchange_halos( mesh, npx%H)
+    call exchange_halos( mesh, npx%U)
+    call exchange_halos( mesh, npx%V)
+    call exchange_halos( mesh, npx%T)
+    call exchange_halos( mesh, npx%S)
+
+    call checksum( mesh%pai_V, npx%H, 'npx%H')
+    call checksum( mesh%pai_V, npx%U, 'npx%U')
+    call checksum( mesh%pai_V, npx%V, 'npx%V')
+    call checksum( mesh%pai_V, npx%T, 'npx%T')
+    call checksum( mesh%pai_V, npx%S, 'npx%S')
+
+    ! Layer thickness on b and c grid
+    call map_H_a_b( mesh, laddie, npx%H, npx%H_b)
+    call map_H_a_c( mesh, laddie, npx%H, npx%H_c)
+    call checksum( mesh%pai_Tri, npx%H_b, 'npx%H_b')
+    call checksum( mesh%pai_E  , npx%H_c, 'npx%H_c')
+
+    ! Initialise ambient T and S
+    call compute_ambient_TS( mesh, laddie, forcing, npx%H)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_laddie_model_timestep_from_file
 
 end module LADDIE_main_model

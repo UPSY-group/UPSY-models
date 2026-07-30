@@ -1024,6 +1024,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: choice_laddie_momentum_advection_config      = ''                               ! Choose momentum advection scheme. Options: 'none', 'upstream'
 
     ! Initialisation
+    character(len=1024) :: choice_laddie_model_initialisation_config    = 'uniform'                        ! Initialisation method. Options: 'uniform', 'read_from_file'
+
+    ! Initialisation 'read_from_file'
+    character(len=1024) :: filename_laddie_restart_config               = ''                               ! File name containing main LADDIE variables
+    real(dp)            :: timeframe_laddie_restart_config              = 1E9_dp
+
+    ! Initialisation 'uniform'
     real(dp)            :: laddie_initial_thickness_config              = 10._dp                           ! [m] Initial value of thickness H
     real(dp)            :: laddie_initial_T_offset_config               = 0.0_dp                           ! [degC] Initial offset of T relative to ambient
     real(dp)            :: laddie_initial_S_offset_config               = -0.1_dp                          ! [PSU] Initial offset of S relative to ambient. Must be negative for stable buoyancy!
@@ -2274,6 +2281,13 @@ module model_configuration_type_and_namelist
     character(len=1024) :: choice_laddie_momentum_advection
 
     ! Initialisation
+    character(len=1024) :: choice_laddie_model_initialisation
+
+    ! Initialisation 'read_from_file'
+    character(len=1024) :: filename_laddie_restart
+    real(dp)            :: timeframe_laddie_restart
+
+    ! Initialisation 'uniform'
     real(dp)            :: laddie_initial_thickness
     real(dp)            :: laddie_initial_T_offset
     real(dp)            :: laddie_initial_S_offset
@@ -3197,6 +3211,9 @@ contains
       laddie_fbrk3_beta3_config                                   , &
       laddie_lfra_nu_config                                       , &
       choice_laddie_momentum_advection_config                     , &
+      choice_laddie_model_initialisation_config                   , &
+      filename_laddie_restart_config                              , &
+      timeframe_laddie_restart_config                             , &
       laddie_initial_thickness_config                             , &
       laddie_initial_T_offset_config                              , &
       laddie_initial_S_offset_config                              , &
@@ -4408,6 +4425,13 @@ contains
     C%choice_laddie_momentum_advection                       = choice_laddie_momentum_advection_config
 
     ! Initialisation
+    C%choice_laddie_model_initialisation                     = choice_laddie_model_initialisation_config
+ 
+    ! Initialisation 'read_from_file' 
+    C%filename_laddie_restart                                = filename_laddie_restart_config
+    C%timeframe_laddie_restart                               = timeframe_laddie_restart_config
+ 
+    ! Initialisation 'uniform' 
     C%laddie_initial_thickness                               = laddie_initial_thickness_config
     C%laddie_initial_T_offset                                = laddie_initial_T_offset_config
     C%laddie_initial_S_offset                                = laddie_initial_S_offset_config

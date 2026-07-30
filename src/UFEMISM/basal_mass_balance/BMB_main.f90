@@ -517,8 +517,8 @@ CONTAINS
 
     ! ! Write the LADDIE fields to the file
     CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'H_lad', BMB%laddie%now%H)
-    CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'U_lad', BMB%laddie%now%U)
-    CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'V_lad', BMB%laddie%now%V)
+    CALL write_to_field_multopt_mesh_dp_2D_b( mesh, BMB%restart_filename, ncid, 'U_lad', BMB%laddie%now%U)
+    CALL write_to_field_multopt_mesh_dp_2D_b( mesh, BMB%restart_filename, ncid, 'V_lad', BMB%laddie%now%V)
     CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'T_lad', BMB%laddie%now%T)
     CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'S_lad', BMB%laddie%now%S)
 

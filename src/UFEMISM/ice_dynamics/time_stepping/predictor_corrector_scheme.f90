@@ -147,8 +147,41 @@ contains
       ! == Error assessment ==
       ! ======================
 
+      ! Initialise unstable vertex count
+      n_tot = 0
+      n_guilty = 0
+
+      ! Determine number of unstable vertices
+      do vi = region%mesh%vi1, region%mesh%vi2
+        ! Only consider fully grounded vertices
+        if (region%ice%geom%fraction_gr( vi) < 1._dp) CYCLE
+        ! if so, add to total vertex count
+        n_tot = n_tot + 1
+        ! if this vertex's error is larger than tolerance
+        if (region%ice%pc%tau_np1( vi) > C%pc_epsilon) then
+          ! Add to total guilty vertex count
+          n_guilty = n_guilty + 1
+          ! Add to this vertex's guilty record
+          region%ice%pc%tau_n_guilty( vi) = region%ice%pc%tau_n_guilty( vi) + 1
+        end if
+      end do
+
+      ! Add up findings from each process domain
+      call MPI_ALLREDUCE( MPI_IN_PLACE, n_tot,    1, MPI_integer, MPI_SUM, MPI_COMM_WORLD, ierr)
+      call MPI_ALLREDUCE( MPI_IN_PLACE, n_guilty, 1, MPI_integer, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+      ! Safety
+      if (n_tot == 0) n_tot = 1
+
       ! Check if largest truncation error is small enough; if so, move on
       if (region%ice%pc%eta_np1 < C%pc_epsilon) then
+        exit iterate_pc_timestep
+
+      ! if not, check whether that occurs in a significant amount of vertices; if not,
+      ! set the truncation error to almost the tolerance (to allow for growth) and move on
+      elseif (100._dp * real( n_guilty,dp) / real(n_tot,dp) < C%pc_guilty_max) then
+        ! if (par%primary) call warning('{dp_01}% of vertices are changing rapidly, ignoring for now', dp_01 = 100._dp * real( n_guilty,dp) / real(n_tot,dp))
+        region%ice%pc%eta_np1 = .95_dp * C%pc_epsilon
         exit iterate_pc_timestep
 
       ! if not, re-do the PC timestep

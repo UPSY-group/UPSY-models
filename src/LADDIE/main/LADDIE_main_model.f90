@@ -168,6 +168,10 @@ contains
         laddie%now%V( ti)     = 0.0_dp
         laddie%now%H_b( ti)   = 0.0_dp
       end if
+      if (laddie%mask_gl_b( ti)) then
+        laddie%now%U( ti)     = 0.0_dp
+        laddie%now%V( ti)     = 0.0_dp
+      end if
     end do
 
     call checksum( mesh%pai_Tri, laddie%now%U  , 'laddie%now%U'  )

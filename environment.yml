@@ -20,6 +20,8 @@ dependencies:
 
   # Goodies for plotting
   - cartopy
+  - cmasher
+  - cmcrameri
   - cmocean
   - dask
   - geopandas

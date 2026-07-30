@@ -18,6 +18,8 @@ classifiers = [
 
 dependencies = [
     "cartopy",
+    "cmasher",
+    "cmcrameri",
     "cmocean",
     "dask",
     "geopandas",

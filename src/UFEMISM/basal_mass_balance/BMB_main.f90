@@ -324,6 +324,9 @@ CONTAINS
     ! Set time of next calculation to start time
     BMB%t_next = C%start_time_of_run
 
+    ! Set time of next reinitialisation to avoid double initialisation at start
+    BMB%t_next_reinit = C%start_time_of_run + C%dt_BMB_reinit
+
     ! Compute grounded ice mass balance
     SELECT CASE (C%choice_BMB_grounded)
       CASE ('from_temperature')

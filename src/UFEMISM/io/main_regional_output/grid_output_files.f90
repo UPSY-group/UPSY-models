@@ -922,6 +922,12 @@ contains
         ! Not implemented
       case ('S_base')
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%S_base, d_grid_vec_partial_2D)
+      case ('domain_a')
+        call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%domain_a, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'domain_a', d_grid_vec_partial_2D)
+      case ('domain_b')
+        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%domain_b, d_grid_vec_partial_2D)
+        call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'domain_b', d_grid_vec_partial_2D)
 
     ! == Lateral mass balance ==
     ! ==========================
@@ -1727,6 +1733,10 @@ contains
         ! not implemented
       case ('S_base')
         call add_field_grid_dp_2D( filename, ncid, 'S_base', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Salinity at ice shelf base', units = 'PSU')
+      case ('domain_a')
+        call add_field_grid_dp_2D( filename, ncid, 'domain_a', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Domain of a-grid', units = '0-1')
+      case ('domain_b')
+        call add_field_grid_dp_2D( filename, ncid, 'domain_b', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Domain of b-grid', units = '0-1')
 
 
     ! == Lateral mass balance ==

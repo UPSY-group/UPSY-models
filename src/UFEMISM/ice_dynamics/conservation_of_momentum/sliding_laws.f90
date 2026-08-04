@@ -170,7 +170,7 @@ contains
     ! ====================
 
     ! Calculate the till yield stress from the effective pressure and bed roughness
-    till_yield_stress = effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
+    till_yield_stress = effective_pressure * tand( bed_roughness_applied)
 
     ! == Extend till yield stress over ice-free land neighbours
     ! =========================================================
@@ -230,7 +230,7 @@ contains
     ! ====================
 
     ! Calculate the till yield stress from the effective pressure and bed roughness
-    till_yield_stress = effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
+    till_yield_stress = effective_pressure * tand( bed_roughness_applied)
 
     ! == Extend till yield stress over ice-free land neighbours
     ! =========================================================
@@ -408,7 +408,7 @@ contains
     ! ====================
 
     ! Calculate the till yield stress from the effective pressure and bed roughness
-    till_yield_stress = effective_pressure * tan(pi / 180._dp) * bed_roughness_applied
+    till_yield_stress = effective_pressure * tand( bed_roughness_applied)
 
     ! == Extend till yield stress over ice-free land neighbours
     ! =========================================================

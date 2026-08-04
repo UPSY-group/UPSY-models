@@ -258,7 +258,7 @@ contains
     end if
 #endif
 
-    Hs = 2000._dp - x * tan( 0.5_dp * pi / 180._dp)
+    Hs = 2000._dp - x * tand( 0.5_dp)
     Hb = Hs - 1000._dp + 500._dp * sin( x * 2._dp * pi / C%refgeo_idealised_ISMIP_HOM_L) &
                                 * sin( y * 2._dp * pi / C%refgeo_idealised_ISMIP_HOM_L)
     Hi = Hs - Hb
@@ -284,7 +284,7 @@ contains
     end if
 #endif
 
-    Hs = 2000._dp - x * TAN( 0.5_dp * pi / 180._dp)
+    Hs = 2000._dp - x * tand( 0.5_dp)
     Hb = Hs - 1000._dp + 500._dp * SIN( x * 2._dp * pi / C%refgeo_idealised_ISMIP_HOM_L)
     Hi = Hs - Hb
     SL = -10000._dp
@@ -309,7 +309,7 @@ contains
     end if
 #endif
 
-    Hs = 2000._dp - x * TAN( 0.1_dp * pi / 180._dp)
+    Hs = 2000._dp - x * tand( 0.1_dp)
     Hb = Hs - 1000._dp
     Hi = Hs - Hb
     SL = -10000._dp
@@ -339,7 +339,7 @@ contains
     end if
 #endif
 
-    Hs = 5000._dp - x * tan( 3._dp * pi / 180._dp)
+    Hs = 5000._dp - x * tand( 3._dp)
     Hb = Hs - H0 + a0 * exp( -((x - 1._dp * C%refgeo_idealised_ISMIP_HOM_L)**2 + (y - 1._dp * C%refgeo_idealised_ISMIP_HOM_L)**2) / sigma**2) &
                 + a0 * exp( -((x - 1._dp * C%refgeo_idealised_ISMIP_HOM_L)**2 + (y - 0._dp * C%refgeo_idealised_ISMIP_HOM_L)**2) / sigma**2) &
                 + a0 * exp( -((x - 1._dp * C%refgeo_idealised_ISMIP_HOM_L)**2 + (y + 1._dp * C%refgeo_idealised_ISMIP_HOM_L)**2) / sigma**2) &

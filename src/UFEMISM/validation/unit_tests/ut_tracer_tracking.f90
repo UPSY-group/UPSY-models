@@ -427,7 +427,7 @@ module ut_tracer_tracking
 
 !     ! choice_refgeo_idealised = 'slabonaslope'
 !     ! C%refgeo_idealised_slabonaslope_Hi = 1000._dp
-!     ! C%refgeo_idealised_slabonaslope_dhdx = tan( theta * pi / 180._dp)
+!     ! C%refgeo_idealised_slabonaslope_dhdx = tand( theta)
 
 !     ! do vi = mesh%vi1, mesh%vi2
 !     !   call calc_idealised_geometry( mesh%V( vi,1), mesh%V( vi,2), &
@@ -440,8 +440,8 @@ module ut_tracer_tracking
 !     ! ! zero at the base to u_abs at the surface.
 
 !     ! ice%v_3D_b = 0._dp
-!     ! u_surf = uabs * cos( theta * pi / 180._dp)
-!     ! w_surf = uabs * sin( theta * pi / 180._dp)
+!     ! u_surf = uabs * cosd( theta)
+!     ! w_surf = uabs * sind( theta)
 !     ! do k = 1, mesh%nz
 !     !   ice%u_3D_b( :,k) = u_surf * (1._dp - mesh%zeta( k))
 !     !   ice%w_3D  ( :,k) = w_surf * (1._dp - mesh%zeta( k))

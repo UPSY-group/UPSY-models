@@ -40,10 +40,9 @@ contains
     integer                                              :: pc_it
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: Hi_dummy
     real(dp)                                             :: beta_1, beta_2
-    integer                                              :: vi, n_guilty, n_tot
+    integer                                              :: n_guilty, n_tot
     integer                                              :: n_visc_its
     integer                                              :: n_Axb_its
-    integer                                              :: ierr
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
 
     ! Add routine to path
@@ -147,31 +146,7 @@ contains
       ! == Error assessment ==
       ! ======================
 
-      ! Initialise unstable vertex count
-      n_tot = 0
-      n_guilty = 0
-
-      ! Determine number of unstable vertices
-      do vi = region%mesh%vi1, region%mesh%vi2
-        ! Only consider fully grounded vertices
-        if (region%ice%geom%fraction_gr( vi) < 1._dp) CYCLE
-        ! if so, add to total vertex count
-        n_tot = n_tot + 1
-        ! if this vertex's error is larger than tolerance
-        if (region%ice%pc%tau_np1( vi) > C%pc_epsilon) then
-          ! Add to total guilty vertex count
-          n_guilty = n_guilty + 1
-          ! Add to this vertex's guilty record
-          region%ice%pc%tau_n_guilty( vi) = region%ice%pc%tau_n_guilty( vi) + 1
-        end if
-      end do
-
-      ! Add up findings from each process domain
-      call MPI_ALLREDUCE( MPI_IN_PLACE, n_tot,    1, MPI_integer, MPI_SUM, MPI_COMM_WORLD, ierr)
-      call MPI_ALLREDUCE( MPI_IN_PLACE, n_guilty, 1, MPI_integer, MPI_SUM, MPI_COMM_WORLD, ierr)
-
-      ! Safety
-      if (n_tot == 0) n_tot = 1
+      call calc_n_guilty( region%mesh, region%ice, region%ice%pc, n_guilty, n_tot)
 
       ! Check if largest truncation error is small enough; if so, move on
       if (region%ice%pc%eta_np1 < C%pc_epsilon) then
@@ -333,6 +308,54 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine calc_pc_truncation_error
+
+  subroutine calc_n_guilty( mesh, ice, pc, n_guilty, n_tot)
+    !< Calculate the truncation error tau in the ice thickness
+    !< rate of change (Robinson et al., 2020, Eq. 32)
+
+    ! In- and output variables:
+    type(type_mesh),      intent(in   ) :: mesh
+    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_pc),    intent(inout) :: pc
+    integer,              intent(  out) :: n_guilty, n_tot
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_n_guilty'
+    integer                     :: vi, ierr
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Initialise unstable vertex count
+    n_tot = 0
+    n_guilty = 0
+
+    ! Determine number of unstable vertices
+    do vi = mesh%vi1, mesh%vi2
+      ! Only consider fully grounded vertices
+      if (ice%geom%fraction_gr( vi) < 1._dp) CYCLE
+      ! if so, add to total vertex count
+      n_tot = n_tot + 1
+      ! if this vertex's error is larger than tolerance
+      if (pc%tau_np1( vi) > C%pc_epsilon) then
+        ! Add to total guilty vertex count
+        n_guilty = n_guilty + 1
+        ! Add to this vertex's guilty record
+        pc%tau_n_guilty( vi) = pc%tau_n_guilty( vi) + 1
+      end if
+    end do
+
+    ! Add up findings from each process domain
+    call MPI_ALLREDUCE( MPI_IN_PLACE, n_tot,    1, MPI_integer, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, n_guilty, 1, MPI_integer, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    ! Safety
+    if (n_tot == 0) n_tot = 1
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_n_guilty
 
   subroutine initialise_pc_scheme( mesh, pc, region_name)
     !< allocate memory and initialise values for the ice thickness predictor/corrector scheme.

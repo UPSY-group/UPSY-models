@@ -62,9 +62,17 @@ CONTAINS
     CHARACTER(LEN=256)                                    :: choice_BMB_model
     CHARACTER(LEN=256)                                    :: choice_BMB_model_ROI
     INTEGER                                               :: vi
+    logical                                               :: do_long_initialisation
 
     ! Add routine to path
     CALL init_routine( routine_name)
+
+    ! Determine whether long initialisation is needed
+    if (C%choice_laddie_model_initialisation == 'uniform') then
+      do_long_initialisation = is_initial
+    else
+      do_long_initialisation = .false.
+    end if
 
     ! Determine which BMB model to run for this region
     SELECT CASE (region_name)
@@ -184,7 +192,7 @@ CONTAINS
         CALL run_BMB_model_laddie( mesh, ice, BMB, time, .FALSE.)
       case ('laddie')
         call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
-        call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, is_initial, .false.)
+        call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, do_long_initialisation, .false.)
         BMB%BMB_shelf = 0._dp
         do vi = mesh%vi1, mesh%vi2
           BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year
@@ -316,6 +324,9 @@ CONTAINS
     ! Set time of next calculation to start time
     BMB%t_next = C%start_time_of_run
 
+    ! Set time of next reinitialisation to avoid double initialisation at start
+    BMB%t_next_reinit = C%start_time_of_run + C%dt_BMB_reinit
+
     ! Compute grounded ice mass balance
     SELECT CASE (C%choice_BMB_grounded)
       CASE ('from_temperature')
@@ -430,7 +441,7 @@ CONTAINS
       CASE ('laddie_py')
         ! No need to do anything
       CASE ('laddie')
-        ! No need to do anything
+        CALL write_to_restart_file_BMB_laddie_region( mesh, BMB, region_name, time)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -483,6 +494,53 @@ CONTAINS
 
   END SUBROUTINE write_to_restart_file_BMB_model_region
 
+  SUBROUTINE write_to_restart_file_BMB_laddie_region( mesh, BMB, region_name, time)
+    ! Write to the restart NetCDF file specific for LADDIE
+
+    ! In/output variables:
+    TYPE(type_mesh),          INTENT(IN) :: mesh
+    TYPE(type_BMB_model),     INTENT(IN) :: BMB
+    CHARACTER(LEN=3),         INTENT(IN) :: region_name
+    REAL(dp),                 INTENT(IN) :: time
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER        :: routine_name = 'write_to_restart_file_BMB_laddie_region'
+    INTEGER                              :: ncid
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! If no NetCDF output should be created, do nothing
+    IF (.NOT. C%do_create_netcdf_output) THEN
+      CALL finalise_routine( routine_name)
+      RETURN
+    END IF
+
+    ! Print to terminal
+    IF (par%primary) WRITE(0,'(A)') '   Writing to BMB restart file "' // &
+      UPSY%stru%colour_string( TRIM( BMB%restart_filename), 'light blue') // '"...'
+
+    ! Open the NetCDF file
+    CALL open_existing_netcdf_file_for_writing( BMB%restart_filename, ncid)
+
+    ! Write the time to the file
+    CALL write_time_to_file( BMB%restart_filename, ncid, time)
+
+    ! ! Write the LADDIE fields to the file
+    CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'H_lad', BMB%laddie%now%H)
+    CALL write_to_field_multopt_mesh_dp_2D_b( mesh, BMB%restart_filename, ncid, 'U_lad', BMB%laddie%now%U)
+    CALL write_to_field_multopt_mesh_dp_2D_b( mesh, BMB%restart_filename, ncid, 'V_lad', BMB%laddie%now%V)
+    CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'T_lad', BMB%laddie%now%T)
+    CALL write_to_field_multopt_mesh_dp_2D( mesh, BMB%restart_filename, ncid, 'S_lad', BMB%laddie%now%S)
+
+    ! Close the file
+    CALL close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE write_to_restart_file_BMB_laddie_region
+
   SUBROUTINE create_restart_file_BMB_model( mesh, BMB, region_name)
     ! Create the restart file for the BMB model
 
@@ -529,7 +587,7 @@ CONTAINS
       CASE ('laddie_py')
         ! No need to do anything
       CASE ('laddie')
-        ! No need to do anything
+        CALL create_restart_file_BMB_laddie_region( mesh, BMB, region_name)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -589,6 +647,61 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE create_restart_file_BMB_model_region
+
+  SUBROUTINE create_restart_file_BMB_laddie_region( mesh, BMB, region_name)
+    ! Create a restart NetCDF file specific for LADDIE
+    ! Includes generation of the procedural filename (e.g. "restart_BMB_00001.nc")
+
+    ! In/output variables:
+    TYPE(type_mesh),          INTENT(IN)    :: mesh
+    TYPE(type_BMB_model),     INTENT(INOUT) :: BMB
+    CHARACTER(LEN=3),         INTENT(IN)    :: region_name
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER           :: routine_name = 'create_restart_file_BMB_laddie_region'
+    CHARACTER(LEN=256)                      :: filename_base
+    INTEGER                                 :: ncid
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! If no NetCDF output should be created, do nothing
+    IF (.NOT. C%do_create_netcdf_output) THEN
+      CALL finalise_routine( routine_name)
+      RETURN
+    END IF
+
+    ! Set the filename
+    filename_base = TRIM( C%output_dir) // 'restart_BMB_' // region_name
+    CALL generate_filename_XXXXXdotnc( filename_base, BMB%restart_filename)
+
+    ! Print to terminal
+    IF (par%primary) WRITE(0,'(A)') '   Creating BMB model restart file "' // &
+      UPSY%stru%colour_string( TRIM( BMB%restart_filename), 'light blue') // '"...'
+
+    ! Create the NetCDF file
+    CALL create_new_netcdf_file_for_writing( BMB%restart_filename, ncid)
+
+    ! Set up the mesh in the file
+    CALL setup_mesh_in_netcdf_file( BMB%restart_filename, ncid, mesh)
+
+    ! Add a time dimension to the file
+    CALL add_time_dimension_to_file( BMB%restart_filename, ncid)
+
+    ! Add the data fields to the file
+    CALL add_field_mesh_dp_2D(   BMB%restart_filename, ncid, 'H_lad', long_name = 'Laddie layer thickness', units = 'm')
+    CALL add_field_mesh_dp_2D_b( BMB%restart_filename, ncid, 'U_lad', long_name = 'Laddie x-velocity', units = 'm/s')
+    CALL add_field_mesh_dp_2D_b( BMB%restart_filename, ncid, 'V_lad', long_name = 'Laddie y-velocity', units = 'm/s')
+    CALL add_field_mesh_dp_2D(   BMB%restart_filename, ncid, 'T_lad', long_name = 'Laddie temperature', units = 'degC')
+    CALL add_field_mesh_dp_2D(   BMB%restart_filename, ncid, 'S_lad', long_name = 'Laddie salinity', units = 'psu')
+
+    ! Close the file
+    CALL close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE create_restart_file_BMB_laddie_region
 
   SUBROUTINE remap_BMB_model( mesh_old, mesh_new, ice, ocean, BMB, region_name, time)
     ! Remap the BMB model

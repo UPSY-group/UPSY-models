@@ -9,7 +9,8 @@ module conservation_of_mass_semiimplicit
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind
-  use conservation_of_mass_explicit, only: calc_dHi_dt_explicit, apply_ice_thickness_BC_explicit
+  use conservation_of_mass_explicit, only: calc_dHi_dt_explicit
+  use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
   use checksum_mod, only: checksum
 
   implicit none

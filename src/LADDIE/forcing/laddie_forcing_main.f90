@@ -24,7 +24,8 @@ module laddie_forcing_main
   use ice_model_memory, only: allocate_ice_model
   use thermodynamics_main, only: initialise_ice_temperature_uniform
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
-  use conservation_of_mass_main, only: apply_ice_thickness_BC_explicit, apply_mask_noice_direct
+  use conservation_of_mass_main, only: apply_mask_noice_direct
+  use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
   use ice_geometry_basics, only: Hi_from_Hb_Hs_and_SL
   use ocean_main, only: initialise_ocean_model
   use projections, only: inverse_oblique_sg_projection

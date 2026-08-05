@@ -12,6 +12,7 @@ module tracer_tracking_model_particles_main
   use grid_basic, only: setup_square_grid
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_all
   use tracer_tracking_model_particles_io, only: create_particles_netcdf_file, write_to_particles_netcdf_file
   use tracer_tracking_model_particles_remapping, only: calc_particles_to_mesh_map, map_tracer_to_mesh
@@ -185,7 +186,7 @@ contains
     ! Gather data to all processes, so they can be interpolated to the particle positions
     ! (necessary, as a particle owned by process n will generally not be located in the
     ! domain of that process)
-    call gather_to_all( ice%geom%Hi    , Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi    , Hi_tot)
     call gather_to_all( ice%geom%Hs    , Hs_tot)
     call gather_to_all( ice%u_3D_b, u_3D_b_tot)
     call gather_to_all( ice%v_3D_b, v_3D_b_tot)

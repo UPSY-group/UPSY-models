@@ -202,6 +202,7 @@ contains
     real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, TF
     real(dp), dimension(C%nz)                            :: d_zeta_temp
     integer                                              :: vi, ti
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: d_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -233,7 +234,8 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%geom%Hi, vmin=0._dp)
+    d_loc = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%lithk, inputfield_a=d_loc, vmin=0._dp)
     call write_to_file( region, region%ismip_output%orog,  inputfield_a=region%ice%geom%Hs, vmin=0._dp)
     call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%geom%Hb)
     call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%geom%Hib)
@@ -309,7 +311,8 @@ contains
     ! === Scalars ===
 
     ! State with provided inputfields and optional masks
-    call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
+    d_loc = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2) * ice_density
+    call write_to_file( region, region%ismip_output%lim, d_loc)
     call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%geom%TAF) * ice_density, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareagr, region%ice%geom%fraction_gr, mask=mask_ice_a)
     call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%geom%fraction_gr, mask=mask_ice_a)
@@ -1152,7 +1155,7 @@ contains
     call reallocate_bounds( ismip_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
 
     ! Use accum to store current Hi for dHidt
-    ismip_output%dlithkdt%accum = ice%geom%Hi
+    ismip_output%dlithkdt%accum = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

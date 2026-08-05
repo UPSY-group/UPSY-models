@@ -218,7 +218,7 @@ contains
 
     ! In- and output variables:
     type(type_mesh),                                   intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: Hi
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih),            intent(in   ) :: Hi
     real(dp), dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: Hs
     real(dp), dimension(:),                            intent(in   ) :: zeta
     logical,  dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: mask_grounded_ice

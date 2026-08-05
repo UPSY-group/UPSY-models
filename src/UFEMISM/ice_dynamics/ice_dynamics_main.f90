@@ -200,6 +200,7 @@ contains
     character(len=1024), parameter         :: routine_name = 'initialise_ice_dynamics_model'
     integer                                :: vi
     real(dp), dimension(mesh%vi1:mesh%vi2) :: dHs_dx, dHs_dy
+    real(dp), dimension(:), pointer        :: Hi_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -260,7 +261,8 @@ contains
     call calc_mask_noice( mesh, ice%mask_noice)
 
     ! Apply no-ice mask
-    call apply_mask_noice_direct( mesh, ice%mask_noice, ice%geom%Hi)
+    Hi_loc => ice%geom%Hi( mesh%vi1:mesh%vi2)
+    call apply_mask_noice_direct( mesh, ice%mask_noice, Hi_loc)
 
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%geom%Hb, ice%geom%SL, ice%geom%Hi)
@@ -309,8 +311,10 @@ contains
     ! Model states for ice dynamics model
     ice%t_Hi_prev = C%start_time_of_run
     ice%t_Hi_next = C%start_time_of_run
-    ice%Hi_prev   = ice%geom%Hi
-    ice%Hi_next   = ice%geom%Hi
+    do vi = mesh%vi1, mesh%vi2
+      ice%Hi_prev( vi)   = ice%geom%Hi( vi)
+      ice%Hi_next( vi)   = ice%geom%Hi( vi)
+    end do
 
     ! Initialise masks
     ! ================
@@ -716,8 +720,10 @@ contains
     ! Model states for ice dynamics model
     ice%t_Hi_prev = time
     ice%t_Hi_next = time
-    ice%Hi_prev   = ice%geom%Hi
-    ice%Hi_next   = ice%geom%Hi
+    do vi = mesh_new%vi1, mesh_new%vi2
+      ice%Hi_prev( vi)   = ice%geom%Hi( vi)
+      ice%Hi_next( vi)   = ice%geom%Hi( vi)
+    end do
 
     ! Initialise masks
     ! ================
@@ -958,7 +964,7 @@ contains
     ! == Fill in prescribed velocities and thicknesses away from the front
     ! ====================================================================
 
-    BC_prescr_Hi   = ice%geom%Hi
+    BC_prescr_Hi   = ice%geom%Hi( mesh%vi1:mesh%vi2)
     BC_prescr_u_b  = ice%u_vav_b
     BC_prescr_v_b  = ice%v_vav_b
     BC_prescr_u_bk = ice%u_3D_b
@@ -1015,7 +1021,7 @@ contains
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
-      ice%geom%Hi = Hi_tplusdt
+      ice%geom%Hi( mesh%vi1:mesh%vi2) = Hi_tplusdt
       t_pseudo = t_pseudo + C%dt_ice_min
 
       ! Update basic geometry
@@ -1192,7 +1198,7 @@ contains
       ! Reference geometry
       ! ==================
 
-      region%refgeo_PD%Hi  = region%ice%geom%Hi
+      region%refgeo_PD%Hi  = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
       region%refgeo_PD%Hs  = region%ice%geom%Hs
       region%refgeo_PD%Hb  = region%ice%geom%Hb
 
@@ -1203,8 +1209,8 @@ contains
       region%ice%dHib = 0._dp
 
       ! Re-initialise previous and next Hi states
-      region%ice%Hi_prev = region%ice%geom%Hi
-      region%ice%Hi_next = region%ice%geom%Hi
+      region%ice%Hi_prev = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
+      region%ice%Hi_next = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
       ! Advance pesudo time
       ! ===================

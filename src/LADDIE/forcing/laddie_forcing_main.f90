@@ -52,6 +52,7 @@ contains
     type(type_ocean_model)         :: ocean
     integer                        :: vi
     character(len=256), parameter  :: mesh_name = 'mesh'
+    real(dp), dimension(:), pointer :: Hi_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -94,7 +95,8 @@ contains
     call calc_mask_noice( mesh, ice%mask_noice)
 
     ! Apply no-ice mask
-    call apply_mask_noice_direct( mesh, ice%mask_noice, ice%geom%Hi)
+    Hi_loc => ice%geom%Hi( mesh%vi1:mesh%vi2)
+    call apply_mask_noice_direct( mesh, ice%mask_noice, Hi_loc)
 
     ! Apply boundary conditions at the domain border
     call apply_ice_thickness_BC_explicit( mesh, ice%mask_noice, ice%geom%Hb, ice%geom%SL, ice%geom%Hi)

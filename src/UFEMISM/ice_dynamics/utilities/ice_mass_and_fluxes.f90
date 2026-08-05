@@ -16,6 +16,7 @@ module ice_mass_and_fluxes
   use reference_geometry_types, only: type_reference_geometry
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
 
   implicit none
 
@@ -377,7 +378,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather ice thickness from all processes
-    call gather_to_all( ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
     call gather_to_all( ice%geom%fraction_margin, fraction_margin_tot)
 
     ! Gather basic masks to all processes
@@ -487,7 +488,7 @@ contains
       call init_routine( routine_name)
 
       ! Gather ice thickness from all processes
-      call gather_to_all( ice%geom%Hi, Hi_tot)
+      call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
       call gather_to_all( ice%geom%fraction_margin, fraction_margin_tot)
 
       ! Gather basic masks to all processes

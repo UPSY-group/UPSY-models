@@ -7,6 +7,7 @@ module time_step_criteria
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
 
   implicit none
@@ -41,7 +42,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather global ice thickness
-    call gather_to_all( ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
 
     ! Initialise time step with maximum allowed value
     dt_crit_SIA = C%dt_ice_max
@@ -100,7 +101,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather global ice thickness
-    call gather_to_all( ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
     call gather_to_all( ice%geom%mask_floating_ice, mask_floating_ice_tot)
 
     ! Calculate vertically averaged ice velocities on the edges

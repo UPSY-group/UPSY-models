@@ -787,12 +787,10 @@ contains
 
     ! Ice
     ! ===
-    allocate( ice_dummy%geom%Hi( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%Hb( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%mask_grounded_ice(   mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%mask_floating_ice( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%mask_noice(        mesh%vi1:mesh%vi2))
+
+    call ice_dummy%geom%allocate( region_name, mesh)
+
+    allocate( ice_dummy%mask_noice( mesh%vi1:mesh%vi2))
 
     ! Fill in masks for the SMB model
     do vi = mesh%vi1, mesh%vi2

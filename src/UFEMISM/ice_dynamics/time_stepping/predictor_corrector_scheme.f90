@@ -40,6 +40,7 @@ contains
     integer                                              :: pc_it
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: Hi_dummy
     real(dp)                                             :: beta_1, beta_2
+    integer                                              :: vi
     integer                                              :: n_guilty, n_tot
     integer                                              :: n_visc_its
     integer                                              :: n_Axb_its
@@ -102,7 +103,9 @@ contains
       ! =================
 
       ! Set ice geometry to H*_n+1
-      region%ice%geom%Hi = region%ice%pc%Hi_star_np1
+      do vi = region%mesh%vi1, region%mesh%vi2
+        region%ice%geom%Hi( vi) = region%ice%pc%Hi_star_np1( vi)
+      end do
       call region%ice%geom%calc_all_secondary_geometry_variables( region%ice%dHb)
 
       ! Calculate ice velocities for the predicted geometry

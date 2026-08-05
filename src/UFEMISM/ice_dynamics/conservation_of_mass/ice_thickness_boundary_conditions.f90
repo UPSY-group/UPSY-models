@@ -24,7 +24,7 @@ contains
     logical,  dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_noice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i1_nih), intent(inout) :: Hi
 
     ! Local variables:
     character(len=*), parameter            :: routine_name = 'apply_ice_thickness_BC_explicit'

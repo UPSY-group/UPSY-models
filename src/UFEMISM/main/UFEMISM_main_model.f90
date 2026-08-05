@@ -1215,6 +1215,7 @@ CONTAINS
     type(type_mesh), allocatable                                       :: mesh_new
     REAL(dp)                                                           :: tstart, tstop
     CHARACTER(LEN=256)                                                 :: str
+    real(dp), dimension(:), pointer :: Hi_loc
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -1273,9 +1274,10 @@ CONTAINS
 
     ! Create a mesh from the modelled ice geometry
     allocate( mesh_new)
+    Hi_loc => region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
     CALL create_mesh_from_meshed_geometry( region%name, new_mesh_name, &
       region%mesh, &
-      region%ice%geom%Hi, &
+      Hi_loc, &
       region%ice%geom%Hb, &
       region%ice%geom%Hs, &
       region%ice%geom%SL, &

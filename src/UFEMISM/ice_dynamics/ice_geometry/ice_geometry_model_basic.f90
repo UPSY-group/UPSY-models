@@ -1,5 +1,6 @@
 module ice_geometry_model_basic
 
+  use UPSY_main, only: UPSY
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
@@ -8,7 +9,7 @@ module ice_geometry_model_basic
   use parameters, only: NaN
   use checksum_mod, only: checksum
   use model_configuration, only: C
-  use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
   use ice_geometry_basics, only: is_floating, thickness_above_floatation, &
     ice_surface_elevation, height_of_water_column_at_ice_front, hi_from_hb_hs_and_sl
   use crash_mod, only: crash, warning
@@ -24,7 +25,12 @@ module ice_geometry_model_basic
   use global_forcings_main, only: update_sealevel_in_model
   use masks_mod, only: calc_mask_noice
   use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
-  use petsc_basic, only: mat_petsc2csr
+  use petsc_basic, only: mat_petsc2csr, mat_petsc2CSR
+  use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
+  use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
+  use remapping_grid_to_mesh_triangles, only: create_map_from_xy_grid_to_mesh_triangles
+  use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
+  use netcdf_io_main
 
   implicit none
 
@@ -51,6 +57,12 @@ module ice_geometry_model_basic
       procedure, public :: calc_grounded_fractions
       procedure, public :: calc_absolute_surface_slope
       procedure, public :: calc_ice_base_slopes
+
+      procedure, public  :: initialise_bedrock_CDFs
+      procedure, private :: initialise_bedrock_CDFs_from_file
+      procedure, public  :: calc_bedrock_CDFs
+      procedure, private :: calc_bedrock_CDFs_a
+      procedure, private :: calc_bedrock_CDFs_b
 
       procedure, public :: calc_all_secondary_geometry_variables
 
@@ -107,6 +119,37 @@ module ice_geometry_model_basic
     module subroutine calc_ice_base_slopes( self)
       class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_ice_base_slopes
+
+    module subroutine initialise_bedrock_CDFs( self, mesh, refgeo, region_name)
+      class(type_ice_geometry_model), intent(inout) :: self
+      type(type_mesh),                intent(in   ) :: mesh
+      type(type_reference_geometry),  intent(in   ) :: refgeo
+      character(len=3),               intent(in   ) :: region_name
+    end subroutine initialise_bedrock_CDFs
+
+    module subroutine initialise_bedrock_CDFs_from_file( self, mesh, region_name)
+      class(type_ice_geometry_model), intent(inout) :: self
+      type(type_mesh),                intent(in   ) :: mesh
+      character(len=3),               intent(in   ) :: region_name
+    end subroutine initialise_bedrock_CDFs_from_file
+
+    module subroutine calc_bedrock_CDFs( self, mesh, refgeo)
+      class(type_ice_geometry_model), intent(inout) :: self
+      type(type_mesh),                intent(in   ) :: mesh
+      type(type_reference_geometry),  intent(in   ) :: refgeo
+    end subroutine calc_bedrock_CDFs
+
+    module subroutine calc_bedrock_CDFs_a( self, mesh, refgeo)
+      class(type_ice_geometry_model), intent(inout) :: self
+      type(type_mesh),                intent(in   ) :: mesh
+      type(type_reference_geometry),  intent(in   ) :: refgeo
+    end subroutine calc_bedrock_CDFs_a
+
+    module subroutine calc_bedrock_CDFs_b( self, mesh, refgeo)
+      class(type_ice_geometry_model), intent(inout) :: self
+      type(type_mesh),                intent(in   ) :: mesh
+      type(type_reference_geometry),  intent(in   ) :: refgeo
+    end subroutine calc_bedrock_CDFs_b
 
   end interface
 

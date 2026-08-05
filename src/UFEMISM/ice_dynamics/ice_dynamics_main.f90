@@ -32,7 +32,6 @@ module ice_dynamics_main
   use petsc_basic, only: mat_petsc2CSR
   use inversion_utilities, only: initialise_dHi_dt_target
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
-  use bedrock_cumulative_density_functions, only: calc_bedrock_CDFs, initialise_bedrock_CDFs
   use geothermal_heat_flux, only: initialise_geothermal_heat_flux
   use bed_roughness_main, only: initialise_bed_roughness_model, remap_bed_roughness_model
   use predictor_corrector_scheme, only: remap_pc_scheme, create_restart_file_pc_scheme, &
@@ -353,7 +352,7 @@ contains
     ! ==================
 
     ! Initialise bedrock cumulative density functions
-    call initialise_bedrock_CDFs( mesh, refgeo_PD, region_name, ice%geom)
+    call ice%geom%initialise_bedrock_CDFs( mesh, refgeo_PD, region_name)
 
     ! Initialise sub-grid grounded-area fractions
     call ice%geom%calc_grounded_fractions( ice%dHb)
@@ -770,7 +769,7 @@ contains
     if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .OR. &
         C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
       ! Compute bedrock cumulative density function
-      call calc_bedrock_CDFs( mesh_new, refgeo_PD, ice%geom)
+      call ice%geom%calc_bedrock_CDFs( mesh_new, refgeo_PD)
     end if
 
     ! Initialise sub-grid grounded-area fractions

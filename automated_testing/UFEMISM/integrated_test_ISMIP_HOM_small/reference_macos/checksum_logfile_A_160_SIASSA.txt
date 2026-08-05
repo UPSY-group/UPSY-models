@@ -1,5 +1,5 @@
  -= Checksum logfile =-
-  Git commit hash        : b87259c0dbdcc12a7a2b7e6c1d2e9b11ce555937
+  Git commit hash        : 5e2ae51aa71f98a9869b88d06eded0857f277641
   has uncommitted changes:  F
   PETSc version          : 3.25.1
   NetCDF version         : 4.10.0
@@ -38,8 +38,8 @@
  self%dHib_dx_b: sum(d^2) = 0.895167E+00, sum(abs) = 0.565810E+02, max(abs) = 0.282356E-01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_ice_base_slopes]
  self%dHib_dy_b: sum(d^2) = 0.498214E+00, sum(abs) = 0.412429E+02, max(abs) = 0.195262E-01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_ice_base_slopes]
  Hs_slope: sum(d^2) = 0.194072E+00, sum(abs) = 0.224299E+02, max(abs) = 0.122190E-01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_absolute_surface_slope]
- ice%geom%bedrock_cdf: sum(d^2) = 0.519686E+11, sum(abs) = 0.325877E+08, max(abs) = 0.259257E+04 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/initialise_bedrock_CDFs]
- ice%geom%bedrock_cdf_b: sum(d^2) = 0.983360E+11, sum(abs) = 0.622256E+08, max(abs) = 0.259257E+04 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/initialise_bedrock_CDFs]
+ geom%bedrock_cdf: sum(d^2) = 0.519686E+11, sum(abs) = 0.325877E+08, max(abs) = 0.259257E+04 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/initialise_bedrock_CDFs]
+ geom%bedrock_cdf_b: sum(d^2) = 0.983360E+11, sum(abs) = 0.622256E+08, max(abs) = 0.259257E+04 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/initialise_bedrock_CDFs]
  fraction_gr: sum(d^2) = 0.271300E+04, sum(abs) = 0.271300E+04, max(abs) = 0.100000E+01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_grounded_fractions]
  fraction_gr_b: sum(d^2) = 0.521100E+04, sum(abs) = 0.521100E+04, max(abs) = 0.100000E+01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_grounded_fractions]
  ice%geothermal_heat_flux: sum(d^2) = 0.802614E+16, sum(abs) = 0.466636E+10, max(abs) = 0.172000E+07 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/initialise_geothermal_heat_flux]

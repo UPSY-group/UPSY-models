@@ -2,7 +2,7 @@ submodule(ice_geometry_model_basic) ice_geometry_model_basic_remap
 
 contains
 
-  subroutine remap_ice_geometry_model( self, mesh_old, mesh_new, refgeo_PD, GIA, mask_noice, forcing, time)
+  subroutine remap_ice_geometry_model( self, mesh_old, mesh_new, refgeo_PD, GIA, forcing, time)
     !< Remap the basic ice geometry Hi,Hb,Hs,SL.
 
     ! In/output variables:
@@ -11,7 +11,6 @@ contains
     type(type_mesh),                      intent(in   ) :: mesh_new
     type(type_reference_geometry),        intent(in   ) :: refgeo_PD
     type(type_GIA_model),                 intent(in   ) :: GIA
-    logical, dimension(:), allocatable,   intent(inout) :: mask_noice
     type(type_global_forcing),            intent(in   ) :: forcing
     real(dp),                             intent(in   ) :: time
 
@@ -22,10 +21,11 @@ contains
     logical,  dimension( mesh_old%nV)               :: mask_icefree_ocean_tot
     real(dp), dimension( mesh_new%vi1:mesh_new%vi2) :: Hi_new
     real(dp), dimension( mesh_new%vi1:mesh_new%vi2) :: Hs_new
+    logical,  dimension( mesh_new%vi1:mesh_new%vi2) :: mask_noice_new
     integer                                         :: vi
     integer                                         :: mi, mi_used
     logical                                         :: found_map
-    type(type_CSR_matrix_dp)                 :: M_CSR
+    type(type_CSR_matrix_dp)                        :: M_CSR
     integer                                         :: vi_new, k1, k2, k, vi_old
     integer                                         :: n_ice, n_nonice
     integer                                         :: n_shelf, n_open_ocean
@@ -84,13 +84,9 @@ contains
       end if
     end do ! do vi = mesh_new%vi1, mesh_new%vi2
 
-    ! reallocate no-ice mask
-    ! T: no ice is allowed here, F: ice is allowed here
-    call reallocate_bounds( mask_noice, mesh_new%vi1, mesh_new%vi2)
-
     ! Apply boundary conditions at the domain border
-    call calc_mask_noice( mesh_new, mask_noice)
-    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice, self%Hb, self%SL, Hi_new)
+    call calc_mask_noice( mesh_new, mask_noice_new)
+    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice_new, self%Hb, self%SL, Hi_new)
 
     ! == Corrections
     ! ==============

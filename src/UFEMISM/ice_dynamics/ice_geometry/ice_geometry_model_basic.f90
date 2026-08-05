@@ -61,13 +61,12 @@ module ice_geometry_model_basic
   ! Interfaces for procedures defined in submodules
   interface
 
-    module subroutine remap_ice_geometry_model( self, mesh_old, mesh_new, refgeo_PD, GIA, mask_noice, forcing, time)
+    module subroutine remap_ice_geometry_model( self, mesh_old, mesh_new, refgeo_PD, GIA, forcing, time)
       class(type_ice_geometry_model),       intent(inout) :: self
       type(type_mesh),                      intent(in   ) :: mesh_old
       type(type_mesh),                      intent(in   ) :: mesh_new
       type(type_reference_geometry),        intent(in   ) :: refgeo_PD
       type(type_GIA_model),                 intent(in   ) :: GIA
-      logical, dimension(:), allocatable,   intent(inout) :: mask_noice
       type(type_global_forcing),            intent(in   ) :: forcing
       real(dp),                             intent(in   ) :: time
     end subroutine remap_ice_geometry_model

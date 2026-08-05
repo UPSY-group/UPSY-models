@@ -492,7 +492,7 @@ contains
     ! ==========================
 
     ! Remap basic ice geometry Hi,Hb,Hs,SL
-    call ice%geom%remap( mesh_old, mesh_new, refgeo_PD, GIA, ice%mask_noice, forcing, time)
+    call ice%geom%remap( mesh_old, mesh_new, refgeo_PD, GIA, forcing, time)
 
     ! Remap dHi/dt to improve stability of the P/C scheme after mesh updates
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, ice%dHi_dt, '2nd_order_conservative')
@@ -572,7 +572,7 @@ contains
     call reallocate_bounds( ice%geom%mask_coastline         , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land next to ice-free ocean, F: otherwise
     call reallocate_bounds( ice%mask_ROI               , mesh_new%vi1, mesh_new%vi2)  ! T: located in ROI, F: otherwise
     call reallocate_bounds( ice%mask_SGD               , mesh_new%vi1, mesh_new%vi2)  ! T: Area where subglacial discharge can be applied, F: otherwise
-    ! call reallocate_bounds( ice%mask_noice           , mesh_new%vi1, mesh_new%vi2)  ! T: no ice is allowed here, F: ice is allowed here
+    call reallocate_bounds( ice%mask_noice             , mesh_new%vi1, mesh_new%vi2)  ! T: no ice is allowed here, F: ice is allowed here
     call reallocate_bounds( ice%geom%mask                   , mesh_new%vi1, mesh_new%vi2)  ! Diagnostic, only meant for quick visual inspection in output
     call reallocate_bounds( ice%basin_ID               , mesh_new%vi1, mesh_new%vi2)  ! The drainage basin to which each vertex belongs
 

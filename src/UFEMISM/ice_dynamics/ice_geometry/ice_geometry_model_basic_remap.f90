@@ -50,7 +50,7 @@ contains
     call remap_ice_geometry_model_ice_thickness( mesh_old, mesh_new, &
       Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, Hb_new, SL_new, Hi_new)
 
-    call reallocate_bounds( self%Hi, mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'Hi', self%Hi)
     call reallocate_bounds( self%Hb, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%SL, mesh_new%vi1, mesh_new%vi2)
 

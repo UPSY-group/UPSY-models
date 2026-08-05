@@ -175,7 +175,13 @@ contains
     ! Allocate all the stuff that is specific to the ice_geometry model
 
     ! Primary ice geometry variables
-    allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
+    call self%create_field( self%Hi, self%wHi, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hi', &
+      long_name = 'Ice thickness', &
+      units     = 'm', &
+      remap_method = 'reallocate')
+
     allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%SL( mesh%vi1:mesh%vi2), source = NaN)
 
@@ -229,16 +235,11 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! DENK DROM
-
     ! Deallocate stuff that is common to all models
-    ! call self%deallocate_model()
+    call self%deallocate_model()
 
     ! Deallocate stuff that is specific to the ice_geometry model
-
-    ! nullify( self%Hi)
-    ! nullify( self%Hb)
-    ! nullify( self%SL)
+    nullify( self%Hi)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

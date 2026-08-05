@@ -322,7 +322,7 @@ contains
     call calc_mask_ROI( mesh, region_name, ice%mask_ROI, ice%nROI)
 
     ! Compute mask_SGD only at initialisation
-    call calc_mask_SGD( mesh, ice)
+    call calc_mask_SGD( mesh, ice%mask_SGD)
 
     ! Effective ice thickness
     ! =======================
@@ -783,7 +783,7 @@ contains
     call calc_mask_ROI( mesh_new, region_name, ice%mask_ROI, ice%nROI)
 
     ! Compute mask_SGD
-    call calc_mask_SGD( mesh_new, ice)
+    call calc_mask_SGD( mesh_new, ice%mask_SGD)
 
     ! ! Smooth the ice at the calving front to improve model stability
     ! call relax_calving_front_after_mesh_update( mesh_new, ice)

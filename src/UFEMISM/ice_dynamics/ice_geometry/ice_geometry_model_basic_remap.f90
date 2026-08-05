@@ -189,9 +189,62 @@ contains
     allocate( self%Hi( mesh_new%vi1: mesh_new%vi2))
     self%Hi = Hi_new
 
+    call reallocate_secondary_geometry_variables( self, mesh_new)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine remap_ice_geometry_model
+
+  subroutine reallocate_secondary_geometry_variables( self, mesh_new)
+
+    ! In/output variables:
+    class(type_ice_geometry_model), intent(inout) :: self
+    type(type_mesh),                intent(in   ) :: mesh_new
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'reallocate_secondary_geometry_variables'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Secondary ice geometry fields
+   !call reallocate_bounds( self%Hs                     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%Hib                    , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%TAF                    , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%Hi_eff                 , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%Hs_slope               , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%Ho                     , mesh_new%vi1, mesh_new%vi2)
+
+    ! Horizontal derivatives
+    call reallocate_bounds( self%dHib_dx_b              , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%dHib_dy_b              , mesh_new%ti1, mesh_new%ti2)
+
+    ! Sub-grid bedrock cumulative density functions (CDFs)
+    call reallocate_bounds( self%bedrock_cdf            , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)
+    call reallocate_bounds( self%bedrock_cdf_b          , mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)
+
+    ! Area fractions
+    call reallocate_bounds( self%fraction_gr            , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%fraction_gr_b          , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%fraction_margin        , mesh_new%vi1, mesh_new%vi2)
+
+    ! Ice masks
+    call reallocate_bounds( self%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_margin            , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask_coastline         , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%mask                   , mesh_new%vi1, mesh_new%vi2)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine reallocate_secondary_geometry_variables
 
 end submodule ice_geometry_model_basic_remap

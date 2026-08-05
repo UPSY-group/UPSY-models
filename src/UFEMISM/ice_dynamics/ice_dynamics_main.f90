@@ -527,17 +527,6 @@ contains
     ! === Ice-sheet geometry ===
     ! ==========================
 
-    ! Basic geometry
-    ! call reallocate_bounds( ice%geom%Hi    , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness
-    ! call reallocate_bounds( ice%geom%Hb    , mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
-    ! call reallocate_bounds( ice%geom%Hs    , mesh_new%vi1, mesh_new%vi2)  ! [m] Surface elevation (w.r.t. PD sea level)
-    ! call reallocate_bounds( ice%geom%SL    , mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
-    call reallocate_bounds( ice%geom%Hib     , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice base elevation (w.r.t. PD sea level)
-    call reallocate_bounds( ice%geom%TAF     , mesh_new%vi1, mesh_new%vi2)  ! [m] Thickness above flotation
-    call reallocate_bounds( ice%geom%Hi_eff  , mesh_new%vi1, mesh_new%vi2)  ! [m] Effective ice thickness
-    call reallocate_bounds( ice%geom%Hs_slope, mesh_new%vi1, mesh_new%vi2)  ! [-] Absolute surface gradients
-    call reallocate_bounds( ice%geom%Ho      , mesh_new%vi1, mesh_new%vi2)  ! [m] Depth of ocean column adjacent to the ice front
-
     ! Geometry changes
     call reallocate_bounds( ice%dHi  , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness difference (w.r.t. reference)
     call reallocate_bounds( ice%dHb  , mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation difference (w.r.t. reference)
@@ -552,38 +541,14 @@ contains
     call reallocate_bounds( ice%dHi_dt_raw     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice thickness rate of change before any imposed modifications
     call reallocate_bounds( ice%dHi_dt_residual, mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Residual ice thickness rate of change after imposed modifications
 
-    ! Horizontal derivatives
-    call reallocate_bounds( ice%geom%dHib_dx_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
-    call reallocate_bounds( ice%geom%dHib_dy_b, mesh_new%ti1, mesh_new%ti2)  ! [] Horizontal derivative of ice draft on b-grid
-
     ! Target quantities
     call reallocate_bounds( ice%dHi_dt_target   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Target ice thickness rate of change for inversions
 
     ! Masks
-    call reallocate_bounds( ice%geom%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land , F: otherwise
-    call reallocate_bounds( ice%geom%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free ocean, F: otherwise
-    call reallocate_bounds( ice%geom%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice  , F: otherwise
-    call reallocate_bounds( ice%geom%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice  , F: otherwise
-    call reallocate_bounds( ice%geom%mask_margin            , mesh_new%vi1, mesh_new%vi2)  ! T: ice next to ice-free, F: otherwise
-    call reallocate_bounds( ice%geom%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to floating ice, F: otherwise
-    call reallocate_bounds( ice%geom%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to grounded ice, F: otherwise
-    call reallocate_bounds( ice%geom%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)  ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
-    call reallocate_bounds( ice%geom%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)  ! T: floating ice next to ice-free water (sea or lake), F: otherwise
-    call reallocate_bounds( ice%geom%mask_coastline         , mesh_new%vi1, mesh_new%vi2)  ! T: ice-free land next to ice-free ocean, F: otherwise
     call reallocate_bounds( ice%mask_ROI               , mesh_new%vi1, mesh_new%vi2)  ! T: located in ROI, F: otherwise
     call reallocate_bounds( ice%mask_SGD               , mesh_new%vi1, mesh_new%vi2)  ! T: Area where subglacial discharge can be applied, F: otherwise
     call reallocate_bounds( ice%mask_noice             , mesh_new%vi1, mesh_new%vi2)  ! T: no ice is allowed here, F: ice is allowed here
-    call reallocate_bounds( ice%geom%mask                   , mesh_new%vi1, mesh_new%vi2)  ! Diagnostic, only meant for quick visual inspection in output
     call reallocate_bounds( ice%basin_ID               , mesh_new%vi1, mesh_new%vi2)  ! The drainage basin to which each vertex belongs
-
-    ! Area fractions
-    call reallocate_bounds( ice%geom%fraction_gr    , mesh_new%vi1, mesh_new%vi2)  ! [0-1] Grounded area fractions of vertices
-    call reallocate_bounds( ice%geom%fraction_gr_b  , mesh_new%ti1, mesh_new%ti2)  ! [0-1] Grounded area fractions of triangles
-    call reallocate_bounds( ice%geom%fraction_margin, mesh_new%vi1, mesh_new%vi2)  ! [0-1] Ice-covered area fractions of ice margins
-
-    ! Sub-grid bedrock cumulative density functions (CDFs)
-    call reallocate_bounds( ice%geom%bedrock_cdf  , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the a-grid (vertices)
-    call reallocate_bounds( ice%geom%bedrock_cdf_b, mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)  ! [-] Sub-grid bedrock cumulative density functions on the b-grid (triangles)
 
     ! === Terrain-following coordinate zeta gradients ===
     ! ===================================================

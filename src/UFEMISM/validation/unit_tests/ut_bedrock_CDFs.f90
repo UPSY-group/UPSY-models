@@ -87,7 +87,7 @@ subroutine unit_tests_bedrock_CDFs_main( test_name_parent)
   allocate( ice%geom%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins))
   allocate( ice%geom%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins))
 
-  call calc_bedrock_CDFs( mesh, refgeo, ice)
+  call calc_bedrock_CDFs( mesh, refgeo, ice%geom)
 
   ! Vertices
   ! ========

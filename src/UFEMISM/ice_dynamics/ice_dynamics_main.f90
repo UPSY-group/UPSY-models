@@ -353,7 +353,7 @@ contains
     ! ==================
 
     ! Initialise bedrock cumulative density functions
-    call initialise_bedrock_CDFs( mesh, refgeo_PD, ice, region_name)
+    call initialise_bedrock_CDFs( mesh, refgeo_PD, region_name, ice%geom)
 
     ! Initialise sub-grid grounded-area fractions
     call ice%geom%calc_grounded_fractions( ice%dHb)
@@ -770,7 +770,7 @@ contains
     if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .OR. &
         C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
       ! Compute bedrock cumulative density function
-      call calc_bedrock_CDFs( mesh_new, refgeo_PD, ice)
+      call calc_bedrock_CDFs( mesh_new, refgeo_PD, ice%geom)
     end if
 
     ! Initialise sub-grid grounded-area fractions

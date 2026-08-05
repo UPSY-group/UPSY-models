@@ -42,7 +42,7 @@ module bedrock_cumulative_density_functions
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use reference_geometry_types, only: type_reference_geometry
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_main, only: Atlas
   use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
@@ -61,17 +61,17 @@ module bedrock_cumulative_density_functions
 
 contains
 
-  subroutine initialise_bedrock_CDFs( mesh, refgeo, ice, region_name)
+  subroutine initialise_bedrock_CDFs( mesh, refgeo, region_name, geom)
     !< Initialise the sub-grid bedrock cumulative density functions
 
     ! In/output variables:
-    type(type_mesh),               intent(in   ) :: mesh
-    type(type_reference_geometry), intent(in   ) :: refgeo
-    type(type_ice_model),          intent(inout) :: ice
-    character(len=3),              intent(in   ) :: region_name
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_reference_geometry),        intent(in   ) :: refgeo
+    character(len=3),                     intent(in   ) :: region_name
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_bedrock_CDFs'
+    character(len=*), parameter :: routine_name = 'initialise_bedrock_CDFs'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -89,31 +89,31 @@ contains
 
     if (C%do_read_bedrock_cdf_from_file) then
       ! Read them from the corresponding mesh file
-      call initialise_bedrock_CDFs_from_file( mesh, ice, region_name)
+      call initialise_bedrock_CDFs_from_file( mesh, region_name, geom)
     else
       ! Compute them from scratch
-      call calc_bedrock_CDFs( mesh, refgeo, ice)
+      call calc_bedrock_CDFs( mesh, refgeo, geom)
     end if
 
-    call checksum( mesh%pai_V  , ice%geom%bedrock_cdf  , 'ice%geom%bedrock_cdf'  )
-    call checksum( mesh%pai_Tri, ice%geom%bedrock_cdf_b, 'ice%geom%bedrock_cdf_b')
+    call checksum( mesh%pai_V  , geom%bedrock_cdf  , 'geom%bedrock_cdf'  )
+    call checksum( mesh%pai_Tri, geom%bedrock_cdf_b, 'geom%bedrock_cdf_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_bedrock_CDFs
 
-  subroutine initialise_bedrock_CDFs_from_file( mesh, ice, region_name)
+  subroutine initialise_bedrock_CDFs_from_file( mesh, region_name, geom)
     !< Initialise the velocities for the DIVA solver from an external NetCDF file
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
-    character(len=3),     intent(in   ) :: region_name
+    type(type_mesh),                      intent(in   ) :: mesh
+    character(len=3),                     intent(in   ) :: region_name
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_bedrock_CDFs_from_file'
-    character(len=256)             :: filename, check
+    character(len=*), parameter :: routine_name = 'initialise_bedrock_CDFs_from_file'
+    character(len=256)          :: filename, check
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -145,24 +145,24 @@ contains
     end if
 
     ! Read meshed data
-    call read_field_from_mesh_file_CDF(   filename, 'bedrock_cdf',   ice%geom%bedrock_cdf   )
-    call read_field_from_mesh_file_CDF_b( filename, 'bedrock_cdf_b', ice%geom%bedrock_cdf_b )
+    call read_field_from_mesh_file_CDF(   filename, 'bedrock_cdf',   geom%bedrock_cdf   )
+    call read_field_from_mesh_file_CDF_b( filename, 'bedrock_cdf_b', geom%bedrock_cdf_b )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_bedrock_CDFs_from_file
 
-  subroutine calc_bedrock_CDFs( mesh, refgeo, ice)
+  subroutine calc_bedrock_CDFs( mesh, refgeo, geom)
     !< Calculate the sub-grid bedrock cumulative density functions
 
     ! In/output variables:
-    type(type_mesh),               intent(in   ) :: mesh
-    type(type_reference_geometry), intent(in   ) :: refgeo
-    type(type_ice_model),          intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_reference_geometry),        intent(in   ) :: refgeo
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_bedrock_CDFs'
+    character(len=*), parameter :: routine_name = 'calc_bedrock_CDFs'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -177,25 +177,25 @@ contains
     if (par%primary) write(*,"(A)") '       Calculating bedrock CDFs from initial geometry...'
 
     ! Calculate CDFs separately on the a-grid (vertices) and the b-grid (triangles)
-    call calc_bedrock_CDFs_a( mesh, refgeo, ice)
-    call calc_bedrock_CDFs_b( mesh, refgeo, ice)
+    call calc_bedrock_CDFs_a( mesh, refgeo, geom)
+    call calc_bedrock_CDFs_b( mesh, refgeo, geom)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine calc_bedrock_CDFs
 
-  subroutine calc_bedrock_CDFs_a( mesh, refgeo, ice)
+  subroutine calc_bedrock_CDFs_a( mesh, refgeo, geom)
     !< Calculate the sub-grid bedrock cumulative density functions on the a-grid (vertices)
 
     ! In/output variables:
-    type(type_mesh),               intent(in   ) :: mesh
-    type(type_reference_geometry), intent(in   ) :: refgeo
-    type(type_ice_model),          intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_reference_geometry),        intent(in   ) :: refgeo
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'calc_bedrock_CDFs_a'
-    type(type_CSR_matrix_dp)       :: M_map
+    character(len=*), parameter           :: routine_name = 'calc_bedrock_CDFs_a'
+    type(type_CSR_matrix_dp)              :: M_map
     logical                               :: found_map, found_empty_page
     integer                               :: mi, mi_valid, ierr
     real(dp), dimension(:,:), allocatable :: Hb_grid_tot
@@ -245,7 +245,7 @@ contains
     Hb_list = 0._dp
 
     ! Initialise cumulative density function (CDF)
-    ice%geom%bedrock_cdf = 0._dp
+    geom%bedrock_cdf = 0._dp
 
     do vi = mesh%vi1, mesh%vi2
 
@@ -284,8 +284,8 @@ contains
 
       ! Set first (0%) and last bins (100%) of the CDF to the minimum
       ! and maximum bedrock elevations scanned, respectively
-      ice%geom%bedrock_cdf( vi, 1                          ) = Hb_list( 1)
-      ice%geom%bedrock_cdf( vi, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
+      geom%bedrock_cdf( vi, 1                          ) = Hb_list( 1)
+      geom%bedrock_cdf( vi, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
 
       ! Compute the bedrock elevation for each of the other CDF bins
       do i = 2, C%subgrid_bedrock_cdf_nbins - 1
@@ -294,7 +294,7 @@ contains
         ii1  = ceiling( isc)
         wii0 = real( ii1,dp) - isc
         wii1 = 1.0 - wii0
-        ice%geom%bedrock_cdf( vi,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
+        geom%bedrock_cdf( vi,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
       end do
 
     end do
@@ -304,17 +304,17 @@ contains
 
   end subroutine calc_bedrock_CDFs_a
 
-  subroutine calc_bedrock_CDFs_b( mesh, refgeo, ice)
+  subroutine calc_bedrock_CDFs_b( mesh, refgeo, geom)
     !< Calculate the sub-grid bedrock cumulative density functions on the b-grid (triangles)
 
     ! In/output variables:
-    type(type_mesh),               intent(in   ) :: mesh
-    type(type_reference_geometry), intent(in   ) :: refgeo
-    type(type_ice_model),          intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_reference_geometry),        intent(in   ) :: refgeo
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'calc_bedrock_CDFs_b'
-    type(type_CSR_matrix_dp)       :: M_map
+    character(len=*), parameter           :: routine_name = 'calc_bedrock_CDFs_b'
+    type(type_CSR_matrix_dp)              :: M_map
     logical                               :: found_map, found_empty_page
     integer                               :: mi, mi_valid, ierr
     real(dp), dimension(:,:), allocatable :: Hb_grid_tot
@@ -364,7 +364,7 @@ contains
     Hb_list = 0._dp
 
     ! Initialise cumulative density function (CDF)
-    ice%geom%bedrock_cdf_b = 0._dp
+    geom%bedrock_cdf_b = 0._dp
 
     do ti = mesh%ti1, mesh%ti2
 
@@ -403,8 +403,8 @@ contains
 
       ! Set first (0%) and last bins (100%) of the CDF to the minimum
       ! and maximum bedrock elevations scanned, respectively
-      ice%geom%bedrock_cdf_b( ti, 1                          ) = Hb_list( 1)
-      ice%geom%bedrock_cdf_b( ti, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
+      geom%bedrock_cdf_b( ti, 1                          ) = Hb_list( 1)
+      geom%bedrock_cdf_b( ti, C%subgrid_bedrock_cdf_nbins) = Hb_list( n_grid_cells)
 
       ! Compute the bedrock elevation for each of the other CDF bins
       do i = 2, C%subgrid_bedrock_cdf_nbins - 1
@@ -413,7 +413,7 @@ contains
         ii1  = ceiling( isc)
         wii0 = real( ii1,dp) - isc
         wii1 = 1.0 - wii0
-        ice%geom%bedrock_cdf_b( ti,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
+        geom%bedrock_cdf_b( ti,i) = wii0 * Hb_list( ii0) + wii1 * Hb_list( ii1)
       end do
 
     end do

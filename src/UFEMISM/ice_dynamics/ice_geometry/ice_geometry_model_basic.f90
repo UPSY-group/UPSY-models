@@ -30,7 +30,7 @@ module ice_geometry_model_basic
 
   private
 
-  public :: type_ice_geometry_model, remap_basic_ice_geometry
+  public :: type_ice_geometry_model
 
   type, extends(atype_ice_geometry_model_data) :: type_ice_geometry_model
 
@@ -191,98 +191,21 @@ contains
 
   end subroutine deallocate_ice_geometry_model
 
-  subroutine remap_ice_geometry_model( self, mesh_new)
-
-    ! In/output variables:
-    class(type_ice_geometry_model), intent(inout) :: self
-    type(type_mesh), target,        intent(in   ) :: mesh_new
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_ice_geometry_model'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Remap stuff that is common to all models
-    call self%remap_model( mesh_new)
-
-    ! Remap stuff that is specific to ice_geometry models
-
-    ! call self%remap_field( mesh_new, 'Hi', self%Hi)
-    ! call self%remap_field( mesh_new, 'Hb', self%Hb)
-    ! call self%remap_field( mesh_new, 'SL', self%SL)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine remap_ice_geometry_model
-
-  subroutine finalise_ice_geometry_model( self)
-
-    ! In/output variables:
-    type(type_ice_geometry_model), intent(inout) :: self
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'finalise_ice_geometry_model'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call self%deallocate()
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine finalise_ice_geometry_model
-
-  function get_model_name( self) result( model_name)
-    class(type_ice_geometry_model), intent(in) :: self
-    character(len=:), allocatable              :: model_name
-    model_name = 'ice_geometry'
-  end function get_model_name
-
-  subroutine calc_all_secondary_geometry_variables( self, dHb)
-
-    ! In/output variables:
-    class(type_ice_geometry_model), intent(inout) :: self
-    real(dp), dimension(:),         intent(in   ) :: dHb
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'calc_all_secondary_geometry_variables'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call self%calc_surface_elevation()
-    call self%calc_ice_base_elevation()
-    call self%calc_thickness_above_floatation()
-    call self%calc_height_of_water_column()
-    call self%determine_masks()
-    call self%calc_effective_thickness()
-    call self%calc_grounded_fractions( dHb)
-    call self%calc_absolute_surface_slope()
-    call self%calc_ice_base_slopes()
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine calc_all_secondary_geometry_variables
-
-  subroutine remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, geom, mask_noice, forcing, time)
+  subroutine remap_ice_geometry_model( self, mesh_old, mesh_new, refgeo_PD, GIA, mask_noice, forcing, time)
     !< Remap the basic ice geometry Hi,Hb,Hs,SL.
 
     ! In/output variables:
+    class(type_ice_geometry_model),       intent(inout) :: self
     type(type_mesh),                      intent(in   ) :: mesh_old
     type(type_mesh),                      intent(in   ) :: mesh_new
     type(type_reference_geometry),        intent(in   ) :: refgeo_PD
     type(type_GIA_model),                 intent(in   ) :: GIA
-    class(atype_ice_geometry_model_data), intent(inout) :: geom
     logical, dimension(:), allocatable,   intent(inout) :: mask_noice
     type(type_global_forcing),            intent(in   ) :: forcing
     real(dp),                             intent(in   ) :: time
 
     ! Local variables:
-    character(len=*), parameter                     :: routine_name = 'remap_basic_ice_geometry'
+    character(len=*), parameter                     :: routine_name = 'remap_ice_geometry_model'
     real(dp), dimension( mesh_old%nV)               :: Hi_old_tot
     logical,  dimension( mesh_old%nV)               :: mask_floating_ice_tot
     logical,  dimension( mesh_old%nV)               :: mask_icefree_ocean_tot
@@ -300,6 +223,11 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Remap stuff that is common to all models
+    call self%remap_model( mesh_new)
+
+    ! Remap stuff that is specific to ice_geometry models
+
     ! == Basic: remap surface elevation Hs from the old mesh, remap bedrock elevation Hb
     !    from its (presumably high-resolution) source grid, define remapped ice thickness
     !    as the difference between the two. As surface elevation is typically much smoother
@@ -309,36 +237,36 @@ contains
     ! Remap bedrock from the original high-resolution grid, and add the (very smooth) modelled deformation to it
     ! Remapping of Hb in the refgeo structure has already happened, only need to copy the data
     if (par%primary) call warning('GIA model isnt finished yet - need to include dHb in mesh update!')
-    call reallocate_bounds( geom%Hb, mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
-    geom%Hb = refgeo_PD%Hb
+    call reallocate_bounds( self%Hb, mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
+    self%Hb = refgeo_PD%Hb
 
     ! Remap sea level
-    call reallocate_bounds( geom%SL, mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
+    call reallocate_bounds( self%SL, mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
     select case (C%choice_sealevel_model)
     case default
       call crash('unknown choice_sealevel_model "' // trim( C%choice_sealevel_model) // '"')
     case ('fixed')
-      geom%SL = C%fixed_sealevel
+      self%SL = C%fixed_sealevel
     case ('prescribed')
-      call update_sealevel_in_model(forcing, mesh_new, geom, time)
+      call update_sealevel_in_model(forcing, mesh_new, self, time)
     end select
 
     ! Gather global ice thickness and masks
-    call gather_to_all( geom%Hi, Hi_old_tot)
-    call gather_to_all( geom%mask_floating_ice , mask_floating_ice_tot )
-    call gather_to_all( geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( self%Hi, Hi_old_tot)
+    call gather_to_all( self%mask_floating_ice , mask_floating_ice_tot )
+    call gather_to_all( self%mask_icefree_ocean, mask_icefree_ocean_tot)
 
     ! First, naively remap ice thickness and surface elevation without any restrictions
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, geom%Hi, Hi_new, '2nd_order_conservative')
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, geom%Hs, Hs_new, '2nd_order_conservative')
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, self%Hi, Hi_new, '2nd_order_conservative')
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, self%Hs, Hs_new, '2nd_order_conservative')
 
     ! Calculate remapped ice thickness as the difference between new bedrock and remapped surface elevation
     do vi = mesh_new%vi1, mesh_new%vi2
       if (Hi_new( vi) > 0._dp) then
-        if (Hs_new( vi) <= geom%Hb( vi)) then
+        if (Hs_new( vi) <= self%Hb( vi)) then
           Hi_new( vi) = 0._dp
         else
-          Hi_new( vi) = Hi_from_Hb_Hs_and_SL( geom%Hb( vi), Hs_new( vi), geom%SL( vi))
+          Hi_new( vi) = Hi_from_Hb_Hs_and_SL( self%Hb( vi), Hs_new( vi), self%SL( vi))
         end if
       else
         Hi_new( vi) = 0._dp
@@ -351,7 +279,7 @@ contains
 
     ! Apply boundary conditions at the domain border
     call calc_mask_noice( mesh_new, mask_noice)
-    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice, geom%Hb, geom%SL, Hi_new)
+    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice, self%Hb, self%SL, Hi_new)
 
     ! == Corrections
     ! ==============
@@ -433,7 +361,7 @@ contains
           n_open_ocean = n_open_ocean + 1
         end if
 
-      end do ! do k = k1, k2
+      end do
 
       if (n_shelf > 0 .and. n_open_ocean > 0) then
         ! This new-mesh vertex overlaps with both old-mesh shelf vertices,
@@ -441,22 +369,73 @@ contains
         Hi_new( vi_new) = sum_Hi_shelf / real( n_shelf,dp)
       end if
 
-    end do ! do vi_new = mesh_new%vi1, mesh_new%vi2
+    end do
 
     ! Recalculate Hs
-    call reallocate_bounds( geom%Hs, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%Hs, mesh_new%vi1, mesh_new%vi2)
     do vi = mesh_new%vi1, mesh_new%vi2
-      geom%Hs( vi) = ice_surface_elevation( Hi_new( vi), geom%Hb( vi), geom%SL( vi))
+      self%Hs( vi) = ice_surface_elevation( Hi_new( vi), self%Hb( vi), self%SL( vi))
     end do
 
     ! Move Hi_new to geom%Hi
-    deallocate( geom%Hi)
-    allocate( geom%Hi( mesh_new%vi1: mesh_new%vi2))
-    geom%Hi = Hi_new
+    deallocate( self%Hi)
+    allocate( self%Hi( mesh_new%vi1: mesh_new%vi2))
+    self%Hi = Hi_new
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap_basic_ice_geometry
+  end subroutine remap_ice_geometry_model
+
+  subroutine finalise_ice_geometry_model( self)
+
+    ! In/output variables:
+    type(type_ice_geometry_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'finalise_ice_geometry_model'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    call self%deallocate()
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine finalise_ice_geometry_model
+
+  function get_model_name( self) result( model_name)
+    class(type_ice_geometry_model), intent(in) :: self
+    character(len=:), allocatable              :: model_name
+    model_name = 'ice_geometry'
+  end function get_model_name
+
+  subroutine calc_all_secondary_geometry_variables( self, dHb)
+
+    ! In/output variables:
+    class(type_ice_geometry_model), intent(inout) :: self
+    real(dp), dimension(:),         intent(in   ) :: dHb
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_all_secondary_geometry_variables'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    call self%calc_surface_elevation()
+    call self%calc_ice_base_elevation()
+    call self%calc_thickness_above_floatation()
+    call self%calc_height_of_water_column()
+    call self%determine_masks()
+    call self%calc_effective_thickness()
+    call self%calc_grounded_fractions( dHb)
+    call self%calc_absolute_surface_slope()
+    call self%calc_ice_base_slopes()
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine calc_all_secondary_geometry_variables
 
 end module ice_geometry_model_basic

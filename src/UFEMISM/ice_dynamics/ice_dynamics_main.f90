@@ -43,7 +43,6 @@ module ice_dynamics_main
   use bed_roughness_model_types, only: type_bed_roughness_model
   use checksum_mod, only: checksum
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_geometry_model_basic, only: remap_basic_ice_geometry
 
   implicit none
 
@@ -493,7 +492,7 @@ contains
     ! ==========================
 
     ! Remap basic ice geometry Hi,Hb,Hs,SL
-    call remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice%geom, ice%mask_noice, forcing, time)
+    call ice%geom%remap( mesh_old, mesh_new, refgeo_PD, GIA, ice%mask_noice, forcing, time)
 
     ! Remap dHi/dt to improve stability of the P/C scheme after mesh updates
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, ice%dHi_dt, '2nd_order_conservative')
@@ -529,7 +528,6 @@ contains
     ! ==========================
 
     ! Basic geometry
-    call ice%geom%remap( mesh_new)
     ! call reallocate_bounds( ice%geom%Hi    , mesh_new%vi1, mesh_new%vi2)  ! [m] Ice thickness
     ! call reallocate_bounds( ice%geom%Hb    , mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
     ! call reallocate_bounds( ice%geom%Hs    , mesh_new%vi1, mesh_new%vi2)  ! [m] Surface elevation (w.r.t. PD sea level)

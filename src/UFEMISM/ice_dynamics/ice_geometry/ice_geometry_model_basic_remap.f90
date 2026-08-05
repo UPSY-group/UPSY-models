@@ -3,7 +3,6 @@ submodule(ice_geometry_model_basic) ice_geometry_model_basic_remap
 contains
 
   subroutine remap_ice_geometry_model( self, mesh_old, mesh_new, refgeo_PD, GIA, forcing, time)
-    !< Remap the basic ice geometry Hi,Hb,Hs,SL.
 
     ! In/output variables:
     class(type_ice_geometry_model),       intent(inout) :: self
@@ -130,19 +129,18 @@ contains
           n_nonice = n_nonice + 1
         end if
 
-      end do ! do k = k1, k2
+      end do
 
       if (n_ice > 0 .and. n_nonice > 0) then
         ! This new-mesh vertex overlaps with both old-mesh ice vertices,
         ! and old-mesh non-ice vertices
         if (Hi_new( vi_new) < 1._dp) then
           ! Remove very thin remapped ice
-
           Hi_new( vi_new) = 0._dp
         end if
       end if
 
-    end do ! do vi_new = mesh_new%vi1, mesh_new%vi2
+    end do
 
     ! == For those vertices of the new mesh that overlap with both old-mesh shelf and old-mesh
     !    open ocean, average only over the contributing old-mesh shelf vertices
@@ -191,21 +189,23 @@ contains
 
     call apply_mask_noice_direct( mesh_new, mask_noice_new, self%Hi)
 
-    call reallocate_secondary_geometry_variables( self, mesh_new)
+    call reallocate_and_recalculate_secondary_geometry_variables( self, mesh_new, refgeo_PD)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine remap_ice_geometry_model
 
-  subroutine reallocate_secondary_geometry_variables( self, mesh_new)
+  subroutine reallocate_and_recalculate_secondary_geometry_variables( self, mesh_new, refgeo_PD)
 
     ! In/output variables:
     class(type_ice_geometry_model), intent(inout) :: self
     type(type_mesh),                intent(in   ) :: mesh_new
+    type(type_reference_geometry),  intent(in   ) :: refgeo_PD
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'reallocate_secondary_geometry_variables'
+    character(len=*), parameter                    :: routine_name = 'reallocate_and_recalculate_secondary_geometry_variables'
+    real(dp), dimension(mesh_new%vi1:mesh_new%vi2) :: dHb_new
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -244,9 +244,21 @@ contains
     call reallocate_bounds( self%mask_coastline         , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask                   , mesh_new%vi1, mesh_new%vi2)
 
+    ! Only recalculate bedrock CDFs if they are really needed
+    ! (as this is a rather time-consuming step)
+    if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .or. &
+        C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
+      call self%calc_bedrock_CDFs( mesh_new, refgeo_PD)
+    end if
+
+    ! Recalculate all other secondary geometry variables
+    ! FIXME: this should receive the already-remapped dHb field!
+    dHb_new = 0._dp
+    call self%calc_all_secondary_geometry_variables( dHb_new)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine reallocate_secondary_geometry_variables
+  end subroutine reallocate_and_recalculate_secondary_geometry_variables
 
 end submodule ice_geometry_model_basic_remap

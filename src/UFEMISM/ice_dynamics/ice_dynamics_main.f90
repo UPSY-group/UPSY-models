@@ -490,7 +490,6 @@ contains
     ! === Ice-sheet geometry ===
     ! ==========================
 
-    ! Remap basic ice geometry Hi,Hb,Hs,SL
     call ice%geom%remap( mesh_old, mesh_new, refgeo_PD, GIA, forcing, time)
 
     ! Remap dHi/dt to improve stability of the P/C scheme after mesh updates
@@ -688,13 +687,6 @@ contains
     ! Re-initialise the rest of the ice dynamics model
     ! ================================================
 
-    ! Initialise ice geometry
-    ! =======================
-
-    call ice%geom%calc_surface_elevation()
-    call ice%geom%calc_ice_base_elevation()
-    call ice%geom%calc_thickness_above_floatation()
-    call ice%geom%calc_height_of_water_column()
     do vi = mesh_new%vi1, mesh_new%vi2
 
       ! Differences w.r.t. present-day
@@ -709,10 +701,7 @@ contains
       ice%dHs_dt ( vi) = 0._dp
       ice%dHib_dt( vi) = 0._dp
 
-    end do ! do vi = mesh_new%vi1, mesh_new%vi2
-
-    ! Horizontal derivatives
-    call ice%geom%calc_ice_base_slopes()
+    end do
 
     ! Calculate zeta gradients
     call calc_zeta_gradients( mesh_new, ice)
@@ -739,8 +728,6 @@ contains
     ! Remove ice bleed into forbidden areas
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%dHi_dt)
 
-    call ice%geom%determine_masks()
-
     ! Compute mask_ROI
     call calc_mask_ROI( mesh_new, region_name, ice%mask_ROI, ice%nROI)
 
@@ -749,30 +736,6 @@ contains
 
     ! ! Smooth the ice at the calving front to improve model stability
     ! call relax_calving_front_after_mesh_update( mesh_new, ice)
-
-    ! Effective ice thickness
-    ! =======================
-
-    ! Calculate new effective thickness
-     call ice%geom%calc_effective_thickness()
-
-    ! Surface gradients
-    ! =================
-
-    ! Calculate absolute surface gradient
-    call ice%geom%calc_absolute_surface_slope()
-
-    ! Sub-grid fractions
-    ! ==================
-
-    if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .OR. &
-        C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
-      ! Compute bedrock cumulative density function
-      call ice%geom%calc_bedrock_CDFs( mesh_new, refgeo_PD)
-    end if
-
-    ! Initialise sub-grid grounded-area fractions
-    call ice%geom%calc_grounded_fractions( ice%dHb)
 
     ! Basal conditions
     ! ================

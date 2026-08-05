@@ -18,6 +18,7 @@ MODULE global_forcings_main
   USE netcdf_io_main
   USE netcdf_basic
   USE series_utilities
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   IMPLICIT NONE
 
@@ -152,15 +153,15 @@ CONTAINS
 
   END SUBROUTINE update_sealevel_at_model_time
 
-  SUBROUTINE update_sealevel_in_model(forcing, mesh, ice, time)
+  SUBROUTINE update_sealevel_in_model(forcing, mesh, geom, time)
   ! Update the current sea level based on the loaded sea level curve
 
     IMPLICIT NONE
 
-    TYPE(type_global_forcing),         INTENT(IN)      :: forcing
-    TYPE(type_mesh),                   INTENT(IN   )   :: mesh
-    TYPE(type_ice_model),              INTENT(INOUT)   :: ice
-    REAL(dp),                          INTENT(IN   )   :: time
+    TYPE(type_global_forcing),            intent(in   ) :: forcing
+    TYPE(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
+    REAL(dp),                             intent(in   ) :: time
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'update_sealevel_in_model'
@@ -174,7 +175,7 @@ CONTAINS
     CALL interpolate_value_from_forcing_record(forcing%sl_t0, forcing%sl_t1, forcing%sl_at_t0, forcing%sl_at_t1, time, computed_sea_level) ! We might be calling this twice with no need, but might be worth keeping it like that to facilitate future impoementations
 
     do vi = mesh%vi1, mesh%vi2
-      ice%geom%SL( vi) = computed_sea_level
+      geom%SL( vi) = computed_sea_level
     end do
 
     ! Finalise routine path

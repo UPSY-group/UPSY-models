@@ -90,7 +90,7 @@ contains
     end do
 
     ! Calculate the no-ice mask
-    call calc_mask_noice( mesh, ice)
+    call calc_mask_noice( mesh, ice%mask_noice)
 
     ! Apply no-ice mask
     call apply_mask_noice_direct( mesh, ice%mask_noice, ice%geom%Hi)

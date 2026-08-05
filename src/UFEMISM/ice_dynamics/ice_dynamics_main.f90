@@ -42,6 +42,7 @@ module ice_dynamics_main
   use global_forcings_main, only: update_sealevel_in_model
   use bed_roughness_model_types, only: type_bed_roughness_model
   use checksum_mod, only: checksum
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -229,7 +230,7 @@ contains
 
     case ('prescribed')
       ! Sea-level from an external record, stored in the global_forcings type
-      call update_sealevel_in_model(forcing, mesh, ice, start_time_of_run)
+      call update_sealevel_in_model(forcing, mesh, ice%geom, start_time_of_run)
 
     case ('eustatic')
       ! Eustatic sea level
@@ -257,7 +258,7 @@ contains
     end do
 
     ! Calculate the no-ice mask
-    call calc_mask_noice( mesh, ice)
+    call calc_mask_noice( mesh, ice%mask_noice)
 
     ! Apply no-ice mask
     call apply_mask_noice_direct( mesh, ice%mask_noice, ice%geom%Hi)
@@ -491,7 +492,7 @@ contains
     ! ==========================
 
     ! Remap basic ice geometry Hi,Hb,Hs,SL
-    call remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice, forcing, time)
+    call remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice%geom, ice%mask_noice, forcing, time)
 
     ! Remap dHi/dt to improve stability of the P/C scheme after mesh updates
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, ice%dHi_dt, '2nd_order_conservative')
@@ -770,7 +771,7 @@ contains
     ! ================
 
     ! Calculate the no-ice mask
-    call calc_mask_noice( mesh_new, ice)
+    call calc_mask_noice( mesh_new, ice%mask_noice)
 
     ! Remove ice bleed into forbidden areas
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%geom%Hi)
@@ -853,7 +854,7 @@ contains
 
   end subroutine remap_ice_dynamics_model
 
-  subroutine remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, ice, forcing, time)
+  subroutine remap_basic_ice_geometry( mesh_old, mesh_new, refgeo_PD, GIA, geom, mask_noice, forcing, time)
     !< Remap the basic ice geometry Hi,Hb,Hs,SL.
 
     ! In/output variables:
@@ -861,7 +862,8 @@ contains
     type(type_mesh),               intent(in   ) :: mesh_new
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_GIA_model),          intent(in   ) :: GIA
-    type(type_ice_model),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(inout) :: geom
+    logical, dimension(:), allocatable,   intent(inout) :: mask_noice
     type(type_global_forcing),     intent(in   ) :: forcing
     real(dp),                      intent(in   ) :: time
 
@@ -893,36 +895,36 @@ contains
     ! Remap bedrock from the original high-resolution grid, and add the (very smooth) modelled deformation to it
     ! Remapping of Hb in the refgeo structure has already happened, only need to copy the data
     if (par%primary) call warning('GIA model isnt finished yet - need to include dHb in mesh update!')
-    call reallocate_bounds( ice%geom%Hb, mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
-    ice%geom%Hb = refgeo_PD%Hb
+    call reallocate_bounds( geom%Hb, mesh_new%vi1, mesh_new%vi2)  ! [m] Bedrock elevation (w.r.t. PD sea level)
+    geom%Hb = refgeo_PD%Hb
 
     ! Remap sea level
-    call reallocate_bounds( ice%geom%SL, mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
+    call reallocate_bounds( geom%SL, mesh_new%vi1, mesh_new%vi2)  ! [m] Sea level (geoid) elevation (w.r.t. PD sea level)
     select case (C%choice_sealevel_model)
     case default
       call crash('unknown choice_sealevel_model "' // trim( C%choice_sealevel_model) // '"')
     case ('fixed')
-      ice%geom%SL = C%fixed_sealevel
+      geom%SL = C%fixed_sealevel
     case ('prescribed')
-      call update_sealevel_in_model(forcing, mesh_new, ice, time)
+      call update_sealevel_in_model(forcing, mesh_new, geom, time)
     end select
 
     ! Gather global ice thickness and masks
-    call gather_to_all( ice%geom%Hi, Hi_old_tot)
-    call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
-    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_to_all( geom%Hi, Hi_old_tot)
+    call gather_to_all( geom%mask_floating_ice , mask_floating_ice_tot )
+    call gather_to_all( geom%mask_icefree_ocean, mask_icefree_ocean_tot)
 
     ! First, naively remap ice thickness and surface elevation without any restrictions
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, ice%geom%Hi, Hi_new, '2nd_order_conservative')
-    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, ice%geom%Hs, Hs_new, '2nd_order_conservative')
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, geom%Hi, Hi_new, '2nd_order_conservative')
+    call map_from_mesh_to_mesh_2D( mesh_old, mesh_new, C%output_dir, geom%Hs, Hs_new, '2nd_order_conservative')
 
     ! Calculate remapped ice thickness as the difference between new bedrock and remapped surface elevation
     do vi = mesh_new%vi1, mesh_new%vi2
       if (Hi_new( vi) > 0._dp) then
-        if (Hs_new( vi) <= ice%geom%Hb( vi)) then
+        if (Hs_new( vi) <= geom%Hb( vi)) then
           Hi_new( vi) = 0._dp
         else
-          Hi_new( vi) = Hi_from_Hb_Hs_and_SL( ice%geom%Hb( vi), Hs_new( vi), ice%geom%SL( vi))
+          Hi_new( vi) = Hi_from_Hb_Hs_and_SL( geom%Hb( vi), Hs_new( vi), geom%SL( vi))
         end if
       else
         Hi_new( vi) = 0._dp
@@ -931,11 +933,11 @@ contains
 
     ! reallocate no-ice mask
     ! T: no ice is allowed here, F: ice is allowed here
-    call reallocate_bounds( ice%mask_noice, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( mask_noice, mesh_new%vi1, mesh_new%vi2)
 
     ! Apply boundary conditions at the domain border
-    call calc_mask_noice( mesh_new, ice)
-    call apply_ice_thickness_BC_explicit( mesh_new, ice%mask_noice, ice%geom%Hb, ice%geom%SL, Hi_new)
+    call calc_mask_noice( mesh_new, mask_noice)
+    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice, geom%Hb, geom%SL, Hi_new)
 
     ! == Corrections
     ! ==============
@@ -1028,15 +1030,15 @@ contains
     end do ! do vi_new = mesh_new%vi1, mesh_new%vi2
 
     ! Recalculate Hs
-    call reallocate_bounds( ice%geom%Hs, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( geom%Hs, mesh_new%vi1, mesh_new%vi2)
     do vi = mesh_new%vi1, mesh_new%vi2
-      ice%geom%Hs( vi) = ice_surface_elevation( Hi_new( vi), ice%geom%Hb( vi), ice%geom%SL( vi))
+      geom%Hs( vi) = ice_surface_elevation( Hi_new( vi), geom%Hb( vi), geom%SL( vi))
     end do
 
-    ! Move Hi_new to ice%geom%Hi
-    deallocate( ice%geom%Hi)
-    allocate( ice%geom%Hi( mesh_new%vi1: mesh_new%vi2))
-    ice%geom%Hi = Hi_new
+    ! Move Hi_new to geom%Hi
+    deallocate( geom%Hi)
+    allocate( geom%Hi( mesh_new%vi1: mesh_new%vi2))
+    geom%Hi = Hi_new
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -195,12 +195,12 @@ contains
 
   end subroutine calc_mask_ROI
 
-  subroutine calc_mask_noice( mesh, ice)
+  subroutine calc_mask_noice( mesh, mask_noice)
     !< Calculate the no-ice mask
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                       intent(in   ) :: mesh
+    logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_noice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_mask_noice'
@@ -212,7 +212,7 @@ contains
     ! Initialise
     ! ==========
 
-    ice%mask_noice = .false.
+    mask_noice = .false.
 
     ! domain-specific cases (mutually exclusive)
     ! ==========================================
@@ -223,16 +223,16 @@ contains
       case ('none')
         ! Ice is (in principle) allowed everywhere
 
-        ice%mask_noice = .false.
+        mask_noice = .false.
 
       case ('MISMIP_mod')
         ! Kill all ice when r > 900 km
 
         do vi = mesh%vi1, mesh%vi2
           if (NORM2( mesh%V( vi,:)) > 900E3_dp) then
-            ice%mask_noice( vi) = .true.
+            mask_noice( vi) = .true.
           else
-            ice%mask_noice( vi) = .false.
+            mask_noice( vi) = .false.
           end if
         end do
 
@@ -241,24 +241,24 @@ contains
 
         do vi = mesh%vi1, mesh%vi2
           if (mesh%V( vi,1) > 640E3_dp) then
-            ice%mask_noice( vi) = .true.
+            mask_noice( vi) = .true.
           else
-            ice%mask_noice( vi) = .false.
+            mask_noice( vi) = .false.
           end if
         end do
 
       case ('remove_Ellesmere')
         ! Prevent ice growth in the Ellesmere Island part of the Greenland domain
 
-        call calc_mask_noice_remove_Ellesmere( mesh, ice%mask_noice)
+        call calc_mask_noice_remove_Ellesmere( mesh, mask_noice)
 
       case ('Thule')
         ! Prevent ice growth in the Thule area
         do vi = mesh%vi1, mesh%vi2
           if (NORM2( mesh%V( vi,:)) > 750E3_dp) then
-            ice%mask_noice( vi) = .true.
+            mask_noice( vi) = .true.
           else
-            ice%mask_noice( vi) = .false.
+            mask_noice( vi) = .false.
           end if
         end do
 

@@ -31,6 +31,7 @@ module ice_geometry_model_basic
   use remapping_grid_to_mesh_triangles, only: create_map_from_xy_grid_to_mesh_triangles
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
+  use conservation_of_mass_utilities, only: apply_mask_noice_direct
 
   implicit none
 

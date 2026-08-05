@@ -151,15 +151,13 @@ CONTAINS
 
   END SUBROUTINE update_sealevel_at_model_time
 
-  SUBROUTINE update_sealevel_in_model(forcing, mesh, geom, time)
+  SUBROUTINE update_sealevel_in_model( forcing, mesh, time, SL)
   ! Update the current sea level based on the loaded sea level curve
 
-    IMPLICIT NONE
-
-    TYPE(type_global_forcing),            intent(in   ) :: forcing
-    TYPE(type_mesh),                      intent(in   ) :: mesh
-    class(atype_ice_geometry_model_data), intent(inout) :: geom
-    REAL(dp),                             intent(in   ) :: time
+    TYPE(type_global_forcing),              intent(in   ) :: forcing
+    TYPE(type_mesh),                        intent(in   ) :: mesh
+    REAL(dp),                               intent(in   ) :: time
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: SL
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'update_sealevel_in_model'
@@ -173,7 +171,7 @@ CONTAINS
     CALL interpolate_value_from_forcing_record(forcing%sl_t0, forcing%sl_t1, forcing%sl_at_t0, forcing%sl_at_t1, time, computed_sea_level) ! We might be calling this twice with no need, but might be worth keeping it like that to facilitate future impoementations
 
     do vi = mesh%vi1, mesh%vi2
-      geom%SL( vi) = computed_sea_level
+      SL( vi) = computed_sea_level
     end do
 
     ! Finalise routine path

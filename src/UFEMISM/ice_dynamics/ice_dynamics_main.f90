@@ -229,7 +229,7 @@ contains
 
     case ('prescribed')
       ! Sea-level from an external record, stored in the global_forcings type
-      call update_sealevel_in_model(forcing, mesh, ice%geom, start_time_of_run)
+      call update_sealevel_in_model(forcing, mesh, start_time_of_run, ice%geom%SL)
 
     case ('eustatic')
       ! Eustatic sea level

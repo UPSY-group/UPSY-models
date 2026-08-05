@@ -123,7 +123,7 @@ CONTAINS
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN
         CALL update_sealevel_at_model_time(regional_forcing, region%time)
-        CALL update_sealevel_in_model(regional_forcing, region%mesh, region%ice%geom, region%time)
+        CALL update_sealevel_in_model(regional_forcing, region%mesh, region%time, region%ice%geom%SL)
       END IF
 
       ! Update CO2 if necessary? - this can be done in a better way, but will solve the error for now

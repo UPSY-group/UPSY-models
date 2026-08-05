@@ -6,8 +6,6 @@ module masks_mod
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
-  use ice_geometry_basics, only: is_floating
   use projections, only: oblique_sg_projection
   use plane_geometry, only: is_in_polygon
   use mesh_ROI_polygons
@@ -22,16 +20,17 @@ module masks_mod
 
 contains
 
-  subroutine calc_mask_ROI( mesh, ice, region_name)
+  subroutine calc_mask_ROI( mesh, region_name, mask_ROI, nROI)
     !< Calculate the ROI mask
 
     ! In/output variables:
-    type(type_mesh),      intent(in   )           :: mesh
-    type(type_ice_model), intent(inout)           :: ice
-    character(len=3),     intent(in   )           :: region_name
+    type(type_mesh),                       intent(in   ) :: mesh
+    character(len=3),                      intent(in   ) :: region_name
+    integer, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_ROI
+    integer,                               intent(  out) :: nROI
 
     ! Local variables:
-    character(len=1024), parameter                :: routine_name = 'calc_mask_ROI'
+    character(len=*), parameter                   :: routine_name = 'calc_mask_ROI'
     character(len=256)                            :: all_names_ROI, name_ROI
     integer                                       :: vi, vj, ci, i, i_ROI
     real(dp), dimension(:,:  ), allocatable       :: poly_ROI
@@ -179,7 +178,7 @@ contains
             vj = mesh%C( vi,ci)
             point = mesh%V( vj,:) ! Just to make sure it's in the right format
             if (is_in_polygon(poly_ROI, point)) then
-              ice%mask_ROI(vi) = i_ROI
+              mask_ROI(vi) = i_ROI
             end if
         end do
       end do ! do vi = mesh%vi1, mesh%vi2
@@ -188,19 +187,19 @@ contains
       deallocate( poly_ROI)
 
     end do
-    ice%nROI = i_ROI ! keep track of how many ROIs we actually have in the mask
+    nROI = i_ROI ! keep track of how many ROIs we actually have in the mask
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine calc_mask_ROI
 
-  subroutine calc_mask_noice( mesh, ice)
+  subroutine calc_mask_noice( mesh, mask_noice)
     !< Calculate the no-ice mask
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                       intent(in   ) :: mesh
+    logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_noice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_mask_noice'
@@ -212,7 +211,7 @@ contains
     ! Initialise
     ! ==========
 
-    ice%mask_noice = .false.
+    mask_noice = .false.
 
     ! domain-specific cases (mutually exclusive)
     ! ==========================================
@@ -223,16 +222,16 @@ contains
       case ('none')
         ! Ice is (in principle) allowed everywhere
 
-        ice%mask_noice = .false.
+        mask_noice = .false.
 
       case ('MISMIP_mod')
         ! Kill all ice when r > 900 km
 
         do vi = mesh%vi1, mesh%vi2
           if (NORM2( mesh%V( vi,:)) > 900E3_dp) then
-            ice%mask_noice( vi) = .true.
+            mask_noice( vi) = .true.
           else
-            ice%mask_noice( vi) = .false.
+            mask_noice( vi) = .false.
           end if
         end do
 
@@ -241,24 +240,24 @@ contains
 
         do vi = mesh%vi1, mesh%vi2
           if (mesh%V( vi,1) > 640E3_dp) then
-            ice%mask_noice( vi) = .true.
+            mask_noice( vi) = .true.
           else
-            ice%mask_noice( vi) = .false.
+            mask_noice( vi) = .false.
           end if
         end do
 
       case ('remove_Ellesmere')
         ! Prevent ice growth in the Ellesmere Island part of the Greenland domain
 
-        call calc_mask_noice_remove_Ellesmere( mesh, ice%mask_noice)
+        call calc_mask_noice_remove_Ellesmere( mesh, mask_noice)
 
       case ('Thule')
         ! Prevent ice growth in the Thule area
         do vi = mesh%vi1, mesh%vi2
           if (NORM2( mesh%V( vi,:)) > 750E3_dp) then
-            ice%mask_noice( vi) = .true.
+            mask_noice( vi) = .true.
           else
-            ice%mask_noice( vi) = .false.
+            mask_noice( vi) = .false.
           end if
         end do
 
@@ -310,15 +309,15 @@ contains
 
   end subroutine calc_mask_noice_remove_Ellesmere
 
-  subroutine calc_mask_SGD( mesh, ice)
+  subroutine calc_mask_SGD( mesh, mask_SGD)
     !< Calculate the subglacial discharge mask (SGD)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                       intent(in   ) :: mesh
+    logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_SGD
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_mask_SGD'
+    character(len=*), parameter :: routine_name = 'calc_mask_SGD'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -327,12 +326,12 @@ contains
       case ('none', 'read_transects')
         ! No SGD: don't need to do anything
       case ('idealised')
-        call calc_mask_SGD_idealised(mesh, ice)
+        call calc_mask_SGD_idealised( mesh, mask_SGD)
       case ('read_from_file')
-        call calc_mask_SGD_from_file(mesh, ice)
+        call calc_mask_SGD_from_file( mesh, mask_SGD)
       case default
         ! Choice not found
-        call crash('unknown choice_laddie_SGD "' // TRIM( C%choice_laddie_SGD) // '"!')
+        call crash('unknown choice_laddie_SGD "' // trim( C%choice_laddie_SGD) // '"!')
     end select
 
     ! Finalise routine path
@@ -340,17 +339,17 @@ contains
 
   end subroutine calc_mask_SGD
 
-  subroutine calc_mask_SGD_idealised( mesh, ice)
+  subroutine calc_mask_SGD_idealised( mesh, mask_SGD)
     !< Calculate the subglacial discharge mask (SGD) - idealised cases for the MISMIPplus geometry
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                       intent(in   ) :: mesh
+    logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_SGD
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_mask_SGD_idealised'
-    integer                        :: vi
-    real(dp)                       :: y_coord_channel
+    character(len=*), parameter :: routine_name = 'calc_mask_SGD_idealised'
+    integer                     :: vi
+    real(dp)                    :: y_coord_channel
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -369,9 +368,9 @@ contains
       ! NOTE: This approach allows for some vertices along the transect at a given y-coordinate to be marked as false.
       !       Therefore, if the grounding line retreats to a position where no vertices are marked as true, no SGD will be applied.
       if (mesh%V( vi,2) < y_coord_channel + 2500._dp .and. mesh%V( vi,2) > y_coord_channel - 2500._dp) then
-        ice%mask_SGD( vi) = .true.
+        mask_SGD( vi) = .true.
       else
-        ice%mask_SGD( vi) = .false.
+        mask_SGD( vi) = .false.
       end if
     end do
 
@@ -380,17 +379,17 @@ contains
 
   end subroutine calc_mask_SGD_idealised
 
-  subroutine calc_mask_SGD_from_file( mesh, ice)
+  subroutine calc_mask_SGD_from_file( mesh, mask_SGD)
     !< Calculate the subglacial discharge (SGD) mask by reading values from an external file.
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                       intent(in   ) :: mesh
+    logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_SGD
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_mask_SGD_from_file'
+    character(len=*), parameter            :: routine_name = 'calc_mask_SGD_from_file'
     integer                                :: vi
-    REAL(dp), DIMENSION(mesh%vi1:mesh%vi2) :: temporary_mask_SGD
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: temporary_mask_SGD
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -400,10 +399,10 @@ contains
 
     ! Assign mask_SGD as true where the read-in field is greater than zero.
     do vi = mesh%vi1, mesh%vi2
-      if (temporary_mask_SGD( vi)>0) then
-        ice%mask_SGD( vi) = .true.
+      if (temporary_mask_SGD( vi)>0._dp) then
+        mask_SGD( vi) = .true.
       else
-        ice%mask_SGD( vi) = .false.
+        mask_SGD( vi) = .false.
       end if
     end do
 

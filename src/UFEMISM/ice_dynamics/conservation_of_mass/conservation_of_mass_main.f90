@@ -8,7 +8,7 @@ module conservation_of_mass_main
   use mesh_types, only: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use conservation_of_mass_utilities, only: apply_mask_noice_direct
-  use conservation_of_mass_explicit, only: calc_dHi_dt_explicit, apply_ice_thickness_BC_explicit
+  use conservation_of_mass_explicit, only: calc_dHi_dt_explicit
   use conservation_of_mass_semiimplicit, only: calc_dHi_dt_semiimplicit
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD
   use ice_thickness_safeties, only: calc_and_apply_spill_over_flux
@@ -18,7 +18,7 @@ module conservation_of_mass_main
 
   private
 
-  public :: calc_dHi_dt, apply_mask_noice_direct, apply_ice_thickness_BC_explicit
+  public :: calc_dHi_dt, apply_mask_noice_direct
 
 contains
 

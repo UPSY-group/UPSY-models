@@ -189,6 +189,8 @@ contains
     allocate( self%Hi( mesh_new%vi1: mesh_new%vi2))
     self%Hi = Hi_new
 
+    call apply_mask_noice_direct( mesh_new, mask_noice_new, self%Hi)
+
     call reallocate_secondary_geometry_variables( self, mesh_new)
 
     ! Finalise routine path

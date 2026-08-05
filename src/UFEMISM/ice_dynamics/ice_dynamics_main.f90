@@ -737,7 +737,6 @@ contains
     call calc_mask_noice( mesh_new, ice%mask_noice)
 
     ! Remove ice bleed into forbidden areas
-    call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%geom%Hi)
     call apply_mask_noice_direct( mesh_new, ice%mask_noice, ice%dHi_dt)
 
     call ice%geom%determine_masks()

@@ -22,16 +22,17 @@ module masks_mod
 
 contains
 
-  subroutine calc_mask_ROI( mesh, ice, region_name)
+  subroutine calc_mask_ROI( mesh, region_name, mask_ROI, nROI)
     !< Calculate the ROI mask
 
     ! In/output variables:
-    type(type_mesh),      intent(in   )           :: mesh
-    type(type_ice_model), intent(inout)           :: ice
-    character(len=3),     intent(in   )           :: region_name
+    type(type_mesh),                       intent(in   ) :: mesh
+    character(len=3),                      intent(in   ) :: region_name
+    integer, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_ROI
+    integer,                               intent(  out) :: nROI
 
     ! Local variables:
-    character(len=1024), parameter                :: routine_name = 'calc_mask_ROI'
+    character(len=*), parameter                   :: routine_name = 'calc_mask_ROI'
     character(len=256)                            :: all_names_ROI, name_ROI
     integer                                       :: vi, vj, ci, i, i_ROI
     real(dp), dimension(:,:  ), allocatable       :: poly_ROI
@@ -179,7 +180,7 @@ contains
             vj = mesh%C( vi,ci)
             point = mesh%V( vj,:) ! Just to make sure it's in the right format
             if (is_in_polygon(poly_ROI, point)) then
-              ice%mask_ROI(vi) = i_ROI
+              mask_ROI(vi) = i_ROI
             end if
         end do
       end do ! do vi = mesh%vi1, mesh%vi2
@@ -188,7 +189,7 @@ contains
       deallocate( poly_ROI)
 
     end do
-    ice%nROI = i_ROI ! keep track of how many ROIs we actually have in the mask
+    nROI = i_ROI ! keep track of how many ROIs we actually have in the mask
 
     ! Finalise routine path
     call finalise_routine( routine_name)

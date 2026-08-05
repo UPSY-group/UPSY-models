@@ -319,7 +319,7 @@ contains
     call ice%geom%determine_masks()
 
     ! Compute mask_ROI only at initialisation, (NOTE: This works only for one single ROI right now)
-    call calc_mask_ROI( mesh, ice, region_name)
+    call calc_mask_ROI( mesh, region_name, ice%mask_ROI, ice%nROI)
 
     ! Compute mask_SGD only at initialisation
     call calc_mask_SGD( mesh, ice)
@@ -780,7 +780,7 @@ contains
     call ice%geom%determine_masks()
 
     ! Compute mask_ROI
-    call calc_mask_ROI( mesh_new, ice, region_name)
+    call calc_mask_ROI( mesh_new, region_name, ice%mask_ROI, ice%nROI)
 
     ! Compute mask_SGD
     call calc_mask_SGD( mesh_new, ice)

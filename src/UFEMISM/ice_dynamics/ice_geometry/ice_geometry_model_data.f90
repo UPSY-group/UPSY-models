@@ -42,7 +42,7 @@ module ice_geometry_model_data
     type(MPI_WIN) :: wfraction_gr, wfraction_gr_b, wfraction_margin
 
     ! Ice masks
-    logical,  dimension(:  ), allocatable :: mask_icefree_land       ! T: ice-free land , F: otherwise
+    logical,  dimension(:  ), contiguous, pointer :: mask_icefree_land     => null()  ! T: ice-free land , F: otherwise
     logical,  dimension(:  ), allocatable :: mask_icefree_ocean      ! T: ice-free ocean, F: otherwise
     logical,  dimension(:  ), allocatable :: mask_grounded_ice       ! T: grounded ice  , F: otherwise
     logical,  dimension(:  ), allocatable :: mask_floating_ice       ! T: floating ice  , F: otherwise
@@ -53,6 +53,7 @@ module ice_geometry_model_data
     logical,  dimension(:  ), allocatable :: mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
     logical,  dimension(:  ), allocatable :: mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
     integer,  dimension(:  ), allocatable :: mask
+    type(MPI_WIN) :: wmask_icefree_land
 
   end type atype_ice_geometry_model_data
 

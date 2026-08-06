@@ -341,7 +341,7 @@ contains
     call self%remap_field( mesh_new, 'fraction_margin', self%fraction_margin)
 
     ! Ice masks
-    call reallocate_bounds( self%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask_icefree_land' , self%mask_icefree_land )
     call reallocate_bounds( self%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)

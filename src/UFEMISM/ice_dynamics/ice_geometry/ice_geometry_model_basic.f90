@@ -6,7 +6,7 @@ module ice_geometry_model_basic
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use Arakawa_grid_mod, only: Arakawa_grid
   use mesh_types, only: type_mesh
-  use parameters, only: NaN
+  use parameters, only: NaN, ice_density, seawater_density
   use checksum_mod, only: checksum
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
@@ -14,7 +14,7 @@ module ice_geometry_model_basic
     ice_surface_elevation, height_of_water_column_at_ice_front, hi_from_hb_hs_and_sl
   use crash_mod, only: crash, warning
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, &
-    ddx_a_b_2D, ddy_a_b_2D
+    ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
   use global_forcing_types, only: type_global_forcing
@@ -55,7 +55,6 @@ module ice_geometry_model_basic
       procedure, public :: calc_height_of_water_column
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
-      procedure, public :: calc_grounded_fractions
       procedure, public :: calc_absolute_surface_slope
       procedure, public :: calc_ice_base_slopes
 
@@ -64,6 +63,10 @@ module ice_geometry_model_basic
       procedure, public  :: calc_bedrock_CDFs
       procedure, private :: calc_bedrock_CDFs_a
       procedure, private :: calc_bedrock_CDFs_b
+
+      procedure, public  :: calc_grounded_fractions
+      procedure, private :: calc_grounded_fractions_bedrock_CDF_a
+      procedure, private :: calc_grounded_fractions_bedrock_CDF_b
 
       procedure, public :: calc_all_secondary_geometry_variables
 
@@ -108,11 +111,6 @@ module ice_geometry_model_basic
       class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_effective_thickness
 
-    module subroutine calc_grounded_fractions( self, dHb)
-      class(type_ice_geometry_model),                   intent(inout) :: self
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
-    end subroutine calc_grounded_fractions
-
     module subroutine calc_absolute_surface_slope( self)
       class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_absolute_surface_slope
@@ -151,6 +149,23 @@ module ice_geometry_model_basic
       type(type_mesh),                intent(in   ) :: mesh
       type(type_reference_geometry),  intent(in   ) :: refgeo
     end subroutine calc_bedrock_CDFs_b
+
+    module subroutine calc_grounded_fractions( self, dHb)
+      class(type_ice_geometry_model),                   intent(inout) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+    end subroutine calc_grounded_fractions
+
+    module subroutine calc_grounded_fractions_bedrock_CDF_a( self, dHb, fraction_gr)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
+    end subroutine calc_grounded_fractions_bedrock_CDF_a
+
+    module subroutine calc_grounded_fractions_bedrock_CDF_b( self, dHb, fraction_gr_b)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
+    end subroutine calc_grounded_fractions_bedrock_CDF_b
 
   end interface
 

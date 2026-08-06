@@ -1,56 +1,39 @@
-module subgrid_grounded_fractions_bilin_TAF
-  !< Routines for calculating sub-grid grounded fractions by
-  !< bilinearly interpolating the thickness above floatation
-
-  use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
-  use plane_geometry, only: triangle_area
-  use mpi_distributed_memory, only: gather_to_all
-  use mesh_disc_apply_operators, only: map_a_b_2D
-
-  implicit none
-
-  private
-
-  public :: calc_grounded_fractions_bilin_interp_TAF_a, calc_grounded_fractions_bilin_interp_TAF_b
+submodule(ice_geometry_model_basic) subgrid_grounded_fractions_bilin_TAF
 
 contains
 
-  subroutine calc_grounded_fractions_bilin_interp_TAF_a( mesh, TAF , fraction_gr)
+  subroutine calc_grounded_fractions_bilin_interp_TAF_a( self, fraction_gr)
     !< Calculate the sub-grid grounded fractions of the vertices
 
     ! Bilinearly interpolate the thickness above floatation (the CISM/PISM approach)
 
     ! In- and output variables
-    type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: TAF
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: fraction_gr
+    class(type_ice_geometry_model),                   intent(in   ) :: self
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'calc_grounded_fractions_bilin_interp_TAF_a'
-    real(dp), dimension(mesh%nV)           :: TAF_tot
-    real(dp), dimension(mesh%ti1:mesh%ti2) :: TAF_b
-    real(dp), dimension(mesh%nTri)         :: TAF_b_tot
-    integer                                :: vi, ci, vj, iti1, iti2, ti1, ti2, iti, ti
-    real(dp)                               :: TAF_max, TAF_min
-    real(dp), dimension(2)                 :: va, vb, vc
-    real(dp)                               :: TAFa, TAFb, TAFc, A_vor, A_tri_tot, A_tri_grnd, A_grnd
+    character(len=*), parameter                      :: routine_name = 'calc_grounded_fractions_bilin_interp_TAF_a'
+    real(dp), dimension(self%mesh%nV)                :: TAF_tot
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: TAF_b
+    real(dp), dimension(self%mesh%nTri)              :: TAF_b_tot
+    integer                                          :: vi, ci, vj, iti1, iti2, ti1, ti2, iti, ti
+    real(dp)                                         :: TAF_max, TAF_min
+    real(dp), dimension(2)                           :: va, vb, vc
+    real(dp)                                         :: TAFa, TAFb, TAFc, A_vor, A_tri_tot, A_tri_grnd, A_grnd
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Gather global thickness above floatation
-    call gather_to_all( TAF, TAF_tot)
+    call gather_to_all( self%TAF, TAF_tot)
 
     ! Map thickness-above-floatation to the b-grid
-    call map_a_b_2D(  mesh, TAF, TAF_b)
+    call map_a_b_2D(  self%mesh, self%TAF, TAF_b)
 
     ! Gather global thickness above floatation on the b-grid
     call gather_to_all( TAF_b, TAF_b_tot)
 
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Determine maximum and minimum TAF of the local neighbourhood
       TAF_max = -1E6_dp
@@ -59,8 +42,8 @@ contains
       TAF_max = max( TAF_max, TAF_tot( vi))
       TAF_min = min( TAF_min, TAF_tot( vi))
 
-      do ci = 1, mesh%nC( vi)
-        vj = mesh%C( vi,ci)
+      do ci = 1, self%mesh%nC( vi)
+        vj = self%mesh%C( vi,ci)
         TAF_max = max( TAF_max, TAF_tot( vj))
         TAF_min = min( TAF_min, TAF_tot( vj))
       end do
@@ -81,22 +64,22 @@ contains
       A_vor  = 0._dp
       A_grnd = 0._dp
 
-      va   = mesh%V( vi,:)
+      va   = self%mesh%V( vi,:)
       TAFa = TAF_tot( vi)
 
-      if (mesh%VBI( vi) == 0) then
+      if (self%mesh%VBI( vi) == 0) then
         ! Free vertex
 
-        do iti1 = 1, mesh%niTri( vi)
+        do iti1 = 1, self%mesh%niTri( vi)
 
           iti2 = iti1 + 1
-          if (iti2 == mesh%niTri( vi) + 1) iti2 = 1
+          if (iti2 == self%mesh%niTri( vi) + 1) iti2 = 1
 
-          ti1 = mesh%iTri( vi,iti1)
-          ti2 = mesh%iTri( vi,iti2)
+          ti1 = self%mesh%iTri( vi,iti1)
+          ti2 = self%mesh%iTri( vi,iti2)
 
-          vb = mesh%Tricc( ti1,:)
-          vc = mesh%Tricc( ti2,:)
+          vb = self%mesh%Tricc( ti1,:)
+          vc = self%mesh%Tricc( ti2,:)
 
           TAFb = TAF_b_tot( ti1)
           TAFc = TAF_b_tot( ti2)
@@ -113,13 +96,13 @@ contains
         ! Border vertex
 
         ! First subtriangle
-        vj   = mesh%C( vi,1)
-        vb   = 0.5_dp * (mesh%V(  vi,:) + mesh%V(  vj,:))
+        vj   = self%mesh%C( vi,1)
+        vb   = 0.5_dp * (self%mesh%V(  vi,:) + self%mesh%V(  vj,:))
         TAFb = 0.5_dp * (TAF_tot( vi  ) + TAF_tot( vj  ))
 
         iti  = 1
-        ti   = mesh%iTri( vi,iti)
-        vc   = mesh%Tricc( ti,:)
+        ti   = self%mesh%iTri( vi,iti)
+        vc   = self%mesh%Tricc( ti,:)
         TAFc = TAF_b_tot( ti)
 
         ! Calculate total area of, and grounded area within, this subtriangle
@@ -129,16 +112,16 @@ contains
         A_grnd = A_grnd + A_tri_grnd
 
         ! Middle subtriangles
-        do iti1 = 1, mesh%niTri( vi)-1
+        do iti1 = 1, self%mesh%niTri( vi)-1
 
           iti2 = iti1 + 1
-          if (iti2 == mesh%niTri( vi) + 1) iti2 = 1
+          if (iti2 == self%mesh%niTri( vi) + 1) iti2 = 1
 
-          ti1 = mesh%iTri( vi,iti1)
-          ti2 = mesh%iTri( vi,iti2)
+          ti1 = self%mesh%iTri( vi,iti1)
+          ti2 = self%mesh%iTri( vi,iti2)
 
-          vb = mesh%Tricc( ti1,:)
-          vc = mesh%Tricc( ti2,:)
+          vb = self%mesh%Tricc( ti1,:)
+          vc = self%mesh%Tricc( ti2,:)
 
           TAFb = TAF_b_tot( ti1)
           TAFc = TAF_b_tot( ti2)
@@ -152,13 +135,13 @@ contains
         end do ! do vori1 = 1, nVor
 
         ! Last subtriangle
-        iti  = mesh%niTri( vi)
-        ti   = mesh%iTri( vi,iti)
-        vb   = mesh%Tricc( ti,:)
+        iti  = self%mesh%niTri( vi)
+        ti   = self%mesh%iTri( vi,iti)
+        vb   = self%mesh%Tricc( ti,:)
         TAFb = TAF_b_tot( ti)
 
-        vj   = mesh%C( vi, mesh%nC( vi))
-        vc   = 0.5_dp * (mesh%V(  vi,:) + mesh%V(  vj,:))
+        vj   = self%mesh%C( vi, self%mesh%nC( vi))
+        vc   = 0.5_dp * (self%mesh%V(  vi,:) + self%mesh%V(  vj,:))
         TAFc = 0.5_dp * (TAF_tot( vi  ) + TAF_tot( vj  ))
 
         ! Calculate total area of, and grounded area within, this subtriangle
@@ -167,53 +150,52 @@ contains
         A_vor  = A_vor  + A_tri_tot
         A_grnd = A_grnd + A_tri_grnd
 
-      end if ! if (mesh%VBI( vi) == 0) then
+      end if ! if (self%mesh%VBI( vi) == 0) then
 
       ! Calculate the sub-grid grounded fraction of this Voronoi cell
       fraction_gr( vi) = min( 1._dp, max( 0._dp, A_grnd / A_vor ))
 
-    end do ! do vi = mesh%vi1, mesh%vi2
+    end do ! do vi = self%mesh%vi1, self%mesh%vi2
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine calc_grounded_fractions_bilin_interp_TAF_a
 
-  subroutine calc_grounded_fractions_bilin_interp_TAF_b( mesh, TAF, fraction_gr_b)
+  subroutine calc_grounded_fractions_bilin_interp_TAF_b( self, fraction_gr_b)
     !< Calculate the sub-grid grounded fractions of the triangles
 
     ! Bilinearly interpolate the thickness above floatation (the CISM/PISM approach)
 
     ! In- and output variables
-    type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: TAF
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: fraction_gr_b
+    class(type_ice_geometry_model),                   intent(in   ) :: self
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_grounded_fractions_bilin_interp_TAF_b'
-    real(dp), dimension(mesh%nV)   :: TAF_tot
-    integer                        :: ti, via, vib, vic
-    real(dp)                       :: TAF_max, TAF_min
-    real(dp), dimension(2)         :: va, vb, vc
-    real(dp)                       :: TAFa, TAFb, TAFc, A_tri_tot, A_tri_grnd
+    character(len=*), parameter       :: routine_name = 'calc_grounded_fractions_bilin_interp_TAF_b'
+    real(dp), dimension(self%mesh%nV) :: TAF_tot
+    integer                           :: ti, via, vib, vic
+    real(dp)                          :: TAF_max, TAF_min
+    real(dp), dimension(2)            :: va, vb, vc
+    real(dp)                          :: TAFa, TAFb, TAFc, A_tri_tot, A_tri_grnd
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Gather global thickness above floatation
-    call gather_to_all( TAF, TAF_tot)
+    call gather_to_all( self%TAF, TAF_tot)
 
-    do ti = mesh%ti1, mesh%ti2
+    do ti = self%mesh%ti1, self%mesh%ti2
 
       ! The indices of the three vertices spanning triangle ti
-      via = mesh%Tri( ti,1)
-      vib = mesh%Tri( ti,2)
-      vic = mesh%Tri( ti,3)
+      via = self%mesh%Tri( ti,1)
+      vib = self%mesh%Tri( ti,2)
+      vic = self%mesh%Tri( ti,3)
 
       ! The coordinates of the three vertices spanning triangle ti
-      va   = mesh%V( via,:)
-      vb   = mesh%V( vib,:)
-      vc   = mesh%V( vic,:)
+      va   = self%mesh%V( via,:)
+      vb   = self%mesh%V( vib,:)
+      vc   = self%mesh%V( vic,:)
 
       ! Thickness above floatation at the three corners of the triangle
       TAFa = TAF_tot( via)
@@ -369,4 +351,4 @@ contains
 
   end subroutine calc_grounded_area_triangle_1flt_2grnd
 
-end module subgrid_grounded_fractions_bilin_TAF
+end submodule subgrid_grounded_fractions_bilin_TAF

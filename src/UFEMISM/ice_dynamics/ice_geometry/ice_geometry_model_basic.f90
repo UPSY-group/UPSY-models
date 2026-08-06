@@ -32,6 +32,7 @@ module ice_geometry_model_basic
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
   use conservation_of_mass_utilities, only: apply_mask_noice_direct
+  use plane_geometry, only: triangle_area
 
   implicit none
 
@@ -65,6 +66,8 @@ module ice_geometry_model_basic
       procedure, private :: calc_bedrock_CDFs_b
 
       procedure, public  :: calc_grounded_fractions
+      procedure, private :: calc_grounded_fractions_bilin_interp_TAF_a
+      procedure, private :: calc_grounded_fractions_bilin_interp_TAF_b
       procedure, private :: calc_grounded_fractions_bedrock_CDF_a
       procedure, private :: calc_grounded_fractions_bedrock_CDF_b
 
@@ -154,6 +157,16 @@ module ice_geometry_model_basic
       class(type_ice_geometry_model),                   intent(inout) :: self
       real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
     end subroutine calc_grounded_fractions
+
+    module subroutine calc_grounded_fractions_bilin_interp_TAF_a( self, fraction_gr)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
+    end subroutine calc_grounded_fractions_bilin_interp_TAF_a
+
+    module subroutine calc_grounded_fractions_bilin_interp_TAF_b( self, fraction_gr_b)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
+    end subroutine calc_grounded_fractions_bilin_interp_TAF_b
 
     module subroutine calc_grounded_fractions_bedrock_CDF_a( self, dHb, fraction_gr)
       class(type_ice_geometry_model),                   intent(in   ) :: self

@@ -28,7 +28,7 @@ contains
       field_Arakawa_grid, name, long_name, units, remap_method)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine create_field_logical_2D
 
@@ -59,7 +59,7 @@ contains
       field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine create_field_logical_3D
 
@@ -89,7 +89,7 @@ contains
       field_Arakawa_grid, name, long_name, units, remap_method)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine create_field_int_2D
 
@@ -120,7 +120,7 @@ contains
       field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine create_field_int_3D
 
@@ -150,7 +150,7 @@ contains
       field_Arakawa_grid, name, long_name, units, remap_method)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine create_field_dp_2D
 
@@ -181,7 +181,7 @@ contains
       field_Arakawa_grid, field_third_dimension, name, long_name, units, remap_method)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 1)
 
   end subroutine create_field_dp_3D
 

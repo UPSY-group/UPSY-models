@@ -328,12 +328,12 @@ contains
     call reallocate_bounds( self%Ho                     , mesh_new%vi1, mesh_new%vi2)
 
     ! Horizontal derivatives
-    call reallocate_bounds( self%dHib_dx_b              , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%dHib_dy_b              , mesh_new%ti1, mesh_new%ti2)
+    call self%remap_field( mesh_new, 'dHib_dx_b', self%dHib_dx_b)
+    call self%remap_field( mesh_new, 'dHib_dy_b', self%dHib_dy_b)
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    call reallocate_bounds( self%bedrock_cdf            , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)
-    call reallocate_bounds( self%bedrock_cdf_b          , mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)
+    call self%remap_field( mesh_new, 'bedrock_cdf'  , self%bedrock_cdf)
+    call self%remap_field( mesh_new, 'bedrock_cdf_b', self%bedrock_cdf_b)
 
     ! Area fractions
     call reallocate_bounds( self%fraction_gr            , mesh_new%vi1, mesh_new%vi2)

@@ -39,7 +39,7 @@ contains
 
     end do
 
-    deallocate( self%items)
+    if (allocated( self%items)) deallocate( self%items)
     self%n     = 0
     self%n_max = 0
 

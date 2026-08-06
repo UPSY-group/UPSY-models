@@ -1,13 +1,6 @@
 submodule( ice_geometry_model_basic) subgrid_grounded_fractions_main
   !< Routines for calculating sub-grid grounded fractions
 
-  use subgrid_grounded_fractions_bedrock_CDF, only: &
-    calc_grounded_fractions_bedrock_CDF_a, &
-    calc_grounded_fractions_bedrock_CDF_b
-  use subgrid_grounded_fractions_bilin_TAF, only: &
-    calc_grounded_fractions_bilin_interp_TAF_a, &
-    calc_grounded_fractions_bilin_interp_TAF_b
-
 contains
 
   subroutine calc_grounded_fractions( self, dHb)
@@ -19,20 +12,15 @@ contains
 
     ! Local variables:
     character(len=*), parameter                      :: routine_name = 'calc_grounded_fractions'
-    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: TAF
     real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: fraction_gr_TAF_a
     real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: fraction_gr_CDF_a
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: fraction_gr_TAF_b
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: fraction_gr_CDF_b
     logical,  dimension(self%mesh%nV)                :: mask_floating_ice_tot
-    integer                                          :: ti, via, vib, vic, vi
+    integer                                          :: ti, via, vib, vic
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    do vi = self%mesh%vi1, self%mesh%vi2
-      TAF(vi) = thickness_above_floatation( self%Hi( vi), self%Hb( vi), self%SL( vi))
-    end do
 
     ! Use the specified way of calculating sub-grid grounded fractions
     select case (C%choice_subgrid_grounded_fraction)
@@ -42,8 +30,8 @@ contains
     case('bilin_interp_TAF')
       ! Bilinearly interpolate the thickness above floatation to calculate the grounded fractions
 
-      call calc_grounded_fractions_bilin_interp_TAF_a( self%mesh, TAF, fraction_gr_TAF_a)
-      call calc_grounded_fractions_bilin_interp_TAF_b( self%mesh, TAF, fraction_gr_TAF_b)
+      call self%calc_grounded_fractions_bilin_interp_TAF_a( fraction_gr_TAF_a)
+      call self%calc_grounded_fractions_bilin_interp_TAF_b( fraction_gr_TAF_b)
 
       self%fraction_gr   = fraction_gr_TAF_a
       self%fraction_gr_b = fraction_gr_TAF_b
@@ -51,8 +39,8 @@ contains
     case ('bedrock_CDF')
       ! Use the sub-grid bedrock cumulative density functions to calculate the grounded fractions
 
-      call calc_grounded_fractions_bedrock_CDF_a( self%mesh, self%Hi, self%SL, dHb,      self%bedrock_cdf  , fraction_gr_CDF_a)
-      call calc_grounded_fractions_bedrock_CDF_b( self%mesh, self%Hi, self%SL, dHb, TAF, self%bedrock_cdf_b, fraction_gr_CDF_b)
+      call self%calc_grounded_fractions_bedrock_CDF_a( dHb, fraction_gr_CDF_a)
+      call self%calc_grounded_fractions_bedrock_CDF_b( dHb, fraction_gr_CDF_b)
 
       self%fraction_gr   = fraction_gr_CDF_a
       self%fraction_gr_b = fraction_gr_CDF_b
@@ -60,11 +48,11 @@ contains
     case ('bilin_interp_TAF+bedrock_CDF')
       ! Use the TAF method at the grounding line, and the CDF method inland
 
-      call calc_grounded_fractions_bilin_interp_TAF_a( self%mesh, TAF, fraction_gr_TAF_a)
-      call calc_grounded_fractions_bilin_interp_TAF_b( self%mesh, TAF, fraction_gr_TAF_b)
+      call self%calc_grounded_fractions_bilin_interp_TAF_a( fraction_gr_TAF_a)
+      call self%calc_grounded_fractions_bilin_interp_TAF_b( fraction_gr_TAF_b)
 
-      call calc_grounded_fractions_bedrock_CDF_a( self%mesh, self%Hi, self%SL, dHb,      self%bedrock_cdf  , fraction_gr_CDF_a)
-      call calc_grounded_fractions_bedrock_CDF_b( self%mesh, self%Hi, self%SL, dHb, TAF, self%bedrock_cdf_b, fraction_gr_CDF_b)
+      call self%calc_grounded_fractions_bedrock_CDF_a( dHb, fraction_gr_CDF_a)
+      call self%calc_grounded_fractions_bedrock_CDF_b( dHb, fraction_gr_CDF_b)
 
       ! Gather global floating ice mask
       call gather_to_all( self%mask_floating_ice, mask_floating_ice_tot)

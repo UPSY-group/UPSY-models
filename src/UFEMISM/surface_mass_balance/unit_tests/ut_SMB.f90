@@ -252,13 +252,12 @@ contains
     end do
 
     ! Set up simple ice model fields
-    allocate( ice%geom%Hi( mesh%vi1: mesh%vi2), source = 0._dp)
-    allocate( ice%geom%Hb( mesh%vi1: mesh%vi2), source = 10._dp)
-    allocate( ice%geom%Hs( mesh%vi1: mesh%vi2), source = 10._dp)
-    allocate( ice%geom%mask_icefree_ocean( mesh%vi1: mesh%vi2), source = .false.)
-    allocate( ice%geom%mask_floating_ice ( mesh%vi1: mesh%vi2), source = .false.)
-    allocate( ice%mask_noice        ( mesh%vi1: mesh%vi2), source = .false.)
-    allocate( ice%geom%mask_grounded_ice ( mesh%vi1: mesh%vi2), source = .false.)
+    allocate( ice%geom)
+    call ice%geom%allocate( 'ANT', mesh)
+    ice%geom%Hi( mesh%vi1: mesh%vi2) = 0._dp
+    ice%geom%Hb( mesh%vi1: mesh%vi2) = 10._dp
+    ice%geom%Hs( mesh%vi1: mesh%vi2) = 10._dp
+    allocate( ice%mask_noice( mesh%vi1: mesh%vi2), source = .false.)
 
     do vi = mesh%vi1, mesh%vi2
       rp = 1.5_dp * hypot( mesh%V( vi,1), mesh%V( vi,2)) / (mesh%xmax - mesh%xmin)

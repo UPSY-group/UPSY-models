@@ -301,7 +301,7 @@ MODULE ice_model_types
   ! ==========================
 
     ! Basic geometry
-    type(type_ice_geometry_model) :: geom
+    type(type_ice_geometry_model), allocatable :: geom
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)

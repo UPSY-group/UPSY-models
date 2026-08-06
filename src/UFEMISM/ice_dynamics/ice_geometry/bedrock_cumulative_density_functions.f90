@@ -120,8 +120,8 @@ contains
     end if
 
     ! Read meshed data
-    call read_field_from_mesh_file_CDF(   filename, 'bedrock_cdf',   self%bedrock_cdf   )
-    call read_field_from_mesh_file_CDF_b( filename, 'bedrock_cdf_b', self%bedrock_cdf_b )
+    call read_field_from_mesh_file_CDF(   mesh, filename, 'bedrock_cdf',   self%bedrock_cdf   )
+    call read_field_from_mesh_file_CDF_b( mesh, filename, 'bedrock_cdf_b', self%bedrock_cdf_b )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -219,10 +219,9 @@ contains
     allocate( Hb_list( refgeo%grid_raw%nx * refgeo%grid_raw%ny ))
     Hb_list = 0._dp
 
-    ! Initialise cumulative density function (CDF)
-    self%bedrock_cdf = 0._dp
-
     do vi = mesh%vi1, mesh%vi2
+
+      self%bedrock_cdf( vi,:) = 0._dp
 
       ! Clear the list
       Hb_list = 0._dp
@@ -338,10 +337,9 @@ contains
     allocate( Hb_list( refgeo%grid_raw%nx * refgeo%grid_raw%ny ))
     Hb_list = 0._dp
 
-    ! Initialise cumulative density function (CDF)
-    self%bedrock_cdf_b = 0._dp
-
     do ti = mesh%ti1, mesh%ti2
+
+      self%bedrock_cdf_b( ti,:) = 0._dp
 
       ! Clear the list
       Hb_list = 0._dp
@@ -398,13 +396,14 @@ contains
 
   end subroutine calc_bedrock_CDFs_b
 
-  subroutine read_field_from_mesh_file_CDF( filename, field_name_options, &
+  subroutine read_field_from_mesh_file_CDF( mesh, filename, field_name_options, &
     d_mesh_partial)
     !< Read a cumulative density function field from a NetCDF file on a mesh
 
     ! NOTE: the mesh should be read before, and memory allocated for d_mesh_partial!
 
     ! In/output variables:
+    type(type_mesh),                    intent(in   ) :: mesh
     character(len=*),                   intent(in   ) :: filename
     character(len=*),                   intent(in   ) :: field_name_options
     real(dp), dimension(:,:),           intent(  out) :: d_mesh_partial
@@ -451,7 +450,7 @@ contains
     ! ==================================================================================
 
     ! Distribute data
-    call distribute_from_primary( d_mesh_partial, d_mesh)
+    call distribute_dist_shared_from_primary( mesh%pai_V, C%subgrid_bedrock_cdf_nbins, d_mesh_partial, d_mesh)
 
     ! Clean up after yourself
     if (par%primary) deallocate( d_mesh)
@@ -461,13 +460,14 @@ contains
 
   end subroutine read_field_from_mesh_file_CDF
 
-  subroutine read_field_from_mesh_file_CDF_b( filename, field_name_options, &
+  subroutine read_field_from_mesh_file_CDF_b( mesh, filename, field_name_options, &
     d_mesh_partial)
     !< Read a cumulative density function field from a NetCDF file on a mesh b-grid
 
     ! NOTE: the mesh should be read before, and memory allocated for d_mesh_partial!
 
     ! In/output variables:
+    type(type_mesh),                    intent(in   ) :: mesh
     character(len=*),                   intent(in   ) :: filename
     character(len=*),                   intent(in   ) :: field_name_options
     real(dp), dimension(:,:),           intent(  out) :: d_mesh_partial
@@ -514,7 +514,7 @@ contains
     ! ==================================================================================
 
     ! Distribute data
-    call distribute_from_primary( d_mesh_partial, d_mesh)
+    call distribute_dist_shared_from_primary( mesh%pai_Tri, C%subgrid_bedrock_cdf_nbins, d_mesh_partial, d_mesh)
 
     ! Clean up after yourself
     if (par%primary) deallocate( d_mesh)

@@ -21,6 +21,7 @@ module fields_dimensions
     procedure :: ice_zeta    => third_dimension_factory_ice_zeta
     procedure :: month       => third_dimension_factory_month
     procedure :: ocean_depth => third_dimension_factory_ocean_depth
+    procedure :: bedrock_CDF => third_dimension_factory_bedrock_CDF
   end type type_third_dimension_factory
 
   type type_third_dimension
@@ -99,6 +100,16 @@ contains
     allocate( res%val( n), source = NaN)
     res%units = 'm'
   end function third_dimension_factory_ocean_depth
+
+  function third_dimension_factory_bedrock_CDF( self, n) result( res)
+    class(type_third_dimension_factory), intent(in) :: self
+    integer,                             intent(in) :: n
+    type(type_third_dimension)                      :: res
+    res%name = 'bedrock_CDF'
+    res%n    = n
+    allocate( res%val( res%n), source = NaN)
+    res%units = '-'
+  end function third_dimension_factory_bedrock_CDF
 
   pure function test_third_dimension_equality( dim1, dim2) result( res)
     class(type_third_dimension), intent(in) :: dim1

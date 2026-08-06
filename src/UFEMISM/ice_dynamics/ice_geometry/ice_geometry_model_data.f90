@@ -26,12 +26,14 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Depth of ocean column adjacent to the ice front
 
     ! Horizontal derivatives
-    real(dp), dimension(:  ), allocatable :: dHib_dx_b               ! [-]       Horizontal derivative of ice draft on b-grid
-    real(dp), dimension(:  ), allocatable :: dHib_dy_b               ! [-]       Horizontal derivative of ice draft on b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: dHib_dx_b             => null()  ! [-]       Horizontal derivative of ice draft on b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: dHib_dy_b             => null()  ! [-]       Horizontal derivative of ice draft on b-grid
+    type(MPI_WIN) :: wdHib_dx_b, wdHib_dy_b
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    real(dp), dimension(:,:), allocatable :: bedrock_cdf             ! [-]       Sub-grid bedrock cumulative density functions on the a-grid (vertices)
-    real(dp), dimension(:,:), allocatable :: bedrock_cdf_b           ! [-]       Sub-grid bedrock cumulative density functions on the b-grid (triangles)
+    real(dp), dimension(:,:), contiguous, pointer :: bedrock_cdf           => null()  ! [-]       Sub-grid bedrock cumulative density functions on the a-grid (vertices)
+    real(dp), dimension(:,:), contiguous, pointer :: bedrock_cdf_b         => null()  ! [-]       Sub-grid bedrock cumulative density functions on the b-grid (triangles)
+    type(MPI_WIN) :: wbedrock_cdf, wbedrock_cdf_b
 
     ! Area fractions
     real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1]     Grounded area fractions of vertices

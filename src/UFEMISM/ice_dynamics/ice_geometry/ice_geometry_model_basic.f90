@@ -6,15 +6,16 @@ module ice_geometry_model_basic
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use Arakawa_grid_mod, only: Arakawa_grid
   use mesh_types, only: type_mesh
-  use parameters, only: NaN
+  use parameters, only: NaN, ice_density, seawater_density
   use checksum_mod, only: checksum
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
+  use mpi_distributed_shared_memory, only: distribute_dist_shared_from_primary
   use ice_geometry_basics, only: is_floating, thickness_above_floatation, &
     ice_surface_elevation, height_of_water_column_at_ice_front, hi_from_hb_hs_and_sl
   use crash_mod, only: crash, warning
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, &
-    ddx_a_b_2D, ddy_a_b_2D
+    ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
   use global_forcing_types, only: type_global_forcing
@@ -32,6 +33,8 @@ module ice_geometry_model_basic
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
   use conservation_of_mass_utilities, only: apply_mask_noice_direct
+  use plane_geometry, only: triangle_area
+  use fields_dimensions, only: third_dimension
 
   implicit none
 
@@ -55,7 +58,6 @@ module ice_geometry_model_basic
       procedure, public :: calc_height_of_water_column
       procedure, public :: determine_masks
       procedure, public :: calc_effective_thickness
-      procedure, public :: calc_grounded_fractions
       procedure, public :: calc_absolute_surface_slope
       procedure, public :: calc_ice_base_slopes
 
@@ -64,6 +66,12 @@ module ice_geometry_model_basic
       procedure, public  :: calc_bedrock_CDFs
       procedure, private :: calc_bedrock_CDFs_a
       procedure, private :: calc_bedrock_CDFs_b
+
+      procedure, public  :: calc_grounded_fractions
+      procedure, private :: calc_grounded_fractions_bilin_interp_TAF_a
+      procedure, private :: calc_grounded_fractions_bilin_interp_TAF_b
+      procedure, private :: calc_grounded_fractions_bedrock_CDF_a
+      procedure, private :: calc_grounded_fractions_bedrock_CDF_b
 
       procedure, public :: calc_all_secondary_geometry_variables
 
@@ -108,11 +116,6 @@ module ice_geometry_model_basic
       class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_effective_thickness
 
-    module subroutine calc_grounded_fractions( self, dHb)
-      class(type_ice_geometry_model),                   intent(inout) :: self
-      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
-    end subroutine calc_grounded_fractions
-
     module subroutine calc_absolute_surface_slope( self)
       class(type_ice_geometry_model), intent(inout) :: self
     end subroutine calc_absolute_surface_slope
@@ -152,6 +155,33 @@ module ice_geometry_model_basic
       type(type_reference_geometry),  intent(in   ) :: refgeo
     end subroutine calc_bedrock_CDFs_b
 
+    module subroutine calc_grounded_fractions( self, dHb)
+      class(type_ice_geometry_model),                   intent(inout) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+    end subroutine calc_grounded_fractions
+
+    module subroutine calc_grounded_fractions_bilin_interp_TAF_a( self, fraction_gr)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
+    end subroutine calc_grounded_fractions_bilin_interp_TAF_a
+
+    module subroutine calc_grounded_fractions_bilin_interp_TAF_b( self, fraction_gr_b)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
+    end subroutine calc_grounded_fractions_bilin_interp_TAF_b
+
+    module subroutine calc_grounded_fractions_bedrock_CDF_a( self, dHb, fraction_gr)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: fraction_gr
+    end subroutine calc_grounded_fractions_bedrock_CDF_a
+
+    module subroutine calc_grounded_fractions_bedrock_CDF_b( self, dHb, fraction_gr_b)
+      class(type_ice_geometry_model),                   intent(in   ) :: self
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: dHb
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(  out) :: fraction_gr_b
+    end subroutine calc_grounded_fractions_bedrock_CDF_b
+
   end interface
 
 contains
@@ -188,12 +218,32 @@ contains
     allocate( self%Ho      ( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Horizontal derivatives
-    allocate( self%dHib_dx_b( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%dHib_dy_b( mesh%ti1:mesh%ti2), source = NaN)
+    call self%create_field( self%dHib_dx_b, self%wdHib_dx_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'dHib_dx_b', &
+      long_name = 'Horizontal derivative in x-direction of ice draft on b-grid', &
+      units     = '-', &
+      remap_method = 'reallocate')
+    call self%create_field( self%dHib_dy_b, self%wdHib_dy_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'dHib_dy_b', &
+      long_name = 'Horizontal derivative in y-direction of ice draft on b-grid', &
+      units     = '-', &
+      remap_method = 'reallocate')
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)
-    allocate( self%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = NaN)
+    call self%create_field( self%bedrock_cdf, self%wbedrock_cdf, &
+      self%mesh, Arakawa_grid%a(), third_dimension%bedrock_CDF( C%subgrid_bedrock_cdf_nbins), &
+      name      = 'bedrock_cdf', &
+      long_name = 'Bedrock CDF of vertices', &
+      units     = 'm', &
+      remap_method = 'reallocate')
+    call self%create_field( self%bedrock_cdf_b, self%wbedrock_cdf_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%bedrock_CDF( C%subgrid_bedrock_cdf_nbins), &
+      name      = 'bedrock_cdf_b', &
+      long_name = 'Bedrock CDF of triangles', &
+      units     = 'm', &
+      remap_method = 'reallocate')
 
     ! Area fractions
     allocate( self%fraction_gr    ( mesh%vi1:mesh%vi2), source = NaN)
@@ -214,7 +264,7 @@ contains
     allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
 
   end subroutine allocate_ice_geometry_model
 
@@ -229,16 +279,49 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! DENK DROM
-
     ! Deallocate stuff that is common to all models
-    ! call self%deallocate_model()
+    call self%deallocate_model()
 
     ! Deallocate stuff that is specific to the ice_geometry model
 
-    ! nullify( self%Hi)
-    ! nullify( self%Hb)
-    ! nullify( self%SL)
+    ! Primary ice geometry variables
+    deallocate( self%Hi)
+    deallocate( self%Hb)
+    deallocate( self%SL)
+
+    ! Derived ice geometry variables
+    deallocate( self%Hs      )
+    deallocate( self%Hib     )
+    deallocate( self%TAF     )
+    deallocate( self%Hi_eff  )
+    deallocate( self%Hs_slope)
+    deallocate( self%Ho      )
+
+    ! Horizontal derivatives
+    nullify( self%dHib_dx_b)
+    nullify( self%dHib_dy_b)
+
+    ! Sub-grid bedrock cumulative density functions (CDFs)
+    nullify( self%bedrock_cdf  )
+    nullify( self%bedrock_cdf_b)
+
+    ! Area fractions
+    deallocate( self%fraction_gr    )
+    deallocate( self%fraction_gr_b  )
+    deallocate( self%fraction_margin)
+
+    ! Ice masks
+    deallocate( self%mask_icefree_land )
+    deallocate( self%mask_icefree_ocean)
+    deallocate( self%mask_grounded_ice )
+    deallocate( self%mask_floating_ice )
+    deallocate( self%mask_margin       )
+    deallocate( self%mask_gl_gr        )
+    deallocate( self%mask_gl_fl        )
+    deallocate( self%mask_cf_gr        )
+    deallocate( self%mask_cf_fl        )
+    deallocate( self%mask_coastline    )
+    deallocate( self%mask              )
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -384,7 +384,7 @@ contains
     ! Gather basic masks to all processes
     call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_land , mask_icefree_land_tot )
-    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
 
     ! Initialise
     scalars%gl_flux           = 0._dp
@@ -494,7 +494,7 @@ contains
       ! Gather basic masks to all processes
       call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
       call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_land , mask_icefree_land_tot )
-      call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+      call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
 
       ! Initialise
       calving_flux                = 0._dp

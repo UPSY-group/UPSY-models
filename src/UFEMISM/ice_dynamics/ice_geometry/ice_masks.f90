@@ -24,7 +24,7 @@ contains
 
     ! Initialise basic masks
     self%mask_icefree_land ( self%mesh%vi1:self%mesh%vi2) = .false.
-    self%mask_icefree_ocean = .false.
+    self%mask_icefree_ocean( self%mesh%vi1:self%mesh%vi2) = .false.
     self%mask_grounded_ice  = .false.
     self%mask_floating_ice  = .false.
     self%mask               = 0
@@ -81,7 +81,7 @@ contains
 
     ! Gather basic masks to all processes
     call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_icefree_land , mask_icefree_land_tot )
-    call gather_to_all( self%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( self%mask_grounded_ice , mask_grounded_ice_tot )
     call gather_to_all( self%mask_floating_ice , mask_floating_ice_tot )
 

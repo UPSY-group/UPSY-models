@@ -34,12 +34,12 @@ contains
 
     ! Remap stuff that is specific to ice_geometry models
 
-    allocate( Hi_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hi)
-    allocate( Hb_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hb)
-    allocate( SL_old                ( mesh_old%vi1:mesh_old%vi2), source = self%SL)
-    allocate( Hs_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hs)
-    allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice)
-    allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean)
+    allocate( Hi_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hi                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( Hb_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hb                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( SL_old                ( mesh_old%vi1:mesh_old%vi2), source = self%SL                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( Hs_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hs                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice ( mesh_old%vi1:mesh_old%vi2))
+    allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean( mesh_old%vi1:mesh_old%vi2))
 
     allocate( Hi_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
     allocate( Hb_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
@@ -342,7 +342,7 @@ contains
 
     ! Ice masks
     call self%remap_field( mesh_new, 'mask_icefree_land' , self%mask_icefree_land )
-    call reallocate_bounds( self%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask_icefree_ocean', self%mask_icefree_ocean)
     call reallocate_bounds( self%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_margin            , mesh_new%vi1, mesh_new%vi2)

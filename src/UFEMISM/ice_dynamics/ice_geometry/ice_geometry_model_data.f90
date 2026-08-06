@@ -36,9 +36,10 @@ module ice_geometry_model_data
     type(MPI_WIN) :: wbedrock_cdf, wbedrock_cdf_b
 
     ! Area fractions
-    real(dp), dimension(:  ), allocatable :: fraction_gr             ! [0-1]     Grounded area fractions of vertices
-    real(dp), dimension(:  ), allocatable :: fraction_gr_b           ! [0-1]     Grounded area fractions of triangles
-    real(dp), dimension(:  ), allocatable :: fraction_margin         ! [0-1]     Ice-covered area fractions of ice margins
+    real(dp), dimension(:  ), contiguous, pointer :: fraction_gr           => null()  ! [0-1]     Grounded area fractions of vertices
+    real(dp), dimension(:  ), contiguous, pointer :: fraction_gr_b         => null()  ! [0-1]     Grounded area fractions of triangles
+    real(dp), dimension(:  ), contiguous, pointer :: fraction_margin       => null()  ! [0-1]     Ice-covered area fractions of ice margins
+    type(MPI_WIN) :: wfraction_gr, wfraction_gr_b, wfraction_margin
 
     ! Ice masks
     logical,  dimension(:  ), allocatable :: mask_icefree_land       ! T: ice-free land , F: otherwise

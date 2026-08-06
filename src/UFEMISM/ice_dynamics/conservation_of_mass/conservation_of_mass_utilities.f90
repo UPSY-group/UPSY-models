@@ -7,6 +7,7 @@ module conservation_of_mass_utilities
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD
 
   implicit none
@@ -31,10 +32,10 @@ contains
     ! ice thickness at vj.
 
     ! In/output variables:
-    type(type_mesh),                                     intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   ) :: u_perp
-    real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   ) :: fraction_margin
-    type(type_CSR_matrix_dp),                            intent(  out) :: M_divQ
+    type(type_mesh),                                          intent(in   ) :: mesh
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem),      intent(in   ) :: u_perp
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: fraction_margin
+    type(type_CSR_matrix_dp),                                 intent(  out) :: M_divQ
 
     ! Local variables:
     character(len=1024), parameter     :: routine_name = 'calc_ice_flux_divergence_matrix_upwind'
@@ -48,7 +49,7 @@ contains
     call init_routine( routine_name)
 
     ! Calculate vertically averaged ice velocities on the edges
-    call gather_to_all( fraction_margin, fraction_margin_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, fraction_margin, fraction_margin_tot)
 
     ! == Initialise the matrix using the native UFEMISM CSR-matrix format
     ! ===================================================================

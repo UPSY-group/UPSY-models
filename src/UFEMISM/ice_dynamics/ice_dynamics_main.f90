@@ -1113,7 +1113,9 @@ contains
       ! Ignore any target thinning rates
       dHi_dt_target_dummy = 0._dp
 
-      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%geom%Hi_eff) * region%ice%geom%fraction_gr
+      do vi = region%mesh%vi1, region%mesh%vi2
+        region%ice%effective_pressure( vi) = max( 0._dp, ice_density * grav * region%ice%geom%Hi_eff( vi)) * region%ice%geom%fraction_gr( vi)
+      end do
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &

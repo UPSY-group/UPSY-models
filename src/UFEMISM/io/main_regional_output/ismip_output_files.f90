@@ -202,6 +202,7 @@ contains
     real(dp),  dimension(region%mesh%vi1:region%mesh%vi2) :: T_vav, TF
     real(dp), dimension(C%nz)                            :: d_zeta_temp
     integer                                              :: vi, ti
+    real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: d_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -291,8 +292,10 @@ contains
 
     ! Area fractions
     call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%geom%fraction_margin, vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=region%ice%geom%fraction_gr, vmin=0._dp, vmax=1._dp)
-    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=region%ice%geom%fraction_margin - region%ice%geom%fraction_gr, &
+    d_loc = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=d_loc, vmin=0._dp, vmax=1._dp)
+    d_loc = region%ice%geom%fraction_margin( region%mesh%vi1:region%mesh%vi2) - region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=d_loc, &
       vmin=0._dp, vmax=1._dp)
 
     ! Other stuff
@@ -311,8 +314,10 @@ contains
     ! State with provided inputfields and optional masks
     call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
     call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%geom%TAF) * ice_density, mask=mask_ice_a)
-    call write_to_file( region, region%ismip_output%iareagr, region%ice%geom%fraction_gr, mask=mask_ice_a)
-    call write_to_file( region, region%ismip_output%iareafl, 1._dp-region%ice%geom%fraction_gr, mask=mask_ice_a)
+    d_loc = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%iareagr, d_loc, mask=mask_ice_a)
+    d_loc = 1._dp - region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%iareafl, d_loc, mask=mask_ice_a)
 
     ! Fluxes
     call write_to_file( region, region%ismip_output%tendacabf)

@@ -246,9 +246,24 @@ contains
       remap_method = 'reallocate')
 
     ! Area fractions
-    allocate( self%fraction_gr    ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%fraction_margin( mesh%vi1:mesh%vi2), source = NaN)
+    call self%create_field( self%fraction_gr, self%wfraction_gr, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'fraction_gr', &
+      long_name = 'Grounded area fractions of vertices', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%fraction_gr_b, self%wfraction_gr_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'fraction_gr_b', &
+      long_name = 'Grounded area fractions of triangles', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%fraction_margin, self%wfraction_margin, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'fraction_margin', &
+      long_name = 'Ice-covered area fractions of ice margins', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
 
     ! Ice masks
     allocate( self%mask_icefree_land ( mesh%vi1:mesh%vi2), source = .false.)
@@ -264,7 +279,7 @@ contains
     allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 7)
 
   end subroutine allocate_ice_geometry_model
 
@@ -306,9 +321,9 @@ contains
     nullify( self%bedrock_cdf_b)
 
     ! Area fractions
-    deallocate( self%fraction_gr    )
-    deallocate( self%fraction_gr_b  )
-    deallocate( self%fraction_margin)
+    nullify( self%fraction_gr    )
+    nullify( self%fraction_gr_b  )
+    nullify( self%fraction_margin)
 
     ! Ice masks
     deallocate( self%mask_icefree_land )

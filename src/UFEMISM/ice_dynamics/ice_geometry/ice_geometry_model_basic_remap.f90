@@ -336,9 +336,9 @@ contains
     call self%remap_field( mesh_new, 'bedrock_cdf_b', self%bedrock_cdf_b)
 
     ! Area fractions
-    call reallocate_bounds( self%fraction_gr            , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%fraction_gr_b          , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%fraction_margin        , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'fraction_gr'    , self%fraction_gr    )
+    call self%remap_field( mesh_new, 'fraction_gr_b'  , self%fraction_gr_b  )
+    call self%remap_field( mesh_new, 'fraction_margin', self%fraction_margin)
 
     ! Ice masks
     call reallocate_bounds( self%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)

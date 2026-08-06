@@ -332,8 +332,8 @@ contains
     call self%remap_field( mesh_new, 'dHib_dy_b', self%dHib_dy_b)
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    call reallocate_bounds( self%bedrock_cdf            , mesh_new%vi1, mesh_new%vi2, C%subgrid_bedrock_cdf_nbins)
-    call reallocate_bounds( self%bedrock_cdf_b          , mesh_new%ti1, mesh_new%ti2, C%subgrid_bedrock_cdf_nbins)
+    call self%remap_field( mesh_new, 'bedrock_cdf'  , self%bedrock_cdf)
+    call self%remap_field( mesh_new, 'bedrock_cdf_b', self%bedrock_cdf_b)
 
     ! Area fractions
     call reallocate_bounds( self%fraction_gr            , mesh_new%vi1, mesh_new%vi2)

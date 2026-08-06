@@ -10,6 +10,7 @@ module ice_geometry_model_basic
   use checksum_mod, only: checksum
   use model_configuration, only: C
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
+  use mpi_distributed_shared_memory, only: distribute_dist_shared_from_primary
   use ice_geometry_basics, only: is_floating, thickness_above_floatation, &
     ice_surface_elevation, height_of_water_column_at_ice_front, hi_from_hb_hs_and_sl
   use crash_mod, only: crash, warning
@@ -33,6 +34,7 @@ module ice_geometry_model_basic
   use netcdf_io_main
   use conservation_of_mass_utilities, only: apply_mask_noice_direct
   use plane_geometry, only: triangle_area
+  use fields_dimensions, only: third_dimension
 
   implicit none
 
@@ -230,8 +232,18 @@ contains
       remap_method = 'reallocate')
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)
-    allocate( self%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins), source = NaN)
+    call self%create_field( self%bedrock_cdf, self%wbedrock_cdf, &
+      self%mesh, Arakawa_grid%a(), third_dimension%bedrock_CDF( C%subgrid_bedrock_cdf_nbins), &
+      name      = 'bedrock_cdf', &
+      long_name = 'Bedrock CDF of vertices', &
+      units     = 'm', &
+      remap_method = 'reallocate')
+    call self%create_field( self%bedrock_cdf_b, self%wbedrock_cdf_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%bedrock_CDF( C%subgrid_bedrock_cdf_nbins), &
+      name      = 'bedrock_cdf_b', &
+      long_name = 'Bedrock CDF of triangles', &
+      units     = 'm', &
+      remap_method = 'reallocate')
 
     ! Area fractions
     allocate( self%fraction_gr    ( mesh%vi1:mesh%vi2), source = NaN)
@@ -290,8 +302,8 @@ contains
     nullify( self%dHib_dy_b)
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
-    deallocate( self%bedrock_cdf  )
-    deallocate( self%bedrock_cdf_b)
+    nullify( self%bedrock_cdf  )
+    nullify( self%bedrock_cdf_b)
 
     ! Area fractions
     deallocate( self%fraction_gr    )

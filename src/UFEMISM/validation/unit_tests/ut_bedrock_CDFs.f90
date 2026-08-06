@@ -84,8 +84,7 @@ subroutine unit_tests_bedrock_CDFs_main( test_name_parent)
   ! Use 5 bins for  now, including first and last
   allocate( ice%geom)
   C%subgrid_bedrock_cdf_nbins = 5
-  allocate( ice%geom%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins))
-  allocate( ice%geom%bedrock_cdf_b( mesh%ti1:mesh%ti2, C%subgrid_bedrock_cdf_nbins))
+  call ice%geom%allocate( 'ANT', mesh)
 
   call ice%geom%calc_bedrock_CDFs( mesh, refgeo)
 

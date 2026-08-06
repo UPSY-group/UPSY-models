@@ -229,16 +229,49 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! DENK DROM
-
     ! Deallocate stuff that is common to all models
-    ! call self%deallocate_model()
+    call self%deallocate_model()
 
     ! Deallocate stuff that is specific to the ice_geometry model
 
-    ! nullify( self%Hi)
-    ! nullify( self%Hb)
-    ! nullify( self%SL)
+    ! Primary ice geometry variables
+    deallocate( self%Hi)
+    deallocate( self%Hb)
+    deallocate( self%SL)
+
+    ! Derived ice geometry variables
+    deallocate( self%Hs      )
+    deallocate( self%Hib     )
+    deallocate( self%TAF     )
+    deallocate( self%Hi_eff  )
+    deallocate( self%Hs_slope)
+    deallocate( self%Ho      )
+
+    ! Horizontal derivatives
+    deallocate( self%dHib_dx_b)
+    deallocate( self%dHib_dy_b)
+
+    ! Sub-grid bedrock cumulative density functions (CDFs)
+    deallocate( self%bedrock_cdf  )
+    deallocate( self%bedrock_cdf_b)
+
+    ! Area fractions
+    deallocate( self%fraction_gr    )
+    deallocate( self%fraction_gr_b  )
+    deallocate( self%fraction_margin)
+
+    ! Ice masks
+    deallocate( self%mask_icefree_land )
+    deallocate( self%mask_icefree_ocean)
+    deallocate( self%mask_grounded_ice )
+    deallocate( self%mask_floating_ice )
+    deallocate( self%mask_margin       )
+    deallocate( self%mask_gl_gr        )
+    deallocate( self%mask_gl_fl        )
+    deallocate( self%mask_cf_gr        )
+    deallocate( self%mask_cf_fl        )
+    deallocate( self%mask_coastline    )
+    deallocate( self%mask              )
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

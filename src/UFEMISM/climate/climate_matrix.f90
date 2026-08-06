@@ -787,6 +787,8 @@ contains
 
     ! Ice
     ! ===
+
+    allocate( ice_dummy%geom)
     allocate( ice_dummy%geom%Hi( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%geom%Hb( mesh%vi1:mesh%vi2))
     allocate( ice_dummy%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2))

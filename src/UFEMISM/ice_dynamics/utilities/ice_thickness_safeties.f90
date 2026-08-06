@@ -37,19 +37,20 @@ contains
     real(dp),                               intent(in   ) :: time
 
     ! Local variables:
-    character(len=1024), parameter         :: routine_name = 'alter_ice_thickness'
-    integer                                :: vi
-    real(dp)                               :: decay_start, decay_end
-    real(dp)                               :: fixiness, limitness, fix_H_applied, limit_H_applied
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: modiness_up, modiness_down
-    real(dp), dimension(mesh%vi1:mesh%vi2) :: Hi_save
-    real(dp)                               :: floating_area, calving_area, mass_lost
-    type(type_ice_geometry_model)          :: geom_new   ! Not the most beautiful solution, but the best that can be done for now...
+    character(len=1024), parameter             :: routine_name = 'alter_ice_thickness'
+    integer                                    :: vi
+    real(dp)                                   :: decay_start, decay_end
+    real(dp)                                   :: fixiness, limitness, fix_H_applied, limit_H_applied
+    real(dp), dimension(mesh%vi1:mesh%vi2)     :: modiness_up, modiness_down
+    real(dp), dimension(mesh%vi1:mesh%vi2)     :: Hi_save
+    real(dp)                                   :: floating_area, calving_area, mass_lost
+    type(type_ice_geometry_model), allocatable :: geom_new   ! Not the most beautiful solution, but the best that can be done for now...
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! DENK DROM
+    allocate( geom_new)
     call geom_new%allocate( ice%geom%region_name(), mesh)
     geom_new%Hi = Hi_new
     geom_new%Hb = ice%geom%Hb

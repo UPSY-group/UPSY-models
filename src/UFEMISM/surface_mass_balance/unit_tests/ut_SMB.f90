@@ -252,6 +252,7 @@ contains
     end do
 
     ! Set up simple ice model fields
+    allocate( ice%geom)
     allocate( ice%geom%Hi( mesh%vi1: mesh%vi2), source = 0._dp)
     allocate( ice%geom%Hb( mesh%vi1: mesh%vi2), source = 10._dp)
     allocate( ice%geom%Hs( mesh%vi1: mesh%vi2), source = 10._dp)

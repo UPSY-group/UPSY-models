@@ -26,8 +26,9 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: Ho                      ! [m]       Depth of ocean column adjacent to the ice front
 
     ! Horizontal derivatives
-    real(dp), dimension(:  ), allocatable :: dHib_dx_b               ! [-]       Horizontal derivative of ice draft on b-grid
-    real(dp), dimension(:  ), allocatable :: dHib_dy_b               ! [-]       Horizontal derivative of ice draft on b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: dHib_dx_b             => null()  ! [-]       Horizontal derivative of ice draft on b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: dHib_dy_b             => null()  ! [-]       Horizontal derivative of ice draft on b-grid
+    type(MPI_WIN) :: wdHib_dx_b, wdHib_dy_b
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     real(dp), dimension(:,:), allocatable :: bedrock_cdf             ! [-]       Sub-grid bedrock cumulative density functions on the a-grid (vertices)

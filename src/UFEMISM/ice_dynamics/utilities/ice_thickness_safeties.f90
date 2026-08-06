@@ -290,6 +290,9 @@ contains
 
     end do
 
+    ! Clean up after yourself
+    deallocate( geom_new)
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

@@ -188,8 +188,18 @@ contains
     allocate( self%Ho      ( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Horizontal derivatives
-    allocate( self%dHib_dx_b( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%dHib_dy_b( mesh%ti1:mesh%ti2), source = NaN)
+    call self%create_field( self%dHib_dx_b, self%wdHib_dx_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'dHib_dx_b', &
+      long_name = 'Horizontal derivative in x-direction of ice draft on b-grid', &
+      units     = '-', &
+      remap_method = 'reallocate')
+    call self%create_field( self%dHib_dy_b, self%wdHib_dy_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'dHib_dy_b', &
+      long_name = 'Horizontal derivative in y-direction of ice draft on b-grid', &
+      units     = '-', &
+      remap_method = 'reallocate')
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     allocate( self%bedrock_cdf  ( mesh%vi1:mesh%vi2, C%subgrid_bedrock_cdf_nbins), source = NaN)
@@ -214,7 +224,7 @@ contains
     allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
 
   end subroutine allocate_ice_geometry_model
 
@@ -248,8 +258,8 @@ contains
     deallocate( self%Ho      )
 
     ! Horizontal derivatives
-    deallocate( self%dHib_dx_b)
-    deallocate( self%dHib_dy_b)
+    nullify( self%dHib_dx_b)
+    nullify( self%dHib_dy_b)
 
     ! Sub-grid bedrock cumulative density functions (CDFs)
     deallocate( self%bedrock_cdf  )

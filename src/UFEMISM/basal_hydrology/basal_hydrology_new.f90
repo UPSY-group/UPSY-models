@@ -1277,7 +1277,7 @@ CONTAINS
 
     call gather_to_all(basal_hydro%mask_W, mask_W_tot)
     call gather_to_all(basal_hydro%W, W_tot)
-    call gather_to_all(ice%geom%mask_gl_gr, mask_gl_gr_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_gl_gr, mask_gl_gr_tot)
     call gather_to_all(basal_hydro%mask_a, mask_a_tot)
 
     ! Slightly adjusted version of calc_n_interior_neighbours

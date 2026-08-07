@@ -346,7 +346,7 @@ contains
     call self%remap_field( mesh_new, 'mask_grounded_ice' , self%mask_grounded_ice )
     call self%remap_field( mesh_new, 'mask_floating_ice' , self%mask_floating_ice )
     call self%remap_field( mesh_new, 'mask_margin'       , self%mask_margin       )
-    call reallocate_bounds( self%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask_gl_gr '       , self%mask_gl_gr        )
     call reallocate_bounds( self%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)

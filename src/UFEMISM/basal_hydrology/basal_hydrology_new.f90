@@ -16,6 +16,7 @@ MODULE basal_hydrology_new
   use netcdf_io_main
   USE mesh_disc_apply_operators                              , ONLY: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_b_a_2D, ddx_a_a_2D, ddy_a_a_2D
   use mpi_distributed_memory                                 , only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mesh_halo_exchange                                     , only: exchange_halos
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_1D_wrapper
   use mesh_utilities                                         , only: find_containing_vertex
@@ -434,7 +435,7 @@ CONTAINS
 
     ! This is very similar to what is done in laddie_thickness.90 in the compute_divQH subroutine
 
-    call gather_to_all(ice%geom%mask_grounded_ice, mask_grounded_ice_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_grounded_ice, mask_grounded_ice_tot)
     call gather_to_all(basal_hydro%u_c, u_c_tot)
     call gather_to_all(basal_hydro%v_c, v_c_tot)
     call gather_to_all(basal_hydro%W, W_tot)

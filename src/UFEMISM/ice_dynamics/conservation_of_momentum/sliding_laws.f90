@@ -12,6 +12,7 @@ module sliding_laws
   use mesh_disc_apply_operators, only: map_b_a_2D
   use mesh_utilities, only: extrapolate_Gaussian
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use Schoof_SSA_solution, only: Schoof2006_icestream
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
@@ -693,7 +694,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather data from all processes
-    call gather_to_all( geom%mask_grounded_ice, mask_grounded_ice_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_grounded_ice, mask_grounded_ice_tot)
     call gather_to_all( till_yield_stress, till_yield_stress_tot)
 
     do vi = mesh%vi1, mesh%vi2

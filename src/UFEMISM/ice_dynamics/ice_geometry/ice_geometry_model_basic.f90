@@ -281,7 +281,13 @@ contains
       units     = '', &
       remap_method = 'reallocate')
 
-    allocate( self%mask_grounded_ice ( mesh%vi1:mesh%vi2), source = .false.)
+    call self%create_field( self%mask_grounded_ice, self%wmask_grounded_ice, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_grounded_ice', &
+      long_name = 'Mask indicating grounded ice', &
+      units     = '', &
+      remap_method = 'reallocate')
+
     allocate( self%mask_floating_ice ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask_margin       ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask_gl_gr        ( mesh%vi1:mesh%vi2), source = .false.)
@@ -292,7 +298,7 @@ contains
     allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 9)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 10)
 
   end subroutine allocate_ice_geometry_model
 
@@ -341,7 +347,7 @@ contains
     ! Ice masks
     nullify( self%mask_icefree_land )
     nullify( self%mask_icefree_ocean)
-    deallocate( self%mask_grounded_ice )
+    nullify( self%mask_grounded_ice )
     deallocate( self%mask_floating_ice )
     deallocate( self%mask_margin       )
     deallocate( self%mask_gl_gr        )

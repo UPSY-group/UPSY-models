@@ -343,7 +343,7 @@ contains
     ! Ice masks
     call self%remap_field( mesh_new, 'mask_icefree_land' , self%mask_icefree_land )
     call self%remap_field( mesh_new, 'mask_icefree_ocean', self%mask_icefree_ocean)
-    call reallocate_bounds( self%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask_grounded_ice' , self%mask_grounded_ice )
     call reallocate_bounds( self%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_margin            , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)

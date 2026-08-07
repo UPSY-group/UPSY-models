@@ -221,7 +221,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: Hi
     real(dp), dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: Hs
     real(dp), dimension(:),                            intent(in   ) :: zeta
-    logical,  dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: mask_grounded_ice
+    logical,  dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: mask_grounded_ice
     logical,  dimension(mesh%vi1:mesh%vi2),            intent(in   ) :: mask_floating_ice
     real(dp), dimension(mesh%vi1:mesh%vi2, 1:mesh%nz), intent(in   ) :: w_3D_a
     real(dp), dimension(mesh%vi1:mesh%vi2, 1:mesh%nz), intent(  out) :: dw_dz_3D_a

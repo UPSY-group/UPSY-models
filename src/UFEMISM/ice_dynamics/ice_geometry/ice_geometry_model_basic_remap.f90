@@ -351,7 +351,7 @@ contains
     call self%remap_field( mesh_new, 'mask_cf_gr'        , self%mask_cf_gr        )
     call self%remap_field( mesh_new, 'mask_cf_fl'        , self%mask_cf_fl        )
     call self%remap_field( mesh_new, 'mask_coastline'    , self%mask_coastline    )
-    call reallocate_bounds( self%mask                   , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask'              , self%mask              )
 
     ! Only recalculate bedrock CDFs if they are really needed
     ! (as this is a rather time-consuming step)

@@ -337,10 +337,15 @@ contains
       units     = '', &
       remap_method = 'reallocate')
 
-    allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
+    call self%create_field( self%mask, self%wmask, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask', &
+      long_name = 'General mask', &
+      units     = '', &
+      remap_method = 'reallocate')
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 17)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 18)
 
   end subroutine allocate_ice_geometry_model
 
@@ -397,7 +402,7 @@ contains
     nullify( self%mask_cf_gr        )
     nullify( self%mask_cf_fl        )
     nullify( self%mask_coastline    )
-    deallocate( self%mask              )
+    nullify( self%mask              )
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -309,14 +309,20 @@ contains
       units     = '', &
       remap_method = 'reallocate')
 
-    allocate( self%mask_gl_fl        ( mesh%vi1:mesh%vi2), source = .false.)
+    call self%create_field( self%mask_gl_fl, self%wmask_gl_fl, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_gl_fl', &
+      long_name = 'Mask indicating floating side of grounding line', &
+      units     = '', &
+      remap_method = 'reallocate')
+
     allocate( self%mask_cf_gr        ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask_cf_fl        ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask_coastline    ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 13)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 14)
 
   end subroutine allocate_ice_geometry_model
 
@@ -369,7 +375,7 @@ contains
     nullify( self%mask_floating_ice )
     nullify( self%mask_margin       )
     nullify( self%mask_gl_gr        )
-    deallocate( self%mask_gl_fl        )
+    nullify( self%mask_gl_fl        )
     deallocate( self%mask_cf_gr        )
     deallocate( self%mask_cf_fl        )
     deallocate( self%mask_coastline    )

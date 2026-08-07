@@ -302,13 +302,7 @@ contains
         call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_gl_gr, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_gr', mask_int)
       case ('mask_gl_fl')
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%geom%mask_gl_fl( vi)) then
-            mask_int( vi) = 1
-          else
-            mask_int( vi) = 0
-          end if
-        end do
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_gl_fl, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_fl', mask_int)
       case ('mask_cf_gr')
         do vi = region%mesh%vi1, region%mesh%vi2

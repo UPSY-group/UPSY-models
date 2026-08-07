@@ -215,7 +215,13 @@ contains
     allocate( self%Hib     ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%TAF     ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hi_eff  ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%Hs_slope( mesh%vi1:mesh%vi2), source = NaN)
+
+    call self%create_field( self%Hs_slope, self%wHs_slope, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hs_slope', &
+      long_name = 'Absolute surface gradient', &
+      units     = '-', &
+      remap_method = 'reallocate')
 
     call self%create_field( self%Ho, self%wHo, &
       self%mesh, Arakawa_grid%a(), &
@@ -355,7 +361,7 @@ contains
       remap_method = 'reallocate')
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 19)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 20)
 
   end subroutine allocate_ice_geometry_model
 
@@ -385,7 +391,7 @@ contains
     deallocate( self%Hib     )
     deallocate( self%TAF     )
     deallocate( self%Hi_eff  )
-    deallocate( self%Hs_slope)
+    nullify( self%Hs_slope)
     nullify( self%Ho      )
 
     ! Horizontal derivatives

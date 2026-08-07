@@ -348,8 +348,8 @@ contains
     call self%remap_field( mesh_new, 'mask_margin'       , self%mask_margin       )
     call self%remap_field( mesh_new, 'mask_gl_gr '       , self%mask_gl_gr        )
     call self%remap_field( mesh_new, 'mask_gl_fl '       , self%mask_gl_fl        )
-    call reallocate_bounds( self%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask_cf_gr '       , self%mask_cf_gr        )
+    call self%remap_field( mesh_new, 'mask_cf_fl '       , self%mask_cf_fl        )
     call reallocate_bounds( self%mask_coastline         , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%mask                   , mesh_new%vi1, mesh_new%vi2)
 

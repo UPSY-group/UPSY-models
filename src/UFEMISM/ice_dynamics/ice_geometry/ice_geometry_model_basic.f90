@@ -316,13 +316,25 @@ contains
       units     = '', &
       remap_method = 'reallocate')
 
-    allocate( self%mask_cf_gr        ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_cf_fl        ( mesh%vi1:mesh%vi2), source = .false.)
+    call self%create_field( self%mask_cf_gr, self%wmask_cf_gr, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_cf_gr', &
+      long_name = 'Mask indicating grounded calving front', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_cf_fl, self%wmask_cf_fl, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_cf_fl', &
+      long_name = 'Mask indicating floating calving front', &
+      units     = '', &
+      remap_method = 'reallocate')
+
     allocate( self%mask_coastline    ( mesh%vi1:mesh%vi2), source = .false.)
     allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 14)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 16)
 
   end subroutine allocate_ice_geometry_model
 
@@ -376,8 +388,8 @@ contains
     nullify( self%mask_margin       )
     nullify( self%mask_gl_gr        )
     nullify( self%mask_gl_fl        )
-    deallocate( self%mask_cf_gr        )
-    deallocate( self%mask_cf_fl        )
+    nullify( self%mask_cf_gr        )
+    nullify( self%mask_cf_fl        )
     deallocate( self%mask_coastline    )
     deallocate( self%mask              )
 

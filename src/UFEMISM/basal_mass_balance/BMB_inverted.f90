@@ -48,7 +48,7 @@ contains
     ! field), so instead use the mean of the neighbouring non-front shelf
     ! vertices.
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice     , mask_floating_ice_tot)
-    call gather_to_all( ice%geom%mask_cf_fl            , mask_cf_fl_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_cf_fl            , mask_cf_fl_tot)
     call gather_to_all( BMB_inv%target_geometry%Hi, Hi_target_tot)
 
     do vi = mesh%vi1, mesh% vi2

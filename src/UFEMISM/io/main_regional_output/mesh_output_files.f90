@@ -293,13 +293,7 @@ contains
         call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_grounded_ice, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_grounded_ice', mask_int)
       case ('mask_floating_ice')
-        do vi = region%mesh%vi1, region%mesh%vi2
-          if (region%ice%geom%mask_floating_ice( vi)) then
-            mask_int( vi) = 1
-          else
-            mask_int( vi) = 0
-          end if
-        end do
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_floating_ice, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_floating_ice', mask_int)
       case ('mask_margin')
         do vi = region%mesh%vi1, region%mesh%vi2

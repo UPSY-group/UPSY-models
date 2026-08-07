@@ -855,7 +855,7 @@ contains
 
     ! Gather global masks
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
-    call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice , mask_floating_ice_tot )
     call gather_to_all( ice%geom%mask_cf_fl        , mask_cf_fl_tot        )
 
     ! == Create the relaxation mask

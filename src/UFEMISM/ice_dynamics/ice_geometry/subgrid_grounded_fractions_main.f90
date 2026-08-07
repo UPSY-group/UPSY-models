@@ -55,7 +55,7 @@ contains
       call self%calc_grounded_fractions_bedrock_CDF_b( dHb, fraction_gr_CDF_b)
 
       ! Gather global floating ice mask
-      call gather_to_all( self%mask_floating_ice, mask_floating_ice_tot)
+      call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_floating_ice, mask_floating_ice_tot)
 
       ! a-grid (vertices): take the smallest value (used for basal melt?)
       do vi = self%mesh%vi1, self%mesh%vi2

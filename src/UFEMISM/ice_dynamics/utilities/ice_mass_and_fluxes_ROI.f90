@@ -392,7 +392,7 @@ contains
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%fraction_margin, fraction_margin_tot)
 
     ! Gather basic masks to all processes
-    call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice , mask_floating_ice_tot )
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_land , mask_icefree_land_tot )
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
 

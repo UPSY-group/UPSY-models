@@ -83,15 +83,15 @@ contains
     call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_icefree_land , mask_icefree_land_tot )
     call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_grounded_ice , mask_grounded_ice_tot )
-    call gather_to_all( self%mask_floating_ice , mask_floating_ice_tot )
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_floating_ice , mask_floating_ice_tot )
 
     ! Initialise transitional masks
-    self%mask_margin    = .false.
-    self%mask_gl_gr     = .false.
-    self%mask_gl_fl     = .false.
-    self%mask_cf_gr     = .false.
-    self%mask_cf_fl     = .false.
-    self%mask_coastline = .false.
+    self%mask_margin   ( self%mesh%vi1:self%mesh%vi2) = .false.
+    self%mask_gl_gr    ( self%mesh%vi1:self%mesh%vi2) = .false.
+    self%mask_gl_fl    ( self%mesh%vi1:self%mesh%vi2) = .false.
+    self%mask_cf_gr    ( self%mesh%vi1:self%mesh%vi2) = .false.
+    self%mask_cf_fl    ( self%mesh%vi1:self%mesh%vi2) = .false.
+    self%mask_coastline( self%mesh%vi1:self%mesh%vi2) = .false.
 
     do vi = self%mesh%vi1, self%mesh%vi2
 

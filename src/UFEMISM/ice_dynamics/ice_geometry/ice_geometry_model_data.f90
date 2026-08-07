@@ -46,14 +46,14 @@ module ice_geometry_model_data
     logical,  dimension(:  ), contiguous, pointer :: mask_icefree_ocean    => null()  ! T: ice-free ocean, F: otherwise
     logical,  dimension(:  ), contiguous, pointer :: mask_grounded_ice     => null()  ! T: grounded ice  , F: otherwise
     logical,  dimension(:  ), contiguous, pointer :: mask_floating_ice     => null()  ! T: floating ice  , F: otherwise
-    logical,  dimension(:  ), allocatable :: mask_margin             ! T: ice next to ice-free, F: otherwise
+    logical,  dimension(:  ), contiguous, pointer :: mask_margin           => null()  ! T: ice next to ice-free, F: otherwise
     logical,  dimension(:  ), allocatable :: mask_gl_gr              ! T: grounded ice next to floating ice, F: otherwise
     logical,  dimension(:  ), allocatable :: mask_gl_fl              ! T: floating ice next to grounded ice, F: otherwise
     logical,  dimension(:  ), allocatable :: mask_cf_gr              ! T: grounded ice next to ice-free water (sea or lake), F: otherwise
     logical,  dimension(:  ), allocatable :: mask_cf_fl              ! T: floating ice next to ice-free water (sea or lake), F: otherwise
     logical,  dimension(:  ), allocatable :: mask_coastline          ! T: ice-free land next to ice-free ocean, F: otherwise
     integer,  dimension(:  ), allocatable :: mask
-    type(MPI_WIN) :: wmask_icefree_land, wmask_icefree_ocean, wmask_grounded_ice, wmask_floating_ice
+    type(MPI_WIN) :: wmask_icefree_land, wmask_icefree_ocean, wmask_grounded_ice, wmask_floating_ice, wmask_margin
 
   end type atype_ice_geometry_model_data
 

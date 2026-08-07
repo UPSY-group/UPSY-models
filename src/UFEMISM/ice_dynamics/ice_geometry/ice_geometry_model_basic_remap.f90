@@ -325,7 +325,7 @@ contains
     call reallocate_bounds( self%TAF                    , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%Hi_eff                 , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%Hs_slope               , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%Ho                     , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'Ho'                     , self%Ho                     )
 
     ! Horizontal derivatives
     call self%remap_field( mesh_new, 'dHib_dx_b', self%dHib_dx_b)

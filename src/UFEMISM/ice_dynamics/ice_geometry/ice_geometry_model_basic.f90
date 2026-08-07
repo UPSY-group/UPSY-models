@@ -216,7 +216,13 @@ contains
     allocate( self%TAF     ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hi_eff  ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hs_slope( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%Ho      ( mesh%vi1:mesh%vi2), source = NaN)
+
+    call self%create_field( self%Ho, self%wHo, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Ho', &
+      long_name = 'Depth of ocean column adjacent to the ice front', &
+      units     = 'm', &
+      remap_method = 'reallocate')
 
     ! Horizontal derivatives
     call self%create_field( self%dHib_dx_b, self%wdHib_dx_b, &
@@ -225,6 +231,7 @@ contains
       long_name = 'Horizontal derivative in x-direction of ice draft on b-grid', &
       units     = '-', &
       remap_method = 'reallocate')
+
     call self%create_field( self%dHib_dy_b, self%wdHib_dy_b, &
       self%mesh, Arakawa_grid%b(), &
       name      = 'dHib_dy_b', &
@@ -239,6 +246,7 @@ contains
       long_name = 'Bedrock CDF of vertices', &
       units     = 'm', &
       remap_method = 'reallocate')
+
     call self%create_field( self%bedrock_cdf_b, self%wbedrock_cdf_b, &
       self%mesh, Arakawa_grid%b(), third_dimension%bedrock_CDF( C%subgrid_bedrock_cdf_nbins), &
       name      = 'bedrock_cdf_b', &
@@ -253,12 +261,14 @@ contains
       long_name = 'Grounded area fractions of vertices', &
       units     = '0-1', &
       remap_method = 'reallocate')
+
     call self%create_field( self%fraction_gr_b, self%wfraction_gr_b, &
       self%mesh, Arakawa_grid%b(), &
       name      = 'fraction_gr_b', &
       long_name = 'Grounded area fractions of triangles', &
       units     = '0-1', &
       remap_method = 'reallocate')
+
     call self%create_field( self%fraction_margin, self%wfraction_margin, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'fraction_margin', &
@@ -345,7 +355,7 @@ contains
       remap_method = 'reallocate')
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 18)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 19)
 
   end subroutine allocate_ice_geometry_model
 
@@ -376,7 +386,7 @@ contains
     deallocate( self%TAF     )
     deallocate( self%Hi_eff  )
     deallocate( self%Hs_slope)
-    deallocate( self%Ho      )
+    nullify( self%Ho      )
 
     ! Horizontal derivatives
     nullify( self%dHib_dx_b)

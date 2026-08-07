@@ -34,12 +34,12 @@ contains
 
     ! Remap stuff that is specific to ice_geometry models
 
-    allocate( Hi_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hi)
-    allocate( Hb_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hb)
-    allocate( SL_old                ( mesh_old%vi1:mesh_old%vi2), source = self%SL)
-    allocate( Hs_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hs)
-    allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice)
-    allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean)
+    allocate( Hi_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hi                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( Hb_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hb                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( SL_old                ( mesh_old%vi1:mesh_old%vi2), source = self%SL                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( Hs_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hs                ( mesh_old%vi1:mesh_old%vi2))
+    allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice ( mesh_old%vi1:mesh_old%vi2))
+    allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean( mesh_old%vi1:mesh_old%vi2))
 
     allocate( Hi_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
     allocate( Hb_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
@@ -336,22 +336,22 @@ contains
     call self%remap_field( mesh_new, 'bedrock_cdf_b', self%bedrock_cdf_b)
 
     ! Area fractions
-    call reallocate_bounds( self%fraction_gr            , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%fraction_gr_b          , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%fraction_margin        , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'fraction_gr'    , self%fraction_gr    )
+    call self%remap_field( mesh_new, 'fraction_gr_b'  , self%fraction_gr_b  )
+    call self%remap_field( mesh_new, 'fraction_margin', self%fraction_margin)
 
     ! Ice masks
-    call reallocate_bounds( self%mask_icefree_land      , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_icefree_ocean     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_grounded_ice      , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_floating_ice      , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_margin            , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_gl_gr             , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_gl_fl             , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_cf_gr             , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_cf_fl             , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask_coastline         , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%mask                   , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'mask_icefree_land' , self%mask_icefree_land )
+    call self%remap_field( mesh_new, 'mask_icefree_ocean', self%mask_icefree_ocean)
+    call self%remap_field( mesh_new, 'mask_grounded_ice' , self%mask_grounded_ice )
+    call self%remap_field( mesh_new, 'mask_floating_ice' , self%mask_floating_ice )
+    call self%remap_field( mesh_new, 'mask_margin'       , self%mask_margin       )
+    call self%remap_field( mesh_new, 'mask_gl_gr'        , self%mask_gl_gr        )
+    call self%remap_field( mesh_new, 'mask_gl_fl'        , self%mask_gl_fl        )
+    call self%remap_field( mesh_new, 'mask_cf_gr'        , self%mask_cf_gr        )
+    call self%remap_field( mesh_new, 'mask_cf_fl'        , self%mask_cf_fl        )
+    call self%remap_field( mesh_new, 'mask_coastline'    , self%mask_coastline    )
+    call self%remap_field( mesh_new, 'mask'              , self%mask              )
 
     ! Only recalculate bedrock CDFs if they are really needed
     ! (as this is a rather time-consuming step)

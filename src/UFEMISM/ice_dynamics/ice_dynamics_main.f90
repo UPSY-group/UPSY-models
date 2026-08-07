@@ -26,6 +26,7 @@ module ice_dynamics_main
   use masks_mod, only: calc_mask_ROI, calc_mask_noice, calc_mask_SGD
   use zeta_gradients, only: calc_zeta_gradients
   use mpi_distributed_memory, only: gather_to_all, distribute_from_primary
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use remapping_main, only: map_from_mesh_to_mesh_2D, map_from_mesh_to_mesh_with_reallocation_2D, &
     map_from_mesh_to_mesh_with_reallocation_3D
   use reallocate_mod, only: reallocate_bounds
@@ -853,9 +854,9 @@ contains
     call init_routine( routine_name)
 
     ! Gather global masks
-    call gather_to_all( ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
-    call gather_to_all( ice%geom%mask_floating_ice , mask_floating_ice_tot )
-    call gather_to_all( ice%geom%mask_cf_fl        , mask_cf_fl_tot        )
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice , mask_floating_ice_tot )
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_cf_fl        , mask_cf_fl_tot        )
 
     ! == Create the relaxation mask
     ! =============================
@@ -1113,7 +1114,9 @@ contains
       ! Ignore any target thinning rates
       dHi_dt_target_dummy = 0._dp
 
-      region%ice%effective_pressure = MAX( 0._dp, ice_density * grav * region%ice%geom%Hi_eff) * region%ice%geom%fraction_gr
+      do vi = region%mesh%vi1, region%mesh%vi2
+        region%ice%effective_pressure( vi) = max( 0._dp, ice_density * grav * region%ice%geom%Hi_eff( vi)) * region%ice%geom%fraction_gr( vi)
+      end do
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &

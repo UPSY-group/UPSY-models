@@ -17,7 +17,7 @@ contains
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: fraction_gr_TAF_b
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: fraction_gr_CDF_b
     logical,  dimension(self%mesh%nV)                :: mask_floating_ice_tot
-    integer                                          :: ti, via, vib, vic
+    integer                                          :: vi, ti, via, vib, vic
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -33,8 +33,8 @@ contains
       call self%calc_grounded_fractions_bilin_interp_TAF_a( fraction_gr_TAF_a)
       call self%calc_grounded_fractions_bilin_interp_TAF_b( fraction_gr_TAF_b)
 
-      self%fraction_gr   = fraction_gr_TAF_a
-      self%fraction_gr_b = fraction_gr_TAF_b
+      self%fraction_gr  ( self%mesh%vi1:self%mesh%vi2) = fraction_gr_TAF_a
+      self%fraction_gr_b( self%mesh%ti1:self%mesh%ti2) = fraction_gr_TAF_b
 
     case ('bedrock_CDF')
       ! Use the sub-grid bedrock cumulative density functions to calculate the grounded fractions
@@ -42,8 +42,8 @@ contains
       call self%calc_grounded_fractions_bedrock_CDF_a( dHb, fraction_gr_CDF_a)
       call self%calc_grounded_fractions_bedrock_CDF_b( dHb, fraction_gr_CDF_b)
 
-      self%fraction_gr   = fraction_gr_CDF_a
-      self%fraction_gr_b = fraction_gr_CDF_b
+      self%fraction_gr  ( self%mesh%vi1:self%mesh%vi2) = fraction_gr_CDF_a
+      self%fraction_gr_b( self%mesh%ti1:self%mesh%ti2) = fraction_gr_CDF_b
 
     case ('bilin_interp_TAF+bedrock_CDF')
       ! Use the TAF method at the grounding line, and the CDF method inland
@@ -55,10 +55,12 @@ contains
       call self%calc_grounded_fractions_bedrock_CDF_b( dHb, fraction_gr_CDF_b)
 
       ! Gather global floating ice mask
-      call gather_to_all( self%mask_floating_ice, mask_floating_ice_tot)
+      call gather_dist_shared_to_all( self%mesh%pai_V, self%mask_floating_ice, mask_floating_ice_tot)
 
       ! a-grid (vertices): take the smallest value (used for basal melt?)
-      self%fraction_gr = min( fraction_gr_TAF_a, fraction_gr_CDF_a)
+      do vi = self%mesh%vi1, self%mesh%vi2
+        self%fraction_gr( vi) = min( fraction_gr_TAF_a( vi), fraction_gr_CDF_a( vi))
+      end do
 
       ! b-grid (triangles): take CDF inland, TAF at grounding line (used for basal friction)
       do ti = self%mesh%ti1, self%mesh%ti2

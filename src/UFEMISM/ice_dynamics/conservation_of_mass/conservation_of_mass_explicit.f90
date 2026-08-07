@@ -83,12 +83,9 @@ contains
       buffer_xx_nih = mesh%buffer1_d_a_nih, buffer_yy_nih = mesh%buffer2_d_a_nih)
 
     ! Calculate rate of ice thickness change dHi/dt
-    dHi_dt( mesh%vi1: mesh%vi2) = -divQ( mesh%vi1: mesh%vi2) &
-      + geom%fraction_margin( mesh%vi1: mesh%vi2) * ( &
-          SMB( mesh%vi1: mesh%vi2) &
-        + BMB( mesh%vi1: mesh%vi2) &
-        - dHi_dt_target( mesh%vi1: mesh%vi2)) &
-      + LMB( mesh%vi1: mesh%vi2)
+    do vi = mesh%vi1, mesh%vi2
+      dHi_dt( vi) = -divQ( vi) + geom%fraction_margin( vi) * (SMB( vi) + BMB( vi) - dHi_dt_target( vi)) + LMB( vi)
+    end do
 
     ! Store this value in the artificial mass balance field
     AMB( mesh%vi1: mesh%vi2) = dHi_dt( mesh%vi1: mesh%vi2)

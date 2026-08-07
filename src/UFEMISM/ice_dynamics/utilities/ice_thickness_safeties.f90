@@ -11,6 +11,7 @@ module ice_thickness_safeties
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_basic, only: par, sync
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
   use ice_geometry_model_basic, only: type_ice_geometry_model
@@ -328,7 +329,7 @@ contains
     Q_dst    ( mesh%vi1:mesh%vi2  ) = 0._dp
     relweight( mesh%vi1:mesh%vi2,:) = 0._dp
 
-    call gather_to_all( geom%mask_icefree_ocean, mask_icefree_ocean_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
     call gather_to_all( geom%Hb, Hb_tot)
 

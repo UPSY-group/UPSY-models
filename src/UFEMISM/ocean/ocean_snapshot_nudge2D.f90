@@ -16,6 +16,7 @@ module ocean_snapshot_nudge2D
   use reference_geometries_main, only: reallocate_reference_geometry_on_mesh
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mesh_utilities, only: extrapolate_Gaussian
   use mesh_data_smoothing, only: smooth_Gaussian
 
@@ -119,8 +120,8 @@ contains
     ! is often wrong (because of the difficulty of remapping a discontinuous
     ! field), so instead use the mean of the neighbouring non-front shelf
     ! vertices.
-    call gather_to_all( ice%geom%mask_floating_ice, mask_floating_ice_tot)
-    call gather_to_all( ice%geom%mask_cf_fl       , mask_cf_fl_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice, mask_floating_ice_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_cf_fl       , mask_cf_fl_tot       )
     call gather_to_all( Hi_target_corr       , Hi_target_tot)
 
     do vi = mesh%vi1, mesh% vi2

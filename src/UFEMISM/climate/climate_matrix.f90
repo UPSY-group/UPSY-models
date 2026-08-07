@@ -789,11 +789,7 @@ contains
     ! ===
 
     allocate( ice_dummy%geom)
-    allocate( ice_dummy%geom%Hi( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%Hb( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%mask_grounded_ice(   mesh%vi1:mesh%vi2))
-    allocate( ice_dummy%geom%mask_floating_ice( mesh%vi1:mesh%vi2))
+    call ice_dummy%geom%allocate( region_name, mesh)
     allocate( ice_dummy%mask_noice(        mesh%vi1:mesh%vi2))
 
     ! Fill in masks for the SMB model
@@ -861,7 +857,8 @@ contains
     end do
 
     ! Clean up after yourself
-    call SMB_dummy%deallocate
+    call ice_dummy%geom%deallocate()
+    call SMB_dummy%deallocate()
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -35,6 +35,7 @@ module ice_geometry_model_basic
   use conservation_of_mass_utilities, only: apply_mask_noice_direct
   use plane_geometry, only: triangle_area
   use fields_dimensions, only: third_dimension
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
 
   implicit none
 
@@ -246,25 +247,105 @@ contains
       remap_method = 'reallocate')
 
     ! Area fractions
-    allocate( self%fraction_gr    ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%fraction_gr_b  ( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%fraction_margin( mesh%vi1:mesh%vi2), source = NaN)
+    call self%create_field( self%fraction_gr, self%wfraction_gr, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'fraction_gr', &
+      long_name = 'Grounded area fractions of vertices', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%fraction_gr_b, self%wfraction_gr_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'fraction_gr_b', &
+      long_name = 'Grounded area fractions of triangles', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%fraction_margin, self%wfraction_margin, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'fraction_margin', &
+      long_name = 'Ice-covered area fractions of ice margins', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
 
     ! Ice masks
-    allocate( self%mask_icefree_land ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_icefree_ocean( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_grounded_ice ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_floating_ice ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_margin       ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_gl_gr        ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_gl_fl        ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_cf_gr        ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_cf_fl        ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask_coastline    ( mesh%vi1:mesh%vi2), source = .false.)
-    allocate( self%mask              ( mesh%vi1:mesh%vi2), source = -42)
+    call self%create_field( self%mask_icefree_land, self%wmask_icefree_land, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_icefree_land', &
+      long_name = 'Mask indicating ice-free land', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_icefree_ocean, self%wmask_icefree_ocean, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_icefree_ocean', &
+      long_name = 'Mask indicating ice-free ocean', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_grounded_ice, self%wmask_grounded_ice, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_grounded_ice', &
+      long_name = 'Mask indicating grounded ice', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_floating_ice, self%wmask_floating_ice, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_floating_ice', &
+      long_name = 'Mask indicating floating ice', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_margin, self%wmask_margin, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_margin', &
+      long_name = 'Mask indicating ice next to ice-free', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_gl_gr, self%wmask_gl_gr, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_gl_gr', &
+      long_name = 'Mask indicating grounded side of grounding line', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_gl_fl, self%wmask_gl_fl, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_gl_fl', &
+      long_name = 'Mask indicating floating side of grounding line', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_cf_gr, self%wmask_cf_gr, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_cf_gr', &
+      long_name = 'Mask indicating grounded calving front', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_cf_fl, self%wmask_cf_fl, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_cf_fl', &
+      long_name = 'Mask indicating floating calving front', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask_coastline, self%wmask_coastline, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask_coastline', &
+      long_name = 'Mask indicating ice-free land next to ice-free ocean', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%mask, self%wmask, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'mask', &
+      long_name = 'General mask', &
+      units     = '', &
+      remap_method = 'reallocate')
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 2)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 18)
 
   end subroutine allocate_ice_geometry_model
 
@@ -306,22 +387,22 @@ contains
     nullify( self%bedrock_cdf_b)
 
     ! Area fractions
-    deallocate( self%fraction_gr    )
-    deallocate( self%fraction_gr_b  )
-    deallocate( self%fraction_margin)
+    nullify( self%fraction_gr    )
+    nullify( self%fraction_gr_b  )
+    nullify( self%fraction_margin)
 
     ! Ice masks
-    deallocate( self%mask_icefree_land )
-    deallocate( self%mask_icefree_ocean)
-    deallocate( self%mask_grounded_ice )
-    deallocate( self%mask_floating_ice )
-    deallocate( self%mask_margin       )
-    deallocate( self%mask_gl_gr        )
-    deallocate( self%mask_gl_fl        )
-    deallocate( self%mask_cf_gr        )
-    deallocate( self%mask_cf_fl        )
-    deallocate( self%mask_coastline    )
-    deallocate( self%mask              )
+    nullify( self%mask_icefree_land )
+    nullify( self%mask_icefree_ocean)
+    nullify( self%mask_grounded_ice )
+    nullify( self%mask_floating_ice )
+    nullify( self%mask_margin       )
+    nullify( self%mask_gl_gr        )
+    nullify( self%mask_gl_fl        )
+    nullify( self%mask_cf_gr        )
+    nullify( self%mask_cf_fl        )
+    nullify( self%mask_coastline    )
+    nullify( self%mask              )
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

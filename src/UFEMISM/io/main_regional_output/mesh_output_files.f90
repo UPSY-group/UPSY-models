@@ -16,6 +16,7 @@ module mesh_output_files
   use parameters, only: NaN
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_a_2D, ddy_a_a_2D
+  use parallel_array_info_type, only: type_par_arr_info
 
   implicit none
 
@@ -137,6 +138,7 @@ contains
     integer, dimension(region%mesh%vi1:region%mesh%vi2) :: mask_int
     real(dp), dimension(:),   allocatable :: d_mesh_vec_partial_2D
     real(dp), dimension(:),   allocatable :: d_mesh_vec_partial_2D_b
+    integer                               :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -282,83 +284,45 @@ contains
     ! =================
 
       case ('mask_icefree_land')
-        where (region%ice%geom%mask_icefree_land)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_icefree_land, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_icefree_land', mask_int)
       case ('mask_icefree_ocean')
-        where (region%ice%geom%mask_icefree_ocean)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_icefree_ocean, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_icefree_ocean', mask_int)
       case ('mask_grounded_ice')
-        where (region%ice%geom%mask_grounded_ice)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_grounded_ice, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_grounded_ice', mask_int)
       case ('mask_floating_ice')
-        where (region%ice%geom%mask_floating_ice)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_floating_ice, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_floating_ice', mask_int)
       case ('mask_margin')
-        where (region%ice%geom%mask_margin)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_margin, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_margin', mask_int)
       case ('mask_gl_gr')
-        where (region%ice%geom%mask_gl_gr)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_gl_gr, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_gr', mask_int)
       case ('mask_gl_fl')
-        where (region%ice%geom%mask_gl_fl)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_gl_fl, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_gl_fl', mask_int)
       case ('mask_cf_gr')
-        where (region%ice%geom%mask_cf_gr)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_cf_gr, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_cf_gr', mask_int)
       case ('mask_cf_fl')
-        where (region%ice%geom%mask_cf_fl)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_cf_fl, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_cf_fl', mask_int)
       case ('mask_coastline')
-        where (region%ice%geom%mask_coastline)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        call convert_hybrid_logical_mask_to_int( region%mesh%pai_v, region%ice%geom%mask_coastline, mask_int)
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_coastline', mask_int)
       case ('mask_ROI')
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_ROI', region%ice%mask_ROI)
       case ('mask_SGD')
-        where (region%ice%mask_SGD)
-          mask_int = 1
-        elsewhere
-          mask_int = 0
-        end where
+        do vi = region%mesh%vi1, region%mesh%vi2
+          if (region%ice%mask_SGD( vi)) then
+            mask_int( vi) = 1
+          else
+            mask_int( vi) = 0
+          end if
+        end do
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask_SGD', mask_int)
       case ('mask')
         call write_to_field_multopt_mesh_int_2D( region%mesh, filename, ncid, 'mask', region%ice%geom%mask)
@@ -1778,5 +1742,32 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine write_contour_to_file
+
+  subroutine convert_hybrid_logical_mask_to_int( pai, mask_logical, mask_int)
+
+    ! In/output variables:
+    type(type_par_arr_info),                   intent(in   ) :: pai
+    logical, dimension(pai%i1_nih:pai%i2_nih), intent(in   ) :: mask_logical
+    integer, dimension(pai%i1    :pai%i2    ), intent(  out) :: mask_int
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'convert_hybrid_logical_mask_to_int'
+    integer                     :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = pai%i1, pai%i2
+      if (mask_logical( vi)) then
+        mask_int( vi) = 1
+      else
+        mask_int( vi) = 0
+      end if
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine convert_hybrid_logical_mask_to_int
 
 end module mesh_output_files

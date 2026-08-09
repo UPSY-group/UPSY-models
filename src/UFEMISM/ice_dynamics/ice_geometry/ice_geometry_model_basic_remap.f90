@@ -320,7 +320,7 @@ contains
     call init_routine( routine_name)
 
     ! Secondary ice geometry fields
-    call reallocate_bounds( self%Hs                     , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'Hs'                     , self%Hs                     )
     call self%remap_field( mesh_new, 'Hib'                    , self%Hib                    )
     call self%remap_field( mesh_new, 'TAF'                    , self%TAF                    )
     call self%remap_field( mesh_new, 'Hi_eff'                 , self%Hi_eff                 )

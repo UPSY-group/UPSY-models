@@ -326,7 +326,8 @@ contains
     ! =====================================================
     ! First calculate the total ice volume term (second term in the equation)
     w_tot = MAX(-w_cutoff, MIN(1._dp + w_cutoff, &
-      (SUM( ice%geom%Hs) - SUM( climate%matrix%GCM_warm%Hs)) / (SUM( climate%matrix%GCM_cold%Hs) - SUM( climate%matrix%GCM_warm%Hs)) ))
+      (SUM( ice%geom%Hs( mesh%vi1:mesh%vi2)) - SUM( climate%matrix%GCM_warm%Hs( mesh%vi1:mesh%vi2))) / &
+      (SUM( climate%matrix%GCM_cold%Hs( mesh%vi1:mesh%vi2)) - SUM( climate%matrix%GCM_warm%Hs( mesh%vi1:mesh%vi2))) ))
 
     call weighting_fields_matrix_precipitation( climate, mesh, grid, ice, region_name, forcing, w_tot, w_warm, w_cold)
 
@@ -352,10 +353,10 @@ contains
     if (region_name == 'NAM' .OR. region_name == 'EAS') then
       ! Use the Roe&Lindzen precipitation model to do this; Berends et al., 2018, Eqs. A3-A7
       call adapt_precip_Roe( mesh, Hs_GCM,   T_ref_GCM  , climate%matrix%PD_obs%Wind_LR, climate%matrix%PD_obs%Wind_DU, P_ref_GCM, &
-                                   ice%geom%Hs, climate%T2m, climate%matrix%PD_obs%Wind_LR, climate%matrix%PD_obs%Wind_DU, climate%Precip)
+                                   ice%geom%Hs( mesh%vi1:mesh%vi2), climate%T2m, climate%matrix%PD_obs%Wind_LR, climate%matrix%PD_obs%Wind_DU, climate%Precip)
     elseif (region_name == 'GRL' .OR. region_name == 'ANT') then
       ! Use a simpler temperature-based correction; Berends et al., 2018, Eq. 14
-      call adapt_precip_CC( mesh, ice%geom%Hs, Hs_GCM, T_ref_GCM, P_ref_GCM, climate%Precip, region_name)
+      call adapt_precip_CC( mesh, ice%geom%Hs( mesh%vi1:mesh%vi2), Hs_GCM, T_ref_GCM, P_ref_GCM, climate%Precip, region_name)
     end if
 
     ! Finalise routine path

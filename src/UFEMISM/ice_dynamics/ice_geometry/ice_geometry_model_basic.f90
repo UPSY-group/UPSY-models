@@ -211,7 +211,12 @@ contains
     allocate( self%SL( mesh%vi1:mesh%vi2), source = NaN)
 
     ! Derived ice geometry variables
-    allocate( self%Hs      ( mesh%vi1:mesh%vi2), source = NaN)
+    call self%create_field( self%Hs, self%wHs, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hs', &
+      long_name = 'Ice surface elevation', &
+      units     = 'm w.r.t. PD sea level', &
+      remap_method = 'reallocate')
 
     call self%create_field( self%Hib, self%wHib, &
       self%mesh, Arakawa_grid%a(), &
@@ -379,7 +384,7 @@ contains
       remap_method = 'reallocate')
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 23)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 24)
 
   end subroutine allocate_ice_geometry_model
 
@@ -405,7 +410,7 @@ contains
     deallocate( self%SL)
 
     ! Derived ice geometry variables
-    deallocate( self%Hs      )
+    nullify( self%Hs      )
     nullify( self%Hib     )
     nullify( self%TAF     )
     nullify( self%Hi_eff  )

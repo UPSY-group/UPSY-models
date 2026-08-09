@@ -126,7 +126,9 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    deltaHs = ice%geom%Hs - target_geometry%Hs
+    do vi = mesh%vi1, mesh%vi2
+      deltaHs( vi) = ice%geom%Hs( vi) - target_geometry%Hs( vi)
+    end do
 
     call gather_to_all( ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)

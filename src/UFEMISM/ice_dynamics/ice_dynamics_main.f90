@@ -1196,7 +1196,7 @@ contains
       ! ==================
 
       region%refgeo_PD%Hi  = region%ice%geom%Hi
-      region%refgeo_PD%Hs  = region%ice%geom%Hs
+      region%refgeo_PD%Hs( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
       region%refgeo_PD%Hb  = region%ice%geom%Hb
 
       ! Differences w.r.t. present-day

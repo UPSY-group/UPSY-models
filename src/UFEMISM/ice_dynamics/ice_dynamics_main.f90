@@ -226,7 +226,7 @@ contains
 
     case ('fixed')
       ! Fixed sea level
-      ice%geom%SL = C%fixed_sealevel
+      ice%geom%SL( mesh%vi1:mesh%vi2) = C%fixed_sealevel
 
     case ('prescribed')
       ! Sea-level from an external record, stored in the global_forcings type

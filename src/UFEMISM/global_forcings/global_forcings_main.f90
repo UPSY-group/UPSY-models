@@ -157,7 +157,7 @@ CONTAINS
     TYPE(type_global_forcing),              intent(in   ) :: forcing
     TYPE(type_mesh),                        intent(in   ) :: mesh
     REAL(dp),                               intent(in   ) :: time
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: SL
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(  out) :: SL
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'update_sealevel_in_model'

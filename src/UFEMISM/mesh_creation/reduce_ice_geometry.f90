@@ -11,6 +11,7 @@ module reduce_ice_geometry
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use mpi_distributed_memory, only: gather_to_primary
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_primary
   use grid_basic, only: calc_grid_mask_as_polygons, calc_grid_contour_as_line
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use ice_geometry_basics, only: thickness_above_floatation
@@ -252,7 +253,10 @@ contains
 
     ! In/output variables:
     type(type_mesh),                         intent(in)    :: mesh
-    real(dp), dimension(:    ),              intent(in)    :: Hi, Hb, Hs, SL
+    real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in)    :: Hi
+    real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in)    :: Hb
+    real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in)    :: Hs
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih),  intent(in)    :: SL
     real(dp), dimension(:,:  ), allocatable, intent(out)   :: poly_mult_sheet
     real(dp), dimension(:,:  ), allocatable, intent(out)   :: poly_mult_shelf
     real(dp), dimension(:,:  ), allocatable, intent(out)   :: p_line_grounding_line
@@ -297,7 +301,7 @@ contains
     call gather_to_primary( Hi, Hi_tot)
     call gather_to_primary( Hb, Hb_tot)
     call gather_to_primary( Hs, Hs_tot)
-    call gather_to_primary( SL, SL_tot)
+    call gather_dist_shared_to_primary( mesh%pai_V, SL, SL_tot)
 
     ! Let the primary calculate the polygons and lines
 

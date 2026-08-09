@@ -25,7 +25,7 @@ contains
     ! In- and output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi
 
     ! Local variables:
@@ -124,7 +124,7 @@ contains
     ! In- and output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi
     logical,  dimension(:), allocatable,    intent(inout) :: mask_grounded_ice_tot
     logical,  dimension(:), allocatable,    intent(inout) :: mask_floating_ice_tot

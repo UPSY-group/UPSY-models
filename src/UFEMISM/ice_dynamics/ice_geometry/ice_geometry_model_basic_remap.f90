@@ -22,7 +22,6 @@ contains
     character(len=*), parameter         :: routine_name = 'remap_ice_geometry_model'
     real(dp), dimension(:), allocatable :: Hi_old, Hi_new
     real(dp), dimension(:), allocatable :: Hb_old, Hb_new
-    real(dp), dimension(:), allocatable :: SL_old, SL_new
     real(dp), dimension(:), allocatable :: Hs_old
     logical,  dimension(:), allocatable :: mask_floating_ice_old, mask_icefree_ocean_old
 
@@ -36,27 +35,24 @@ contains
 
     allocate( Hi_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hi                ( mesh_old%vi1:mesh_old%vi2))
     allocate( Hb_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hb                ( mesh_old%vi1:mesh_old%vi2))
-    allocate( SL_old                ( mesh_old%vi1:mesh_old%vi2), source = self%SL                ( mesh_old%vi1:mesh_old%vi2))
     allocate( Hs_old                ( mesh_old%vi1:mesh_old%vi2), source = self%Hs                ( mesh_old%vi1:mesh_old%vi2))
     allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice ( mesh_old%vi1:mesh_old%vi2))
     allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean( mesh_old%vi1:mesh_old%vi2))
 
     allocate( Hi_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
     allocate( Hb_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
-    allocate( SL_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
+
+    call remap_ice_geometry_model_sealevel( self, mesh_new, forcing, time)
 
     call remap_ice_geometry_model_bedrock      ( mesh_old, mesh_new, refgeo_PD, GIA, Hb_old, Hb_new)
-    call remap_ice_geometry_model_sealevel     ( mesh_old, mesh_new, forcing, time, SL_old, SL_new)
     call remap_ice_geometry_model_ice_thickness( mesh_old, mesh_new, &
-      Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, Hb_new, SL_new, Hi_new)
+      Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, Hb_new, self%SL, Hi_new)
 
     call reallocate_bounds( self%Hi, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%Hb, mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%SL, mesh_new%vi1, mesh_new%vi2)
 
     self%Hi( mesh_new%vi1:mesh_new%vi2) = Hi_new( mesh_new%vi1:mesh_new%vi2)
     self%Hb( mesh_new%vi1:mesh_new%vi2) = Hb_new( mesh_new%vi1:mesh_new%vi2)
-    self%SL( mesh_new%vi1:mesh_new%vi2) = SL_new( mesh_new%vi1:mesh_new%vi2)
 
     call reallocate_and_recalculate_secondary_geometry_variables( self, mesh_new, refgeo_PD)
 
@@ -91,15 +87,13 @@ contains
 
   end subroutine remap_ice_geometry_model_bedrock
 
-  subroutine remap_ice_geometry_model_sealevel( mesh_old, mesh_new, forcing, time, SL_old, SL_new)
+  subroutine remap_ice_geometry_model_sealevel( self, mesh_new, forcing, time)
 
     ! In/output variables:
-    type(type_mesh),                                intent(in   ) :: mesh_old
-    type(type_mesh),                                intent(in   ) :: mesh_new
-    type(type_global_forcing),                      intent(in   ) :: forcing
-    real(dp),                                       intent(in   ) :: time
-    real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: SL_old
-    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(  out) :: SL_new
+    class(type_ice_geometry_model), intent(inout) :: self
+    type(type_mesh),                intent(in   ) :: mesh_new
+    type(type_global_forcing),      intent(in   ) :: forcing
+    real(dp),                       intent(in   ) :: time
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'remap_ice_geometry_model_sealevel'
@@ -107,13 +101,15 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    call self%remap_field( mesh_new, 'SL', self%SL)
+
     select case (C%choice_sealevel_model)
     case default
       call crash('unknown choice_sealevel_model "' // trim( C%choice_sealevel_model) // '"')
     case ('fixed')
-      SL_new( mesh_new%vi1 : mesh_new%vi2) = C%fixed_sealevel
+      self%SL( mesh_new%vi1:mesh_new%vi2) = C%fixed_sealevel
     case ('prescribed')
-      call update_sealevel_in_model( forcing, mesh_new, time, SL_new)
+      call update_sealevel_in_model( forcing, mesh_new, time, self%SL)
     end select
 
     ! Finalise routine path
@@ -132,7 +128,7 @@ contains
     logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_floating_ice_old
     logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_icefree_ocean_old
     real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: Hb_new
-    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: SL_new
+    real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), intent(in   ) :: SL_new
     real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(  out) :: Hi_new
 
     ! Local variables:

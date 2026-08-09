@@ -12,6 +12,7 @@ module remapping_transects
   use apply_maps, only: Atlas
   use apply_maps_transects, only: apply_map_mesh_vertices_to_transect_2D, apply_map_mesh_vertices_to_transect_3D, &
     apply_map_mesh_triangles_to_transect_2D, apply_map_mesh_triangles_to_transect_3D
+  use dist_to_hybrid_mod, only: hybrid_to_dist
 
   implicit none
 
@@ -26,20 +27,21 @@ module remapping_transects
 contains
 
   ! From a mesh to a transect
-  subroutine map_from_mesh_vertices_to_transect_2D( mesh, transect, d_mesh_partial, d_transect_partial, method)
+  subroutine map_from_mesh_vertices_to_transect_2D( mesh, transect, d_mesh, d_transect_partial, method)
     ! Map a 2-D data field from the vertices of a mesh to a transect
 
     ! In/output variables
     type(type_mesh),            intent(in   ) :: mesh
     type(type_transect),        intent(in   ) :: transect
-    real(dp), dimension(:    ), intent(in   ) :: d_mesh_partial
+    real(dp), dimension(:    ), intent(in   ) :: d_mesh
     real(dp), dimension(:    ), intent(  out) :: d_transect_partial
     character(len=*), optional, intent(in   ) :: method
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'map_from_mesh_vertices_to_transect_2D'
-    integer                        :: mi, mi_valid
-    logical                        :: found_map, found_empty_page
+    character(len=*), parameter         :: routine_name = 'map_from_mesh_vertices_to_transect_2D'
+    integer                             :: mi, mi_valid
+    logical                             :: found_map, found_empty_page
+    real(dp), dimension(:), allocatable :: d_mesh_dist
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -81,29 +83,40 @@ contains
       if (.not. found_empty_page) call crash('No more room in Atlas - assign more memory!')
     end if
 
+    ! Handle both distributed and hybrid distributed/shared memory fields
+    if (size( d_mesh,1) == mesh%pai_V%n_loc) then
+      allocate( d_mesh_dist( mesh%vi1:mesh%vi2), source = d_mesh)
+    elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
+      allocate( d_mesh_dist( mesh%vi1:mesh%vi2), source = 0._dp)
+      call hybrid_to_dist( mesh%pai_V, d_mesh, d_mesh_dist)
+    else
+      call crash('invalid size for d_mesh')
+    end if
+
     ! Apply the appropriate mapping object
     call apply_map_mesh_vertices_to_transect_2D( mesh, transect, &
-      Atlas( mi), d_mesh_partial, d_transect_partial)
+      Atlas( mi), d_mesh_dist, d_transect_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine map_from_mesh_vertices_to_transect_2D
 
-  subroutine map_from_mesh_vertices_to_transect_3D( mesh, transect, d_mesh_partial, d_transect_partial, method)
+  subroutine map_from_mesh_vertices_to_transect_3D( mesh, transect, d_mesh, d_transect_partial, method)
     ! Map a 3-D data field from the vertices of a mesh to a transect
 
     ! In/output variables
     type(type_mesh),            intent(in   ) :: mesh
     type(type_transect),        intent(in   ) :: transect
-    real(dp), dimension(:,:  ), intent(in   ) :: d_mesh_partial
+    real(dp), dimension(:,:  ), intent(in   ) :: d_mesh
     real(dp), dimension(:,:  ), intent(  out) :: d_transect_partial
     character(len=*), optional, intent(in   ) :: method
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'map_from_mesh_vertices_to_transect_3D'
-    integer                        :: mi, mi_valid
-    logical                        :: found_map, found_empty_page
+    character(len=*), parameter           :: routine_name = 'map_from_mesh_vertices_to_transect_3D'
+    integer                               :: mi, mi_valid
+    logical                               :: found_map, found_empty_page
+    real(dp), dimension(:,:), allocatable :: d_mesh_dist
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -138,29 +151,40 @@ contains
       if (.not. found_empty_page) call crash('No more room in Atlas - assign more memory!')
     end if
 
+    ! Handle both distributed and hybrid distributed/shared memory fields
+    if (size( d_mesh,1) == mesh%pai_V%n_loc) then
+      allocate( d_mesh_dist( mesh%vi1:mesh%vi2, 1:size( d_mesh,2)), source = d_mesh)
+    elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
+      allocate( d_mesh_dist( mesh%vi1:mesh%vi2, 1:size( d_mesh,2)), source = 0._dp)
+      call hybrid_to_dist( mesh%pai_V, size( d_mesh,2), d_mesh, d_mesh_dist)
+    else
+      call crash('invalid size for d_mesh')
+    end if
+
     ! Apply the appropriate mapping object
     call apply_map_mesh_vertices_to_transect_3D( mesh, transect, &
-      Atlas( mi), d_mesh_partial, d_transect_partial)
+      Atlas( mi), d_mesh_dist, d_transect_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine map_from_mesh_vertices_to_transect_3D
 
-  subroutine map_from_mesh_triangles_to_transect_2D( mesh, transect, d_mesh_partial, d_transect_partial, method)
+  subroutine map_from_mesh_triangles_to_transect_2D( mesh, transect, d_mesh, d_transect_partial, method)
     ! Map a 2-D data field from the triangles of a mesh to a transect
 
     ! In/output variables
     type(type_mesh),            intent(in   ) :: mesh
     type(type_transect),        intent(in   ) :: transect
-    real(dp), dimension(:    ), intent(in   ) :: d_mesh_partial
+    real(dp), dimension(:    ), intent(in   ) :: d_mesh
     real(dp), dimension(:    ), intent(  out) :: d_transect_partial
     character(len=*), optional, intent(in   ) :: method
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'map_from_mesh_triangles_to_transect_2D'
-    integer                        :: mi, mi_valid
-    logical                        :: found_map, found_empty_page
+    character(len=*), parameter         :: routine_name = 'map_from_mesh_triangles_to_transect_2D'
+    integer                             :: mi, mi_valid
+    logical                             :: found_map, found_empty_page
+    real(dp), dimension(:), allocatable :: d_mesh_dist
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -195,29 +219,40 @@ contains
       if (.not. found_empty_page) call crash('No more room in Atlas - assign more memory!')
     end if
 
+    ! Handle both distributed and hybrid distributed/shared memory fields
+    if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
+      allocate( d_mesh_dist( mesh%ti1:mesh%ti2), source = d_mesh)
+    elseif (size( d_mesh,1) == mesh%pai_Tri%n_nih) then
+      allocate( d_mesh_dist( mesh%ti1:mesh%ti2), source = 0._dp)
+      call hybrid_to_dist( mesh%pai_Tri, d_mesh, d_mesh_dist)
+    else
+      call crash('invalid size for d_mesh')
+    end if
+
     ! Apply the appropriate mapping object
     call apply_map_mesh_triangles_to_transect_2D( mesh, transect, &
-      Atlas( mi), d_mesh_partial, d_transect_partial)
+      Atlas( mi), d_mesh_dist, d_transect_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine map_from_mesh_triangles_to_transect_2D
 
-  subroutine map_from_mesh_triangles_to_transect_3D( mesh, transect, d_mesh_partial, d_transect_partial, method)
+  subroutine map_from_mesh_triangles_to_transect_3D( mesh, transect, d_mesh, d_transect_partial, method)
     ! Map a 2-D data field from the triangles of a mesh to a transect
 
     ! In/output variables
     type(type_mesh),            intent(in   ) :: mesh
     type(type_transect),        intent(in   ) :: transect
-    real(dp), dimension(:,:  ), intent(in   ) :: d_mesh_partial
+    real(dp), dimension(:,:  ), intent(in   ) :: d_mesh
     real(dp), dimension(:,:  ), intent(  out) :: d_transect_partial
     character(len=*), optional, intent(in   ) :: method
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'map_from_mesh_triangles_to_transect_3D'
-    integer                        :: mi, mi_valid
-    logical                        :: found_map, found_empty_page
+    character(len=*), parameter           :: routine_name = 'map_from_mesh_triangles_to_transect_3D'
+    integer                               :: mi, mi_valid
+    logical                               :: found_map, found_empty_page
+    real(dp), dimension(:,:), allocatable :: d_mesh_dist
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -252,9 +287,19 @@ contains
       if (.not. found_empty_page) call crash('No more room in Atlas - assign more memory!')
     end if
 
+    ! Handle both distributed and hybrid distributed/shared memory fields
+    if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
+      allocate( d_mesh_dist( mesh%ti1:mesh%ti2, 1:size( d_mesh,2)), source = d_mesh)
+    elseif (size( d_mesh,1) == mesh%pai_Tri%n_nih) then
+      allocate( d_mesh_dist( mesh%ti1:mesh%ti2, 1:size( d_mesh,2)), source = 0._dp)
+      call hybrid_to_dist( mesh%pai_Tri, size( d_mesh,2), d_mesh, d_mesh_dist)
+    else
+      call crash('invalid size for d_mesh')
+    end if
+
     ! Apply the appropriate mapping object
     call apply_map_mesh_triangles_to_transect_3D( mesh, transect, &
-      Atlas( mi), d_mesh_partial, d_transect_partial)
+      Atlas( mi), d_mesh_dist, d_transect_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -123,17 +123,26 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     logical,  dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_noice
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi
+    real(dp), dimension(:), target,         intent(inout) :: Hi
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'apply_mask_noice_direct'
     integer                        :: vi
+    real(dp), dimension(:), pointer :: Hi_nih, Hi_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! DENK DROM - handles both distributed and hybrid distributed/shared versions of Hi
+    if (size( Hi,1) == mesh%pai_V%n_loc) then
+      Hi_loc( mesh%vi1:mesh%vi2) => Hi
+    elseif (size( Hi,1) == mesh%pai_V%n_nih) then
+      Hi_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih) => Hi
+      Hi_loc( mesh%vi1:mesh%vi2) => Hi_nih( mesh%vi1:mesh%vi2)
+    end if
+
     do vi = mesh%vi1, mesh%vi2
-      if (mask_noice( vi)) Hi( vi) = 0._dp
+      if (mask_noice( vi)) Hi_loc( vi) = 0._dp
     end do
 
     ! Finalise routine path
@@ -147,7 +156,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hi
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: dHi_dt
     real(dp),                               intent(  out) :: dt_max
 

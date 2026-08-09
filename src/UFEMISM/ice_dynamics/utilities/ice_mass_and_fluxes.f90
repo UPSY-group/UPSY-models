@@ -378,7 +378,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather ice thickness from all processes
-    call gather_to_all( ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%fraction_margin, fraction_margin_tot)
 
     ! Gather basic masks to all processes
@@ -488,7 +488,7 @@ contains
       call init_routine( routine_name)
 
       ! Gather ice thickness from all processes
-      call gather_to_all( ice%geom%Hi, Hi_tot)
+      call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
       call gather_dist_shared_to_all( mesh%pai_V, ice%geom%fraction_margin, fraction_margin_tot)
 
       ! Gather basic masks to all processes

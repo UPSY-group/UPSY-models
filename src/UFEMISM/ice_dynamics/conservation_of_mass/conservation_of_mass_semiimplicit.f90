@@ -143,7 +143,7 @@ contains
     end do
 
     ! Take the current ice thickness as the initial guess
-    Hi_tplusdt = geom%Hi
+    Hi_tplusdt( mesh%vi1:mesh%vi2) = geom%Hi( mesh%vi1:mesh%vi2)
 
     ! Apply boundary conditions
     call apply_ice_thickness_BC_matrix( mesh, mask_noice, geom%Hb, geom%SL, Hi_tplusdt_ex, AA, bb, Hi_tplusdt, BC_prescr_mask, BC_prescr_Hi)
@@ -153,11 +153,13 @@ contains
       C%dHi_PETSc_rtol, C%dHi_PETSc_abstol, n_Axb_its, &
       PETSc_KSPtype = C%dHi_PETSc_KSPtype, PETSc_PCtype = C%dHi_PETSc_PCtype)
 
-    ! Store the corresponding dH/dt in the artificial mass balance field
-    AMB = (Hi_tplusdt - geom%Hi) / dt
+    do vi = mesh%vi1, mesh%vi2
+      ! Store the corresponding dH/dt in the artificial mass balance field
+      AMB( vi) = (Hi_tplusdt( vi) - geom%Hi( vi)) / dt
 
-    ! Calculate dH/dt
-    dHi_dt = (Hi_tplusdt - geom%Hi) / dt
+      ! Calculate dH/dt
+      dHi_dt( vi) = (Hi_tplusdt( vi) - geom%Hi( vi)) / dt
+    end do
 
     ! Remove the final dH/dt field, which now includes some
     ! artificial ice modifications, from the original field

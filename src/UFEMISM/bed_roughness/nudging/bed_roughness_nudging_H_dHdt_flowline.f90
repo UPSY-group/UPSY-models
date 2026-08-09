@@ -15,6 +15,7 @@ module bed_roughness_nudging_H_dHdt_flowline
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_dHdt_flowline
   use mesh_utilities, only: extrapolate_Gaussian
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
   use mesh_data_smoothing, only: smooth_Gaussian
   use nudging_utilities, only: calc_nudging_vs_extrapolation_masks, trace_flowline_upstream, &
@@ -130,7 +131,7 @@ contains
       deltaHs( vi) = ice%geom%Hs( vi) - target_geometry%Hs( vi)
     end do
 
-    call gather_to_all( ice%geom%Hi     , Hi_tot     )
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( ice%dHs_dt , dHs_dt_tot )
     call gather_to_all( ice%u_vav_b, u_b_tot    )

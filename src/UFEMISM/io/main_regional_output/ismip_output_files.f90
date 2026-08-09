@@ -236,7 +236,8 @@ contains
     if (par%primary) write(0,'(A)') '   Writing to ISMIP output files' // '...'
 
     ! Basic topography
-    call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%geom%Hi, vmin=0._dp)
+    d_loc_dp = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%lithk, inputfield_a=d_loc_dp, vmin=0._dp)
     d_loc_dp = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
     call write_to_file( region, region%ismip_output%orog,  inputfield_a=d_loc_dp, vmin=0._dp)
     d_loc_dp = region%ice%geom%Hb( region%mesh%vi1:region%mesh%vi2)
@@ -320,7 +321,8 @@ contains
     ! === Scalars ===
 
     ! State with provided inputfields and optional masks
-    call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
+    d_loc_dp = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2) * ice_density
+    call write_to_file( region, region%ismip_output%lim, d_loc_dp)
     d_loc_dp = max( 0._dp, region%ice%geom%TAF( region%mesh%vi1:region%mesh%vi2)) * ice_density
     call write_to_file( region, region%ismip_output%limnsw, d_loc_dp, mask=mask_ice_a)
     d_loc_dp = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
@@ -1166,7 +1168,7 @@ contains
     call reallocate_bounds( ismip_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
 
     ! Use accum to store current Hi for dHidt
-    ismip_output%dlithkdt%accum = ice%geom%Hi
+    ismip_output%dlithkdt%accum( mesh_new%vi1:mesh_new%vi2) = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

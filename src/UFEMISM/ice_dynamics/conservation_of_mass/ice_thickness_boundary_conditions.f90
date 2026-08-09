@@ -20,11 +20,11 @@ contains
     !< Apply boundary conditions to the ice thickness on the domain border directly
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    logical,  dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_noice
+    type(type_mesh),                                          intent(in   ) :: mesh
+    logical,  dimension(mesh%vi1:mesh%vi2),                   intent(in   ) :: mask_noice
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi
+    real(dp), dimension(:), target,                           intent(inout) :: Hi
 
     ! Local variables:
     character(len=*), parameter            :: routine_name = 'apply_ice_thickness_BC_explicit'
@@ -36,13 +36,22 @@ contains
     character(len=:), allocatable          :: BC_H
     integer                                :: ci,vj
     real(dp)                               :: Hs_sum, Hs_av
+    real(dp), dimension(:), pointer        :: Hi_nih, Hi_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! DENK DROM - handles both distributed and hybrid distributed/shared versions of Hi
+    if (size( Hi,1) == mesh%pai_V%n_loc) then
+      Hi_loc( mesh%vi1:mesh%vi2) => Hi
+    elseif (size( Hi,1) == mesh%pai_V%n_nih) then
+      Hi_nih( mesh%pai_V%i1_nih:mesh%pai_V%i2_nih) => Hi
+      Hi_loc( mesh%vi1:mesh%vi2) => Hi_nih( mesh%vi1:mesh%vi2)
+    end if
+
     ! Calculate Hs( t+dt)
     do vi = mesh%vi1, mesh%vi2
-      Hs_tplusdt( vi) = ice_surface_elevation( Hi( vi), Hb( vi), SL( vi))
+      Hs_tplusdt( vi) = ice_surface_elevation( Hi_loc( vi), Hb( vi), SL( vi))
     end do
 
     ! Gather global data fields
@@ -80,7 +89,7 @@ contains
       case ('zero')
         ! Set ice thickness to zero here
 
-        Hi( vi) = 0._dp
+        Hi_loc( vi) = 0._dp
 
       case ('infinite')
         ! Set H on this vertex equal to the average value on its neighbours
@@ -97,7 +106,7 @@ contains
           Hs_av = Hs_sum / real( n_interior_neighbours( vi),dp)
 
           Hs_tplusdt( vi) = max( Hb( vi), Hs_av)
-          Hi( vi) = Hi_from_Hb_Hs_and_SL( Hb( vi), Hs_tplusdt( vi), SL( vi))
+          Hi_loc( vi) = Hi_from_Hb_Hs_and_SL( Hb( vi), Hs_tplusdt( vi), SL( vi))
 
         end if
 
@@ -137,7 +146,7 @@ contains
       case ('zero')
         ! Set ice thickness to zero here
 
-        Hi( vi) = 0._dp
+        Hi_loc( vi) = 0._dp
 
       case ('infinite')
         ! Set H on this vertex equal to the average value on its neighbours
@@ -152,7 +161,7 @@ contains
           Hs_av = Hs_sum / real( mesh%nC( vi),dp)
 
           Hs_tplusdt( vi) = max( Hb( vi), Hs_av)
-          Hi( vi) = Hi_from_Hb_Hs_and_SL( Hb( vi), Hs_tplusdt( vi), SL( vi))
+          Hi_loc( vi) = Hi_from_Hb_Hs_and_SL( Hb( vi), Hs_tplusdt( vi), SL( vi))
 
         end if
 

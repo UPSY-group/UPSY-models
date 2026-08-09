@@ -20,7 +20,7 @@ contains
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'remap_ice_geometry_model'
-    real(dp), dimension(:), allocatable :: Hi_old, Hi_new
+    real(dp), dimension(:), allocatable :: Hi_old
     real(dp), dimension(:), allocatable :: Hs_old
     logical,  dimension(:), allocatable :: mask_floating_ice_old, mask_icefree_ocean_old
 
@@ -37,17 +37,14 @@ contains
     allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice ( mesh_old%vi1:mesh_old%vi2))
     allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean( mesh_old%vi1:mesh_old%vi2))
 
+    call self%remap_field( mesh_new, 'Hi', self%Hi)
+    call self%remap_field( mesh_new, 'Hb', self%Hb)
+    call self%remap_field( mesh_new, 'SL', self%SL)
 
-    allocate( Hi_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
-
+    call remap_ice_geometry_model_bedrock ( self, mesh_new, refgeo_PD, GIA)
     call remap_ice_geometry_model_sealevel( self, mesh_new, forcing, time)
-
-    call remap_ice_geometry_model_bedrock      ( self, mesh_new, refgeo_PD, GIA)
-    call remap_ice_geometry_model_ice_thickness( mesh_old, mesh_new, &
-      Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, self%Hb, self%SL, Hi_new)
-
-    call reallocate_bounds( self%Hi, mesh_new%vi1, mesh_new%vi2)
-    self%Hi( mesh_new%vi1:mesh_new%vi2) = Hi_new( mesh_new%vi1:mesh_new%vi2)
+    call remap_ice_geometry_model_ice_thickness( self, mesh_old, mesh_new, &
+      Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old)
 
     call reallocate_and_recalculate_secondary_geometry_variables( self, mesh_new, refgeo_PD)
 
@@ -69,8 +66,6 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    call self%remap_field( mesh_new, 'Hb', self%Hb)
 
     ! Remap bedrock from the original high-resolution grid, and add the (very smooth) modelled deformation to it
     ! Remapping of Hb in the refgeo structure has already happened, only need to copy the data
@@ -96,8 +91,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call self%remap_field( mesh_new, 'SL', self%SL)
-
     select case (C%choice_sealevel_model)
     case default
       call crash('unknown choice_sealevel_model "' // trim( C%choice_sealevel_model) // '"')
@@ -112,22 +105,21 @@ contains
 
   end subroutine remap_ice_geometry_model_sealevel
 
-  subroutine remap_ice_geometry_model_ice_thickness( mesh_old, mesh_new, &
-    Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, Hb_new, SL_new, Hi_new)
+  subroutine remap_ice_geometry_model_ice_thickness( self, mesh_old, mesh_new, &
+    Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old)
 
     ! In/output variables:
+    class(type_ice_geometry_model),                 intent(inout) :: self
     type(type_mesh),                                intent(in   ) :: mesh_old
     type(type_mesh),                                intent(in   ) :: mesh_new
     real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: Hi_old
     real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: Hs_old
     logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_floating_ice_old
     logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_icefree_ocean_old
-    real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), intent(in   ) :: Hb_new
-    real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), intent(in   ) :: SL_new
-    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(  out) :: Hi_new
 
     ! Local variables:
     character(len=*), parameter                     :: routine_name = 'remap_ice_geometry_model_ice_thickness'
+    real(dp), dimension( mesh_new%vi1:mesh_new%vi2) :: Hi_new
     real(dp), dimension( mesh_new%vi1:mesh_new%vi2) :: Hs_new
     logical,  dimension( mesh_new%vi1:mesh_new%vi2) :: mask_noice_new
     integer                                         :: vi
@@ -145,10 +137,10 @@ contains
 
     do vi = mesh_new%vi1, mesh_new%vi2
       if (Hi_new( vi) > 0._dp) then
-        if (Hs_new( vi) <= Hb_new( vi)) then
+        if (Hs_new( vi) <= self%Hb( vi)) then
           Hi_new( vi) = 0._dp
         else
-          Hi_new( vi) = Hi_from_Hb_Hs_and_SL( Hb_new( vi), Hs_new( vi), SL_new( vi))
+          Hi_new( vi) = Hi_from_Hb_Hs_and_SL( self%Hb( vi), Hs_new( vi), self%SL( vi))
         end if
       else
         Hi_new( vi) = 0._dp
@@ -157,11 +149,13 @@ contains
 
     ! Apply boundary conditions at the domain border
     call calc_mask_noice( mesh_new, mask_noice_new)
-    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice_new, Hb_new, SL_new, Hi_new)
+    call apply_ice_thickness_BC_explicit( mesh_new, mask_noice_new, self%Hb, self%SL, Hi_new)
 
     ! Apply corrections at the ice margin
     call correct_remapped_ice_margin( mesh_old, mesh_new, Hi_old, Hs_old, &
       mask_floating_ice_old, mask_icefree_ocean_old, mask_noice_new, Hi_new)
+
+    self%Hi( mesh_new%vi1:mesh_new%vi2) = Hi_new( mesh_new%vi1:mesh_new%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

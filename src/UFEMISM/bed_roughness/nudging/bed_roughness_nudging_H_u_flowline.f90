@@ -15,6 +15,7 @@ module bed_roughness_nudging_H_u_flowline
     trace_flowline_downstream, map_from_vertices_to_half_flowline, map_from_triangles_to_half_flowline, &
     calc_half_flowline_average
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mesh_utilities, only: extrapolate_Gaussian
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, ddx_b_a_2D, ddy_b_a_2D
 
@@ -141,7 +142,9 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    deltaHs = ice%geom%Hi - target_geometry%Hi
+    do vi = mesh%vi1, mesh%vi2
+      deltaHs( vi) = ice%geom%Hi( vi) - target_geometry%Hi( vi)
+    end do
 
     deltau = 0._dp
     do ti = mesh%ti1, mesh%ti2
@@ -150,7 +153,7 @@ contains
       end if
     end do
 
-    call gather_to_all( ice%geom%Hi     , Hi_tot     )
+    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( deltau     , deltau_tot )
     call gather_to_all( ice%u_vav_b, u_b_tot    )

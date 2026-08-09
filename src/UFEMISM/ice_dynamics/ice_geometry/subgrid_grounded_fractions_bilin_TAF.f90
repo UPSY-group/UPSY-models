@@ -25,7 +25,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather global thickness above floatation
-    call gather_to_all( self%TAF, TAF_tot)
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%TAF, TAF_tot)
 
     ! Map thickness-above-floatation to the b-grid
     call map_a_b_2D(  self%mesh, self%TAF, TAF_b)
@@ -183,7 +183,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather global thickness above floatation
-    call gather_to_all( self%TAF, TAF_tot)
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%TAF, TAF_tot)
 
     do ti = self%mesh%ti1, self%mesh%ti2
 

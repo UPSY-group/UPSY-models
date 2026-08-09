@@ -318,7 +318,8 @@ contains
 
     ! State with provided inputfields and optional masks
     call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
-    call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%geom%TAF) * ice_density, mask=mask_ice_a)
+    d_loc_dp = max( 0._dp, region%ice%geom%TAF( region%mesh%vi1:region%mesh%vi2)) * ice_density
+    call write_to_file( region, region%ismip_output%limnsw, d_loc_dp, mask=mask_ice_a)
     d_loc_dp = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
     call write_to_file( region, region%ismip_output%iareagr, d_loc_dp, mask=mask_ice_a)
     d_loc_dp = 1._dp - region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)

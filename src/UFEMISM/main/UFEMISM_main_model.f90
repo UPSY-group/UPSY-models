@@ -1277,7 +1277,7 @@ CONTAINS
       region%mesh, &
       region%ice%geom%Hi, &
       region%ice%geom%Hb, &
-      region%ice%geom%Hs, &
+      region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2), &
       region%ice%geom%SL, &
       xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
       mesh_new)

@@ -237,9 +237,11 @@ contains
 
     ! Basic topography
     call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%geom%Hi, vmin=0._dp)
-    call write_to_file( region, region%ismip_output%orog,  inputfield_a=region%ice%geom%Hs, vmin=0._dp)
+    d_loc_dp = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%orog,  inputfield_a=d_loc_dp, vmin=0._dp)
     call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%geom%Hb)
-    call write_to_file( region, region%ismip_output%base,  inputfield_a=region%ice%geom%Hib)
+    d_loc_dp = region%ice%geom%Hib( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%base,  inputfield_a=d_loc_dp)
 
     ! Geothermal heat flux
     call write_to_file_grid_FL( region, region%ismip_output%hfgeoubed, vmin=0._dp)
@@ -318,7 +320,8 @@ contains
 
     ! State with provided inputfields and optional masks
     call write_to_file( region, region%ismip_output%lim, region%ice%geom%Hi * ice_density)
-    call write_to_file( region, region%ismip_output%limnsw, max(0._dp,region%ice%geom%TAF) * ice_density, mask=mask_ice_a)
+    d_loc_dp = max( 0._dp, region%ice%geom%TAF( region%mesh%vi1:region%mesh%vi2)) * ice_density
+    call write_to_file( region, region%ismip_output%limnsw, d_loc_dp, mask=mask_ice_a)
     d_loc_dp = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
     call write_to_file( region, region%ismip_output%iareagr, d_loc_dp, mask=mask_ice_a)
     d_loc_dp = 1._dp - region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)

@@ -239,7 +239,8 @@ contains
     call write_to_file( region, region%ismip_output%lithk, inputfield_a=region%ice%geom%Hi, vmin=0._dp)
     d_loc_dp = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
     call write_to_file( region, region%ismip_output%orog,  inputfield_a=d_loc_dp, vmin=0._dp)
-    call write_to_file( region, region%ismip_output%topg,  inputfield_a=region%ice%geom%Hb)
+    d_loc_dp = region%ice%geom%Hb( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%topg,  inputfield_a=d_loc_dp)
     d_loc_dp = region%ice%geom%Hib( region%mesh%vi1:region%mesh%vi2)
     call write_to_file( region, region%ismip_output%base,  inputfield_a=d_loc_dp)
 

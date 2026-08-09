@@ -1197,7 +1197,7 @@ contains
 
       region%refgeo_PD%Hi  = region%ice%geom%Hi
       region%refgeo_PD%Hs( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
-      region%refgeo_PD%Hb  = region%ice%geom%Hb
+      region%refgeo_PD%Hb( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hb( region%mesh%vi1:region%mesh%vi2)
 
       ! Differences w.r.t. present-day
       region%ice%dHi  = 0._dp

@@ -87,7 +87,6 @@ contains
     if (size( d_mesh,1) == mesh%pai_V%n_loc) then
       allocate( d_mesh_dist( mesh%vi1:mesh%vi2), source = d_mesh)
     elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
-      call crash('wut')
       allocate( d_mesh_dist( mesh%vi1:mesh%vi2), source = 0._dp)
       call hybrid_to_dist( mesh%pai_V, d_mesh, d_mesh_dist)
     else
@@ -156,7 +155,6 @@ contains
     if (size( d_mesh,1) == mesh%pai_V%n_loc) then
       allocate( d_mesh_dist( mesh%vi1:mesh%vi2, 1:size( d_mesh,2)), source = d_mesh)
     elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
-      call crash('wut')
       allocate( d_mesh_dist( mesh%vi1:mesh%vi2, 1:size( d_mesh,2)), source = 0._dp)
       call hybrid_to_dist( mesh%pai_V, size( d_mesh,2), d_mesh, d_mesh_dist)
     else
@@ -225,7 +223,6 @@ contains
     if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
       allocate( d_mesh_dist( mesh%ti1:mesh%ti2), source = d_mesh)
     elseif (size( d_mesh,1) == mesh%pai_Tri%n_nih) then
-      call crash('wut')
       allocate( d_mesh_dist( mesh%ti1:mesh%ti2), source = 0._dp)
       call hybrid_to_dist( mesh%pai_Tri, d_mesh, d_mesh_dist)
     else
@@ -294,7 +291,6 @@ contains
     if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
       allocate( d_mesh_dist( mesh%ti1:mesh%ti2, 1:size( d_mesh,2)), source = d_mesh)
     elseif (size( d_mesh,1) == mesh%pai_Tri%n_nih) then
-      call crash('wut')
       allocate( d_mesh_dist( mesh%ti1:mesh%ti2, 1:size( d_mesh,2)), source = 0._dp)
       call hybrid_to_dist( mesh%pai_Tri, size( d_mesh,2), d_mesh, d_mesh_dist)
     else

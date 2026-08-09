@@ -214,7 +214,13 @@ contains
     allocate( self%Hs      ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%Hib     ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%TAF     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%Hi_eff  ( mesh%vi1:mesh%vi2), source = NaN)
+
+    call self%create_field( self%Hi_eff, self%wHi_eff, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hi_eff', &
+      long_name = 'Effective ice thickness', &
+      units     = '-', &
+      remap_method = 'reallocate')
 
     call self%create_field( self%Hs_slope, self%wHs_slope, &
       self%mesh, Arakawa_grid%a(), &
@@ -390,7 +396,7 @@ contains
     deallocate( self%Hs      )
     deallocate( self%Hib     )
     deallocate( self%TAF     )
-    deallocate( self%Hi_eff  )
+    nullify( self%Hi_eff  )
     nullify( self%Hs_slope)
     nullify( self%Ho      )
 

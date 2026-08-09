@@ -21,10 +21,10 @@ module ice_geometry_model_data
     real(dp), dimension(:  ), allocatable :: Hs                      ! [m]       Ice surface elevation (w.r.t. PD sea level)
     real(dp), dimension(:  ), allocatable :: Hib                     ! [m]       Ice base elevation    (w.r.t. PD sea level)
     real(dp), dimension(:  ), allocatable :: TAF                     ! [m]       Thickness above floatation
-    real(dp), dimension(:  ), allocatable :: Hi_eff                  ! [m]       Effective ice thickness
+    real(dp), dimension(:  ), contiguous, pointer :: Hi_eff                => null()  ! [m]       Effective ice thickness
     real(dp), dimension(:  ), contiguous, pointer :: Hs_slope              => null()  ! [-]       Absolute surface gradient
     real(dp), dimension(:  ), contiguous, pointer :: Ho                    => null()  ! [m]       Depth of ocean column adjacent to the ice front
-    type(MPI_WIN) :: wHs_slope, wHo
+    type(MPI_WIN) :: wHi_eff, wHs_slope, wHo
 
     ! Horizontal derivatives
     real(dp), dimension(:  ), contiguous, pointer :: dHib_dx_b             => null()  ! [-]       Horizontal derivative of ice draft on b-grid

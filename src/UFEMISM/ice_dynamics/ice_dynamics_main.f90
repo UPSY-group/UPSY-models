@@ -602,11 +602,11 @@ contains
     ! ======================
 
     ! 3-D
-    call reallocate_bounds( ice%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [m yr^-1] 3-D ice velocity
-    call reallocate_bounds( ice%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( ice%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( ice%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [m yr^-1] 3-D ice velocity
+    call reallocate_bounds( ice%vel%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
 
     ! Vertically integrated
     call reallocate_bounds( ice%u_vav     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Vertically averaged ice velocity
@@ -962,8 +962,8 @@ contains
     BC_prescr_Hi   = ice%geom%Hi
     BC_prescr_u_b  = ice%u_vav_b
     BC_prescr_v_b  = ice%v_vav_b
-    BC_prescr_u_bk = ice%u_3D_b
-    BC_prescr_v_bk = ice%v_3D_b
+    BC_prescr_u_bk = ice%vel%u_3D_b
+    BC_prescr_v_bk = ice%vel%v_3D_b
 
     ! == Save proper values of config parameters for the velocity solver
     ! ==================================================================

@@ -117,7 +117,7 @@ contains
     call ddy_a_a_2D( mesh, ice%geom%Hib, dHib_dy)
 
     ! Calculate u,v on the c-grid (edges)
-    call map_velocities_from_b_to_c_3D( mesh, ice%u_3D_b, ice%v_3D_b, u_3D_c, v_3D_c)
+    call map_velocities_from_b_to_c_3D( mesh, ice%vel%u_3D_b, ice%vel%v_3D_b, u_3D_c, v_3D_c)
     call gather_to_all( u_3D_c, u_3D_c_tot)
     call gather_to_all( v_3D_c, v_3D_c_tot)
 
@@ -126,7 +126,7 @@ contains
 
       ! No ice means no velocity
       if (.not. (ice%geom%mask_grounded_ice( vi) .or. ice%geom%mask_floating_ice( vi))) then
-        ice%w_3D( vi,:) = 0._dp
+        ice%vel%w_3D( vi,:) = 0._dp
         cycle
       end if
 
@@ -138,14 +138,14 @@ contains
 
       if (ice%geom%mask_floating_ice( vi)) then
 
-        ice%w_3D( vi,C%nz) = (ice%u_3D( vi,C%nz) * dHib_dx( vi)) + &
-                            (ice%v_3D( vi,C%nz) * dHib_dy( vi)) + &
+        ice%vel%w_3D( vi,C%nz) = (ice%vel%u_3D( vi,C%nz) * dHib_dx( vi)) + &
+                            (ice%vel%v_3D( vi,C%nz) * dHib_dy( vi)) + &
                               dHib_dt( vi) + MIN( 0._dp, BMB( vi))
 
       else
 
-        ice%w_3D( vi,C%nz) = (ice%u_3D( vi,C%nz) * dHib_dx( vi)) + &
-                            (ice%v_3D( vi,C%nz) * dHib_dy( vi)) + &
+        ice%vel%w_3D( vi,C%nz) = (ice%vel%u_3D( vi,C%nz) * dHib_dx( vi)) + &
+                            (ice%vel%v_3D( vi,C%nz) * dHib_dy( vi)) + &
                               dHib_dt( vi) + MIN( 0._dp, BMB( vi))
 
       end if
@@ -154,7 +154,7 @@ contains
       ! Exception for very thin ice / ice margin: assume horizontal stretching
       ! is negligible, so that w( z) = w( z = b)
       if (ice%geom%Hi( vi) < 10._dp) then
-        ice%w_3D( vi,:) = ice%w_3D( vi,C%nz)
+        ice%vel%w_3D( vi,:) = ice%vel%w_3D( vi,C%nz)
         cycle
       end if
 
@@ -187,8 +187,8 @@ contains
         grad_uv_ks = cint_un_dS / mesh%A( vi)
 
         ! Calculate du/dzeta, dv/dzeta
-        du_dzeta_ks = (ice%u_3D( vi,ks+1) - ice%u_3D( vi,ks)) / dzeta
-        dv_dzeta_ks = (ice%v_3D( vi,ks+1) - ice%v_3D( vi,ks)) / dzeta
+        du_dzeta_ks = (ice%vel%u_3D( vi,ks+1) - ice%vel%u_3D( vi,ks)) / dzeta
+        dv_dzeta_ks = (ice%vel%v_3D( vi,ks+1) - ice%vel%v_3D( vi,ks)) / dzeta
 
         ! Calculate dzeta/dx, dzeta/dy, dzeta/dz
         dzeta_dx_ks = 0.5_dp * (ice%dzeta_dx_ak( vi,ks) + ice%dzeta_dx_ak( vi,ks+1))
@@ -199,7 +199,7 @@ contains
         dw_dzeta_ks = -1._dp / dzeta_dz_ks * (grad_uv_ks + dzeta_dx_ks * du_dzeta_ks + dzeta_dy_ks * dv_dzeta_ks)
 
         ! Calculate w
-        ice%w_3D( vi,ks) = ice%w_3D( vi,ks+1) - dzeta * dw_dzeta_ks
+        ice%vel%w_3D( vi,ks) = ice%vel%w_3D( vi,ks+1) - dzeta * dw_dzeta_ks
 
       end do
 
@@ -207,7 +207,7 @@ contains
 
     ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
     call calc_dw_dz( mesh, ice%geom%Hi, ice%geom%Hs, mesh%zeta, &
-      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%w_3D, ice%dw_dz_3D)
+      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%vel%w_3D, ice%dw_dz_3D)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

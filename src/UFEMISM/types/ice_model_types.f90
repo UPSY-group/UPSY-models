@@ -10,6 +10,7 @@ MODULE ice_model_types
   use mpi_f08, only: MPI_WIN
   use basal_hydrology_model_types, only: type_basal_hydrology_model
   use ice_geometry_model_basic, only: type_ice_geometry_model
+  use ice_velocity_model_basic, only: type_ice_velocity_model
 
   IMPLICIT NONE
 
@@ -297,11 +298,11 @@ MODULE ice_model_types
   TYPE type_ice_model
     ! The ice dynamics model data structure.
 
-  ! === Ice-sheet geometry ===
-  ! ==========================
-
-    ! Basic geometry
+    ! Geometry
     type(type_ice_geometry_model), allocatable :: geom
+
+    ! Velocity
+    type(type_ice_velocity_model), allocatable :: vel
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)
@@ -385,13 +386,6 @@ MODULE ice_model_types
     TYPE(type_ice_velocity_solver_DIVA)     :: DIVA                        ! Depth-Integrated Viscosity Approximation
     TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
     TYPE(type_ice_velocity_solver_hybrid)   :: hybrid                      ! Hybrid DIVA/BPA
-
-    ! 3-D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_3D                        ! [m yr^-1] 3-D ice velocity
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_3D_b
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_3D_b
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: w_3D
 
     ! Vertically integrated
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_vav                       ! [m yr^-1] Vertically averaged ice velocity

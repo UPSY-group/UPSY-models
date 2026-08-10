@@ -364,15 +364,15 @@ contains
 
       ! 3-D
       case ('u_3D')
-        call write_to_field_multopt_mesh_dp_3D_b( region%mesh, filename, ncid, 'u_3D', region%ice%u_3D_b)
+        call write_to_field_multopt_mesh_dp_3D_b( region%mesh, filename, ncid, 'u_3D', region%ice%vel%u_3D_b)
       case ('v_3D')
-        call write_to_field_multopt_mesh_dp_3D_b( region%mesh, filename, ncid, 'v_3D', region%ice%v_3D_b)
+        call write_to_field_multopt_mesh_dp_3D_b( region%mesh, filename, ncid, 'v_3D', region%ice%vel%v_3D_b)
       case ('u_3D_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_3D_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('w_3D')
-        call write_to_field_multopt_mesh_dp_3D( region%mesh, filename, ncid, 'w_3D', region%ice%w_3D)
+        call write_to_field_multopt_mesh_dp_3D( region%mesh, filename, ncid, 'w_3D', region%ice%vel%w_3D)
 
       ! Vertically integrated
       case ('u_vav')

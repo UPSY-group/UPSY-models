@@ -110,8 +110,8 @@ contains
 
       case ('none')
 
-        ice%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
-        ice%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        ice%vel%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        ice%vel%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
 
         n_visc_its = 0
         n_Axb_its  = 0
@@ -197,18 +197,18 @@ contains
     do ti = mesh%ti1, mesh%ti2
 
       ! Surface
-      ice%u_surf_b(    ti) = ice%u_3D_b( ti,1)
-      ice%v_surf_b(    ti) = ice%v_3D_b( ti,1)
+      ice%u_surf_b(    ti) = ice%vel%u_3D_b( ti,1)
+      ice%v_surf_b(    ti) = ice%vel%v_3D_b( ti,1)
       ice%uabs_surf_b( ti) = SQRT( ice%u_surf_b( ti)**2 + ice%v_surf_b( ti)**2)
 
       ! Base
-      ice%u_base_b(    ti) = ice%u_3D_b( ti,C%nz)
-      ice%v_base_b(    ti) = ice%v_3D_b( ti,C%nz)
+      ice%u_base_b(    ti) = ice%vel%u_3D_b( ti,C%nz)
+      ice%v_base_b(    ti) = ice%vel%v_3D_b( ti,C%nz)
       ice%uabs_base_b( ti) = SQRT( ice%u_base_b( ti)**2 + ice%v_base_b( ti)**2)
 
       ! Vertical average
-      u_prof = ice%u_3D_b( ti,:)
-      v_prof = ice%v_3D_b( ti,:)
+      u_prof = ice%vel%u_3D_b( ti,:)
+      v_prof = ice%vel%v_3D_b( ti,:)
       ice%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
       ice%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
       ice%uabs_vav_b( ti) = SQRT( ice%u_vav_b( ti)**2 + ice%v_vav_b( ti)**2)
@@ -218,8 +218,8 @@ contains
     ! == Calculate velocities on the a-grid (needed to calculate the vertical velocity w, and for writing to output)
 
     ! 3-D
-    call map_b_a_3D( mesh, ice%u_3D_b  , ice%u_3D  )
-    call map_b_a_3D( mesh, ice%v_3D_b  , ice%v_3D  )
+    call map_b_a_3D( mesh, ice%vel%u_3D_b  , ice%vel%u_3D  )
+    call map_b_a_3D( mesh, ice%vel%v_3D_b  , ice%vel%v_3D  )
 
     ! Surface
     call map_b_a_2D( mesh, ice%u_surf_b, ice%u_surf)
@@ -377,8 +377,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
-      ice%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
+      ice%vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
+      ice%vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
@@ -418,8 +418,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = SSA%u_b( ti)
-      ice%v_3D_b( ti,:) = SSA%v_b( ti)
+      ice%vel%u_3D_b( ti,:) = SSA%u_b( ti)
+      ice%vel%v_3D_b( ti,:) = SSA%v_b( ti)
     end do
 
     ! Strain rates
@@ -463,8 +463,8 @@ contains
 
       ! Velocities
       do ti = mesh%ti1, mesh%ti2
-        ice%u_3D_b( ti,:) = SIA%u_3D_b( ti,:) + SSA%u_b( ti)
-        ice%v_3D_b( ti,:) = SIA%v_3D_b( ti,:) + SSA%v_b( ti)
+        ice%vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:) + SSA%u_b( ti)
+        ice%vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:) + SSA%v_b( ti)
       end do
 
       ! Strain rates
@@ -491,8 +491,8 @@ contains
         w_sia_u = 1._dp - (2.0_dp/pi) * atan( (abs(SSA%u_b( ti))**2.0_dp) / (30._dp**2.0_dp) )
         w_sia_v = 1._dp - (2.0_dp/pi) * atan( (abs(SSA%v_b( ti))**2.0_dp) / (30._dp**2.0_dp) )
         ! Add SIA fraction to SSA solution
-        ice%u_3D_b( ti,:) = w_sia_u * SIA%u_3D_b( ti,:) + SSA%u_b( ti)
-        ice%v_3D_b( ti,:) = w_sia_v * SIA%v_3D_b( ti,:) + SSA%v_b( ti)
+        ice%vel%u_3D_b( ti,:) = w_sia_u * SIA%u_3D_b( ti,:) + SSA%u_b( ti)
+        ice%vel%v_3D_b( ti,:) = w_sia_v * SIA%v_3D_b( ti,:) + SSA%v_b( ti)
       end do
 
       ! Strain rates
@@ -536,8 +536,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
-      ice%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
+      ice%vel%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
+      ice%vel%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
@@ -582,8 +582,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = BPA%u_bk( ti,:)
-      ice%v_3D_b( ti,:) = BPA%v_bk( ti,:)
+      ice%vel%u_3D_b( ti,:) = BPA%u_bk( ti,:)
+      ice%vel%v_3D_b( ti,:) = BPA%v_bk( ti,:)
     end do
 
     ! Strain rates
@@ -623,8 +623,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
-      ice%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
+      ice%vel%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
+      ice%vel%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
     end do
 
     ! Strain rates

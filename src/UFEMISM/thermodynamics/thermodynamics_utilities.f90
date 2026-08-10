@@ -381,8 +381,8 @@ CONTAINS
     CALL ddy_a_b_3D( mesh, ice%Ti, dTi_dyp_3D_b)
 
     ! Gather full velocity fields
-    CALL gather_to_all( ice%u_3D_b  , u_3D_b_tot      )
-    CALL gather_to_all( ice%v_3D_b  , v_3D_b_tot      )
+    CALL gather_to_all( ice%vel%u_3D_b  , u_3D_b_tot      )
+    CALL gather_to_all( ice%vel%v_3D_b  , v_3D_b_tot      )
     CALL gather_to_all( dTi_dxp_3D_b, dTi_dxp_3D_b_tot)
     CALL gather_to_all( dTi_dyp_3D_b, dTi_dyp_3D_b_tot)
 

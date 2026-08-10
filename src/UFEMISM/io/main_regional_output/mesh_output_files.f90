@@ -390,17 +390,17 @@ contains
 
       ! Surface
       case ('u_surf')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'u_surf', region%ice%u_surf_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'u_surf', region%ice%vel%u_surf_b)
       case ('v_surf')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'v_surf', region%ice%v_surf_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'v_surf', region%ice%vel%v_surf_b)
       case ('u_surf_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_surf_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('w_surf')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'w_surf', region%ice%w_surf)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'w_surf', region%ice%vel%w_surf)
       case ('uabs_surf')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'uabs_surf', region%ice%uabs_surf_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'uabs_surf', region%ice%vel%uabs_surf_b)
       case ('uabs_surf_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
 

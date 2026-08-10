@@ -617,13 +617,13 @@ contains
     call reallocate_bounds( ice%vel%uabs_vav_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Surface
-    call reallocate_bounds( ice%u_surf     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the surface
-    call reallocate_bounds( ice%v_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%w_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%u_surf     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the surface
+    call reallocate_bounds( ice%vel%v_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%w_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Basal
     call reallocate_bounds( ice%u_base     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the base

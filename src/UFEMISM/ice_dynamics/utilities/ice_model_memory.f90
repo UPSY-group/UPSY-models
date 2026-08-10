@@ -109,14 +109,6 @@ contains
     ! === Ice velocities ===
     ! ======================
 
-    ! Vertically integrated
-    allocate( ice%u_vav     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%v_vav     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%u_vav_b   ( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%v_vav_b   ( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%uabs_vav  ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%uabs_vav_b( mesh%ti1:mesh%ti2), source = 0._dp)
-
     ! Surface
     allocate( ice%u_surf     ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%v_surf     ( mesh%vi1:mesh%vi2), source = 0._dp)

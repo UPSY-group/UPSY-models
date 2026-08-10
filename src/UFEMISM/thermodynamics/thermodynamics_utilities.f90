@@ -396,7 +396,7 @@ CONTAINS
       END IF
 
       ! The upwind velocity vector
-      u_upwind = [-ice%u_vav( vi), -ice%v_vav( vi)]
+      u_upwind = [-ice%vel%u_vav( vi), -ice%vel%v_vav( vi)]
 
       ! Find the upwind triangle
       ti_upwind = 0

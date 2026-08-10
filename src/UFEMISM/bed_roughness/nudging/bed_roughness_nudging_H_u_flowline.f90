@@ -153,8 +153,8 @@ contains
     call gather_to_all( ice%geom%Hi     , Hi_tot     )
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( deltau     , deltau_tot )
-    call gather_to_all( ice%u_vav_b, u_b_tot    )
-    call gather_to_all( ice%v_vav_b, v_b_tot    )
+    call gather_to_all( ice%vel%u_vav_b, u_b_tot    )
+    call gather_to_all( ice%vel%v_vav_b, v_b_tot    )
 
     nudge%deltaHs_av_up   = 0._dp
     nudge%deltaHs_av_down = 0._dp
@@ -238,7 +238,7 @@ contains
       if (nudge%mask_calc_dCdt_from_nudging( vi)) then
 
         nudge%R( vi) = max( 0._dp, min( 1._dp, &
-          ((ice%uabs_vav( vi) * ice%geom%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
+          ((ice%vel%uabs_vav( vi) * ice%geom%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
 
         I1( vi) = -nudge%deltau_av_up  ( vi) / C%bednudge_H_u_flowline_u0
         I2( vi) = -nudge%deltau_av_down( vi) / C%bednudge_H_u_flowline_u0

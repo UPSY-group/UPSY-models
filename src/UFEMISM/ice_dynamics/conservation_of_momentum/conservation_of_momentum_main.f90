@@ -209,9 +209,9 @@ contains
       ! Vertical average
       u_prof = ice%vel%u_3D_b( ti,:)
       v_prof = ice%vel%v_3D_b( ti,:)
-      ice%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
-      ice%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
-      ice%uabs_vav_b( ti) = SQRT( ice%u_vav_b( ti)**2 + ice%v_vav_b( ti)**2)
+      ice%vel%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
+      ice%vel%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
+      ice%vel%uabs_vav_b( ti) = SQRT( ice%vel%u_vav_b( ti)**2 + ice%vel%v_vav_b( ti)**2)
 
     end do
 
@@ -230,17 +230,17 @@ contains
     call map_b_a_2D( mesh, ice%v_base_b, ice%v_base)
 
     ! Vertical average
-    call map_b_a_2D( mesh, ice%u_vav_b , ice%u_vav )
-    call map_b_a_2D( mesh, ice%v_vav_b , ice%v_vav )
+    call map_b_a_2D( mesh, ice%vel%u_vav_b , ice%vel%u_vav )
+    call map_b_a_2D( mesh, ice%vel%v_vav_b , ice%vel%v_vav )
 
     ! Absolute
     do vi = mesh%vi1, mesh%vi2
       ice%uabs_surf( vi) = sqrt( ice%u_surf( vi)**2 + ice%v_surf( vi)**2)
       ice%uabs_base( vi) = sqrt( ice%u_base( vi)**2 + ice%v_base( vi)**2)
-      ice%uabs_vav(  vi) = sqrt( ice%u_vav(  vi)**2 + ice%v_vav(  vi)**2)
+      ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
     end do
 
-    call calc_u_perp( mesh, ice%u_vav_b, ice%v_vav_b, ice%u_perp)
+    call calc_u_perp( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, ice%u_perp)
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2

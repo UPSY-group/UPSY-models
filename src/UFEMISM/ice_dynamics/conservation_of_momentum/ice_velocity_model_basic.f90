@@ -64,6 +64,14 @@ contains
     allocate( self%v_3D_b( mesh%ti1:mesh%ti2, 1:mesh%nz), source = NaN)
     allocate( self%w_3D  ( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
 
+    ! Vertically averaged
+    allocate( self%u_vav     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%v_vav     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%u_vav_b   ( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%v_vav_b   ( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%uabs_vav  ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%uabs_vav_b( mesh%ti1:mesh%ti2), source = NaN)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -91,6 +99,14 @@ contains
     deallocate( self%u_3D_b)
     deallocate( self%v_3D_b)
     deallocate( self%w_3D  )
+
+    ! Vertically averaged
+    deallocate( self%u_vav     )
+    deallocate( self%v_vav     )
+    deallocate( self%u_vav_b   )
+    deallocate( self%v_vav_b   )
+    deallocate( self%uabs_vav  )
+    deallocate( self%uabs_vav_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

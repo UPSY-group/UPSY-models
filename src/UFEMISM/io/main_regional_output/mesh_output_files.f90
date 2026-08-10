@@ -376,15 +376,15 @@ contains
 
       ! Vertically integrated
       case ('u_vav')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'u_vav', region%ice%u_vav_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'u_vav', region%ice%vel%u_vav_b)
       case ('v_vav')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'v_vav', region%ice%v_vav_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'v_vav', region%ice%vel%v_vav_b)
       case ('u_vav_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_vav_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('uabs_vav')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'uabs_vav', region%ice%uabs_vav_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'uabs_vav', region%ice%vel%uabs_vav_b)
       case ('uabs_vav_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
 

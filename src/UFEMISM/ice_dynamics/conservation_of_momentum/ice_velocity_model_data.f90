@@ -19,6 +19,14 @@ module ice_velocity_model_data
     real(dp), dimension(:,:), allocatable :: v_3D_b                      ! [m yr^-1]   3-D ice velocity in the y-direction on the b-grid
     real(dp), dimension(:,:), allocatable :: w_3D                        ! [m yr^-1]   3-D ice velocity in the z-direction
 
+    ! Vertically averaged
+    real(dp), dimension(:  ), allocatable :: u_vav                       ! [m yr^-1]   Vertically averaged ice velocity in the x-direction
+    real(dp), dimension(:  ), allocatable :: v_vav                       ! [m yr^-1]   Vertically averaged ice velocity in the y-direction
+    real(dp), dimension(:  ), allocatable :: u_vav_b                     ! [m yr^-1]   Vertically averaged ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), allocatable :: v_vav_b                     ! [m yr^-1]   Vertically averaged ice velocity in the y-direction on the b-grid
+    real(dp), dimension(:  ), allocatable :: uabs_vav                    ! [m yr^-1]   Vertically averaged horizontal ice speed
+    real(dp), dimension(:  ), allocatable :: uabs_vav_b                  ! [m yr^-1]   Vertically averaged horizontal ice speed on the b-grid
+
   end type atype_ice_velocity_model_data
 
 end module ice_velocity_model_data

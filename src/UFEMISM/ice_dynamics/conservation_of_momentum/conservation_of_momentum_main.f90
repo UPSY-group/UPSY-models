@@ -197,9 +197,9 @@ contains
     do ti = mesh%ti1, mesh%ti2
 
       ! Surface
-      ice%u_surf_b(    ti) = ice%vel%u_3D_b( ti,1)
-      ice%v_surf_b(    ti) = ice%vel%v_3D_b( ti,1)
-      ice%uabs_surf_b( ti) = SQRT( ice%u_surf_b( ti)**2 + ice%v_surf_b( ti)**2)
+      ice%vel%u_surf_b(    ti) = ice%vel%u_3D_b( ti,1)
+      ice%vel%v_surf_b(    ti) = ice%vel%v_3D_b( ti,1)
+      ice%vel%uabs_surf_b( ti) = SQRT( ice%vel%u_surf_b( ti)**2 + ice%vel%v_surf_b( ti)**2)
 
       ! Base
       ice%u_base_b(    ti) = ice%vel%u_3D_b( ti,C%nz)
@@ -222,8 +222,8 @@ contains
     call map_b_a_3D( mesh, ice%vel%v_3D_b  , ice%vel%v_3D  )
 
     ! Surface
-    call map_b_a_2D( mesh, ice%u_surf_b, ice%u_surf)
-    call map_b_a_2D( mesh, ice%v_surf_b, ice%v_surf)
+    call map_b_a_2D( mesh, ice%vel%u_surf_b, ice%vel%u_surf)
+    call map_b_a_2D( mesh, ice%vel%v_surf_b, ice%vel%v_surf)
 
     ! Base
     call map_b_a_2D( mesh, ice%u_base_b, ice%u_base)
@@ -235,7 +235,7 @@ contains
 
     ! Absolute
     do vi = mesh%vi1, mesh%vi2
-      ice%uabs_surf( vi) = sqrt( ice%u_surf( vi)**2 + ice%v_surf( vi)**2)
+      ice%vel%uabs_surf( vi) = sqrt( ice%vel%u_surf( vi)**2 + ice%vel%v_surf( vi)**2)
       ice%uabs_base( vi) = sqrt( ice%u_base( vi)**2 + ice%v_base( vi)**2)
       ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
     end do
@@ -244,7 +244,7 @@ contains
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2
-      ice%R_shear( vi) = (ice%uabs_base( vi) + 0.1_dp) / (ice%uabs_surf( vi) + 0.1_dp)
+      ice%R_shear( vi) = (ice%uabs_base( vi) + 0.1_dp) / (ice%vel%uabs_surf( vi) + 0.1_dp)
     end do
 
     ! Finalise routine path

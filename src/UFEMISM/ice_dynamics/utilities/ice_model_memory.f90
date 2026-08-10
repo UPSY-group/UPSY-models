@@ -109,15 +109,6 @@ contains
     ! === Ice velocities ===
     ! ======================
 
-    ! Surface
-    allocate( ice%u_surf     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%v_surf     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%u_surf_b   ( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%v_surf_b   ( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%w_surf     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%uabs_surf  ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%uabs_surf_b( mesh%ti1:mesh%ti2), source = 0._dp)
-
     ! Basal
     allocate( ice%u_base     ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%v_base     ( mesh%vi1:mesh%vi2), source = 0._dp)

@@ -149,7 +149,7 @@ contains
     deltau = 0._dp
     do ti = mesh%ti1, mesh%ti2
       if (.not. isnan( nudge%uabs_surf_target_b( ti))) then
-        deltau( ti) = ice%uabs_surf_b( ti) - nudge%uabs_surf_target_b( ti)
+        deltau( ti) = ice%vel%uabs_surf_b( ti) - nudge%uabs_surf_target_b( ti)
       end if
     end do
 

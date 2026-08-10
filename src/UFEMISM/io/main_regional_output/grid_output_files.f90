@@ -500,13 +500,13 @@ contains
 
       ! 3-D
       case ('u_3D')
-        call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%u_3D_b, d_grid_vec_partial_3D)
+        call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%u_3D_b, d_grid_vec_partial_3D)
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'u_3D', d_grid_vec_partial_3D)
       case ('v_3D')
-        call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%v_3D_b, d_grid_vec_partial_3D)
+        call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%v_3D_b, d_grid_vec_partial_3D)
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'v_3D', d_grid_vec_partial_3D)
       case ('w_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%w_3D, d_grid_vec_partial_3D)
+        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%w_3D, d_grid_vec_partial_3D)
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'w_3D', d_grid_vec_partial_3D)
 
       ! Vertically integrated

@@ -28,11 +28,11 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! === Ice-sheet geometry ===
-    ! ==========================
-
     allocate( ice%geom)
     call ice%geom%allocate( region_name, mesh)
+
+    allocate( ice%vel)
+    call ice%vel%allocate( region_name, mesh)
 
     ! Geometry changes
     allocate( ice%dHi ( mesh%vi1:mesh%vi2), source = 0._dp)
@@ -108,13 +108,6 @@ contains
 
     ! === Ice velocities ===
     ! ======================
-
-    ! 3-D
-    allocate( ice%u_3D  ( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%v_3D  ( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%u_3D_b( mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-    allocate( ice%v_3D_b( mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-    allocate( ice%w_3D  ( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
 
     ! Vertically integrated
     allocate( ice%u_vav     ( mesh%vi1:mesh%vi2), source = 0._dp)

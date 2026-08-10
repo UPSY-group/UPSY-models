@@ -439,12 +439,12 @@ module ut_tracer_tracking
 !     ! ! Ice flows parallel to the surface, with the speed increasing from
 !     ! ! zero at the base to u_abs at the surface.
 
-!     ! ice%v_3D_b = 0._dp
+!     ! ice%vel%v_3D_b = 0._dp
 !     ! u_surf = uabs * cosd( theta)
 !     ! w_surf = uabs * sind( theta)
 !     ! do k = 1, mesh%nz
-!     !   ice%u_3D_b( :,k) = u_surf * (1._dp - mesh%zeta( k))
-!     !   ice%w_3D  ( :,k) = w_surf * (1._dp - mesh%zeta( k))
+!     !   ice%vel%u_3D_b( :,k) = u_surf * (1._dp - mesh%zeta( k))
+!     !   ice%vel%w_3D  ( :,k) = w_surf * (1._dp - mesh%zeta( k))
 !     ! end do
 
 !     ! xmin    = mesh%xmin * 0.95_dp
@@ -564,13 +564,13 @@ module ut_tracer_tracking
 !     ! ! infinity years at the base (rotation speed decreases
 !     ! ! linearly with depth)
 
-!     ! ice%w_3D = 0._dp
+!     ! ice%vel%w_3D = 0._dp
 !     ! do ti = mesh%ti1, mesh%ti2
 !     ! do k = 1, mesh%nz
 !     !   x = mesh%Tricc( ti,1)
 !     !   y = mesh%Tricc( ti,2)
-!     !   ice%u_3D_b( ti,k) = -y * 2_dp * pi / time_rev_surf * (1._dp - mesh%zeta( k))
-!     !   ice%v_3D_b( ti,k) =  x * 2_dp * pi / time_rev_surf * (1._dp - mesh%zeta( k))
+!     !   ice%vel%u_3D_b( ti,k) = -y * 2_dp * pi / time_rev_surf * (1._dp - mesh%zeta( k))
+!     !   ice%vel%v_3D_b( ti,k) =  x * 2_dp * pi / time_rev_surf * (1._dp - mesh%zeta( k))
 !     ! end do
 !     ! end do
 

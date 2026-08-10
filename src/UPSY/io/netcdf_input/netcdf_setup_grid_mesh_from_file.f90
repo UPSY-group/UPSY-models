@@ -11,7 +11,8 @@ module netcdf_setup_grid_mesh_from_file
   use mesh_parallel_creation, only: broadcast_mesh
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use mesh_disc_calc_matrix_operators_2D, only: calc_all_matrix_operators_mesh
-  use grid_lonlat_basic, only: calc_lonlat_field_to_vector_form_translation_tables
+  use grid_lonlat_basic, only: calc_lonlat_field_to_vector_form_translation_tables, &
+    setup_lonlat_grid_parallelisation
   use grid_basic, only: calc_secondary_grid_data
   use netcdf_basic
   use tests_main
@@ -145,6 +146,7 @@ contains
 
     ! Secondary data
     call calc_lonlat_field_to_vector_form_translation_tables( grid)
+    call setup_lonlat_grid_parallelisation( grid)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -439,6 +441,7 @@ contains
 
     ! Secondary data
     call calc_lonlat_field_to_vector_form_translation_tables( grid)
+    call setup_lonlat_grid_parallelisation( grid)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

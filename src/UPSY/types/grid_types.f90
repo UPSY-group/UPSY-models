@@ -62,6 +62,7 @@ module grid_types
 
     ! Parallelisation
     integer                                 :: n1,n2,n_loc  ! Matrix rows owned by each process
+    type(type_par_arr_info)                 :: pai
 
   end type type_grid_lonlat
 

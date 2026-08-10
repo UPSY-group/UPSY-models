@@ -11,8 +11,17 @@ MODULE grid_lonlat_basic
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection
   use mpi_distributed_memory, only: partition_list, distribute_from_primary, gather_to_primary
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_INTEGER, MPI_MIN, MPI_MAX
 
   IMPLICIT NONE
+
+  private
+
+  public :: setup_simple_lonlat_grid, deallocate_lonlat_grid, deallocate_lat_grid, &
+    check_if_lonlat_grids_are_identical, distribute_lonlat_gridded_data_from_primary_dp_2D, &
+    distribute_lonlat_gridded_data_from_primary_dp_3D, gather_lonlat_gridded_data_to_primary_dp_2D, &
+    gather_lonlat_gridded_data_to_primary_dp_3D, calc_lonlat_field_to_vector_form_translation_tables, &
+    setup_lonlat_grid_parallelisation
 
 CONTAINS
 
@@ -65,6 +74,7 @@ CONTAINS
 
     ! Secondary data
     CALL calc_lonlat_field_to_vector_form_translation_tables( grid)
+    call setup_lonlat_grid_parallelisation( grid)
 
     ! Finalise routine path
     CALL finalise_routine( routine_name)
@@ -194,14 +204,62 @@ CONTAINS
     END DO
     END DO
 
-    ! Parallelisation domains
-    CALL partition_list( grid%n, par%i, par%n, grid%n1, grid%n2)
-    grid%n_loc = grid%n2 + 1 - grid%n1
-
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE calc_lonlat_field_to_vector_form_translation_tables
+
+  subroutine setup_lonlat_grid_parallelisation( grid)
+
+    ! In/output variables
+    type(type_grid_lonlat), intent(inout) :: grid
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'setup_lonlat_grid_parallelisation'
+    integer                     :: ierr
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Parallelisation domains
+    call partition_list( grid%n, par%i, par%n, grid%n1, grid%n2)
+    grid%n_loc = grid%n2 + 1 - grid%n1
+
+    ! Parallel array info
+    grid%pai%n  = grid%n
+
+    grid%pai%i1    = grid%n1
+    grid%pai%i2    = grid%n2
+    grid%pai%n_loc = grid%n_loc
+
+    call MPI_ALLREDUCE( grid%pai%i1, grid%pai%i1_node, 1, MPI_INTEGER, MPI_MIN, par%mpi_comm_node, ierr)
+    call MPI_ALLREDUCE( grid%pai%i2, grid%pai%i2_node, 1, MPI_INTEGER, MPI_MAX, par%mpi_comm_node, ierr)
+    grid%pai%n_node = grid%pai%i2_node + 1 - grid%pai%i1_node
+
+    grid%pai%i1_nih = grid%pai%i1_node
+    grid%pai%i2_nih = grid%pai%i2_node
+    grid%pai%n_nih  = grid%pai%n_node
+
+    grid%pai%i1_hle = 0
+    grid%pai%i2_hle = -1
+    grid%pai%n_hle  = 0
+
+    grid%pai%i1_hli = 0
+    grid%pai%i2_hli = -1
+    grid%pai%n_hli  = 0
+
+    grid%pai%i1_hre = 0
+    grid%pai%i2_hre = -1
+    grid%pai%n_hre  = 0
+
+    grid%pai%i1_hri = 0
+    grid%pai%i2_hri = -1
+    grid%pai%n_hri  = 0
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine setup_lonlat_grid_parallelisation
 
 ! == Subroutines for manipulating gridded data in distributed memory
 

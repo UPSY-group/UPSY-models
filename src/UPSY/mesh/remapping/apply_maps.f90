@@ -85,13 +85,16 @@ contains
     real(dp), dimension(:), intent(out) :: d_mesh_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_2D'
+    character(len=*), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_2D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
+      grid%pai, d_grid_vec_partial, mesh%pai_V, d_mesh_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -109,13 +112,16 @@ contains
     real(dp), dimension(:,:), intent(out) :: d_mesh_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_3D'
+    character(len=*), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_3D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+      grid%pai, d_grid_vec_partial, mesh%pai_V, d_mesh_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -136,13 +142,16 @@ contains
     real(dp), dimension(:), intent(out) :: d_mesh_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_2D'
+    character(len=*), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_2D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
+      grid%pai, d_grid_vec_partial, mesh%pai_Tri, d_mesh_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -160,13 +169,16 @@ contains
     real(dp), dimension(:,:), intent(out) :: d_mesh_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_3D'
+    character(len=*), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_3D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+      grid%pai, d_grid_vec_partial, mesh%pai_Tri, d_mesh_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -187,13 +199,16 @@ contains
     real(dp), dimension(:), intent(out) :: d_mesh_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_lonlat_grid_to_mesh_2D'
+    character(len=*), parameter :: routine_name = 'apply_map_lonlat_grid_to_mesh_2D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
+      grid%pai, d_grid_vec_partial, mesh%pai_V, d_mesh_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -211,13 +226,16 @@ contains
     real(dp), dimension(:,:), intent(out) :: d_mesh_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_lonlat_grid_to_mesh_3D'
+    character(len=*), parameter :: routine_name = 'apply_map_lonlat_grid_to_mesh_3D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+      grid%pai, d_grid_vec_partial, mesh%pai_V, d_mesh_partial)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -530,13 +548,16 @@ contains
     real(dp), dimension(:), intent(out) :: d_dst_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_to_mesh_2D'
+    character(len=*), parameter :: routine_name = 'apply_map_mesh_to_mesh_2D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_src_partial, d_dst_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
+      mesh_src%pai_V, d_src_partial, mesh_dst%pai_V, d_dst_partial)
 
     ! Set values of border vertices to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
@@ -557,13 +578,16 @@ contains
     real(dp), dimension(:,:), intent(out) :: d_dst_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_to_mesh_3D'
+    character(len=*), parameter :: routine_name = 'apply_map_mesh_to_mesh_3D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_src_partial, d_dst_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+      mesh_src%pai_V, d_src_partial, mesh_dst%pai_V, d_dst_partial)
 
     ! Set values of border vertices to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
@@ -584,13 +608,16 @@ contains
     real(dp), dimension(:), intent(out) :: d_dst_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_2D'
+    character(len=*), parameter :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_2D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_src_partial, d_dst_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( M_CSR, &
+      mesh_src%pai_Tri, d_src_partial, mesh_dst%pai_Tri, d_dst_partial)
 
     ! Set values of border triangles to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
@@ -611,13 +638,16 @@ contains
     real(dp), dimension(:,:), intent(out) :: d_dst_partial
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_3D'
+    character(len=*), parameter :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_3D'
+    type(type_CSR_matrix_dp)    :: M_CSR
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_src_partial, d_dst_partial)
+    call mat_petsc2CSR( map%M, M_CSR)
+    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+      mesh_src%pai_Tri, d_src_partial, mesh_dst%pai_Tri, d_dst_partial)
 
     ! Set values of border vertices to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border

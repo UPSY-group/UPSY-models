@@ -19,6 +19,7 @@ module apply_maps
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
     multiply_CSR_matrix_with_vector_2D_wrapper
+  use dist_to_hybrid_mod, only: dist_to_hybrid, hybrid_to_dist
 
   implicit none
 
@@ -75,23 +76,33 @@ contains
   ! =====================================
 
   !> Map a 2-D data field from an x/y-grid to a mesh.
-  subroutine apply_map_xy_grid_to_mesh_2D( grid, mesh, map, d_grid_vec_partial, d_mesh_partial)
+  subroutine apply_map_xy_grid_to_mesh_2D( grid, mesh, map, d_grid_vec_partial, d_mesh)
 
     ! In/output variables
-    type(type_grid),        intent(in)  :: grid
-    type(type_mesh),        intent(in)  :: mesh
-    type(type_map),         intent(in)  :: map
-    real(dp), dimension(:), intent(in)  :: d_grid_vec_partial
-    real(dp), dimension(:), intent(out) :: d_mesh_partial
+    type(type_grid),        intent(in   ) :: grid
+    type(type_mesh),        intent(in   ) :: mesh
+    type(type_map),         intent(in   ) :: map
+    real(dp), dimension(:), intent(in   ) :: d_grid_vec_partial
+    real(dp), dimension(:), intent(  out) :: d_mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_2D'
+    character(len=*), parameter            :: routine_name = 'apply_map_xy_grid_to_mesh_2D'
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: d_mesh_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_loc)
+
+    ! Support d_mesh as both distributed and hybrid distributed/shared memory
+    if (size( d_mesh,1) == mesh%pai_V%n_loc) then
+      d_mesh = d_mesh_loc
+    elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
+      call dist_to_hybrid( mesh%pai_V, d_mesh_loc, d_mesh)
+    else
+      call crash('invalid size for d_mesh')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -99,23 +110,33 @@ contains
   end subroutine apply_map_xy_grid_to_mesh_2D
 
   !> Map a 3-D data field from an x/y-grid to a mesh.
-  subroutine apply_map_xy_grid_to_mesh_3D( grid, mesh, map, d_grid_vec_partial, d_mesh_partial)
+  subroutine apply_map_xy_grid_to_mesh_3D( grid, mesh, map, d_grid_vec_partial, d_mesh)
 
     ! In/output variables
-    type(type_grid),          intent(in)  :: grid
-    type(type_mesh),          intent(in)  :: mesh
-    type(type_map),           intent(in)  :: map
-    real(dp), dimension(:,:), intent(in)  :: d_grid_vec_partial
-    real(dp), dimension(:,:), intent(out) :: d_mesh_partial
+    type(type_grid),          intent(in   ) :: grid
+    type(type_mesh),          intent(in   ) :: mesh
+    type(type_map),           intent(in   ) :: map
+    real(dp), dimension(:,:), intent(in   ) :: d_grid_vec_partial
+    real(dp), dimension(:,:), intent(  out) :: d_mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_3D'
+    character(len=*), parameter                             :: routine_name = 'apply_map_xy_grid_to_mesh_3D'
+    real(dp), dimension(mesh%vi1:mesh%vi2,1:size(d_mesh,2)) :: d_mesh_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_loc)
+
+    ! Support d_mesh as both distributed and hybrid distributed/shared memory
+    if (size( d_mesh,1) == mesh%pai_V%n_loc) then
+      d_mesh = d_mesh_loc
+    elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
+      call dist_to_hybrid( mesh%pai_V, size( d_mesh,2), d_mesh_loc, d_mesh)
+    else
+      call crash('invalid size for d_mesh')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -126,23 +147,33 @@ contains
   ! ======================================
 
   ! Map a 2-D data field from an x/y-grid to a mesh triangles.
-  subroutine apply_map_xy_grid_to_mesh_triangles_2D( grid, mesh, map, d_grid_vec_partial, d_mesh_partial)
+  subroutine apply_map_xy_grid_to_mesh_triangles_2D( grid, mesh, map, d_grid_vec_partial, d_mesh)
 
     ! In/output variables
-    type(type_grid),        intent(in)  :: grid
-    type(type_mesh),        intent(in)  :: mesh
-    type(type_map),         intent(in)  :: map
-    real(dp), dimension(:), intent(in)  :: d_grid_vec_partial
-    real(dp), dimension(:), intent(out) :: d_mesh_partial
+    type(type_grid),                intent(in)  :: grid
+    type(type_mesh),                intent(in)  :: mesh
+    type(type_map),                 intent(in)  :: map
+    real(dp), dimension(:),         intent(in)  :: d_grid_vec_partial
+    real(dp), dimension(:), target, intent(out) :: d_mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_2D'
+    character(len=*), parameter            :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_2D'
+    real(dp), dimension(mesh%ti1:mesh%ti2) :: d_mesh_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_loc)
+
+    ! Support d_mesh as both distributed and hybrid distributed/shared memory
+    if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
+      d_mesh = d_mesh_loc
+    elseif (size( d_mesh,1) == mesh%pai_Tri%n_nih) then
+      call dist_to_hybrid( mesh%pai_Tri, d_mesh_loc, d_mesh)
+    else
+      call crash('invalid size for d_mesh')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -150,23 +181,33 @@ contains
   end subroutine apply_map_xy_grid_to_mesh_triangles_2D
 
   !> Map a 3-D data field from an x/y-grid to a mesh triangles.
-  subroutine apply_map_xy_grid_to_mesh_triangles_3D( grid, mesh, map, d_grid_vec_partial, d_mesh_partial)
+  subroutine apply_map_xy_grid_to_mesh_triangles_3D( grid, mesh, map, d_grid_vec_partial, d_mesh)
 
     ! In/output variables
-    type(type_grid),          intent(in)  :: grid
-    type(type_mesh),          intent(in)  :: mesh
-    type(type_map),           intent(in)  :: map
-    real(dp), dimension(:,:), intent(in)  :: d_grid_vec_partial
-    real(dp), dimension(:,:), intent(out) :: d_mesh_partial
+    type(type_grid),                  intent(in)  :: grid
+    type(type_mesh),                  intent(in)  :: mesh
+    type(type_map),                   intent(in)  :: map
+    real(dp), dimension(:,:),         intent(in)  :: d_grid_vec_partial
+    real(dp), dimension(:,:), target, intent(out) :: d_mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_3D'
+    character(len=*), parameter                             :: routine_name = 'apply_map_xy_grid_to_mesh_triangles_3D'
+    real(dp), dimension(mesh%ti1:mesh%ti2,1:size(d_mesh,2)) :: d_mesh_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_loc)
+
+    ! Support d_mesh as both distributed and hybrid distributed/shared memory
+    if (size( d_mesh,1) == mesh%pai_Tri%n_loc) then
+      d_mesh = d_mesh_loc
+    elseif (size( d_mesh,1) == mesh%pai_Tri%n_nih) then
+      call dist_to_hybrid( mesh%pai_Tri, size( d_mesh,2), d_mesh_loc, d_mesh)
+    else
+      call crash('invalid size for d_mesh')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -177,23 +218,33 @@ contains
   ! ================================
 
   !> Map a 2-D data field from a lon/lat-grid to a mesh.
-  subroutine apply_map_lonlat_grid_to_mesh_2D( grid, mesh, map, d_grid_vec_partial, d_mesh_partial)
+  subroutine apply_map_lonlat_grid_to_mesh_2D( grid, mesh, map, d_grid_vec_partial, d_mesh)
 
     ! In/output variables
-    type(type_grid_lonlat), intent(in)  :: grid
-    type(type_mesh),        intent(in)  :: mesh
-    type(type_map),         intent(in)  :: map
-    real(dp), dimension(:), intent(in)  :: d_grid_vec_partial
-    real(dp), dimension(:), intent(out) :: d_mesh_partial
+    type(type_grid_lonlat),         intent(in)  :: grid
+    type(type_mesh),                intent(in)  :: mesh
+    type(type_map),                 intent(in)  :: map
+    real(dp), dimension(:),         intent(in)  :: d_grid_vec_partial
+    real(dp), dimension(:), target, intent(out) :: d_mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_lonlat_grid_to_mesh_2D'
+    character(len=*), parameter            :: routine_name = 'apply_map_lonlat_grid_to_mesh_2D'
+    real(dp), dimension(mesh%vi1:mesh%vi2) :: d_mesh_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call multiply_PETSc_matrix_with_vector_1D( map%M, d_grid_vec_partial, d_mesh_loc)
+
+    ! Support d_mesh as both distributed and hybrid distributed/shared memory
+    if (size( d_mesh,1) == mesh%pai_V%n_loc) then
+      d_mesh = d_mesh_loc
+    elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
+      call dist_to_hybrid( mesh%pai_V, d_mesh_loc, d_mesh)
+    else
+      call crash('invalid size for d_mesh')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -201,23 +252,33 @@ contains
   end subroutine apply_map_lonlat_grid_to_mesh_2D
 
   !> Map a 3-D data field from a lon/lat-grid to a mesh.
-  subroutine apply_map_lonlat_grid_to_mesh_3D( grid, mesh, map, d_grid_vec_partial, d_mesh_partial)
+  subroutine apply_map_lonlat_grid_to_mesh_3D( grid, mesh, map, d_grid_vec_partial, d_mesh)
 
     ! In/output variables
-    type(type_grid_lonlat),   intent(in)  :: grid
-    type(type_mesh),          intent(in)  :: mesh
-    type(type_map),           intent(in)  :: map
-    real(dp), dimension(:,:), intent(in)  :: d_grid_vec_partial
-    real(dp), dimension(:,:), intent(out) :: d_mesh_partial
+    type(type_grid_lonlat),           intent(in)  :: grid
+    type(type_mesh),                  intent(in)  :: mesh
+    type(type_map),                   intent(in)  :: map
+    real(dp), dimension(:,:),         intent(in)  :: d_grid_vec_partial
+    real(dp), dimension(:,:), target, intent(out) :: d_mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_lonlat_grid_to_mesh_3D'
+    character(len=*), parameter                             :: routine_name = 'apply_map_lonlat_grid_to_mesh_3D'
+    real(dp), dimension(mesh%vi1:mesh%vi2,1:size(d_mesh,2)) :: d_mesh_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_partial)
+    call multiply_PETSc_matrix_with_vector_2D( map%M, d_grid_vec_partial, d_mesh_loc)
+
+    ! Support d_mesh as both distributed and hybrid distributed/shared memory
+    if (size( d_mesh,1) == mesh%pai_V%n_loc) then
+      d_mesh = d_mesh_loc
+    elseif (size( d_mesh,1) == mesh%pai_V%n_nih) then
+      call dist_to_hybrid( mesh%pai_V, size( d_mesh,2), d_mesh_loc, d_mesh)
+    else
+      call crash('invalid size for d_mesh')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -520,108 +581,188 @@ contains
   ! ===== mesh to mesh =====
   ! ========================
 
-  subroutine apply_map_mesh_to_mesh_2D( mesh_src, mesh_dst, map, d_src_partial, d_dst_partial)
+  subroutine apply_map_mesh_to_mesh_2D( mesh_src, mesh_dst, map, d_src, d_dst)
 
     ! In/output variables
     type(type_mesh),        intent(in)  :: mesh_src
     type(type_mesh),        intent(in)  :: mesh_dst
     type(type_map),         intent(in)  :: map
-    real(dp), dimension(:), intent(in)  :: d_src_partial
-    real(dp), dimension(:), intent(out) :: d_dst_partial
+    real(dp), dimension(:), intent(in)  :: d_src
+    real(dp), dimension(:), intent(out) :: d_dst
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_to_mesh_2D'
+    character(len=*), parameter                    :: routine_name = 'apply_map_mesh_to_mesh_2D'
+    real(dp), dimension(mesh_src%vi1:mesh_src%vi2) :: d_src_loc
+    real(dp), dimension(mesh_dst%vi1:mesh_dst%vi2) :: d_dst_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Support d_src as both distributed and hybrid distributed/shared memory
+    if (size( d_src,1) == mesh_src%pai_V%n_loc) then
+      d_src_loc = d_src
+    elseif (size( d_src,1) == mesh_src%pai_V%n_nih) then
+      call hybrid_to_dist( mesh_src%pai_V, d_src, d_src_loc)
+    else
+      call crash('invalid size for d_src')
+    end if
+
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_src_partial, d_dst_partial)
+    call multiply_PETSc_matrix_with_vector_1D( map%M, d_src_loc, d_dst_loc)
 
     ! Set values of border vertices to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
-    call set_border_vertices_to_interior_mean_dp_2D( mesh_dst, d_dst_partial)
+    call set_border_vertices_to_interior_mean_dp_2D( mesh_dst, d_dst_loc)
+
+    ! Support d_dst as both distributed and hybrid distributed/shared memory
+    if (size( d_dst,1) == mesh_dst%pai_V%n_loc) then
+      d_dst = d_dst_loc
+    elseif (size( d_dst,1) == mesh_dst%pai_V%n_nih) then
+      call dist_to_hybrid( mesh_dst%pai_V, d_dst_loc, d_dst)
+    else
+      call crash('invalid size for d_dst')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine apply_map_mesh_to_mesh_2D
 
-  subroutine apply_map_mesh_to_mesh_3D( mesh_src, mesh_dst, map, d_src_partial, d_dst_partial)
+  subroutine apply_map_mesh_to_mesh_3D( mesh_src, mesh_dst, map, d_src, d_dst)
 
     ! In/output variables
     type(type_mesh),          intent(in)  :: mesh_src
     type(type_mesh),          intent(in)  :: mesh_dst
     type(type_map),           intent(in)  :: map
-    real(dp), dimension(:,:), intent(in)  :: d_src_partial
-    real(dp), dimension(:,:), intent(out) :: d_dst_partial
+    real(dp), dimension(:,:), intent(in)  :: d_src
+    real(dp), dimension(:,:), intent(out) :: d_dst
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_to_mesh_3D'
+    character(len=*), parameter                                      :: routine_name = 'apply_map_mesh_to_mesh_3D'
+    real(dp), dimension(mesh_src%vi1:mesh_src%vi2, 1:size( d_src,2)) :: d_src_loc
+    real(dp), dimension(mesh_dst%vi1:mesh_dst%vi2, 1:size( d_dst,2)) :: d_dst_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Support d_src as both distributed and hybrid distributed/shared memory
+    if (size( d_src,1) == mesh_src%pai_V%n_loc) then
+      d_src_loc = d_src
+    elseif (size( d_src,1) == mesh_src%pai_V%n_nih) then
+      call hybrid_to_dist( mesh_src%pai_V, size( d_src,2), d_src, d_src_loc)
+    else
+      call crash('invalid size for d_src')
+    end if
+
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_src_partial, d_dst_partial)
+    call multiply_PETSc_matrix_with_vector_2D( map%M, d_src_loc, d_dst_loc)
 
     ! Set values of border vertices to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
-    call set_border_vertices_to_interior_mean_dp_3D( mesh_dst, d_dst_partial)
+    call set_border_vertices_to_interior_mean_dp_3D( mesh_dst, d_dst_loc)
+
+    ! Support d_dst as both distributed and hybrid distributed/shared memory
+    if (size( d_dst,1) == mesh_dst%pai_V%n_loc) then
+      d_dst = d_dst_loc
+    elseif (size( d_dst,1) == mesh_dst%pai_V%n_nih) then
+      call dist_to_hybrid( mesh_dst%pai_V, size( d_dst,2), d_dst_loc, d_dst)
+    else
+      call crash('invalid size for d_dst')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine apply_map_mesh_to_mesh_3D
 
-  subroutine apply_map_mesh_tri_to_mesh_tri_2D( mesh_src, mesh_dst, map, d_src_partial, d_dst_partial)
+  subroutine apply_map_mesh_tri_to_mesh_tri_2D( mesh_src, mesh_dst, map, d_src, d_dst)
 
     ! In/output variables
     type(type_mesh),        intent(in)  :: mesh_src
     type(type_mesh),        intent(in)  :: mesh_dst
     type(type_map),         intent(in)  :: map
-    real(dp), dimension(:), intent(in)  :: d_src_partial
-    real(dp), dimension(:), intent(out) :: d_dst_partial
+    real(dp), dimension(:), intent(in)  :: d_src
+    real(dp), dimension(:), intent(out) :: d_dst
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_2D'
+    character(len=*), parameter                    :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_2D'
+    real(dp), dimension(mesh_src%ti1:mesh_src%ti2) :: d_src_loc
+    real(dp), dimension(mesh_dst%ti1:mesh_dst%ti2) :: d_dst_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Support d_src as both distributed and hybrid distributed/shared memory
+    if (size( d_src,1) == mesh_src%pai_Tri%n_loc) then
+      d_src_loc = d_src
+    elseif (size( d_src,1) == mesh_src%pai_Tri%n_nih) then
+      call hybrid_to_dist( mesh_src%pai_Tri, d_src, d_src_loc)
+    else
+      call crash('invalid size for d_src')
+    end if
+
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_1D( map%M, d_src_partial, d_dst_partial)
+    call multiply_PETSc_matrix_with_vector_1D( map%M, d_src_loc, d_dst_loc)
 
     ! Set values of border triangles to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
-    call set_border_triangles_to_interior_mean_dp_2D( mesh_dst, d_dst_partial)
+    call set_border_triangles_to_interior_mean_dp_2D( mesh_dst, d_dst_loc)
+
+    ! Support d_dst as both distributed and hybrid distributed/shared memory
+    if (size( d_dst,1) == mesh_dst%pai_Tri%n_loc) then
+      d_dst = d_dst_loc
+    elseif (size( d_dst,1) == mesh_dst%pai_Tri%n_nih) then
+      call dist_to_hybrid( mesh_dst%pai_Tri, d_dst_loc, d_dst)
+    else
+      call crash('invalid size for d_dst')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine apply_map_mesh_tri_to_mesh_tri_2D
 
-  subroutine apply_map_mesh_tri_to_mesh_tri_3D( mesh_src, mesh_dst, map, d_src_partial, d_dst_partial)
+  subroutine apply_map_mesh_tri_to_mesh_tri_3D( mesh_src, mesh_dst, map, d_src, d_dst)
 
     ! In/output variables
     type(type_mesh),          intent(in)  :: mesh_src
     type(type_mesh),          intent(in)  :: mesh_dst
     type(type_map),           intent(in)  :: map
-    real(dp), dimension(:,:), intent(in)  :: d_src_partial
-    real(dp), dimension(:,:), intent(out) :: d_dst_partial
+    real(dp), dimension(:,:), intent(in)  :: d_src
+    real(dp), dimension(:,:), intent(out) :: d_dst
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_3D'
+    character(len=*), parameter                                      :: routine_name = 'apply_map_mesh_tri_to_mesh_tri_3D'
+    real(dp), dimension(mesh_src%ti1:mesh_src%ti2, 1:size( d_src,2)) :: d_src_loc
+    real(dp), dimension(mesh_dst%ti1:mesh_dst%ti2, 1:size( d_dst,2)) :: d_dst_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Support d_src as both distributed and hybrid distributed/shared memory
+    if (size( d_src,1) == mesh_src%pai_Tri%n_loc) then
+      d_src_loc = d_src
+    elseif (size( d_src,1) == mesh_src%pai_Tri%n_nih) then
+      call hybrid_to_dist( mesh_src%pai_Tri, size( d_src,2), d_src, d_src_loc)
+    else
+      call crash('invalid size for d_src')
+    end if
+
     ! Perform the mapping operation as a matrix multiplication
-    call multiply_PETSc_matrix_with_vector_2D( map%M, d_src_partial, d_dst_partial)
+    call multiply_PETSc_matrix_with_vector_2D( map%M, d_src_loc, d_dst_loc)
 
     ! Set values of border vertices to mean of interior neighbours
     ! Used to fix problems with conservative remapping on the border
-    call set_border_triangles_to_interior_mean_dp_3D( mesh_dst, d_dst_partial)
+    call set_border_triangles_to_interior_mean_dp_3D( mesh_dst, d_dst_loc)
+
+    ! Support d_dst as both distributed and hybrid distributed/shared memory
+    if (size( d_dst,1) == mesh_dst%pai_Tri%n_loc) then
+      d_dst = d_dst_loc
+    elseif (size( d_dst,1) == mesh_dst%pai_Tri%n_nih) then
+      call dist_to_hybrid( mesh_dst%pai_Tri, size( d_dst,2), d_dst_loc, d_dst)
+    else
+      call crash('invalid size for d_dst')
+    end if
 
     ! Finalise routine path
     call finalise_routine( routine_name)

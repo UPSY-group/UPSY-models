@@ -17,6 +17,7 @@ module DIVA_main
   use bed_roughness_model_types, only: type_bed_roughness_model
   use DIVA_solver_infinite_slab, only: solve_DIVA_infinite_slab
   use DIVA_solver_ocean_pressure, only: solve_DIVA_ocean_pressure
+  use mpi_distributed_memory, only: gather_to_all
 
   implicit none
 
@@ -236,6 +237,8 @@ contains
     real(dp)                       :: dummy1
     character(len=1024)            :: filename
     real(dp)                       :: timeframe
+    real(dp), dimension(mesh%ti1:mesh%ti2) :: u_b_prev_loc
+    real(dp), dimension(mesh%ti1:mesh%ti2) :: v_b_prev_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -271,24 +274,44 @@ contains
     if (par%primary) write(0,*) '   Initialising DIVA velocities from file "' // &
       UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
-    ! Read velocities from the file
-    if (timeframe == 1E9_dp) then
-      ! Assume the file has no time dimension
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b' , DIVA%u_vav_b )
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b' , DIVA%v_vav_b )
-      call read_field_from_mesh_file_dp_2D_b( filename, 'tau_bx_b', DIVA%tau_bx_b)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'tau_by_b', DIVA%tau_by_b)
-      call read_field_from_mesh_file_dp_3D_b( filename, 'eta_3D_b', DIVA%eta_3D_b)
-    else
-      ! Read specified timeframe
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b' , DIVA%u_vav_b , time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b' , DIVA%v_vav_b , time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'tau_bx_b', DIVA%tau_bx_b, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'tau_by_b', DIVA%tau_by_b, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_3D_b( filename, 'eta_3D_b', DIVA%eta_3D_b, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_base_b', DIVA%u_base_b, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_base_b', DIVA%v_base_b, time_to_read = timeframe)
-    end if
+    ! Solution
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b'                     , DIVA%u_vav_b                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b'                     , DIVA%v_vav_b                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_base_b'                    , DIVA%u_base_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_base_b'                    , DIVA%v_base_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D_b( filename, 'u_3D_b'                      , DIVA%u_3D_b                      , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D_b( filename, 'v_3D_b'                      , DIVA%v_3D_b                      , time_to_read = timeframe)
+
+    ! Intermediate data fields
+    call read_field_from_mesh_file_dp_2D  ( filename, 'du_dx_a'                     , DIVA%du_dx_a                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'du_dy_a'                     , DIVA%du_dy_a                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'dv_dx_a'                     , DIVA%dv_dx_a                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'dv_dy_a'                     , DIVA%dv_dy_a                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D  ( filename, 'du_dz_3D_a'                  , DIVA%du_dz_3D_a                  , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D  ( filename, 'dv_dz_3D_a'                  , DIVA%dv_dz_3D_a                  , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D  ( filename, 'eta_3D_a'                    , DIVA%eta_3D_a                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D_b( filename, 'eta_3D_b'                    , DIVA%eta_3D_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'eta_vav_a'                   , DIVA%eta_vav_a                   , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'N_a'                         , DIVA%N_a                         , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'N_b'                         , DIVA%N_b                         , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'dN_dx_b'                     , DIVA%dN_dx_b                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'dN_dy_b'                     , DIVA%dN_dy_b                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D  ( filename, 'F1_3D_a'                     , DIVA%F1_3D_a                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D  ( filename, 'F2_3D_a'                     , DIVA%F2_3D_a                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D_b( filename, 'F1_3D_b'                     , DIVA%F1_3D_b                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_3D_b( filename, 'F2_3D_b'                     , DIVA%F2_3D_b                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'basal_friction_coefficient_b', DIVA%basal_friction_coefficient_b, time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'beta_eff_a'                  , DIVA%beta_eff_a                  , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'beta_eff_b'                  , DIVA%beta_eff_b                  , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_bx_b'                    , DIVA%tau_bx_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_by_b'                    , DIVA%tau_by_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dx_b'                    , DIVA%tau_dx_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dy_b'                    , DIVA%tau_dy_b                    , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_b_prev'                    , u_b_prev_loc                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_b_prev'                    , v_b_prev_loc                     , time_to_read = timeframe)
+
+    call gather_to_all( u_b_prev_loc, DIVA%u_b_prev)
+    call gather_to_all( v_b_prev_loc, DIVA%v_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -362,6 +385,8 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_restart_file_DIVA'
     integer                        :: ncid
+    real(dp), dimension(mesh%ti1:mesh%ti2) :: u_b_prev_loc
+    real(dp), dimension(mesh%ti1:mesh%ti2) :: v_b_prev_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -382,14 +407,43 @@ contains
     ! Write the time to the file
     call write_time_to_file( DIVA%restart_filename, ncid, time)
 
-    ! Write the velocity fields to the file
-    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'u_vav_b' , DIVA%u_vav_b )
-    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'v_vav_b' , DIVA%v_vav_b )
-    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'tau_bx_b', DIVA%tau_bx_b)
-    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'tau_by_b', DIVA%tau_by_b)
-    call write_to_field_multopt_mesh_dp_3D_b( mesh, DIVA%restart_filename, ncid, 'eta_3D_b', DIVA%eta_3D_b)
-    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'u_base_b', DIVA%u_base_b)
-    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'v_base_b', DIVA%v_base_b)
+    ! Solution
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'u_vav_b'                     , DIVA%u_vav_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'v_vav_b'                     , DIVA%v_vav_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'u_base_b'                    , DIVA%u_base_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'v_base_b'                    , DIVA%v_base_b)
+    call write_to_field_multopt_mesh_dp_3D_b( mesh, DIVA%restart_filename, ncid, 'u_3D_b'                      , DIVA%u_3D_b)
+    call write_to_field_multopt_mesh_dp_3D_b( mesh, DIVA%restart_filename, ncid, 'v_3D_b'                      , DIVA%v_3D_b)
+
+    ! Intermediate data fields
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'du_dx_a'                     , DIVA%du_dx_a)
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'du_dy_a'                     , DIVA%du_dy_a)
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'dv_dx_a'                     , DIVA%dv_dx_a)
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'dv_dy_a'                     , DIVA%dv_dy_a)
+    call write_to_field_multopt_mesh_dp_3D  ( mesh, DIVA%restart_filename, ncid, 'du_dz_3D_a'                  , DIVA%du_dz_3D_a)
+    call write_to_field_multopt_mesh_dp_3D  ( mesh, DIVA%restart_filename, ncid, 'dv_dz_3D_a'                  , DIVA%dv_dz_3D_a)
+    call write_to_field_multopt_mesh_dp_3D  ( mesh, DIVA%restart_filename, ncid, 'eta_3D_a'                    , DIVA%eta_3D_a)
+    call write_to_field_multopt_mesh_dp_3D_b( mesh, DIVA%restart_filename, ncid, 'eta_3D_b'                    , DIVA%eta_3D_b)
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'eta_vav_a'                   , DIVA%eta_vav_a)
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'N_a'                         , DIVA%N_a)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'N_b'                         , DIVA%N_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'dN_dx_b'                     , DIVA%dN_dx_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'dN_dy_b'                     , DIVA%dN_dy_b)
+    call write_to_field_multopt_mesh_dp_3D  ( mesh, DIVA%restart_filename, ncid, 'F1_3D_a'                     , DIVA%F1_3D_a)
+    call write_to_field_multopt_mesh_dp_3D  ( mesh, DIVA%restart_filename, ncid, 'F2_3D_a'                     , DIVA%F2_3D_a)
+    call write_to_field_multopt_mesh_dp_3D_b( mesh, DIVA%restart_filename, ncid, 'F1_3D_b'                     , DIVA%F1_3D_b)
+    call write_to_field_multopt_mesh_dp_3D_b( mesh, DIVA%restart_filename, ncid, 'F2_3D_b'                     , DIVA%F2_3D_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'basal_friction_coefficient_b', DIVA%basal_friction_coefficient_b)
+    call write_to_field_multopt_mesh_dp_2D  ( mesh, DIVA%restart_filename, ncid, 'beta_eff_a'                  , DIVA%beta_eff_a)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'beta_eff_b'                  , DIVA%beta_eff_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'tau_bx_b'                    , DIVA%tau_bx_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'tau_by_b'                    , DIVA%tau_by_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'tau_dx_b'                    , DIVA%tau_dx_b)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'tau_dy_b'                    , DIVA%tau_dy_b)
+    u_b_prev_loc = DIVA%u_b_prev( mesh%ti1:mesh%ti2)
+    v_b_prev_loc = DIVA%v_b_prev( mesh%ti1:mesh%ti2)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'u_b_prev'                    , u_b_prev_loc)
+    call write_to_field_multopt_mesh_dp_2D_b( mesh, DIVA%restart_filename, ncid, 'v_b_prev'                    , v_b_prev_loc)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -441,14 +495,41 @@ contains
     ! Add a zeta dimension to the file
     call add_zeta_dimension_to_file( DIVA%restart_filename, ncid, mesh%zeta)
 
-    ! Add the velocity fields to the file
-    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'u_vav_b' , long_name = 'Vertically averaged horizontal ice velocity in the x-direction', units = 'm/yr')
-    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'v_vav_b' , long_name = 'Vertically averaged horizontal ice velocity in the y-direction', units = 'm/yr')
-    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'tau_bx_b', long_name = 'Basal shear stress in the x-direction', units = 'Pa')
-    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'tau_by_b', long_name = 'Basal shear stress in the y-direction', units = 'Pa')
-    call add_field_mesh_dp_3D_b( DIVA%restart_filename, ncid, 'eta_3D_b', long_name = '3-D effective viscosity')
-    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'u_base_b', long_name = 'Basal ice velocity in the x-direction', units = 'm/yr')
-    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'v_base_b', long_name = 'Basal ice velocity in the y-direction', units = 'm/yr')
+    ! Solution
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'u_vav_b'                     , long_name = 'Vertically averaged horizontal ice velocity in the x-direction', units = 'm/yr')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'v_vav_b'                     , long_name = 'Vertically averaged horizontal ice velocity in the y-direction', units = 'm/yr')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'u_base_b'                    , long_name = 'Basal ice velocity in the x-direction', units = 'm/yr')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'v_base_b'                    , long_name = 'Basal ice velocity in the y-direction', units = 'm/yr')
+    call add_field_mesh_dp_3D_b( DIVA%restart_filename, ncid, 'u_3D_b'                      , long_name = '3-D horizontal ice velocity in the x-direction', units = 'm/yr')
+    call add_field_mesh_dp_3D_b( DIVA%restart_filename, ncid, 'v_3D_b'                      , long_name = '3-D horizontal ice velocity in the y-direction', units = 'm/yr')
+
+    ! Intermediate data fields
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'du_dx_a'                     , long_name = 'Vertically averaged xx strain rate', units = 'yr^-1')
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'du_dy_a'                     , long_name = 'Vertically averaged xy strain rate', units = 'yr^-1')
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'dv_dx_a'                     , long_name = 'Vertically averaged yx strain rate', units = 'yr^-1')
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'dv_dy_a'                     , long_name = 'Vertically averaged yy strain rate', units = 'yr^-1')
+    call add_field_mesh_dp_3D  ( DIVA%restart_filename, ncid, 'du_dz_3D_a'                  , long_name = '3-D xz strain rate', units = 'yr^-1')
+    call add_field_mesh_dp_3D  ( DIVA%restart_filename, ncid, 'dv_dz_3D_a'                  , long_name = '3-D yz strain rate', units = 'yr^-1')
+    call add_field_mesh_dp_3D  ( DIVA%restart_filename, ncid, 'eta_3D_a'                    , long_name = '3-D effective viscosity on a-grid')
+    call add_field_mesh_dp_3D_b( DIVA%restart_filename, ncid, 'eta_3D_b'                    , long_name = '3-D effective viscosity on b-grid')
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'eta_vav_a'                   , long_name = 'Vertically averaged effective viscosity on a-grid')
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'N_a'                         , long_name = 'Product term N = eta * H on a-grid')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'N_b'                         , long_name = 'Product term N = eta * H on b-grid')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'dN_dx_b'                     , long_name = 'Gradient of N in x-direction on b-grid')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'dN_dy_b'                     , long_name = 'Gradient of N in y-direction on b-grid')
+    call add_field_mesh_dp_3D  ( DIVA%restart_filename, ncid, 'F1_3D_a'                     , long_name = '3-D F_1 integral on a-grid')
+    call add_field_mesh_dp_3D  ( DIVA%restart_filename, ncid, 'F2_3D_a'                     , long_name = '3-D F_2 integral on a-grid')
+    call add_field_mesh_dp_3D_b( DIVA%restart_filename, ncid, 'F1_3D_b'                     , long_name = '3-D F_1 integral on b-grid')
+    call add_field_mesh_dp_3D_b( DIVA%restart_filename, ncid, 'F2_3D_b'                     , long_name = '3-D F_2 integral on b-grid')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'basal_friction_coefficient_b', long_name = 'Basal friction coefficient on b-grid')
+    call add_field_mesh_dp_2D  ( DIVA%restart_filename, ncid, 'beta_eff_a'                  , long_name = 'Beta_eff on a-grid')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'beta_eff_b'                  , long_name = 'Beta_eff on b-grid')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'tau_bx_b'                    , long_name = 'Basal shear stress in the x-direction', units = 'Pa')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'tau_by_b'                    , long_name = 'Basal shear stress in the y-direction', units = 'Pa')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'tau_dx_b'                    , long_name = 'Driving stress in the x-direction', units = 'Pa')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'tau_dy_b'                    , long_name = 'Driving stress in the y-direction', units = 'Pa')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'u_b_prev'                    , long_name = 'Previous iteration of u_b', units = 'm yr^-1')
+    call add_field_mesh_dp_2D_b( DIVA%restart_filename, ncid, 'v_b_prev'                    , long_name = 'Previous iteration of v_b', units = 'm yr^-1')
 
     ! Close the file
     call close_netcdf_file( ncid)

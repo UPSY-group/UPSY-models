@@ -375,11 +375,13 @@ contains
       call crash('unknown choice_flow_law "' // trim( C%choice_flow_law) // '"!')
     end if
 
-    ! Safety
-    SSA%eta_a = min( max( SSA%eta_a, C%visc_eff_min), eta_max)
+    do vi = mesh%vi1, mesh%vi2
+      ! Safety
+      SSA%eta_a( vi) = min( max( SSA%eta_a( vi), C%visc_eff_min), eta_max)
 
-    ! Calculate the product term N = eta * H on the a-grid
-    SSA%N_a = SSA%eta_a * max( 0.1_dp, ice%geom%Hi)
+      ! Calculate the product term N = eta * H on the a-grid
+      SSA%N_a( vi) = SSA%eta_a( vi) * max( 0.1_dp, ice%geom%Hi( vi))
+    end do
 
     ! Calculate the product term N and its gradients on the b-grid
     call map_a_b_2D( mesh, SSA%N_a, SSA%N_b    )

@@ -226,21 +226,22 @@ contains
 
     case ('fixed')
       ! Fixed sea level
-      ice%geom%SL = C%fixed_sealevel
+      ice%geom%SL( mesh%vi1:mesh%vi2) = C%fixed_sealevel
 
     case ('prescribed')
       ! Sea-level from an external record, stored in the global_forcings type
-      call update_sealevel_in_model(forcing, mesh, start_time_of_run, ice%geom%SL)
+
+      call update_sealevel_in_model( forcing, mesh, start_time_of_run, ice%geom%SL)
 
     case ('eustatic')
       ! Eustatic sea level
       call crash('Sea level initialisation: eustatic method not implemented yet!')
-      ! ice%geom%SL = C%initial_guess_sealevel
+      ! ice%geom%SL( mesh%vi1:mesh%vi2) = C%initial_guess_sealevel
 
     case ('SELEN')
       ! Sea level from SELEN
       call crash('Sea level initialisation: SELEN method not implemented yet!')
-      ! ice%geom%SL = C%initial_guess_sealevel
+      ! ice%geom%SL( mesh%vi1:mesh%vi2) = C%initial_guess_sealevel
 
     end select
 
@@ -310,8 +311,8 @@ contains
     ! Model states for ice dynamics model
     ice%t_Hi_prev = C%start_time_of_run
     ice%t_Hi_next = C%start_time_of_run
-    ice%Hi_prev   = ice%geom%Hi
-    ice%Hi_next   = ice%geom%Hi
+    ice%Hi_prev( mesh%vi1:mesh%vi2) = ice%geom%Hi( mesh%vi1:mesh%vi2)
+    ice%Hi_next( mesh%vi1:mesh%vi2) = ice%geom%Hi( mesh%vi1:mesh%vi2)
 
     ! Initialise masks
     ! ================
@@ -717,8 +718,8 @@ contains
     ! Model states for ice dynamics model
     ice%t_Hi_prev = time
     ice%t_Hi_next = time
-    ice%Hi_prev   = ice%geom%Hi
-    ice%Hi_next   = ice%geom%Hi
+    ice%Hi_prev( mesh_new%vi1:mesh_new%vi2) = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
+    ice%Hi_next( mesh_new%vi1:mesh_new%vi2) = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
 
     ! Initialise masks
     ! ================
@@ -959,11 +960,11 @@ contains
     ! == Fill in prescribed velocities and thicknesses away from the front
     ! ====================================================================
 
-    BC_prescr_Hi   = ice%geom%Hi
-    BC_prescr_u_b  = ice%vel%u_vav_b
-    BC_prescr_v_b  = ice%vel%v_vav_b
-    BC_prescr_u_bk = ice%vel%u_3D_b
-    BC_prescr_v_bk = ice%vel%v_3D_b
+    BC_prescr_Hi  ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi    ( mesh%vi1:mesh%vi2  )
+    BC_prescr_u_b ( mesh%ti1:mesh%ti2  ) = ice%vel%u_vav_b( mesh%ti1:mesh%ti2  )
+    BC_prescr_v_b ( mesh%ti1:mesh%ti2  ) = ice%vel%v_vav_b( mesh%ti1:mesh%ti2  )
+    BC_prescr_u_bk( mesh%ti1:mesh%ti2,:) = ice%vel%u_3D_b ( mesh%ti1:mesh%ti2,:)
+    BC_prescr_v_bk( mesh%ti1:mesh%ti2,:) = ice%vel%v_3D_b ( mesh%ti1:mesh%ti2,:)
 
     ! == Save proper values of config parameters for the velocity solver
     ! ==================================================================
@@ -1016,7 +1017,7 @@ contains
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
-      ice%geom%Hi = Hi_tplusdt
+      ice%geom%Hi( mesh%vi1:mesh%vi2) = Hi_tplusdt( mesh%vi1:mesh%vi2)
       t_pseudo = t_pseudo + C%dt_ice_min
 
       ! Update basic geometry
@@ -1195,19 +1196,19 @@ contains
       ! Reference geometry
       ! ==================
 
-      region%refgeo_PD%Hi  = region%ice%geom%Hi
+      region%refgeo_PD%Hi( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
       region%refgeo_PD%Hs( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
-      region%refgeo_PD%Hb  = region%ice%geom%Hb
+      region%refgeo_PD%Hb( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hb( region%mesh%vi1:region%mesh%vi2)
 
       ! Differences w.r.t. present-day
-      region%ice%dHi  = 0._dp
-      region%ice%dHb  = 0._dp
-      region%ice%dHs  = 0._dp
-      region%ice%dHib = 0._dp
+      region%ice%dHi ( region%mesh%vi1:region%mesh%vi2) = 0._dp
+      region%ice%dHb ( region%mesh%vi1:region%mesh%vi2) = 0._dp
+      region%ice%dHs ( region%mesh%vi1:region%mesh%vi2) = 0._dp
+      region%ice%dHib( region%mesh%vi1:region%mesh%vi2) = 0._dp
 
       ! Re-initialise previous and next Hi states
-      region%ice%Hi_prev = region%ice%geom%Hi
-      region%ice%Hi_next = region%ice%geom%Hi
+      region%ice%Hi_prev( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
+      region%ice%Hi_next( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
       ! Advance pesudo time
       ! ===================

@@ -24,15 +24,15 @@ module ice_thickness_safeties
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, Hi_old,Hb,SL, Hi_new, refgeo, time)
+  subroutine alter_ice_thickness( mesh, ice, Hi_old, Hb, SL, Hi_new, refgeo, time)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_model),                   intent(in   ) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_old
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: SL
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
@@ -53,9 +53,9 @@ contains
     ! DENK DROM
     allocate( geom_new)
     call geom_new%allocate( ice%geom%region_name(), mesh)
-    geom_new%Hi = Hi_new
-    geom_new%Hb = ice%geom%Hb
-    geom_new%SL = ice%geom%SL
+    geom_new%Hi( mesh%vi1:mesh%vi2) = Hi_new     ( mesh%vi1:mesh%vi2)
+    geom_new%Hb( mesh%vi1:mesh%vi2) = ice%geom%Hb( mesh%vi1:mesh%vi2)
+    geom_new%SL( mesh%vi1:mesh%vi2) = ice%geom%SL( mesh%vi1:mesh%vi2)
 
     ! Save predicted ice thickness for future reference
     Hi_save = Hi_new
@@ -331,7 +331,7 @@ contains
 
     call gather_dist_shared_to_all( mesh%pai_V, geom%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
-    call gather_to_all( geom%Hb, Hb_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%Hb, Hb_tot)
 
     ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2

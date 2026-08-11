@@ -91,7 +91,7 @@ contains
     AMB( mesh%vi1: mesh%vi2) = dHi_dt( mesh%vi1: mesh%vi2)
 
     ! Calculate largest time step possible based on dHi_dt
-    call calc_flux_limited_timestep( mesh, geom%Hi, dHi_dt, dt_max)
+    call calc_flux_limited_timestep( mesh, geom, dHi_dt, dt_max)
 
     ! Constrain dt based on new limit
     dt = min( dt, dt_max)

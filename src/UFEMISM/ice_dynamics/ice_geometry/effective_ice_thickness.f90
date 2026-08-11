@@ -20,9 +20,9 @@ contains
     call init_routine( routine_name)
 
     ! Collect Hi from all processes
-    call gather_to_all( self%Hi, Hi_tot)
-    call gather_to_all( self%Hb, Hb_tot)
-    call gather_to_all( self%SL, SL_tot)
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%Hi, Hi_tot)
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%Hb, Hb_tot)
+    call gather_dist_shared_to_all( self%mesh%pai_V, self%SL, SL_tot)
 
     ! == Margin mask
     ! ==============

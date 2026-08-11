@@ -38,6 +38,7 @@ contains
     ! Local variables:
     character(len=*), parameter                          :: routine_name = 'run_ice_dynamics_model_pc'
     integer                                              :: pc_it
+    integer                                              :: vi
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: Hi_dummy
     real(dp)                                             :: beta_1, beta_2
     integer                                              :: n_guilty, n_tot
@@ -49,10 +50,10 @@ contains
     call init_routine( routine_name)
 
     ! Cycle timeframes
-    region%ice%t_Hi_prev              = region%ice%t_Hi_next
-    region%ice%Hi_prev                = region%ice%Hi_next
-    region%ice%pc%dHi_dt_Hi_nm1_u_nm1 = region%ice%pc%dHi_dt_Hi_n_u_n
-    region%ice%pc%eta_n               = region%ice%pc%eta_np1
+    region%ice%t_Hi_prev                                                = region%ice%t_Hi_next
+    region%ice%Hi_prev               ( region%mesh%vi1:region%mesh%vi2) = region%ice%Hi_next           ( region%mesh%vi1:region%mesh%vi2)
+    region%ice%pc%dHi_dt_Hi_nm1_u_nm1( region%mesh%vi1:region%mesh%vi2) = region%ice%pc%dHi_dt_Hi_n_u_n( region%mesh%vi1:region%mesh%vi2)
+    region%ice%pc%eta_n                                                 = region%ice%pc%eta_np1
 
     ! Calculate time step
     region%ice%pc%dt_n = region%ice%pc%dt_np1
@@ -88,9 +89,11 @@ contains
       !  H*_n+1 in Robinson et al., 2020, Eq. 30
       beta_1 = 1._dp + region%ice%pc%zeta_t / 2._dp
       beta_2 =        -region%ice%pc%zeta_t / 2._dp
-      region%ice%pc%Hi_star_np1 = region%ice%Hi_prev + region%ice%pc%dt_np1 * (&
-        beta_1 * region%ice%pc%dHi_dt_Hi_n_u_n + &
-        beta_2 * region%ice%pc%dHi_dt_Hi_nm1_u_nm1)
+      do vi = region%mesh%vi1, region%mesh%vi2
+        region%ice%pc%Hi_star_np1( vi) = region%ice%Hi_prev( vi) + region%ice%pc%dt_np1 * (&
+          beta_1 * region%ice%pc%dHi_dt_Hi_n_u_n    ( vi) + &
+          beta_2 * region%ice%pc%dHi_dt_Hi_nm1_u_nm1( vi))
+      end do
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_star_np1)
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_star_np1)
       call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_star_np1)
@@ -102,7 +105,9 @@ contains
       ! =================
 
       ! Set ice geometry to H*_n+1
-      region%ice%geom%Hi = region%ice%pc%Hi_star_np1
+      do vi = region%mesh%vi1, region%mesh%vi2
+        region%ice%geom%Hi( vi) = region%ice%pc%Hi_star_np1( vi)
+      end do
       call region%ice%geom%calc_all_secondary_geometry_variables( region%ice%dHb)
 
       ! Calculate ice velocities for the predicted geometry
@@ -177,7 +182,7 @@ contains
 
     ! Set next modelled ice thickness
     region%ice%t_Hi_next = region%ice%t_Hi_prev + region%ice%pc%dt_np1
-    region%ice%Hi_next   = region%ice%pc%Hi_np1
+    region%ice%Hi_next( region%mesh%vi1:region%mesh%vi2) = region%ice%pc%Hi_np1( region%mesh%vi1:region%mesh%vi2)
 
     ! Safety
     if (any( region%ice%Hi_next < 0._dp)) then

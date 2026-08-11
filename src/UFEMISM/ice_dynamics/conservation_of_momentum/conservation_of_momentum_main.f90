@@ -110,8 +110,8 @@ contains
 
       case ('none')
 
-        ice%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
-        ice%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        ice%vel%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        ice%vel%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
 
         n_visc_its = 0
         n_Axb_its  = 0
@@ -197,54 +197,54 @@ contains
     do ti = mesh%ti1, mesh%ti2
 
       ! Surface
-      ice%u_surf_b(    ti) = ice%u_3D_b( ti,1)
-      ice%v_surf_b(    ti) = ice%v_3D_b( ti,1)
-      ice%uabs_surf_b( ti) = SQRT( ice%u_surf_b( ti)**2 + ice%v_surf_b( ti)**2)
+      ice%vel%u_surf_b(    ti) = ice%vel%u_3D_b( ti,1)
+      ice%vel%v_surf_b(    ti) = ice%vel%v_3D_b( ti,1)
+      ice%vel%uabs_surf_b( ti) = SQRT( ice%vel%u_surf_b( ti)**2 + ice%vel%v_surf_b( ti)**2)
 
       ! Base
-      ice%u_base_b(    ti) = ice%u_3D_b( ti,C%nz)
-      ice%v_base_b(    ti) = ice%v_3D_b( ti,C%nz)
-      ice%uabs_base_b( ti) = SQRT( ice%u_base_b( ti)**2 + ice%v_base_b( ti)**2)
+      ice%vel%u_base_b(    ti) = ice%vel%u_3D_b( ti,C%nz)
+      ice%vel%v_base_b(    ti) = ice%vel%v_3D_b( ti,C%nz)
+      ice%vel%uabs_base_b( ti) = SQRT( ice%vel%u_base_b( ti)**2 + ice%vel%v_base_b( ti)**2)
 
       ! Vertical average
-      u_prof = ice%u_3D_b( ti,:)
-      v_prof = ice%v_3D_b( ti,:)
-      ice%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
-      ice%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
-      ice%uabs_vav_b( ti) = SQRT( ice%u_vav_b( ti)**2 + ice%v_vav_b( ti)**2)
+      u_prof = ice%vel%u_3D_b( ti,:)
+      v_prof = ice%vel%v_3D_b( ti,:)
+      ice%vel%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
+      ice%vel%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
+      ice%vel%uabs_vav_b( ti) = SQRT( ice%vel%u_vav_b( ti)**2 + ice%vel%v_vav_b( ti)**2)
 
     end do
 
     ! == Calculate velocities on the a-grid (needed to calculate the vertical velocity w, and for writing to output)
 
     ! 3-D
-    call map_b_a_3D( mesh, ice%u_3D_b  , ice%u_3D  )
-    call map_b_a_3D( mesh, ice%v_3D_b  , ice%v_3D  )
+    call map_b_a_3D( mesh, ice%vel%u_3D_b  , ice%vel%u_3D  )
+    call map_b_a_3D( mesh, ice%vel%v_3D_b  , ice%vel%v_3D  )
 
     ! Surface
-    call map_b_a_2D( mesh, ice%u_surf_b, ice%u_surf)
-    call map_b_a_2D( mesh, ice%v_surf_b, ice%v_surf)
+    call map_b_a_2D( mesh, ice%vel%u_surf_b, ice%vel%u_surf)
+    call map_b_a_2D( mesh, ice%vel%v_surf_b, ice%vel%v_surf)
 
     ! Base
-    call map_b_a_2D( mesh, ice%u_base_b, ice%u_base)
-    call map_b_a_2D( mesh, ice%v_base_b, ice%v_base)
+    call map_b_a_2D( mesh, ice%vel%u_base_b, ice%vel%u_base)
+    call map_b_a_2D( mesh, ice%vel%v_base_b, ice%vel%v_base)
 
     ! Vertical average
-    call map_b_a_2D( mesh, ice%u_vav_b , ice%u_vav )
-    call map_b_a_2D( mesh, ice%v_vav_b , ice%v_vav )
+    call map_b_a_2D( mesh, ice%vel%u_vav_b , ice%vel%u_vav )
+    call map_b_a_2D( mesh, ice%vel%v_vav_b , ice%vel%v_vav )
 
     ! Absolute
     do vi = mesh%vi1, mesh%vi2
-      ice%uabs_surf( vi) = sqrt( ice%u_surf( vi)**2 + ice%v_surf( vi)**2)
-      ice%uabs_base( vi) = sqrt( ice%u_base( vi)**2 + ice%v_base( vi)**2)
-      ice%uabs_vav(  vi) = sqrt( ice%u_vav(  vi)**2 + ice%v_vav(  vi)**2)
+      ice%vel%uabs_surf( vi) = sqrt( ice%vel%u_surf( vi)**2 + ice%vel%v_surf( vi)**2)
+      ice%vel%uabs_base( vi) = sqrt( ice%vel%u_base( vi)**2 + ice%vel%v_base( vi)**2)
+      ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
     end do
 
-    call calc_u_perp( mesh, ice%u_vav_b, ice%v_vav_b, ice%u_perp)
+    call calc_u_vav_perp( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, ice%vel%u_vav_perp)
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2
-      ice%R_shear( vi) = (ice%uabs_base( vi) + 0.1_dp) / (ice%uabs_surf( vi) + 0.1_dp)
+      ice%vel%R_shear( vi) = (ice%vel%uabs_base( vi) + 0.1_dp) / (ice%vel%uabs_surf( vi) + 0.1_dp)
     end do
 
     ! Finalise routine path
@@ -252,7 +252,7 @@ contains
 
   end subroutine calc_secondary_velocities
 
-  subroutine calc_u_perp( mesh, u_vav_b, v_vav_b, u_perp)
+  subroutine calc_u_vav_perp( mesh, u_vav_b, v_vav_b, u_vav_perp)
     !< Calculate the vertically averaged ice velocity component
     !< perpendicular to the shared Voronoi cell boundaries
 
@@ -260,10 +260,10 @@ contains
     type(type_mesh),                                     intent(in   ) :: mesh
     real(dp), dimension(mesh%ti1:mesh%ti1),              intent(in   ) :: u_vav_b
     real(dp), dimension(mesh%ti1:mesh%ti1),              intent(in   ) :: v_vav_b
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(  out) :: u_perp
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(  out) :: u_vav_perp
 
     ! Local variables:
-    character(len=*), parameter            :: routine_name = 'calc_u_perp'
+    character(len=*), parameter            :: routine_name = 'calc_u_vav_perp'
     real(dp), dimension(mesh%ei1:mesh%ei2) :: u_vav_c, v_vav_c
     real(dp), dimension(mesh%nE)           :: u_vav_c_tot, v_vav_c_tot
     integer                                :: vi, ci, ei, vj
@@ -283,7 +283,7 @@ contains
         ei = mesh%VE( vi,ci)
 
         ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
-        u_perp( vi, ci) = &
+        u_vav_perp( vi, ci) = &
           u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + &
           v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
@@ -293,7 +293,7 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine calc_u_perp
+  end subroutine calc_u_vav_perp
 
   subroutine remap_velocity_solver( mesh_old, mesh_new, ice)
     !< Remap the velocity solver for the chosen stress balance approximation
@@ -377,24 +377,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
-      ice%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
+      ice%vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
+      ice%vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
-      ice%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
+      ice%vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+      ice%vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
     end do
 
     ! In the SIA, horizontal gradients of u,v, and all gradients of w, are neglected
-    ice%du_dx_3D = 0._dp
-    ice%du_dy_3D = 0._dp
-    ice%dv_dx_3D = 0._dp
-    ice%dv_dy_3D = 0._dp
-    ice%dw_dx_3D = 0._dp
-    ice%dw_dy_3D = 0._dp
-    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    ice%vel%du_dx_3D = 0._dp
+    ice%vel%du_dy_3D = 0._dp
+    ice%vel%dv_dx_3D = 0._dp
+    ice%vel%dv_dy_3D = 0._dp
+    ice%vel%dw_dx_3D = 0._dp
+    ice%vel%dw_dy_3D = 0._dp
+    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -418,24 +418,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = SSA%u_b( ti)
-      ice%v_3D_b( ti,:) = SSA%v_b( ti)
+      ice%vel%u_3D_b( ti,:) = SSA%u_b( ti)
+      ice%vel%v_3D_b( ti,:) = SSA%v_b( ti)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%du_dx_3D( vi,:) = SSA%du_dx_a( vi)
-      ice%du_dy_3D( vi,:) = SSA%du_dy_a( vi)
-      ice%dv_dx_3D( vi,:) = SSA%dv_dx_a( vi)
-      ice%dv_dy_3D( vi,:) = SSA%dv_dy_a( vi)
+      ice%vel%du_dx_3D( vi,:) = SSA%du_dx_a( vi)
+      ice%vel%du_dy_3D( vi,:) = SSA%du_dy_a( vi)
+      ice%vel%dv_dx_3D( vi,:) = SSA%dv_dx_a( vi)
+      ice%vel%dv_dy_3D( vi,:) = SSA%dv_dy_a( vi)
     end do
 
     ! In the SSA, vertical gradients of u,v, and all gradients of w, are neglected
-    ice%du_dz_3D = 0._dp
-    ice%dv_dz_3D = 0._dp
-    ice%dw_dx_3D = 0._dp
-    ice%dw_dy_3D = 0._dp
-    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    ice%vel%du_dz_3D = 0._dp
+    ice%vel%dv_dz_3D = 0._dp
+    ice%vel%dw_dx_3D = 0._dp
+    ice%vel%dw_dy_3D = 0._dp
+    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -463,24 +463,24 @@ contains
 
       ! Velocities
       do ti = mesh%ti1, mesh%ti2
-        ice%u_3D_b( ti,:) = SIA%u_3D_b( ti,:) + SSA%u_b( ti)
-        ice%v_3D_b( ti,:) = SIA%v_3D_b( ti,:) + SSA%v_b( ti)
+        ice%vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:) + SSA%u_b( ti)
+        ice%vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:) + SSA%v_b( ti)
       end do
 
       ! Strain rates
       do vi = mesh%vi1, mesh%vi2
-        ice%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
-        ice%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
-        ice%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
-        ice%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
-        ice%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
-        ice%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
+        ice%vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+        ice%vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
+        ice%vel%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
+        ice%vel%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
+        ice%vel%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
+        ice%vel%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
       end do
 
       ! In the hybrid SIA/SSA, gradients of w are neglected
-      ice%dw_dx_3D = 0._dp
-      ice%dw_dy_3D = 0._dp
-      ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+      ice%vel%dw_dx_3D = 0._dp
+      ice%vel%dw_dy_3D = 0._dp
+      ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     elseif (C%choice_hybrid_SIASSA_scheme == 'add_SIA_reduced') then
       ! u = (weight * u_SIA) + u_SSA
@@ -491,24 +491,24 @@ contains
         w_sia_u = 1._dp - (2.0_dp/pi) * atan( (abs(SSA%u_b( ti))**2.0_dp) / (30._dp**2.0_dp) )
         w_sia_v = 1._dp - (2.0_dp/pi) * atan( (abs(SSA%v_b( ti))**2.0_dp) / (30._dp**2.0_dp) )
         ! Add SIA fraction to SSA solution
-        ice%u_3D_b( ti,:) = w_sia_u * SIA%u_3D_b( ti,:) + SSA%u_b( ti)
-        ice%v_3D_b( ti,:) = w_sia_v * SIA%v_3D_b( ti,:) + SSA%v_b( ti)
+        ice%vel%u_3D_b( ti,:) = w_sia_u * SIA%u_3D_b( ti,:) + SSA%u_b( ti)
+        ice%vel%v_3D_b( ti,:) = w_sia_v * SIA%v_3D_b( ti,:) + SSA%v_b( ti)
       end do
 
       ! Strain rates
       do vi = mesh%vi1, mesh%vi2
-        ice%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
-        ice%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
-        ice%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
-        ice%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
-        ice%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
-        ice%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
+        ice%vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+        ice%vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
+        ice%vel%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
+        ice%vel%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
+        ice%vel%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
+        ice%vel%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
       end do
 
       ! In the hybrid SIA/SSA, gradients of w are neglected
-      ice%dw_dx_3D = 0._dp
-      ice%dw_dy_3D = 0._dp
-      ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+      ice%vel%dw_dx_3D = 0._dp
+      ice%vel%dw_dy_3D = 0._dp
+      ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     else
       call crash('unknown choice_hybrid_SIASSA_scheme_config "' // TRIM( C%choice_hybrid_SIASSA_scheme) // '"!')
@@ -536,24 +536,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
-      ice%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
+      ice%vel%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
+      ice%vel%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%du_dx_3D( vi,:) = DIVA%du_dx_a(    vi  )
-      ice%du_dy_3D( vi,:) = DIVA%du_dy_a(    vi  )
-      ice%du_dz_3D( vi,:) = DIVA%du_dz_3D_a( vi,:)
-      ice%dv_dx_3D( vi,:) = DIVA%dv_dx_a(    vi  )
-      ice%dv_dy_3D( vi,:) = DIVA%dv_dy_a(    vi  )
-      ice%dv_dz_3D( vi,:) = DIVA%dv_dz_3D_a( vi,:)
+      ice%vel%du_dx_3D( vi,:) = DIVA%du_dx_a(    vi  )
+      ice%vel%du_dy_3D( vi,:) = DIVA%du_dy_a(    vi  )
+      ice%vel%du_dz_3D( vi,:) = DIVA%du_dz_3D_a( vi,:)
+      ice%vel%dv_dx_3D( vi,:) = DIVA%dv_dx_a(    vi  )
+      ice%vel%dv_dy_3D( vi,:) = DIVA%dv_dy_a(    vi  )
+      ice%vel%dv_dz_3D( vi,:) = DIVA%dv_dz_3D_a( vi,:)
     end do
 
     ! In the DIVA, gradients of w are neglected
-    ice%dw_dx_3D = 0._dp
-    ice%dw_dy_3D = 0._dp
-    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    ice%vel%dw_dx_3D = 0._dp
+    ice%vel%dw_dy_3D = 0._dp
+    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Stresses
     do ti = mesh%ti1, mesh%ti2
@@ -582,24 +582,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = BPA%u_bk( ti,:)
-      ice%v_3D_b( ti,:) = BPA%v_bk( ti,:)
+      ice%vel%u_3D_b( ti,:) = BPA%u_bk( ti,:)
+      ice%vel%v_3D_b( ti,:) = BPA%v_bk( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%du_dx_3D( vi,:) = BPA%du_dx_ak( vi,:)
-      ice%du_dy_3D( vi,:) = BPA%du_dy_ak( vi,:)
-      ice%du_dz_3D( vi,:) = BPA%du_dz_ak( vi,:)
-      ice%dv_dx_3D( vi,:) = BPA%dv_dx_ak( vi,:)
-      ice%dv_dy_3D( vi,:) = BPA%dv_dy_ak( vi,:)
-      ice%dv_dz_3D( vi,:) = BPA%dv_dz_ak( vi,:)
+      ice%vel%du_dx_3D( vi,:) = BPA%du_dx_ak( vi,:)
+      ice%vel%du_dy_3D( vi,:) = BPA%du_dy_ak( vi,:)
+      ice%vel%du_dz_3D( vi,:) = BPA%du_dz_ak( vi,:)
+      ice%vel%dv_dx_3D( vi,:) = BPA%dv_dx_ak( vi,:)
+      ice%vel%dv_dy_3D( vi,:) = BPA%dv_dy_ak( vi,:)
+      ice%vel%dv_dz_3D( vi,:) = BPA%dv_dz_ak( vi,:)
     end do
 
     ! In the BPA, gradients of w are neglected
-    ice%dw_dx_3D = 0._dp
-    ice%dw_dy_3D = 0._dp
-    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    ice%vel%dw_dx_3D = 0._dp
+    ice%vel%dw_dy_3D = 0._dp
+    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -623,24 +623,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
-      ice%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
+      ice%vel%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
+      ice%vel%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%du_dx_3D( vi,:) = hybrid%BPA%du_dx_ak( vi,:)
-      ice%du_dy_3D( vi,:) = hybrid%BPA%du_dy_ak( vi,:)
-      ice%du_dz_3D( vi,:) = hybrid%BPA%du_dz_ak( vi,:)
-      ice%dv_dx_3D( vi,:) = hybrid%BPA%dv_dx_ak( vi,:)
-      ice%dv_dy_3D( vi,:) = hybrid%BPA%dv_dy_ak( vi,:)
-      ice%dv_dz_3D( vi,:) = hybrid%BPA%dv_dz_ak( vi,:)
+      ice%vel%du_dx_3D( vi,:) = hybrid%BPA%du_dx_ak( vi,:)
+      ice%vel%du_dy_3D( vi,:) = hybrid%BPA%du_dy_ak( vi,:)
+      ice%vel%du_dz_3D( vi,:) = hybrid%BPA%du_dz_ak( vi,:)
+      ice%vel%dv_dx_3D( vi,:) = hybrid%BPA%dv_dx_ak( vi,:)
+      ice%vel%dv_dy_3D( vi,:) = hybrid%BPA%dv_dy_ak( vi,:)
+      ice%vel%dv_dz_3D( vi,:) = hybrid%BPA%dv_dz_ak( vi,:)
     end do
 
     ! In the hybrid DIVA/BPA, gradients of w are neglected
-    ice%dw_dx_3D = 0._dp
-    ice%dw_dy_3D = 0._dp
-    ! ice%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    ice%vel%dw_dx_3D = 0._dp
+    ice%vel%dw_dy_3D = 0._dp
+    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -291,7 +291,7 @@ CONTAINS
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'compute_divQUV_upstream'
     integer                                               :: ti, tj, ci, ei
-    real(dp)                                              :: u_perp
+    real(dp)                                              :: u_vav_perp
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -331,24 +331,24 @@ CONTAINS
           if (laddie%mask_gl_b( tj)) cycle
 
           ! Calculate vertically averaged water velocity component perpendicular to this edge
-          u_perp = npxref%U_c( ei) * mesh%TriD_x( ti, ci) / mesh%TriD( ti, ci) &
+          u_vav_perp = npxref%U_c( ei) * mesh%TriD_x( ti, ci) / mesh%TriD( ti, ci) &
                  + npxref%V_c( ei) * mesh%TriD_y( ti, ci) / mesh%TriD( ti, ci)
 
           ! Calculate upstream momentum divergence
           ! =============================
-          ! u_perp > 0: flow is exiting this triangle into triangle tj
-          if (u_perp > 0) then
-            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%U( ti)* u_perp / mesh%TriA( ti)
-          ! u_perp < 0: flow is entering this triangle into triangle tj
+          ! u_vav_perp > 0: flow is exiting this triangle into triangle tj
+          if (u_vav_perp > 0) then
+            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%U( ti)* u_vav_perp / mesh%TriA( ti)
+          ! u_vav_perp < 0: flow is entering this triangle into triangle tj
           else
-            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%U( tj)* u_perp / mesh%TriA( ti)
+            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%U( tj)* u_vav_perp / mesh%TriA( ti)
           end if
 
           ! V momentum
-          if (u_perp > 0) then
-            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%V( ti)* u_perp / mesh%TriA( ti)
+          if (u_vav_perp > 0) then
+            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%V( ti)* u_vav_perp / mesh%TriA( ti)
           else
-            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%V( tj)* u_perp / mesh%TriA( ti)
+            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%V( tj)* u_vav_perp / mesh%TriA( ti)
           end if
 
         end do ! do ci = 1, 3
@@ -380,7 +380,7 @@ CONTAINS
     ! Local variables:
     character(len=256), parameter                         :: routine_name = 'compute_divQUV_fesom'
     integer                                               :: ti, tj, ci, ei, vil, vir
-    real(dp)                                              :: u_perp
+    real(dp)                                              :: u_vav_perp
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -422,24 +422,24 @@ CONTAINS
           if (laddie%mask_gl_b( tj)) cycle
 
           ! Calculate vertically averaged water velocity component perpendicular to this edge
-          u_perp = 0.5*(npxref%U_a( vil) + npxref%U_a( vir)) * mesh%TriD_x( ti, ci) / mesh%TriD( ti, ci) &
+          u_vav_perp = 0.5*(npxref%U_a( vil) + npxref%U_a( vir)) * mesh%TriD_x( ti, ci) / mesh%TriD( ti, ci) &
                  + 0.5*(npxref%V_a( vil) + npxref%V_a( vir)) * mesh%TriD_y( ti, ci) / mesh%TriD( ti, ci)
 
           ! Calculate upstream momentum divergence
           ! =============================
-          ! u_perp > 0: flow is exiting this triangle into triangle tj
-          if (u_perp > 0) then
-            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%U( ti)* u_perp / mesh%TriA( ti)
-          ! u_perp < 0: flow is entering this triangle into triangle tj
+          ! u_vav_perp > 0: flow is exiting this triangle into triangle tj
+          if (u_vav_perp > 0) then
+            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%U( ti)* u_vav_perp / mesh%TriA( ti)
+          ! u_vav_perp < 0: flow is entering this triangle into triangle tj
           else
-            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%U( tj)* u_perp / mesh%TriA( ti)
+            laddie%divQU( ti) = laddie%divQU( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%U( tj)* u_vav_perp / mesh%TriA( ti)
           end if
 
           ! V momentum
-          if (u_perp > 0) then
-            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%V( ti)* u_perp / mesh%TriA( ti)
+          if (u_vav_perp > 0) then
+            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( ti) * npxref%V( ti)* u_vav_perp / mesh%TriA( ti)
           else
-            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%V( tj)* u_perp / mesh%TriA( ti)
+            laddie%divQV( ti) = laddie%divQV( ti) + mesh%TriCw( ti, ci) * Hstar_b( tj) * npxref%V( tj)* u_vav_perp / mesh%TriA( ti)
           end if
 
         end do ! do ci = 1, 3

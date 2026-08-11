@@ -10,6 +10,7 @@ MODULE ice_model_types
   use mpi_f08, only: MPI_WIN
   use basal_hydrology_model_types, only: type_basal_hydrology_model
   use ice_geometry_model_basic, only: type_ice_geometry_model
+  use ice_velocity_model_basic, only: type_ice_velocity_model
 
   IMPLICIT NONE
 
@@ -297,11 +298,11 @@ MODULE ice_model_types
   TYPE type_ice_model
     ! The ice dynamics model data structure.
 
-  ! === Ice-sheet geometry ===
-  ! ==========================
-
-    ! Basic geometry
+    ! Geometry
     type(type_ice_geometry_model), allocatable :: geom
+
+    ! Velocity
+    type(type_ice_velocity_model), allocatable :: vel
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)
@@ -386,59 +387,11 @@ MODULE ice_model_types
     TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
     TYPE(type_ice_velocity_solver_hybrid)   :: hybrid                      ! Hybrid DIVA/BPA
 
-    ! 3-D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_3D                        ! [m yr^-1] 3-D ice velocity
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_3D_b
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_3D_b
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: w_3D
-
-    ! Vertically integrated
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_vav                       ! [m yr^-1] Vertically averaged ice velocity
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_vav
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_vav_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_vav_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_vav
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_vav_b
-
-    ! Surface
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_surf                      ! [m yr^-1] Ice velocity at the surface
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_surf
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_surf_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_surf_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: w_surf
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_surf
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_surf_b
-
-    ! Basal
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_base                      ! [m yr^-1] Ice velocity at the base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_base_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_base_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: w_base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_base_b
-
-  ! == Strain rates ==
-  ! ==================
-
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dx_3D                    ! [yr^-1]
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dy_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dz_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dx_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dy_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dz_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dw_dx_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dw_dy_3D
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dw_dz_3D
-
   ! == Ice flow regime ==
   ! =====================
 
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: divQ                        ! [m yr^-1] Horizontal ice flux divergence
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: R_shear                     ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
     real(dp), dimension(:    ), allocatable :: Qspill                      ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
-    real(dp), dimension(:,:  ), allocatable :: u_perp                      ! [m yr^-1] Perpendicular ice velocity to to edge.
 
   ! == Basal hydrology ==
   ! =====================

@@ -299,12 +299,12 @@ contains
 
   end subroutine alter_ice_thickness
 
-  subroutine calc_and_apply_spill_over_flux( mesh, geom, u_perp, Qspill, Hi_new, dt)
+  subroutine calc_and_apply_spill_over_flux( mesh, geom, u_vav_perp, Qspill, Hi_new, dt)
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
     class(atype_ice_geometry_model_data),                intent(in   ) :: geom
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   ) :: u_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   ) :: u_vav_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out) :: Qspill
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(inout) :: Hi_new
     real(dp),                                            intent(in   ) :: dt
@@ -312,7 +312,7 @@ contains
     ! Local variables:
     character(len=1024), parameter                       :: routine_name = 'calc_and_apply_spill_over_flux'
     integer                                              :: vi, ci, vj, cj, cm, ierr
-    real(dp)                                             :: u_perp_min, Q_max, Q_min, Q_dsttot, Q_srctot
+    real(dp)                                             :: u_vav_perp_min, Q_max, Q_min, Q_dsttot, Q_srctot
     real(dp), dimension(mesh%nC_mem)                     :: weight        ! [m2/y] Perpendicular outflow to ocean
     real(dp), dimension(mesh%vi1: mesh%vi2, mesh%nC_mem) :: relweight     ! [0-1] Relative outflow weight
     real(dp), dimension(mesh%nV, mesh%nC_mem)            :: relweight_tot ! [0-1] Relative outflow weight
@@ -341,17 +341,17 @@ contains
 
         ! Find connection with the strongest inflow into this cell
         cm = 0
-        u_perp_min = huge( u_perp_min)
+        u_vav_perp_min = huge( u_vav_perp_min)
         do ci = 1, mesh%nC( vi)
-          if (u_perp( vi,ci) < u_perp_min) then
-            u_perp_min = u_perp( vi,ci)
+          if (u_vav_perp( vi,ci) < u_vav_perp_min) then
+            u_vav_perp_min = u_vav_perp( vi,ci)
             cm = ci
           end if
         end do
 
         ! If there is no inflow at all, for example during initialisation,
         ! use effective thickness
-        if (u_perp( vi, cm) >= 0._dp) then
+        if (u_vav_perp( vi, cm) >= 0._dp) then
           Hi_ups = geom%Hi_eff( vi)
         end if
 
@@ -388,7 +388,7 @@ contains
             ! Add small value to avoid division by 0 if no outflow velocity enters
             ! any ocean cell. In that case, weights will be equally distributed
             ! over all neighbouring ocean cells.
-            weight( ci) = max(0._dp, u_perp( vi, ci)) + w_eps
+            weight( ci) = max(0._dp, u_vav_perp( vi, ci)) + w_eps
           end if
         end do
 

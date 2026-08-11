@@ -261,14 +261,14 @@ contains
     region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
-    call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=region%ice%u_surf_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%yvelsurf, inputfield_b=region%ice%v_surf_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=region%ice%w_3D( :, 1) / sec_per_year)
-    call write_to_file( region, region%ismip_output%xvelbase, inputfield_b=region%ice%u_base_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%yvelbase, inputfield_b=region%ice%v_base_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=region%ice%w_3D( :, C%nz) / sec_per_year)
-    call write_to_file( region, region%ismip_output%xvelmean, inputfield_b=region%ice%u_vav_b  / sec_per_year)
-    call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=region%ice%v_vav_b  / sec_per_year)
+    call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=region%ice%vel%u_surf_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%yvelsurf, inputfield_b=region%ice%vel%v_surf_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=region%ice%vel%w_3D( :, 1) / sec_per_year)
+    call write_to_file( region, region%ismip_output%xvelbase, inputfield_b=region%ice%vel%u_base_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%yvelbase, inputfield_b=region%ice%vel%v_base_b / sec_per_year)
+    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=region%ice%vel%w_3D( :, C%nz) / sec_per_year)
+    call write_to_file( region, region%ismip_output%xvelmean, inputfield_b=region%ice%vel%u_vav_b  / sec_per_year)
+    call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=region%ice%vel%v_vav_b  / sec_per_year)
 
     ! Temperatures
     call write_to_file( region, region%ismip_output%litemptop, inputfield_a=region%ice%Ti( :, 1), mask_a=mask_ice_a)

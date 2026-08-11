@@ -77,10 +77,10 @@ CONTAINS
       END IF
 
       ! Calculate the total strain rate D
-      D = SQRT( 0.5_dp * (ice%du_dx_3D( vi,k)**2 + ice%dv_dy_3D( vi,k)**2 + ice%dw_dz_3D( vi,k)**2 + &
-                0.5_dp * (ice%du_dy_3D( vi,k)    + ice%dv_dx_3D( vi,k))**2 + &
-                0.5_dp * (ice%du_dz_3D( vi,k)    + ice%dw_dx_3D( vi,k))**2 + &
-                0.5_dp * (ice%dv_dz_3D( vi,k)    + ice%dw_dy_3D( vi,k))**2 ))
+      D = SQRT( 0.5_dp * (ice%vel%du_dx_3D( vi,k)**2 + ice%vel%dv_dy_3D( vi,k)**2 + ice%vel%dw_dz_3D( vi,k)**2 + &
+                0.5_dp * (ice%vel%du_dy_3D( vi,k)    + ice%vel%dv_dx_3D( vi,k))**2 + &
+                0.5_dp * (ice%vel%du_dz_3D( vi,k)    + ice%vel%dw_dx_3D( vi,k))**2 + &
+                0.5_dp * (ice%vel%dv_dz_3D( vi,k)    + ice%vel%dw_dy_3D( vi,k))**2 ))
 
       ! Calculate the strain heating rate Phi
       ice%internal_heating( vi,k) = 2._dp * ice%A_flow( vi,k)**(-1._dp / C%Glens_flow_law_exponent) * D**(1._dp / C%Glens_flow_law_exponent + 1._dp)
@@ -121,7 +121,7 @@ CONTAINS
     ! Calculate frictional heating
     DO vi = mesh%vi1, mesh%vi2
       IF (ice%geom%mask_grounded_ice( vi)) THEN
-        ice%frictional_heating( vi) = ice%basal_friction_coefficient( vi) * ice%uabs_base( vi)
+        ice%frictional_heating( vi) = ice%basal_friction_coefficient( vi) * ice%vel%uabs_base( vi)
       ELSE
         ice%frictional_heating( vi) = 0._dp
       END IF
@@ -381,8 +381,8 @@ CONTAINS
     CALL ddy_a_b_3D( mesh, ice%Ti, dTi_dyp_3D_b)
 
     ! Gather full velocity fields
-    CALL gather_to_all( ice%u_3D_b  , u_3D_b_tot      )
-    CALL gather_to_all( ice%v_3D_b  , v_3D_b_tot      )
+    CALL gather_to_all( ice%vel%u_3D_b  , u_3D_b_tot      )
+    CALL gather_to_all( ice%vel%v_3D_b  , v_3D_b_tot      )
     CALL gather_to_all( dTi_dxp_3D_b, dTi_dxp_3D_b_tot)
     CALL gather_to_all( dTi_dyp_3D_b, dTi_dyp_3D_b_tot)
 
@@ -396,7 +396,7 @@ CONTAINS
       END IF
 
       ! The upwind velocity vector
-      u_upwind = [-ice%u_vav( vi), -ice%v_vav( vi)]
+      u_upwind = [-ice%vel%u_vav( vi), -ice%vel%v_vav( vi)]
 
       ! Find the upwind triangle
       ti_upwind = 0

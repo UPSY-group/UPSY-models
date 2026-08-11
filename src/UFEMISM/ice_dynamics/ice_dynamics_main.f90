@@ -603,58 +603,58 @@ contains
     ! ======================
 
     ! 3-D
-    call reallocate_bounds( ice%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [m yr^-1] 3-D ice velocity
-    call reallocate_bounds( ice%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( ice%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( ice%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [m yr^-1] 3-D ice velocity
+    call reallocate_bounds( ice%vel%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
 
     ! Vertically integrated
-    call reallocate_bounds( ice%u_vav     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Vertically averaged ice velocity
-    call reallocate_bounds( ice%v_vav     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%u_vav_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%v_vav_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%uabs_vav  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_vav_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%u_vav     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Vertically averaged ice velocity
+    call reallocate_bounds( ice%vel%v_vav     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%u_vav_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%v_vav_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%uabs_vav  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_vav_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Surface
-    call reallocate_bounds( ice%u_surf     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the surface
-    call reallocate_bounds( ice%v_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%w_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%u_surf     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the surface
+    call reallocate_bounds( ice%vel%v_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%w_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Basal
-    call reallocate_bounds( ice%u_base     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the base
-    call reallocate_bounds( ice%v_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%u_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%v_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%w_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_base  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%u_base     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the base
+    call reallocate_bounds( ice%vel%v_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%u_base_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%v_base_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%w_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_base  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
 
     ! == Strain rates ==
     ! ==================
 
-    call reallocate_bounds( ice%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
-    call reallocate_bounds( ice%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
+    call reallocate_bounds( ice%vel%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
 
     ! == Ice flow regime ==
     ! =====================
 
     call reallocate_bounds( ice%divQ   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux divergence
-    call reallocate_bounds( ice%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
+    call reallocate_bounds( ice%vel%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
     call reallocate_bounds( ice%Qspill , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
-    call reallocate_bounds( ice%u_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
+    call reallocate_bounds( ice%vel%u_vav_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
 
     ! == Basal hydrology ==
     ! =====================
@@ -960,11 +960,11 @@ contains
     ! == Fill in prescribed velocities and thicknesses away from the front
     ! ====================================================================
 
-    BC_prescr_Hi  ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi( mesh%vi1:mesh%vi2  )
-    BC_prescr_u_b ( mesh%ti1:mesh%ti2  ) = ice%u_vav_b( mesh%ti1:mesh%ti2  )
-    BC_prescr_v_b ( mesh%ti1:mesh%ti2  ) = ice%v_vav_b( mesh%ti1:mesh%ti2  )
-    BC_prescr_u_bk( mesh%ti1:mesh%ti2,:) = ice%u_3D_b ( mesh%ti1:mesh%ti2,:)
-    BC_prescr_v_bk( mesh%ti1:mesh%ti2,:) = ice%v_3D_b ( mesh%ti1:mesh%ti2,:)
+    BC_prescr_Hi  ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi    ( mesh%vi1:mesh%vi2  )
+    BC_prescr_u_b ( mesh%ti1:mesh%ti2  ) = ice%vel%u_vav_b( mesh%ti1:mesh%ti2  )
+    BC_prescr_v_b ( mesh%ti1:mesh%ti2  ) = ice%vel%v_vav_b( mesh%ti1:mesh%ti2  )
+    BC_prescr_u_bk( mesh%ti1:mesh%ti2,:) = ice%vel%u_3D_b ( mesh%ti1:mesh%ti2,:)
+    BC_prescr_v_bk( mesh%ti1:mesh%ti2,:) = ice%vel%v_3D_b ( mesh%ti1:mesh%ti2,:)
 
     ! == Save proper values of config parameters for the velocity solver
     ! ==================================================================
@@ -1013,7 +1013,7 @@ contains
 
       ! Calculate dH/dt around the calving front
       call calc_dHi_dt( mesh, ice%geom, &
-        ice%u_perp, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
+        ice%vel%u_vav_perp, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1124,7 +1124,7 @@ contains
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%u_perp, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel%u_vav_perp, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
                         region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy, region%ice%Qspill)
 
       ! Set ice model ice thickness to relaxed field

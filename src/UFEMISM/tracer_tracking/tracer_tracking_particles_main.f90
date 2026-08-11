@@ -187,9 +187,9 @@ contains
     ! domain of that process)
     call gather_to_all( ice%geom%Hi    , Hi_tot)
     call gather_to_all( ice%geom%Hs    , Hs_tot)
-    call gather_to_all( ice%u_3D_b, u_3D_b_tot)
-    call gather_to_all( ice%v_3D_b, v_3D_b_tot)
-    call gather_to_all( ice%w_3D  , w_3D_tot)
+    call gather_to_all( ice%vel%u_3D_b, u_3D_b_tot)
+    call gather_to_all( ice%vel%v_3D_b, v_3D_b_tot)
+    call gather_to_all( ice%vel%w_3D  , w_3D_tot)
     call gather_gridded_data_to_all( particles%grid_new_particles, Hi_grid_vec_partial,  Hi_grid_tot)
     call gather_gridded_data_to_all( particles%grid_new_particles, SMB_grid_vec_partial, SMB_grid_tot)
 

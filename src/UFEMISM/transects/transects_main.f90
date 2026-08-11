@@ -868,12 +868,12 @@ contains
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hi_eff,   tHi_eff_partial, 'nearest_neighbour')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, BMB%BMB,      tBMB_partial,    'trilin')
     call map_from_mesh_vertices_to_transect_3D ( mesh, transect, ice%Ti,       tTi_partial,     'trilin')
-    call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%u_3D_b,   tu_partial)
-    call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%v_3D_b,   tv_partial)
-    call map_from_mesh_vertices_to_transect_3D ( mesh, transect, ice%w_3D,     tw_partial,      'trilin')
-    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%du_dx_3D, tdu_dx_partial,  'trilin')
-    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%dv_dy_3D, tdv_dy_partial,  'trilin')
-    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%dw_dz_3D, tdw_dz_partial,  'trilin')
+    call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%vel%u_3D_b,   tu_partial)
+    call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%vel%v_3D_b,   tv_partial)
+    call map_from_mesh_vertices_to_transect_3D ( mesh, transect, ice%vel%w_3D,     tw_partial,      'trilin')
+    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%vel%du_dx_3D, tdu_dx_partial,  'trilin')
+    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%vel%dv_dy_3D, tdv_dy_partial,  'trilin')
+    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%vel%dw_dz_3D, tdw_dz_partial,  'trilin')
 
     ! Calculate parallel/orthogonal velocity components
     do k = 1, transect%nz

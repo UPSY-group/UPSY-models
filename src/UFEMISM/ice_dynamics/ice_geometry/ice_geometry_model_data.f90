@@ -15,7 +15,8 @@ module ice_geometry_model_data
     ! Primary ice geometry fields
     real(dp), dimension(:  ), allocatable :: Hi                      ! [m]       Ice thickness
     real(dp), dimension(:  ), allocatable :: Hb                      ! [m]       Bedrock elevation (w.r.t. PD sea level)
-    real(dp), dimension(:  ), allocatable :: SL                      ! [m]       Geoid elevation   (w.r.t. PD sea level)
+    real(dp), dimension(:  ), contiguous, pointer :: SL                    => null()  ! [m]       Geoid elevation   (w.r.t. PD sea level)
+    type(MPI_WIN) :: wSL
 
     ! Secondary ice geometry fields
     real(dp), dimension(:  ), contiguous, pointer :: Hs                    => null()  ! [m]       Ice surface elevation (w.r.t. PD sea level)

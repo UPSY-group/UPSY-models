@@ -52,7 +52,7 @@ contains
 
     call reallocate_bounds( self%Hi, mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%Hb, mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%SL, mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'SL', self%SL)
 
     self%Hi( mesh_new%vi1:mesh_new%vi2) = Hi_new( mesh_new%vi1:mesh_new%vi2)
     self%Hb( mesh_new%vi1:mesh_new%vi2) = Hb_new( mesh_new%vi1:mesh_new%vi2)

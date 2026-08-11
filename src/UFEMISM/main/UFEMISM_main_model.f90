@@ -1275,10 +1275,10 @@ CONTAINS
     allocate( mesh_new)
     CALL create_mesh_from_meshed_geometry( region%name, new_mesh_name, &
       region%mesh, &
-      region%ice%geom%Hi, &
-      region%ice%geom%Hb, &
+      region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2), &
+      region%ice%geom%Hb( region%mesh%vi1:region%mesh%vi2), &
       region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2), &
-      region%ice%geom%SL, &
+      region%ice%geom%SL( region%mesh%vi1:region%mesh%vi2), &
       xmin, xmax, ymin, ymax, lambda_M, phi_M, beta_stereo, &
       mesh_new)
 

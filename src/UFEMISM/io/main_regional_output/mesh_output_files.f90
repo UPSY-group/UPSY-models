@@ -406,17 +406,17 @@ contains
 
       ! Base
       case ('u_base')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'u_base', region%ice%u_base_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'u_base', region%ice%vel%u_base_b)
       case ('v_base')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'v_base', region%ice%v_base_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'v_base', region%ice%vel%v_base_b)
       case ('u_base_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('v_base_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
       case ('w_base')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'w_base', region%ice%w_base)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'w_base', region%ice%vel%w_base)
       case ('uabs_base')
-        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'uabs_base', region%ice%uabs_base_b)
+        call write_to_field_multopt_mesh_dp_2D_b( region%mesh, filename, ncid, 'uabs_base', region%ice%vel%uabs_base_b)
       case ('uabs_base_b')
         call crash( trim(choice_output_field)//' no longer an option; horizontal velocities are always returned on the b-grid')
 

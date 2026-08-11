@@ -36,6 +36,15 @@ module ice_velocity_model_data
     real(dp), dimension(:  ), allocatable :: uabs_surf                   ! [m yr^-1]   Surface ice speed
     real(dp), dimension(:  ), allocatable :: uabs_surf_b                 ! [m yr^-1]   Surface ice speed on the b-grid
 
+    ! Base
+    real(dp), dimension(:  ), allocatable :: u_base                      ! [m yr^-1]   Basal ice velocity in the x-direction
+    real(dp), dimension(:  ), allocatable :: v_base                      ! [m yr^-1]   Basal ice velocity in the y-direction
+    real(dp), dimension(:  ), allocatable :: u_base_b                    ! [m yr^-1]   Basal ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), allocatable :: v_base_b                    ! [m yr^-1]   Basal ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), allocatable :: w_base                      ! [m yr^-1]   Basal ice velocity in the z-direction
+    real(dp), dimension(:  ), allocatable :: uabs_base                   ! [m yr^-1]   Basal ice speed
+    real(dp), dimension(:  ), allocatable :: uabs_base_b                 ! [m yr^-1]   Basal ice speed on the b-grid
+
   end type atype_ice_velocity_model_data
 
 end module ice_velocity_model_data

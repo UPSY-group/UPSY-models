@@ -280,9 +280,9 @@ CONTAINS
 
     do vi = mesh%vi1, mesh%vi2
       ! Convert ice velocities to m/s
-      basal_hydro%ice_u_base( vi) = ice%u_base( vi)/sec_per_year
-      basal_hydro%ice_v_base( vi) = ice%v_base( vi)/sec_per_year
-      basal_hydro%ice_w_base( vi) = ice%w_base( vi)/sec_per_year
+      basal_hydro%ice_u_base( vi) = ice%vel%u_base( vi)/sec_per_year
+      basal_hydro%ice_v_base( vi) = ice%vel%v_base( vi)/sec_per_year
+      basal_hydro%ice_w_base( vi) = ice%vel%w_base( vi)/sec_per_year
     end do
     !call checksum(mesh%pai_V, basal_hydro%ice_u_base, "ice_u_base after conversion to SI")
     !call checksum(mesh%pai_V, basal_hydro%ice_v_base, "ice_v_base after conversion to SI")

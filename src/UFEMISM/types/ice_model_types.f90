@@ -387,15 +387,6 @@ MODULE ice_model_types
     TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
     TYPE(type_ice_velocity_solver_hybrid)   :: hybrid                      ! Hybrid DIVA/BPA
 
-    ! Basal
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_base                      ! [m yr^-1] Ice velocity at the base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_base_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_base_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: w_base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_base
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: uabs_base_b
-
   ! == Strain rates ==
   ! ==================
 

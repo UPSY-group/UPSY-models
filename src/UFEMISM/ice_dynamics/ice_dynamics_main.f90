@@ -627,13 +627,13 @@ contains
     call reallocate_bounds( ice%vel%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Basal
-    call reallocate_bounds( ice%u_base     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the base
-    call reallocate_bounds( ice%v_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%u_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%v_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%w_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_base  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%u_base     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the base
+    call reallocate_bounds( ice%vel%v_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%u_base_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%v_base_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( ice%vel%w_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_base  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( ice%vel%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
 
     ! == Strain rates ==
     ! ==================

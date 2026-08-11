@@ -79,7 +79,7 @@ contains
 
       ! Calculate thinning rates for current geometry and velocity
       !   f(H_n, u_n) in Robinson et al., 2020, Eq. 30
-      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%u_vav_perp, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel%u_vav_perp, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, &
         region%ice%divQ, region%ice%dHi_dt_target, region%ice%Qspill)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%dHi_dt_Hi_n_u_n)
@@ -125,7 +125,7 @@ contains
 
       ! Calculate thinning rates for the predicted ice thickness and predicted velocity
       !  f( H*_n+1, u_n+1) in Robinson et al., 2020, Eq. 31
-      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%u_vav_perp, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel%u_vav_perp, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, &
         region%ice%divQ, region%ice%dHi_dt_target, region%ice%Qspill)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%dHi_dt_Hi_star_np1_u_np1)

@@ -26,6 +26,7 @@ module ice_velocity_model_data
     real(dp), dimension(:  ), allocatable :: v_vav_b                     ! [m yr^-1]   Vertically averaged ice velocity in the y-direction on the b-grid
     real(dp), dimension(:  ), allocatable :: uabs_vav                    ! [m yr^-1]   Vertically averaged horizontal ice speed
     real(dp), dimension(:  ), allocatable :: uabs_vav_b                  ! [m yr^-1]   Vertically averaged horizontal ice speed on the b-grid
+    real(dp), dimension(:,:), allocatable :: u_vav_perp                  ! [m yr^-1]   Vertically averaged ice velocity perpendicular to Voronoi cell boundaries
 
     ! Surface
     real(dp), dimension(:  ), allocatable :: u_surf                      ! [m yr^-1]   Surface ice velocity in the x-direction

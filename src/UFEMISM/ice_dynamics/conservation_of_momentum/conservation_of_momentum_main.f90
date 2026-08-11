@@ -240,7 +240,7 @@ contains
       ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
     end do
 
-    call calc_u_vav_perp( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, ice%u_vav_perp)
+    call calc_u_vav_perp( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, ice%vel%u_vav_perp)
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2

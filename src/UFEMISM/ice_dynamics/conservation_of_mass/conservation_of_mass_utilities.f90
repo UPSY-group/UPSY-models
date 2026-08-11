@@ -21,7 +21,7 @@ module conservation_of_mass_utilities
 
 contains
 
-  subroutine calc_ice_flux_divergence_matrix_upwind( mesh, u_perp, fraction_margin, M_divQ)
+  subroutine calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_perp, fraction_margin, M_divQ)
     !< Calculate the ice flux divergence matrix M_divQ using an upwind scheme
 
     ! The vertically averaged ice flux divergence represents the net ice volume (which,
@@ -35,7 +35,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                          intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem),      intent(in   ) :: u_perp
+    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem),      intent(in   ) :: u_vav_perp
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: fraction_margin
     type(type_CSR_matrix_dp),                                 intent(  out) :: M_divQ
 
@@ -87,16 +87,16 @@ contains
         ! Calculate matrix coefficients
         ! =============================
 
-        ! u_perp > 0: flow is exiting this vertex into vertex vj
+        ! u_vav_perp > 0: flow is exiting this vertex into vertex vj
         if (fraction_margin_tot( vi) >= 1._dp) then
-          cM_divQ( 0) = cM_divQ( 0) + L_c * max( 0._dp, u_perp( vi, ci)) / A_i
+          cM_divQ( 0) = cM_divQ( 0) + L_c * max( 0._dp, u_vav_perp( vi, ci)) / A_i
         else
           ! if this vertex is not completely covering its assigned area, then don't let ice out of it yet.
         end if
 
-        ! u_perp < 0: flow is entering this vertex from vertex vj
+        ! u_vav_perp < 0: flow is entering this vertex from vertex vj
         if (fraction_margin_tot( vj) >= 1._dp) then
-          cM_divQ( ci) = L_c * MIN( 0._dp, u_perp( vi, ci)) / A_i
+          cM_divQ( ci) = L_c * MIN( 0._dp, u_vav_perp( vi, ci)) / A_i
         else
           ! if that vertex is not completely covering its assigned area, then don't let ice out of it yet.
         end if

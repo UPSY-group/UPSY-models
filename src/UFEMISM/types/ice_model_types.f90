@@ -392,7 +392,7 @@ MODULE ice_model_types
 
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: divQ                        ! [m yr^-1] Horizontal ice flux divergence
     real(dp), dimension(:    ), allocatable :: Qspill                      ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
-    real(dp), dimension(:,:  ), allocatable :: u_perp                      ! [m yr^-1] Perpendicular ice velocity to to edge.
+    real(dp), dimension(:,:  ), allocatable :: u_vav_perp                      ! [m yr^-1] Perpendicular ice velocity to to edge.
 
   ! == Basal hydrology ==
   ! =====================

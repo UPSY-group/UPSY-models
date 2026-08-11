@@ -167,7 +167,7 @@ CONTAINS
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'compute_divQTS'
     INTEGER                                               :: ci, ei, vi, vj
-    REAL(dp)                                              :: u_perp
+    REAL(dp)                                              :: u_vav_perp
 
     ! Add routine to path
     CALL init_routine( routine_name)
@@ -216,24 +216,24 @@ CONTAINS
           ei = mesh%VE( vi,ci)
 
           ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
-          u_perp = npx%U_c( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + npx%V_c( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
+          u_vav_perp = npx%U_c( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + npx%V_c( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
           ! Calculate upwind momentum divergence
           ! =============================
-          ! u_perp > 0: flow is exiting this vertex into vertex vj
-          IF (u_perp > 0) THEN
-            laddie%divQT( vi) = laddie%divQT( vi) + mesh%Cw( vi, ci) * u_perp * Hstar( vi) * npx%T( vi) / mesh%A( vi)
-            laddie%divQS( vi) = laddie%divQS( vi) + mesh%Cw( vi, ci) * u_perp * Hstar( vi) * npx%S( vi) / mesh%A( vi)
-          ! u_perp < 0: flow is entering this vertex from vertex vj
+          ! u_vav_perp > 0: flow is exiting this vertex into vertex vj
+          IF (u_vav_perp > 0) THEN
+            laddie%divQT( vi) = laddie%divQT( vi) + mesh%Cw( vi, ci) * u_vav_perp * Hstar( vi) * npx%T( vi) / mesh%A( vi)
+            laddie%divQS( vi) = laddie%divQS( vi) + mesh%Cw( vi, ci) * u_vav_perp * Hstar( vi) * npx%S( vi) / mesh%A( vi)
+          ! u_vav_perp < 0: flow is entering this vertex from vertex vj
           ELSE
             IF (laddie%mask_oc_a( vj)) THEN
               CYCLE ! no inflow
               ! TODO fix boundary condition inflow
-              laddie%divQT( vi) = laddie%divQT( vi) + mesh%Cw( vi, ci) * u_perp * Hstar( vi) * npx%T( vi) / mesh%A( vi)
-              laddie%divQS( vi) = laddie%divQS( vi) + mesh%Cw( vi, ci) * u_perp * Hstar( vi) * npx%S( vi) / mesh%A( vi)
+              laddie%divQT( vi) = laddie%divQT( vi) + mesh%Cw( vi, ci) * u_vav_perp * Hstar( vi) * npx%T( vi) / mesh%A( vi)
+              laddie%divQS( vi) = laddie%divQS( vi) + mesh%Cw( vi, ci) * u_vav_perp * Hstar( vi) * npx%S( vi) / mesh%A( vi)
             ELSE
-              laddie%divQT( vi) = laddie%divQT( vi) + mesh%Cw( vi, ci) * u_perp * Hstar( vj) * npx%T( vj) / mesh%A( vi)
-              laddie%divQS( vi) = laddie%divQS( vi) + mesh%Cw( vi, ci) * u_perp * Hstar( vj) * npx%S( vj) / mesh%A( vi)
+              laddie%divQT( vi) = laddie%divQT( vi) + mesh%Cw( vi, ci) * u_vav_perp * Hstar( vj) * npx%T( vj) / mesh%A( vi)
+              laddie%divQS( vi) = laddie%divQS( vi) + mesh%Cw( vi, ci) * u_vav_perp * Hstar( vj) * npx%S( vj) / mesh%A( vi)
             END IF
           END IF
 

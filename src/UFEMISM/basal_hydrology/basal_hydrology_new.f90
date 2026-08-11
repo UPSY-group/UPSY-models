@@ -427,7 +427,7 @@ CONTAINS
     logical,  dimension(mesh%nV)           :: mask_grounded_ice_tot
     real(dp), dimension(mesh%nE)           :: u_c_tot, v_c_tot
     real(dp), dimension(mesh%nV)           :: W_tot
-    real(dp)                               :: u_perp
+    real(dp)                               :: u_vav_perp
     real(dp), dimension(mesh%vi1:mesh%vi2) :: D_nabla_W_x, D_nabla_W_y, dD_nabla_W_x, dD_nabla_W_y !Needed for the calculation of the diffusion term
 
     ! Add routine to path
@@ -473,19 +473,19 @@ CONTAINS
         ei = mesh%VE( vi,ci)
 
         ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
-        u_perp = u_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
+        u_vav_perp = u_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + v_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 
         ! Calculate upwind momentum divergence
         ! =============================
-        ! u_perp > 0: flow is exiting this vertex into vertex vj
-        IF (u_perp > 0) THEN
-          basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vi) / mesh%A( vi) ! Bueler and Van Pelt 2015 eq. 43 (for the first two terms for one connection of the Voronoi cell, the diffusion term is added later)
-        ! u_perp < 0: flow is entering this vertex from vertex vj
+        ! u_vav_perp > 0: flow is exiting this vertex into vertex vj
+        IF (u_vav_perp > 0) THEN
+          basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_vav_perp * W_tot( vi) / mesh%A( vi) ! Bueler and Van Pelt 2015 eq. 43 (for the first two terms for one connection of the Voronoi cell, the diffusion term is added later)
+        ! u_vav_perp < 0: flow is entering this vertex from vertex vj
         ELSE
           ! Skip connection if neighbour is not grounded. No flux across grounding line
           ! Can be made more flexible when accounting for partial cells (PMP instead of FCMP)
           IF (mask_grounded_ice_tot( vj)) then
-            basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_perp * W_tot( vj) / mesh%A( vi)
+            basal_hydro%divQ( vi) = basal_hydro%divQ( vi) + mesh%Cw( vi, ci) * u_vav_perp * W_tot( vj) / mesh%A( vi)
           END IF
         END IF
 

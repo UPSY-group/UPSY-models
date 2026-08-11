@@ -408,41 +408,41 @@ contains
         ! Voronoi cells of vertices vi and vj has length L_c
         L_c = mesh%Cw( vi,ci)
 
-        ! Calculate the flux: if u_perp > 0, that means that this mass is
+        ! Calculate the flux: if u_vav_perp > 0, that means that this mass is
         ! flowing out from our transitional vertex. If so, add it its (negative) total.
-        ! A negative velocity u_perp < 0 means that the ice is flowing _into_ this
+        ! A negative velocity u_vav_perp < 0 means that the ice is flowing _into_ this
         ! transitional zone. That might happen if there is an ice shelf flowing into
         ! grounded ice. Account for that as well to get a perfect mass tracking.
-        ! For the other zones, u_perp < 0 would come from an area with no ice, so
+        ! For the other zones, u_vav_perp < 0 would come from an area with no ice, so
         ! that case adds 0 anyway. Thus, only consider positive velocities.
 
         ! Grounding line (grounded side)
         if (ice%geom%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
-          if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
-          elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
-            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) * ice_density * 1.0E-12_dp ! [Gt/yr]
+          if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_vav_perp( vi, ci) > 0._dp) then
+            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_vav_perp( vi, ci) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+          elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_vav_perp( vi, ci) < 0._dp) then
+            scalars%gl_flux = scalars%gl_flux - L_c * ice%u_vav_perp( vi, ci) * Hi_tot( vj) * ice_density * 1.0E-12_dp ! [Gt/yr]
           end if
         end if
 
         ! Grounded marine front
         if (fraction_margin_tot( vi) >= 1._dp .and. ice%geom%mask_cf_gr( vi) .and. mask_icefree_ocean_tot( vj)) THEN
-          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+          scalars%cf_gr_flux = scalars%cf_gr_flux - L_c * max( 0._dp, ice%u_vav_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Floating calving front
         if (fraction_margin_tot( vi) >= 1._dp .and. ice%geom%mask_cf_fl( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+          scalars%cf_fl_flux = scalars%cf_fl_flux - L_c * max( 0._dp, ice%u_vav_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Land-terminating ice (grounded or floating)
         if (fraction_margin_tot( vi) >= 1._dp .and. ice%geom%mask_margin( vi) .and. mask_icefree_land_tot( vj)) then
-          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+          scalars%margin_land_flux = scalars%margin_land_flux - L_c * max( 0._dp, ice%u_vav_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
         ! Marine-terminating ice (grounded or floating)
         if (fraction_margin_tot( vi) >= 1._dp .and. ice%geom%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+          scalars%margin_ocean_flux = scalars%margin_ocean_flux - L_c * max( 0._dp, ice%u_vav_perp( vi, ci)) * Hi_tot( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
         end if
 
       end do ! do ci = 1, mesh%nC( vi)
@@ -515,25 +515,25 @@ contains
           ! Voronoi cells of vertices vi and vj has length L_c
           L_c = mesh%Cw( vi,ci)
 
-          ! Calculate the flux: if u_perp > 0, that means that this mass is
+          ! Calculate the flux: if u_vav_perp > 0, that means that this mass is
           ! flowing out from our transitional vertex. If so, add it its (negative) total.
-          ! A negative velocity u_perp < 0 means that the ice is flowing _into_ this
+          ! A negative velocity u_vav_perp < 0 means that the ice is flowing _into_ this
           ! transitional zone. That might happen if there is an ice shelf flowing into
           ! grounded ice. Account for that as well to get a perfect mass tracking.
-          ! For the other zones, u_perp < 0 would come from an area with no ice, so
+          ! For the other zones, u_vav_perp < 0 would come from an area with no ice, so
           ! that case adds 0 anyway. Thus, only consider positive velocities.
 
           ! Calving flux
           if (fraction_margin_tot( vi) >= 1._dp .and. ice%geom%mask_margin( vi) .and. mask_icefree_ocean_tot( vj)) then
-            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
+            calving_flux( vi) = calving_flux( vi) - L_c * max( 0._dp, ice%u_vav_perp( vi, ci)) * Hi_tot( vi) / A_i ! [m/yr]
           end if
 
           ! Grounding line (grounded side)
           if (ice%geom%mask_grounded_ice( vi) .and. mask_floating_ice_tot( vj)) then
-            if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_perp( vi, ci) > 0._dp) then
-              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vi) / A_i ! [m/yr]
-            elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_perp( vi, ci) < 0._dp) then
-              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_perp( vi, ci) * Hi_tot( vj) / A_i ! [m/yr]
+            if (fraction_margin_tot( vi) >= 1._dp .and. ice%u_vav_perp( vi, ci) > 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_vav_perp( vi, ci) * Hi_tot( vi) / A_i ! [m/yr]
+            elseif (fraction_margin_tot( vj) >= 1._dp .and. ice%u_vav_perp( vi, ci) < 0._dp) then
+              gl_flux( vi) = gl_flux( vi) - L_c * ice%u_vav_perp( vi, ci) * Hi_tot( vj) / A_i ! [m/yr]
             end if
           end if
 

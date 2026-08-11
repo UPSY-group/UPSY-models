@@ -654,7 +654,7 @@ contains
     call reallocate_bounds( ice%divQ   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux divergence
     call reallocate_bounds( ice%vel%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
     call reallocate_bounds( ice%Qspill , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
-    call reallocate_bounds( ice%u_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
+    call reallocate_bounds( ice%u_vav_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
 
     ! == Basal hydrology ==
     ! =====================
@@ -1013,7 +1013,7 @@ contains
 
       ! Calculate dH/dt around the calving front
       call calc_dHi_dt( mesh, ice%geom, &
-        ice%u_perp, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
+        ice%u_vav_perp, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1124,7 +1124,7 @@ contains
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%u_perp, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%u_vav_perp, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
                         region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy, region%ice%Qspill)
 
       ! Set ice model ice thickness to relaxed field

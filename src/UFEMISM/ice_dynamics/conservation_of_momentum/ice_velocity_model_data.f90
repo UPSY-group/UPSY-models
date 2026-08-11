@@ -45,6 +45,17 @@ module ice_velocity_model_data
     real(dp), dimension(:  ), allocatable :: uabs_base                   ! [m yr^-1]   Basal ice speed
     real(dp), dimension(:  ), allocatable :: uabs_base_b                 ! [m yr^-1]   Basal ice speed on the b-grid
 
+    ! Strain rates
+    real(dp), dimension(:,:), allocatable :: du_dx_3D                    ! [yr^-1]     3-D xx strain rate
+    real(dp), dimension(:,:), allocatable :: du_dy_3D                    ! [yr^-1]     3-D xy strain rate
+    real(dp), dimension(:,:), allocatable :: du_dz_3D                    ! [yr^-1]     3-D xz strain rate
+    real(dp), dimension(:,:), allocatable :: dv_dx_3D                    ! [yr^-1]     3-D yx strain rate
+    real(dp), dimension(:,:), allocatable :: dv_dy_3D                    ! [yr^-1]     3-D yy strain rate
+    real(dp), dimension(:,:), allocatable :: dv_dz_3D                    ! [yr^-1]     3-D yz strain rate
+    real(dp), dimension(:,:), allocatable :: dw_dx_3D                    ! [yr^-1]     3-D zx strain rate
+    real(dp), dimension(:,:), allocatable :: dw_dy_3D                    ! [yr^-1]     3-D zy strain rate
+    real(dp), dimension(:,:), allocatable :: dw_dz_3D                    ! [yr^-1]     3-D zz strain rate
+
   end type atype_ice_velocity_model_data
 
 end module ice_velocity_model_data

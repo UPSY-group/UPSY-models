@@ -106,19 +106,6 @@ contains
     ! Glen's flow law factor
     allocate( ice%A_flow( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
 
-    ! == Strain rates ==
-    ! ==================
-
-    allocate( ice%du_dx_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%du_dy_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%du_dz_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%dv_dx_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%dv_dy_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%dv_dz_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%dw_dx_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%dw_dy_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( ice%dw_dz_3D( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-
     ! == Ice flow regime ==
     ! =====================
 

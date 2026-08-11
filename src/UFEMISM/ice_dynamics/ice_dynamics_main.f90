@@ -311,8 +311,8 @@ contains
     ! Model states for ice dynamics model
     ice%t_Hi_prev = C%start_time_of_run
     ice%t_Hi_next = C%start_time_of_run
-    ice%Hi_prev   = ice%geom%Hi
-    ice%Hi_next   = ice%geom%Hi
+    ice%Hi_prev( mesh%vi1:mesh%vi2) = ice%geom%Hi( mesh%vi1:mesh%vi2)
+    ice%Hi_next( mesh%vi1:mesh%vi2) = ice%geom%Hi( mesh%vi1:mesh%vi2)
 
     ! Initialise masks
     ! ================
@@ -718,8 +718,8 @@ contains
     ! Model states for ice dynamics model
     ice%t_Hi_prev = time
     ice%t_Hi_next = time
-    ice%Hi_prev   = ice%geom%Hi
-    ice%Hi_next   = ice%geom%Hi
+    ice%Hi_prev( mesh_new%vi1:mesh_new%vi2) = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
+    ice%Hi_next( mesh_new%vi1:mesh_new%vi2) = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
 
     ! Initialise masks
     ! ================
@@ -960,11 +960,11 @@ contains
     ! == Fill in prescribed velocities and thicknesses away from the front
     ! ====================================================================
 
-    BC_prescr_Hi   = ice%geom%Hi
-    BC_prescr_u_b  = ice%u_vav_b
-    BC_prescr_v_b  = ice%v_vav_b
-    BC_prescr_u_bk = ice%u_3D_b
-    BC_prescr_v_bk = ice%v_3D_b
+    BC_prescr_Hi  ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi( mesh%vi1:mesh%vi2  )
+    BC_prescr_u_b ( mesh%ti1:mesh%ti2  ) = ice%u_vav_b( mesh%ti1:mesh%ti2  )
+    BC_prescr_v_b ( mesh%ti1:mesh%ti2  ) = ice%v_vav_b( mesh%ti1:mesh%ti2  )
+    BC_prescr_u_bk( mesh%ti1:mesh%ti2,:) = ice%u_3D_b ( mesh%ti1:mesh%ti2,:)
+    BC_prescr_v_bk( mesh%ti1:mesh%ti2,:) = ice%v_3D_b ( mesh%ti1:mesh%ti2,:)
 
     ! == Save proper values of config parameters for the velocity solver
     ! ==================================================================
@@ -1017,7 +1017,7 @@ contains
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
-      ice%geom%Hi = Hi_tplusdt
+      ice%geom%Hi( mesh%vi1:mesh%vi2) = Hi_tplusdt( mesh%vi1:mesh%vi2)
       t_pseudo = t_pseudo + C%dt_ice_min
 
       ! Update basic geometry

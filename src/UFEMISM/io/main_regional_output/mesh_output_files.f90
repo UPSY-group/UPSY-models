@@ -1614,13 +1614,15 @@ contains
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_ice_margin_to_file'
     real(dp), dimension(:,:  ), allocatable :: CC
+    real(dp), dimension(:), pointer         :: Hi_loc
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Calculate ice margin contour
     if (par%primary) allocate( CC( mesh%nE,2))
-    call calc_mesh_contour( mesh, ice%geom%Hi, 0.05_dp, CC)
+    Hi_loc => ice%geom%Hi( mesh%vi1:mesh%vi2)
+    call calc_mesh_contour( mesh, Hi_loc, 0.05_dp, CC)
 
     ! Write to NetCDF
     call write_contour_to_file( filename, ncid, mesh, CC, 'ice_margin')

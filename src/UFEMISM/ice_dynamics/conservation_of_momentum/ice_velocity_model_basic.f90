@@ -101,6 +101,9 @@ contains
     allocate( self%dw_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
     allocate( self%dw_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
 
+    ! Flow regime
+    allocate( self%R_shear( mesh%vi1:mesh%vi2), source = NaN)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -165,6 +168,9 @@ contains
     deallocate( self%dw_dx_3D)
     deallocate( self%dw_dy_3D)
     deallocate( self%dw_dz_3D)
+
+    ! Flow regime
+    deallocate( self%R_shear)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

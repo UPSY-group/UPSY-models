@@ -56,6 +56,9 @@ module ice_velocity_model_data
     real(dp), dimension(:,:), allocatable :: dw_dy_3D                    ! [yr^-1]     3-D zy strain rate
     real(dp), dimension(:,:), allocatable :: dw_dz_3D                    ! [yr^-1]     3-D zz strain rate
 
+    ! Flow regime
+    real(dp), dimension(:  ), allocatable :: R_shear                     ! [0-1]       uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
+
   end type atype_ice_velocity_model_data
 
 end module ice_velocity_model_data

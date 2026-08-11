@@ -448,7 +448,7 @@ contains
       case ('divQ')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'divQ', region%ice%divQ)
       case ('R_shear')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'R_shear', region%ice%R_shear)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'R_shear', region%ice%vel%R_shear)
       case ('Qspill')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Qspill', region%ice%Qspill)
 

@@ -182,7 +182,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   )           :: mesh
     logical,  dimension(mesh%vi1:mesh%vi2), intent(in   )           :: mask_noice
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   )           :: Hb
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout)           :: Hi_tplusdt_ex
     type(type_CSR_matrix_dp),        intent(inout)           :: AA                    ! Stiffness matrix
@@ -212,7 +212,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     logical,  dimension(mesh%vi1:mesh%vi2), intent(in   ) :: mask_noice
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_tplusdt_ex
     type(type_CSR_matrix_dp),        intent(inout) :: AA                    ! Stiffness matrix

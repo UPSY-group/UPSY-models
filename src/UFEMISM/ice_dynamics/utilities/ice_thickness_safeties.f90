@@ -31,7 +31,7 @@ contains
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_model),                   intent(in   ) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_old
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hb
+    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
@@ -331,7 +331,7 @@ contains
 
     call gather_dist_shared_to_all( mesh%pai_V, geom%mask_icefree_ocean, mask_icefree_ocean_tot)
     call gather_to_all( Hi_new, Hi_new_tot)
-    call gather_to_all( geom%Hb, Hb_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%Hb, Hb_tot)
 
     ! Compute spill flux source
     do vi = mesh%vi1, mesh%vi2

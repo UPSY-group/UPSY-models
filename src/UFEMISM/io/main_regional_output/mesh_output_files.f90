@@ -1622,7 +1622,7 @@ contains
     ! Calculate ice margin contour
     if (par%primary) allocate( CC( mesh%nE,2))
     Hi_loc => ice%geom%Hi( mesh%vi1:mesh%vi2)
-    call calc_mesh_contour( mesh, ice%geom%Hi, 0.05_dp, CC)
+    call calc_mesh_contour( mesh, Hi_loc, 0.05_dp, CC)
 
     ! Write to NetCDF
     call write_contour_to_file( filename, ncid, mesh, CC, 'ice_margin')

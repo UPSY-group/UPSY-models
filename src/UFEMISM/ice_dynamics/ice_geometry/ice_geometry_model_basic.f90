@@ -207,7 +207,13 @@ contains
 
     ! Primary ice geometry variables
     allocate( self%Hi( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%Hb( mesh%vi1:mesh%vi2), source = NaN)
+
+    call self%create_field( self%Hb, self%wHb, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hb', &
+      long_name = 'Bedrock elevation', &
+      units     = 'm w.r.t. PD sea level', &
+      remap_method = 'reallocate')
 
     call self%create_field( self%SL, self%wSL, &
       self%mesh, Arakawa_grid%a(), &
@@ -390,7 +396,7 @@ contains
       remap_method = 'reallocate')
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 25)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 26)
 
   end subroutine allocate_ice_geometry_model
 
@@ -412,7 +418,7 @@ contains
 
     ! Primary ice geometry variables
     deallocate( self%Hi)
-    deallocate( self%Hb)
+    nullify( self%Hb)
     nullify( self%SL)
 
     ! Derived ice geometry variables

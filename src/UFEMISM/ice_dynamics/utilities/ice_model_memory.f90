@@ -106,18 +106,6 @@ contains
     ! Glen's flow law factor
     allocate( ice%A_flow( mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
 
-    ! === Ice velocities ===
-    ! ======================
-
-    ! Basal
-    allocate( ice%u_base     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%v_base     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%u_base_b   ( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%v_base_b   ( mesh%ti1:mesh%ti2), source = 0._dp)
-    allocate( ice%w_base     ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%uabs_base  ( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( ice%uabs_base_b( mesh%ti1:mesh%ti2), source = 0._dp)
-
     ! == Strain rates ==
     ! ==================
 

@@ -81,6 +81,15 @@ contains
     allocate( self%uabs_surf  ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%uabs_surf_b( mesh%ti1:mesh%ti2), source = NaN)
 
+    ! Base
+    allocate( self%u_base     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%v_base     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%u_base_b   ( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%v_base_b   ( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%w_base     ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%uabs_base  ( mesh%vi1:mesh%vi2), source = NaN)
+    allocate( self%uabs_base_b( mesh%ti1:mesh%ti2), source = NaN)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -125,6 +134,15 @@ contains
     deallocate( self%w_surf     )
     deallocate( self%uabs_surf  )
     deallocate( self%uabs_surf_b)
+
+    ! Base
+    deallocate( self%u_base     )
+    deallocate( self%v_base     )
+    deallocate( self%u_base_b   )
+    deallocate( self%v_base_b   )
+    deallocate( self%w_base     )
+    deallocate( self%uabs_base  )
+    deallocate( self%uabs_base_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

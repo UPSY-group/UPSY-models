@@ -90,6 +90,17 @@ contains
     allocate( self%uabs_base  ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%uabs_base_b( mesh%ti1:mesh%ti2), source = NaN)
 
+    ! Strain rates
+    allocate( self%du_dx_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%du_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%du_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%dv_dx_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%dv_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%dv_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%dw_dx_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%dw_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    allocate( self%dw_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -143,6 +154,17 @@ contains
     deallocate( self%w_base     )
     deallocate( self%uabs_base  )
     deallocate( self%uabs_base_b)
+
+    ! Strain rates
+    deallocate( self%du_dx_3D)
+    deallocate( self%du_dy_3D)
+    deallocate( self%du_dz_3D)
+    deallocate( self%dv_dx_3D)
+    deallocate( self%dv_dy_3D)
+    deallocate( self%dv_dz_3D)
+    deallocate( self%dw_dx_3D)
+    deallocate( self%dw_dy_3D)
+    deallocate( self%dw_dz_3D)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

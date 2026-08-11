@@ -638,15 +638,15 @@ contains
     ! == Strain rates ==
     ! ==================
 
-    call reallocate_bounds( ice%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
-    call reallocate_bounds( ice%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
+    call reallocate_bounds( ice%vel%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( ice%vel%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
 
     ! == Ice flow regime ==
     ! =====================

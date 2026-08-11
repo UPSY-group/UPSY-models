@@ -207,7 +207,7 @@ contains
 
     ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
     call calc_dw_dz( mesh, ice%geom%Hi, ice%geom%Hs, mesh%zeta, &
-      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%vel%w_3D, ice%dw_dz_3D)
+      ice%geom%mask_grounded_ice, ice%geom%mask_floating_ice, ice%vel%w_3D, ice%vel%dw_dz_3D)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

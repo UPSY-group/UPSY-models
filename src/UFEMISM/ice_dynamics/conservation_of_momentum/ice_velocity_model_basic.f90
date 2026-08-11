@@ -71,6 +71,7 @@ contains
     allocate( self%v_vav_b   ( mesh%ti1:mesh%ti2), source = NaN)
     allocate( self%uabs_vav  ( mesh%vi1:mesh%vi2), source = NaN)
     allocate( self%uabs_vav_b( mesh%ti1:mesh%ti2), source = NaN)
+    allocate( self%u_vav_perp( mesh%vi1:mesh%vi2, 1:mesh%nC_mem), source = NaN)
 
     ! Surface
     allocate( self%u_surf     ( mesh%vi1:mesh%vi2), source = NaN)
@@ -139,6 +140,7 @@ contains
     deallocate( self%v_vav_b   )
     deallocate( self%uabs_vav  )
     deallocate( self%uabs_vav_b)
+    deallocate( self%u_vav_perp)
 
     ! Surface
     deallocate( self%u_surf     )

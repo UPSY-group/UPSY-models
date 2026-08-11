@@ -1196,19 +1196,19 @@ contains
       ! Reference geometry
       ! ==================
 
-      region%refgeo_PD%Hi  = region%ice%geom%Hi
+      region%refgeo_PD%Hi( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
       region%refgeo_PD%Hs( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hs( region%mesh%vi1:region%mesh%vi2)
-      region%refgeo_PD%Hb  = region%ice%geom%Hb
+      region%refgeo_PD%Hb( region%mesh%vi1:region%mesh%vi2)  = region%ice%geom%Hb( region%mesh%vi1:region%mesh%vi2)
 
       ! Differences w.r.t. present-day
-      region%ice%dHi  = 0._dp
-      region%ice%dHb  = 0._dp
-      region%ice%dHs  = 0._dp
-      region%ice%dHib = 0._dp
+      region%ice%dHi ( region%mesh%vi1:region%mesh%vi2) = 0._dp
+      region%ice%dHb ( region%mesh%vi1:region%mesh%vi2) = 0._dp
+      region%ice%dHs ( region%mesh%vi1:region%mesh%vi2) = 0._dp
+      region%ice%dHib( region%mesh%vi1:region%mesh%vi2) = 0._dp
 
       ! Re-initialise previous and next Hi states
-      region%ice%Hi_prev = region%ice%geom%Hi
-      region%ice%Hi_next = region%ice%geom%Hi
+      region%ice%Hi_prev( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
+      region%ice%Hi_next( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
       ! Advance pesudo time
       ! ===================

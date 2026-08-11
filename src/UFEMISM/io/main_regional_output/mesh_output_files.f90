@@ -1640,7 +1640,6 @@ contains
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_coastline_to_file'
-    real(dp)                                :: NaN
     real(dp), dimension(mesh%vi1:mesh%vi2)  :: water_depth_for_coastline
     integer                                 :: vi
     real(dp), dimension(:,:  ), allocatable :: CC

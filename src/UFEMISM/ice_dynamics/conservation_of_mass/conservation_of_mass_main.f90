@@ -63,8 +63,8 @@ contains
     case ('none')
       ! Unchanging ice geometry
 
-      Hi_tplusdt = geom%Hi
-      dHi_dt     = 0._dp
+      Hi_tplusdt( mesh%vi1:mesh%vi2) = geom%Hi( mesh%vi1:mesh%vi2)
+      dHi_dt    ( mesh%vi1:mesh%vi2) = 0._dp
       call finalise_routine( routine_name)
       return
 
@@ -99,11 +99,13 @@ contains
       call warning('encountered negative values for Hi_tplusdt - time step too large?')
     end if
 
-    ! Add difference between corrected and uncorrected dHi_dt to residual tracker
-    AMB = AMB + (Hi_tplusdt - geom%Hi) / dt - dHi_dt
+    do vi = mesh%vi1, mesh%vi2
+      ! Add difference between corrected and uncorrected dHi_dt to residual tracker
+      AMB( vi) = AMB( vi) + (Hi_tplusdt( vi) - geom%Hi( vi)) / dt - dHi_dt( vi)
 
-    ! Recalculate dH/dt with adjusted values of H
-    dHi_dt = (Hi_tplusdt - geom%Hi) / dt
+      ! Recalculate dH/dt with adjusted values of H
+      dHi_dt( vi) = (Hi_tplusdt( vi) - geom%Hi( vi)) / dt
+    end do
 
     call checksum( mesh%pai_V, dHi_dt, 'dHi_dt')
     call checksum( mesh%pai_V, AMB   , 'AMB')

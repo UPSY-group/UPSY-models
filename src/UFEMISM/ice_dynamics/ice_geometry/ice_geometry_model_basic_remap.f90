@@ -20,9 +20,10 @@ contains
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'remap_ice_geometry_model'
-    real(dp), dimension(:), allocatable :: Hi_old, Hi_new
+    real(dp), dimension(:), allocatable :: Hi_old
     real(dp), dimension(:), allocatable :: Hs_old
-    logical,  dimension(:), allocatable :: mask_floating_ice_old, mask_icefree_ocean_old
+    logical,  dimension(:), allocatable :: mask_floating_ice_old
+    logical,  dimension(:), allocatable :: mask_icefree_ocean_old
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -37,18 +38,14 @@ contains
     allocate( mask_floating_ice_old ( mesh_old%vi1:mesh_old%vi2), source = self%mask_floating_ice ( mesh_old%vi1:mesh_old%vi2))
     allocate( mask_icefree_ocean_old( mesh_old%vi1:mesh_old%vi2), source = self%mask_icefree_ocean( mesh_old%vi1:mesh_old%vi2))
 
-    allocate( Hi_new                ( mesh_new%vi1:mesh_new%vi2), source = NaN)
-
-    call reallocate_bounds( self%Hi, mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'Hi', self%Hi)
     call self%remap_field( mesh_new, 'Hb', self%Hb)
     call self%remap_field( mesh_new, 'SL', self%SL)
 
     call remap_ice_geometry_model_bedrock      ( mesh_old, mesh_new, refgeo_PD, GIA, self%Hb)
     call remap_ice_geometry_model_sealevel     ( mesh_old, mesh_new, forcing, time, self%SL)
     call remap_ice_geometry_model_ice_thickness( mesh_old, mesh_new, &
-      Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, self%Hb, self%SL, Hi_new)
-
-    self%Hi( mesh_new%vi1:mesh_new%vi2) = Hi_new( mesh_new%vi1:mesh_new%vi2)
+      Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, self%Hb, self%SL, self%Hi)
 
     call reallocate_and_recalculate_secondary_geometry_variables( self, mesh_new, refgeo_PD)
 
@@ -115,15 +112,15 @@ contains
     Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, Hb_new, SL_new, Hi_new)
 
     ! In/output variables:
-    type(type_mesh),                                intent(in   ) :: mesh_old
-    type(type_mesh),                                intent(in   ) :: mesh_new
-    real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: Hi_old
-    real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: Hs_old
-    logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_floating_ice_old
-    logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_icefree_ocean_old
+    type(type_mesh),                                                  intent(in   ) :: mesh_old
+    type(type_mesh),                                                  intent(in   ) :: mesh_new
+    real(dp), dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: Hi_old
+    real(dp), dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: Hs_old
+    logical,  dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: mask_floating_ice_old
+    logical,  dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: mask_icefree_ocean_old
     real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), intent(in   ) :: Hb_new
     real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), intent(in   ) :: SL_new
-    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(  out) :: Hi_new
+    real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), target, intent(  out) :: Hi_new
 
     ! Local variables:
     character(len=*), parameter                     :: routine_name = 'remap_ice_geometry_model_ice_thickness'
@@ -171,17 +168,17 @@ contains
     Hi_old, Hs_old, mask_floating_ice_old, mask_icefree_ocean_old, mask_noice_new, Hi_new)
 
     ! In/output variables:
-    type(type_mesh),                                intent(in   ) :: mesh_old
-    type(type_mesh),                                intent(in   ) :: mesh_new
-    real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: Hi_old
-    real(dp), dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: Hs_old
-    logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_floating_ice_old
-    logical,  dimension(mesh_old%vi1:mesh_old%vi2), intent(in   ) :: mask_icefree_ocean_old
-    logical,  dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: mask_noice_new
-    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(inout) :: Hi_new
+    type(type_mesh),                                                  intent(in   ) :: mesh_old
+    type(type_mesh),                                                  intent(in   ) :: mesh_new
+    real(dp), dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: Hi_old
+    real(dp), dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: Hs_old
+    logical,  dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: mask_floating_ice_old
+    logical,  dimension(mesh_old%vi1:mesh_old%vi2),                   intent(in   ) :: mask_icefree_ocean_old
+    logical,  dimension(mesh_new%vi1:mesh_new%vi2),                   intent(in   ) :: mask_noice_new
+    real(dp), dimension(mesh_new%pai_V%i1_nih:mesh_new%pai_V%i2_nih), intent(  out) :: Hi_new
 
     ! Local variables:
-    character(len=*), parameter                     :: routine_name = 'remap_ice_geometry_model_ice_thickness'
+    character(len=*), parameter                     :: routine_name = 'correct_remapped_ice_margin'
     real(dp), dimension( mesh_old%nV)               :: Hi_old_tot
     logical,  dimension( mesh_old%nV)               :: mask_floating_ice_old_tot
     logical,  dimension( mesh_old%nV)               :: mask_icefree_ocean_old_tot

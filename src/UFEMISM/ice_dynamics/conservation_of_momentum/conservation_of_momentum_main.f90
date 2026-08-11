@@ -244,7 +244,7 @@ contains
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2
-      ice%R_shear( vi) = (ice%vel%uabs_base( vi) + 0.1_dp) / (ice%vel%uabs_surf( vi) + 0.1_dp)
+      ice%vel%R_shear( vi) = (ice%vel%uabs_base( vi) + 0.1_dp) / (ice%vel%uabs_surf( vi) + 0.1_dp)
     end do
 
     ! Finalise routine path

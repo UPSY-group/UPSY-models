@@ -652,7 +652,7 @@ contains
     ! =====================
 
     call reallocate_bounds( ice%divQ   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux divergence
-    call reallocate_bounds( ice%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
+    call reallocate_bounds( ice%vel%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
     call reallocate_bounds( ice%Qspill , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
     call reallocate_bounds( ice%u_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
 

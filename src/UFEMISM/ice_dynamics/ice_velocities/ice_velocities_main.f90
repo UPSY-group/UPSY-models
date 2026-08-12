@@ -187,9 +187,10 @@ contains
     type(type_ice_model), intent(inout) :: ice
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_secondary_velocities'
-    integer                        :: vi,ti
-    real(dp), dimension(mesh%nz)   :: u_prof, v_prof
+    character(len=1024), parameter  :: routine_name = 'calc_secondary_velocities'
+    integer                         :: vi,ti
+    real(dp), dimension(mesh%nz)    :: u_prof, v_prof
+    real(dp), dimension(:), pointer :: u_vav_b_loc, v_vav_b_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -240,7 +241,9 @@ contains
       ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
     end do
 
-    call calc_u_vav_perp( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, ice%vel%u_vav_perp)
+    u_vav_b_loc => ice%vel%u_vav_b( mesh%ti1:mesh%ti2)
+    v_vav_b_loc => ice%vel%v_vav_b( mesh%ti1:mesh%ti2)
+    call calc_u_vav_perp( mesh, u_vav_b_loc, v_vav_b_loc, ice%vel%u_vav_perp)
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2

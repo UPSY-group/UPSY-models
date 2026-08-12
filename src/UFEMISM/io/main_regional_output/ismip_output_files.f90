@@ -205,6 +205,7 @@ contains
     logical,  dimension(region%mesh%vi1:region%mesh%vi2) :: d_loc_logical
     integer,  dimension(region%mesh%vi1:region%mesh%vi2) :: d_loc_int
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: d_loc_dp
+    real(dp), dimension(region%mesh%ti1:region%mesh%ti2) :: d_loc_dp_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -261,14 +262,22 @@ contains
     region%ismip_output%dlithkdt%accum( region%mesh%vi1:region%mesh%vi2) = region%ice%geom%Hi( region%mesh%vi1:region%mesh%vi2)
 
     ! Velocities
-    call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=region%ice%vel%u_surf_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%yvelsurf, inputfield_b=region%ice%vel%v_surf_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=region%ice%vel%w_3D( :, 1) / sec_per_year)
-    call write_to_file( region, region%ismip_output%xvelbase, inputfield_b=region%ice%vel%u_base_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%yvelbase, inputfield_b=region%ice%vel%v_base_b / sec_per_year)
-    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=region%ice%vel%w_3D( :, C%nz) / sec_per_year)
-    call write_to_file( region, region%ismip_output%xvelmean, inputfield_b=region%ice%vel%u_vav_b  / sec_per_year)
-    call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=region%ice%vel%v_vav_b  / sec_per_year)
+    d_loc_dp_b = region%ice%vel%u_surf_b( region%mesh%ti1:region%mesh%ti2) / sec_per_year
+    call write_to_file( region, region%ismip_output%xvelsurf, inputfield_b=d_loc_dp_b)
+    d_loc_dp_b = region%ice%vel%v_surf_b( region%mesh%ti1:region%mesh%ti2) / sec_per_year
+    call write_to_file( region, region%ismip_output%yvelsurf, inputfield_b=d_loc_dp_b)
+    d_loc_dp = region%ice%vel%w_3D( region%mesh%vi1:region%mesh%vi2,1) / sec_per_year
+    call write_to_file( region, region%ismip_output%zvelsurf, inputfield_a=d_loc_dp)
+    d_loc_dp_b = region%ice%vel%u_base_b( region%mesh%ti1:region%mesh%ti2) / sec_per_year
+    call write_to_file( region, region%ismip_output%xvelbase, inputfield_b=d_loc_dp_b)
+    d_loc_dp_b = region%ice%vel%v_base_b( region%mesh%ti1:region%mesh%ti2) / sec_per_year
+    call write_to_file( region, region%ismip_output%yvelbase, inputfield_b=d_loc_dp_b)
+    d_loc_dp = region%ice%vel%w_3D( region%mesh%vi1:region%mesh%vi2,region%mesh%nz) / sec_per_year
+    call write_to_file( region, region%ismip_output%zvelbase, inputfield_a=d_loc_dp)
+    d_loc_dp_b = region%ice%vel%u_vav_b( region%mesh%ti1:region%mesh%ti2) / sec_per_year
+    call write_to_file( region, region%ismip_output%xvelmean, inputfield_b=d_loc_dp_b)
+    d_loc_dp_b = region%ice%vel%v_vav_b( region%mesh%ti1:region%mesh%ti2) / sec_per_year
+    call write_to_file( region, region%ismip_output%yvelmean, inputfield_b=d_loc_dp_b)
 
     ! Temperatures
     call write_to_file( region, region%ismip_output%litemptop, inputfield_a=region%ice%Ti( :, 1), mask_a=mask_ice_a)
@@ -299,12 +308,12 @@ contains
     call write_to_file_grid_FL( region, region%ismip_output%lifmassbf)
 
     ! Area fractions
-    call write_to_file( region, region%ismip_output%sftgif, inputfield_a=region%ice%geom%fraction_margin, vmin=0._dp, vmax=1._dp)
+    d_loc_dp = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
+    call write_to_file( region, region%ismip_output%sftgif, inputfield_a=d_loc_dp, vmin=0._dp, vmax=1._dp)
     d_loc_dp = region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
     call write_to_file( region, region%ismip_output%sftgrf, inputfield_a=d_loc_dp, vmin=0._dp, vmax=1._dp)
     d_loc_dp = region%ice%geom%fraction_margin( region%mesh%vi1:region%mesh%vi2) - region%ice%geom%fraction_gr( region%mesh%vi1:region%mesh%vi2)
-    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=d_loc_dp, &
-      vmin=0._dp, vmax=1._dp)
+    call write_to_file( region, region%ismip_output%sftflf, inputfield_a=d_loc_dp, vmin=0._dp, vmax=1._dp)
 
     ! Other stuff
     do vi = region%mesh%vi1, region%mesh%vi2

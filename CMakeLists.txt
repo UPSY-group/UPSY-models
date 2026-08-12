@@ -8,6 +8,7 @@ option(BUILD_LADDIE "Build the LADDIE model" OFF)
 
 include( cmake/link_to_dependencies.cmake)
 include( cmake/add_compiler_flags.cmake)
+include( cmake/fortran_comment_sanitizer.cmake)
 
 add_subdirectory(src/UPSY)
 

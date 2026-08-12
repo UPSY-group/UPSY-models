@@ -177,9 +177,12 @@ contains
       units     = 'm yr^-1', &
       remap_method = 'reallocate')
 
-    ! DENK DROM - need to first create a new third dimension for
-    ! mesh connections before this can be changed to a field
-    allocate( self%u_vav_perp( mesh%vi1:mesh%vi2, 1:mesh%nC_mem), source = 0._dp)
+    call self%create_field( self%u_vav_perp, self%wu_vav_perp, &
+      self%mesh, Arakawa_grid%b(), third_dimension%vertex_connectivity( mesh%nC_mem), &
+      name      = 'u_vav_perp', &
+      long_name = 'Vertically averaged ice velocity perpendicular to Voronoi cell boundaries', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
 
     ! DENK DROM
     self%u_vav     ( self%mesh%vi1:self%mesh%vi2) = 0._dp
@@ -188,6 +191,7 @@ contains
     self%v_vav_b   ( self%mesh%ti1:self%mesh%ti2) = 0._dp
     self%uabs_vav  ( self%mesh%vi1:self%mesh%vi2) = 0._dp
     self%uabs_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+    self%u_vav_perp( self%mesh%ti1:self%mesh%ti2,:) = 0._dp
 
     ! Surface
     call self%create_field( self%u_surf, self%wu_surf, &
@@ -399,7 +403,7 @@ contains
     nullify( self%v_vav_b   )
     nullify( self%uabs_vav  )
     nullify( self%uabs_vav_b)
-    deallocate( self%u_vav_perp)
+    nullify( self%u_vav_perp)
 
     ! Surface
     nullify( self%u_surf     )
@@ -520,7 +524,7 @@ contains
     call self%remap_field( mesh_new, 'v_vav_b'   , self%v_vav_b   )
     call self%remap_field( mesh_new, 'uabs_vav'  , self%uabs_vav  )
     call self%remap_field( mesh_new, 'uabs_vav_b', self%uabs_vav_b)
-    call reallocate_bounds( self%u_vav_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)
+    call self%remap_field( mesh_new, 'u_vav_perp', self%u_vav_perp)
 
     ! Surface
     call self%remap_field( mesh_new, 'u_surf'     , self%u_surf     )

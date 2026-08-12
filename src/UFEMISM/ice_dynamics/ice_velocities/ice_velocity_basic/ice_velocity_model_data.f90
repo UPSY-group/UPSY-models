@@ -27,8 +27,8 @@ module ice_velocity_model_data
     real(dp), dimension(:  ), contiguous, pointer :: v_vav_b         => null()   ! [m yr^-1]   Vertically averaged ice velocity in the y-direction on the b-grid
     real(dp), dimension(:  ), contiguous, pointer :: uabs_vav        => null()   ! [m yr^-1]   Vertically averaged horizontal ice speed
     real(dp), dimension(:  ), contiguous, pointer :: uabs_vav_b      => null()   ! [m yr^-1]   Vertically averaged horizontal ice speed on the b-grid
-    real(dp), dimension(:,:), allocatable :: u_vav_perp       ! [m yr^-1]   Vertically averaged ice velocity perpendicular to Voronoi cell boundaries
-    type(MPI_WIN) :: wu_vav, wv_vav, wu_vav_b, wv_vav_b, wuabs_vav, wuabs_vav_b
+    real(dp), dimension(:,:), contiguous, pointer :: u_vav_perp      => null()   ! [m yr^-1]   Vertically averaged ice velocity perpendicular to Voronoi cell boundaries
+    type(MPI_WIN) :: wu_vav, wv_vav, wu_vav_b, wv_vav_b, wuabs_vav, wuabs_vav_b, wu_vav_perp
 
     ! Surface
     real(dp), dimension(:  ), contiguous, pointer :: u_surf          => null()   ! [m yr^-1]   Surface ice velocity in the x-direction

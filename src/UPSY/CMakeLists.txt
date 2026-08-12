@@ -6,7 +6,10 @@ add_library( UPSY_static_library STATIC ${UPSY_sources_raw})
 link_to_dependencies( UPSY_static_library)
 add_compiler_flags( UPSY_static_library)
 
-target_include_directories(UPSY_static_library PUBLIC ${PROJECT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}/mod_files)
+if(EXISTS ${PROJECT_SOURCE_DIR}/include)
+	target_include_directories(UPSY_static_library PUBLIC ${PROJECT_SOURCE_DIR}/include)
+endif()
+target_include_directories(UPSY_static_library PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/mod_files)
 
 set_property(TARGET UPSY_static_library PROPERTY Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod_files)
 

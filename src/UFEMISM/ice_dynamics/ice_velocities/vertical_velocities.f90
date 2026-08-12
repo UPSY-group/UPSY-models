@@ -22,7 +22,7 @@ module vertical_velocities
 
 contains
 
-  subroutine calc_vertical_velocities( vel, ice, geom, BMB)
+  subroutine calc_vertical_velocities( vel, mesh, ice, geom, BMB)
     !< Calculate vertical velocities w from conservation of mass
 
     ! NOTE: since the vertical velocities for floating ice depend on
@@ -68,9 +68,10 @@ contains
 
     ! In- and output variables:
     class(atype_ice_velocity_model_data),   intent(inout) :: vel
+    type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_model),                   intent(in   ) :: ice
     class(atype_ice_geometry_model_data),   intent(in   ) :: geom
-    real(dp), dimension(vel%mesh%vi1:vel%mesh%vi2), intent(in   ) :: BMB
+    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'calc_vertical_velocities'
@@ -91,15 +92,15 @@ contains
     call init_routine( routine_name)
 
     ! Allocate shared memory
-    allocate( dHib_dx   ( vel%mesh%vi1:vel%mesh%vi2              ))
-    allocate( dHib_dy   ( vel%mesh%vi1:vel%mesh%vi2              ))
-    allocate( dHib_dt   ( vel%mesh%vi1:vel%mesh%vi2              ))
-    allocate( u_3D_c    ( vel%mesh%ei1:vel%mesh%ei2, vel%mesh%nz))
-    allocate( v_3D_c    ( vel%mesh%ei1:vel%mesh%ei2, vel%mesh%nz))
-    allocate( u_3D_c_tot( vel%mesh%nE, vel%mesh%nz               ))
-    allocate( v_3D_c_tot( vel%mesh%nE, vel%mesh%nz               ))
+    allocate( dHib_dx   ( mesh%vi1:mesh%vi2              ))
+    allocate( dHib_dy   ( mesh%vi1:mesh%vi2              ))
+    allocate( dHib_dt   ( mesh%vi1:mesh%vi2              ))
+    allocate( u_3D_c    ( mesh%ei1:mesh%ei2, mesh%nz))
+    allocate( v_3D_c    ( mesh%ei1:mesh%ei2, mesh%nz))
+    allocate( u_3D_c_tot( mesh%nE, mesh%nz               ))
+    allocate( v_3D_c_tot( mesh%nE, mesh%nz               ))
 
-    do vi = vel%mesh%vi1, vel%mesh%vi2
+    do vi = mesh%vi1, mesh%vi2
 
       ! Calculate rate of change of ice base elevation
       if     (geom%mask_grounded_ice( vi)) then
@@ -116,16 +117,16 @@ contains
     end do
 
     ! Calculate slopes of the ice base
-    call ddx_a_a_2D( vel%mesh, geom%Hib, dHib_dx)
-    call ddy_a_a_2D( vel%mesh, geom%Hib, dHib_dy)
+    call ddx_a_a_2D( mesh, geom%Hib, dHib_dx)
+    call ddy_a_a_2D( mesh, geom%Hib, dHib_dy)
 
     ! Calculate u,v on the c-grid (edges)
-    call map_velocities_from_b_to_c_3D( vel%mesh, vel%u_3D_b, vel%v_3D_b, u_3D_c, v_3D_c)
+    call map_velocities_from_b_to_c_3D( mesh, vel%u_3D_b, vel%v_3D_b, u_3D_c, v_3D_c)
     call gather_to_all( u_3D_c, u_3D_c_tot)
     call gather_to_all( v_3D_c, v_3D_c_tot)
 
     ! Calculate vertical velocities by solving conservation of mass in each 3-D cell
-    do vi = vel%mesh%vi1, vel%mesh%vi2
+    do vi = mesh%vi1, mesh%vi2
 
       ! No ice means no velocity
       if (.not. (geom%mask_grounded_ice( vi) .or. geom%mask_floating_ice( vi))) then
@@ -163,22 +164,22 @@ contains
 
       ! Calculate vertical velocities by integrating dw/dz over the vertical column
 
-      do ks = vel%mesh%nz-1, 1, -1
+      do ks = mesh%nz-1, 1, -1
 
-        dzeta = vel%mesh%zeta( ks+1) - vel%mesh%zeta( ks)
+        dzeta = mesh%zeta( ks+1) - mesh%zeta( ks)
 
         ! Integrate u*n_hat around the Voronoi cell boundary
         cint_un_dS = 0._dp
-        do ci = 1, vel%mesh%nC( vi)
-          vj = vel%mesh%C(  vi,ci)
-          ei = vel%mesh%VE( vi,ci)
+        do ci = 1, mesh%nC( vi)
+          vj = mesh%C(  vi,ci)
+          ei = mesh%VE( vi,ci)
           ! Velocities at this section of the boundary
           u_ks = 0.5_dp * (u_3D_c_tot( ei,ks) + u_3D_c_tot( ei,ks+1))
           v_ks = 0.5_dp * (v_3D_c_tot( ei,ks) + v_3D_c_tot( ei,ks+1))
           ! Length of this section of the boundary
-          dS = vel%mesh%Cw( vi,ci)
+          dS = mesh%Cw( vi,ci)
           ! Outward normal vector to this section of the boundary
-          n_hat = vel%mesh%V( vj,:) - vel%mesh%V( vi,:)
+          n_hat = mesh%V( vj,:) - mesh%V( vi,:)
           n_hat = n_hat / NORM2( n_hat)
           ! Line integral over this section of the boundary
           un_dS = (u_ks * n_hat( 1) + v_ks * n_hat( 2)) * dS
@@ -187,7 +188,7 @@ contains
         end do
 
         ! Calculate grad uv from the divergence theorem
-        grad_uv_ks = cint_un_dS / vel%mesh%A( vi)
+        grad_uv_ks = cint_un_dS / mesh%A( vi)
 
         ! Calculate du/dzeta, dv/dzeta
         du_dzeta_ks = (vel%u_3D( vi,ks+1) - vel%u_3D( vi,ks)) / dzeta
@@ -209,28 +210,29 @@ contains
     end do
 
     ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
-    call calc_dw_dz( vel, geom)
+    call calc_dw_dz( vel, mesh, geom)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine calc_vertical_velocities
 
-  subroutine calc_dw_dz( vel, geom)
+  subroutine calc_dw_dz( vel, mesh, geom)
 
     ! In- and output variables:
     class(atype_ice_velocity_model_data), intent(inout) :: vel
+    type(type_mesh),                      intent(in   ) :: mesh
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter       :: routine_name = 'calc_dw_dz'
     integer                           :: vi
-    real(dp), dimension(vel%mesh%nz) :: w_prof, dw_dzeta_prof
+    real(dp), dimension(mesh%nz) :: w_prof, dw_dzeta_prof
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    do vi = vel%mesh%vi1, vel%mesh%vi2
+    do vi = mesh%vi1, mesh%vi2
 
       ! No ice means undefined velocity
       if (.not. (geom%mask_grounded_ice( vi) .or. geom%mask_floating_ice( vi))) then
@@ -240,7 +242,7 @@ contains
 
       ! Calculate dw/dzeta in the vertical column, on the regular zeta-grid (use two-sided differencing)
       w_prof = vel%w_3D( vi,:)
-      call multiply_CSR_matrix_with_vector_local( vel%mesh%M_ddzeta_k_k_1D, w_prof, dw_dzeta_prof)
+      call multiply_CSR_matrix_with_vector_local( mesh%M_ddzeta_k_k_1D, w_prof, dw_dzeta_prof)
 
       ! Calculate dw/dz from dw/dzeta (see Eqs. C2-C3 in Berends et al., 2024:
       ! Berends, C. J., van de Wal, R. S. W., and Zegeling, P. A.: Improvements

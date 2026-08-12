@@ -172,7 +172,7 @@ contains
     call calc_secondary_velocities( mesh, ice)
 
     ! Calculate vertical velocities
-    call calc_vertical_velocities( ice%vel, ice, ice%geom, BMB)
+    call calc_vertical_velocities( ice%vel, mesh, ice, ice%geom, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

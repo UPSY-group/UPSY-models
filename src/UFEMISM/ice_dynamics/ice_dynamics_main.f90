@@ -17,7 +17,7 @@ module ice_dynamics_main
   use global_forcing_types, only: type_global_forcing
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_main, only: Atlas
-  use conservation_of_momentum_main, only: solve_stress_balance, remap_velocity_solver, &
+  use ice_velocities_main, only: solve_stress_balance, remap_velocity_solver, &
     create_restart_file_ice_velocity, write_to_restart_file_ice_velocity, initialise_velocity_solver
   use conservation_of_mass_main, only: calc_dHi_dt, apply_mask_noice_direct
   use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit

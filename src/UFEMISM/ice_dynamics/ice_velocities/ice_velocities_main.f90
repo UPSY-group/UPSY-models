@@ -1,4 +1,4 @@
-module conservation_of_momentum_main
+module ice_velocities_main
 
   !< Contains all the routines needed to solve for conservation of momentum
   !< and calculate instantaneous ice velocities for the current modelled ice-sheet geometry.
@@ -724,4 +724,4 @@ contains
 
   end subroutine create_restart_file_ice_velocity
 
-end module conservation_of_momentum_main
+end module ice_velocities_main

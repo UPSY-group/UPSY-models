@@ -17,7 +17,7 @@ module ct_mass_conservation
   use conservation_of_mass_main, only: calc_dHi_dt
   use parameters, only: pi
   use ice_model_memory, only: allocate_ice_model
-  use conservation_of_momentum_main, only: calc_u_vav_perp
+  use ice_velocities_main, only: calc_u_vav_perp
 
   implicit none
 

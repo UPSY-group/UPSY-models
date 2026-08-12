@@ -1,4 +1,4 @@
-module conservation_of_momentum_main
+module ice_velocities_main
 
   !< Contains all the routines needed to solve for conservation of momentum
   !< and calculate instantaneous ice velocities for the current modelled ice-sheet geometry.
@@ -12,7 +12,7 @@ module conservation_of_momentum_main
   use mesh_types, only: type_mesh
   use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
     type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
-  use SIA_main, only: initialise_SIA_solver, solve_SIA, remap_SIA_solver
+  use ice_velocity_model_SIA, only: initialise_SIA_solver, solve_SIA, remap_SIA_solver
   use SSA_main, only: initialise_SSA_solver, solve_SSA, remap_SSA_solver, &
     create_restart_file_SSA, write_to_restart_file_SSA
   use DIVA_main, only: initialise_DIVA_solver, solve_DIVA, remap_DIVA_solver, &
@@ -25,7 +25,7 @@ module conservation_of_momentum_main
   use mpi_distributed_memory, only: gather_to_all
   use mesh_zeta, only: vertical_average
   use map_velocities_to_c_grid
-  use vertical_velocities
+  use vertical_velocities, only: calc_vertical_velocities
   use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
@@ -172,7 +172,7 @@ contains
     call calc_secondary_velocities( mesh, ice)
 
     ! Calculate vertical velocities
-    call calc_vertical_velocities( mesh, ice, BMB)
+    call calc_vertical_velocities( ice%vel, mesh, ice, ice%geom, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -724,4 +724,4 @@ contains
 
   end subroutine create_restart_file_ice_velocity
 
-end module conservation_of_momentum_main
+end module ice_velocities_main

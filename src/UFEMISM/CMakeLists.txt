@@ -1,6 +1,7 @@
 # Collect LADDIE/UFEMISM source files
 file( GLOB_RECURSE LADDIE_sources_raw  "${PROJECT_SOURCE_DIR}/src/LADDIE/*.f90")
 list(REMOVE_ITEM LADDIE_sources_raw "${PROJECT_SOURCE_DIR}/src/LADDIE/main/LADDIE_program.f90")
+sanitize_fortran_sources(LADDIE_sources_sanitized UFEMISM_static_library ${LADDIE_sources_raw})
 
 file( GLOB_RECURSE UFEMISM_sources_raw "${CMAKE_CURRENT_SOURCE_DIR}/*.f90")
 file( GLOB UFEMISM_program_sources "${CMAKE_CURRENT_SOURCE_DIR}/main/*_program.f90")
@@ -8,9 +9,11 @@ file( GLOB UFEMISM_program_sources "${CMAKE_CURRENT_SOURCE_DIR}/main/*_program.f
 foreach(program_source IN LISTS UFEMISM_program_sources)
 	list(REMOVE_ITEM UFEMISM_sources_raw "${program_source}")
 endforeach()
+sanitize_fortran_sources(UFEMISM_sources_sanitized UFEMISM_static_library ${UFEMISM_sources_raw})
+sanitize_fortran_sources(UFEMISM_program_sources_sanitized UFEMISM_programs ${UFEMISM_program_sources})
 
 # Create static library for UFEMISM/LADDIE sources
-add_library( UFEMISM_static_library STATIC ${LADDIE_sources_raw} ${UFEMISM_sources_raw})
+add_library( UFEMISM_static_library STATIC ${LADDIE_sources_sanitized} ${UFEMISM_sources_sanitized})
 target_link_libraries( UFEMISM_static_library PUBLIC UPSY_static_library)
 link_to_dependencies( UFEMISM_static_library)
 add_compiler_flags( UFEMISM_static_library)
@@ -25,7 +28,7 @@ set_property( TARGET UFEMISM_static_library PROPERTY Fortran_MODULE_DIRECTORY ${
 set( all_programs "")
 
 # UFEMISM programs (main and tests)
-foreach(program_source IN LISTS UFEMISM_program_sources)
+foreach(program_source IN LISTS UFEMISM_program_sources_sanitized)
 	get_filename_component( program_name "${program_source}" NAME_WE)
 	add_executable( ${program_name} "${program_source}")
 	list( APPEND all_programs ${program_name})

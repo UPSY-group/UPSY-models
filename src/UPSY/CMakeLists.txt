@@ -1,8 +1,9 @@
 # Collect UPSY/LADDIE/UFEMISM source files
 file( GLOB_RECURSE UPSY_sources_raw    "${CMAKE_CURRENT_SOURCE_DIR}/*.f90")
+sanitize_fortran_sources(UPSY_sources_sanitized UPSY_static_library ${UPSY_sources_raw})
 
 # Create static library for UPSY
-add_library( UPSY_static_library STATIC ${UPSY_sources_raw})
+add_library( UPSY_static_library STATIC ${UPSY_sources_sanitized})
 link_to_dependencies( UPSY_static_library)
 add_compiler_flags( UPSY_static_library)
 

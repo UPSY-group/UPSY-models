@@ -69,11 +69,22 @@ if ($selection == 'changed') rm -f build/CMakeCache.txt
 
 set compile_exit_code = 0
 set in_build_dir = 0
+set source_root = `pwd`
+set stripped_source_dir = ""
 
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
 if ($status != 0) then
   echo "Error: Failed to add git commit hash to the code"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+# Copy the build-relevant source tree to a temporary location and strip apostrophes
+# from Fortran comment lines before CMake preprocesses the sources.
+set stripped_source_dir = `python3 ./cmake/strip_fortran_comment_apostrophes.py "$source_root"`
+if ($status != 0) then
+  echo "Error: Failed to prepare stripped source tree"
   set compile_exit_code = 1
   goto cleanup
 endif
@@ -89,7 +100,7 @@ if ($version == 'dev') then
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
-    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" "$stripped_source_dir"
 
 else if ($version == 'perf') then
 
@@ -97,7 +108,7 @@ else if ($version == 'perf') then
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \
-    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" "$stripped_source_dir"
 
 endif
 
@@ -117,6 +128,10 @@ cleanup:
 
 if ($in_build_dir == 1) then
   cd ..
+endif
+
+if ("$stripped_source_dir" != "") then
+  rm -rf "$stripped_source_dir"
 endif
 
 # Copy compiled program

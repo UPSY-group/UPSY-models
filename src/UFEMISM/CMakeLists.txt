@@ -15,7 +15,10 @@ target_link_libraries( UFEMISM_static_library PUBLIC UPSY_static_library)
 link_to_dependencies( UFEMISM_static_library)
 add_compiler_flags( UFEMISM_static_library)
 
-target_include_directories( UFEMISM_static_library PUBLIC ${PROJECT_SOURCE_DIR}/include ${CMAKE_CURRENT_BINARY_DIR}/mod_files/UFEMISM_static_library)
+if(EXISTS ${PROJECT_SOURCE_DIR}/include)
+	target_include_directories( UFEMISM_static_library PUBLIC ${PROJECT_SOURCE_DIR}/include)
+endif()
+target_include_directories( UFEMISM_static_library PUBLIC ${CMAKE_CURRENT_BINARY_DIR}/mod_files/UFEMISM_static_library)
 set_property( TARGET UFEMISM_static_library PROPERTY Fortran_MODULE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/mod_files/UFEMISM_static_library)
 
 # Initialise an empty list of executables

@@ -50,6 +50,8 @@ echo ""
 
 set compile_exit_code = 0
 set in_build_dir = 0
+set source_root = `pwd`
+set stripped_source_dir = ""
 
 # Define compiler flags based on version
 if ($version == 'dev') then
@@ -81,6 +83,15 @@ if ($status != 0) then
   goto cleanup
 endif
 
+# Copy the build-relevant source tree to a temporary location and strip apostrophes
+# from Fortran comment lines before CMake preprocesses the sources.
+set stripped_source_dir = `python3 ./cmake/strip_fortran_comment_apostrophes.py "$source_root"`
+if ($status != 0) then
+  echo "Error: Failed to prepare stripped source tree"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
 # Use CMake to build UPSY, with Ninja to determine module dependencies;
 # use different compiler flags for the development/performance build
 cd build
@@ -91,14 +102,14 @@ if ($version == 'dev') then
   cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
-    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" "$stripped_source_dir"
 
 else if ($version == 'perf') then
 
   cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \
-    -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
+    -DEXTRA_Fortran_FLAGS="$cmake_flags" "$stripped_source_dir"
 
 endif
 
@@ -118,6 +129,10 @@ cleanup:
 
 if ($in_build_dir == 1) then
   cd ..
+endif
+
+if ("$stripped_source_dir" != "") then
+  rm -rf "$stripped_source_dir"
 endif
 
 # Delete git commit hash and package versions from the source code (restore to INVALID)

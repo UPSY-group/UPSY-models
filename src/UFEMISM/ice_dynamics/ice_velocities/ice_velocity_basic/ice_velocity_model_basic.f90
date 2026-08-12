@@ -124,13 +124,54 @@ contains
     allocate( self%uabs_surf_b( mesh%ti1:mesh%ti2), source = NaN)
 
     ! Base
-    allocate( self%u_base     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%v_base     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%u_base_b   ( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%v_base_b   ( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%w_base     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%uabs_base  ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%uabs_base_b( mesh%ti1:mesh%ti2), source = NaN)
+    call self%create_field( self%u_base, self%wu_base, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'u_base', &
+      long_name = 'Basal ice velocity in the x-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_base, self%wv_base, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'v_base', &
+      long_name = 'Basal ice velocity in the y-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%u_base_b, self%wu_base_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'u_base_b', &
+      long_name = 'Basal ice velocity in the x-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_base_b, self%wv_base_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'v_base_b', &
+      long_name = 'Basal ice velocity in the y-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%w_base, self%ww_base, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'w_base', &
+      long_name = 'Basal ice velocity in the z-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%uabs_base, self%wuabs_base, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'uabs_base', &
+      long_name = 'Basal ice speed', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%uabs_base_b, self%wuabs_base_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'uabs_base_b', &
+      long_name = 'Basal ice speed on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
 
     ! Strain rates
     call self%create_field( self%du_dx_3D, self%wdu_dx_3D, &
@@ -254,13 +295,13 @@ contains
     deallocate( self%uabs_surf_b)
 
     ! Base
-    deallocate( self%u_base     )
-    deallocate( self%v_base     )
-    deallocate( self%u_base_b   )
-    deallocate( self%v_base_b   )
-    deallocate( self%w_base     )
-    deallocate( self%uabs_base  )
-    deallocate( self%uabs_base_b)
+    nullify( self%u_base     )
+    nullify( self%v_base     )
+    nullify( self%u_base_b   )
+    nullify( self%v_base_b   )
+    nullify( self%w_base     )
+    nullify( self%uabs_base  )
+    nullify( self%uabs_base_b)
 
     ! Strain rates
     nullify( self%du_dx_3D)
@@ -375,13 +416,13 @@ contains
     call reallocate_bounds( self%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Base
-    call reallocate_bounds( self%u_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%v_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%u_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%v_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%w_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%uabs_base  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
+    call self%remap_field( mesh_new, 'u_base'     , self%u_base     )
+    call self%remap_field( mesh_new, 'v_base'     , self%v_base     )
+    call self%remap_field( mesh_new, 'u_base_b'   , self%u_base_b   )
+    call self%remap_field( mesh_new, 'v_base_b'   , self%v_base_b   )
+    call self%remap_field( mesh_new, 'w_base'     , self%w_base     )
+    call self%remap_field( mesh_new, 'uabs_base'  , self%uabs_base  )
+    call self%remap_field( mesh_new, 'uabs_base_b', self%uabs_base_b)
 
     ! Strain rates
     call self%remap_field( mesh_new, 'du_dx_3D', self%du_dx_3D)

@@ -38,24 +38,25 @@ module ice_velocity_model_data
     real(dp), dimension(:  ), allocatable :: uabs_surf_b      ! [m yr^-1]   Surface ice speed on the b-grid
 
     ! Base
-    real(dp), dimension(:  ), allocatable :: u_base           ! [m yr^-1]   Basal ice velocity in the x-direction
-    real(dp), dimension(:  ), allocatable :: v_base           ! [m yr^-1]   Basal ice velocity in the y-direction
-    real(dp), dimension(:  ), allocatable :: u_base_b         ! [m yr^-1]   Basal ice velocity in the x-direction on the b-grid
-    real(dp), dimension(:  ), allocatable :: v_base_b         ! [m yr^-1]   Basal ice velocity in the x-direction on the b-grid
-    real(dp), dimension(:  ), allocatable :: w_base           ! [m yr^-1]   Basal ice velocity in the z-direction
-    real(dp), dimension(:  ), allocatable :: uabs_base        ! [m yr^-1]   Basal ice speed
-    real(dp), dimension(:  ), allocatable :: uabs_base_b      ! [m yr^-1]   Basal ice speed on the b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: u_base          => null()   ! [m yr^-1]   Basal ice velocity in the x-direction
+    real(dp), dimension(:  ), contiguous, pointer :: v_base          => null()   ! [m yr^-1]   Basal ice velocity in the y-direction
+    real(dp), dimension(:  ), contiguous, pointer :: u_base_b        => null()   ! [m yr^-1]   Basal ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: v_base_b        => null()   ! [m yr^-1]   Basal ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: w_base          => null()   ! [m yr^-1]   Basal ice velocity in the z-direction
+    real(dp), dimension(:  ), contiguous, pointer :: uabs_base       => null()   ! [m yr^-1]   Basal ice speed
+    real(dp), dimension(:  ), contiguous, pointer :: uabs_base_b     => null()   ! [m yr^-1]   Basal ice speed on the b-grid
+    type(MPI_WIN) :: wu_base, wv_base, wu_base_b, wv_base_b, ww_base, wuabs_base, wuabs_base_b
 
     ! Strain rates
-    real(dp), dimension(:,:), contiguous, pointer :: du_dx_3D        => null() ! [yr^-1]     3-D xx strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: du_dy_3D        => null() ! [yr^-1]     3-D xy strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: du_dz_3D        => null() ! [yr^-1]     3-D xz strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: dv_dx_3D        => null() ! [yr^-1]     3-D yx strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: dv_dy_3D        => null() ! [yr^-1]     3-D yy strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: dv_dz_3D        => null() ! [yr^-1]     3-D yz strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: dw_dx_3D        => null() ! [yr^-1]     3-D zx strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: dw_dy_3D        => null() ! [yr^-1]     3-D zy strain rate
-    real(dp), dimension(:,:), contiguous, pointer :: dw_dz_3D        => null() ! [yr^-1]     3-D zz strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: du_dx_3D        => null()   ! [yr^-1]     3-D xx strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: du_dy_3D        => null()   ! [yr^-1]     3-D xy strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: du_dz_3D        => null()   ! [yr^-1]     3-D xz strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: dv_dx_3D        => null()   ! [yr^-1]     3-D yx strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: dv_dy_3D        => null()   ! [yr^-1]     3-D yy strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: dv_dz_3D        => null()   ! [yr^-1]     3-D yz strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: dw_dx_3D        => null()   ! [yr^-1]     3-D zx strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: dw_dy_3D        => null()   ! [yr^-1]     3-D zy strain rate
+    real(dp), dimension(:,:), contiguous, pointer :: dw_dz_3D        => null()   ! [yr^-1]     3-D zz strain rate
     type(MPI_WIN) :: wdu_dx_3D, wdu_dy_3D, wdu_dz_3D, wdv_dx_3D, wdv_dy_3D, wdv_dz_3D, wdw_dx_3D, wdw_dy_3D, wdw_dz_3D
 
     ! Flow regime

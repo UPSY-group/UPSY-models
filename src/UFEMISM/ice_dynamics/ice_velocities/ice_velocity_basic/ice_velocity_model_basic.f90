@@ -99,11 +99,40 @@ contains
     ! Allocate all the stuff that is common to all ice velocity models
 
     ! 3-D
-    allocate( self%u_3D  ( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%v_3D  ( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%u_3D_b( mesh%ti1:mesh%ti2, 1:mesh%nz), source = NaN)
-    allocate( self%v_3D_b( mesh%ti1:mesh%ti2, 1:mesh%nz), source = NaN)
-    allocate( self%w_3D  ( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    call self%create_field( self%u_3D, self%wu_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'u_3D', &
+      long_name = '3-D ice velocity in the x-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_3D, self%wv_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'v_3D', &
+      long_name = '3-D ice velocity in the y-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%u_3D_b, self%wu_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'u_3D_b', &
+      long_name = '3-D ice velocity in the x-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_3D_b, self%wv_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'v_3D_b', &
+      long_name = '3-D ice velocity in the y-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%w_3D, self%ww_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'w_3D', &
+      long_name = '3-D ice velocity in the z-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
 
     ! Vertically averaged
     call self%create_field( self%u_vav, self%wu_vav, &
@@ -357,11 +386,11 @@ contains
     ! Deallocate stuff that is common to all ice velocity models
 
     ! 3-D
-    deallocate( self%u_3D  )
-    deallocate( self%v_3D  )
-    deallocate( self%u_3D_b)
-    deallocate( self%v_3D_b)
-    deallocate( self%w_3D  )
+    nullify( self%u_3D  )
+    nullify( self%v_3D  )
+    nullify( self%u_3D_b)
+    nullify( self%v_3D_b)
+    nullify( self%w_3D  )
 
     ! Vertically averaged
     nullify( self%u_vav     )
@@ -478,11 +507,11 @@ contains
     ! Remap stuff that is common to all ice_velocity models
 
     ! 3-D
-    call reallocate_bounds( self%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call self%remap_field( mesh_new, 'u_3D'  , self%u_3D  )
+    call self%remap_field( mesh_new, 'v_3D'  , self%v_3D  )
+    call self%remap_field( mesh_new, 'u_3D_b', self%u_3D_b)
+    call self%remap_field( mesh_new, 'v_3D_b', self%v_3D_b)
+    call self%remap_field( mesh_new, 'w_3D'  , self%w_3D  )
 
     ! Vertically averaged
     call self%remap_field( mesh_new, 'u_vav'     , self%u_vav     )

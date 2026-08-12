@@ -2,7 +2,7 @@ module ice_velocity_model
 
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use ice_velocity_model_basic, only: atype_ice_velocity_model
-  use ice_velocity_model_clean, only: type_ice_velocity_model_clean
+  use ice_velocity_model_dummy, only: type_ice_velocity_model_dummy
 
   implicit none
 
@@ -29,19 +29,19 @@ contains
     case default
       call crash('unknown choice_stress_balance_approximation "' // trim( choice_stress_balance_approximation) // '"!')
     case ('none')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     case ('SIA')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     case ('SSA')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     case ('SIA/SSA')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     case ('DIVA')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     case ('BPA')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     case ('hybrid DIVA/BPA')
-      allocate( type_ice_velocity_model_clean :: vel)
+      allocate( type_ice_velocity_model_dummy :: vel)
     end select
 
     ! Remove routine from call stack

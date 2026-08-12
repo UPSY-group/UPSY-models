@@ -6,6 +6,9 @@ module ice_velocity_model_basic
   use mesh_types, only: type_mesh
   use parameters, only: NaN
   use reallocate_mod, only: reallocate_bounds
+  use Arakawa_grid_mod, only: Arakawa_grid
+  use fields_dimensions, only: third_dimension
+  use model_configuration, only: C
 
   implicit none
 
@@ -130,24 +133,82 @@ contains
     allocate( self%uabs_base_b( mesh%ti1:mesh%ti2), source = NaN)
 
     ! Strain rates
-    allocate( self%du_dx_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%du_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%du_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%dv_dx_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%dv_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%dv_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%dw_dx_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%dw_dy_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
-    allocate( self%dw_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
+    call self%create_field( self%du_dx_3D, self%wdu_dx_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'du_dx_3D', &
+      long_name = '3-D xx strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%du_dy_3D, self%wdu_dy_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'du_dy_3D', &
+      long_name = '3-D xy strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%du_dz_3D, self%wdu_dz_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'du_dz_3D', &
+      long_name = '3-D xz strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dv_dx_3D, self%wdv_dx_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dv_dx_3D', &
+      long_name = '3-D yx strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dv_dy_3D, self%wdv_dy_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dv_dy_3D', &
+      long_name = '3-D yy strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dv_dz_3D, self%wdv_dz_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dv_dz_3D', &
+      long_name = '3-D yz strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dw_dx_3D, self%wdw_dx_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dw_dx_3D', &
+      long_name = '3-D zx strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dw_dy_3D, self%wdw_dy_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dw_dy_3D', &
+      long_name = '3-D zy strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dw_dz_3D, self%wdw_dz_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( mesh%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dw_dz_3D', &
+      long_name = '3-D zz strain rate', &
+      units     = '', &
+      remap_method = 'reallocate')
 
     ! Flow regime
-    allocate( self%R_shear( mesh%vi1:mesh%vi2), source = NaN)
+    call self%create_field( self%R_shear, self%wR_shear, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'R_shear', &
+      long_name = 'Slide/shear ratio', &
+      units     = '', &
+      remap_method = 'reallocate')
 
     ! Allocate stuff that is specific to each individual ice velocity model implementation
     call self%allocate_ice_velocity_model()
 
     ! Remove routine from call stack
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 10)
 
   end subroutine ice_velocity_model_allocate
 
@@ -202,18 +263,18 @@ contains
     deallocate( self%uabs_base_b)
 
     ! Strain rates
-    deallocate( self%du_dx_3D)
-    deallocate( self%du_dy_3D)
-    deallocate( self%du_dz_3D)
-    deallocate( self%dv_dx_3D)
-    deallocate( self%dv_dy_3D)
-    deallocate( self%dv_dz_3D)
-    deallocate( self%dw_dx_3D)
-    deallocate( self%dw_dy_3D)
-    deallocate( self%dw_dz_3D)
+    nullify( self%du_dx_3D)
+    nullify( self%du_dy_3D)
+    nullify( self%du_dz_3D)
+    nullify( self%dv_dx_3D)
+    nullify( self%dv_dy_3D)
+    nullify( self%dv_dz_3D)
+    nullify( self%dw_dx_3D)
+    nullify( self%dw_dy_3D)
+    nullify( self%dw_dz_3D)
 
     ! Flow regime
-    deallocate( self%R_shear)
+    nullify( self%R_shear)
 
     ! Deallocate stuff that is specific to each individual ice velocity model implementation
     call self%deallocate_ice_velocity_model()
@@ -323,18 +384,18 @@ contains
     call reallocate_bounds( self%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Strain rates
-    call reallocate_bounds( self%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
-    call reallocate_bounds( self%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call self%remap_field( mesh_new, 'du_dx_3D', self%du_dx_3D)
+    call self%remap_field( mesh_new, 'du_dy_3D', self%du_dy_3D)
+    call self%remap_field( mesh_new, 'du_dz_3D', self%du_dz_3D)
+    call self%remap_field( mesh_new, 'dv_dx_3D', self%dv_dx_3D)
+    call self%remap_field( mesh_new, 'dv_dy_3D', self%dv_dy_3D)
+    call self%remap_field( mesh_new, 'dv_dz_3D', self%dv_dz_3D)
+    call self%remap_field( mesh_new, 'dw_dx_3D', self%dw_dx_3D)
+    call self%remap_field( mesh_new, 'dw_dy_3D', self%dw_dy_3D)
+    call self%remap_field( mesh_new, 'dw_dz_3D', self%dw_dz_3D)
 
     ! Flow regime
-    call reallocate_bounds( self%R_shear, mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'R_shear', self%R_shear)
 
     ! Remap stuff that is specific to each individual ice_velocity model implementation
     call self%remap_ice_velocity_model( mesh_new)

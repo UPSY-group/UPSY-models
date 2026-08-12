@@ -5,6 +5,7 @@ module ice_velocity_model_basic
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use mesh_types, only: type_mesh
   use parameters, only: NaN
+  use reallocate_mod, only: reallocate_bounds
 
   implicit none
 
@@ -286,6 +287,54 @@ contains
     call self%remap_model( mesh_new)
 
     ! Remap stuff that is common to all ice_velocity models
+
+    ! 3-D
+    call reallocate_bounds( self%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( self%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( self%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+
+    ! Vertically averaged
+    call reallocate_bounds( self%u_vav     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%v_vav     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%u_vav_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%v_vav_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%uabs_vav  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%uabs_vav_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%u_vav_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)
+
+    ! Surface
+    call reallocate_bounds( self%u_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%v_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%w_surf     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
+
+    ! Base
+    call reallocate_bounds( self%u_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%v_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%u_base_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%v_base_b   , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%w_base     , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%uabs_base  , mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( self%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
+
+    ! Strain rates
+    call reallocate_bounds( self%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
+    call reallocate_bounds( self%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+
+    ! Flow regime
+    call reallocate_bounds( self%R_shear, mesh_new%vi1, mesh_new%vi2)
 
     ! Remap stuff that is specific to each individual ice_velocity model implementation
     call self%remap_ice_velocity_model( mesh_new)

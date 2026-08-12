@@ -486,13 +486,8 @@ contains
     ! Print to terminal
     if (par%primary) write(0,'(A)') '    Remapping ice model data to the new mesh...'
 
-    ! Remap conserved ice model quantities
-    ! ====================================
-
-    ! === Ice-sheet geometry ===
-    ! ==========================
-
     call ice%geom%remap( mesh_old, mesh_new, refgeo_PD, GIA, forcing, time)
+    call ice%vel %remap( mesh_new)
 
     ! Remap dHi/dt to improve stability of the P/C scheme after mesh updates
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, ice%dHi_dt, '2nd_order_conservative')
@@ -599,62 +594,11 @@ contains
     ! Glen's flow law factor
     call reallocate_bounds( ice%A_flow, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [Pa^-3 y^-1] Glen's flow law factor
 
-    ! === Ice velocities ===
-    ! ======================
-
-    ! 3-D
-    call reallocate_bounds( ice%vel%u_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [m yr^-1] 3-D ice velocity
-    call reallocate_bounds( ice%vel%v_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%u_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%v_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%w_3D  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-
-    ! Vertically integrated
-    call reallocate_bounds( ice%vel%u_vav     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Vertically averaged ice velocity
-    call reallocate_bounds( ice%vel%v_vav     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%u_vav_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%vel%v_vav_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%vel%uabs_vav  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%uabs_vav_b, mesh_new%ti1, mesh_new%ti2)
-
-    ! Surface
-    call reallocate_bounds( ice%vel%u_surf     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the surface
-    call reallocate_bounds( ice%vel%v_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%vel%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%vel%w_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
-
-    ! Basal
-    call reallocate_bounds( ice%vel%u_base     , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Ice velocity at the base
-    call reallocate_bounds( ice%vel%v_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%u_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%vel%v_base_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( ice%vel%w_base     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%uabs_base  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( ice%vel%uabs_base_b, mesh_new%ti1, mesh_new%ti2)
-
-    ! == Strain rates ==
-    ! ==================
-
-    call reallocate_bounds( ice%vel%du_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)  ! [yr^-1]
-    call reallocate_bounds( ice%vel%du_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%dv_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%dv_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%dw_dx_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%dw_dy_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( ice%vel%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-
     ! == Ice flow regime ==
     ! =====================
 
     call reallocate_bounds( ice%divQ   , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux divergence
-    call reallocate_bounds( ice%vel%R_shear, mesh_new%vi1, mesh_new%vi2)  ! [0-1]     uabs_base / uabs_surf (0 = pure vertical shear, viscous flow; 1 = pure sliding, plug flow)
     call reallocate_bounds( ice%Qspill , mesh_new%vi1, mesh_new%vi2)  ! [m yr^-1] Horizontal ice flux due to spill over of filled cells
-    call reallocate_bounds( ice%vel%u_vav_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)  ! [m yr^-1] Ice velocity perpendicular to edge
 
     ! == Basal hydrology ==
     ! =====================

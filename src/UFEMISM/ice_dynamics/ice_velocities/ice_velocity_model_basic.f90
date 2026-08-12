@@ -10,9 +10,9 @@ module ice_velocity_model_basic
 
   private
 
-  public :: type_ice_velocity_model
+  public :: atype_ice_velocity_model, type_ice_velocity_model_clean
 
-  type, extends(atype_ice_velocity_model_data) :: type_ice_velocity_model
+  type, abstract, extends(atype_ice_velocity_model_data) :: atype_ice_velocity_model
 
     contains
 
@@ -20,11 +20,14 @@ module ice_velocity_model_basic
       procedure, public :: deallocate => deallocate_ice_velocity_model
       ! procedure, public :: remap      => remap_ice_velocity_model
 
-      final :: finalise_ice_velocity_model
-
       procedure, public :: get_model_name
 
-  end type type_ice_velocity_model
+  end type atype_ice_velocity_model
+
+  ! Temporary concrete extension, to be used until all velocity models have been converted
+  ! to extensions of the abstract base type
+  type, extends(atype_ice_velocity_model) :: type_ice_velocity_model_clean
+  end type type_ice_velocity_model_clean
 
   ! Interfaces for procedures defined in submodules
   interface
@@ -42,9 +45,9 @@ contains
   subroutine allocate_ice_velocity_model( self, region_name, mesh)
 
     ! In/output variables:
-    class(type_ice_velocity_model), intent(inout) :: self
-    character(len=*),               intent(in   ) :: region_name
-    type(type_mesh), target,        intent(in   ) :: mesh
+    class(atype_ice_velocity_model), intent(inout) :: self
+    character(len=*),                intent(in   ) :: region_name
+    type(type_mesh), target,         intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'allocate_ice_velocity_model'
@@ -113,7 +116,7 @@ contains
   subroutine deallocate_ice_velocity_model( self)
 
     ! In/output variables:
-    class(type_ice_velocity_model), intent(inout) :: self
+    class(atype_ice_velocity_model), intent(inout) :: self
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'deallocate_ice_velocity_model'
@@ -179,26 +182,8 @@ contains
 
   end subroutine deallocate_ice_velocity_model
 
-  subroutine finalise_ice_velocity_model( self)
-
-    ! In/output variables:
-    type(type_ice_velocity_model), intent(inout) :: self
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'finalise_ice_velocity_model'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    call self%deallocate()
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine finalise_ice_velocity_model
-
   function get_model_name( self) result( model_name)
-    class(type_ice_velocity_model), intent(in) :: self
+    class(atype_ice_velocity_model), intent(in) :: self
     character(len=:), allocatable              :: model_name
     model_name = 'ice_velocity'
   end function get_model_name

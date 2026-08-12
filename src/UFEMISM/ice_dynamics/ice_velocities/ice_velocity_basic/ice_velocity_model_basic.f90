@@ -115,13 +115,54 @@ contains
     allocate( self%u_vav_perp( mesh%vi1:mesh%vi2, 1:mesh%nC_mem), source = 0._dp)
 
     ! Surface
-    allocate( self%u_surf     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%v_surf     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%u_surf_b   ( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%v_surf_b   ( mesh%ti1:mesh%ti2), source = NaN)
-    allocate( self%w_surf     ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%uabs_surf  ( mesh%vi1:mesh%vi2), source = NaN)
-    allocate( self%uabs_surf_b( mesh%ti1:mesh%ti2), source = NaN)
+    call self%create_field( self%u_surf, self%wu_surf, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'u_surf', &
+      long_name = 'Surface ice velocity in the x-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_surf, self%wv_surf, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'v_surf', &
+      long_name = 'Surface ice velocity in the y-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%u_surf_b, self%wu_surf_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'u_surf_b', &
+      long_name = 'Surface ice velocity in the x-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_surf_b, self%wv_surf_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'v_surf_b', &
+      long_name = 'Surface ice velocity in the y-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%w_surf, self%ww_surf, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'w_surf', &
+      long_name = 'Surface ice velocity in the z-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%uabs_surf, self%wuabs_surf, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'uabs_surf', &
+      long_name = 'Surface ice speed', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%uabs_surf_b, self%wuabs_surf_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'uabs_surf_b', &
+      long_name = 'Surface ice speed on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
 
     ! Base
     call self%create_field( self%u_base, self%wu_base, &
@@ -286,13 +327,13 @@ contains
     deallocate( self%u_vav_perp)
 
     ! Surface
-    deallocate( self%u_surf     )
-    deallocate( self%v_surf     )
-    deallocate( self%u_surf_b   )
-    deallocate( self%v_surf_b   )
-    deallocate( self%w_surf     )
-    deallocate( self%uabs_surf  )
-    deallocate( self%uabs_surf_b)
+    nullify( self%u_surf     )
+    nullify( self%v_surf     )
+    nullify( self%u_surf_b   )
+    nullify( self%v_surf_b   )
+    nullify( self%w_surf     )
+    nullify( self%uabs_surf  )
+    nullify( self%uabs_surf_b)
 
     ! Base
     nullify( self%u_base     )
@@ -407,13 +448,13 @@ contains
     call reallocate_bounds( self%u_vav_perp, mesh_new%vi1, mesh_new%vi2, mesh_new%nC_mem)
 
     ! Surface
-    call reallocate_bounds( self%u_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%v_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%u_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%v_surf_b   , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%w_surf     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%uabs_surf  , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%uabs_surf_b, mesh_new%ti1, mesh_new%ti2)
+    call self%remap_field( mesh_new, 'u_surf'     , self%u_surf     )
+    call self%remap_field( mesh_new, 'v_surf'     , self%v_surf     )
+    call self%remap_field( mesh_new, 'u_surf_b'   , self%u_surf_b   )
+    call self%remap_field( mesh_new, 'v_surf_b'   , self%v_surf_b   )
+    call self%remap_field( mesh_new, 'w_surf'     , self%w_surf     )
+    call self%remap_field( mesh_new, 'uabs_surf'  , self%uabs_surf  )
+    call self%remap_field( mesh_new, 'uabs_surf_b', self%uabs_surf_b)
 
     ! Base
     call self%remap_field( mesh_new, 'u_base'     , self%u_base     )

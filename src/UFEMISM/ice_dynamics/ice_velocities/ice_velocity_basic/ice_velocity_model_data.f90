@@ -29,13 +29,14 @@ module ice_velocity_model_data
     real(dp), dimension(:,:), allocatable :: u_vav_perp       ! [m yr^-1]   Vertically averaged ice velocity perpendicular to Voronoi cell boundaries
 
     ! Surface
-    real(dp), dimension(:  ), allocatable :: u_surf           ! [m yr^-1]   Surface ice velocity in the x-direction
-    real(dp), dimension(:  ), allocatable :: v_surf           ! [m yr^-1]   Surface ice velocity in the y-direction
-    real(dp), dimension(:  ), allocatable :: u_surf_b         ! [m yr^-1]   Surface ice velocity in the x-direction on the b-grid
-    real(dp), dimension(:  ), allocatable :: v_surf_b         ! [m yr^-1]   Surface ice velocity in the x-direction on the b-grid
-    real(dp), dimension(:  ), allocatable :: w_surf           ! [m yr^-1]   Surface ice velocity in the z-direction
-    real(dp), dimension(:  ), allocatable :: uabs_surf        ! [m yr^-1]   Surface ice speed
-    real(dp), dimension(:  ), allocatable :: uabs_surf_b      ! [m yr^-1]   Surface ice speed on the b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: u_surf          => null()   ! [m yr^-1]   Surface ice velocity in the x-direction
+    real(dp), dimension(:  ), contiguous, pointer :: v_surf          => null()   ! [m yr^-1]   Surface ice velocity in the y-direction
+    real(dp), dimension(:  ), contiguous, pointer :: u_surf_b        => null()   ! [m yr^-1]   Surface ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: v_surf_b        => null()   ! [m yr^-1]   Surface ice velocity in the x-direction on the b-grid
+    real(dp), dimension(:  ), contiguous, pointer :: w_surf          => null()   ! [m yr^-1]   Surface ice velocity in the z-direction
+    real(dp), dimension(:  ), contiguous, pointer :: uabs_surf       => null()   ! [m yr^-1]   Surface ice speed
+    real(dp), dimension(:  ), contiguous, pointer :: uabs_surf_b     => null()   ! [m yr^-1]   Surface ice speed on the b-grid
+    type(MPI_WIN) :: wu_surf, wv_surf, wu_surf_b, wv_surf_b, ww_surf, wuabs_surf, wuabs_surf_b
 
     ! Base
     real(dp), dimension(:  ), contiguous, pointer :: u_base          => null()   ! [m yr^-1]   Basal ice velocity in the x-direction

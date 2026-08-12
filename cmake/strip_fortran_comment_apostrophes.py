@@ -11,7 +11,6 @@ from __future__ import annotations
 
 import argparse
 import shutil
-import tempfile
 from pathlib import Path
 
 
@@ -72,7 +71,7 @@ def main() -> int:
     else:
         build_root = source_root / "build"
         build_root.mkdir(parents=True, exist_ok=True)
-        target_root = Path(tempfile.mkdtemp(prefix="stripped-source-", dir=build_root))
+        target_root = build_root / "stripped-source"
 
     if target_root.exists():
         shutil.rmtree(target_root)

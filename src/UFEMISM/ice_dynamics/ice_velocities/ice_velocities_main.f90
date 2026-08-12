@@ -25,7 +25,7 @@ module ice_velocities_main
   use mpi_distributed_memory, only: gather_to_all
   use mesh_zeta, only: vertical_average
   use map_velocities_to_c_grid
-  use vertical_velocities
+  use vertical_velocities, only: calc_vertical_velocities
   use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
@@ -172,7 +172,7 @@ contains
     call calc_secondary_velocities( mesh, ice)
 
     ! Calculate vertical velocities
-    call calc_vertical_velocities( mesh, ice, BMB)
+    call calc_vertical_velocities( ice%vel, ice, ice%geom, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

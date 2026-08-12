@@ -17,24 +17,24 @@ set_property(TARGET UPSY_static_library PROPERTY Fortran_MODULE_DIRECTORY ${CMAK
 # Initialise an empty list of executables
 set( all_programs "")
 
-# UPSY programs
-add_executable( UPSY_unit_test_program                               "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_unit_test_program.f90")
-add_executable( UPSY_multinode_unit_test_program                     "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_multinode_unit_test_program.f90")
-add_executable( UPSY_component_test_program_PETSc_matrix_solving     "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_PETSc_matrix_solving.f90")
-add_executable( UPSY_component_test_program_mesh_creation            "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_creation.f90")
-add_executable( UPSY_component_test_program_mesh_focussing           "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_focussing.f90")
-add_executable( UPSY_component_test_program_mesh_discretisation      "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_discretisation.f90")
-add_executable( UPSY_component_test_program_mesh_remapping_mesh_grid "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_remapping_mesh_grid.f90")
-add_executable( UPSY_component_test_program_mesh_remapping_mesh_mesh "${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_remapping_mesh_mesh.f90")
+set( UPSY_program_sources_raw
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_unit_test_program.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_multinode_unit_test_program.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_PETSc_matrix_solving.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_creation.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_focussing.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_discretisation.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_remapping_mesh_grid.f90"
+	"${CMAKE_CURRENT_SOURCE_DIR}/UPSY_component_test_program_mesh_remapping_mesh_mesh.f90")
 
-list( APPEND all_programs UPSY_unit_test_program)
-list( APPEND all_programs UPSY_multinode_unit_test_program)
-list( APPEND all_programs UPSY_component_test_program_PETSc_matrix_solving)
-list( APPEND all_programs UPSY_component_test_program_mesh_creation)
-list( APPEND all_programs UPSY_component_test_program_mesh_focussing)
-list( APPEND all_programs UPSY_component_test_program_mesh_discretisation)
-list( APPEND all_programs UPSY_component_test_program_mesh_remapping_mesh_grid)
-list( APPEND all_programs UPSY_component_test_program_mesh_remapping_mesh_mesh)
+sanitize_fortran_sources(UPSY_program_sources_sanitized UPSY_programs ${UPSY_program_sources_raw})
+
+# UPSY programs
+foreach(program_source IN LISTS UPSY_program_sources_sanitized)
+		get_filename_component(program_name "${program_source}" NAME_WE)
+		add_executable(${program_name} "${program_source}")
+		list(APPEND all_programs ${program_name})
+endforeach()
 
 # Link all executables to the UPSY static library and the external dependencies,
 # and set the compiler flags

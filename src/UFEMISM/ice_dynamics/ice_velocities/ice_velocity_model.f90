@@ -1,7 +1,8 @@
 module ice_velocity_model
 
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use ice_velocity_model_basic, only: atype_ice_velocity_model, type_ice_velocity_model_clean
+  use ice_velocity_model_basic, only: atype_ice_velocity_model
+  use ice_velocity_model_clean, only: type_ice_velocity_model_clean
 
   implicit none
 

@@ -10,7 +10,7 @@ module ice_velocity_model_basic
 
   private
 
-  public :: atype_ice_velocity_model, type_ice_velocity_model_clean
+  public :: atype_ice_velocity_model
 
   type, abstract, extends(atype_ice_velocity_model_data) :: atype_ice_velocity_model
 
@@ -23,11 +23,6 @@ module ice_velocity_model_basic
       procedure, public :: get_model_name
 
   end type atype_ice_velocity_model
-
-  ! Temporary concrete extension, to be used until all velocity models have been converted
-  ! to extensions of the abstract base type
-  type, extends(atype_ice_velocity_model) :: type_ice_velocity_model_clean
-  end type type_ice_velocity_model_clean
 
   ! Interfaces for procedures defined in submodules
   interface

@@ -141,7 +141,12 @@ contains
     allocate( self%dw_dz_3D( mesh%vi1:mesh%vi2, 1:mesh%nz), source = NaN)
 
     ! Flow regime
-    allocate( self%R_shear( mesh%vi1:mesh%vi2), source = NaN)
+    call self%create_field( self%R_shear, self%wR_shear, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'R_shear', &
+      long_name = 'Slide/shear ratio', &
+      units     = '', &
+      remap_method = 'reallocate')
 
     ! Allocate stuff that is specific to each individual ice velocity model implementation
     call self%allocate_ice_velocity_model()
@@ -213,7 +218,7 @@ contains
     deallocate( self%dw_dz_3D)
 
     ! Flow regime
-    deallocate( self%R_shear)
+    nullify( self%R_shear)
 
     ! Deallocate stuff that is specific to each individual ice velocity model implementation
     call self%deallocate_ice_velocity_model()
@@ -334,7 +339,7 @@ contains
     call reallocate_bounds( self%dw_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
 
     ! Flow regime
-    call reallocate_bounds( self%R_shear, mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'R_shear', self%R_shear)
 
     ! Remap stuff that is specific to each individual ice_velocity model implementation
     call self%remap_ice_velocity_model( mesh_new)

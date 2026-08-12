@@ -96,7 +96,6 @@ contains
     real(dp)                               :: dist, dt
     real(dp), parameter                    :: dt_correction_factor = 0.9_dp ! Make actual applied time step a little bit smaller, just to be sure.
     integer                                :: ierr
-    real(dp), dimension(:), pointer :: u_vav_b_loc, v_vav_b_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -106,9 +105,7 @@ contains
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice, mask_floating_ice_tot)
 
     ! Calculate vertically averaged ice velocities on the edges
-    u_vav_b_loc => ice%vel%u_vav_b( mesh%ti1:mesh%ti2)
-    v_vav_b_loc => ice%vel%v_vav_b( mesh%ti1:mesh%ti2)
-    call map_velocities_from_b_to_c_2D( mesh, u_vav_b_loc, v_vav_b_loc, u_vav_c, v_vav_c)
+    call map_velocities_from_b_to_c_2D( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, u_vav_c, v_vav_c)
     call gather_to_all( u_vav_c, u_vav_c_tot)
     call gather_to_all( v_vav_c, v_vav_c_tot)
 

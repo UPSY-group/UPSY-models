@@ -195,32 +195,34 @@ contains
     dHi_dt_target   = 0._dp
     dt              = 0.1_dp
 
-    call calc_u_vav_perp( mesh, u_vav_b, v_vav_b, u_vav_perp)
+    ice%vel%u_vav_b( mesh%ti1:mesh%ti2) = u_vav_b
+    ice%vel%v_vav_b( mesh%ti1:mesh%ti2) = v_vav_b
+    call calc_u_vav_perp( mesh, ice%vel)
 
     ! Calculate modelled thinning rates using different solvers
     ! =========================================================
 
     ! Explicit
     C%choice_ice_integration_method = 'explicit'
-    call calc_dHi_dt( mesh, ice%geom, u_vav_perp, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice%geom, ice%vel, SMB, BMB, LMB, AMB, &
       mask_noice, dt, dHi_dt_expl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Semi-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 0.5_dp
-    call calc_dHi_dt( mesh, ice%geom, u_vav_perp, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice%geom, ice%vel, SMB, BMB, LMB, AMB, &
       mask_noice, dt, dHi_dt_semiimpl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1._dp
-    call calc_dHi_dt( mesh, ice%geom, u_vav_perp, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice%geom, ice%vel, SMB, BMB, LMB, AMB, &
       mask_noice, dt, dHi_dt_impl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Over-implicit
     C%choice_ice_integration_method = 'semi-implicit'
     C%dHi_semiimplicit_fs = 1.5_dp
-    call calc_dHi_dt( mesh, ice%geom, u_vav_perp, SMB, BMB, LMB, AMB, &
+    call calc_dHi_dt( mesh, ice%geom, ice%vel, SMB, BMB, LMB, AMB, &
       mask_noice, dt, dHi_dt_overimpl, Hi_tplusdt, divQ, dHi_dt_target, ice%Qspill)
 
     ! Write results to output

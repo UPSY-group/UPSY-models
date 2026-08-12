@@ -45,7 +45,6 @@ contains
     integer                                              :: n_visc_its
     integer                                              :: n_Axb_its
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
-    real(dp), dimension(:,:), pointer                    :: u_vav_perp_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -80,8 +79,7 @@ contains
 
       ! Calculate thinning rates for current geometry and velocity
       !   f(H_n, u_n) in Robinson et al., 2020, Eq. 30
-      u_vav_perp_loc => region%ice%vel%u_vav_perp( region%mesh%vi1:region%mesh%vi2,1:region%mesh%nz)
-      call calc_dHi_dt( region%mesh, region%ice%geom, u_vav_perp_loc, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_n_u_n, Hi_dummy, &
         region%ice%divQ, region%ice%dHi_dt_target, region%ice%Qspill)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%dHi_dt_Hi_n_u_n)
@@ -127,8 +125,7 @@ contains
 
       ! Calculate thinning rates for the predicted ice thickness and predicted velocity
       !  f( H*_n+1, u_n+1) in Robinson et al., 2020, Eq. 31
-      u_vav_perp_loc => region%ice%vel%u_vav_perp( region%mesh%vi1:region%mesh%vi2,1:region%mesh%nz)
-      call calc_dHi_dt( region%mesh, region%ice%geom, u_vav_perp_loc, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_loc, region%BMB%BMB, region%LMB%LMB, region%AMB%AMB, &
         region%ice%mask_noice, region%ice%pc%dt_np1, region%ice%pc%dHi_dt_Hi_star_np1_u_np1, Hi_dummy, &
         region%ice%divQ, region%ice%dHi_dt_target, region%ice%Qspill)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%dHi_dt_Hi_star_np1_u_np1)

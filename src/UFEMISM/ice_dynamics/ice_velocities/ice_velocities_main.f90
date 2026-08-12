@@ -27,6 +27,7 @@ module ice_velocities_main
   use map_velocities_to_c_grid
   use vertical_velocities, only: calc_vertical_velocities
   use bed_roughness_model_types, only: type_bed_roughness_model
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
 
   implicit none
 
@@ -190,8 +191,6 @@ contains
     character(len=1024), parameter    :: routine_name = 'calc_secondary_velocities'
     integer                           :: vi,ti
     real(dp), dimension(mesh%nz)      :: u_prof, v_prof
-    real(dp), dimension(:  ), pointer :: u_vav_b_loc, v_vav_b_loc
-    real(dp), dimension(:,:), pointer :: u_vav_perp_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -242,10 +241,7 @@ contains
       ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
     end do
 
-    u_vav_b_loc    => ice%vel%u_vav_b( mesh%ti1:mesh%ti2)
-    v_vav_b_loc    => ice%vel%v_vav_b( mesh%ti1:mesh%ti2)
-    u_vav_perp_loc => ice%vel%u_vav_perp( mesh%vi1:mesh%vi2, 1:mesh%nz)
-    call calc_u_vav_perp( mesh, u_vav_b_loc, v_vav_b_loc, u_vav_perp_loc)
+    call calc_u_vav_perp( mesh, ice%vel)
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2
@@ -257,15 +253,13 @@ contains
 
   end subroutine calc_secondary_velocities
 
-  subroutine calc_u_vav_perp( mesh, u_vav_b, v_vav_b, u_vav_perp)
+  subroutine calc_u_vav_perp( mesh, vel)
     !< Calculate the vertically averaged ice velocity component
     !< perpendicular to the shared Voronoi cell boundaries
 
     ! In/output variables:
-    type(type_mesh),                                     intent(in   ) :: mesh
-    real(dp), dimension(mesh%ti1:mesh%ti1),              intent(in   ) :: u_vav_b
-    real(dp), dimension(mesh%ti1:mesh%ti1),              intent(in   ) :: v_vav_b
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(  out) :: u_vav_perp
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
 
     ! Local variables:
     character(len=*), parameter            :: routine_name = 'calc_u_vav_perp'
@@ -277,7 +271,7 @@ contains
     call init_routine( routine_name)
 
     ! Calculate vertically averaged ice velocities on the edges
-    call map_velocities_from_b_to_c_2D( mesh, u_vav_b, v_vav_b, u_vav_c, v_vav_c)
+    call map_velocities_from_b_to_c_2D( mesh, vel%u_vav_b, vel%v_vav_b, u_vav_c, v_vav_c)
     call gather_to_all( u_vav_c, u_vav_c_tot)
     call gather_to_all( v_vav_c, v_vav_c_tot)
 
@@ -288,7 +282,7 @@ contains
         ei = mesh%VE( vi,ci)
 
         ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
-        u_vav_perp( vi, ci) = &
+        vel%u_vav_perp( vi, ci) = &
           u_vav_c_tot( ei) * mesh%D_x( vi, ci)/mesh%D( vi, ci) + &
           v_vav_c_tot( ei) * mesh%D_y( vi, ci)/mesh%D( vi, ci)
 

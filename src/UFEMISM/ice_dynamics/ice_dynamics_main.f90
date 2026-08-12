@@ -794,7 +794,6 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: divQ
     integer                                        :: n_visc_its
     integer                                        :: n_Axb_its
-    real(dp), dimension(:,:), pointer              :: u_vav_perp_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -957,9 +956,8 @@ contains
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
       ! Calculate dH/dt around the calving front
-      u_vav_perp_loc => ice%vel%u_vav_perp( mesh%vi1:mesh%vi2,1:mesh%nz)
       call calc_dHi_dt( mesh, ice%geom, &
-        u_vav_perp_loc, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
+        ice%vel, SMB_new, BMB_new, LMB_new, AMB_new, ice%mask_noice, C%dt_ice_min, &
         ice%dHi_dt, Hi_tplusdt, divQ, ice%dHi_dt_target, ice%Qspill, BC_prescr_mask, BC_prescr_Hi)
 
       ! Update ice thickness and advance pseudo-time
@@ -1011,7 +1009,6 @@ contains
     character(len=256)                                    :: r_time, r_step, r_adv
     integer                                               :: n_visc_its
     integer                                               :: n_Axb_its
-    real(dp), dimension(:,:), pointer                     :: u_vav_perp_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -1071,8 +1068,7 @@ contains
         BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
-      u_vav_perp_loc => region%ice%vel%u_vav_perp( region%mesh%vi1:region%mesh%vi2, 1:region%mesh%nz)
-      call calc_dHi_dt( region%mesh, region%ice%geom, u_vav_perp_loc, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
+      call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
                         region%ice%mask_noice, t_step, dHi_dt_new, Hi_new, region%ice%divQ, dHi_dt_target_dummy, region%ice%Qspill)
 
       ! Set ice model ice thickness to relaxed field

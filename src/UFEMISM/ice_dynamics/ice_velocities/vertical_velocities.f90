@@ -87,7 +87,6 @@ contains
     real(dp)                              :: du_dzeta_ks, dv_dzeta_ks
     real(dp)                              :: dzeta_dx_ks, dzeta_dy_ks, dzeta_dz_ks
     real(dp)                              :: dw_dzeta_ks
-    real(dp), dimension(mesh%ti1:mesh%ti2,1:mesh%nz) :: u_3D_b_loc, v_3D_b_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -122,9 +121,7 @@ contains
     call ddy_a_a_2D( mesh, geom%Hib, dHib_dy)
 
     ! Calculate u,v on the c-grid (edges)
-    u_3D_b_loc = vel%u_3D_b( mesh%ti1:mesh%ti2,:)
-    v_3D_b_loc = vel%v_3D_b( mesh%ti1:mesh%ti2,:)
-    call map_velocities_from_b_to_c_3D( mesh, u_3D_b_loc, v_3D_b_loc, u_3D_c, v_3D_c)
+    call map_velocities_from_b_to_c_3D( mesh, vel%u_3D_b, vel%v_3D_b, u_3D_c, v_3D_c)
     call gather_to_all( u_3D_c, u_3D_c_tot)
     call gather_to_all( v_3D_c, v_3D_c_tot)
 

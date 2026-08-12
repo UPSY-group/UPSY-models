@@ -5,6 +5,7 @@ module conservation_of_mass_explicit
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use ice_geometry_basics, only: ice_surface_elevation, Hi_from_Hb_Hs_and_SL
   use mpi_distributed_memory, only: gather_to_all
@@ -22,7 +23,7 @@ module conservation_of_mass_explicit
 
 contains
 
-  subroutine calc_dHi_dt_explicit( mesh, geom, u_vav_perp, SMB, BMB, LMB, AMB, &
+  subroutine calc_dHi_dt_explicit( mesh, geom, vel, SMB, BMB, LMB, AMB, &
     mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a time-explicit discretisation scheme for the ice fluxes
@@ -51,7 +52,7 @@ contains
     ! In/output variables:
     type(type_mesh),                                     intent(in   )           :: mesh                  ! [-]       The model mesh
     class(atype_ice_geometry_model_data),                intent(in   )           :: geom                  !           The ice-sheet geometry
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   )           :: u_vav_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
+    class(atype_ice_velocity_model_data),                intent(in   )           :: vel                   !           The ice-sheet velocity
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
@@ -75,7 +76,7 @@ contains
     call init_routine( routine_name)
 
     ! Calculate the ice flux divergence matrix M_divQ using an upwind scheme
-    call calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_perp, geom%fraction_margin, M_divQ)
+    call calc_ice_flux_divergence_matrix_upwind( mesh, vel, geom%fraction_margin, M_divQ)
 
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &

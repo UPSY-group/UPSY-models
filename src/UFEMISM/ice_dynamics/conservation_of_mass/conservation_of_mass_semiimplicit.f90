@@ -5,6 +5,7 @@ module conservation_of_mass_semiimplicit
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use petsc_basic, only: solve_matrix_equation_csr_petsc
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
@@ -21,7 +22,7 @@ module conservation_of_mass_semiimplicit
 
 contains
 
-  subroutine calc_dHi_dt_semiimplicit( mesh, geom, u_vav_perp, SMB, BMB, LMB, AMB, &
+  subroutine calc_dHi_dt_semiimplicit( mesh, geom, vel, SMB, BMB, LMB, AMB, &
     mask_noice, dt, dHi_dt, Hi_tplusdt, divQ, dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     !< Calculate ice thickness rates of change (dH/dt)
     !< Use a semi-implicit time discretisation scheme for the ice fluxes
@@ -71,7 +72,7 @@ contains
     ! In/output variables:
     type(type_mesh),                                     intent(in   )           :: mesh                  ! [-]       The model mesh
     class(atype_ice_geometry_model_data),                intent(in   )           :: geom                  !           The ice-sheet geometry
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem), intent(in   )           :: u_vav_perp                ! [m yr^-1] Vertically-averaged ice velocity components perpendicular to Voronoi cell boundaries
+    class(atype_ice_velocity_model_data),                intent(in   )           :: vel                   !           The ice-sheet velocity
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: SMB                   ! [m yr^-1] Surface mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: BMB                   ! [m yr^-1] Basal   mass balance
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   )           :: LMB                   ! [m yr^-1] Lateral mass balance
@@ -102,13 +103,13 @@ contains
     ! First calculate the explicit solution (used to estimate the time step,
     ! and to apply boundary conditions at the domain border)
     dt_ex = dt
-    call calc_dHi_dt_explicit( mesh, geom, u_vav_perp, SMB, BMB, LMB, AMB_ex, &
+    call calc_dHi_dt_explicit( mesh, geom, vel, SMB, BMB, LMB, AMB_ex, &
       mask_noice, dt_ex, dHi_dt_ex, Hi_tplusdt_ex, divQ_ex, &
       dHi_dt_target, BC_prescr_mask, BC_prescr_Hi)
     dt_max = dt_ex
 
     ! Calculate the ice flux divergence matrix M_divQ using an upwind scheme
-    call calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_perp, geom%fraction_margin, M_divQ)
+    call calc_ice_flux_divergence_matrix_upwind( mesh, vel, geom%fraction_margin, M_divQ)
 
     ! Calculate the ice flux divergence div(Q)
     call multiply_CSR_matrix_with_vector_1D_wrapper( M_divQ, &

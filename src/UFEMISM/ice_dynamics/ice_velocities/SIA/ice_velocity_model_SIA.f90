@@ -1,4 +1,4 @@
-module SIA_main
+module ice_velocity_model_SIA
 
   !< Routines for calculating ice velocities using the Shallow Ice Approximation (SIA)
 
@@ -190,4 +190,4 @@ contains
 
   end subroutine remap_SIA_solver
 
-end module SIA_main
+end module ice_velocity_model_SIA

@@ -14,6 +14,17 @@ module ice_model_data
 
   IMPLICIT NONE
 
+  private
+
+  public :: type_ice_velocity_solver_SIA
+  public :: type_ice_velocity_solver_SSA
+  public :: type_ice_velocity_solver_DIVA
+  public :: type_ice_velocity_solver_DIVA_graphs
+  public :: type_ice_velocity_solver_BPA
+  public :: type_ice_velocity_solver_hybrid
+  public :: type_ice_pc
+  public :: type_ice_model_data
+
 ! ===== Types =====
 ! =================
 

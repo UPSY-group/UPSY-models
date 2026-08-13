@@ -11,7 +11,7 @@ MODULE basal_hydrology_new
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE basal_hydrology_model_types                            , ONLY: type_basal_hydrology_model
   use netcdf_io_main
   USE mesh_disc_apply_operators                              , ONLY: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_b_a_2D, ddx_a_a_2D, ddy_a_a_2D

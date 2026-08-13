@@ -12,7 +12,7 @@ MODULE BMB_parameterised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D

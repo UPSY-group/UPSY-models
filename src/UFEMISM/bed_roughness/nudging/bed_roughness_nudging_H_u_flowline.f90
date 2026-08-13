@@ -7,7 +7,7 @@ module bed_roughness_nudging_H_u_flowline
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_u_flowline
   use netcdf_io_main, only: read_field_from_file_2D_b, find_last_output_file, find_last_timeframe

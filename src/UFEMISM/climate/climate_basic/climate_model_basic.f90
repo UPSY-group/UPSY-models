@@ -9,7 +9,7 @@ module climate_model_basic
   use fields_main, only: third_dimension
   use climate_model_data, only: atype_climate_model_data
   use mpi_f08, only: MPI_WIN
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
 
   implicit none

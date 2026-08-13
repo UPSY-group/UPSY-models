@@ -1,4 +1,4 @@
-MODULE ice_model_types
+module ice_model_data
 
   ! The different data types used in the ice modules
 
@@ -295,7 +295,7 @@ MODULE ice_model_types
 
   END TYPE type_ice_pc
 
-  TYPE type_ice_model
+  type type_ice_model
     ! The ice dynamics model data structure.
 
     ! Geometry
@@ -447,8 +447,6 @@ MODULE ice_model_types
     integer                                 :: n_visc_its                  !      Number of non-linear viscosity iterations
     integer                                 :: n_Axb_its                   !      Number of iterations in iterative solver for linearised momentum balance
 
-  END TYPE type_ice_model
+  end type type_ice_model
 
-CONTAINS
-
-END MODULE ice_model_types
+end module ice_model_data

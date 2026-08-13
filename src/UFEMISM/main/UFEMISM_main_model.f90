@@ -13,7 +13,7 @@ MODULE UFEMISM_main_model
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE mesh_types                                             , ONLY: type_mesh
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE global_forcing_types                                   , ONLY: type_global_forcing

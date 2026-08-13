@@ -9,7 +9,7 @@ module SMB_prescribed
   use SMB_model_basic, only: atype_SMB_model
   use mpi_basic, only: par
   use netcdf_io_main, only: read_field_from_file_2D
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid

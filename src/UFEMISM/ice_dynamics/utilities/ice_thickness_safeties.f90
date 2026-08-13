@@ -6,7 +6,7 @@ module ice_thickness_safeties
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reference_geometry_types, only: type_reference_geometry

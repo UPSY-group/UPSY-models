@@ -5,7 +5,7 @@ module vertical_velocities
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use parameters, only: ice_density, seawater_density, NaN
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_3D

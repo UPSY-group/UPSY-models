@@ -4,7 +4,7 @@ module tracer_tracking_model_particles_main
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles
   use model_configuration, only: C
   use tracer_tracking_model_particles_basic, only: update_particle_velocity, create_particle_at_ice_surface

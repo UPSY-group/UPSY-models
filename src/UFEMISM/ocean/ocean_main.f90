@@ -13,7 +13,7 @@ MODULE ocean_main
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   use grid_types, only: type_grid
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base, interpolate_ocean_depth

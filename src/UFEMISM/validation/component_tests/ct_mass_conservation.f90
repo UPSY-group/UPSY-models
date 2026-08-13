@@ -7,7 +7,7 @@ module ct_mass_conservation
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_mesh_from_file, &
     close_netcdf_file, create_new_netcdf_file_for_writing, setup_mesh_in_netcdf_file, &
     add_field_mesh_dp_2D_notime, write_to_field_multopt_mesh_dp_2D_notime

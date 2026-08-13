@@ -12,7 +12,7 @@ MODULE climate_realistic
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
   USE global_forcing_types                                   , ONLY: type_global_forcing
   USE global_forcings_main

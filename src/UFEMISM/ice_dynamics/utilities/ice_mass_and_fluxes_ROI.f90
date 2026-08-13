@@ -9,7 +9,7 @@ module ice_mass_and_fluxes_ROI
   use parameters, only: ice_density, seawater_density, ocean_area, sec_per_year
   use mesh_types, only: type_mesh
   use scalar_types, only: type_regional_scalars
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use SMB_model, only: atype_SMB_model
   use BMB_model_types, only: type_BMB_model
   use LMB_model_types, only: type_LMB_model

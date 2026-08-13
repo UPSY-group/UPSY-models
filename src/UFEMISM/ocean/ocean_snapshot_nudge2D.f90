@@ -8,7 +8,7 @@ module ocean_snapshot_nudge2D
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use ocean_model_types, only: type_ocean_model, type_ocean_model_snapshot_nudge2D
   use netcdf_io_main
   use remapping_main

@@ -12,7 +12,7 @@ MODULE ocean_utilities
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   use checksum_mod, only: checksum
 

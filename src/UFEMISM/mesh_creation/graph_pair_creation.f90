@@ -4,7 +4,7 @@ module graph_pair_creation
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use create_graphs_from_masked_mesh, only: create_graph_from_masked_mesh_a, &
     create_graph_from_masked_mesh_b
   use graph_operators, only: calc_graph_matrix_operators_2nd_order, &

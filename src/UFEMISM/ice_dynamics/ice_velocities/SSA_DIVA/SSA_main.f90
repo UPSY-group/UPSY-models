@@ -11,7 +11,7 @@ module SSA_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SSA
+  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_SSA
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, ddx_b_a_2D, ddy_b_a_2D, map_b_a_2D

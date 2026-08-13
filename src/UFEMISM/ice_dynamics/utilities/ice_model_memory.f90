@@ -5,7 +5,7 @@ module ice_model_memory
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use ice_velocity_model, only: create_ice_velocity_model
 
   implicit none

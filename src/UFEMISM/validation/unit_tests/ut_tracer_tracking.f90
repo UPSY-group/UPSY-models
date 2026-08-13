@@ -20,7 +20,7 @@ module ut_tracer_tracking
 !   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles, type_map_particles_to_mesh
 !   use tracer_tracking_model_particles, only: calc_particle_zeta, interpolate_3d_velocities_to_3D_point, &
 !     calc_particles_to_mesh_map, initialise_tracer_tracking_model_particles, add_particle
-!   use ice_model_types, only: type_ice_model
+!   use ice_model_data, only: type_ice_model
 !   use ice_model_memory, only: allocate_ice_model
 !   use reference_geometries_main, only: calc_idealised_geometry
 

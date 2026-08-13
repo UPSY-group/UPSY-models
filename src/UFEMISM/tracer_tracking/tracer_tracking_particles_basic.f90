@@ -7,7 +7,7 @@ module tracer_tracking_model_particles_basic
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex, &
     interpolate_to_point_dp_2D_singlecore, interpolate_to_point_dp_3D_singlecore

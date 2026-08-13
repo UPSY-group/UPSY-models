@@ -12,7 +12,7 @@ module bed_roughness_main
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use bed_roughness_model_types, only: type_bed_roughness_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main

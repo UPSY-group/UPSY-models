@@ -11,7 +11,7 @@ module BPA_main
   use model_configuration, only: C
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model, type_ice_velocity_solver_BPA
+  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_BPA
   use parameters
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_3D, ddy_b_a_3D, calc_3D_gradient_bk_ak, calc_3D_gradient_bk_bks, &

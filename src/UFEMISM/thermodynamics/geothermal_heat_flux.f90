@@ -11,7 +11,7 @@ MODULE geothermal_heat_flux
   USE call_stack_and_comp_time_tracking                  , ONLY: crash, warning, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   use netcdf_io_main
   USE parameters                                             , ONLY: sec_per_year
   use checksum_mod, only: checksum

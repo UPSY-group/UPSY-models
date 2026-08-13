@@ -10,7 +10,7 @@ module SMB_IMAU_ITM
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use climate_model_types, only: type_climate_model, type_climate_model_snapshot
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
   use parameters, only: ice_density, T0, L_fusion, sec_per_year

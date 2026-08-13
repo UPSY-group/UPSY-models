@@ -46,7 +46,7 @@ module ISMIP7_SMB
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use parameters, only: sec_per_year, ice_density, NaN, freshwater_density
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly

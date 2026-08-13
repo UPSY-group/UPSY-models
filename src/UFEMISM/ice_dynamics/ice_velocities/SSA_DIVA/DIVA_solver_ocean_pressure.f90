@@ -12,7 +12,7 @@ module DIVA_solver_ocean_pressure
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
   use graph_pair_creation, only: create_ice_only_graph_pair, deallocate_graph_pair
-  use ice_model_types, only: type_ice_model, type_ice_velocity_solver_DIVA, &
+  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_DIVA, &
     type_ice_velocity_solver_DIVA_graphs
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient

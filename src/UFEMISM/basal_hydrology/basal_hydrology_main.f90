@@ -9,7 +9,7 @@ module basal_hydrology_main
   use model_configuration, only: C
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg, allocate_basal_hydro, remap_basal_hydro_model_Salle2025
   use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
   use crash_mod, only: crash

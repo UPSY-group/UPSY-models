@@ -8,7 +8,7 @@ module SMB_reconstructed
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model
   use grid_types, only: type_grid
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use mesh_data_smoothing, only: smooth_Gaussian
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon

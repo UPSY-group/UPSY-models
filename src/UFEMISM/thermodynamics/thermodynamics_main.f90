@@ -13,7 +13,7 @@ MODULE thermodynamics_main
   USE parameters
   USE region_types                                           , ONLY: type_model_region
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
   use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model

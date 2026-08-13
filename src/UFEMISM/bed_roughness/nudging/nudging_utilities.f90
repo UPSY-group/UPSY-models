@@ -3,7 +3,7 @@ module nudging_utilities
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use mesh_utilities, only: find_containing_vertex, interpolate_to_point_dp_2D_singlecore, &
     find_containing_triangle
 

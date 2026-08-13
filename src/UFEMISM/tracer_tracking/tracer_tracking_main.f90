@@ -8,7 +8,7 @@ module tracer_tracking_model_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use SMB_model, only: atype_SMB_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model
   use tracer_tracking_model_particles_main, only: initialise_tracer_tracking_model_particles, &

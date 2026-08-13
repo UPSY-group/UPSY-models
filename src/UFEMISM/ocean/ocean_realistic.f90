@@ -12,7 +12,7 @@ module ocean_realistic
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
-  use ice_model_types                                        , only: type_ice_model
+  use ice_model_data                                        , only: type_ice_model
   use ocean_model_types                                      , only: type_ocean_model
   use netcdf_io_main
   use ocean_extrapolation                                    , only: extrapolate_ocean_forcing

@@ -8,7 +8,7 @@ module mesh_output_files
   use grid_basic, only: type_grid
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use netcdf_io_main
   use netcdf_bedrock_CDF
   use netcdf, only: NF90_DOUBLE

@@ -13,7 +13,7 @@ module SMB_snapshot_plus_anomalies
     field_name_options_time, read_field_from_file_2D, read_field_from_file_2D_monthly
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use climate_model_types, only: type_climate_model
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use grid_types, only: type_grid
 

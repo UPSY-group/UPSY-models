@@ -12,7 +12,7 @@ MODULE climate_snapshot_plus_anomalies
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
   USE global_forcing_types                                   , ONLY: type_global_forcing
   use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_insolation
@@ -265,15 +265,15 @@ CONTAINS
     CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , mesh_new, C%output_dir, climate%snapshot_p_anml%snapshot_baseline%T2m)
     CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh_new, C%output_dir, climate%snapshot_p_anml%snapshot_baseline%Precip)
 
-    
+
     ! Update anomaly timeframes
     call update_climate_timeframes( mesh_new, climate, time)
 
     ! Interpolate between the two timeframes to find the applied anomaly
     call interpolate_between_climate_anomaly_timeframes(mesh_new, climate, time)
-    
+
     call apply_geometry_downscaling_corrections( mesh_new, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
-    
+
 
     IF (climate%snapshot_p_anml%snapshot_baseline%has_insolation .eqv. .TRUE.) THEN
       call remap_insolation( climate%snapshot_p_anml%snapshot_baseline, mesh_new)
@@ -351,7 +351,7 @@ CONTAINS
   end subroutine update_climate_timeframes
 
   subroutine interpolate_between_climate_anomaly_timeframes(mesh, climate, time)
-  ! Calculates anomalies by interpolating between the two 
+  ! Calculates anomalies by interpolating between the two
   ! timeframes to find the applied anomaly, then applies it to the climate variables
 
 

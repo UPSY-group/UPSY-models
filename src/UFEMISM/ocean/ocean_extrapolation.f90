@@ -4,7 +4,7 @@ module ocean_extrapolation
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use mesh_utilities, only: extrapolate_Gaussian
   use parameters, only: NaN
 

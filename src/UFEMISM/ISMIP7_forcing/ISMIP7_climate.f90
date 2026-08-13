@@ -60,7 +60,7 @@ module ISMIP7_climate
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
   use climate_model_basic, only: atype_climate_model

@@ -10,7 +10,7 @@ module transects_main
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use transect_types, only: atype_transect, type_transect
   use UPSY_main, only: UPSY
   use netcdf_io_main

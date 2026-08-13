@@ -9,7 +9,7 @@ module bed_roughness_nudging_main
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use bed_roughness_model_types, only: type_bed_roughness_model
   use region_types, only: type_model_region
   use bed_roughness_nudging_H_dHdt_flowline, only: initialise_bed_roughness_nudging_H_dHdt_flowline, run_bed_roughness_nudging_H_dHdt_flowline

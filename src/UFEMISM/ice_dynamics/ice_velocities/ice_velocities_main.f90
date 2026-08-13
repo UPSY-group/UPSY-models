@@ -10,7 +10,7 @@ module ice_velocities_main
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
+  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
     type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
   use ice_velocity_model_SIA, only: initialise_SIA_solver, solve_SIA, remap_SIA_solver
   use SSA_main, only: initialise_SSA_solver, solve_SSA, remap_SSA_solver, &

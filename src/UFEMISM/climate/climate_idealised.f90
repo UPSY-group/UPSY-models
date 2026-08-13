@@ -12,7 +12,7 @@ MODULE climate_idealised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
 
   IMPLICIT NONE

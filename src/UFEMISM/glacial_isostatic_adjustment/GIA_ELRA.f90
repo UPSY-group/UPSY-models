@@ -11,7 +11,7 @@ MODULE GIA_ELRA
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   USE GIA_model_types                                        , ONLY: type_GIA_model, type_ELRA_model
   USE region_types                                           , ONLY: type_model_region
   USE grid_basic                                             , ONLY: setup_square_grid

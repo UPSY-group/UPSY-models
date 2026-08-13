@@ -6,7 +6,7 @@ module BMB_inverted
   use mpi_basic, only: par
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use BMB_model_types, only: type_BMB_model_inverted
   use reference_geometry_types, only: type_reference_geometry
   use reference_geometries_main, only: reallocate_reference_geometry_on_mesh

@@ -13,7 +13,7 @@ module ut_SMB
   use mesh_refinement_basic, only: refine_mesh_uniform
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use mesh_disc_calc_matrix_operators_2D, only: calc_all_matrix_operators_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid

@@ -6,7 +6,7 @@ module bed_roughness_nudging_H_dHdt_local
   use parameters
   use mesh_types, only: type_mesh
   use grid_basic, only: type_grid
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_dHdt_local
   use mesh_utilities, only: extrapolate_Gaussian

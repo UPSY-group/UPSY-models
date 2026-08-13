@@ -12,7 +12,7 @@ MODULE climate_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model
   use SMB_model, only: atype_SMB_model
   use SMB_snapshot_plus_anomalies, only: type_SMB_model_snp_p_anml
   use reference_geometry_types, only: type_reference_geometry

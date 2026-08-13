@@ -6,7 +6,7 @@ module netcdf_bedrock_CDF
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: type_ice_model
   use netcdf_basic
   use netcdf, only: NF90_DOUBLE
 

@@ -32,9 +32,9 @@ contains
     !< Prescribe a target dHi_dt from a file without a time dimension
 
     ! In- and output variables
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
-    character(len=3),     intent(in   ) :: region_name
+    character(len=3),            intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'initialise_dHi_dt_target'
@@ -93,7 +93,7 @@ contains
     ! a steady-state mid-stream grounding-line position at x = 450 km in the MISMIP+ experiment
 
     ! In- and output variables
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:

@@ -31,7 +31,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
 
     ! Local variables:

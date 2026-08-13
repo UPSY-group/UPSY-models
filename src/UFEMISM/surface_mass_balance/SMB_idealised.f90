@@ -78,7 +78,7 @@ contains
 
     ! In/output variables:
     class(type_SMB_model_idealised), intent(inout) :: self
-    class(atype_ice_model_data),            intent(in   ) :: ice
+    class(atype_ice_model_data),     intent(in   ) :: ice
     type(type_reference_geometry),   intent(in   ) :: refgeo_init
     type(type_reference_geometry),   intent(in   ) :: refgeo_PD
 
@@ -101,7 +101,7 @@ contains
     ! In/output variables:
     class(type_SMB_model_idealised), intent(inout) :: self
     real(dp),                        intent(in   ) :: time
-    class(atype_ice_model_data),            intent(in   ) :: ice
+    class(atype_ice_model_data),     intent(in   ) :: ice
     type(type_climate_model),        intent(inout) :: climate
     type(type_grid),                 intent(in   ) :: grid_smooth
 
@@ -286,7 +286,7 @@ contains
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_model_data),          target, intent(in   ) :: ice
+    class(atype_ice_model_data),   target, intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_idealised_remap'

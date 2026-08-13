@@ -72,7 +72,7 @@ module climate_model_basic
     subroutine climate_model_run_ifc( self, ice, time)
       import atype_climate_model, atype_ice_model_data, dp
       class(atype_climate_model), intent(inout) :: self
-      class(atype_ice_model_data),       intent(in   ) :: ice
+      class(atype_ice_model_data),intent(in   ) :: ice
       real(dp),                   intent(in   ) :: time
     end subroutine climate_model_run_ifc
 
@@ -192,7 +192,7 @@ contains
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
-    class(atype_ice_model_data),       intent(in   ) :: ice
+    class(atype_ice_model_data),intent(in   ) :: ice
     real(dp),                   intent(in   ) :: time
 
     ! Local variables:

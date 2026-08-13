@@ -21,7 +21,7 @@ contains
     !< needed to perform the scaled vertical coordinate transformation
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:

@@ -69,7 +69,7 @@ contains
     ! In- and output variables:
     class(atype_ice_velocity_model_data),   intent(inout) :: vel
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
     class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
 

@@ -28,7 +28,7 @@ contains
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
     type(type_grid),                                     intent(in   ) :: grid_smooth
-    class(atype_ice_model_data),                                intent(in   ) :: ice
+    class(atype_ice_model_data),                         intent(in   ) :: ice
     type(type_reference_geometry),                       intent(in   ) :: target_geometry
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   ) :: bed_roughness_prev
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out) :: bed_roughness_next

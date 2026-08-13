@@ -40,7 +40,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                intent(inout) :: ice
+    class(atype_ice_model_data),         intent(inout) :: ice
     character(len=3),                    intent(in   ) :: region_name
 
     ! Local variables:
@@ -83,7 +83,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(inout) :: mesh
-    class(atype_ice_model_data),                   intent(inout) :: ice
+    class(atype_ice_model_data),            intent(inout) :: ice
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
     character(len=3),                       intent(in   ) :: region_name
@@ -184,7 +184,7 @@ contains
     !< Calculate all secondary ice velocities (surface, base, vertical average)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -298,8 +298,8 @@ contains
     !< Remap the velocity solver for the chosen stress balance approximation
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh_old
-    type(type_mesh),      intent(in   ) :: mesh_new
+    type(type_mesh),             intent(in   ) :: mesh_old
+    type(type_mesh),             intent(in   ) :: mesh_new
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -364,7 +364,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(inout) :: ice
+    class(atype_ice_model_data),        intent(inout) :: ice
     type(type_ice_velocity_solver_SIA), intent(in   ) :: SIA
 
     ! Local variables:
@@ -405,7 +405,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                intent(inout) :: ice
+    class(atype_ice_model_data),         intent(inout) :: ice
     type(type_ice_velocity_solver_SSA),  intent(in   ) :: SSA
 
     ! Local variables:
@@ -446,7 +446,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(inout) :: ice
+    class(atype_ice_model_data),        intent(inout) :: ice
     type(type_ice_velocity_solver_SIA), intent(in   ) :: SIA
     type(type_ice_velocity_solver_SSA), intent(in   ) :: SSA
 
@@ -523,7 +523,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                intent(inout) :: ice
+    class(atype_ice_model_data),         intent(inout) :: ice
     type(type_ice_velocity_solver_DIVA), intent(in   ) :: DIVA
 
     ! Local variables:
@@ -569,7 +569,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(inout) :: ice
+    class(atype_ice_model_data),        intent(inout) :: ice
     type(type_ice_velocity_solver_BPA), intent(in   ) :: BPA
 
     ! Local variables:
@@ -610,7 +610,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(inout) :: ice
+    class(atype_ice_model_data),            intent(inout) :: ice
     type(type_ice_velocity_solver_hybrid),  intent(in   ) :: hybrid
 
     ! Local variables:
@@ -652,9 +652,9 @@ contains
     !< Write to the restart NetCDF file for the ice velocity solver
 
     ! In/output variables:
-    type(type_mesh),     intent(in   ) :: mesh
+    type(type_mesh),            intent(in   ) :: mesh
     class(atype_ice_model_data),intent(in   ) :: ice
-    real(dp),            intent(in   ) :: time
+    real(dp),                   intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_restart_file_ice_velocity'
@@ -690,7 +690,7 @@ contains
     !< Create a restart NetCDF file for the ice velocity solver
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:

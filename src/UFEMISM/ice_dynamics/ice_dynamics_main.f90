@@ -197,7 +197,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),               intent(in   ) :: mesh
-    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_model_data),   intent(inout) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_reference_geometry), intent(in   ) :: refgeo_GIAeq
@@ -406,9 +406,9 @@ contains
     !< Write to all the restart files for the ice dynamics model
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
-    real(dp),             intent(in   ) :: time
+    real(dp),                    intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_restart_files_ice_model'
@@ -438,7 +438,7 @@ contains
     !< Create all the restart files for the ice dynamics model
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -471,7 +471,7 @@ contains
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh_old
     type(type_mesh),                intent(inout) :: mesh_new
-    class(atype_ice_model_data),           intent(inout) :: ice
+    class(atype_ice_model_data),    intent(inout) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
     type(type_reference_geometry),  intent(in   ) :: refgeo_PD
     class(atype_SMB_model),         intent(in   ) :: SMB
@@ -749,7 +749,7 @@ contains
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh_old
     type(type_mesh),                intent(inout) :: mesh
-    class(atype_ice_model_data),           intent(inout) :: ice
+    class(atype_ice_model_data),    intent(inout) :: ice
     type(type_bed_roughness_model), intent(in   ) :: bed_roughness
     class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB

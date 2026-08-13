@@ -30,7 +30,7 @@ CONTAINS
 
     ! Input variables:
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                INTENT(INOUT) :: ice
+    class(atype_ice_model_data),         INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_geothermal_heat_flux'

@@ -30,7 +30,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                INTENT(IN)    :: ice
+    class(atype_ice_model_data),         INTENT(IN)    :: ice
     TYPE(type_ocean_model),              INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
 
@@ -60,7 +60,7 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),                     intent(in)    :: mesh
-    class(atype_ice_model_data),                intent(in)    :: ice
+    class(atype_ice_model_data),         intent(in)    :: ice
     type(type_ocean_model),              intent(in)    :: ocean
     type(type_BMB_model),                intent(inout) :: BMB
 
@@ -122,7 +122,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                INTENT(IN)    :: ice
+    class(atype_ice_model_data),         INTENT(IN)    :: ice
     TYPE(type_ocean_model),              INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
 

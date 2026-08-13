@@ -32,7 +32,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh
-    class(atype_ice_model_data),           intent(in   ) :: ice
+    class(atype_ice_model_data),    intent(in   ) :: ice
     type(type_reference_geometry),  intent(in   ) :: target_geometry
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
 
@@ -118,7 +118,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                                intent(in   ) :: ice
+    class(atype_ice_model_data),                         intent(in   ) :: ice
     type(type_reference_geometry),                       intent(in   ) :: target_geometry
     type(type_bed_roughness_nudging_model_H_u_flowline), intent(inout) :: nudge
 
@@ -202,7 +202,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                                intent(in   ) :: ice
+    class(atype_ice_model_data),                         intent(in   ) :: ice
     type(type_bed_roughness_model),                      intent(in   ) :: bed_roughness
     type(type_bed_roughness_nudging_model_H_u_flowline), intent(inout) :: nudge
 

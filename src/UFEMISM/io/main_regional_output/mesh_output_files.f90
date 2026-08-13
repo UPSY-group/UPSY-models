@@ -1530,9 +1530,9 @@ contains
   subroutine write_grounding_line_to_file( filename, ncid, mesh, ice)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
+    character(len=*),            intent(in   ) :: filename
+    integer,                     intent(in   ) :: ncid
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
@@ -1568,9 +1568,9 @@ contains
   subroutine write_calving_front_to_file( filename, ncid, mesh, ice)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
+    character(len=*),            intent(in   ) :: filename
+    integer,                     intent(in   ) :: ncid
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
@@ -1606,9 +1606,9 @@ contains
   subroutine write_ice_margin_to_file( filename, ncid, mesh, ice)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
+    character(len=*),            intent(in   ) :: filename
+    integer,                     intent(in   ) :: ncid
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
@@ -1635,9 +1635,9 @@ contains
   subroutine write_coastline_to_file( filename, ncid, mesh, ice)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
+    character(len=*),            intent(in   ) :: filename
+    integer,                     intent(in   ) :: ncid
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
@@ -1673,9 +1673,9 @@ contains
   subroutine write_grounded_ice_contour_to_file( filename, ncid, mesh, ice)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
+    character(len=*),            intent(in   ) :: filename
+    integer,                     intent(in   ) :: ncid
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:

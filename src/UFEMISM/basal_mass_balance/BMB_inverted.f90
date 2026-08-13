@@ -27,7 +27,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),               intent(in   ) :: mesh
-    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_model_data),   intent(in   ) :: ice
     type(type_BMB_model_inverted), intent(inout) :: BMB_inv
     real(dp),                      intent(in   ) :: time
 

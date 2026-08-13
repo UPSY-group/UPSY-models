@@ -21,7 +21,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                       intent(in   ) :: mesh
-    class(atype_ice_model_data),                  intent(in   ) :: ice
+    class(atype_ice_model_data),           intent(in   ) :: ice
     logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_calc_dCdt_from_nudging
     logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_calc_dCdt_from_extrapolation
     integer, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_extrapolation

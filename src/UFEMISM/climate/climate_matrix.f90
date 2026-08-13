@@ -46,7 +46,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
-    class(atype_ice_model_data),                intent(in)    :: ice
+    class(atype_ice_model_data),         intent(in)    :: ice
     class(atype_SMB_model),              intent(in)    :: SMB
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
@@ -105,7 +105,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
-    class(atype_ice_model_data),                intent(in)    :: ice
+    class(atype_ice_model_data),         intent(in)    :: ice
     type(type_SMB_model_IMAU_ITM),       intent(in)    :: IMAU_ITM
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
@@ -296,7 +296,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
-    class(atype_ice_model_data),                intent(in)    :: ice
+    class(atype_ice_model_data),         intent(in)    :: ice
     type(type_climate_model),            intent(inout) :: climate
     type(type_global_forcing),           intent(in)    :: forcing
     character(LEN=3),                    intent(in)    :: region_name
@@ -369,7 +369,7 @@ contains
     ! In/output variables
     type(type_mesh),                         intent(in)    :: mesh
     type(type_grid),                         intent(in)    :: grid
-    class(atype_ice_model_data),                    intent(in)    :: ice
+    class(atype_ice_model_data),             intent(in)    :: ice
     type(type_climate_model),                intent(inout) :: climate
     character(LEN=3),                        intent(in)    :: region_name
     type(type_global_forcing),               intent(in)    :: forcing
@@ -442,7 +442,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid !used to smooth later on, check if grid is called during initialise
-    class(atype_ice_model_data),                intent(in)    :: ice
+    class(atype_ice_model_data),         intent(in)    :: ice
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
     type(type_global_forcing),           intent(in)    :: forcing
@@ -746,7 +746,7 @@ contains
     type(type_climate_model_snapshot),    intent(inout) :: snapshot
     character(LEN=3),                     intent(in)    :: region_name
     type(type_global_forcing),            intent(in)    :: forcing
-    class(atype_ice_model_data),                 intent(in)    :: ice
+    class(atype_ice_model_data),          intent(in)    :: ice
 
     ! Local variables:
     character(LEN=256), parameter         :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
@@ -875,7 +875,7 @@ contains
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
     type(type_grid),                        intent(in)    :: grid
-    class(atype_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),            intent(in)    :: ice
     type(type_global_forcing),              intent(in)    :: forcing
     ! Local variables:
     character(LEN=256), parameter                         :: routine_name = 'remap_climate_matrix_model'

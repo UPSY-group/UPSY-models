@@ -22,7 +22,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_model_data),      intent(inout) :: ice
     real(dp),                         intent(in   ) :: time
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
 
@@ -107,7 +107,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_model_data),      intent(inout) :: ice
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -147,7 +147,7 @@ contains
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    class(atype_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),            intent(in)    :: ice
     TYPE(type_basal_hydrology_model),       INTENT(INOUT) :: basal_hydro
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -187,7 +187,7 @@ contains
   subroutine calc_pore_water_pressure_none( mesh, ice)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -213,7 +213,7 @@ contains
     ! Calculate pore water pressure according to the parameterisation from Martin et al. (2011)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -243,7 +243,7 @@ contains
     ! Calculate pore water pressure as an error function
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -276,7 +276,7 @@ contains
     ! Calculate effective pressure based on Leguy et al. (2014)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
@@ -311,7 +311,7 @@ contains
     ! Calculate pore water pressure as an error function
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:

@@ -23,9 +23,9 @@ contains
   subroutine create_ice_only_graph_pair( mesh, ice, graphs)
 
     ! In/output variables:
-    type(type_mesh),       intent(in   ) :: mesh
+    type(type_mesh),              intent(in   ) :: mesh
     class(atype_ice_model_data),  intent(in   ) :: ice
-    type(type_graph_pair), intent(  out) :: graphs
+    type(type_graph_pair),        intent(  out) :: graphs
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'create_ice_only_graph_pair'

@@ -22,9 +22,9 @@ contains
     !< Set up a bedrock CDF in an existing NetCDF file
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
+    type(type_mesh),             intent(in   ) :: mesh
+    character(len=*),            intent(in   ) :: filename
+    integer,                     intent(in   ) :: ncid
     class(atype_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:

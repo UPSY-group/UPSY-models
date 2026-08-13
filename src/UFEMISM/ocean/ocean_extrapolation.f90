@@ -17,7 +17,7 @@ contains
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    class(atype_ice_model_data),                              intent(in)    :: ice
+    class(atype_ice_model_data),                       intent(in)    :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
 
     ! Local variables
@@ -53,7 +53,7 @@ contains
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    class(atype_ice_model_data),                              intent(in)    :: ice
+    class(atype_ice_model_data),                       intent(in)    :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
 
     ! Local variables
@@ -82,7 +82,7 @@ contains
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    class(atype_ice_model_data),                              intent(in)    :: ice
+    class(atype_ice_model_data),                       intent(in)    :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
     real(dp),                                          intent(in)    :: sigma
 

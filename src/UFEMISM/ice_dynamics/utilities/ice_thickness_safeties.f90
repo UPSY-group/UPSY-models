@@ -29,14 +29,14 @@ contains
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_old
+    type(type_mesh),                                          intent(in   ) :: mesh
+    class(atype_ice_model_data),                              intent(in   ) :: ice
+    real(dp), dimension(mesh%vi1:mesh%vi2),                   intent(in   ) :: Hi_old
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
-    type(type_reference_geometry),          intent(in   ) :: refgeo
-    real(dp),                               intent(in   ) :: time
+    real(dp), dimension(mesh%vi1:mesh%vi2),                   intent(inout) :: Hi_new
+    type(type_reference_geometry),                            intent(in   ) :: refgeo
+    real(dp),                                                 intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter             :: routine_name = 'alter_ice_thickness'

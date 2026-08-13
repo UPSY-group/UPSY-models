@@ -113,7 +113,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                       intent(inout) :: mesh
-    class(atype_ice_model_data),                  intent(inout) :: ice
+    class(atype_ice_model_data),           intent(inout) :: ice
     type(type_bed_roughness_model),        intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
     character(len=3),                      intent(in   ) :: region_name
@@ -658,7 +658,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
     type(type_ice_velocity_solver_hybrid),  intent(inout) :: hybrid
     integer,                                intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
     integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
@@ -1120,11 +1120,11 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
     type(type_ice_velocity_solver_BPA),     intent(inout) :: BPA
     integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
     logical,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: mask_BPA_b            ! T: solve the BPA here, F: otherwise
-    type(type_CSR_matrix_dp),        intent(  out) :: A_BPA
+    type(type_CSR_matrix_dp),               intent(  out) :: A_BPA
     real(dp), dimension(:), allocatable,    intent(  out) :: b_BPA
 
     ! Local variables:

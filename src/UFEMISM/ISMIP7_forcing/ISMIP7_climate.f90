@@ -301,7 +301,7 @@ contains
 
     ! In/output variables:
     class(type_climate_model_ISMIP7), intent(inout) :: self
-    class(atype_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_model_data),      intent(in   ) :: ice
     real(dp),                         intent(in   ) :: time
 
     ! Local variables:

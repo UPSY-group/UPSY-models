@@ -282,9 +282,9 @@ contains
     !< rate of change (Robinson et al., 2020, Eq. 32)
 
     ! In- and output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_ice_pc),    intent(inout) :: pc
+    type(type_ice_pc),           intent(inout) :: pc
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_pc_truncation_error'
@@ -319,10 +319,10 @@ contains
     !< rate of change (Robinson et al., 2020, Eq. 32)
 
     ! In- and output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_ice_pc),    intent(inout) :: pc
-    integer,              intent(  out) :: n_guilty, n_tot
+    type(type_ice_pc),           intent(inout) :: pc
+    integer,                     intent(  out) :: n_guilty, n_tot
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_n_guilty'

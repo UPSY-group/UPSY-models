@@ -44,7 +44,7 @@ CONTAINS
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     TYPE(type_grid),             target,    INTENT(IN)    :: grid
-    class(atype_ice_model_data),        target,    INTENT(IN)    :: ice
+    class(atype_ice_model_data), target,    INTENT(IN)    :: ice
     TYPE(type_climate_model),    target,    INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -141,7 +141,7 @@ CONTAINS
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     type(type_grid),                        intent(in)    :: grid
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(OUT)   :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     type(type_reference_geometry),          intent(in)    :: refgeo_PD

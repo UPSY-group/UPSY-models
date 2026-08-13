@@ -67,7 +67,7 @@ contains
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
     TYPE(type_grid),                     INTENT(IN)    :: grid
-    class(atype_ice_model_data),                INTENT(INOUT) :: ice
+    class(atype_ice_model_data),         INTENT(INOUT) :: ice
     TYPE(type_GIA_model),                INTENT(INOUT) :: GIA
     TYPE(type_ELRA_model),               INTENT(INOUT) :: ELRA
 

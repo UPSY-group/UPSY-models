@@ -42,7 +42,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -78,7 +78,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
 
@@ -176,7 +176,7 @@ CONTAINS
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_old
     type(type_mesh),                        intent(in)    :: mesh_new
-    class(atype_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),            intent(in)    :: ice
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
 

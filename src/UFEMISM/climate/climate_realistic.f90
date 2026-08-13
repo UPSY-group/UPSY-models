@@ -46,7 +46,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     REAL(dp),                               INTENT(IN)    :: time
@@ -91,7 +91,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -190,7 +190,7 @@ CONTAINS
     IMPLICIT NONE
 
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                  INTENT(IN)    :: ice
+    class(atype_ice_model_data),           INTENT(IN)    :: ice
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
 
     ! Local Variables

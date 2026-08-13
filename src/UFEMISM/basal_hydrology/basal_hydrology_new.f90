@@ -36,7 +36,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_model_data),      intent(inout) :: ice
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
     real(dp),                         intent(in   ) :: time
 
@@ -79,7 +79,7 @@ CONTAINS
   subroutine basal_hydrology(mesh, ice, basal_hydro, time)
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_model_data),      intent(inout) :: ice
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
     real(dp),                         intent(in)    :: time
 
@@ -166,7 +166,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(  out) :: basal_hydro
 
     ! Local variables:
@@ -268,7 +268,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -299,7 +299,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
     real(dp),                           intent(in   ) :: W_min, W_max, W_min_til, W_max_til, P_min
 
@@ -418,7 +418,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -512,7 +512,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
     real(dp),                           intent(in   ) :: P_min
 
@@ -569,7 +569,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
     real(dp),                           intent(in   ) :: W_max_til
 
@@ -601,7 +601,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
     real(dp),                           intent(in   ) :: W_min, W_max, W_min_til, W_max_til
 
@@ -737,7 +737,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
-    class(atype_ice_model_data),                   intent(in   )    :: ice
+    class(atype_ice_model_data),            intent(in   )    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
@@ -826,7 +826,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),               intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_basal_hydrology_model),   intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -900,7 +900,7 @@ CONTAINS
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
-    class(atype_ice_model_data),                   intent(in   )    :: ice
+    class(atype_ice_model_data),            intent(in   )    :: ice
     logical,                                intent(in   )    :: test
 
     ! Local variables:
@@ -932,7 +932,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
-    class(atype_ice_model_data),                   intent(in   )    :: ice
+    class(atype_ice_model_data),            intent(in   )    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
@@ -972,7 +972,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
-    class(atype_ice_model_data),                   intent(in   )    :: ice
+    class(atype_ice_model_data),            intent(in   )    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
@@ -1045,7 +1045,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
-    class(atype_ice_model_data),                   intent(in   )    :: ice
+    class(atype_ice_model_data),            intent(in   )    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
@@ -1078,7 +1078,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
-    class(atype_ice_model_data),                   intent(in   )    :: ice
+    class(atype_ice_model_data),            intent(in   )    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
@@ -1110,7 +1110,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
     type(type_basal_hydrology_model),       intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -1256,7 +1256,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
     type(type_basal_hydrology_model),       intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -1429,7 +1429,7 @@ CONTAINS
 
     ! In/output variables:
     type(type_mesh),                        intent(in   )    :: mesh
-    class(atype_ice_model_data),                   intent(inout)    :: ice
+    class(atype_ice_model_data),            intent(inout)    :: ice
     type(type_basal_hydrology_model),       intent(inout)    :: basal_hydro
 
     ! Local variables:
@@ -1461,7 +1461,7 @@ CONTAINS
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_basal_hydrology_model),       INTENT(INOUT) :: basal_hydro
     REAL(dp),                               INTENT(IN)    :: time
 

@@ -1157,10 +1157,10 @@ contains
   subroutine remap_ISMIP_output( mesh_old, mesh_new, ice, ismip_output)
     ! Reallocate the accumulated fields and redefine Hi_prev
 
-    type(type_mesh),                   intent(in   ) :: mesh_old
-    type(type_mesh),                   intent(in   ) :: mesh_new
-    class(atype_ice_model_data),              intent(in   ) :: ice
-    type(type_ismip_output),      intent(inout) :: ismip_output
+    type(type_mesh),             intent(in   ) :: mesh_old
+    type(type_mesh),             intent(in   ) :: mesh_new
+    class(atype_ice_model_data), intent(in   ) :: ice
+    type(type_ismip_output),     intent(inout) :: ismip_output
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'remap_ISMIP_output'

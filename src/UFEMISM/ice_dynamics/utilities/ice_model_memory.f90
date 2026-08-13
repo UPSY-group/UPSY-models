@@ -19,9 +19,9 @@ contains
   subroutine allocate_ice_model( mesh, ice, region_name)
 
     ! In- and output variables
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(  out) :: ice
-    character(len=*),     intent(in   ) :: region_name
+    character(len=*),            intent(in   ) :: region_name
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'allocate_ice_model'

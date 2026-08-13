@@ -33,7 +33,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     REAL(dp),                               INTENT(IN)    :: time
     LOGICAL,                                INTENT(IN)    :: do_hybrid  ! If .TRUE. run laddie within ROI, and a different BMB model outside ROI. If .FALSE. run laddie for the full domain.

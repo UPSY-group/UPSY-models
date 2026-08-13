@@ -32,7 +32,7 @@ subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_nam
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    class(atype_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),            intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run

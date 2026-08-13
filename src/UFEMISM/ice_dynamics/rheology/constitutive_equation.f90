@@ -85,7 +85,7 @@ contains
     !< Calculate the flow factor A in Glen's flow law
 
     ! In/output variables
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:

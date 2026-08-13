@@ -31,7 +31,7 @@ subroutine run_LMB_model_GlacialIndex(mesh, ice, LMB, time)
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_LMB_model),                   INTENT(INOUT) :: LMB
     REAL(dp),                               INTENT(IN)    :: time
 

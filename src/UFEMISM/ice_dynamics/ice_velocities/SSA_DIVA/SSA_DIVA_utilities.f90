@@ -25,7 +25,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: tau_dx_b, tau_dy_b
 
     ! Local variables:

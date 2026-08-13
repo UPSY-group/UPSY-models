@@ -34,7 +34,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                            intent(in   ) :: mesh
-    class(atype_ice_model_data),                       intent(in   ) :: ice
+    class(atype_ice_model_data),                intent(in   ) :: ice
     type(type_tracer_tracking_model_particles), intent(  out) :: particles
 
     ! Local variables:
@@ -97,7 +97,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                             intent(in   ) :: mesh
-    class(atype_ice_model_data),                        intent(in   ) :: ice
+    class(atype_ice_model_data),                 intent(in   ) :: ice
     class(atype_SMB_model),                      intent(in   ) :: SMB
     type(type_tracer_tracking_model_particles),  intent(inout) :: particles
     real(dp),                                    intent(in   ) :: time
@@ -157,7 +157,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                            intent(in   ) :: mesh
-    class(atype_ice_model_data),                       intent(in   ) :: ice
+    class(atype_ice_model_data),                intent(in   ) :: ice
     class(atype_SMB_model),                     intent(in   ) :: SMB
     type(type_tracer_tracking_model_particles), intent(in   ) :: particles
     real(dp), dimension(mesh%nV),               intent(  out) :: Hi_tot, Hs_tot

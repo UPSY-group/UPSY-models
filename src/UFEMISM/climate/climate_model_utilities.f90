@@ -477,7 +477,7 @@ module climate_model_utilities
     IMPLICIT NONE
 
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                  INTENT(IN)    :: ice
+    class(atype_ice_model_data),           INTENT(IN)    :: ice
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
     TYPE(type_climate_model_snapshot),     INTENT(IN)    :: snapshot
     REAL(dp),                              INTENT(IN)    :: deltaT_snapshot

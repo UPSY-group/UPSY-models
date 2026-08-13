@@ -814,11 +814,11 @@ contains
   subroutine write_to_transect_netcdf_output_file( mesh, ice, BMB, transect, time)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_BMB_model), intent(in   ) :: BMB
-    type(type_transect),  intent(in   ) :: transect
-    real(dp),             intent(in   ) :: time
+    type(type_BMB_model),        intent(in   ) :: BMB
+    type(type_transect),         intent(in   ) :: transect
+    real(dp),                    intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter                      :: routine_name = 'write_to_transect_netcdf_output_file'

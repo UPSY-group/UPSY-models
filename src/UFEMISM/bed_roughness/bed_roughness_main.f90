@@ -33,7 +33,7 @@ contains
 
     ! Input variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                intent(in   ) :: ice
+    class(atype_ice_model_data),         intent(in   ) :: ice
     type(type_bed_roughness_model),      intent(  out) :: bed_roughness
     character(len=3),                    intent(in   ) :: region_name
 
@@ -80,7 +80,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh_old
     type(type_mesh),                     intent(in   ) :: mesh_new
-    class(atype_ice_model_data),                intent(in   ) :: ice
+    class(atype_ice_model_data),         intent(in   ) :: ice
     type(type_bed_roughness_model),      intent(inout) :: bed_roughness
     character(len=3),                    intent(in   ) :: region_name
 
@@ -181,7 +181,7 @@ contains
 
     ! Input variables:
     type(type_mesh),                intent(in   ) :: mesh
-    class(atype_ice_model_data),           intent(in   ) :: ice
+    class(atype_ice_model_data),    intent(in   ) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
 
     ! Local variables:
@@ -211,7 +211,7 @@ contains
 
     ! Input variables:
     type(type_mesh),                intent(in   ) :: mesh
-    class(atype_ice_model_data),           intent(in   ) :: ice
+    class(atype_ice_model_data),    intent(in   ) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
 
     ! Local variables:

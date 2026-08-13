@@ -1350,7 +1350,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                                     INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                                INTENT(IN)    :: ice
+    class(atype_ice_model_data),                         INTENT(IN)    :: ice
     REAL(dp),                                            INTENT(OUT)   :: f
 
     ! Local variables:

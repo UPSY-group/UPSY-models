@@ -31,7 +31,7 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),                    intent(in)    :: mesh
-    class(atype_ice_model_data),               intent(in)    :: ice
+    class(atype_ice_model_data),        intent(in)    :: ice
     type(type_ocean_model),             intent(inout) :: ocean
 
     ! Local variables:
@@ -74,7 +74,7 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),                    intent(in)    :: mesh
-    class(atype_ice_model_data),               intent(in)    :: ice
+    class(atype_ice_model_data),        intent(in)    :: ice
     type(type_ocean_model),             intent(inout) :: ocean
 
     ! Local variables:

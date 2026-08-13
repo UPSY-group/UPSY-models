@@ -31,7 +31,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -105,7 +105,7 @@ CONTAINS
     IMPLICIT NONE
 
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                 INTENT(IN)    :: ice
+    class(atype_ice_model_data),          INTENT(IN)    :: ice
     TYPE(type_climate_model),             INTENT(INOUT) :: climate
     REAL(dp),                             INTENT(IN)    :: time
 

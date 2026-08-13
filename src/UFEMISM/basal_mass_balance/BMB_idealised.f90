@@ -29,7 +29,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -59,7 +59,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                INTENT(IN)    :: ice
+    class(atype_ice_model_data),         INTENT(IN)    :: ice
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
     REAL(dp),                            INTENT(IN)    :: time
 

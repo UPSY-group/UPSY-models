@@ -29,7 +29,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                  intent(in   ) :: mesh
-    class(atype_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_model_data),      intent(in   ) :: ice
     class(atype_SMB_model),           intent(in   ) :: SMB
     type(type_tracer_tracking_model), intent(inout) :: tracer_tracking
     real(dp),                         intent(in   ) :: time
@@ -74,7 +74,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                  intent(in   ) :: mesh
-    class(atype_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_model_data),      intent(in   ) :: ice
     type(type_tracer_tracking_model), intent(inout) :: tracer_tracking
 
     ! Local variables:

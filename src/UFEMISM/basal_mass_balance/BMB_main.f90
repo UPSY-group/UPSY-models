@@ -49,7 +49,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_reference_geometry),          INTENT(IN)    :: refgeo
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
@@ -261,7 +261,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                   INTENT(OUT)   :: BMB
     type(type_reference_geometry),          intent(in   ) :: refgeo_PD, refgeo_init
@@ -709,7 +709,7 @@ CONTAINS
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -804,7 +804,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
 
     ! Local variables:
@@ -834,7 +834,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
 
     ! Local variables:
@@ -863,8 +863,8 @@ CONTAINS
   subroutine compute_subgrid_BMB(ice, BMB, vi)
 
     class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_BMB_model), intent(inout) :: BMB
-    integer             , intent(in   ) :: vi
+    type(type_BMB_model),        intent(inout) :: BMB
+    integer             ,        intent(in   ) :: vi
 
     ! Determine which sub-grid scheme to apply
     select case (C%choice_BMB_subgrid)
@@ -899,11 +899,11 @@ CONTAINS
   subroutine update_laddie_forcing( mesh, ice, ocean, forcing, region_name)
 
     ! In/output variables
-    type(type_mesh),           intent(in   ) :: mesh
-    class(atype_ice_model_data),      intent(in   ) :: ice
-    type(type_ocean_model),    intent(in   ) :: ocean
-    type(type_laddie_forcing), intent(inout) :: forcing
-    character(len=3),          intent(in   ) :: region_name
+    type(type_mesh),             intent(in   ) :: mesh
+    class(atype_ice_model_data), intent(in   ) :: ice
+    type(type_ocean_model),      intent(in   ) :: ocean
+    type(type_laddie_forcing),   intent(inout) :: forcing
+    character(len=3),            intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_laddie_forcing'

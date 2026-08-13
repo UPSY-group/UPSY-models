@@ -67,7 +67,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                intent(inout) :: ice
+    class(atype_ice_model_data),         intent(inout) :: ice
     type(type_ice_velocity_solver_SIA),  intent(inout) :: SIA
 
     ! Local variables:

@@ -27,7 +27,7 @@ contains
 
     ! In- and output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),                intent(in   ) :: ice
+    class(atype_ice_model_data),         intent(in   ) :: ice
     real(dp),                            intent(  out) :: dt_crit_SIA
 
     ! Local variables:
@@ -82,9 +82,9 @@ contains
     !< Calculate the critical time step for advective ice flow (CFL criterion)
 
     ! In- and output variables:
-    type(type_mesh),      intent(in   ) :: mesh
+    type(type_mesh),             intent(in   ) :: mesh
     class(atype_ice_model_data), intent(in   ) :: ice
-    real(dp),             intent(  out) :: dt_crit_adv
+    real(dp),                    intent(  out) :: dt_crit_adv
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_critical_timestep_adv'

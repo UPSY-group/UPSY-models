@@ -138,7 +138,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)              :: mesh
-    class(atype_ice_model_data),                INTENT(IN)              :: ice
+    class(atype_ice_model_data),         INTENT(IN)              :: ice
     REAL(dp),                            INTENT(IN)              :: time
 
     ! Local variables:
@@ -169,7 +169,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)              :: mesh
-    class(atype_ice_model_data),                INTENT(INOUT)           :: ice
+    class(atype_ice_model_data),         INTENT(INOUT)           :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                                :: routine_name = 'create_restart_file_thermo'
@@ -201,7 +201,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
@@ -256,7 +256,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
 
     ! Local variables:
@@ -307,7 +307,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
 
     ! Local variables:
@@ -356,7 +356,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
 
@@ -395,7 +395,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    class(atype_ice_model_data),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
 
     ! Local variables:

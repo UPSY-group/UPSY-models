@@ -81,11 +81,11 @@ contains
     !   gr ---------- fl ---------- oc ---------- oc
 
     ! In/output variables
-    type(type_mesh),           intent(out  ) :: mesh
-    class(atype_ice_model_data),      intent(out  ) :: ice
-    type(type_ocean_model),    intent(out  ) :: ocean
-    type(type_laddie_model),   intent(out  ) :: laddie
-    type(type_laddie_forcing), intent(out  ) :: forcing
+    type(type_mesh),             intent(out  ) :: mesh
+    class(atype_ice_model_data), intent(out  ) :: ice
+    type(type_ocean_model),      intent(out  ) :: ocean
+    type(type_laddie_model),     intent(out  ) :: laddie
+    type(type_laddie_forcing),   intent(out  ) :: forcing
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_dummy_domain_16'

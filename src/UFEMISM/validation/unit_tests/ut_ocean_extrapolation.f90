@@ -15,7 +15,7 @@ module ut_ocean_extrapolation
   use mesh_dummy_meshes, only: initialise_dummy_mesh_5
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use grid_basic, only: setup_square_grid
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use ice_model_memory, only: allocate_ice_model
   use ocean_model_types, only: type_ocean_model
   use ocean_utilities , only: initialise_ocean_vertical_grid
@@ -46,7 +46,7 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
   character(len=1024)            :: name
   type(type_mesh)                :: mesh
   integer                        :: vi, k, ierr
-  type(type_ice_model)           :: ice
+  type(type_ice_model_data)           :: ice
   type(type_ocean_model)         :: ocean
   logical                        :: test_result
   real(dp), parameter            :: sigma = 12e3

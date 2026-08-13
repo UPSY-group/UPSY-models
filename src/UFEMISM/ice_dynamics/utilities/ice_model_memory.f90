@@ -5,7 +5,7 @@ module ice_model_memory
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use ice_velocity_model, only: create_ice_velocity_model
 
   implicit none
@@ -20,7 +20,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(  out) :: ice
+    type(type_ice_model_data), intent(  out) :: ice
     character(len=*),     intent(in   ) :: region_name
 
     ! Local variables:

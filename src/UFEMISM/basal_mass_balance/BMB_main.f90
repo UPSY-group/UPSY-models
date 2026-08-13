@@ -12,7 +12,7 @@ MODULE BMB_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE BMB_model_types                                        , ONLY: type_BMB_model
@@ -49,7 +49,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_reference_geometry),          INTENT(IN)    :: refgeo
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
@@ -261,7 +261,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                   INTENT(OUT)   :: BMB
     type(type_reference_geometry),          intent(in   ) :: refgeo_PD, refgeo_init
@@ -709,7 +709,7 @@ CONTAINS
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -804,7 +804,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
 
     ! Local variables:
@@ -834,7 +834,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
 
     ! Local variables:
@@ -862,7 +862,7 @@ CONTAINS
 
   subroutine compute_subgrid_BMB(ice, BMB, vi)
 
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
     type(type_BMB_model), intent(inout) :: BMB
     integer             , intent(in   ) :: vi
 
@@ -900,7 +900,7 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),           intent(in   ) :: mesh
-    type(type_ice_model),      intent(in   ) :: ice
+    type(type_ice_model_data),      intent(in   ) :: ice
     type(type_ocean_model),    intent(in   ) :: ocean
     type(type_laddie_forcing), intent(inout) :: forcing
     character(len=3),          intent(in   ) :: region_name

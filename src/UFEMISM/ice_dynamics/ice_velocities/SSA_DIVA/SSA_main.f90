@@ -11,7 +11,7 @@ module SSA_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_SSA
+  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_SSA
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, ddx_b_a_2D, ddy_b_a_2D, map_b_a_2D
@@ -88,7 +88,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
     integer,                            intent(  out) :: n_visc_its            ! Number of non-linear viscosity iterations
@@ -314,7 +314,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_ice_velocity_solver_SSA),  intent(inout) :: SSA
 
     ! Local variables:
@@ -341,7 +341,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
     real(dp),                           intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
@@ -401,7 +401,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_SSA), intent(inout) :: SSA
 

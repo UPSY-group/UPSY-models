@@ -11,7 +11,7 @@ module BPA_main
   use model_configuration, only: C
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_BPA
+  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_BPA
   use parameters
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_3D, ddy_b_a_3D, calc_3D_gradient_bk_ak, calc_3D_gradient_bk_bks, &
@@ -93,7 +93,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(inout) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
     integer,                            intent(  out) :: n_visc_its            ! Number of non-linear viscosity iterations
@@ -332,7 +332,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                intent(in   ) :: mesh
-    type(type_ice_model),                           intent(in   ) :: ice
+    type(type_ice_model_data),                           intent(in   ) :: ice
     type(type_ice_velocity_solver_BPA),             intent(inout) :: BPA
     integer,                                        intent(  out) :: n_Axb_its              ! Number of iterations used in the iterative solver
     integer,  dimension(mesh%ti1:mesh%ti2,mesh%nz), intent(in   ) :: BC_prescr_mask_bk      ! Mask of triangles where velocity is prescribed
@@ -713,7 +713,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in   )           :: mesh
     type(type_ice_velocity_solver_BPA),  intent(in   )           :: BPA
-    type(type_ice_model),                intent(in   )           :: ice
+    type(type_ice_model_data),                intent(in   )           :: ice
     type(type_CSR_matrix_dp),     intent(inout)           :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout)        :: bb
     integer,                             intent(in   )           :: row_tikuv
@@ -972,7 +972,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_ice_model),                   intent(in   ) :: ice
+    type(type_ice_model_data),                   intent(in   ) :: ice
     type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
@@ -1729,7 +1729,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(in   ) :: ice
+    type(type_ice_model_data),               intent(in   ) :: ice
     type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
 
     ! Local variables:
@@ -1814,7 +1814,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
     real(dp),                           intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
@@ -1939,7 +1939,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
 

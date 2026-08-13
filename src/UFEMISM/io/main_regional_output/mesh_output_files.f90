@@ -8,7 +8,7 @@ module mesh_output_files
   use grid_basic, only: type_grid
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use netcdf_io_main
   use netcdf_bedrock_CDF
   use netcdf, only: NF90_DOUBLE
@@ -1533,7 +1533,7 @@ contains
     character(len=*),     intent(in   ) :: filename
     integer,              intent(in   ) :: ncid
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_grounding_line_to_file'
@@ -1571,7 +1571,7 @@ contains
     character(len=*),     intent(in   ) :: filename
     integer,              intent(in   ) :: ncid
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_calving_front_to_file'
@@ -1609,7 +1609,7 @@ contains
     character(len=*),     intent(in   ) :: filename
     integer,              intent(in   ) :: ncid
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_ice_margin_to_file'
@@ -1638,7 +1638,7 @@ contains
     character(len=*),     intent(in   ) :: filename
     integer,              intent(in   ) :: ncid
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_coastline_to_file'
@@ -1676,7 +1676,7 @@ contains
     character(len=*),     intent(in   ) :: filename
     integer,              intent(in   ) :: ncid
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_grounded_ice_contour_to_file'

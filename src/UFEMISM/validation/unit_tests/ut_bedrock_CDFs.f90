@@ -16,7 +16,7 @@ module ut_bedrock_CDFs
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use reference_geometry_types, only: type_reference_geometry
   use grid_basic, only: setup_square_grid
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use mesh_translation_tables, only: calc_field_to_vector_form_translation_tables
 
   implicit none
@@ -43,7 +43,7 @@ subroutine unit_tests_bedrock_CDFs_main( test_name_parent)
   type(type_reference_geometry)  :: refgeo
   real(dp)                       :: dx
   integer                        :: n,i,j,vi,ti,ierr
-  type(type_ice_model)           :: ice
+  type(type_ice_model_data)           :: ice
   logical                        :: test_result
 
   ! Add routine to call stack

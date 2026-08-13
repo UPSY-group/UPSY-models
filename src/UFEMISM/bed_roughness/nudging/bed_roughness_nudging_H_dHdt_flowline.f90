@@ -10,7 +10,7 @@ module bed_roughness_nudging_H_dHdt_flowline
   use parameters
   use mesh_types, only: type_mesh
   use grid_basic, only: type_grid
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_dHdt_flowline
   use mesh_utilities, only: extrapolate_Gaussian
@@ -35,7 +35,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
     type(type_grid),                     intent(in   ) :: grid_smooth
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_reference_geometry),       intent(in   ) :: target_geometry
     type(type_bed_roughness_model),      intent(inout) :: bed_roughness
 
@@ -104,7 +104,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                        intent(in   ) :: mesh
-    type(type_ice_model),                                   intent(in   ) :: ice
+    type(type_ice_model_data),                                   intent(in   ) :: ice
     type(type_reference_geometry),                          intent(in   ) :: target_geometry
     type(type_bed_roughness_nudging_model_H_dHdt_flowline), intent(inout) :: nudge
 
@@ -180,7 +180,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                        intent(in   ) :: mesh
-    type(type_ice_model),                                   intent(in   ) :: ice
+    type(type_ice_model_data),                                   intent(in   ) :: ice
     type(type_grid),                                        intent(in   ) :: grid_smooth
     type(type_bed_roughness_model),                         intent(in   ) :: bed_roughness
     type(type_bed_roughness_nudging_model_H_dHdt_flowline), intent(inout) :: nudge
@@ -229,7 +229,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
+    type(type_ice_model_data),                   intent(in   ) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: dC_dt
 
     ! Local variables:

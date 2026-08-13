@@ -10,7 +10,7 @@ module transects_main
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use transect_types, only: atype_transect, type_transect
   use UPSY_main, only: UPSY
   use netcdf_io_main
@@ -815,7 +815,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
     type(type_BMB_model), intent(in   ) :: BMB
     type(type_transect),  intent(in   ) :: transect
     real(dp),             intent(in   ) :: time

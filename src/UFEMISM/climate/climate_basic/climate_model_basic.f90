@@ -9,7 +9,7 @@ module climate_model_basic
   use fields_main, only: third_dimension
   use climate_model_data, only: atype_climate_model_data
   use mpi_f08, only: MPI_WIN
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
 
   implicit none
@@ -70,9 +70,9 @@ module climate_model_basic
     end subroutine climate_model_initialise_ifc
 
     subroutine climate_model_run_ifc( self, ice, time)
-      import atype_climate_model, type_ice_model, dp
+      import atype_climate_model, type_ice_model_data, dp
       class(atype_climate_model), intent(inout) :: self
-      type(type_ice_model),       intent(in   ) :: ice
+      type(type_ice_model_data),       intent(in   ) :: ice
       real(dp),                   intent(in   ) :: time
     end subroutine climate_model_run_ifc
 
@@ -192,7 +192,7 @@ contains
 
     ! In/output variables:
     class(atype_climate_model), intent(inout) :: self
-    type(type_ice_model),       intent(in   ) :: ice
+    type(type_ice_model_data),       intent(in   ) :: ice
     real(dp),                   intent(in   ) :: time
 
     ! Local variables:

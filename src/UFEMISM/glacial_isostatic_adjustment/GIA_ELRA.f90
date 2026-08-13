@@ -11,7 +11,7 @@ MODULE GIA_ELRA
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE GIA_model_types                                        , ONLY: type_GIA_model, type_ELRA_model
   USE region_types                                           , ONLY: type_model_region
   USE grid_basic                                             , ONLY: setup_square_grid
@@ -67,7 +67,7 @@ contains
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
     TYPE(type_grid),                     INTENT(IN)    :: grid
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
     TYPE(type_GIA_model),                INTENT(INOUT) :: GIA
     TYPE(type_ELRA_model),               INTENT(INOUT) :: ELRA
 

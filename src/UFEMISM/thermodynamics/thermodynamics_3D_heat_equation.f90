@@ -13,7 +13,7 @@ MODULE thermodynamics_3D_heat_equation
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE climate_model_types                                    , ONLY: type_climate_model
   use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
@@ -45,7 +45,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(INOUT) :: mesh
-    TYPE(type_ice_model),                 INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                 INTENT(INOUT) :: ice
     TYPE(type_climate_model),             INTENT(IN)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
     REAL(dp),                             INTENT(IN)    :: dt
@@ -486,7 +486,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)              :: mesh
-    TYPE(type_ice_model),                INTENT(IN)              :: ice
+    TYPE(type_ice_model_data),                INTENT(IN)              :: ice
     REAL(dp),                            INTENT(IN)              :: time
 
     ! Local variables:
@@ -531,7 +531,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)              :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT)           :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT)           :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                                :: routine_name = 'create_restart_file_thermo_3D_heat_equation'

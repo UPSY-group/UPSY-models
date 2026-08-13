@@ -10,7 +10,7 @@ module ismip_output_files
   use region_types, only: type_model_region
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use netcdf_io_main
   use ice_mass_and_fluxes, only: calc_ISMIP_fluxes
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, &
@@ -1159,7 +1159,7 @@ contains
 
     type(type_mesh),                   intent(in   ) :: mesh_old
     type(type_mesh),                   intent(in   ) :: mesh_new
-    type(type_ice_model),              intent(in   ) :: ice
+    type(type_ice_model_data),              intent(in   ) :: ice
     type(type_ismip_output),      intent(inout) :: ismip_output
 
     ! Local variables

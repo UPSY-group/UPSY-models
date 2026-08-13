@@ -10,7 +10,7 @@ module ice_velocities_main
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
+  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
     type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
   use ice_velocity_model_SIA, only: initialise_SIA_solver, solve_SIA, remap_SIA_solver
   use SSA_main, only: initialise_SSA_solver, solve_SSA, remap_SSA_solver, &
@@ -40,7 +40,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    type(type_ice_model_data),                intent(inout) :: ice
     character(len=3),                    intent(in   ) :: region_name
 
     ! Local variables:
@@ -83,7 +83,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(inout) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    type(type_ice_model_data),                   intent(inout) :: ice
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
     character(len=3),                       intent(in   ) :: region_name
@@ -185,7 +185,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'calc_secondary_velocities'
@@ -300,7 +300,7 @@ contains
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh_old
     type(type_mesh),      intent(in   ) :: mesh_new
-    type(type_ice_model), intent(inout) :: ice
+    type(type_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'remap_velocity_solver'
@@ -364,7 +364,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_ice_velocity_solver_SIA), intent(in   ) :: SIA
 
     ! Local variables:
@@ -405,7 +405,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    type(type_ice_model_data),                intent(inout) :: ice
     type(type_ice_velocity_solver_SSA),  intent(in   ) :: SSA
 
     ! Local variables:
@@ -446,7 +446,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_ice_velocity_solver_SIA), intent(in   ) :: SIA
     type(type_ice_velocity_solver_SSA), intent(in   ) :: SSA
 
@@ -523,7 +523,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    type(type_ice_model_data),                intent(inout) :: ice
     type(type_ice_velocity_solver_DIVA), intent(in   ) :: DIVA
 
     ! Local variables:
@@ -569,7 +569,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
+    type(type_ice_model_data),               intent(inout) :: ice
     type(type_ice_velocity_solver_BPA), intent(in   ) :: BPA
 
     ! Local variables:
@@ -610,7 +610,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    type(type_ice_model_data),                   intent(inout) :: ice
     type(type_ice_velocity_solver_hybrid),  intent(in   ) :: hybrid
 
     ! Local variables:
@@ -653,7 +653,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),     intent(in   ) :: mesh
-    type(type_ice_model),intent(in   ) :: ice
+    type(type_ice_model_data),intent(in   ) :: ice
     real(dp),            intent(in   ) :: time
 
     ! Local variables:
@@ -691,7 +691,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_restart_file_ice_velocity'

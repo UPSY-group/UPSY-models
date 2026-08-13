@@ -13,7 +13,7 @@ MODULE UFEMISM_main_model
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE mesh_types                                             , ONLY: type_mesh
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE global_forcing_types                                   , ONLY: type_global_forcing
@@ -1349,7 +1349,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                                INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                                INTENT(IN)    :: ice
     REAL(dp),                                            INTENT(OUT)   :: f
 
     ! Local variables:

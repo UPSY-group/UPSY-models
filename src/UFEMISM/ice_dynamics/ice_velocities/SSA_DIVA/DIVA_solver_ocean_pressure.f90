@@ -12,7 +12,7 @@ module DIVA_solver_ocean_pressure
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
   use graph_pair_creation, only: create_ice_only_graph_pair, deallocate_graph_pair
-  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_DIVA, &
+  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_DIVA, &
     type_ice_velocity_solver_DIVA_graphs
   use netcdf_io_main
   use sliding_laws, only: calc_basal_friction_coefficient
@@ -49,7 +49,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    type(type_ice_model_data),                intent(inout) :: ice
     type(type_bed_roughness_model),      intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
     integer,                             intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations
@@ -255,7 +255,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    type(type_ice_model_data),                intent(inout) :: ice
     type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
 
     ! Local variables:
@@ -437,7 +437,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
 
     ! Local variables:
@@ -808,7 +808,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                            intent(in   ) :: mesh
-    type(type_ice_model),                       intent(inout) :: ice
+    type(type_ice_model_data),                       intent(inout) :: ice
     type(type_ice_velocity_solver_DIVA_graphs), intent(inout) :: DIVA
     real(dp),                                   intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
@@ -1036,7 +1036,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                            intent(in   ) :: mesh
-    type(type_ice_model),                       intent(inout) :: ice
+    type(type_ice_model_data),                       intent(inout) :: ice
     type(type_bed_roughness_model),             intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_DIVA_graphs), intent(inout) :: DIVA
 

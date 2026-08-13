@@ -7,7 +7,7 @@ module climate_model_utilities
   use parameters
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER, MPI_BCAST
   use mesh_types                                             , only: type_mesh
-  use ice_model_data                                        , only: type_ice_model
+  use ice_model_data                                        , only: type_ice_model_data
   use grid_types                                             , only: type_grid
   use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
   use global_forcing_types                                   , only: type_global_forcing
@@ -477,7 +477,7 @@ module climate_model_utilities
     IMPLICIT NONE
 
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                  INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                  INTENT(IN)    :: ice
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
     TYPE(type_climate_model_snapshot),     INTENT(IN)    :: snapshot
     REAL(dp),                              INTENT(IN)    :: deltaT_snapshot

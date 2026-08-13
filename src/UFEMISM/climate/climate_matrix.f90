@@ -10,7 +10,7 @@ module climate_matrix
   use parameters
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER
   use mesh_types                                             , only: type_mesh
-  use ice_model_data                                        , only: type_ice_model
+  use ice_model_data                                        , only: type_ice_model_data
   use grid_types                                             , only: type_grid
   use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
   use global_forcing_types                                   , only: type_global_forcing
@@ -45,7 +45,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
-    type(type_ice_model),                intent(in)    :: ice
+    type(type_ice_model_data),                intent(in)    :: ice
     class(atype_SMB_model),              intent(in)    :: SMB
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
@@ -104,7 +104,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
-    type(type_ice_model),                intent(in)    :: ice
+    type(type_ice_model_data),                intent(in)    :: ice
     type(type_SMB_model_IMAU_ITM),       intent(in)    :: IMAU_ITM
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
@@ -295,7 +295,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid
-    type(type_ice_model),                intent(in)    :: ice
+    type(type_ice_model_data),                intent(in)    :: ice
     type(type_climate_model),            intent(inout) :: climate
     type(type_global_forcing),           intent(in)    :: forcing
     character(LEN=3),                    intent(in)    :: region_name
@@ -368,7 +368,7 @@ contains
     ! In/output variables
     type(type_mesh),                         intent(in)    :: mesh
     type(type_grid),                         intent(in)    :: grid
-    type(type_ice_model),                    intent(in)    :: ice
+    type(type_ice_model_data),                    intent(in)    :: ice
     type(type_climate_model),                intent(inout) :: climate
     character(LEN=3),                        intent(in)    :: region_name
     type(type_global_forcing),               intent(in)    :: forcing
@@ -441,7 +441,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
     type(type_grid),                     intent(in)    :: grid !used to smooth later on, check if grid is called during initialise
-    type(type_ice_model),                intent(in)    :: ice
+    type(type_ice_model_data),                intent(in)    :: ice
     type(type_climate_model),            intent(inout) :: climate
     character(LEN=3),                    intent(in)    :: region_name
     type(type_global_forcing),           intent(in)    :: forcing
@@ -745,12 +745,12 @@ contains
     type(type_climate_model_snapshot),    intent(inout) :: snapshot
     character(LEN=3),                     intent(in)    :: region_name
     type(type_global_forcing),            intent(in)    :: forcing
-    type(type_ice_model),                 intent(in)    :: ice
+    type(type_ice_model_data),                 intent(in)    :: ice
 
     ! Local variables:
     character(LEN=256), parameter         :: routine_name = 'initialise_matrix_calc_absorbed_insolation'
     integer                               :: vi,m,i
-    type(type_ice_model)      ,    target :: ice_dummy
+    type(type_ice_model_data)      ,    target :: ice_dummy
     type(type_climate_model)  ,    target :: climate_dummy
     type(type_reference_geometry), target :: refgeo_init_dummy, refgeo_PD_dummy
     type(type_grid)           ,    target :: grid_dummy
@@ -874,7 +874,7 @@ contains
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
     type(type_grid),                        intent(in)    :: grid
-    type(type_ice_model),                   intent(in)    :: ice
+    type(type_ice_model_data),                   intent(in)    :: ice
     type(type_global_forcing),              intent(in)    :: forcing
     ! Local variables:
     character(LEN=256), parameter                         :: routine_name = 'remap_climate_matrix_model'

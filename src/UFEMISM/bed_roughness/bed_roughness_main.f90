@@ -12,7 +12,7 @@ module bed_roughness_main
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use bed_roughness_model_types, only: type_bed_roughness_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main
@@ -33,7 +33,7 @@ contains
 
     ! Input variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_bed_roughness_model),      intent(  out) :: bed_roughness
     character(len=3),                    intent(in   ) :: region_name
 
@@ -80,7 +80,7 @@ contains
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh_old
     type(type_mesh),                     intent(in   ) :: mesh_new
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_bed_roughness_model),      intent(inout) :: bed_roughness
     character(len=3),                    intent(in   ) :: region_name
 
@@ -181,7 +181,7 @@ contains
 
     ! Input variables:
     type(type_mesh),                intent(in   ) :: mesh
-    type(type_ice_model),           intent(in   ) :: ice
+    type(type_ice_model_data),           intent(in   ) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
 
     ! Local variables:
@@ -211,7 +211,7 @@ contains
 
     ! Input variables:
     type(type_mesh),                intent(in   ) :: mesh
-    type(type_ice_model),           intent(in   ) :: ice
+    type(type_ice_model_data),           intent(in   ) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
 
     ! Local variables:

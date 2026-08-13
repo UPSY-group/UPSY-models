@@ -12,7 +12,7 @@ MODULE LMB_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE LMB_model_types                                        , ONLY: type_LMB_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
@@ -33,7 +33,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_LMB_model),                   INTENT(INOUT) :: LMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time

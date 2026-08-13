@@ -10,7 +10,7 @@ module inversion_utilities
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use plane_geometry, only: is_in_polygon
   use netcdf_io_main
@@ -33,7 +33,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_ice_model_data), intent(inout) :: ice
     character(len=3),     intent(in   ) :: region_name
 
     ! Local variables:
@@ -94,7 +94,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'MISMIPplus_adapt_flow_factor'

@@ -4,7 +4,7 @@ module zeta_gradients
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_2D, ddy_b_a_2D
 
@@ -22,7 +22,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'calc_zeta_gradients'

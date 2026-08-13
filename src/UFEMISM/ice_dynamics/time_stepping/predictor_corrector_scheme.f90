@@ -9,7 +9,7 @@ module predictor_corrector_scheme
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model, type_ice_pc
+  use ice_model_data, only: type_ice_model_data, type_ice_pc
   use reallocate_mod, only: reallocate_bounds
   use netcdf_io_main
   use time_step_criteria, only: calc_critical_timestep_adv
@@ -283,7 +283,7 @@ contains
 
     ! In- and output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
     type(type_ice_pc),    intent(inout) :: pc
 
     ! Local variables:
@@ -320,7 +320,7 @@ contains
 
     ! In- and output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_ice_model_data), intent(in   ) :: ice
     type(type_ice_pc),    intent(inout) :: pc
     integer,              intent(  out) :: n_guilty, n_tot
 

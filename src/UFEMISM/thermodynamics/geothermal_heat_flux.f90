@@ -11,7 +11,7 @@ MODULE geothermal_heat_flux
   USE call_stack_and_comp_time_tracking                  , ONLY: crash, warning, happy, init_routine, finalise_routine
   USE model_configuration                                    , ONLY: C
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   use netcdf_io_main
   USE parameters                                             , ONLY: sec_per_year
   use checksum_mod, only: checksum
@@ -30,7 +30,7 @@ CONTAINS
 
     ! Input variables:
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'initialise_geothermal_heat_flux'

@@ -13,7 +13,7 @@ module ut_SMB
   use mesh_refinement_basic, only: refine_mesh_uniform
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use mesh_disc_calc_matrix_operators_2D, only: calc_all_matrix_operators_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
@@ -90,7 +90,7 @@ contains
     character(len=1024), parameter        :: test_name_local = 'idealised'
     character(len=1024)                   :: test_name
     class(atype_SMB_model), allocatable   :: SMB
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model_data)         , target :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
     type(type_grid)              , target :: grid_smooth
@@ -157,7 +157,7 @@ contains
     character(:), allocatable                   :: filename
     integer                                     :: ncid
     class(atype_SMB_model), allocatable         :: SMB
-    type(type_ice_model)         , target       :: ice
+    type(type_ice_model_data)         , target       :: ice
     type(type_reference_geometry), target       :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target       :: climate
     type(type_grid)              , target       :: grid_smooth
@@ -225,7 +225,7 @@ contains
     real(dp)                              :: rp
     class(atype_SMB_model), allocatable   :: SMB
     real(dp)                              :: time
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model_data)         , target :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
     type(type_grid)              , target :: grid_smooth

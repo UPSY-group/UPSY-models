@@ -10,7 +10,7 @@ MODULE thermodynamics_utilities
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE BMB_model_types                                        , ONLY: type_BMB_model
   USE climate_model_types                                    , ONLY: type_climate_model
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_local
@@ -58,7 +58,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calc_strain_heating'
@@ -103,7 +103,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calc_frictional_heating'
@@ -142,7 +142,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calc_heat_capacity'
@@ -181,7 +181,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calc_thermal_conductivity'
@@ -220,7 +220,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calc_pressure_melting_point'
@@ -249,7 +249,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                INTENT(INOUT) :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calc_homologous_temperature'
@@ -278,7 +278,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                                INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                           INTENT(INOUT) :: ice
+    TYPE(type_ice_model_data),                           INTENT(INOUT) :: ice
     TYPE(type_climate_model),                       INTENT(IN)    :: climate
     class(atype_SMB_model),                         intent(in   ) :: SMB
     REAL(dp), DIMENSION(mesh%vi1:mesh%vi2,mesh%nz), INTENT(INOUT) :: Ti
@@ -359,7 +359,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                                INTENT(IN)  :: mesh
-    TYPE(type_ice_model),                           INTENT(IN)  :: ice
+    TYPE(type_ice_model_data),                           INTENT(IN)  :: ice
     REAL(dp), DIMENSION(mesh%vi1:mesh%vi2,mesh%nz), INTENT(OUT) :: u_times_dTdxp_upwind, v_times_dTdyp_upwind
 
     ! Local variables:
@@ -458,7 +458,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                INTENT(IN)    :: ice
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
 
     ! Local variables:

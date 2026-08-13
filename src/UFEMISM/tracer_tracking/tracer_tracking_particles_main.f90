@@ -4,7 +4,7 @@ module tracer_tracking_model_particles_main
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles
   use model_configuration, only: C
   use tracer_tracking_model_particles_basic, only: update_particle_velocity, create_particle_at_ice_surface
@@ -34,7 +34,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                            intent(in   ) :: mesh
-    type(type_ice_model),                       intent(in   ) :: ice
+    type(type_ice_model_data),                       intent(in   ) :: ice
     type(type_tracer_tracking_model_particles), intent(  out) :: particles
 
     ! Local variables:
@@ -97,7 +97,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                             intent(in   ) :: mesh
-    type(type_ice_model),                        intent(in   ) :: ice
+    type(type_ice_model_data),                        intent(in   ) :: ice
     class(atype_SMB_model),                      intent(in   ) :: SMB
     type(type_tracer_tracking_model_particles),  intent(inout) :: particles
     real(dp),                                    intent(in   ) :: time
@@ -157,7 +157,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                            intent(in   ) :: mesh
-    type(type_ice_model),                       intent(in   ) :: ice
+    type(type_ice_model_data),                       intent(in   ) :: ice
     class(atype_SMB_model),                     intent(in   ) :: SMB
     type(type_tracer_tracking_model_particles), intent(in   ) :: particles
     real(dp), dimension(mesh%nV),               intent(  out) :: Hi_tot, Hs_tot

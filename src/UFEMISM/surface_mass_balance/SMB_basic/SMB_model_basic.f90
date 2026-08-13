@@ -9,7 +9,7 @@ module SMB_model_basic
   use fields_main, only: third_dimension
   use SMB_model_data, only: atype_SMB_model_data
   use mpi_f08, only: MPI_WIN
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
   use reference_geometry_types, only: type_reference_geometry
@@ -65,29 +65,29 @@ module SMB_model_basic
     end subroutine SMB_model_deallocate_ifc
 
     subroutine SMB_model_initialise_ifc( self, ice, refgeo_init, refgeo_PD)
-      import atype_SMB_model, type_ice_model, type_reference_geometry
+      import atype_SMB_model, type_ice_model_data, type_reference_geometry
       class(atype_SMB_model),        intent(inout) :: self
-      type(type_ice_model),          intent(in   ) :: ice
+      type(type_ice_model_data),          intent(in   ) :: ice
       type(type_reference_geometry), intent(in   ) :: refgeo_init
       type(type_reference_geometry), intent(in   ) :: refgeo_PD
     end subroutine SMB_model_initialise_ifc
 
     subroutine SMB_model_run_ifc( self, time, ice, climate, grid_smooth)
-      import atype_SMB_model, dp, type_ice_model, type_climate_model, type_grid
+      import atype_SMB_model, dp, type_ice_model_data, type_climate_model, type_grid
       class(atype_SMB_model),   intent(inout) :: self
       real(dp),                 intent(in   ) :: time
-      type(type_ice_model),     intent(in   ) :: ice
+      type(type_ice_model_data),     intent(in   ) :: ice
       type(type_climate_model), intent(inout) :: climate
       type(type_grid),          intent(in   ) :: grid_smooth
     end subroutine SMB_model_run_ifc
 
     subroutine SMB_model_remap_ifc( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
-      import atype_SMB_model, type_mesh, dp, type_reference_geometry, type_ice_model
+      import atype_SMB_model, type_mesh, dp, type_reference_geometry, type_ice_model_data
       class(atype_SMB_model),                intent(inout) :: self
       type(type_mesh), target,               intent(in   ) :: mesh_new
       real(dp),                              intent(in   ) :: time
       type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-      type(type_ice_model),          target, intent(in   ) :: ice
+      type(type_ice_model_data),          target, intent(in   ) :: ice
     end subroutine SMB_model_remap_ifc
 
     function get_SMB_model_name_ifc( self) result( SMB_model_name)
@@ -164,7 +164,7 @@ contains
 
     ! In/output variables:
     class(atype_SMB_model),        intent(inout) :: self
-    type(type_ice_model),          intent(in   ) :: ice
+    type(type_ice_model_data),          intent(in   ) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
 
@@ -195,7 +195,7 @@ contains
     ! In/output variables:
     class(atype_SMB_model),   intent(inout) :: self
     real(dp),                 intent(in   ) :: time
-    type(type_ice_model),     intent(in   ) :: ice
+    type(type_ice_model_data),     intent(in   ) :: ice
     type(type_climate_model), intent(inout) :: climate
     type(type_grid),          intent(in   ) :: grid_smooth
 
@@ -251,7 +251,7 @@ contains
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    type(type_ice_model),          target, intent(in   ) :: ice
+    type(type_ice_model_data),          target, intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_remap'

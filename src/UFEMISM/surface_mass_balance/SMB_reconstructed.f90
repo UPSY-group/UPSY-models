@@ -8,7 +8,7 @@ module SMB_reconstructed
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model
   use grid_types, only: type_grid
-  use ice_model_data, only: type_ice_model
+  use ice_model_data, only: type_ice_model_data
   use mesh_data_smoothing, only: smooth_Gaussian
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon
@@ -78,7 +78,7 @@ contains
 
     ! In/output variables:
     class(type_SMB_model_reconstructed), intent(inout) :: self
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_reference_geometry),       intent(in   ) :: refgeo_init
     type(type_reference_geometry),       intent(in   ) :: refgeo_PD
 
@@ -100,7 +100,7 @@ contains
     ! In/output variables:
     class(type_SMB_model_reconstructed), intent(inout) :: self
     real(dp),                            intent(in   ) :: time
-    type(type_ice_model),                intent(in   ) :: ice
+    type(type_ice_model_data),                intent(in   ) :: ice
     type(type_climate_model),            intent(inout) :: climate
     type(type_grid),                     intent(in   ) :: grid_smooth
 
@@ -194,7 +194,7 @@ contains
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    type(type_ice_model),          target, intent(in   ) :: ice
+    type(type_ice_model_data),          target, intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_reconstructed_remap'

@@ -12,7 +12,7 @@ module ocean_deltaT_transient
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
-  use ice_model_data                                        , only: type_ice_model
+  use ice_model_data                                        , only: type_ice_model_data
   use ocean_model_types                                      , only: type_ocean_model
   use netcdf_io_main
   use ocean_extrapolation                                    , only: extrapolate_ocean_forcing
@@ -32,7 +32,7 @@ subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_nam
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model),                   intent(in)    :: ice
+    type(type_ice_model_data),                   intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run

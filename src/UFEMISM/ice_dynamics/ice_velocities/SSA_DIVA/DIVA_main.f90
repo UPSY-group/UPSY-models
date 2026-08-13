@@ -8,7 +8,7 @@ module DIVA_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model, type_ice_velocity_solver_DIVA
+  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_DIVA
   use netcdf_io_main
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, map_b_a_2D, map_b_a_3D
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
@@ -82,7 +82,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    type(type_ice_model_data),                intent(inout) :: ice
     type(type_bed_roughness_model),      intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_DIVA), intent(inout) :: DIVA
     integer,                             intent(  out) :: n_visc_its               ! Number of non-linear viscosity iterations

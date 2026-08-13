@@ -12,7 +12,7 @@ MODULE climate_idealised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: type_ice_model_data
   USE climate_model_types                                    , ONLY: type_climate_model
 
   IMPLICIT NONE
@@ -31,7 +31,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -105,7 +105,7 @@ CONTAINS
     IMPLICIT NONE
 
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(IN)    :: ice
+    TYPE(type_ice_model_data),                 INTENT(IN)    :: ice
     TYPE(type_climate_model),             INTENT(INOUT) :: climate
     REAL(dp),                             INTENT(IN)    :: time
 

@@ -8,7 +8,7 @@ module tracer_tracking_model_particles_remapping
     MPI_RSEND, MPI_STATUS_IGNORE, MPI_WAIT
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles, type_map_particles_to_mesh
   use model_configuration, only: C
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex, &

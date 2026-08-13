@@ -60,7 +60,7 @@ module ISMIP7_climate
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
   use climate_model_basic, only: atype_climate_model
@@ -301,7 +301,7 @@ contains
 
     ! In/output variables:
     class(type_climate_model_ISMIP7), intent(inout) :: self
-    type(type_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_model_data),             intent(in   ) :: ice
     real(dp),                         intent(in   ) :: time
 
     ! Local variables:

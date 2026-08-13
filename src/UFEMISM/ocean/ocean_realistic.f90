@@ -12,7 +12,7 @@ module ocean_realistic
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
-  use ice_model_data                                        , only: type_ice_model_data
+  use ice_model_data                                        , only: atype_ice_model_data
   use ocean_model_types                                      , only: type_ocean_model
   use netcdf_io_main
   use ocean_extrapolation                                    , only: extrapolate_ocean_forcing
@@ -35,7 +35,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     real(dp),                               intent(in)    :: time
 
@@ -84,7 +84,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run
@@ -124,7 +124,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run
@@ -180,7 +180,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
 
@@ -232,7 +232,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
 
@@ -299,7 +299,7 @@ contains
   subroutine remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: time

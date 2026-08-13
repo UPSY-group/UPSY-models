@@ -12,7 +12,7 @@ MODULE climate_snapshot_plus_anomalies
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model_data
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
   USE global_forcing_types                                   , ONLY: type_global_forcing
   use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_insolation
@@ -45,7 +45,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -92,7 +92,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
 
@@ -210,7 +210,7 @@ CONTAINS
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_old
     type(type_mesh),                        intent(in)    :: mesh_new
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: time

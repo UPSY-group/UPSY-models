@@ -12,7 +12,7 @@ module hybrid_DIVA_BPA_main
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
-  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
+  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
   use DIVA_main, only: allocate_DIVA_solver, remap_DIVA_solver
@@ -113,7 +113,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                       intent(inout) :: mesh
-    type(type_ice_model_data),                  intent(inout) :: ice
+    class(atype_ice_model_data),                  intent(inout) :: ice
     type(type_bed_roughness_model),        intent(in   ) :: bed_roughness
     type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
     character(len=3),                      intent(in   ) :: region_name
@@ -658,7 +658,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),                   intent(in   ) :: ice
     type(type_ice_velocity_solver_hybrid),  intent(inout) :: hybrid
     integer,                                intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
     integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
@@ -1120,7 +1120,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),                   intent(in   ) :: ice
     type(type_ice_velocity_solver_BPA),     intent(inout) :: BPA
     integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
     logical,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: mask_BPA_b            ! T: solve the BPA here, F: otherwise

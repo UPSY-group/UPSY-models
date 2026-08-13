@@ -13,7 +13,7 @@ MODULE ocean_main
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   use grid_types, only: type_grid
-  USE ice_model_data                                        , ONLY: type_ice_model_data
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base, interpolate_ocean_depth
@@ -40,7 +40,7 @@ CONTAINS
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     type(type_grid),                        intent(in   ) :: grid_smooth
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
@@ -125,7 +125,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_ocean_model),                 INTENT(OUT)   :: ocean
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: start_time_of_run
@@ -393,7 +393,7 @@ CONTAINS
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -456,7 +456,7 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),                    intent(in)    :: mesh
-    type(type_ice_model_data),               intent(in)    :: ice
+    class(atype_ice_model_data),               intent(in)    :: ice
     type(type_ocean_model),             intent(inout) :: ocean
 
     ! Local variables:

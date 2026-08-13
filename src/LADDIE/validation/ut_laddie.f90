@@ -15,7 +15,7 @@ module ut_laddie
   use mesh_dummy_meshes, only: initialise_dummy_mesh_5
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use grid_basic, only: setup_square_grid
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_main, only: type_ice_model
   use ocean_model_types, only: type_ocean_model
   use ocean_utilities , only: initialise_ocean_vertical_grid
   use ocean_extrapolation, only: extrapolate_ocean_forcing_preparation, &
@@ -48,7 +48,7 @@ subroutine unit_tests_laddie_main( test_name_parent)
   type(type_mesh)                :: mesh
   type(type_laddie_model)        :: laddie
   type(type_laddie_forcing)      :: forcing
-  type(type_ice_model_data)           :: ice
+  type(type_ice_model)           :: ice
   type(type_ocean_model)         :: ocean
   logical                        :: test_result
   integer                        :: vi, k, ierr

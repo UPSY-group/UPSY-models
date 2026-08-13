@@ -8,7 +8,7 @@ module ocean_snapshot_nudge2D
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use ocean_model_types, only: type_ocean_model, type_ocean_model_snapshot_nudge2D
   use netcdf_io_main
   use remapping_main
@@ -33,7 +33,7 @@ contains
     ! In/output variables:
     type(type_mesh),        intent(in   ) :: mesh
     type(type_grid),        intent(in   ) :: grid_smooth
-    type(type_ice_model_data),   intent(in   ) :: ice
+    class(atype_ice_model_data),   intent(in   ) :: ice
     type(type_ocean_model), intent(inout) :: ocean
     real(dp),               intent(in   ) :: time
 
@@ -64,7 +64,7 @@ contains
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
     type(type_grid),                         intent(in   ) :: grid_smooth
-    type(type_ice_model_data),                    intent(in   ) :: ice
+    class(atype_ice_model_data),                    intent(in   ) :: ice
     type(type_ocean_model_snapshot_nudge2D), intent(inout) :: snapshot_nudge2D
 
     ! Local variables:
@@ -100,7 +100,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_ice_model_data),                    intent(in   ) :: ice
+    class(atype_ice_model_data),                    intent(in   ) :: ice
     type(type_ocean_model_snapshot_nudge2D), intent(in   ) :: snapshot_nudge2D
     real(dp), dimension(mesh%vi1:mesh%vi2),  intent(  out) :: Hi_target_corr
 
@@ -151,7 +151,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_grid),                        intent(in   ) :: grid_smooth
-    type(type_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),                   intent(in   ) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_target_corr
     logical , dimension(mesh%vi1:mesh%vi2), intent(in   ) :: target_mask_shelf
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: dTdt

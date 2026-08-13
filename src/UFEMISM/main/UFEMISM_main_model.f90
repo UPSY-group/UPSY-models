@@ -13,7 +13,7 @@ MODULE UFEMISM_main_model
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
-  USE ice_model_data                                        , ONLY: type_ice_model_data
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE mesh_types                                             , ONLY: type_mesh
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE global_forcing_types                                   , ONLY: type_global_forcing
@@ -524,6 +524,7 @@ CONTAINS
     ! ===== Ice dynamics =====
     ! ========================
 
+    allocate( region%ice)
     CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
     call initialise_basal_hydro_model( region%mesh, region%ice, region%ice%hydro_Salle2025)
@@ -1349,7 +1350,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                                INTENT(IN)    :: ice
+    class(atype_ice_model_data),                                INTENT(IN)    :: ice
     REAL(dp),                                            INTENT(OUT)   :: f
 
     ! Local variables:

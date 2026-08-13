@@ -13,7 +13,7 @@ module SMB_snapshot_plus_anomalies
     field_name_options_time, read_field_from_file_2D, read_field_from_file_2D_monthly
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use climate_model_types, only: type_climate_model
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use grid_types, only: type_grid
 
@@ -191,7 +191,7 @@ contains
 
     ! In/output variables:
     class(type_SMB_model_snp_p_anml), intent(inout) :: self
-    type(type_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_model_data),             intent(in   ) :: ice
     type(type_reference_geometry),    intent(in   ) :: refgeo_init
     type(type_reference_geometry),    intent(in   ) :: refgeo_PD
 
@@ -224,7 +224,7 @@ contains
     ! In/output variables:
     class(type_SMB_model_snp_p_anml), intent(inout) :: self
     real(dp),                         intent(in   ) :: time
-    type(type_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_model_data),             intent(in   ) :: ice
     type(type_climate_model),         intent(inout) :: climate
     type(type_grid),                  intent(in   ) :: grid_smooth
 
@@ -343,7 +343,7 @@ contains
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    type(type_ice_model_data),          target, intent(in   ) :: ice
+    class(atype_ice_model_data),          target, intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_remap'

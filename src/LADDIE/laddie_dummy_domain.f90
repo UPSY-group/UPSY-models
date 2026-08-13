@@ -10,7 +10,7 @@ module laddie_dummy_domain
   use model_configuration, only: C
   use parameters, only: pi
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use ice_model_memory, only: allocate_ice_model
   use ocean_model_types, only: type_ocean_model
   use ocean_main, only: initialise_ocean_vertical_grid
@@ -82,7 +82,7 @@ contains
 
     ! In/output variables
     type(type_mesh),           intent(out  ) :: mesh
-    type(type_ice_model_data),      intent(out  ) :: ice
+    class(atype_ice_model_data),      intent(out  ) :: ice
     type(type_ocean_model),    intent(out  ) :: ocean
     type(type_laddie_model),   intent(out  ) :: laddie
     type(type_laddie_forcing), intent(out  ) :: forcing

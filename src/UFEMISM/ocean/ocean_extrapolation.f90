@@ -4,7 +4,7 @@ module ocean_extrapolation
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use mesh_utilities, only: extrapolate_Gaussian
   use parameters, only: NaN
 
@@ -17,7 +17,7 @@ contains
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    type(type_ice_model_data),                              intent(in)    :: ice
+    class(atype_ice_model_data),                              intent(in)    :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
 
     ! Local variables
@@ -53,7 +53,7 @@ contains
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    type(type_ice_model_data),                              intent(in)    :: ice
+    class(atype_ice_model_data),                              intent(in)    :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
 
     ! Local variables
@@ -82,7 +82,7 @@ contains
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    type(type_ice_model_data),                              intent(in)    :: ice
+    class(atype_ice_model_data),                              intent(in)    :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
     real(dp),                                          intent(in)    :: sigma
 

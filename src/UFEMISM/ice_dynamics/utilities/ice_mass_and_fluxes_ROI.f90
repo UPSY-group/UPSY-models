@@ -9,7 +9,7 @@ module ice_mass_and_fluxes_ROI
   use parameters, only: ice_density, seawater_density, ocean_area, sec_per_year
   use mesh_types, only: type_mesh
   use scalar_types, only: type_regional_scalars
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use SMB_model, only: atype_SMB_model
   use BMB_model_types, only: type_BMB_model
   use LMB_model_types, only: type_LMB_model
@@ -30,7 +30,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),               intent(in   ) :: mesh
-    type(type_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_model_data),          intent(in   ) :: ice
     class(atype_SMB_model),        intent(in   ) :: SMB
     type(type_BMB_model),          intent(in   ) :: BMB
     type(type_LMB_model),          intent(in   ) :: LMB
@@ -81,7 +81,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),               intent(in   ) :: mesh
-    type(type_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_model_data),          intent(in   ) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_regional_scalars),   intent(inout) :: scalars
     integer,                       intent(in)    :: i_ROI
@@ -139,7 +139,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),             intent(in   ) :: mesh
-    type(type_ice_model_data),        intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_regional_scalars), intent(inout) :: scalars
     integer,                     intent(in)    :: i_ROI
 
@@ -191,7 +191,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),             intent(in   ) :: mesh
-    type(type_ice_model_data),        intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     class(atype_SMB_model),      intent(in   ) :: SMB
     type(type_BMB_model),        intent(in   ) :: BMB
     type(type_LMB_model),        intent(in   ) :: LMB
@@ -369,7 +369,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),             intent(in   ) :: mesh
-    type(type_ice_model_data),        intent(in   ) :: ice
+    class(atype_ice_model_data),        intent(in   ) :: ice
     type(type_regional_scalars), intent(inout) :: scalars
     integer,                     intent(in)    :: i_ROI
 

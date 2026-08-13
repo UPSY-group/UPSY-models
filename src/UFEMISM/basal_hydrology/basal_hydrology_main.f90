@@ -9,7 +9,7 @@ module basal_hydrology_main
   use model_configuration, only: C
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg, allocate_basal_hydro, remap_basal_hydro_model_Salle2025
   use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
   use crash_mod, only: crash
@@ -22,7 +22,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    type(type_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_model_data),             intent(inout) :: ice
     real(dp),                         intent(in   ) :: time
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
 
@@ -107,7 +107,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    type(type_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_model_data),             intent(inout) :: ice
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -147,7 +147,7 @@ contains
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    type(type_ice_model_data),                   intent(in)    :: ice
+    class(atype_ice_model_data),                   intent(in)    :: ice
     TYPE(type_basal_hydrology_model),       INTENT(INOUT) :: basal_hydro
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -188,7 +188,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_pore_water_pressure_none'
@@ -214,7 +214,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_pore_water_pressure_Martin2011'
@@ -244,7 +244,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_pressure_error_function_M11'
@@ -277,7 +277,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_pressure_Leguy2014'
@@ -312,7 +312,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_pressure_error_function_constant'

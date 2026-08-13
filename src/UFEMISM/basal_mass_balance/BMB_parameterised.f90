@@ -12,7 +12,7 @@ MODULE BMB_parameterised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model_data
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
@@ -30,7 +30,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                INTENT(IN)    :: ice
+    class(atype_ice_model_data),                INTENT(IN)    :: ice
     TYPE(type_ocean_model),              INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
 
@@ -60,7 +60,7 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),                     intent(in)    :: mesh
-    type(type_ice_model_data),                intent(in)    :: ice
+    class(atype_ice_model_data),                intent(in)    :: ice
     type(type_ocean_model),              intent(in)    :: ocean
     type(type_BMB_model),                intent(inout) :: BMB
 
@@ -122,7 +122,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                INTENT(IN)    :: ice
+    class(atype_ice_model_data),                INTENT(IN)    :: ice
     TYPE(type_ocean_model),              INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
 

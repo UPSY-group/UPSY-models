@@ -12,7 +12,7 @@ MODULE BMB_idealised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model_data
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE BMB_model_types                                        , ONLY: type_BMB_model
 
   IMPLICIT NONE
@@ -29,7 +29,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -59,7 +59,7 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model_data),                INTENT(IN)    :: ice
+    class(atype_ice_model_data),                INTENT(IN)    :: ice
     TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
     REAL(dp),                            INTENT(IN)    :: time
 

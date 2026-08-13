@@ -5,7 +5,7 @@ module constitutive_equation
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
 
   implicit none
 
@@ -86,7 +86,7 @@ contains
 
     ! In/output variables
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_ice_rheology_Glen'

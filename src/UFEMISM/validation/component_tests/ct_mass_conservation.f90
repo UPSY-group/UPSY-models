@@ -7,7 +7,7 @@ module ct_mass_conservation
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_main, only: type_ice_model
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_mesh_from_file, &
     close_netcdf_file, create_new_netcdf_file_for_writing, setup_mesh_in_netcdf_file, &
     add_field_mesh_dp_2D_notime, write_to_field_multopt_mesh_dp_2D_notime
@@ -103,7 +103,7 @@ contains
     character(len=1024), parameter      :: routine_name = 'run_mass_cons_test_on_mesh'
     integer                             :: ncid
     type(type_mesh)                     :: mesh
-    type(type_ice_model_data)                :: ice
+    type(type_ice_model)                :: ice
     real(dp), dimension(:), allocatable :: Hi, u_vav_b, v_vav_b, dHi_dt_ex
     character(len=1024)                 :: ice_sheet_name
 
@@ -158,7 +158,7 @@ contains
     character(len=*),                        intent(in   ) :: foldername_mass_cons
     character(len=*),                        intent(in   ) :: test_mesh_filename
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_ice_model_data),                    intent(inout) :: ice
+    type(type_ice_model),                    intent(inout) :: ice
     real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in   ) :: Hi
     real(dp), dimension(mesh%ti1:mesh%ti2),  intent(in   ) :: u_vav_b, v_vav_b
     real(dp), dimension(mesh%vi1:mesh%vi2),  intent(in   ) :: dHi_dt_ex

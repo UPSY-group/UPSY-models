@@ -6,7 +6,7 @@ module SSA_DIVA_utilities
   use model_configuration, only: C
   use parameters, only: ice_density, grav
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, ddx_b_a_2D, ddy_b_a_2D
   use checksum_mod, only: checksum
 
@@ -25,7 +25,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),                   intent(in   ) :: ice
     real(dp), dimension(mesh%ti1:mesh%ti2), intent(  out) :: tau_dx_b, tau_dy_b
 
     ! Local variables:

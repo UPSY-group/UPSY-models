@@ -7,7 +7,7 @@ module ice_dynamics_main
   use parameters, only: grav, ice_density, seawater_density
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
   use SMB_model, only: atype_SMB_model
@@ -197,7 +197,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),               intent(in   ) :: mesh
-    type(type_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_model_data),          intent(inout) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_reference_geometry), intent(in   ) :: refgeo_GIAeq
@@ -407,7 +407,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(in   ) :: ice
+    class(atype_ice_model_data), intent(in   ) :: ice
     real(dp),             intent(in   ) :: time
 
     ! Local variables:
@@ -439,7 +439,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model_data), intent(inout) :: ice
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_restart_files_ice_model'
@@ -471,7 +471,7 @@ contains
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh_old
     type(type_mesh),                intent(inout) :: mesh_new
-    type(type_ice_model_data),           intent(inout) :: ice
+    class(atype_ice_model_data),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
     type(type_reference_geometry),  intent(in   ) :: refgeo_PD
     class(atype_SMB_model),         intent(in   ) :: SMB
@@ -749,7 +749,7 @@ contains
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh_old
     type(type_mesh),                intent(inout) :: mesh
-    type(type_ice_model_data),           intent(inout) :: ice
+    class(atype_ice_model_data),           intent(inout) :: ice
     type(type_bed_roughness_model), intent(in   ) :: bed_roughness
     class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB

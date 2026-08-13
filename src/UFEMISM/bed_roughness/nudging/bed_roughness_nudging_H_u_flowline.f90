@@ -7,7 +7,7 @@ module bed_roughness_nudging_H_u_flowline
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_u_flowline
   use netcdf_io_main, only: read_field_from_file_2D_b, find_last_output_file, find_last_timeframe
@@ -32,7 +32,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh
-    type(type_ice_model_data),           intent(in   ) :: ice
+    class(atype_ice_model_data),           intent(in   ) :: ice
     type(type_reference_geometry),  intent(in   ) :: target_geometry
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
 
@@ -118,7 +118,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
-    type(type_ice_model_data),                                intent(in   ) :: ice
+    class(atype_ice_model_data),                                intent(in   ) :: ice
     type(type_reference_geometry),                       intent(in   ) :: target_geometry
     type(type_bed_roughness_nudging_model_H_u_flowline), intent(inout) :: nudge
 
@@ -202,7 +202,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
-    type(type_ice_model_data),                                intent(in   ) :: ice
+    class(atype_ice_model_data),                                intent(in   ) :: ice
     type(type_bed_roughness_model),                      intent(in   ) :: bed_roughness
     type(type_bed_roughness_nudging_model_H_u_flowline), intent(inout) :: nudge
 

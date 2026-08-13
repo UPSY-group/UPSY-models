@@ -12,7 +12,7 @@ MODULE climate_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: type_ice_model_data
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   use SMB_model, only: atype_SMB_model
   use SMB_snapshot_plus_anomalies, only: type_SMB_model_snp_p_anml
   use reference_geometry_types, only: type_reference_geometry
@@ -44,7 +44,7 @@ CONTAINS
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     TYPE(type_grid),             target,    INTENT(IN)    :: grid
-    TYPE(type_ice_model_data),        target,    INTENT(IN)    :: ice
+    class(atype_ice_model_data),        target,    INTENT(IN)    :: ice
     TYPE(type_climate_model),    target,    INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -141,7 +141,7 @@ CONTAINS
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     type(type_grid),                        intent(in)    :: grid
-    TYPE(type_ice_model_data),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),                   INTENT(IN)    :: ice
     TYPE(type_climate_model),               INTENT(OUT)   :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     type(type_reference_geometry),          intent(in)    :: refgeo_PD
@@ -449,7 +449,7 @@ CONTAINS
     type(type_reference_geometry),          intent(in)    :: refgeo_PD
     type(type_reference_geometry),          intent(in)    :: refgeo_init
     type(type_grid), optional,                    intent(in)    :: grid
-    type(type_ice_model_data), optional,               intent(in)    :: ice
+    class(atype_ice_model_data), optional,               intent(in)    :: ice
     type(type_global_forcing), optional,          intent(in) :: forcing
 
     ! Local variables:

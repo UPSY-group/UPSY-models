@@ -46,7 +46,7 @@ module ISMIP7_SMB
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
-  use ice_model_data, only: type_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use parameters, only: sec_per_year, ice_density, NaN, freshwater_density
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
@@ -224,7 +224,7 @@ contains
 
     ! In/output variables
     class(type_SMB_model_ISMIP7),  intent(inout) :: self
-    type(type_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_model_data),          intent(in   ) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
 
@@ -318,7 +318,7 @@ contains
     ! In/output variables:
     class(type_SMB_model_ISMIP7), intent(inout) :: self
     real(dp),                     intent(in   ) :: time
-    type(type_ice_model_data),         intent(in   ) :: ice
+    class(atype_ice_model_data),         intent(in   ) :: ice
     type(type_climate_model),     intent(inout) :: climate
     type(type_grid),              intent(in   ) :: grid_smooth
 
@@ -389,7 +389,7 @@ contains
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    type(type_ice_model_data),          target, intent(in   ) :: ice
+    class(atype_ice_model_data),          target, intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_remap'

@@ -6,7 +6,7 @@ module ice_velocity_model_SIA
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: type_ice_model_data, type_ice_velocity_solver_SIA
+  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_SIA
   use parameters, only: grav, ice_density
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
@@ -67,7 +67,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model_data),                intent(inout) :: ice
+    class(atype_ice_model_data),                intent(inout) :: ice
     type(type_ice_velocity_solver_SIA),  intent(inout) :: SIA
 
     ! Local variables:

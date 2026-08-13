@@ -12,6 +12,7 @@ module tracer_tracking_model_particles_main
   use grid_basic, only: setup_square_grid
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_all
   use tracer_tracking_model_particles_io, only: create_particles_netcdf_file, write_to_particles_netcdf_file
   use tracer_tracking_model_particles_remapping, only: calc_particles_to_mesh_map, map_tracer_to_mesh
@@ -187,8 +188,8 @@ contains
     ! domain of that process)
     call gather_to_all( ice%geom%Hi    , Hi_tot)
     call gather_to_all( ice%geom%Hs    , Hs_tot)
-    call gather_to_all( ice%vel%u_3D_b, u_3D_b_tot)
-    call gather_to_all( ice%vel%v_3D_b, v_3D_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, ice%vel%u_3D_b, u_3D_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, ice%vel%v_3D_b, v_3D_b_tot)
     call gather_to_all( ice%vel%w_3D  , w_3D_tot)
     call gather_gridded_data_to_all( particles%grid_new_particles, Hi_grid_vec_partial,  Hi_grid_tot)
     call gather_gridded_data_to_all( particles%grid_new_particles, SMB_grid_vec_partial, SMB_grid_tot)

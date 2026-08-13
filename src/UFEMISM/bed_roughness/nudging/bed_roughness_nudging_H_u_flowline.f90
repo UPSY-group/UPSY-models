@@ -156,8 +156,8 @@ contains
     call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( deltau     , deltau_tot )
-    call gather_to_all( ice%vel%u_vav_b, u_b_tot    )
-    call gather_to_all( ice%vel%v_vav_b, v_b_tot    )
+    call gather_dist_shared_to_all( mesh%pai_Tri, ice%vel%u_vav_b, u_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, ice%vel%v_vav_b, v_b_tot)
 
     nudge%deltaHs_av_up   = 0._dp
     nudge%deltaHs_av_down = 0._dp

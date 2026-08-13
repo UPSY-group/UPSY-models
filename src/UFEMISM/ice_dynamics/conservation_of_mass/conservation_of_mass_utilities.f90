@@ -5,12 +5,12 @@ module conservation_of_mass_utilities
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD
   use crash_mod, only: crash
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
 
   implicit none
 
@@ -21,7 +21,7 @@ module conservation_of_mass_utilities
 
 contains
 
-  subroutine calc_ice_flux_divergence_matrix_upwind( mesh, u_vav_perp, fraction_margin, M_divQ)
+  subroutine calc_ice_flux_divergence_matrix_upwind( mesh, vel, fraction_margin, M_divQ)
     !< Calculate the ice flux divergence matrix M_divQ using an upwind scheme
 
     ! The vertically averaged ice flux divergence represents the net ice volume (which,
@@ -35,7 +35,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                                          intent(in   ) :: mesh
-    real(dp), dimension(mesh%vi1:mesh%vi2, mesh%nC_mem),      intent(in   ) :: u_vav_perp
+    class(atype_ice_velocity_model_data),                     intent(in   ) :: vel
     real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: fraction_margin
     type(type_CSR_matrix_dp),                                 intent(  out) :: M_divQ
 
@@ -89,28 +89,28 @@ contains
 
         ! u_vav_perp > 0: flow is exiting this vertex into vertex vj
         if (fraction_margin_tot( vi) >= 1._dp) then
-          cM_divQ( 0) = cM_divQ( 0) + L_c * max( 0._dp, u_vav_perp( vi, ci)) / A_i
+          cM_divQ( 0) = cM_divQ( 0) + L_c * max( 0._dp, vel%u_vav_perp( vi, ci)) / A_i
         else
           ! if this vertex is not completely covering its assigned area, then don't let ice out of it yet.
         end if
 
         ! u_vav_perp < 0: flow is entering this vertex from vertex vj
         if (fraction_margin_tot( vj) >= 1._dp) then
-          cM_divQ( ci) = L_c * MIN( 0._dp, u_vav_perp( vi, ci)) / A_i
+          cM_divQ( ci) = L_c * MIN( 0._dp, vel%u_vav_perp( vi, ci)) / A_i
         else
           ! if that vertex is not completely covering its assigned area, then don't let ice out of it yet.
         end if
 
-      end do ! do ci = 1, mesh%nC( vi)
+      end do
 
       ! Add coefficients to matrix
       call M_divQ%add_entry( vi, vi, cM_divQ( 0))
       do ci = 1, mesh%nC( vi)
         vj = mesh%C(  vi,ci)
         call M_divQ%add_entry( vi, vj, cM_divQ( ci))
-      end do ! do ci = 1, mesh%nC( vi)
+      end do
 
-    end do ! do vi = mesh%vi1, mesh%vi2
+    end do
 
     call M_divQ%finalise
 

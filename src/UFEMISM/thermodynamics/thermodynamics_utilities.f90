@@ -18,6 +18,7 @@ MODULE thermodynamics_utilities
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
   use plane_geometry, only: cross2
   use mpi_distributed_memory, only: gather_to_all
+  use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use checksum_mod, only: checksum
 
   IMPLICIT NONE
@@ -381,8 +382,8 @@ CONTAINS
     CALL ddy_a_b_3D( mesh, ice%Ti, dTi_dyp_3D_b)
 
     ! Gather full velocity fields
-    CALL gather_to_all( ice%vel%u_3D_b  , u_3D_b_tot      )
-    CALL gather_to_all( ice%vel%v_3D_b  , v_3D_b_tot      )
+    CALL gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, ice%vel%u_3D_b  , u_3D_b_tot      )
+    CALL gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, ice%vel%v_3D_b  , v_3D_b_tot      )
     CALL gather_to_all( dTi_dxp_3D_b, dTi_dxp_3D_b_tot)
     CALL gather_to_all( dTi_dyp_3D_b, dTi_dyp_3D_b_tot)
 

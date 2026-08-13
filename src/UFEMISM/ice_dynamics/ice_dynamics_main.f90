@@ -46,6 +46,15 @@ module ice_dynamics_main
 
   implicit none
 
+  private
+
+  public :: initialise_ice_dynamics_model
+  public :: run_ice_dynamics_model
+  public :: remap_ice_dynamics_model
+  public :: create_restart_files_ice_model
+  public :: write_to_restart_files_ice_model
+  public :: apply_geometry_relaxation
+
 contains
 
 ! ===== Main routines =====

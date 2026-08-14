@@ -4,6 +4,7 @@ module nudging_utilities
   use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use mesh_utilities, only: find_containing_vertex, interpolate_to_point_dp_2D_singlecore, &
     find_containing_triangle
 
@@ -16,12 +17,12 @@ module nudging_utilities
 
 contains
 
-  subroutine calc_nudging_vs_extrapolation_masks( mesh, ice, mask_calc_dCdt_from_nudging, &
+  subroutine calc_nudging_vs_extrapolation_masks( mesh, geom, mask_calc_dCdt_from_nudging, &
     mask_calc_dCdt_from_extrapolation, mask_extrapolation)
 
     ! In/output variables:
     type(type_mesh),                       intent(in   ) :: mesh
-    class(atype_ice_model_data),           intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_calc_dCdt_from_nudging
     logical, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_calc_dCdt_from_extrapolation
     integer, dimension(mesh%vi1:mesh%vi2), intent(  out) :: mask_extrapolation
@@ -40,7 +41,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Only perform the inversion on (partially) grounded vertices
-      if (ice%geom%fraction_gr( vi) > 0.01_dp .and. ice%geom%Hi( vi) > 50._dp) then
+      if (geom%fraction_gr( vi) > 0.01_dp .and. geom%Hi( vi) > 50._dp) then
 
         mask_calc_dCdt_from_nudging      ( vi) = .true.
         mask_calc_dCdt_from_extrapolation( vi) = .false.

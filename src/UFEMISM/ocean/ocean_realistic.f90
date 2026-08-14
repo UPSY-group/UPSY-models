@@ -12,7 +12,7 @@ module ocean_realistic
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
-  use ice_model_data                                        , only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ocean_model_types                                      , only: type_ocean_model
   use netcdf_io_main
   use ocean_extrapolation                                    , only: extrapolate_ocean_forcing
@@ -28,14 +28,13 @@ contains
 ! ===== Main routines =====
 ! =========================
 
-  subroutine run_ocean_model_realistic( mesh, ice, ocean, time)
+  subroutine run_ocean_model_realistic( mesh, ocean, time)
     ! Calculate the ocean
     !
     ! Use an realistic ocean scheme
 
     ! In/output variables:
     type(type_mesh),                        intent(in)    :: mesh
-    class(atype_ice_model_data),            intent(in)    :: ice
     type(type_ocean_model),                 intent(inout) :: ocean
     real(dp),                               intent(in)    :: time
 
@@ -77,14 +76,14 @@ contains
 
   end subroutine run_ocean_model_realistic
 
-  subroutine initialise_ocean_model_realistic( mesh, ice, ocean, region_name, start_time_of_run)
+  subroutine initialise_ocean_model_realistic( mesh, geom, ocean, region_name, start_time_of_run)
     ! Initialise the ocean model
     !
     ! Use an realistic ocean scheme
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run
@@ -102,11 +101,11 @@ contains
     ! Run the chosen realistic ocean model
     select case (C%choice_ocean_model_realistic)
       case ('snapshot')
-          call initialise_ocean_model_snapshot(mesh, ice, ocean, region_name)
+          call initialise_ocean_model_snapshot( mesh, geom, ocean, region_name)
       case ('snapshot_plus_uniform_deltaT')
-          call initialise_ocean_model_snapshot_plus_unif_dT(mesh, ice, ocean, region_name)
+          call initialise_ocean_model_snapshot_plus_unif_dT( mesh, geom, ocean, region_name)
       case ('transient')
-          call initialise_ocean_model_transient(mesh, ice, ocean, region_name, start_time_of_run)
+          call initialise_ocean_model_transient( mesh, geom, ocean, region_name, start_time_of_run)
 
       case default
         call crash('unknown choice_ocean_model_realistic "' // trim( C%choice_ocean_model_realistic) // '"')
@@ -117,14 +116,14 @@ contains
 
   end subroutine initialise_ocean_model_realistic
 
-  subroutine initialise_ocean_model_transient(mesh, ice, ocean, region_name, start_time_of_run)
-  ! Initialise the ocean model
+  subroutine initialise_ocean_model_transient(mesh, geom, ocean, region_name, start_time_of_run)
+    ! Initialise the ocean model
     !
     ! Use an realistic ocean scheme
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run
@@ -146,7 +145,7 @@ contains
         allocate( ocean%deltaT_transient%S0( mesh%vi1:mesh%vi2,C%nz_ocean))
         ocean%deltaT_transient%T0 = 0._dp
         ocean%deltaT_transient%S0 = 0._dp
-        call initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_name, start_time_of_run)
+        call initialise_ocean_model_transient_deltaT( mesh, geom, ocean, region_name, start_time_of_run)
 
       case ('GlacialIndex')
         ! Allocating timeframe variables
@@ -162,7 +161,7 @@ contains
         ocean%GI%S0_warm = 0._dp
         ocean%GI%T0_cold = 0._dp
         ocean%GI%S0_cold = 0._dp
-        call initialise_ocean_model_GlacialIndex( mesh, ice, ocean, region_name, start_time_of_run)
+        call initialise_ocean_model_GlacialIndex( mesh, geom, ocean, region_name, start_time_of_run)
 
       case default
         call crash('unknown choice_ocean_model_transient "' // trim( C%choice_ocean_model_transient) // '"')
@@ -173,14 +172,14 @@ contains
 
   end subroutine initialise_ocean_model_transient
 
-  subroutine initialise_ocean_model_snapshot(mesh, ice, ocean, region_name)
-  ! Initialise the ocean model
+  subroutine initialise_ocean_model_snapshot( mesh, geom, ocean, region_name)
+    ! Initialise the ocean model
     !
     ! Using just an ocean snapshot
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
 
@@ -214,8 +213,8 @@ contains
     case('none')
       ! Do nothing (assume input ocean data has already been extrapolated)
     case('initialisation')
-      call extrapolate_ocean_forcing( mesh, ice, ocean%T)
-      call extrapolate_ocean_forcing( mesh, ice, ocean%S)
+      call extrapolate_ocean_forcing( mesh, geom, ocean%T)
+      call extrapolate_ocean_forcing( mesh, geom, ocean%S)
     case default
       call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
     end select
@@ -225,14 +224,14 @@ contains
 
   end subroutine initialise_ocean_model_snapshot
 
-  subroutine initialise_ocean_model_snapshot_plus_unif_dT(mesh, ice, ocean, region_name)
-  ! Initialise the ocean model
+  subroutine initialise_ocean_model_snapshot_plus_unif_dT( mesh, geom, ocean, region_name)
+    ! Initialise the ocean model
     !
     ! Using a snapshot plus a static, spatially uniform deltaT
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
 
@@ -257,7 +256,7 @@ contains
         call crash('unknown region_name "' // region_name // '"')
     end select
 
-    call initialise_ocean_model_snapshot(mesh, ice, ocean, region_name)
+    call initialise_ocean_model_snapshot( mesh, geom, ocean, region_name)
     ! adds the deltaT
     do vi = mesh%vi1, mesh%vi2
     do z = 1, C%nz_ocean
@@ -270,8 +269,8 @@ contains
 
   end subroutine initialise_ocean_model_snapshot_plus_unif_dT
 
-  subroutine run_ocean_model_transient(mesh, ocean, time)
-  ! Runs a transient ocean model
+  subroutine run_ocean_model_transient( mesh, ocean, time)
+    ! Runs a transient ocean model
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
     type(type_ocean_model),                 intent(inout) :: ocean
@@ -296,10 +295,10 @@ contains
 
   end subroutine run_ocean_model_transient
 
-  subroutine remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
+  subroutine remap_ocean_model_realistic( mesh_old, mesh_new, geom, ocean, region_name, time)
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: time
@@ -313,21 +312,21 @@ contains
 
     select case (C%choice_ocean_model_realistic)
       case ('snapshot')
-          call initialise_ocean_model_snapshot(mesh_new, ice, ocean, region_name)
+          call initialise_ocean_model_snapshot( mesh_new, geom, ocean, region_name)
       case ('snapshot_plus_uniform_deltaT')
-          call initialise_ocean_model_snapshot_plus_unif_dT(mesh_new, ice, ocean, region_name)
+          call initialise_ocean_model_snapshot_plus_unif_dT( mesh_new, geom, ocean, region_name)
       case ('transient')
           select case (C%choice_ocean_model_transient)
             case ('deltaT')
               call reallocate_bounds(ocean%deltaT_transient%T0, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
               call reallocate_bounds(ocean%deltaT_transient%S0, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
-              call initialise_ocean_model_transient_deltaT( mesh_new, ice, ocean, region_name, time)
+              call initialise_ocean_model_transient_deltaT( mesh_new, geom, ocean, region_name, time)
             case ('GlacialIndex')
               call reallocate_bounds(ocean%GI%T0_warm, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
               call reallocate_bounds(ocean%GI%S0_warm, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
               call reallocate_bounds(ocean%GI%T0_cold, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
               call reallocate_bounds(ocean%GI%S0_cold, mesh_new%vi1, mesh_new%vi2, C%nz_ocean)
-              call initialise_ocean_model_GlacialIndex( mesh_new, ice, ocean, region_name, time)
+              call initialise_ocean_model_GlacialIndex( mesh_new, geom, ocean, region_name, time)
             case default
               call crash('unknown choice_ocean_model_transient "' // trim( C%choice_ocean_model_transient) // '"')
           end select

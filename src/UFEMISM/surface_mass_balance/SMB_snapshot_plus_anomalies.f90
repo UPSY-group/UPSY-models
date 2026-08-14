@@ -14,6 +14,7 @@ module SMB_snapshot_plus_anomalies
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
   use climate_model_types, only: type_climate_model
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
   use grid_types, only: type_grid
 
@@ -187,13 +188,13 @@ contains
 
   end subroutine SMB_model_snp_p_anml_deallocate
 
-  subroutine SMB_model_snp_p_anml_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_snp_p_anml_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(type_SMB_model_snp_p_anml), intent(inout) :: self
-    class(atype_ice_model_data),      intent(in   ) :: ice
-    type(type_reference_geometry),    intent(in   ) :: refgeo_init
-    type(type_reference_geometry),    intent(in   ) :: refgeo_PD
+    class(type_SMB_model_snp_p_anml),     intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_initialise'
@@ -219,14 +220,15 @@ contains
 
   end subroutine SMB_model_snp_p_anml_initialise
 
-  subroutine SMB_model_snp_p_anml_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_snp_p_anml_run( self, time, ice, geom, climate, grid_smooth)
 
     ! In/output variables:
-    class(type_SMB_model_snp_p_anml), intent(inout) :: self
-    real(dp),                         intent(in   ) :: time
-    class(atype_ice_model_data),      intent(in   ) :: ice
-    type(type_climate_model),         intent(inout) :: climate
-    type(type_grid),                  intent(in   ) :: grid_smooth
+    class(type_SMB_model_snp_p_anml),     intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_run'
@@ -336,14 +338,14 @@ contains
 
   end subroutine update_timeframes
 
-  subroutine SMB_model_snp_p_anml_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_snp_p_anml_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_SMB_model_snp_p_anml),      intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_model_data),   target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_snp_p_anml_remap'
@@ -364,7 +366,7 @@ contains
     call self%remap_field( mesh_new, 'T2m'          , self%T2m)
 
     ! Re-initialise and update timeframes
-    call self%initialise( ice, refgeo_init, refgeo_PD)
+    call self%initialise( geom, refgeo_init, refgeo_PD)
     call self%update_timeframes( time)
 
     ! Remove routine from call stack

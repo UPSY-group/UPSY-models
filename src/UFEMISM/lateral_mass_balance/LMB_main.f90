@@ -12,7 +12,7 @@ MODULE LMB_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE LMB_model_types                                        , ONLY: type_LMB_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
@@ -26,14 +26,14 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_LMB_model( mesh, ice, LMB, region_name, time)
+  SUBROUTINE run_LMB_model( mesh, geom, LMB, region_name, time)
     ! Calculate the lateral mass balance
 
     IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_LMB_model),                   INTENT(INOUT) :: LMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
@@ -68,12 +68,12 @@ CONTAINS
       CASE ('uniform')
         LMB%LMB = 0._dp
         DO vi = mesh%vi1, mesh%vi2
-          IF (ice%geom%mask_cf_fl( vi) .OR. ice%geom%mask_cf_gr( vi)) THEN
+          IF (geom%mask_cf_fl( vi) .OR. geom%mask_cf_gr( vi)) THEN
             LMB%LMB( vi) = C%uniform_LMB
           END IF
         END DO
       CASE ('GlacialIndex')
-        CALL run_LMB_model_GlacialIndex(mesh, ice, LMB, time)
+        CALL run_LMB_model_GlacialIndex(mesh, geom, LMB, time)
       CASE ('inverted')
         ! Nothing to do here
       CASE DEFAULT

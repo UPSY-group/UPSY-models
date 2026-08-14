@@ -139,7 +139,7 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
   test_result = .true.
 
   ! Prepare, remove forcing values below bedrock
-  call extrapolate_ocean_forcing_preparation( mesh, ice, ocean%T)
+  call extrapolate_ocean_forcing_preparation( mesh, ice%geom, ocean%T)
 
   do vi = mesh%vi1, mesh%vi2
     if (vi == 1) then
@@ -168,7 +168,7 @@ subroutine unit_tests_ocean_extrapolation_main( test_name_parent)
   test_result = .true.
 
   ! Apply extrapolation into cavity
-  call extrapolate_ocean_forcing_horizontal_cavity( mesh, ice, ocean%T, sigma)
+  call extrapolate_ocean_forcing_horizontal_cavity( mesh, ice%geom, ocean%T, sigma)
 
   do vi = mesh%vi1, mesh%vi2
     if (vi == 5) then

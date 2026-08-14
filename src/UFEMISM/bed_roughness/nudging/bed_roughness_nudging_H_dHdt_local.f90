@@ -7,6 +7,7 @@ module bed_roughness_nudging_H_dHdt_local
   use mesh_types, only: type_mesh
   use grid_basic, only: type_grid
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_dHdt_local
   use mesh_utilities, only: extrapolate_Gaussian
@@ -21,7 +22,7 @@ module bed_roughness_nudging_H_dHdt_local
 
 contains
 
-  subroutine run_bed_roughness_nudging_H_dHdt_local( mesh, grid_smooth, ice, &
+  subroutine run_bed_roughness_nudging_H_dHdt_local( mesh, grid_smooth, ice, geom, &
     target_geometry, bed_roughness_prev, bed_roughness_next, nudge)
     ! Run the bed roughness nuding model based on local values of H and dH/dt (i.e. CISM method)
 
@@ -29,6 +30,7 @@ contains
     type(type_mesh),                                     intent(in   ) :: mesh
     type(type_grid),                                     intent(in   ) :: grid_smooth
     class(atype_ice_model_data),                         intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),                intent(in   ) :: geom
     type(type_reference_geometry),                       intent(in   ) :: target_geometry
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(in   ) :: bed_roughness_prev
     real(dp), dimension(mesh%vi1:mesh%vi2),              intent(  out) :: bed_roughness_next
@@ -51,7 +53,7 @@ contains
 
     nudge%Laplac_C = d2C_dx2 + d2C_dy2
 
-    call calc_nudging_vs_extrapolation_masks( mesh, ice, &
+    call calc_nudging_vs_extrapolation_masks( mesh, geom, &
       nudge%mask_calc_dCdt_from_nudging, &
       nudge%mask_calc_dCdt_from_extrapolation, &
       nudge%mask_extrapolation)
@@ -64,7 +66,7 @@ contains
 
         ! Tim's big equation
         nudge%dC_dt( vi) = -bed_roughness_prev( vi) * (&
-            (ice%geom%Hs( vi) - target_geometry%Hs( vi)) / (C%bednudge_H_dHdt_local_H0 * C%bednudge_H_dHdt_local_tau) &
+            (geom%Hs( vi) - target_geometry%Hs( vi)) / (C%bednudge_H_dHdt_local_H0 * C%bednudge_H_dHdt_local_tau) &
           + (2._dp / C%bednudge_H_dHdt_local_H0 * ice%dHs_dt( vi)) &
           ! - C%bednudge_H_dHdt_local_r / C%bednudge_H_dHdt_local_tau * log( bed_roughness_prev( vi) / bed_roughness_target( vi) &
           - C%bednudge_H_dHdt_local_L**2 / C%bednudge_H_dHdt_local_tau * nudge%Laplac_C( vi))
@@ -89,7 +91,7 @@ contains
     ! Initialise the bed roughness nudging model based on local values of H and dH/dt (i.e. CISM method)
 
     ! In/output variables:
-    type(type_mesh),                                    intent(in   ) :: mesh
+    type(type_mesh),                                     intent(in   ) :: mesh
     type(type_bed_roughness_nudging_model_H_dHdt_local), intent(inout) :: nudge
 
     ! Local variables:

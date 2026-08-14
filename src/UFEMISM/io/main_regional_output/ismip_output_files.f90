@@ -11,6 +11,8 @@ module ismip_output_files
   use grid_types, only: type_grid
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use netcdf_io_main
   use ice_mass_and_fluxes, only: calc_ISMIP_fluxes
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, &
@@ -70,7 +72,7 @@ contains
     end if
 
     ! Compute the calving flux
-    call calc_ISMIP_fluxes( region%mesh, region%ice, calving_flux, gl_flux)
+    call calc_ISMIP_fluxes( region%mesh, region%ice%geom, region%ice%vel, calving_flux, gl_flux)
 
     ! Copy SMB for hybrid memory reasons
     SMB_loc( region%mesh%vi1: region%mesh%vi2) = region%SMB%SMB( region%mesh%vi1: region%mesh%vi2)
@@ -1154,13 +1156,13 @@ contains
 
   end subroutine initialise_ISMIP_field_scalar
 
-  subroutine remap_ISMIP_output( mesh_old, mesh_new, ice, ismip_output)
+  subroutine remap_ISMIP_output( mesh_old, mesh_new, geom, ismip_output)
     ! Reallocate the accumulated fields and redefine Hi_prev
 
-    type(type_mesh),             intent(in   ) :: mesh_old
-    type(type_mesh),             intent(in   ) :: mesh_new
-    class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_ismip_output),     intent(inout) :: ismip_output
+    type(type_mesh),                      intent(in   ) :: mesh_old
+    type(type_mesh),                      intent(in   ) :: mesh_new
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ismip_output),              intent(inout) :: ismip_output
 
     ! Local variables
     character(len=1024), parameter :: routine_name = 'remap_ISMIP_output'
@@ -1177,7 +1179,7 @@ contains
     call reallocate_bounds( ismip_output%dlithkdt%accum, mesh_new%vi1, mesh_new%vi2)
 
     ! Use accum to store current Hi for dHidt
-    ismip_output%dlithkdt%accum( mesh_new%vi1:mesh_new%vi2) = ice%geom%Hi( mesh_new%vi1:mesh_new%vi2)
+    ismip_output%dlithkdt%accum( mesh_new%vi1:mesh_new%vi2) = geom%Hi( mesh_new%vi1:mesh_new%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

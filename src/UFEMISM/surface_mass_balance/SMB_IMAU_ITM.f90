@@ -11,6 +11,7 @@ module SMB_IMAU_ITM
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use climate_model_types, only: type_climate_model, type_climate_model_snapshot
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
   use parameters, only: ice_density, T0, L_fusion, sec_per_year
@@ -205,13 +206,13 @@ contains
 
   end subroutine SMB_model_IMAU_ITM_deallocate
 
-  subroutine SMB_model_IMAU_ITM_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_IMAU_ITM_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables
-    class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    class(atype_ice_model_data),    intent(in   ) :: ice
-    type(type_reference_geometry),  intent(in   ) :: refgeo_init
-    type(type_reference_geometry),  intent(in   ) :: refgeo_PD
+    class(type_SMB_model_IMAU_ITM),       intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_IMAU_ITM_initialise'
@@ -267,7 +268,7 @@ contains
       ! Initialise with a uniform firn layer over the ice sheet
 
       do vi = self%mesh%vi1, self%mesh%vi2
-        if (ice%geom%Hi( vi) > 0._dp) then
+        if (geom%Hi( vi) > 0._dp) then
           self%FirnDepth       ( vi,:) = C%SMB_IMAUITM_initial_firn_thickness
           self%MeltPreviousYear( vi  ) = 0._dp
         else
@@ -285,12 +286,12 @@ contains
     do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Background albedo
-      if (ice%geom%Hb( vi) < 0._dp) then
+      if (geom%Hb( vi) < 0._dp) then
         self%AlbedoSurf( vi) = self%albedo_water
       else
         self%AlbedoSurf( vi) = self%albedo_soil
       end if
-      if (ice%geom%Hi( vi) > 0._dp) then
+      if (geom%Hi( vi) > 0._dp) then
         self%AlbedoSurf( vi) = self%albedo_snow
       end if
 
@@ -357,17 +358,18 @@ contains
 
   end subroutine initialise_IMAU_ITM_firn_from_file
 
-  subroutine SMB_model_IMAU_ITM_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_IMAU_ITM_run( self, time, ice, geom, climate, grid_smooth)
 
     ! NOTE: all the SMB components are in meters of water equivalent;
     !       the end result (SMB_monthly and SMB) are in meters of ice equivalent.
 
     ! In/output variables:
-    class(type_SMB_model_IMAU_ITM), intent(inout) :: self
-    real(dp),                       intent(in   ) :: time
-    class(atype_ice_model_data),    intent(in   ) :: ice
-    type(type_climate_model),       intent(inout) :: climate
-    type(type_grid),                intent(in   ) :: grid_smooth
+    class(type_SMB_model_IMAU_ITM),       intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter       :: routine_name = 'SMB_model_IMAU_ITM_run'
@@ -405,8 +407,8 @@ contains
 
       ! Background albedo
       self%AlbedoSurf( vi) = self%albedo_soil
-      if ((ice%geom%mask_icefree_ocean( vi) .eqv. .true. .and. ice%geom%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_water
-      if (ice%geom%mask_grounded_ice(   vi) .eqv. .true. .or.  ice%geom%mask_floating_ice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_ice
+      if ((geom%mask_icefree_ocean( vi) .eqv. .true. .and. geom%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_water
+      if (geom%mask_grounded_ice(   vi) .eqv. .true. .or.  geom%mask_floating_ice( vi) .eqv. .true.) self%AlbedoSurf( vi) = self%albedo_ice
 
       do m = 1, 12  ! Month loop
 
@@ -415,7 +417,7 @@ contains
 
         self%Albedo( vi,m) = min( self%albedo_snow, max( self%AlbedoSurf( vi), self%albedo_snow - (self%albedo_snow - self%AlbedoSurf( vi))  * &
                              exp(-15._dp * self%FirnDepth( vi,mprev)) - 0.015_dp * self%MeltPreviousYear( vi)))
-        if ((ice%geom%mask_icefree_ocean( vi) .eqv. .true. .and. ice%geom%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%Albedo( vi,m) = self%albedo_water
+        if ((geom%mask_icefree_ocean( vi) .eqv. .true. .and. geom%mask_floating_ice( vi) .eqv. .false.) .or. ice%mask_noice( vi) .eqv. .true.) self%Albedo( vi,m) = self%albedo_water
 
         ! Determine ablation as a function of surface temperature and albedo/insolation according to Bintanja et al. (2002)
         self%Melt( vi,m) = max(0._dp, ( self%C_abl_Ts         * (climate%T2m( vi,m) - T0) + &
@@ -455,8 +457,8 @@ contains
       self%Refreezing_year( vi) = min( min( min( sup_imp_wat, liquid_water), sum(climate%Precip( vi,:))), 0.25_dp * sum( self%FirnDepth( vi,:) / 12._dp)) ! version from IMAU-ICE dev branch
       !SMB%Refreezing_year( vi) = min( min( sup_imp_wat, liquid_water), sum( climate%Precip( vi,:))) ! outdated version on main branch
 
-      if (ice%geom%mask_grounded_ice( vi)  .eqv. .false. .or. ice%geom%mask_floating_ice( vi) .eqv. .false.) self%Refreezing_year( vi) = 0._dp
-      if (ice%geom%mask_icefree_ocean( vi) .eqv. .true.)                                                self%AddedFirn( vi,:)     = 0._dp ! Does it make sense to add firn over the ocean?!
+      if (geom%mask_grounded_ice( vi)  .eqv. .false. .or. geom%mask_floating_ice( vi) .eqv. .false.) self%Refreezing_year( vi) = 0._dp
+      if (geom%mask_icefree_ocean( vi) .eqv. .true.)                                                self%AddedFirn( vi,:)     = 0._dp ! Does it make sense to add firn over the ocean?!
 
       do m = 1, 12
         self%Refreezing(  vi,m) = self%Refreezing_year( vi) / 12._dp
@@ -465,7 +467,7 @@ contains
       end do
 
       self%SMB( vi) = sum( self%SMB_monthly( vi,:))
-      !if (ice%geom%mask_icefree_ocean( vi) .eqv. .true.) SMB%SMB( vi) = 0._dp ! should we limit SMB over open ocean?
+      !if (geom%mask_icefree_ocean( vi) .eqv. .true.) SMB%SMB( vi) = 0._dp ! should we limit SMB over open ocean?
 
       ! Calculate total melt over this year, to be used for determining next year's albedo
       self%MeltPreviousYear( vi) = sum( self%Melt( vi,:))
@@ -481,14 +483,14 @@ contains
 
   end subroutine SMB_model_IMAU_ITM_run
 
-  subroutine SMB_model_IMAU_ITM_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_IMAU_ITM_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables
     class(type_SMB_model_IMAU_ITM),        intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_model_data),   target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_IMAU_ITM_remap'

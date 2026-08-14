@@ -127,13 +127,13 @@ contains
     ! ===============
 
     ! Only uniform for now
-    call initialise_ice_temperature_uniform( mesh, ice, 'ANT')
+    call initialise_ice_temperature_uniform( mesh, ice, ice%geom, 'ANT')
 
 
     ! Ocean forcing
     ! =============
 
-    call initialise_ocean_model( mesh, ice, ocean, 'ANT', C%start_time_of_run, refgeo, refgeo)
+    call initialise_ocean_model( mesh, ice%geom, ocean, 'ANT', C%start_time_of_run, refgeo, refgeo)
 
     ! Allocate forcing
     ! ================

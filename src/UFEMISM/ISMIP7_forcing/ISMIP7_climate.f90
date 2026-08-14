@@ -60,7 +60,7 @@ module ISMIP7_climate
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mesh_types, only: type_mesh
-  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main, only: read_field_from_file_2D_monthly, read_field_from_file_2D
   use climate_model_basic, only: atype_climate_model
@@ -297,12 +297,12 @@ contains
 
   end subroutine initialise_climate_baseline_fixed
 
-  subroutine climate_model_ISMIP7_run( self, ice, time)
+  subroutine climate_model_ISMIP7_run( self, geom, time)
 
     ! In/output variables:
-    class(type_climate_model_ISMIP7), intent(inout) :: self
-    class(atype_ice_model_data),      intent(in   ) :: ice
-    real(dp),                         intent(in   ) :: time
+    class(type_climate_model_ISMIP7),     intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    real(dp),                             intent(in   ) :: time
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_ISMIP7_run'
@@ -317,7 +317,7 @@ contains
     call self%dtsdz%update_and_interpolate( self%mesh, time)
 
     do vi = self%mesh%vi1, self%mesh%vi2
-      self%delta_z ( vi) = ice%geom%Hs( vi) - self%Hs_baseline ( vi)
+      self%delta_z ( vi) = geom%Hs( vi) - self%Hs_baseline ( vi)
       self%delta_ts( vi) = self%delta_z( vi) * self%dtsdz%val_interp( vi)
     end do
 

@@ -118,7 +118,7 @@ program UFEMISM_program
       call MPI_ALLREDUCE( MPI_IN_PLACE, Hs_cur, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
       if (ABS( 1._dp - Hs_cur / Hs_prev) < 5.0E-3_dp) then
         ! The model has converged to a steady state; adapt the flow factor
-        call MISMIPplus_adapt_flow_factor( ANT%mesh, ANT%ice)
+        call MISMIPplus_adapt_flow_factor( ANT%mesh, ANT%ice%geom)
       end if
     end if
 

@@ -12,6 +12,7 @@ module BPA_main
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_BPA
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use parameters
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_3D, ddy_b_a_3D, calc_3D_gradient_bk_ak, calc_3D_gradient_bk_bks, &
@@ -87,20 +88,21 @@ contains
 
   end subroutine initialise_BPA_solver
 
-  subroutine solve_BPA( mesh, ice, bed_roughness, BPA, n_visc_its, n_Axb_its, &
+  subroutine solve_BPA( mesh, ice, geom, bed_roughness, BPA, n_visc_its, n_Axb_its, &
     BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate ice velocities by solving the Blatter-Pattyn Approximation
 
     ! In/output variables:
-    type(type_mesh),                    intent(inout) :: mesh
-    class(atype_ice_model_data),        intent(inout) :: ice
-    type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
-    integer,                            intent(  out) :: n_visc_its            ! Number of non-linear viscosity iterations
-    integer,                            intent(  out) :: n_Axb_its             ! Number of iterations in iterative solver for linearised momentum balance
-    integer,  dimension(:,:), optional, intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional, intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional, intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    type(type_mesh),                      intent(inout) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    type(type_ice_velocity_solver_BPA),   intent(inout) :: BPA
+    integer,                              intent(  out) :: n_visc_its            ! Number of non-linear viscosity iterations
+    integer,                              intent(  out) :: n_Axb_its             ! Number of iterations in iterative solver for linearised momentum balance
+    integer,  dimension(:,:), optional,   intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'solve_BPA'
@@ -122,7 +124,7 @@ contains
     call init_routine( routine_name)
 
     ! if there is no grounded ice, or no sliding, no need to solve the BPA
-    grounded_ice_exists = any( ice%geom%mask_grounded_ice)
+    grounded_ice_exists = any( geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists) then
       BPA%u_bk = 0._dp
@@ -150,7 +152,7 @@ contains
     end if
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh, ice)
+    call calc_zeta_gradients( mesh, ice, geom)
 
     ! Calculate 3-D matrix operators for the current ice geometry
     call calc_3D_matrix_operators_mesh( mesh, &
@@ -159,7 +161,7 @@ contains
       ice%d2zeta_dx2_bk, ice%d2zeta_dxdy_bk, ice%d2zeta_dy2_bk)
 
     ! Calculate the driving stress
-    call calc_driving_stress( mesh, ice, BPA)
+    call calc_driving_stress( mesh, geom, BPA)
 
     ! Adaptive relaxation parameter for the viscosity iteration
     resid_UV                            = 1E9_dp
@@ -181,10 +183,10 @@ contains
       call calc_strain_rates( mesh, BPA)
 
       ! Calculate the effective viscosity for the current velocity solution
-      call calc_effective_viscosity( mesh, ice, BPA, Glens_flow_law_epsilon_sq_0_applied)
+      call calc_effective_viscosity( mesh, ice, geom, BPA, Glens_flow_law_epsilon_sq_0_applied)
 
       ! Calculate the basal friction coefficient betab for the current velocity solution
-      call calc_applied_basal_friction_coefficient( mesh, ice, bed_roughness, BPA)
+      call calc_applied_basal_friction_coefficient( mesh, ice, geom, bed_roughness, BPA)
 
       ! Solve the linearised BPA to calculate a new velocity solution
       call solve_BPA_linearised( mesh, ice, BPA, n_Axb_its_visc_it, &
@@ -513,7 +515,7 @@ contains
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_ice_velocity_solver_BPA),     intent(in   ) :: BPA
-    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
+    type(type_CSR_matrix_dp),               intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
     integer,                                intent(in   ) :: row_tikuv
 
@@ -1725,12 +1727,12 @@ contains
 
 ! == Calculate several intermediate terms in the BPA
 
-  subroutine calc_driving_stress( mesh, ice, BPA)
+  subroutine calc_driving_stress( mesh, geom, BPA)
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),        intent(in   ) :: ice
-    type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_velocity_solver_BPA),   intent(inout) :: BPA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_driving_stress'
@@ -1740,10 +1742,10 @@ contains
     call init_routine( routine_name)
 
     ! Calculate dh/dx, dh/dy, db/dx, db/dy on the b-grid
-    call ddx_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dx_b)
-    call ddy_a_b_2D( mesh, ice%geom%Hs , BPA%dh_dy_b)
-    call ddx_a_b_2D( mesh, ice%geom%Hib, BPA%db_dx_b)
-    call ddy_a_b_2D( mesh, ice%geom%Hib, BPA%db_dy_b)
+    call ddx_a_b_2D( mesh, geom%Hs , BPA%dh_dx_b)
+    call ddy_a_b_2D( mesh, geom%Hs , BPA%dh_dy_b)
+    call ddx_a_b_2D( mesh, geom%Hib, BPA%db_dx_b)
+    call ddy_a_b_2D( mesh, geom%Hib, BPA%db_dy_b)
 
     ! Calculate the driving stress
     do ti = mesh%ti1, mesh%ti2
@@ -1804,7 +1806,7 @@ contains
 
   end subroutine calc_strain_rates
 
-  subroutine calc_effective_viscosity( mesh, ice, BPA, Glens_flow_law_epsilon_sq_0_applied)
+  subroutine calc_effective_viscosity( mesh, ice, geom, BPA, Glens_flow_law_epsilon_sq_0_applied)
     !< Calculate the effective viscosity eta, the product term N = eta*H, and the gradients of N
 
     ! The effective viscosity eta is calculated separately on both the ak-grid (vertices, regular vertical)
@@ -1813,10 +1815,11 @@ contains
     ! eta_bk, deta_dx_bk, and deta_dy_bk are calculated from eta_ak
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),        intent(inout) :: ice
-    type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
-    real(dp),                           intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_velocity_solver_BPA),   intent(inout) :: BPA
+    real(dp),                             intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
     ! Local variables:
     character(len=1024), parameter        :: routine_name = 'calc_effective_viscosity'
@@ -1846,7 +1849,7 @@ contains
       ! Calculate the effective viscosity eta according to Glen's flow law
 
       ! Calculate flow factors
-      call calc_ice_rheology_Glen( mesh, ice)
+      call calc_ice_rheology_Glen( mesh, ice, geom)
 
       ! Calculate effective viscosity
       do vi = mesh%vi1, mesh%vi2
@@ -1931,17 +1934,18 @@ contains
 
   end subroutine calc_effective_viscosity
 
-  subroutine calc_applied_basal_friction_coefficient( mesh, ice, bed_roughness, BPA)
+  subroutine calc_applied_basal_friction_coefficient( mesh, ice, geom, bed_roughness, BPA)
     !< Calculate the applied basal friction coefficient beta_b, i.e. on the b-grid
     !< and scaled with the sub-grid grounded fraction
 
     ! This is where the sliding law is called!
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    class(atype_ice_model_data),        intent(inout) :: ice
-    type(type_bed_roughness_model),     intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_BPA), intent(inout) :: BPA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    type(type_ice_velocity_solver_BPA),   intent(inout) :: BPA
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_applied_basal_friction_coefficient'
@@ -1962,7 +1966,7 @@ contains
     ! Map velocities to the a-grid
     call map_b_a_2D( mesh, u_base_b, u_base_a)
     call map_b_a_2D( mesh, v_base_b, v_base_a)
-    call calc_basal_friction_coefficient( mesh, ice%geom, bed_roughness, u_base_a, v_base_a, &
+    call calc_basal_friction_coefficient( mesh, geom, bed_roughness, u_base_a, v_base_a, &
       ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
 
     ! Map basal friction coefficient beta_b to the b-grid
@@ -1971,7 +1975,8 @@ contains
     ! Apply the sub-grid grounded fraction, and limit the friction coefficient to improve stability
     if (C%do_GL_subgrid_friction) then
       do ti = mesh%ti1, mesh%ti2
-        BPA%basal_friction_coefficient_b( ti) = BPA%basal_friction_coefficient_b( ti) * ice%geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+        BPA%basal_friction_coefficient_b( ti) = BPA%basal_friction_coefficient_b( ti) * &
+          geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
       end do
     end if
 

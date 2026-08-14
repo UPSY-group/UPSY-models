@@ -47,6 +47,7 @@ module ISMIP7_SMB
   use fields_dimensions, only: third_dimension
   use mpi_f08, only: MPI_WIN
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
   use parameters, only: sec_per_year, ice_density, NaN, freshwater_density
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
@@ -220,13 +221,13 @@ contains
 
   end subroutine SMB_model_ISMIP7_deallocate
 
-  subroutine SMB_model_ISMIP7_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_ISMIP7_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables
-    class(type_SMB_model_ISMIP7),  intent(inout) :: self
-    class(atype_ice_model_data),   intent(in   ) :: ice
-    type(type_reference_geometry), intent(in   ) :: refgeo_init
-    type(type_reference_geometry), intent(in   ) :: refgeo_PD
+    class(type_SMB_model_ISMIP7),         intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_initialise'
@@ -313,14 +314,15 @@ contains
 
   end subroutine initialise_SMB_baseline_fixed
 
-  subroutine SMB_model_ISMIP7_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_ISMIP7_run( self, time, ice, geom, climate, grid_smooth)
 
     ! In/output variables:
-    class(type_SMB_model_ISMIP7), intent(inout) :: self
-    real(dp),                     intent(in   ) :: time
-    class(atype_ice_model_data),  intent(in   ) :: ice
-    type(type_climate_model),     intent(inout) :: climate
-    type(type_grid),              intent(in   ) :: grid_smooth
+    class(type_SMB_model_ISMIP7),         intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_run'
@@ -336,7 +338,7 @@ contains
     call self%dacabfdz%update_and_interpolate( self%mesh, time)
 
     do vi = self%mesh%vi1, self%mesh%vi2
-      self%delta_z  ( vi) = ice%geom%Hs( vi) - self%Hs_baseline ( vi)
+      self%delta_z  ( vi) = geom%Hs( vi) - self%Hs_baseline ( vi)
       self%delta_SMB( vi) = self%delta_z( vi) * self%dacabfdz%val_interp( vi)
     end do
 
@@ -382,14 +384,14 @@ contains
 
   end subroutine SMB_model_ISMIP7_run
 
-  subroutine SMB_model_ISMIP7_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_ISMIP7_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_SMB_model_ISMIP7),          intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_model_data),   target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_ISMIP7_remap'

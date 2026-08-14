@@ -12,7 +12,8 @@ MODULE BMB_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: atype_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE BMB_model_types                                        , ONLY: type_BMB_model
@@ -44,12 +45,13 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model( mesh, ice, ocean, refgeo, BMB, region_name, time, is_initial)
+  SUBROUTINE run_BMB_model( mesh, ice, geom, ocean, refgeo, BMB, region_name, time, is_initial)
     ! Calculate the basal mass balance
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_reference_geometry),          INTENT(IN)    :: refgeo
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
@@ -114,7 +116,7 @@ CONTAINS
           CASE ('prescribed_fixed')
             ! No need to do anything
           CASE DEFAULT
-            CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
+            CALL apply_BMB_subgrid_scheme( mesh, geom, BMB)
         END SELECT
 
         CALL finalise_routine( routine_name)
@@ -129,7 +131,7 @@ CONTAINS
     ! Compute grounded ice mass balance
     SELECT CASE (C%choice_BMB_grounded)
       CASE ('from_temperature')
-        call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+        call calc_grounded_basal_melt_rates_from_temp( mesh, ice, geom, BMB)
       CASE ('none')
         ! Do nothing
       CASE DEFAULT
@@ -142,7 +144,7 @@ CONTAINS
         case default
           !No need to do anything
         case ('laddie')
-          call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+          call update_laddie_forcing( mesh, ice, geom, ocean, BMB%forcing, region_name)
           call initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .false.)
           call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, .true., .false.)
           BMB%t_next_reinit = BMB%t_next_reinit + C%dt_BMB_reinit
@@ -155,43 +157,43 @@ CONTAINS
         BMB%BMB_shelf = 0._dp
         if (time > C%uniform_BMB_t_start) then
           DO vi = mesh%vi1, mesh%vi2
-            IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_icefree_ocean( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
+            IF (geom%mask_floating_ice( vi) .OR. geom%mask_icefree_ocean( vi) .OR. geom%mask_gl_gr( vi)) THEN
               BMB%BMB_shelf( vi) = C%uniform_BMB
             END IF
           END DO
         end if
       CASE ('prescribed')
-        CALL run_BMB_model_prescribed( mesh, ice, BMB, region_name, time)
+        CALL run_BMB_model_prescribed( mesh, BMB, region_name, time)
       CASE ('prescribed_fixed')
         ! No need to do anything
       CASE ('idealised')
         if (time > C%uniform_BMB_t_start) then
-          CALL run_BMB_model_idealised( mesh, ice, BMB, time)
+          CALL run_BMB_model_idealised( mesh, ice, geom, BMB, time)
         end if
       CASE ('parameterised')
         if (time > C%uniform_BMB_t_start) then
-          CALL run_BMB_model_parameterised( mesh, ice, ocean, BMB)
+          CALL run_BMB_model_parameterised( mesh, geom, ocean, BMB)
         end if
       CASE ('inverted')
-        CALL run_BMB_model_inverted( mesh, ice, BMB%inv, time)
+        CALL run_BMB_model_inverted( mesh, ice, geom, BMB%inv, time)
         BMB%BMB = BMB%inv%BMB
         ! Separate into BMB_sheet and BMB_shelf for scalar diagnostics
         do vi = mesh%vi1, mesh%vi2
-          if (ice%geom%mask_floating_ice( vi)) then
+          if (geom%mask_floating_ice( vi)) then
             BMB%BMB_shelf( vi) = BMB%BMB( vi)
           else
             BMB%BMB_shelf( vi) = 0._dp
           end if
-          if (ice%geom%mask_grounded_ice( vi)) then
+          if (geom%mask_grounded_ice( vi)) then
             BMB%BMB_sheet( vi) = BMB%BMB( vi)
           else
             BMB%BMB_sheet( vi) = 0._dp
           end if
         end do
       CASE ('laddie_py')
-        CALL run_BMB_model_laddie( mesh, ice, BMB, time, .FALSE.)
+        CALL run_BMB_model_laddie( mesh, ice, geom, BMB, time, .FALSE.)
       case ('laddie')
-        call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+        call update_laddie_forcing( mesh, ice, geom, ocean, BMB%forcing, region_name)
         call run_laddie_model( mesh, BMB%laddie, BMB%forcing, time, do_long_initialisation, .false.)
         BMB%BMB_shelf = 0._dp
         do vi = mesh%vi1, mesh%vi2
@@ -209,16 +211,16 @@ CONTAINS
         ! Update BMB only for cells in ROI
         DO vi = mesh%vi1, mesh%vi2
           IF (ice%mask_ROI(vi) > 0) THEN
-            IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_icefree_ocean( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
+            IF (geom%mask_floating_ice( vi) .OR. geom%mask_icefree_ocean( vi) .OR. geom%mask_gl_gr( vi)) THEN
               BMB%BMB_shelf( vi) = C%uniform_BMB_ROI
             END IF
           END IF
         END DO
-        CALL apply_BMB_subgrid_scheme_ROI( mesh, ice, BMB)
+        CALL apply_BMB_subgrid_scheme_ROI( mesh, ice, geom, BMB)
       CASE ('laddie_py')
         ! run_BMB_model_laddie and read BMB values only for region of interest
-        CALL run_BMB_model_laddie( mesh, ice, BMB, time, .TRUE.)
-        CALL apply_BMB_subgrid_scheme_ROI( mesh, ice, BMB)
+        CALL run_BMB_model_laddie( mesh, ice, geom, BMB, time, .TRUE.)
+        CALL apply_BMB_subgrid_scheme_ROI( mesh, ice, geom, BMB)
       CASE ('prescribed', 'prescribed_fixed', 'idealised', 'parameterised', 'inverted', 'laddie')
         CALL crash('this BMB_model "' // TRIM( choice_BMB_model_ROI) // '" is not implemented for hybrid-BMB in ROI yet')
       CASE DEFAULT
@@ -232,7 +234,7 @@ CONTAINS
       CASE ('prescribed_fixed')
         ! No need to do anything
       CASE DEFAULT
-        CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
+        CALL apply_BMB_subgrid_scheme( mesh, geom, BMB)
     END SELECT
 
     ! save BMB in BMB_modelled if applying transition phase
@@ -256,12 +258,13 @@ CONTAINS
 
   END SUBROUTINE run_BMB_model
 
-  SUBROUTINE initialise_BMB_model( mesh, ice, ocean, BMB, refgeo_PD, refgeo_init, region_name)
+  SUBROUTINE initialise_BMB_model( mesh, ice, geom, ocean, BMB, refgeo_PD, refgeo_init, region_name)
     ! Initialise the BMB model
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                   INTENT(OUT)   :: BMB
     type(type_reference_geometry),          intent(in   ) :: refgeo_PD, refgeo_init
@@ -330,7 +333,7 @@ CONTAINS
     ! Compute grounded ice mass balance
     SELECT CASE (C%choice_BMB_grounded)
       CASE ('from_temperature')
-        call calc_grounded_basal_melt_rates_from_temp(ice, mesh, BMB)
+        call calc_grounded_basal_melt_rates_from_temp( mesh, ice, geom, BMB)
       CASE ('none')
         ! Do nothing
       CASE DEFAULT
@@ -345,7 +348,7 @@ CONTAINS
         CALL initialise_BMB_model_prescribed( mesh, BMB, region_name)
       CASE ('prescribed_fixed')
         CALL initialise_BMB_model_prescribed( mesh, BMB, region_name)
-        CALL apply_BMB_subgrid_scheme( mesh, ice, BMB)
+        CALL apply_BMB_subgrid_scheme( mesh, geom, BMB)
       CASE ('idealised')
         CALL initialise_BMB_model_idealised( mesh, BMB)
       CASE ('parameterised')
@@ -356,14 +359,14 @@ CONTAINS
         CALL initialise_BMB_model_laddie( mesh, BMB)
       CASE ('laddie')
         call allocate_laddie_forcing( mesh, BMB%forcing)
-        call update_laddie_forcing( mesh, ice, ocean, BMB%forcing, region_name)
+        call update_laddie_forcing( mesh, ice, geom, ocean, BMB%forcing, region_name)
         call initialise_transects_SGD( mesh, BMB%forcing)
         call initialise_laddie_model( mesh, BMB%laddie, BMB%forcing, .false.)
         BMB%BMB_shelf = 0._dp
         do vi = mesh%vi1, mesh%vi2
           BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year
         end do
-        call apply_BMB_subgrid_scheme( mesh, ice, BMB)
+        call apply_BMB_subgrid_scheme( mesh, geom, BMB)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -703,13 +706,14 @@ CONTAINS
 
   END SUBROUTINE create_restart_file_BMB_laddie_region
 
-  SUBROUTINE remap_BMB_model( mesh_old, mesh_new, ice, ocean, BMB, region_name, time)
+  SUBROUTINE remap_BMB_model( mesh_old, mesh_new, ice, geom, ocean, BMB, region_name, time)
     ! Remap the BMB model
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
     class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_ocean_model),                 INTENT(IN)    :: ocean
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -751,7 +755,7 @@ CONTAINS
     ! Compute grounded ice mass balance on the new mesh
     SELECT CASE (C%choice_BMB_grounded)
       CASE ('from_temperature')
-        call calc_grounded_basal_melt_rates_from_temp(ice, mesh_new, BMB)
+        call calc_grounded_basal_melt_rates_from_temp( mesh_new, ice, geom, BMB)
       CASE ('none')
         ! Do nothing
       CASE DEFAULT
@@ -766,26 +770,26 @@ CONTAINS
         CALL initialise_BMB_model_prescribed( mesh_new, BMB, region_name)
       CASE ('prescribed_fixed')
         CALL initialise_BMB_model_prescribed( mesh_new, BMB, region_name)
-        CALL apply_BMB_subgrid_scheme( mesh_new, ice, BMB)
+        CALL apply_BMB_subgrid_scheme( mesh_new, geom, BMB)
       CASE ('idealised')
         ! No need to do anything
       CASE ('parameterised')
         ! we only need to run the BMB model again, considering the ocean model is remapped just before a call to this function
-        CALL run_BMB_model_parameterised( mesh_new, ice, ocean, BMB)
+        CALL run_BMB_model_parameterised( mesh_new, geom, ocean, BMB)
       CASE ('inverted')
         ! No need to do anything
       CASE ('laddie_py')
         CALL remap_BMB_model_laddie( mesh_new, BMB)
       CASE ('laddie')
         call remap_laddie_forcing( mesh_old, mesh_new, BMB%forcing)
-        call update_laddie_forcing( mesh_new, ice, ocean, BMB%forcing, region_name)
+        call update_laddie_forcing( mesh_new, ice, geom, ocean, BMB%forcing, region_name)
         call remap_laddie_model( mesh_old, mesh_new, BMB%laddie, BMB%forcing, time)
         call run_laddie_model( mesh_new, BMB%laddie, BMB%forcing, time, .false., .false.)
         BMB%BMB_shelf = 0._dp
         do vi = mesh_new%vi1, mesh_new%vi2
           BMB%BMB_shelf( vi) = -BMB%laddie%melt( vi) * sec_per_year
         end do
-        call apply_BMB_subgrid_scheme( mesh_new, ice, BMB)
+        call apply_BMB_subgrid_scheme( mesh_new, geom, BMB)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
@@ -798,13 +802,13 @@ CONTAINS
 ! ===== Utilities =====
 ! =====================
 
-  SUBROUTINE apply_BMB_subgrid_scheme( mesh, ice, BMB)
+  SUBROUTINE apply_BMB_subgrid_scheme( mesh, geom, BMB)
     ! Apply selected scheme for sub-grid shelf melt
     ! (see Leguy et al. 2021 for explanations of the three schemes)
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
 
     ! Local variables:
@@ -819,7 +823,7 @@ CONTAINS
 
     DO vi = mesh%vi1, mesh%vi2
       ! Different sub-grid schemes for sub-shelf melt
-      CALL compute_subgrid_BMB(ice, BMB, vi)
+      CALL compute_subgrid_BMB( geom, BMB, vi)
     END DO
     CALL sync
 
@@ -828,13 +832,14 @@ CONTAINS
 
   END SUBROUTINE apply_BMB_subgrid_scheme
 
-  SUBROUTINE apply_BMB_subgrid_scheme_ROI( mesh, ice, BMB)
+  SUBROUTINE apply_BMB_subgrid_scheme_ROI( mesh, ice, geom, BMB)
     ! Apply selected scheme for sub-grid shelf melt
     ! (see Leguy et al. 2021 for explanations of the three schemes)
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
 
     ! Local variables:
@@ -850,7 +855,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
       ! Only for ROI cells
       IF (ice%mask_ROI(vi) > 0) THEN
-        CALL compute_subgrid_BMB(ice, BMB, vi)
+        CALL compute_subgrid_BMB( geom, BMB, vi)
       END IF
     END DO
     CALL sync
@@ -860,35 +865,35 @@ CONTAINS
 
   END SUBROUTINE apply_BMB_subgrid_scheme_ROI
 
-  subroutine compute_subgrid_BMB(ice, BMB, vi)
+  subroutine compute_subgrid_BMB( geom, BMB, vi)
 
-    class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_BMB_model),        intent(inout) :: BMB
-    integer             ,        intent(in   ) :: vi
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_BMB_model),                 intent(inout) :: BMB
+    integer             ,                 intent(in   ) :: vi
 
     ! Determine which sub-grid scheme to apply
     select case (C%choice_BMB_subgrid)
       case default
         call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
       case ('FCMP')
-        if (ice%geom%mask_floating_ice( vi) .or. ice%geom%mask_gl_fl( vi)) then
+        if (geom%mask_floating_ice( vi) .or. geom%mask_gl_fl( vi)) then
           BMB%BMB( vi) = BMB%BMB_shelf( vi)
-        elseif (ice%geom%mask_grounded_ice( vi) .or. ice%geom%mask_gl_gr( vi)) then
+        elseif (geom%mask_grounded_ice( vi) .or. geom%mask_gl_gr( vi)) then
           BMB%BMB( vi) = BMB%BMB_sheet( vi)
         else
           BMB%BMB( vi) = 0._dp
         end if
       case ('NMP')
-        if (ice%geom%mask_floating_ice( vi) .and. ice%geom%fraction_gr( vi) == 0._dp) then
+        if (geom%mask_floating_ice( vi) .and. geom%fraction_gr( vi) == 0._dp) then
           BMB%BMB( vi) = BMB%BMB_shelf( vi)
-        elseif (ice%geom%fraction_gr( vi) > 0._dp) then
+        elseif (geom%fraction_gr( vi) > 0._dp) then
           BMB%BMB( vi) = BMB%BMB_sheet( vi)
         else
           BMB%BMB( vi) = 0._dp
         end if
       case ('PMP')
-        if (ice%geom%mask_floating_ice( vi) .or. ice%geom%mask_grounded_ice( vi)) then
-          BMB%BMB( vi) = ice%geom%fraction_gr( vi) * BMB%BMB_sheet( vi) + (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+        if (geom%mask_floating_ice( vi) .or. geom%mask_grounded_ice( vi)) then
+          BMB%BMB( vi) = geom%fraction_gr( vi) * BMB%BMB_sheet( vi) + (1._dp - geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
         else
           BMB%BMB( vi) = 0._dp
         end if
@@ -896,14 +901,15 @@ CONTAINS
 
   end subroutine compute_subgrid_BMB
 
-  subroutine update_laddie_forcing( mesh, ice, ocean, forcing, region_name)
+  subroutine update_laddie_forcing( mesh, ice, geom, ocean, forcing, region_name)
 
     ! In/output variables
-    type(type_mesh),             intent(in   ) :: mesh
-    class(atype_ice_model_data), intent(in   ) :: ice
-    type(type_ocean_model),      intent(in   ) :: ocean
-    type(type_laddie_forcing),   intent(inout) :: forcing
-    character(len=3),            intent(in   ) :: region_name
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ocean_model),               intent(in   ) :: ocean
+    type(type_laddie_forcing),            intent(inout) :: forcing
+    character(len=3),                     intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'update_laddie_forcing'
@@ -913,21 +919,21 @@ CONTAINS
     ! Add routine to path
     call init_routine( routine_name)
 
-    forcing%Hi                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hi                ( mesh%vi1:mesh%vi2  )
-    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hs                ( mesh%vi1:mesh%vi2  )
-    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = ice%geom%Hb                ( mesh%vi1:mesh%vi2  )
-    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = ice%geom%Hib               ( mesh%vi1:mesh%vi2  )
-    forcing%TAF               ( mesh%vi1:mesh%vi2  ) = ice%geom%TAF               ( mesh%vi1:mesh%vi2  )
-    forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = ice%geom%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
-    forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = ice%geom%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
-    forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_land ( mesh%vi1:mesh%vi2  )
-    forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = ice%geom%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
-    forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_grounded_ice ( mesh%vi1:mesh%vi2  )
-    forcing%mask_floating_ice ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_floating_ice ( mesh%vi1:mesh%vi2  )
+    forcing%Hi                ( mesh%vi1:mesh%vi2  ) = geom%Hi                ( mesh%vi1:mesh%vi2  )
+    forcing%Hs                ( mesh%vi1:mesh%vi2  ) = geom%Hs                ( mesh%vi1:mesh%vi2  )
+    forcing%Hb                ( mesh%vi1:mesh%vi2  ) = geom%Hb                ( mesh%vi1:mesh%vi2  )
+    forcing%Hib               ( mesh%vi1:mesh%vi2  ) = geom%Hib               ( mesh%vi1:mesh%vi2  )
+    forcing%TAF               ( mesh%vi1:mesh%vi2  ) = geom%TAF               ( mesh%vi1:mesh%vi2  )
+    forcing%dHib_dx_b         ( mesh%ti1:mesh%ti2  ) = geom%dHib_dx_b         ( mesh%ti1:mesh%ti2  )
+    forcing%dHib_dy_b         ( mesh%ti1:mesh%ti2  ) = geom%dHib_dy_b         ( mesh%ti1:mesh%ti2  )
+    forcing%mask_icefree_land ( mesh%vi1:mesh%vi2  ) = geom%mask_icefree_land ( mesh%vi1:mesh%vi2  )
+    forcing%mask_icefree_ocean( mesh%vi1:mesh%vi2  ) = geom%mask_icefree_ocean( mesh%vi1:mesh%vi2  )
+    forcing%mask_grounded_ice ( mesh%vi1:mesh%vi2  ) = geom%mask_grounded_ice ( mesh%vi1:mesh%vi2  )
+    forcing%mask_floating_ice ( mesh%vi1:mesh%vi2  ) = geom%mask_floating_ice ( mesh%vi1:mesh%vi2  )
 
-    forcing%mask_gl_fl        ( mesh%vi1:mesh%vi2  ) = ice%geom%mask_gl_fl        ( mesh%vi1:mesh%vi2  )
+    forcing%mask_gl_fl        ( mesh%vi1:mesh%vi2  ) = geom%mask_gl_fl        ( mesh%vi1:mesh%vi2  )
     forcing%mask_SGD          ( mesh%vi1:mesh%vi2  ) = ice%mask_SGD          ( mesh%vi1:mesh%vi2  )
-    forcing%mask              ( mesh%vi1:mesh%vi2  ) = ice%geom%mask              ( mesh%vi1:mesh%vi2  )
+    forcing%mask              ( mesh%vi1:mesh%vi2  ) = geom%mask              ( mesh%vi1:mesh%vi2  )
 
     forcing%Ti                ( mesh%vi1:mesh%vi2,:) = ice%Ti                ( mesh%vi1:mesh%vi2,:) - 273.15 ! [degC]
     forcing%T_ocean           ( mesh%vi1:mesh%vi2,:) = ocean%T               ( mesh%vi1:mesh%vi2,:)
@@ -937,7 +943,7 @@ CONTAINS
     ! The resultant BMB will be multiplied by floating fractions when applying the subgrid scheme
     if (C%choice_BMB_subgrid == 'PMP') then
       do vi = mesh%vi1, mesh%vi2
-        if (ice%geom%mask_gl_gr( vi) .and. ice%geom%Hib( vi) < 0._dp) then
+        if (geom%mask_gl_gr( vi) .and. geom%Hib( vi) < 0._dp) then
           forcing%mask_grounded_ice( vi) = .false.
           forcing%mask_floating_ice( vi) = .true.
         end if
@@ -1073,9 +1079,9 @@ CONTAINS
     ! do vi = region%mesh%vi1, region%mesh%vi2
 
     !   ! Skip vertices where BMB does not operate
-    !   if (.not. region%ice%geom%mask_gl_gr( vi) .and. &
-    !       .not. region%ice%geom%mask_floating_ice( vi) .and. &
-    !       .not. region%ice%geom%mask_cf_fl( vi)) cycle
+    !   if (.not. region%geom%mask_gl_gr( vi) .and. &
+    !       .not. region%geom%mask_floating_ice( vi) .and. &
+    !       .not. region%geom%mask_cf_fl( vi)) cycle
 
     !   if (C%do_BMB_transition_phase) then
     !     ! If BMB_transition_phase is turned ON, use weight 'w' to compute BMB field

@@ -14,6 +14,7 @@ MODULE BMB_idealised
   USE mesh_types                                             , ONLY: type_mesh
   USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE BMB_model_types                                        , ONLY: type_BMB_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   IMPLICIT NONE
 
@@ -22,7 +23,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model_idealised( mesh, ice, BMB, time)
+  SUBROUTINE run_BMB_model_idealised( mesh, ice, geom, BMB, time)
     ! Calculate the basal mass balance
     !
     ! Use an idealised BMB scheme
@@ -30,6 +31,7 @@ CONTAINS
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -43,10 +45,8 @@ CONTAINS
     SELECT CASE (C%choice_BMB_model_idealised)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model_idealised "' // TRIM( C%choice_BMB_model_idealised) // '"')
-      CASE ('MISMIP+')
-        CALL run_BMB_model_idealised_MISMIPplus( mesh, ice, BMB, time)
-      CASE ('MISMIPplus')
-        CALL run_BMB_model_idealised_MISMIPplus( mesh, ice, BMB, time)
+      CASE ('MISMIP+','MISMIPplus')
+        CALL run_BMB_model_idealised_MISMIPplus( mesh, ice, geom, BMB, time)
     END SELECT
 
     ! Finalise routine path
@@ -54,14 +54,15 @@ CONTAINS
 
   END SUBROUTINE run_BMB_model_idealised
 
-  SUBROUTINE run_BMB_model_idealised_MISMIPplus( mesh, ice, BMB, time)
+  SUBROUTINE run_BMB_model_idealised_MISMIPplus( mesh, ice, geom, BMB, time)
     ! The schematic basal melt used in the MISMIPplus experiments
 
     ! In/output variables
-    TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    class(atype_ice_model_data),         INTENT(IN)    :: ice
-    TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
-    REAL(dp),                            INTENT(IN)    :: time
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    class(atype_ice_model_data),          INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    TYPE(type_BMB_model),                 INTENT(INOUT) :: BMB
+    REAL(dp),                             INTENT(IN)    :: time
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'run_BMB_model_idealised_MISMIPplus'
@@ -75,10 +76,10 @@ CONTAINS
     BMB%BMB_shelf = 0._dp
 
     DO vi = mesh%vi1, mesh%vi2
-      IF (ice%geom%mask_floating_ice( vi)) THEN
+      IF (geom%mask_floating_ice( vi)) THEN
 
-        zd = ice%geom%Hs( vi) - ice%geom%Hi( vi)
-        cavity_thickness = MAX( 0._dp, zd - ice%geom%Hb( vi))
+        zd = geom%Hs( vi) - geom%Hi( vi)
+        cavity_thickness = MAX( 0._dp, zd - geom%Hb( vi))
 
         ! Cornford et al. (2020), Eq. 7
         BMB%BMB_shelf( vi) = -0.2_dp * TANH( cavity_thickness / 75._dp) * MAX( -100._dp - zd, 0._dp)

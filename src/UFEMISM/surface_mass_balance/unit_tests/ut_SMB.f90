@@ -109,7 +109,7 @@ contains
     ! Create idealised SMB model
     call create_SMB_model( SMB, 'idealised')
     call SMB%allocate ( 'ANT', mesh)
-    call SMB%initialise( ice, refgeo_init, refgeo_PD)
+    call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
 
     ! Run idealised SMB model for static Halfar solution
     C%choice_SMB_model_idealised = 'Halfar_static'
@@ -117,7 +117,7 @@ contains
     C%refgeo_idealised_Halfar_R0 = 500e3_dp
     C%uniform_Glens_flow_factor  = 1e-16_dp
     time = 0._dp
-    call SMB%run( time, ice, climate, grid_smooth)
+    call SMB%run( time, ice, ice%geom, climate, grid_smooth)
 
     ! Verify that it worked
     test_result = .true.
@@ -134,7 +134,7 @@ contains
     call unit_test( test_result, test_name)
 
     ! Clean up after yourself
-    call SMB%deallocate
+    call SMB%deallocate()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -192,7 +192,7 @@ contains
 
     call create_SMB_model( SMB, 'prescribed')
     call SMB%allocate( 'ANT', mesh)
-    call SMB%initialise( ice, refgeo_init, refgeo_PD)
+    call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
 
     ! Verify that it worked
     test_result = .true.
@@ -203,7 +203,7 @@ contains
     call unit_test( test_result, test_name)
 
     ! Clean up after yourself
-    call SMB%deallocate
+    call SMB%deallocate()
     call deallocate_dist_shared( SMB_ref, wSMB_ref)
 
     ! Remove routine from call stack
@@ -272,9 +272,9 @@ contains
     ! Create and run IMAU-ITM SMB model
     call create_SMB_model( SMB, 'IMAU-ITM')
     call SMB%allocate( 'ANT', mesh)
-    call SMB%initialise( ice, refgeo_init, refgeo_PD)
+    call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
     time = 0._dp
-    call SMB%run( time, ice, climate, grid_smooth)
+    call SMB%run( time, ice, ice%geom, climate, grid_smooth)
 
     ! Verify that it worked
     SMB_min = minval( SMB%SMB)
@@ -286,7 +286,7 @@ contains
       test_ge_le( SMB_max,  3.4_dp,  3.7_dp), test_name)
 
     ! Clean up after yourself
-    call SMB%deallocate
+    call SMB%deallocate()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

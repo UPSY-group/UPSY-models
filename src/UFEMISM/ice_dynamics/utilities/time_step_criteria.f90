@@ -6,6 +6,8 @@ module time_step_criteria
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
@@ -18,7 +20,7 @@ module time_step_criteria
 
 contains
 
-  subroutine calc_critical_timestep_SIA( mesh, ice, dt_crit_SIA)
+  subroutine calc_critical_timestep_SIA( mesh, ice, geom, dt_crit_SIA)
     !< Calculate the critical time step for advective ice flow
 
     ! NOTE: there is no "official" name for this criterion; some people
@@ -26,9 +28,10 @@ contains
     ! criterion for the advection equation (see below).
 
     ! In- and output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),         intent(in   ) :: ice
-    real(dp),                            intent(  out) :: dt_crit_SIA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    real(dp),                             intent(  out) :: dt_crit_SIA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_critical_timestep_SIA'
@@ -42,7 +45,7 @@ contains
     call init_routine( routine_name)
 
     ! Gather global ice thickness
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%Hi, Hi_tot)
 
     ! Initialise time step with maximum allowed value
     dt_crit_SIA = C%dt_ice_max
@@ -78,13 +81,14 @@ contains
 
   end subroutine calc_critical_timestep_SIA
 
-  subroutine calc_critical_timestep_adv( mesh, ice, dt_crit_adv)
+  subroutine calc_critical_timestep_adv( mesh, geom, vel, dt_crit_adv)
     !< Calculate the critical time step for advective ice flow (CFL criterion)
 
     ! In- and output variables:
-    type(type_mesh),             intent(in   ) :: mesh
-    class(atype_ice_model_data), intent(in   ) :: ice
-    real(dp),                    intent(  out) :: dt_crit_adv
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
+    real(dp),                             intent(  out) :: dt_crit_adv
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'calc_critical_timestep_adv'
@@ -101,11 +105,11 @@ contains
     call init_routine( routine_name)
 
     ! Gather global ice thickness
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice, mask_floating_ice_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_floating_ice, mask_floating_ice_tot)
 
     ! Calculate vertically averaged ice velocities on the edges
-    call map_velocities_from_b_to_c_2D( mesh, ice%vel%u_vav_b, ice%vel%v_vav_b, u_vav_c, v_vav_c)
+    call map_velocities_from_b_to_c_2D( mesh, vel%u_vav_b, vel%v_vav_b, u_vav_c, v_vav_c)
     call gather_to_all( u_vav_c, u_vav_c_tot)
     call gather_to_all( v_vav_c, v_vav_c_tot)
 

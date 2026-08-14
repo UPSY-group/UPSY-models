@@ -12,7 +12,7 @@ module bed_roughness_main
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use bed_roughness_model_types, only: type_bed_roughness_model
   use reference_geometry_types, only: type_reference_geometry
   use netcdf_io_main
@@ -28,14 +28,14 @@ module bed_roughness_main
 
 contains
 
-  subroutine initialise_bed_roughness_model( mesh, ice, bed_roughness, region_name)
+  subroutine initialise_bed_roughness_model( mesh, geom, bed_roughness, region_name)
     ! Initialise the bed roughness
 
     ! Input variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    class(atype_ice_model_data),         intent(in   ) :: ice
-    type(type_bed_roughness_model),      intent(  out) :: bed_roughness
-    character(len=3),                    intent(in   ) :: region_name
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(  out) :: bed_roughness
+    character(len=3),                     intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'initialise_bed_roughness_model'
@@ -55,7 +55,7 @@ contains
     elseif (C%choice_bed_roughness == 'parameterised') then
       ! Apply the chosen parameterisation of bed roughness
 
-      call calc_bed_roughness_parameterised( mesh, ice, bed_roughness)
+      call calc_bed_roughness_parameterised( mesh, geom, bed_roughness)
 
     elseif (C%choice_bed_roughness == 'read_from_file') then
       ! Initialise bed roughness from a NetCDF file
@@ -75,14 +75,14 @@ contains
 
   end subroutine initialise_bed_roughness_model
 
-  subroutine remap_bed_roughness_model( mesh_old, mesh_new, ice, bed_roughness, region_name)
+  subroutine remap_bed_roughness_model( mesh_old, mesh_new, geom, bed_roughness, region_name)
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh_old
-    type(type_mesh),                     intent(in   ) :: mesh_new
-    class(atype_ice_model_data),         intent(in   ) :: ice
-    type(type_bed_roughness_model),      intent(inout) :: bed_roughness
-    character(len=3),                    intent(in   ) :: region_name
+    type(type_mesh),                      intent(in   ) :: mesh_old
+    type(type_mesh),                      intent(in   ) :: mesh_new
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(inout) :: bed_roughness
+    character(len=3),                     intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'remap_bed_roughness_model'
@@ -112,7 +112,7 @@ contains
       deallocate( bed_roughness%alpha_sq           )
       deallocate( bed_roughness%beta_sq            )
 
-      call initialise_bed_roughness_model( mesh_new, ice, bed_roughness, region_name)
+      call initialise_bed_roughness_model( mesh_new, geom, bed_roughness, region_name)
 
     end if
 
@@ -177,12 +177,12 @@ contains
 
   end subroutine calc_bed_roughness_uniform
 
-  subroutine calc_bed_roughness_parameterised( mesh, ice, bed_roughness)
+  subroutine calc_bed_roughness_parameterised( mesh, geom, bed_roughness)
 
     ! Input variables:
-    type(type_mesh),                intent(in   ) :: mesh
-    class(atype_ice_model_data),    intent(in   ) :: ice
-    type(type_bed_roughness_model), intent(inout) :: bed_roughness
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(inout) :: bed_roughness
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_bed_roughness_parameterised'
@@ -194,7 +194,7 @@ contains
     case default
       call crash('unknown choice_bed_roughness_parameterised "' // trim( C%choice_bed_roughness_parameterised) // '"')
     case ('Martin2011')
-      call calc_bed_roughness_Martin2011( mesh, ice, bed_roughness)
+      call calc_bed_roughness_Martin2011( mesh, geom, bed_roughness)
     case ('MISMIPplus','MISMIP+')
       call calc_bed_roughness_MISMIPplus( bed_roughness)
     end select
@@ -204,15 +204,15 @@ contains
 
   end subroutine calc_bed_roughness_parameterised
 
-  subroutine calc_bed_roughness_Martin2011( mesh, ice, bed_roughness)
+  subroutine calc_bed_roughness_Martin2011( mesh, geom, bed_roughness)
     ! Calculate the till friction angle using the till model by Martin et al. (2011).
     !
     ! Only applicable when choice_sliding_law = "Coulomb", "Budd", or "Zoet-Iverson"
 
     ! Input variables:
-    type(type_mesh),                intent(in   ) :: mesh
-    class(atype_ice_model_data),    intent(in   ) :: ice
-    type(type_bed_roughness_model), intent(inout) :: bed_roughness
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(inout) :: bed_roughness
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_bed_roughness_Martin2011'
@@ -234,7 +234,7 @@ contains
 
       ! Compute till friction angle based on Martin et al. (2011) Eq. 10
       weight_Hb = min( 1._dp, max( 0._dp, &
-        (ice%geom%Hb( vi) - C%Martin2011till_phi_Hb_min) / (C%Martin2011till_phi_Hb_max - C%Martin2011till_phi_Hb_min) ))
+        (geom%Hb( vi) - C%Martin2011till_phi_Hb_min) / (C%Martin2011till_phi_Hb_max - C%Martin2011till_phi_Hb_min) ))
 
       bed_roughness%till_friction_angle( vi) = (1._dp - weight_Hb) * C%Martin2011till_phi_min + weight_Hb * C%Martin2011till_phi_max
 

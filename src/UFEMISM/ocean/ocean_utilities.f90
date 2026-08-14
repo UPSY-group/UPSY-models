@@ -12,7 +12,7 @@ MODULE ocean_utilities
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE ocean_model_types                                      , ONLY: type_ocean_model
   use checksum_mod, only: checksum
 
@@ -23,16 +23,16 @@ CONTAINS
 ! ===== Mixed layer =====
 ! =======================
 
-  subroutine calc_ocean_temperature_at_shelf_base( mesh, ice, ocean)
+  subroutine calc_ocean_temperature_at_shelf_base( mesh, geom, ocean)
     ! Calculate ocean temperature at the base of the shelf by interpolating
     ! the 3-D ocean temperature field in the vertical column
 
     implicit none
 
     ! In/output variables
-    type(type_mesh),                    intent(in)    :: mesh
-    class(atype_ice_model_data),        intent(in)    :: ice
-    type(type_ocean_model),             intent(inout) :: ocean
+    type(type_mesh),                      intent(in)    :: mesh
+    class(atype_ice_geometry_model_data), intent(in)    :: geom
+    type(type_ocean_model),               intent(inout) :: ocean
 
     ! Local variables:
     character(len=256), parameter                     :: routine_name = 'calc_ocean_temperature_at_shelf_base'
@@ -48,7 +48,7 @@ CONTAINS
       ocean%T_draft( vi) = 0._dp
 
       ! Depth (positive downwards)
-      depth = ice%geom%SL( vi) - ice%geom%Hib( vi)
+      depth = geom%SL( vi) - geom%Hib( vi)
 
       if (depth > 0._dp) then
 
@@ -66,16 +66,16 @@ CONTAINS
 
   end subroutine calc_ocean_temperature_at_shelf_base
 
-  subroutine calc_ocean_freezing_point_at_shelf_base( mesh, ice, ocean)
+  subroutine calc_ocean_freezing_point_at_shelf_base( mesh, geom, ocean)
     ! Calculate the ocean freezing point at the base of the shelf, needed to calculate
     ! basal melt in the different parameterisations from Favier et al. (2019)
 
     implicit none
 
     ! In/output variables
-    type(type_mesh),                    intent(in)    :: mesh
-    class(atype_ice_model_data),        intent(in)    :: ice
-    type(type_ocean_model),             intent(inout) :: ocean
+    type(type_mesh),                      intent(in)    :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ocean_model),               intent(inout) :: ocean
 
     ! Local variables:
     character(len=256), parameter                     :: routine_name = 'calc_ocean_freezing_point_at_shelf_base'
@@ -95,7 +95,7 @@ CONTAINS
       ocean%T_freezing_point( vi) = 0._dp
 
       ! Depth (positive downwards)
-      depth = ice%geom%SL( vi) - ice%geom%Hib( vi)
+      depth = geom%SL( vi) - geom%Hib( vi)
 
       if (depth > 0._dp) then
 

@@ -9,6 +9,7 @@ module SMB_reconstructed
   use SMB_model_basic, only: atype_SMB_model
   use grid_types, only: type_grid
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use mesh_data_smoothing, only: smooth_Gaussian
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon
@@ -74,13 +75,13 @@ contains
 
   end subroutine SMB_model_reconstructed_deallocate
 
-  subroutine SMB_model_reconstructed_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_reconstructed_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(type_SMB_model_reconstructed), intent(inout) :: self
-    class(atype_ice_model_data),         intent(in   ) :: ice
-    type(type_reference_geometry),       intent(in   ) :: refgeo_init
-    type(type_reference_geometry),       intent(in   ) :: refgeo_PD
+    class(type_SMB_model_reconstructed),  intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_reconstructed_initialise'
@@ -95,14 +96,15 @@ contains
 
   end subroutine SMB_model_reconstructed_initialise
 
-  subroutine SMB_model_reconstructed_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_reconstructed_run( self, time, ice, geom, climate, grid_smooth)
 
     ! In/output variables:
-    class(type_SMB_model_reconstructed), intent(inout) :: self
-    real(dp),                            intent(in   ) :: time
-    class(atype_ice_model_data),         intent(in   ) :: ice
-    type(type_climate_model),            intent(inout) :: climate
-    type(type_grid),                     intent(in   ) :: grid_smooth
+    class(type_SMB_model_reconstructed),  intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter            :: routine_name = 'SMB_model_reconstructed_run'
@@ -138,12 +140,12 @@ contains
       ! Check if point lies within our reconstruction polygon
       if (is_in_polygon(poly_ROI, p)) then
         ! If yes, check whether point lies above or below estimated transitional line altitude
-        if (ice%geom%Hs( vi) <= Hs_tla) then
+        if (geom%Hs( vi) <= Hs_tla) then
           ! If below, SMB goes from 0 at the ELA to its estimated maximum at the TLA
-          self%SMB( vi) = SMB_max * max( 0._dp, min( 1._dp, (ice%geom%Hs( vi) - Hs_ela)/(Hs_tla - Hs_ela)))
+          self%SMB( vi) = SMB_max * max( 0._dp, min( 1._dp, (geom%Hs( vi) - Hs_ela)/(Hs_tla - Hs_ela)))
         else
           ! If above, SMB goes from estimated maximum at the TLA to 0 at the DLA
-          self%SMB( vi) = SMB_max * (1._dp - max( 0._dp, min( 1._dp, (ice%geom%Hs( vi) - Hs_tla)/(Hs_dla - Hs_tla))))
+          self%SMB( vi) = SMB_max * (1._dp - max( 0._dp, min( 1._dp, (geom%Hs( vi) - Hs_tla)/(Hs_dla - Hs_tla))))
         end if
       else
         ! If vertex lies outside of the reconstructed polygon, assume a negative
@@ -165,7 +167,7 @@ contains
       ! Check if point lies inside polygon
       if (is_in_polygon(poly_ROI, p)) then
         ! Compute a weight based on Hs: the higher, the less smoothing
-        w_smooth = max( 0._dp, min( 1._dp, ice%geom%Hs( vi) / Hs_dla))
+        w_smooth = max( 0._dp, min( 1._dp, geom%Hs( vi) / Hs_dla))
         ! Apply weighed smoothing
         self%SMB( vi) = w_smooth * self%SMB( vi) + (1._dp - w_smooth) * SMB_smoothed( vi)
       end if
@@ -187,14 +189,14 @@ contains
 
   end subroutine SMB_model_reconstructed_run
 
-  subroutine SMB_model_reconstructed_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_reconstructed_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_SMB_model_reconstructed),   intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_model_data),   target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_reconstructed_remap'

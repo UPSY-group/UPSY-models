@@ -12,7 +12,7 @@ MODULE climate_snapshot_plus_anomalies
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
   USE global_forcing_types                                   , ONLY: type_global_forcing
   use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_insolation
@@ -38,14 +38,14 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_climate_model_snp_p_anml( mesh, ice, climate, time)
+  SUBROUTINE run_climate_model_snp_p_anml( mesh, geom, climate, time)
     ! Calculate the climate
     !
     ! Use a snapshot plus a prescribed uniform deltaT
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -69,7 +69,7 @@ CONTAINS
 
     ! Update temperature and precipitation fields based on the mismatch between
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
-    call apply_geometry_downscaling_corrections(mesh, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
+    call apply_geometry_downscaling_corrections(mesh, geom, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
     IF (climate%snapshot%has_insolation) THEN
@@ -83,7 +83,7 @@ CONTAINS
 
   END SUBROUTINE run_climate_model_snp_p_anml
 
-  SUBROUTINE initialise_climate_model_snp_p_anml( mesh, ice, climate, region_name)
+  SUBROUTINE initialise_climate_model_snp_p_anml( mesh, geom, climate, region_name)
     ! Initialise the climate model
     !
     ! Use a realistic climate scheme
@@ -92,7 +92,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
 
@@ -182,7 +182,7 @@ CONTAINS
     ! Interpolate between the two timeframes to find the applied anomaly
     call interpolate_between_climate_anomaly_timeframes(mesh, climate, C%start_time_of_run)
 
-    call apply_geometry_downscaling_corrections( mesh, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
+    call apply_geometry_downscaling_corrections( mesh, geom, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
 
     ! Initialises the insolation (if needed)
     IF (climate%snapshot_p_anml%snapshot_baseline%has_insolation) THEN
@@ -206,11 +206,11 @@ CONTAINS
 
   END SUBROUTINE initialise_climate_model_snp_p_anml
 
-  SUBROUTINE remap_climate_snp_p_anml(mesh_old, mesh_new, ice, climate, region_name, time)
+  SUBROUTINE remap_climate_snp_p_anml(mesh_old, mesh_new, geom, climate, region_name, time)
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_old
     type(type_mesh),                        intent(in)    :: mesh_new
-    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: time
@@ -272,7 +272,7 @@ CONTAINS
     ! Interpolate between the two timeframes to find the applied anomaly
     call interpolate_between_climate_anomaly_timeframes(mesh_new, climate, time)
 
-    call apply_geometry_downscaling_corrections( mesh_new, ice, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
+    call apply_geometry_downscaling_corrections( mesh_new, geom, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
 
 
     IF (climate%snapshot_p_anml%snapshot_baseline%has_insolation .eqv. .TRUE.) THEN

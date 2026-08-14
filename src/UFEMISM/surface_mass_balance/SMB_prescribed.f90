@@ -10,6 +10,7 @@ module SMB_prescribed
   use mpi_basic, only: par
   use netcdf_io_main, only: read_field_from_file_2D
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
@@ -76,13 +77,13 @@ contains
 
   end subroutine SMB_model_prescribed_deallocate
 
-  subroutine SMB_model_prescribed_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_prescribed_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables
-    class(type_SMB_model_prescribed), intent(inout) :: self
-    class(atype_ice_model_data),      intent(in   ) :: ice
-    type(type_reference_geometry),    intent(in   ) :: refgeo_init
-    type(type_reference_geometry),    intent(in   ) :: refgeo_PD
+    class(type_SMB_model_prescribed),     intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_prescribed_initialise'
@@ -177,14 +178,15 @@ contains
 
   end subroutine initialise_SMB_model_prescribed_notime
 
-  subroutine SMB_model_prescribed_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_prescribed_run( self, time, ice, geom, climate, grid_smooth)
 
     ! In/output variables:
-    class(type_SMB_model_prescribed), intent(inout) :: self
-    real(dp),                         intent(in   ) :: time
-    class(atype_ice_model_data),      intent(in   ) :: ice
-    type(type_climate_model),         intent(inout) :: climate
-    type(type_grid),                  intent(in   ) :: grid_smooth
+    class(type_SMB_model_prescribed),     intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_prescribed_run'
@@ -223,14 +225,14 @@ contains
 
   end subroutine SMB_model_prescribed_run
 
-  subroutine SMB_model_prescribed_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_prescribed_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_SMB_model_prescribed),      intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_model_data),   target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_prescribed_remap'
@@ -241,7 +243,7 @@ contains
     ! Remap all the stuff that is specific to SMB model prescriubed
 
     ! Re-initialise to read and remap the SMB from the input file again
-    call self%initialise( ice, refgeo_init, refgeo_PD)
+    call self%initialise( geom, refgeo_init, refgeo_PD)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

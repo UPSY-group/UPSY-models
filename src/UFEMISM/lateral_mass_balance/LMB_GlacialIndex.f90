@@ -11,7 +11,7 @@ MODULE LMB_GlacialIndex
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE LMB_model_types                                        , ONLY: type_LMB_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
@@ -24,14 +24,14 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-subroutine run_LMB_model_GlacialIndex(mesh, ice, LMB, time)
+subroutine run_LMB_model_GlacialIndex(mesh, geom, LMB, time)
 ! Calculate the lateral mass balance based on a Glacial Index
 
     IMPLICIT NONE
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_LMB_model),                   INTENT(INOUT) :: LMB
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -52,7 +52,7 @@ subroutine run_LMB_model_GlacialIndex(mesh, ice, LMB, time)
   LMB_at_time = LMB%GI%LMB_warm + GI_at_time * (LMB%GI%LMB_cold - LMB%GI%LMB_warm)
 
   do vi = mesh%vi1, mesh%vi2
-    if (ice%geom%mask_cf_fl( vi) .OR. ice%geom%mask_cf_gr( vi)) then
+    if (geom%mask_cf_fl( vi) .OR. geom%mask_cf_gr( vi)) then
       LMB%LMB(vi) = LMB_at_time
     else
       LMB%LMB(vi) = 0._dp

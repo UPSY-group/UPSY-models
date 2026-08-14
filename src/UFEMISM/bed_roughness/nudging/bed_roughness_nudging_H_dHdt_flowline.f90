@@ -11,6 +11,8 @@ module bed_roughness_nudging_H_dHdt_flowline
   use mesh_types, only: type_mesh
   use grid_basic, only: type_grid
   use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_dHdt_flowline
   use mesh_utilities, only: extrapolate_Gaussian
@@ -29,15 +31,17 @@ module bed_roughness_nudging_H_dHdt_flowline
 
 contains
 
-  subroutine run_bed_roughness_nudging_H_dHdt_flowline( mesh, grid_smooth, ice, target_geometry, bed_roughness)
+  subroutine run_bed_roughness_nudging_H_dHdt_flowline( mesh, grid_smooth, ice, geom, vel, target_geometry, bed_roughness)
     ! Run the bed roughness nuding model based on flowline-averaged values of H and dH/dt
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_grid),                     intent(in   ) :: grid_smooth
-    class(atype_ice_model_data),         intent(in   ) :: ice
-    type(type_reference_geometry),       intent(in   ) :: target_geometry
-    type(type_bed_roughness_model),      intent(inout) :: bed_roughness
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_grid),                      intent(in   ) :: grid_smooth
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
+    type(type_reference_geometry),        intent(in   ) :: target_geometry
+    type(type_bed_roughness_model),       intent(inout) :: bed_roughness
 
     ! Local variables:
     character(len=256), parameter          :: routine_name = 'run_bed_roughness_nudging_H_dHdt_flowline'
@@ -45,15 +49,15 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call calc_nudging_vs_extrapolation_masks( mesh, ice, &
+    call calc_nudging_vs_extrapolation_masks( mesh, geom, &
       bed_roughness%nudging_H_dHdt_flowline%mask_calc_dCdt_from_nudging, &
       bed_roughness%nudging_H_dHdt_flowline%mask_calc_dCdt_from_extrapolation, &
       bed_roughness%nudging_H_dHdt_flowline%mask_extrapolation)
 
-    call calc_flowline_averaged_deltaHs_dHsdt( mesh, ice, target_geometry, &
+    call calc_flowline_averaged_deltaHs_dHsdt( mesh, ice, geom, vel, target_geometry, &
       bed_roughness%nudging_H_dHdt_flowline)
 
-    call calc_dCdt( mesh, ice, grid_smooth, bed_roughness, &
+    call calc_dCdt( mesh, geom, vel, grid_smooth, bed_roughness, &
       bed_roughness%nudging_H_dHdt_flowline)
 
     ! Calculate predicted bed roughness at t+dt
@@ -100,11 +104,13 @@ contains
 
   end subroutine initialise_bed_roughness_nudging_H_dHdt_flowline
 
-  subroutine calc_flowline_averaged_deltaHs_dHsdt( mesh, ice, target_geometry, nudge)
+  subroutine calc_flowline_averaged_deltaHs_dHsdt( mesh, ice, geom, vel, target_geometry, nudge)
 
     ! In/output variables:
     type(type_mesh),                                        intent(in   ) :: mesh
     class(atype_ice_model_data),                            intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),                   intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),                   intent(in   ) :: vel
     type(type_reference_geometry),                          intent(in   ) :: target_geometry
     type(type_bed_roughness_nudging_model_H_dHdt_flowline), intent(inout) :: nudge
 
@@ -128,14 +134,14 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      deltaHs( vi) = ice%geom%Hs( vi) - target_geometry%Hs( vi)
+      deltaHs( vi) = geom%Hs( vi) - target_geometry%Hs( vi)
     end do
 
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%Hi, Hi_tot)
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( ice%dHs_dt , dHs_dt_tot )
-    call gather_dist_shared_to_all( mesh%pai_Tri, ice%vel%u_vav_b, u_b_tot)
-    call gather_dist_shared_to_all( mesh%pai_Tri, ice%vel%v_vav_b, v_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, vel%u_vav_b, u_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, vel%v_vav_b, v_b_tot)
 
     nudge%deltaHs_av_up   = 0._dp
     nudge%deltaHs_av_down = 0._dp
@@ -176,11 +182,12 @@ contains
 
   end subroutine calc_flowline_averaged_deltaHs_dHsdt
 
-  subroutine calc_dCdt( mesh, ice, grid_smooth, bed_roughness, nudge)
+  subroutine calc_dCdt( mesh, geom, vel, grid_smooth, bed_roughness, nudge)
 
     ! In/output variables:
     type(type_mesh),                                        intent(in   ) :: mesh
-    class(atype_ice_model_data),                            intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),                   intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),                   intent(in   ) :: vel
     type(type_grid),                                        intent(in   ) :: grid_smooth
     type(type_bed_roughness_model),                         intent(in   ) :: bed_roughness
     type(type_bed_roughness_nudging_model_H_dHdt_flowline), intent(inout) :: nudge
@@ -201,7 +208,7 @@ contains
       if (nudge%mask_calc_dCdt_from_nudging( vi)) then
 
         nudge%R( vi) = max( 0._dp, min( 1._dp, &
-          ((ice%vel%uabs_vav( vi) * ice%geom%Hi( vi)) / (C%bednudge_H_dHdt_flowline_u_scale * C%bednudge_H_dHdt_flowline_Hi_scale)) ))
+          ((vel%uabs_vav( vi) * geom%Hi( vi)) / (C%bednudge_H_dHdt_flowline_u_scale * C%bednudge_H_dHdt_flowline_Hi_scale)) ))
 
         nudge%I_tot( vi) = (&
           (nudge%deltaHs_av_up( vi) - 0.25_dp * nudge%deltaHs_av_down( vi)) / C%bednudge_H_dHdt_flowline_dH0 + &
@@ -216,7 +223,7 @@ contains
     ! Perform the extrapolation - mask: 2 -> use as seed; 1 -> extrapolate; 0 -> ignore
     call extrapolate_Gaussian( mesh, nudge%mask_extrapolation, nudge%dC_dt, 10e3_dp)
 
-    call reduce_dCdt_on_steep_slopes( mesh, ice, nudge%dC_dt)
+    call reduce_dCdt_on_steep_slopes( mesh, geom, nudge%dC_dt)
 
     call smooth_dCdt( mesh, grid_smooth, nudge%dC_dt)
 
@@ -225,11 +232,11 @@ contains
 
   end subroutine calc_dCdt
 
-  subroutine reduce_dCdt_on_steep_slopes( mesh, ice, dC_dt)
+  subroutine reduce_dCdt_on_steep_slopes( mesh, geom, dC_dt)
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),            intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: dC_dt
 
     ! Local variables:
@@ -242,8 +249,8 @@ contains
     call init_routine( routine_name)
 
     ! Calculate surface slopes
-    call ddx_a_a_2D( mesh, ice%geom%Hs, dHs_dx)
-    call ddy_a_a_2D( mesh, ice%geom%Hs, dHs_dy)
+    call ddx_a_a_2D( mesh, geom%Hs, dHs_dx)
+    call ddy_a_a_2D( mesh, geom%Hs, dHs_dy)
 
     ! Calculate absolute surface gradient
     abs_grad_Hs = sqrt( dHs_dx**2 + dHs_dy**2)
@@ -252,13 +259,13 @@ contains
     do vi = mesh%vi1, mesh%vi2
 
       ! Ice margin and grounding lines
-      if (ice%geom%mask_grounded_ice( vi)) then
+      if (geom%mask_grounded_ice( vi)) then
 
         ! Strengthen the effect of grounded fractions for steep slopes
         fg_exp_mod = min( 1.0_dp, max( 0._dp, max( 0._dp, abs_grad_Hs( vi) - 0.02_dp) / (0.06_dp - 0.02_dp) ))
 
         ! Scale based on grounded fraction
-        dC_dt( vi) = dC_dt( vi) * ice%geom%fraction_gr( vi) ** (1._dp + fg_exp_mod)
+        dC_dt( vi) = dC_dt( vi) * geom%fraction_gr( vi) ** (1._dp + fg_exp_mod)
 
       end if
 

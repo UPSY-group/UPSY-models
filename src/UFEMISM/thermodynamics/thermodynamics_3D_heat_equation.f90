@@ -13,7 +13,9 @@ MODULE thermodynamics_3D_heat_equation
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_data                                        , ONLY: atype_ice_model_data
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   USE climate_model_types                                    , ONLY: type_climate_model
   use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
@@ -31,7 +33,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE solve_3D_heat_equation( mesh, ice, climate, SMB, dt)
+  SUBROUTINE solve_3D_heat_equation( mesh, ice, geom, vel, climate, SMB, dt)
     ! Solve the three-dimensional heat equation
     !
     ! (See solve_1D_heat_equation for the derivation)
@@ -46,6 +48,8 @@ CONTAINS
     ! In/output variables
     TYPE(type_mesh),                      INTENT(INOUT) :: mesh
     class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
     TYPE(type_climate_model),             INTENT(IN)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
     REAL(dp),                             INTENT(IN)    :: dt
@@ -93,7 +97,7 @@ CONTAINS
     ALLOCATE( is_unstable         ( mesh%vi1:mesh%vi2        ), source = 0    )
 
     ! Calculate zeta gradients
-    CALL calc_zeta_gradients( mesh, ice)
+    CALL calc_zeta_gradients( mesh, ice, geom)
 
     ! Calculate temperature-dependent heat capacity
     CALL calc_heat_capacity( mesh, ice)
@@ -102,14 +106,14 @@ CONTAINS
     CALL calc_thermal_conductivity( mesh, ice)
 
     ! Calculate pressure melting point
-    CALL calc_pressure_melting_point( mesh, ice)
+    CALL calc_pressure_melting_point( mesh, ice, geom)
 
     ! Calculate upwind velocity times temperature gradients
-    CALL calc_upwind_heat_flux_derivatives( mesh, ice, u_times_dTdxp_upwind, v_times_dTdyp_upwind)
+    CALL calc_upwind_heat_flux_derivatives( mesh, ice, geom, vel, u_times_dTdxp_upwind, v_times_dTdyp_upwind)
 
     ! Calculate heating terms
-    CALL calc_strain_heating(     mesh, ice)
-    CALL calc_frictional_heating( mesh, ice)
+    CALL calc_strain_heating(     mesh, ice, geom, vel)
+    CALL calc_frictional_heating( mesh, ice, geom, vel)
 
     ! Calculate annual mean surface temperature
     DO vi = mesh%vi1, mesh%vi2
@@ -134,7 +138,7 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       ! For very thin ice, just let the profile equal the surface temperature
-      IF (ice%geom%Hi_eff( vi) < C%Hi_min_thermo) THEN
+      IF (geom%Hi_eff( vi) < C%Hi_min_thermo) THEN
         is_unstable( vi) = 0
         Ti_tplusdt( vi,:) = T_surf_annual( vi)
         CYCLE
@@ -142,9 +146,9 @@ CONTAINS
 
       ! Gather all the data needed to solve the 1-D heat equation
       icecol_Ti                   = ice%Ti(               vi,:)
-      icecol_u                    = ice%vel%u_3D(             vi,:)
-      icecol_v                    = ice%vel%v_3D(             vi,:)
-      icecol_w                    = ice%vel%w_3D(             vi,:)
+      icecol_u                    = vel%u_3D(             vi,:)
+      icecol_v                    = vel%v_3D(             vi,:)
+      icecol_w                    = vel%w_3D(             vi,:)
       icecol_u_times_dTdxp_upwind = u_times_dTdxp_upwind( vi,:)
       icecol_v_times_dTdyp_upwind = v_times_dTdyp_upwind( vi,:)
       icecol_Ti_pmp               = ice%Ti_pmp(           vi,:)
@@ -170,7 +174,7 @@ CONTAINS
         DO it_it_dt = 1, 2**(it_dt-1)
 
           ! Solve the heat equation in the vertical column
-          IF (ice%geom%mask_gl_gr( vi)) THEN
+          IF (geom%mask_gl_gr( vi)) THEN
             ! Grounding line: use some combination of the solutions using Q_base_grnd and T_base_float as boundary conditions
 
             ! Fully grounded solution (default: immediately assigned to final solution)
@@ -196,7 +200,7 @@ CONTAINS
                   ! Use solution that assumes a fully grounded ice column (already assigned)
                 CASE ('subgrid')
                   ! Interpolate grounded and floating solutions based on grounded fraction
-                  icecol_Ti_tplusdt = ice%geom%fraction_gr( vi) * icecol_Ti_tplusdt + (1._dp - ice%geom%fraction_gr( vi)) * icecol_Ti_tplusdt_gl_fl
+                  icecol_Ti_tplusdt = geom%fraction_gr( vi) * icecol_Ti_tplusdt + (1._dp - geom%fraction_gr( vi)) * icecol_Ti_tplusdt_gl_fl
                 CASE ('pmp')
                   ! Use solution that assumes ice base is at pressure melting point
                   icecol_Ti_tplusdt = icecol_Ti_tplusdt_gl_fl
@@ -204,7 +208,7 @@ CONTAINS
                   CALL crash('unknown choice_GL_temperature_BC "' // TRIM( C%choice_GL_temperature_BC) // '"!')
               END SELECT
 
-          ELSEIF (ice%geom%mask_grounded_ice( vi)) THEN
+          ELSEIF (geom%mask_grounded_ice( vi)) THEN
             ! Grounded ice: use Q_base_grnd as boundary condition
 
             CALL solve_1D_heat_equation( mesh, icecol_Ti, icecol_u, icecol_v, icecol_w, &
@@ -212,7 +216,7 @@ CONTAINS
               icecol_Ti_pmp, icecol_Ki, icecol_Cpi, icecol_dzeta_dx, icecol_dzeta_dy, icecol_dzeta_dz, icecol_dzeta_dt, &
               icecol_Phi, dt_applied, icecol_Ti_tplusdt, Q_base_grnd = Q_base_grnd( vi))
 
-          ELSEIF (ice%geom%mask_floating_ice( vi)) THEN
+          ELSEIF (geom%mask_floating_ice( vi)) THEN
             ! Floating ice: use T_base_float as boundary condition
 
             CALL solve_1D_heat_equation( mesh, icecol_Ti, icecol_u, icecol_v, icecol_w, &
@@ -260,7 +264,7 @@ CONTAINS
 
       DO vi = mesh%vi1, mesh%vi2
         IF (is_unstable( vi) == 1) THEN
-          CALL replace_Ti_with_robin_solution( mesh, ice, climate, SMB, Ti_tplusdt, vi)
+          CALL replace_Ti_with_robin_solution( mesh, ice, geom, climate, SMB, Ti_tplusdt, vi)
         END IF
       END DO
 
@@ -268,16 +272,16 @@ CONTAINS
       ! An unacceptably large number of grid cells was unstable; throw an error.
 
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%Hi                  , 'Hi'                  )
-      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%Hi_eff              , 'Hi_eff'              )
-      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%Hb                  , 'Hb'                  )
-      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%geom%SL                  , 'SL'                  )
+      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, geom%Hi_eff              , 'Hi_eff'              )
+      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, geom%Hb                  , 'Hb'                  )
+      ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, geom%SL                  , 'SL'                  )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dx_ak         , 'dzeta_dx_ak'         )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dy_ak         , 'dzeta_dy_ak'         )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dz_ak         , 'dzeta_dz_ak'         )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%dzeta_dt_ak         , 'dzeta_dt_ak'         )
-      ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%vel%u_3D                , 'u_3D'                )
-      ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%vel%v_3D                , 'v_3D'                )
-      ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%vel%w_3D                , 'w_3D'                )
+      ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, vel%u_3D                , 'u_3D'                )
+      ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, vel%v_3D                , 'v_3D'                )
+      ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, vel%w_3D                , 'w_3D'                )
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, ice%frictional_heating  , 'frictional_heating'  )
       ! CALL save_variable_as_netcdf_dp_2D(  C%output_dir, ice%internal_heating    , 'internal_heating'    )
       ! CALL save_variable_as_netcdf_dp_1D(  C%output_dir, T_surf_annual           , 'T_surf_annual'       )
@@ -509,10 +513,7 @@ CONTAINS
     ! Open the NetCDF file
     CALL open_existing_netcdf_file_for_writing( ice%thermo_restart_filename, ncid)
 
-    ! Write the time to the file
     CALL write_time_to_file( ice%thermo_restart_filename, ncid, time)
-
-    ! Write the velocity fields to the file
     CALL write_to_field_multopt_mesh_dp_3D( mesh, ice%thermo_restart_filename, ncid, 'Ti', ice%Ti)
 
     ! Close the file

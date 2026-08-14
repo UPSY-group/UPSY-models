@@ -13,6 +13,7 @@ module BMB_inverted
   use ice_geometry_basics, only: is_floating
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -22,14 +23,15 @@ module BMB_inverted
 
 contains
 
-  subroutine run_BMB_model_inverted( mesh, ice, BMB_inv, time)
+  subroutine run_BMB_model_inverted( mesh, ice, geom, BMB_inv, time)
     !< Nudge basal melt rate based on mismatch between modelled and target ice geometry
 
     ! In/output variables:
-    type(type_mesh),               intent(in   ) :: mesh
-    class(atype_ice_model_data),   intent(in   ) :: ice
-    type(type_BMB_model_inverted), intent(inout) :: BMB_inv
-    real(dp),                      intent(in   ) :: time
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_BMB_model_inverted),        intent(inout) :: BMB_inv
+    real(dp),                             intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_BMB_model_inverted'
@@ -47,8 +49,8 @@ contains
     ! is often wrong (because of the difficulty of remapping a discontinuous
     ! field), so instead use the mean of the neighbouring non-front shelf
     ! vertices.
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice     , mask_floating_ice_tot)
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_cf_fl            , mask_cf_fl_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_floating_ice     , mask_floating_ice_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_cf_fl            , mask_cf_fl_tot)
     call gather_to_all( BMB_inv%target_geometry%Hi, Hi_target_tot)
 
     do vi = mesh%vi1, mesh% vi2
@@ -66,7 +68,7 @@ contains
           Hi_target_tot( vi) = wH_sum / w_sum
         else
           ! No available surrounding shelf values, assume ice thickness here is fine
-          Hi_target_tot( vi) = ice%geom%Hi( vi)
+          Hi_target_tot( vi) = geom%Hi( vi)
         end if
       end if
     end do
@@ -83,9 +85,9 @@ contains
         ! or refreezing to shelf vertices when the grounding line temporarily retreats. However,
         ! this happens in pseudo-time, and will stop once the geometry converges to the target)
 
-        if (BMB_inv%target_mask_shelf( vi) .or. ice%geom%mask_floating_ice( vi)) then
+        if (BMB_inv%target_mask_shelf( vi) .or. geom%mask_floating_ice( vi)) then
 
-          deltaH = ice%geom%Hi( vi) - Hi_target_tot( vi)
+          deltaH = geom%Hi( vi) - Hi_target_tot( vi)
           dHdt   = ice%dHi_dt( vi)
 
           dBMBdt = c_H * deltaH + c_dHdt * dHdt

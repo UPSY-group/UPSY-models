@@ -9,8 +9,6 @@ module ice_model_data
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
   use basal_hydrology_model_types, only: type_basal_hydrology_model
-  use ice_geometry_model_basic, only: type_ice_geometry_model
-  use ice_velocity_model_basic, only: atype_ice_velocity_model
 
   IMPLICIT NONE
 
@@ -308,12 +306,6 @@ module ice_model_data
 
   type, abstract :: atype_ice_model_data
     ! The ice dynamics model data structure.
-
-    ! Geometry
-    type(type_ice_geometry_model), allocatable :: geom
-
-    ! Velocity
-    class(atype_ice_velocity_model), allocatable :: vel
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)

@@ -46,6 +46,8 @@ jobs:
         if: matrix.os == 'macos-latest'
         shell: micromamba-shell {0}
         run: echo "PKG_CONFIG_PATH=${CONDA_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" >> $GITHUB_ENV
+
+      - name: Compile UFEMISM
         shell: micromamba-shell {0}
         run: csh compile_UFEMISM.csh  ${{ matrix.build_type }}  clean
 

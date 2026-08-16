@@ -5,6 +5,7 @@ on:
     branches:
       - main
     paths:
+      - 'src/UPSY/**'
       - 'src/UFEMISM/**'
   workflow_dispatch:
 

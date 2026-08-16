@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - 'src/UPSY/**'
+      - '.github/workflows/UPSY_test_suite**'
   workflow_dispatch:
 
 jobs:

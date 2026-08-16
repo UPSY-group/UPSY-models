@@ -129,7 +129,7 @@ contains
     !< Read parallel array info from a NetCDF file
 
     ! In/output variables:
-    class(type_par_arr_info), intent(  out) :: self
+    class(type_par_arr_info), intent(inout) :: self
     character(len=*),         intent(in   ) :: filename
     integer,                  intent(in   ) :: ncid
     character(len=*),         intent(in   ) :: pai_name

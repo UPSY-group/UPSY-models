@@ -110,6 +110,10 @@ jobs:
           cache-environment: true
           cache-downloads: true
 
+      - name: Set PKG_CONFIG_PATH
+        shell: micromamba-shell {0}
+        run: echo "PKG_CONFIG_PATH=${CONDA_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" >> $GITHUB_ENV
+
       - name: Verify compiler setup
         shell: micromamba-shell {0}
         run: gfortran --version

@@ -20,6 +20,10 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v4
 
+      - name: Set PKG_CONFIG_PATH
+        shell: micromamba-shell {0}
+        run: echo "PKG_CONFIG_PATH=${CONDA_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" >> $GITHUB_ENV
+
       - name: Restore LADDIE program from cache
         uses: actions/cache/restore@v3
         id: LADDIE_program_cache_restore

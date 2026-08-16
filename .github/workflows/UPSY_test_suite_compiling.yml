@@ -42,6 +42,10 @@ jobs:
         shell: micromamba-shell {0}
         run: gfortran --version
 
+      - name: Set PKG_CONFIG_PATH
+        shell: micromamba-shell {0}
+        run: echo "PKG_CONFIG_PATH=${CONDA_PREFIX}/lib/pkgconfig:${PKG_CONFIG_PATH}" >> $GITHUB_ENV
+
       - name: Compile UPSY
         shell: micromamba-shell {0}
         run: csh compile_UPSY.csh  ${{ matrix.build_type }}  clean

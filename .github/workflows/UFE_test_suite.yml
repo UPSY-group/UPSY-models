@@ -5,7 +5,10 @@ on:
     branches:
       - main
     paths:
+      - 'src/UPSY/**'
       - 'src/UFEMISM/**'
+      - '.github/workflows/UFE_test_suite**'
+      - '.github/workflows/UPSY_test_suite_run_and_check_test.yml'
   workflow_dispatch:
 
 jobs:

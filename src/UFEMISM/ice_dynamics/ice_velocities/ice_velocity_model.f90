@@ -36,7 +36,7 @@ contains
     case ('SSA')
       allocate( type_ice_velocity_model_dummy :: vel)
     case ('SIA/SSA')
-      allocate( type_ice_velocity_model_dummy :: vel)
+      allocate( type_ice_velocity_model_SIA :: vel)
     case ('DIVA')
       allocate( type_ice_velocity_model_dummy :: vel)
     case ('BPA')

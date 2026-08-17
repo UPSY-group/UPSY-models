@@ -9,6 +9,7 @@ module ice_model_data
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
   use basal_hydrology_model_types, only: type_basal_hydrology_model
+  use models_basic, only: atype_model
 
   IMPLICIT NONE
 
@@ -304,7 +305,7 @@ module ice_model_data
 
   END TYPE type_ice_pc
 
-  type, abstract :: atype_ice_model_data
+  type, abstract, extends(atype_model) :: atype_ice_model_data
     ! The ice dynamics model data structure.
 
     ! Geometry changes

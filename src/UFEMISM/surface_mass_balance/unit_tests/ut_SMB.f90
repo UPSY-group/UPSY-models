@@ -90,7 +90,7 @@ contains
     character(len=1024), parameter        :: test_name_local = 'idealised'
     character(len=1024)                   :: test_name
     class(atype_SMB_model), allocatable   :: SMB
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model) , allocatable    :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
     type(type_grid)              , target :: grid_smooth
@@ -109,6 +109,9 @@ contains
     ! Create idealised SMB model
     call create_SMB_model( SMB, 'idealised')
     call SMB%allocate ( 'ANT', mesh)
+    allocate( ice)
+    allocate( ice%geom)
+    call ice%geom%allocate( 'ANT', mesh)
     call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
 
     ! Run idealised SMB model for static Halfar solution
@@ -157,7 +160,7 @@ contains
     character(:), allocatable                   :: filename
     integer                                     :: ncid
     class(atype_SMB_model), allocatable         :: SMB
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model), allocatable           :: ice
     type(type_reference_geometry), target       :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target       :: climate
     type(type_grid)              , target       :: grid_smooth
@@ -192,6 +195,9 @@ contains
 
     call create_SMB_model( SMB, 'prescribed')
     call SMB%allocate( 'ANT', mesh)
+    allocate( ice)
+    allocate( ice%geom)
+    call ice%geom%allocate( 'ANT', mesh)
     call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
 
     ! Verify that it worked
@@ -225,7 +231,7 @@ contains
     real(dp)                              :: rp
     class(atype_SMB_model), allocatable   :: SMB
     real(dp)                              :: time
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model), allocatable     :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
     type(type_grid)              , target :: grid_smooth
@@ -252,6 +258,7 @@ contains
     end do
 
     ! Set up simple ice model fields
+    allocate( ice)
     allocate( ice%geom)
     call ice%geom%allocate( 'ANT', mesh)
     ice%geom%Hi( mesh%vi1: mesh%vi2) = 0._dp

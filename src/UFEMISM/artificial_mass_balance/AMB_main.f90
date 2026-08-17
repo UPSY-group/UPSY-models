@@ -11,7 +11,7 @@ MODULE AMB_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE AMB_model_types                                        , ONLY: type_AMB_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   IMPLICIT NONE

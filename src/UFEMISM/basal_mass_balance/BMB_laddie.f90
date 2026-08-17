@@ -14,9 +14,10 @@ MODULE BMB_laddie
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  USE ice_model_data                                        , ONLY: atype_ice_model_data
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use netcdf_io_main
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   IMPLICIT NONE
 
@@ -26,14 +27,15 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model_laddie( mesh, ice, BMB, time, do_hybrid)
+  SUBROUTINE run_BMB_model_laddie( mesh, ice, geom, BMB, time, do_hybrid)
     ! Calculate the basal mass balance
     !
     ! Call the external LADDIE model
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     REAL(dp),                               INTENT(IN)    :: time
     LOGICAL,                                INTENT(IN)    :: do_hybrid  ! If .TRUE. run laddie within ROI, and a different BMB model outside ROI. If .FALSE. run laddie for the full domain.
@@ -83,7 +85,7 @@ CONTAINS
               BMB%BMB( vi) = 0._dp
 
               ! Copy values from temporary BMB to all floating / grounding cells within ROI
-              IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_gl_fl( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
+              IF (geom%mask_floating_ice( vi) .OR. geom%mask_gl_fl( vi) .OR. geom%mask_gl_gr( vi)) THEN
                 BMB%BMB_shelf( vi) = temporary_BMB(vi)
                 BMB%BMB( vi)       = BMB%BMB_shelf( vi)
               END IF
@@ -110,7 +112,7 @@ CONTAINS
               BMB%BMB( vi) = 0._dp
 
               ! Copy values from temporary BMB to all floating / grounding cells within ROI
-              IF (ice%geom%mask_floating_ice( vi) .OR. ice%geom%mask_gl_fl( vi) .OR. ice%geom%mask_gl_gr( vi)) THEN
+              IF (geom%mask_floating_ice( vi) .OR. geom%mask_gl_fl( vi) .OR. geom%mask_gl_gr( vi)) THEN
                 BMB%BMB_shelf( vi) = temporary_BMB(vi)
                 BMB%BMB( vi)       = BMB%BMB_shelf( vi)
               END IF

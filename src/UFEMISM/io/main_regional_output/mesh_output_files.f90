@@ -8,7 +8,8 @@ module mesh_output_files
   use grid_basic, only: type_grid
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_io_main
   use netcdf_bedrock_CDF
   use netcdf, only: NF90_DOUBLE
@@ -219,15 +220,15 @@ contains
       case ('Hs_slope')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'Hs_slope', region%ice%geom%Hs_slope)
       case ('grounding_line')
-        call write_grounding_line_to_file( filename, ncid, region%mesh, region%ice)
+        call write_grounding_line_to_file( filename, ncid, region%mesh, region%ice%geom)
       case ('ice_margin')
-        call write_ice_margin_to_file( filename, ncid, region%mesh, region%ice)
+        call write_ice_margin_to_file( filename, ncid, region%mesh, region%ice%geom)
       case ('calving_front')
-        call write_calving_front_to_file( filename, ncid, region%mesh, region%ice)
+        call write_calving_front_to_file( filename, ncid, region%mesh, region%ice%geom)
       case ('coastline')
-        call write_coastline_to_file( filename, ncid, region%mesh, region%ice)
+        call write_coastline_to_file( filename, ncid, region%mesh, region%ice%geom)
       case ('grounded_ice_contour')
-        call write_grounded_ice_contour_to_file( filename, ncid, region%mesh, region%ice)
+        call write_grounded_ice_contour_to_file( filename, ncid, region%mesh, region%ice%geom)
 
     ! ===== Geometry on triangles for 3D plots =====
     ! ==============================================
@@ -804,7 +805,7 @@ contains
 
     if (C%choice_subgrid_grounded_fraction == 'bedrock_CDF' .or. C%choice_subgrid_grounded_fraction == 'bilin_interp_TAF+bedrock_CDF') then
       ! Set up bedrock CDF in the file
-      call setup_bedrock_CDF_in_netcdf_file( region%mesh, region%output_filename_mesh, ncid, region%ice)
+      call setup_bedrock_CDF_in_netcdf_file( region%mesh, region%output_filename_mesh, ncid, region%ice%geom)
     end if
 
     ! Add time, zeta, and month dimensions+variables to the file
@@ -1527,13 +1528,13 @@ contains
 
   end subroutine create_main_regional_output_file_mesh_field
 
-  subroutine write_grounding_line_to_file( filename, ncid, mesh, ice)
+  subroutine write_grounding_line_to_file( filename, ncid, mesh, geom)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    character(len=*),                     intent(in   ) :: filename
+    integer,                              intent(in   ) :: ncid
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_grounding_line_to_file'
@@ -1546,8 +1547,8 @@ contains
 
     ! Replace thickness above floatation with NaN in ice-free vertices so GL wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%geom%Hi( vi) > 0.1_dp) then
-        TAF_for_GL( vi) = ice%geom%TAF( vi)
+      if (geom%Hi( vi) > 0.1_dp) then
+        TAF_for_GL( vi) = geom%TAF( vi)
       else
         TAF_for_GL( vi) = NaN
       end if
@@ -1565,13 +1566,13 @@ contains
 
   end subroutine write_grounding_line_to_file
 
-  subroutine write_calving_front_to_file( filename, ncid, mesh, ice)
+  subroutine write_calving_front_to_file( filename, ncid, mesh, geom)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    character(len=*),                     intent(in   ) :: filename
+    integer,                              intent(in   ) :: ncid
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_calving_front_to_file'
@@ -1584,8 +1585,8 @@ contains
 
     ! Replace ice thickness with NaN in grounded vertices so CF wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%geom%TAF( vi) < 0._dp) then
-        Hi_for_GL( vi) = ice%geom%Hi( vi)
+      if (geom%TAF( vi) < 0._dp) then
+        Hi_for_GL( vi) = geom%Hi( vi)
       else
         Hi_for_GL( vi) = NaN
       end if
@@ -1603,13 +1604,13 @@ contains
 
   end subroutine write_calving_front_to_file
 
-  subroutine write_ice_margin_to_file( filename, ncid, mesh, ice)
+  subroutine write_ice_margin_to_file( filename, ncid, mesh, geom)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    character(len=*),                     intent(in   ) :: filename
+    integer,                              intent(in   ) :: ncid
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_ice_margin_to_file'
@@ -1621,7 +1622,7 @@ contains
 
     ! Calculate ice margin contour
     if (par%primary) allocate( CC( mesh%nE,2))
-    Hi_loc => ice%geom%Hi( mesh%vi1:mesh%vi2)
+    Hi_loc => geom%Hi( mesh%vi1:mesh%vi2)
     call calc_mesh_contour( mesh, Hi_loc, 0.05_dp, CC)
 
     ! Write to NetCDF
@@ -1632,13 +1633,13 @@ contains
 
   end subroutine write_ice_margin_to_file
 
-  subroutine write_coastline_to_file( filename, ncid, mesh, ice)
+  subroutine write_coastline_to_file( filename, ncid, mesh, geom)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    character(len=*),                     intent(in   ) :: filename
+    integer,                              intent(in   ) :: ncid
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_coastline_to_file'
@@ -1651,10 +1652,10 @@ contains
 
     ! Replace water depth with NaN in ice-covered vertices so coastline wont be found there
     do vi = mesh%vi1, mesh%vi2
-      if (ice%geom%Hi( vi) > 0.05_dp) then
+      if (geom%Hi( vi) > 0.05_dp) then
         water_depth_for_coastline( vi) = NaN
       else
-        water_depth_for_coastline( vi) = ice%geom%SL( vi) - ice%geom%Hb( vi)
+        water_depth_for_coastline( vi) = geom%SL( vi) - geom%Hb( vi)
       end if
     end do
 
@@ -1670,13 +1671,13 @@ contains
 
   end subroutine write_coastline_to_file
 
-  subroutine write_grounded_ice_contour_to_file( filename, ncid, mesh, ice)
+  subroutine write_grounded_ice_contour_to_file( filename, ncid, mesh, geom)
 
     ! In/output variables:
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
+    character(len=*),                     intent(in   ) :: filename
+    integer,                              intent(in   ) :: ncid
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter          :: routine_name = 'write_grounded_ice_contour_to_file'
@@ -1689,8 +1690,8 @@ contains
 
     ! Remove floating ice
     do vi = mesh%vi1, mesh%vi2
-      if (ice%geom%mask_grounded_ice( vi)) then
-        Hi_grounded_only( vi) = ice%geom%Hi( vi)
+      if (geom%mask_grounded_ice( vi)) then
+        Hi_grounded_only( vi) = geom%Hi( vi)
       else
         Hi_grounded_only( vi) = 0._dp
       end if

@@ -5,7 +5,8 @@ module constitutive_equation
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -81,12 +82,13 @@ contains
 
   ! The calculation of the temperature-dependent flow factor
 
-  subroutine calc_ice_rheology_Glen( mesh, ice)
+  subroutine calc_ice_rheology_Glen( mesh, ice, geom)
     !< Calculate the flow factor A in Glen's flow law
 
     ! In/output variables
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_ice_rheology_Glen'
@@ -132,22 +134,22 @@ contains
       case ('separate')
 
         ! Totally separate values for grounded and floating areas
-        if (ice%geom%mask_grounded_ice( vi)) then
+        if (geom%mask_grounded_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_sheet
-        elseif (ice%geom%mask_floating_ice( vi)) then
+        elseif (geom%mask_floating_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_shelf
         end if
 
       case ('interp')
 
-        if (ice%geom%Hi( vi) > 0._dp .and. ice%geom%Hib( vi) < ice%geom%SL( vi)) then
+        if (geom%Hi( vi) > 0._dp .and. geom%Hib( vi) < geom%SL( vi)) then
           ! Interpolation between grounded and floating values depending on grounded fraction
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * &
-            (       ice%geom%fraction_gr( vi)  * C%m_enh_sheet + &
-             (1._dp-ice%geom%fraction_gr( vi)) * C%m_enh_shelf)
-        elseif (ice%geom%mask_grounded_ice( vi)) then
+            (       geom%fraction_gr( vi)  * C%m_enh_sheet + &
+             (1._dp-geom%fraction_gr( vi)) * C%m_enh_shelf)
+        elseif (geom%mask_grounded_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_sheet
-        elseif (ice%geom%mask_floating_ice( vi)) then
+        elseif (geom%mask_floating_ice( vi)) then
           ice%A_flow( vi,:) = ice%A_flow( vi,:) * C%m_enh_shelf
         end if
 

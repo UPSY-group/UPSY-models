@@ -6,7 +6,7 @@ module netcdf_bedrock_CDF
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_basic
   use netcdf, only: NF90_DOUBLE
 
@@ -18,14 +18,14 @@ module netcdf_bedrock_CDF
 
 contains
 
-  subroutine setup_bedrock_CDF_in_netcdf_file( mesh, filename, ncid, ice)
+  subroutine setup_bedrock_CDF_in_netcdf_file( mesh, filename, ncid, geom)
     !< Set up a bedrock CDF in an existing NetCDF file
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    character(len=*),     intent(in   ) :: filename
-    integer,              intent(in   ) :: ncid
-    type(type_ice_model), intent(in   ) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    character(len=*),                     intent(in   ) :: filename
+    integer,                              intent(in   ) :: ncid
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'setup_bedrock_CDF_in_netcdf_file'
@@ -41,8 +41,8 @@ contains
       allocate( bedrock_cdf_tot  ( mesh%nV  , C%subgrid_bedrock_cdf_nbins))
       allocate( bedrock_cdf_b_tot( mesh%nTri, C%subgrid_bedrock_cdf_nbins))
     end if
-    call gather_dist_shared_to_primary( mesh%pai_V  , C%subgrid_bedrock_cdf_nbins, ice%geom%bedrock_cdf  , d_tot = bedrock_cdf_tot)
-    call gather_dist_shared_to_primary( mesh%pai_Tri, C%subgrid_bedrock_cdf_nbins, ice%geom%bedrock_cdf_b, d_tot = bedrock_cdf_b_tot)
+    call gather_dist_shared_to_primary( mesh%pai_V  , C%subgrid_bedrock_cdf_nbins, geom%bedrock_cdf  , d_tot = bedrock_cdf_tot)
+    call gather_dist_shared_to_primary( mesh%pai_Tri, C%subgrid_bedrock_cdf_nbins, geom%bedrock_cdf_b, d_tot = bedrock_cdf_b_tot)
 
     ! Create CDF bin dimension
     call create_dimension( filename, ncid, 'bin', C%subgrid_bedrock_cdf_nbins, id_dim_bin)

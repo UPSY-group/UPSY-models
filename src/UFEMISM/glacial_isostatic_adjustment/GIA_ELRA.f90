@@ -11,7 +11,8 @@ MODULE GIA_ELRA
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE GIA_model_types                                        , ONLY: type_GIA_model, type_ELRA_model
   USE region_types                                           , ONLY: type_model_region
   USE grid_basic                                             , ONLY: setup_square_grid
@@ -50,7 +51,7 @@ contains
     CALL init_routine( routine_name)
 
     ! Calculate the bedrock deformation rate
-    CALL calculate_ELRA_bedrock_deformation_rate( region%mesh, region%GIA%grid, region%ice, region%GIA, region%ELRA)
+    CALL calculate_ELRA_bedrock_deformation_rate( region%mesh, region%GIA%grid, region%ice, region%ice%geom, region%GIA, region%ELRA)
 
     ! Update bedrock with last calculated deformation rate
     DO vi = region%mesh%vi1, region%mesh%vi2
@@ -61,15 +62,16 @@ contains
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE run_ELRA_model
-  SUBROUTINE calculate_ELRA_bedrock_deformation_rate( mesh, grid, ice, GIA, ELRA)
+  SUBROUTINE calculate_ELRA_bedrock_deformation_rate( mesh, grid, ice, geom, GIA, ELRA)
     ! Use the ELRA model to update bedrock deformation rates.
 
     ! In/output variables:
-    TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_grid),                     INTENT(IN)    :: grid
-    TYPE(type_ice_model),                INTENT(INOUT) :: ice
-    TYPE(type_GIA_model),                INTENT(INOUT) :: GIA
-    TYPE(type_ELRA_model),               INTENT(INOUT) :: ELRA
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    TYPE(type_grid),                      INTENT(IN)    :: grid
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    TYPE(type_GIA_model),                 INTENT(INOUT) :: GIA
+    TYPE(type_ELRA_model),                INTENT(INOUT) :: ELRA
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'calculate_ELRA_bedrock_deformation_rate'
@@ -87,10 +89,10 @@ contains
     DO vi = mesh%vi1, mesh%vi2
 
       ! Absolute surface load
-      IF (is_floating( ice%geom%Hi( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) THEN
-        ELRA%surface_load_mesh( vi) = (ice%geom%SL( vi) - ice%geom%Hb( vi)) * grid%dx**2 * seawater_density
-      ELSEIF (ice%geom%Hi( vi) > 0._dp) THEN
-        ELRA%surface_load_mesh( vi) =  ice%geom%Hi( vi) * grid%dx**2 * ice_density
+      IF (is_floating( geom%Hi( vi), geom%Hb( vi), geom%SL( vi))) THEN
+        ELRA%surface_load_mesh( vi) = (geom%SL( vi) - geom%Hb( vi)) * grid%dx**2 * seawater_density
+      ELSEIF (geom%Hi( vi) > 0._dp) THEN
+        ELRA%surface_load_mesh( vi) =  geom%Hi( vi) * grid%dx**2 * ice_density
       ELSE
         ELRA%surface_load_mesh( vi) = 0._dp
       END IF
@@ -269,8 +271,8 @@ contains
 
     ! Add routine to path
     CALL init_routine( routine_name)
-	CALL reallocate_bounds( ELRA%surface_load_GIAeq, mesh_new%vi1, mesh_new%vi2)
-	CALL reallocate_bounds( ELRA%surface_load_mesh, mesh_new%vi1, mesh_new%vi2)
+    CALL reallocate_bounds( ELRA%surface_load_GIAeq, mesh_new%vi1, mesh_new%vi2)
+    CALL reallocate_bounds( ELRA%surface_load_mesh, mesh_new%vi1, mesh_new%vi2)
 
     ! Recalculate the reference load on the GIA grid
     CALL initialise_ELRA_reference_load( mesh_new, grid, ELRA, refgeo_GIAeq)

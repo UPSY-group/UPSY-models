@@ -10,7 +10,7 @@ module ice_velocities_main
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
+  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_SIA, type_ice_velocity_solver_SSA, &
     type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
   use ice_velocity_model_SIA, only: initialise_SIA_solver, solve_SIA, remap_SIA_solver
   use SSA_main, only: initialise_SSA_solver, solve_SSA, remap_SSA_solver, &
@@ -27,6 +27,7 @@ module ice_velocities_main
   use map_velocities_to_c_grid
   use vertical_velocities, only: calc_vertical_velocities
   use bed_roughness_model_types, only: type_bed_roughness_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
 
   implicit none
@@ -40,7 +41,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
+    class(atype_ice_model_data),         intent(inout) :: ice
     character(len=3),                    intent(in   ) :: region_name
 
     ! Local variables:
@@ -77,13 +78,15 @@ contains
 
   end subroutine initialise_velocity_solver
 
-  subroutine solve_stress_balance( mesh, ice, bed_roughness, BMB, region_name, n_visc_its, n_Axb_its, &
+  subroutine solve_stress_balance( mesh, ice, geom, vel, bed_roughness, BMB, region_name, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate all ice velocities based on the chosen stress balance approximation
 
     ! In/output variables:
     type(type_mesh),                        intent(inout) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
+    class(atype_ice_model_data),            intent(inout) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),   intent(inout) :: vel
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
     character(len=3),                       intent(in   ) :: region_name
@@ -111,8 +114,8 @@ contains
 
       case ('none')
 
-        ice%vel%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
-        ice%vel%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        vel%u_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
+        vel%v_3D_b( mesh%ti1:mesh%ti2,:) = 0._dp
 
         n_visc_its = 0
         n_Axb_its  = 0
@@ -120,8 +123,8 @@ contains
       case ('SIA')
         ! Calculate velocities according to the Shallow Ice Approximation
 
-        call solve_SIA( mesh, ice, ice%SIA)
-        call set_ice_velocities_to_SIA_results( mesh, ice, ice%SIA)
+        call solve_SIA( mesh, ice, geom, ice%SIA)
+        call set_ice_velocities_to_SIA_results( mesh, vel, ice%SIA)
 
         n_visc_its = 0
         n_Axb_its  = 0
@@ -129,63 +132,63 @@ contains
       case ('SSA')
         ! Calculate velocities according to the Shallow Shelf Approximation
 
-        call solve_SSA( mesh, ice, bed_roughness, ice%SSA, &
+        call solve_SSA( mesh, ice, geom, bed_roughness, ice%SSA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-        call set_ice_velocities_to_SSA_results( mesh, ice, ice%SSA)
+        call set_ice_velocities_to_SSA_results( mesh, vel, ice%SSA)
 
       case ('SIA/SSA')
         ! Calculate velocities according to the hybrid SIA/SSA
 
-        call solve_SIA( mesh, ice, ice%SIA)
-        call solve_SSA( mesh, ice, bed_roughness, ice%SSA, &
+        call solve_SIA( mesh, ice, geom, ice%SIA)
+        call solve_SSA( mesh, ice, geom, bed_roughness, ice%SSA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-        call set_ice_velocities_to_SIASSA_results( mesh, ice, ice%SIA, ice%SSA)
+        call set_ice_velocities_to_SIASSA_results( mesh, vel, ice%SIA, ice%SSA)
 
       case ('DIVA')
         ! Calculate velocities according to the Depth-Integrated Viscosity Approximation
 
-        call solve_DIVA( mesh, ice, bed_roughness, ice%DIVA, &
+        call solve_DIVA( mesh, ice, geom, bed_roughness, ice%DIVA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-        call set_ice_velocities_to_DIVA_results( mesh, ice, ice%DIVA)
+        call set_ice_velocities_to_DIVA_results( mesh, ice, vel, ice%DIVA)
 
       case ('BPA')
         ! Calculate velocities according to the Blatter-Pattyn Approximation
 
-        call solve_BPA( mesh, ice, bed_roughness, ice%BPA, &
+        call solve_BPA( mesh, ice, geom, bed_roughness, ice%BPA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-        call set_ice_velocities_to_BPA_results( mesh, ice, ice%BPA)
+        call set_ice_velocities_to_BPA_results( mesh, vel, ice%BPA)
 
       case ('hybrid DIVA/BPA')
         ! Calculate velocities according to the hybrid DIVA/BPA
 
-        call solve_hybrid_DIVA_BPA( mesh, ice, bed_roughness, ice%hybrid, region_name, &
+        call solve_hybrid_DIVA_BPA( mesh, ice, geom, bed_roughness, ice%hybrid, region_name, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-        call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, ice, ice%hybrid)
+        call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, vel, ice%hybrid)
 
     end select
 
     ! Calculate all secondary ice velocities (surface, base, vertical average)
-    call calc_secondary_velocities( mesh, ice)
+    call calc_secondary_velocities( mesh, vel)
 
     ! Calculate vertical velocities
-    call calc_vertical_velocities( ice%vel, mesh, ice, ice%geom, BMB)
+    call calc_vertical_velocities( vel, mesh, ice, geom, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine solve_stress_balance
 
-  subroutine calc_secondary_velocities( mesh, ice)
+  subroutine calc_secondary_velocities( mesh, vel)
     !< Calculate all secondary ice velocities (surface, base, vertical average)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
 
     ! Local variables:
     character(len=1024), parameter    :: routine_name = 'calc_secondary_velocities'
@@ -198,54 +201,54 @@ contains
     do ti = mesh%ti1, mesh%ti2
 
       ! Surface
-      ice%vel%u_surf_b(    ti) = ice%vel%u_3D_b( ti,1)
-      ice%vel%v_surf_b(    ti) = ice%vel%v_3D_b( ti,1)
-      ice%vel%uabs_surf_b( ti) = SQRT( ice%vel%u_surf_b( ti)**2 + ice%vel%v_surf_b( ti)**2)
+      vel%u_surf_b(    ti) = vel%u_3D_b( ti,1)
+      vel%v_surf_b(    ti) = vel%v_3D_b( ti,1)
+      vel%uabs_surf_b( ti) = SQRT( vel%u_surf_b( ti)**2 + vel%v_surf_b( ti)**2)
 
       ! Base
-      ice%vel%u_base_b(    ti) = ice%vel%u_3D_b( ti,C%nz)
-      ice%vel%v_base_b(    ti) = ice%vel%v_3D_b( ti,C%nz)
-      ice%vel%uabs_base_b( ti) = SQRT( ice%vel%u_base_b( ti)**2 + ice%vel%v_base_b( ti)**2)
+      vel%u_base_b(    ti) = vel%u_3D_b( ti,C%nz)
+      vel%v_base_b(    ti) = vel%v_3D_b( ti,C%nz)
+      vel%uabs_base_b( ti) = SQRT( vel%u_base_b( ti)**2 + vel%v_base_b( ti)**2)
 
       ! Vertical average
-      u_prof = ice%vel%u_3D_b( ti,:)
-      v_prof = ice%vel%v_3D_b( ti,:)
-      ice%vel%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
-      ice%vel%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
-      ice%vel%uabs_vav_b( ti) = SQRT( ice%vel%u_vav_b( ti)**2 + ice%vel%v_vav_b( ti)**2)
+      u_prof = vel%u_3D_b( ti,:)
+      v_prof = vel%v_3D_b( ti,:)
+      vel%u_vav_b( ti) = vertical_average( mesh%zeta, u_prof)
+      vel%v_vav_b( ti) = vertical_average( mesh%zeta, v_prof)
+      vel%uabs_vav_b( ti) = SQRT( vel%u_vav_b( ti)**2 + vel%v_vav_b( ti)**2)
 
     end do
 
     ! == Calculate velocities on the a-grid (needed to calculate the vertical velocity w, and for writing to output)
 
     ! 3-D
-    call map_b_a_3D( mesh, ice%vel%u_3D_b  , ice%vel%u_3D  )
-    call map_b_a_3D( mesh, ice%vel%v_3D_b  , ice%vel%v_3D  )
+    call map_b_a_3D( mesh, vel%u_3D_b  , vel%u_3D  )
+    call map_b_a_3D( mesh, vel%v_3D_b  , vel%v_3D  )
 
     ! Surface
-    call map_b_a_2D( mesh, ice%vel%u_surf_b, ice%vel%u_surf)
-    call map_b_a_2D( mesh, ice%vel%v_surf_b, ice%vel%v_surf)
+    call map_b_a_2D( mesh, vel%u_surf_b, vel%u_surf)
+    call map_b_a_2D( mesh, vel%v_surf_b, vel%v_surf)
 
     ! Base
-    call map_b_a_2D( mesh, ice%vel%u_base_b, ice%vel%u_base)
-    call map_b_a_2D( mesh, ice%vel%v_base_b, ice%vel%v_base)
+    call map_b_a_2D( mesh, vel%u_base_b, vel%u_base)
+    call map_b_a_2D( mesh, vel%v_base_b, vel%v_base)
 
     ! Vertical average
-    call map_b_a_2D( mesh, ice%vel%u_vav_b , ice%vel%u_vav )
-    call map_b_a_2D( mesh, ice%vel%v_vav_b , ice%vel%v_vav )
+    call map_b_a_2D( mesh, vel%u_vav_b , vel%u_vav )
+    call map_b_a_2D( mesh, vel%v_vav_b , vel%v_vav )
 
     ! Absolute
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%uabs_surf( vi) = sqrt( ice%vel%u_surf( vi)**2 + ice%vel%v_surf( vi)**2)
-      ice%vel%uabs_base( vi) = sqrt( ice%vel%u_base( vi)**2 + ice%vel%v_base( vi)**2)
-      ice%vel%uabs_vav(  vi) = sqrt( ice%vel%u_vav(  vi)**2 + ice%vel%v_vav(  vi)**2)
+      vel%uabs_surf( vi) = sqrt( vel%u_surf( vi)**2 + vel%v_surf( vi)**2)
+      vel%uabs_base( vi) = sqrt( vel%u_base( vi)**2 + vel%v_base( vi)**2)
+      vel%uabs_vav(  vi) = sqrt( vel%u_vav(  vi)**2 + vel%v_vav(  vi)**2)
     end do
 
-    call calc_u_vav_perp( mesh, ice%vel)
+    call calc_u_vav_perp( mesh, vel)
 
     ! Slide/shear ratio
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%R_shear( vi) = (ice%vel%uabs_base( vi) + 0.1_dp) / (ice%vel%uabs_surf( vi) + 0.1_dp)
+      vel%R_shear( vi) = (vel%uabs_base( vi) + 0.1_dp) / (vel%uabs_surf( vi) + 0.1_dp)
     end do
 
     ! Finalise routine path
@@ -294,13 +297,14 @@ contains
 
   end subroutine calc_u_vav_perp
 
-  subroutine remap_velocity_solver( mesh_old, mesh_new, ice)
+  subroutine remap_velocity_solver( mesh_old, mesh_new, ice, vel)
     !< Remap the velocity solver for the chosen stress balance approximation
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh_old
-    type(type_mesh),      intent(in   ) :: mesh_new
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh_old
+    type(type_mesh),                      intent(in   ) :: mesh_new
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'remap_velocity_solver'
@@ -319,38 +323,38 @@ contains
       case ('SIA')
 
         call remap_SIA_solver(  mesh_old, mesh_new, ice%SIA)
-        call set_ice_velocities_to_SIA_results( mesh_new, ice, ice%SIA)
+        call set_ice_velocities_to_SIA_results( mesh_new, vel, ice%SIA)
 
       case ('SSA')
 
         call remap_SSA_solver(  mesh_old, mesh_new, ice%SSA)
-        call set_ice_velocities_to_SSA_results( mesh_new, ice, ice%SSA)
+        call set_ice_velocities_to_SSA_results( mesh_new, vel, ice%SSA)
 
       case ('SIA/SSA')
 
         call remap_SIA_solver(  mesh_old, mesh_new, ice%SIA)
         call remap_SSA_solver(  mesh_old, mesh_new, ice%SSA)
-        call set_ice_velocities_to_SIASSA_results( mesh_new, ice, ice%SIA, ice%SSA)
+        call set_ice_velocities_to_SIASSA_results( mesh_new, vel, ice%SIA, ice%SSA)
 
       case ('DIVA')
 
         call remap_DIVA_solver( mesh_old, mesh_new, ice%DIVA)
-        call set_ice_velocities_to_DIVA_results( mesh_new, ice, ice%DIVA)
+        call set_ice_velocities_to_DIVA_results( mesh_new, ice, vel, ice%DIVA)
 
       case ('BPA')
 
         call remap_BPA_solver(  mesh_old, mesh_new, ice%BPA)
-        call set_ice_velocities_to_BPA_results( mesh_new, ice, ice%BPA)
+        call set_ice_velocities_to_BPA_results( mesh_new, vel, ice%BPA)
 
       case ('hybrid DIVA/BPA')
 
         call remap_hybrid_DIVA_BPA_solver(  mesh_old, mesh_new, ice%hybrid)
-        call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh_new, ice, ice%hybrid)
+        call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh_new, vel, ice%hybrid)
 
     end select
 
     ! Calculate all secondary ice velocities (surface, base, vertical average)
-    call calc_secondary_velocities( mesh_new, ice)
+    call calc_secondary_velocities( mesh_new, vel)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -359,13 +363,13 @@ contains
 
   ! == Set applied ice model velocities to stress balance results
 
-  subroutine set_ice_velocities_to_SIA_results( mesh, ice, SIA)
+  subroutine set_ice_velocities_to_SIA_results( mesh, vel, SIA)
     !< Set applied ice model velocities and strain rates to SIA results
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
-    type(type_ice_velocity_solver_SIA), intent(in   ) :: SIA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
+    type(type_ice_velocity_solver_SIA),   intent(in   ) :: SIA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_SIA_results'
@@ -376,37 +380,37 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
-      ice%vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
+      vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
-      ice%vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
+      vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+      vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
     end do
 
     ! In the SIA, horizontal gradients of u,v, and all gradients of w, are neglected
-    ice%vel%du_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%du_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dv_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dv_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    vel%du_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%du_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dv_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dv_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine set_ice_velocities_to_SIA_results
 
-  subroutine set_ice_velocities_to_SSA_results( mesh, ice, SSA)
+  subroutine set_ice_velocities_to_SSA_results( mesh, vel, SSA)
     !< Set applied ice model velocities to SSA results
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_ice_velocity_solver_SSA),  intent(in   ) :: SSA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
+    type(type_ice_velocity_solver_SSA),   intent(in   ) :: SSA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_SSA_results'
@@ -417,38 +421,38 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%vel%u_3D_b( ti,:) = SSA%u_b( ti)
-      ice%vel%v_3D_b( ti,:) = SSA%v_b( ti)
+      vel%u_3D_b( ti,:) = SSA%u_b( ti)
+      vel%v_3D_b( ti,:) = SSA%v_b( ti)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%du_dx_3D( vi,:) = SSA%du_dx_a( vi)
-      ice%vel%du_dy_3D( vi,:) = SSA%du_dy_a( vi)
-      ice%vel%dv_dx_3D( vi,:) = SSA%dv_dx_a( vi)
-      ice%vel%dv_dy_3D( vi,:) = SSA%dv_dy_a( vi)
+      vel%du_dx_3D( vi,:) = SSA%du_dx_a( vi)
+      vel%du_dy_3D( vi,:) = SSA%du_dy_a( vi)
+      vel%dv_dx_3D( vi,:) = SSA%dv_dx_a( vi)
+      vel%dv_dy_3D( vi,:) = SSA%dv_dy_a( vi)
     end do
 
     ! In the SSA, vertical gradients of u,v, and all gradients of w, are neglected
-    ice%vel%du_dz_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dv_dz_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    vel%du_dz_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dv_dz_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine set_ice_velocities_to_SSA_results
 
-  subroutine set_ice_velocities_to_SIASSA_results( mesh, ice, SIA, SSA)
+  subroutine set_ice_velocities_to_SIASSA_results( mesh, vel, SIA, SSA)
     !< Set applied ice model velocities to hybrid SIA/SSA results
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
-    type(type_ice_velocity_solver_SIA), intent(in   ) :: SIA
-    type(type_ice_velocity_solver_SSA), intent(in   ) :: SSA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
+    type(type_ice_velocity_solver_SIA),   intent(in   ) :: SIA
+    type(type_ice_velocity_solver_SSA),   intent(in   ) :: SSA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_SIASSA_results'
@@ -462,24 +466,24 @@ contains
 
       ! Velocities
       do ti = mesh%ti1, mesh%ti2
-        ice%vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:) + SSA%u_b( ti)
-        ice%vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:) + SSA%v_b( ti)
+        vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:) + SSA%u_b( ti)
+        vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:) + SSA%v_b( ti)
       end do
 
       ! Strain rates
       do vi = mesh%vi1, mesh%vi2
-        ice%vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
-        ice%vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
-        ice%vel%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
-        ice%vel%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
-        ice%vel%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
-        ice%vel%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
+        vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+        vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
+        vel%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
+        vel%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
+        vel%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
+        vel%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
       end do
 
       ! In the hybrid SIA/SSA, gradients of w are neglected
-      ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-      ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-      ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+      vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+      vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+      ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     elseif (C%choice_hybrid_SIASSA_scheme == 'add_SIA_reduced') then
       ! u = (weight * u_SIA) + u_SSA
@@ -490,24 +494,24 @@ contains
         w_sia_u = 1._dp - (2.0_dp/pi) * atan( (abs(SSA%u_b( ti))**2.0_dp) / (30._dp**2.0_dp) )
         w_sia_v = 1._dp - (2.0_dp/pi) * atan( (abs(SSA%v_b( ti))**2.0_dp) / (30._dp**2.0_dp) )
         ! Add SIA fraction to SSA solution
-        ice%vel%u_3D_b( ti,:) = w_sia_u * SIA%u_3D_b( ti,:) + SSA%u_b( ti)
-        ice%vel%v_3D_b( ti,:) = w_sia_v * SIA%v_3D_b( ti,:) + SSA%v_b( ti)
+        vel%u_3D_b( ti,:) = w_sia_u * SIA%u_3D_b( ti,:) + SSA%u_b( ti)
+        vel%v_3D_b( ti,:) = w_sia_v * SIA%v_3D_b( ti,:) + SSA%v_b( ti)
       end do
 
       ! Strain rates
       do vi = mesh%vi1, mesh%vi2
-        ice%vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
-        ice%vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
-        ice%vel%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
-        ice%vel%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
-        ice%vel%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
-        ice%vel%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
+        vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+        vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
+        vel%du_dx_3D( vi,:) = SSA%du_dx_a(  vi  )
+        vel%du_dy_3D( vi,:) = SSA%du_dy_a(  vi  )
+        vel%dv_dx_3D( vi,:) = SSA%dv_dx_a(  vi  )
+        vel%dv_dy_3D( vi,:) = SSA%dv_dy_a(  vi  )
       end do
 
       ! In the hybrid SIA/SSA, gradients of w are neglected
-      ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-      ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-      ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+      vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+      vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+      ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     else
       call crash('unknown choice_hybrid_SIASSA_scheme_config "' // TRIM( C%choice_hybrid_SIASSA_scheme) // '"!')
@@ -518,13 +522,14 @@ contains
 
   end subroutine set_ice_velocities_to_SIASSA_results
 
-  subroutine set_ice_velocities_to_DIVA_results( mesh, ice, DIVA)
+  subroutine set_ice_velocities_to_DIVA_results( mesh, ice, vel, DIVA)
     !< Set applied ice model velocities to DIVA results
 
     ! In/output variables:
-    type(type_mesh),                     intent(in   ) :: mesh
-    type(type_ice_model),                intent(inout) :: ice
-    type(type_ice_velocity_solver_DIVA), intent(in   ) :: DIVA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
+    type(type_ice_velocity_solver_DIVA),  intent(in   ) :: DIVA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_DIVA_results'
@@ -535,24 +540,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%vel%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
-      ice%vel%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
+      vel%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%du_dx_3D( vi,:) = DIVA%du_dx_a(    vi  )
-      ice%vel%du_dy_3D( vi,:) = DIVA%du_dy_a(    vi  )
-      ice%vel%du_dz_3D( vi,:) = DIVA%du_dz_3D_a( vi,:)
-      ice%vel%dv_dx_3D( vi,:) = DIVA%dv_dx_a(    vi  )
-      ice%vel%dv_dy_3D( vi,:) = DIVA%dv_dy_a(    vi  )
-      ice%vel%dv_dz_3D( vi,:) = DIVA%dv_dz_3D_a( vi,:)
+      vel%du_dx_3D( vi,:) = DIVA%du_dx_a(    vi  )
+      vel%du_dy_3D( vi,:) = DIVA%du_dy_a(    vi  )
+      vel%du_dz_3D( vi,:) = DIVA%du_dz_3D_a( vi,:)
+      vel%dv_dx_3D( vi,:) = DIVA%dv_dx_a(    vi  )
+      vel%dv_dy_3D( vi,:) = DIVA%dv_dy_a(    vi  )
+      vel%dv_dz_3D( vi,:) = DIVA%dv_dz_3D_a( vi,:)
     end do
 
     ! In the DIVA, gradients of w are neglected
-    ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Stresses
     do ti = mesh%ti1, mesh%ti2
@@ -564,13 +569,13 @@ contains
 
   end subroutine set_ice_velocities_to_DIVA_results
 
-  subroutine set_ice_velocities_to_BPA_results( mesh, ice, BPA)
+  subroutine set_ice_velocities_to_BPA_results( mesh, vel, BPA)
     ! Set applied ice model velocities and strain rates to BPA results
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_model),               intent(inout) :: ice
-    type(type_ice_velocity_solver_BPA), intent(in   ) :: BPA
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data), intent(inout) :: vel
+    type(type_ice_velocity_solver_BPA),   intent(in   ) :: BPA
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_BPA_results'
@@ -581,37 +586,37 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%vel%u_3D_b( ti,:) = BPA%u_bk( ti,:)
-      ice%vel%v_3D_b( ti,:) = BPA%v_bk( ti,:)
+      vel%u_3D_b( ti,:) = BPA%u_bk( ti,:)
+      vel%v_3D_b( ti,:) = BPA%v_bk( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%du_dx_3D( vi,:) = BPA%du_dx_ak( vi,:)
-      ice%vel%du_dy_3D( vi,:) = BPA%du_dy_ak( vi,:)
-      ice%vel%du_dz_3D( vi,:) = BPA%du_dz_ak( vi,:)
-      ice%vel%dv_dx_3D( vi,:) = BPA%dv_dx_ak( vi,:)
-      ice%vel%dv_dy_3D( vi,:) = BPA%dv_dy_ak( vi,:)
-      ice%vel%dv_dz_3D( vi,:) = BPA%dv_dz_ak( vi,:)
+      vel%du_dx_3D( vi,:) = BPA%du_dx_ak( vi,:)
+      vel%du_dy_3D( vi,:) = BPA%du_dy_ak( vi,:)
+      vel%du_dz_3D( vi,:) = BPA%du_dz_ak( vi,:)
+      vel%dv_dx_3D( vi,:) = BPA%dv_dx_ak( vi,:)
+      vel%dv_dy_3D( vi,:) = BPA%dv_dy_ak( vi,:)
+      vel%dv_dz_3D( vi,:) = BPA%dv_dz_ak( vi,:)
     end do
 
     ! In the BPA, gradients of w are neglected
-    ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine set_ice_velocities_to_BPA_results
 
-  subroutine set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, ice, hybrid)
+  subroutine set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, vel, hybrid)
     !< Set applied ice model velocities and strain rates to hybrid DIVA/BPA results
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(inout) :: ice
-    type(type_ice_velocity_solver_hybrid),  intent(in   ) :: hybrid
+    type(type_mesh),                       intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data),  intent(inout) :: vel
+    type(type_ice_velocity_solver_hybrid), intent(in   ) :: hybrid
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_hybrid_DIVA_BPA_results'
@@ -622,24 +627,24 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      ice%vel%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
-      ice%vel%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
+      vel%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
+      vel%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      ice%vel%du_dx_3D( vi,:) = hybrid%BPA%du_dx_ak( vi,:)
-      ice%vel%du_dy_3D( vi,:) = hybrid%BPA%du_dy_ak( vi,:)
-      ice%vel%du_dz_3D( vi,:) = hybrid%BPA%du_dz_ak( vi,:)
-      ice%vel%dv_dx_3D( vi,:) = hybrid%BPA%dv_dx_ak( vi,:)
-      ice%vel%dv_dy_3D( vi,:) = hybrid%BPA%dv_dy_ak( vi,:)
-      ice%vel%dv_dz_3D( vi,:) = hybrid%BPA%dv_dz_ak( vi,:)
+      vel%du_dx_3D( vi,:) = hybrid%BPA%du_dx_ak( vi,:)
+      vel%du_dy_3D( vi,:) = hybrid%BPA%du_dy_ak( vi,:)
+      vel%du_dz_3D( vi,:) = hybrid%BPA%du_dz_ak( vi,:)
+      vel%dv_dx_3D( vi,:) = hybrid%BPA%dv_dx_ak( vi,:)
+      vel%dv_dy_3D( vi,:) = hybrid%BPA%dv_dy_ak( vi,:)
+      vel%dv_dz_3D( vi,:) = hybrid%BPA%dv_dz_ak( vi,:)
     end do
 
     ! In the hybrid DIVA/BPA, gradients of w are neglected
-    ice%vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ice%vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ! ice%vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -652,9 +657,9 @@ contains
     !< Write to the restart NetCDF file for the ice velocity solver
 
     ! In/output variables:
-    type(type_mesh),     intent(in   ) :: mesh
-    type(type_ice_model),intent(in   ) :: ice
-    real(dp),            intent(in   ) :: time
+    type(type_mesh),            intent(in   ) :: mesh
+    class(atype_ice_model_data),intent(in   ) :: ice
+    real(dp),                   intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_restart_file_ice_velocity'
@@ -690,8 +695,8 @@ contains
     !< Create a restart NetCDF file for the ice velocity solver
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),             intent(in   ) :: mesh
+    class(atype_ice_model_data), intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_restart_file_ice_velocity'

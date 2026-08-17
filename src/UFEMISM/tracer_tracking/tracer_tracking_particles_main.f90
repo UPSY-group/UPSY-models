@@ -4,7 +4,8 @@ module tracer_tracking_model_particles_main
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles
   use model_configuration, only: C
   use tracer_tracking_model_particles_basic, only: update_particle_velocity, create_particle_at_ice_surface
@@ -29,12 +30,11 @@ module tracer_tracking_model_particles_main
 
 contains
 
-  subroutine initialise_tracer_tracking_model_particles( mesh, ice, particles)
+  subroutine initialise_tracer_tracking_model_particles( mesh, particles)
     !< Initialise the particle-based tracer-tracking model
 
     ! In- and output variables
     type(type_mesh),                            intent(in   ) :: mesh
-    type(type_ice_model),                       intent(in   ) :: ice
     type(type_tracer_tracking_model_particles), intent(  out) :: particles
 
     ! Local variables:
@@ -92,12 +92,13 @@ contains
 
   end subroutine initialise_tracer_tracking_model_particles
 
-  subroutine run_tracer_tracking_model_particles( mesh, ice, SMB, particles, time, age)
+  subroutine run_tracer_tracking_model_particles( mesh, geom, vel, SMB, particles, time, age)
     !< Run the particle-based tracer-tracking model
 
     ! In- and output variables
     type(type_mesh),                             intent(in   ) :: mesh
-    type(type_ice_model),                        intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),        intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),        intent(in   ) :: vel
     class(atype_SMB_model),                      intent(in   ) :: SMB
     type(type_tracer_tracking_model_particles),  intent(inout) :: particles
     real(dp),                                    intent(in   ) :: time
@@ -118,7 +119,7 @@ contains
     allocate( Hi_grid_tot         ( particles%grid_new_particles%nx, particles%grid_new_particles%ny))
     allocate( SMB_grid_tot        ( particles%grid_new_particles%nx, particles%grid_new_particles%ny))
 
-    call gather_ice_model_data( mesh, ice, SMB, particles, Hi_tot, Hs_tot, &
+    call gather_ice_model_data( mesh, geom, vel, SMB, particles, Hi_tot, Hs_tot, &
       u_3D_b_tot, v_3D_b_tot, w_3D_tot, Hi_grid_tot, SMB_grid_tot)
 
     ! If the time is right, add a new batch of particles
@@ -151,13 +152,14 @@ contains
 
   end subroutine run_tracer_tracking_model_particles
 
-  subroutine gather_ice_model_data( mesh, ice, SMB, particles, Hi_tot, Hs_tot, &
+  subroutine gather_ice_model_data( mesh, geom, vel, SMB, particles, Hi_tot, Hs_tot, &
       u_3D_b_tot, v_3D_b_tot, w_3D_tot, Hi_grid_tot, SMB_grid_tot)
     !< Gather distributed ice model data for interpolating to the particles
 
     ! In- and output variables
     type(type_mesh),                            intent(in   ) :: mesh
-    type(type_ice_model),                       intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),       intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),       intent(in   ) :: vel
     class(atype_SMB_model),                     intent(in   ) :: SMB
     type(type_tracer_tracking_model_particles), intent(in   ) :: particles
     real(dp), dimension(mesh%nV),               intent(  out) :: Hi_tot, Hs_tot
@@ -179,18 +181,18 @@ contains
 
     ! Map ice thickness and SMB to the particle creation grid
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
-      ice%geom%Hi , Hi_grid_vec_partial)
+      geom%Hi , Hi_grid_vec_partial)
     call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
       SMB%SMB, SMB_grid_vec_partial)
 
     ! Gather data to all processes, so they can be interpolated to the particle positions
     ! (necessary, as a particle owned by process n will generally not be located in the
     ! domain of that process)
-    call gather_to_all( ice%geom%Hi    , Hi_tot)
-    call gather_to_all( ice%geom%Hs    , Hs_tot)
-    call gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, ice%vel%u_3D_b, u_3D_b_tot)
-    call gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, ice%vel%v_3D_b, v_3D_b_tot)
-    call gather_to_all( ice%vel%w_3D  , w_3D_tot)
+    call gather_dist_shared_to_all( mesh%pai_V           , geom%Hi   , Hi_tot    )
+    call gather_dist_shared_to_all( mesh%pai_V           , geom%Hs   , Hs_tot    )
+    call gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, vel%u_3D_b, u_3D_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, mesh%nz, vel%v_3D_b, v_3D_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_V  , mesh%nz, vel%w_3D  , w_3D_tot  )
     call gather_gridded_data_to_all( particles%grid_new_particles, Hi_grid_vec_partial,  Hi_grid_tot)
     call gather_gridded_data_to_all( particles%grid_new_particles, SMB_grid_vec_partial, SMB_grid_tot)
 

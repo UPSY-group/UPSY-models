@@ -4,7 +4,7 @@ module ocean_extrapolation
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use mesh_utilities, only: extrapolate_Gaussian
   use parameters, only: NaN
 
@@ -12,12 +12,12 @@ module ocean_extrapolation
 
 contains
 
-  subroutine extrapolate_ocean_forcing( mesh, ice, d)
+  subroutine extrapolate_ocean_forcing( mesh, geom, d)
     ! Extrapolate offshore ocean properties into full domain
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    type(type_ice_model),                              intent(in)    :: ice
+    class(atype_ice_geometry_model_data),              intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
 
     ! Local variables
@@ -29,11 +29,11 @@ contains
 
     ! == Step 0: set values below bedrock to NaN
 
-    call extrapolate_ocean_forcing_preparation( mesh, ice, d)
+    call extrapolate_ocean_forcing_preparation( mesh, geom, d)
 
     ! == Step 1: extrapolate horizontally into cavity ==
 
-    call extrapolate_ocean_forcing_horizontal_cavity( mesh, ice, d, sigma)
+    call extrapolate_ocean_forcing_horizontal_cavity( mesh, geom, d, sigma)
 
     ! == Step 2: extrapolate vertically into ice shelf and bedrock ==
 
@@ -48,12 +48,12 @@ contains
 
   end subroutine extrapolate_ocean_forcing
 
-  subroutine extrapolate_ocean_forcing_preparation( mesh, ice, d)
+  subroutine extrapolate_ocean_forcing_preparation( mesh, geom, d)
     ! Prepare extrapolation procedure
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    type(type_ice_model),                              intent(in)    :: ice
+    class(atype_ice_geometry_model_data),              intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
 
     ! Local variables
@@ -66,7 +66,7 @@ contains
     ! Set values below bedrock to NaN
     do vi = mesh%vi1, mesh%vi2
       do k = 1, C%nz_ocean
-        if (C%z_ocean( k) > -ice%geom%Hb( vi)) then
+        if (C%z_ocean( k) > -geom%Hb( vi)) then
           d( vi, k) = NaN
         end if
       end do
@@ -77,12 +77,12 @@ contains
 
   end subroutine extrapolate_ocean_forcing_preparation
 
-  subroutine extrapolate_ocean_forcing_horizontal_cavity( mesh, ice, d, sigma)
+  subroutine extrapolate_ocean_forcing_horizontal_cavity( mesh, geom, d, sigma)
     ! Extrapolate offshore ocean properties into cavities
 
     ! In/output variables
     type(type_mesh),                                   intent(in)    :: mesh
-    type(type_ice_model),                              intent(in)    :: ice
+    class(atype_ice_geometry_model_data),              intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2,C%nz_ocean), intent(inout) :: d
     real(dp),                                          intent(in)    :: sigma
 
@@ -102,7 +102,7 @@ contains
         ! Check for NaNs
         if (isnan(d( vi, k))) then
           ! Check whether in cavity
-          if ((C%z_ocean( k) > -ice%geom%Hib( vi)) .and. (C%z_ocean( k) < -ice%geom%Hb( vi))) then
+          if ((C%z_ocean( k) > -geom%Hib( vi)) .and. (C%z_ocean( k) < -geom%Hb( vi))) then
             ! In cavity, so extrapolate here
             mask_fill( vi) = 1
           else

@@ -15,7 +15,7 @@ module ut_laddie
   use mesh_dummy_meshes, only: initialise_dummy_mesh_5
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use grid_basic, only: setup_square_grid
-  use ice_model_types, only: type_ice_model
+  use ice_model_main, only: type_ice_model
   use ocean_model_types, only: type_ocean_model
   use ocean_utilities , only: initialise_ocean_vertical_grid
   use ocean_extrapolation, only: extrapolate_ocean_forcing_preparation, &

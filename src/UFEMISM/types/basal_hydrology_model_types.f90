@@ -26,7 +26,7 @@ MODULE basal_hydrology_model_types
 
     ! Main data fields
     ! Fill here what we need for the basal hydrology model
-    ! Part of this might need to go in ice_model_types?
+    ! Part of this might need to go in ice_model_data?
     real(dp), dimension(:), allocatable :: W                   ! Basal water depth
     real(dp), dimension(:), allocatable :: dW_dx_a             ! Derivative of W to x on A grid.
     real(dp), dimension(:), allocatable :: dW_dy_a             ! Derivative of W to y on A grid.

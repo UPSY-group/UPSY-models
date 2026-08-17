@@ -1,4 +1,4 @@
-MODULE ice_model_types
+module ice_model_data
 
   ! The different data types used in the ice modules
 
@@ -9,10 +9,19 @@ MODULE ice_model_types
   use graph_types, only: type_graph_pair
   use mpi_f08, only: MPI_WIN
   use basal_hydrology_model_types, only: type_basal_hydrology_model
-  use ice_geometry_model_basic, only: type_ice_geometry_model
-  use ice_velocity_model_basic, only: atype_ice_velocity_model
 
   IMPLICIT NONE
+
+  private
+
+  public :: type_ice_velocity_solver_SIA
+  public :: type_ice_velocity_solver_SSA
+  public :: type_ice_velocity_solver_DIVA
+  public :: type_ice_velocity_solver_DIVA_graphs
+  public :: type_ice_velocity_solver_BPA
+  public :: type_ice_velocity_solver_hybrid
+  public :: type_ice_pc
+  public :: atype_ice_model_data
 
 ! ===== Types =====
 ! =================
@@ -295,14 +304,8 @@ MODULE ice_model_types
 
   END TYPE type_ice_pc
 
-  TYPE type_ice_model
+  type, abstract :: atype_ice_model_data
     ! The ice dynamics model data structure.
-
-    ! Geometry
-    type(type_ice_geometry_model), allocatable :: geom
-
-    ! Velocity
-    class(atype_ice_velocity_model), allocatable :: vel
 
     ! Geometry changes
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dHi                         ! [m] Ice thickness difference (w.r.t. reference)
@@ -447,8 +450,6 @@ MODULE ice_model_types
     integer                                 :: n_visc_its                  !      Number of non-linear viscosity iterations
     integer                                 :: n_Axb_its                   !      Number of iterations in iterative solver for linearised momentum balance
 
-  END TYPE type_ice_model
+  end type atype_ice_model_data
 
-CONTAINS
-
-END MODULE ice_model_types
+end module ice_model_data

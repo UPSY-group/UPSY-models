@@ -10,7 +10,7 @@ module laddie_dummy_domain
   use model_configuration, only: C
   use parameters, only: pi
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_main, only: type_ice_model
   use ice_model_memory, only: allocate_ice_model
   use ocean_model_types, only: type_ocean_model
   use ocean_main, only: initialise_ocean_vertical_grid
@@ -81,11 +81,11 @@ contains
     !   gr ---------- fl ---------- oc ---------- oc
 
     ! In/output variables
-    type(type_mesh),           intent(out  ) :: mesh
-    type(type_ice_model),      intent(out  ) :: ice
-    type(type_ocean_model),    intent(out  ) :: ocean
-    type(type_laddie_model),   intent(out  ) :: laddie
-    type(type_laddie_forcing), intent(out  ) :: forcing
+    type(type_mesh),             intent(out  ) :: mesh
+    type(type_ice_model),        intent(out  ) :: ice
+    type(type_ocean_model),      intent(out  ) :: ocean
+    type(type_laddie_model),     intent(out  ) :: laddie
+    type(type_laddie_forcing),   intent(out  ) :: forcing
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_dummy_domain_16'
@@ -206,7 +206,7 @@ contains
     call allocate_laddie_model( mesh, laddie)
     call allocate_laddie_forcing( mesh, forcing)
 
-    call update_laddie_forcing( mesh, ice, ocean, forcing, 'ANT')
+    call update_laddie_forcing( mesh, ice, ice%geom, ocean, forcing, 'ANT')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

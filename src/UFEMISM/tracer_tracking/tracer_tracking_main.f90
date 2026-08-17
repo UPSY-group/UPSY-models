@@ -8,7 +8,8 @@ module tracer_tracking_model_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use SMB_model, only: atype_SMB_model
   use tracer_tracking_model_types, only: type_tracer_tracking_model
   use tracer_tracking_model_particles_main, only: initialise_tracer_tracking_model_particles, &
@@ -25,14 +26,15 @@ module tracer_tracking_model_main
 
 contains
 
-  subroutine run_tracer_tracking_model( mesh, ice, SMB, tracer_tracking, time)
+  subroutine run_tracer_tracking_model( mesh, geom, vel, SMB, tracer_tracking, time)
 
     ! In- and output variables
-    type(type_mesh),                  intent(in   ) :: mesh
-    type(type_ice_model),             intent(in   ) :: ice
-    class(atype_SMB_model),           intent(in   ) :: SMB
-    type(type_tracer_tracking_model), intent(inout) :: tracer_tracking
-    real(dp),                         intent(in   ) :: time
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
+    class(atype_SMB_model),               intent(in   ) :: SMB
+    type(type_tracer_tracking_model),     intent(inout) :: tracer_tracking
+    real(dp),                             intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_tracer_tracking_model'
@@ -54,7 +56,7 @@ contains
       case default
         call crash('unknown choice_tracer_tracking_model "' // trim(C%choice_tracer_tracking_model) // '"')
       case ('particles')
-        call run_tracer_tracking_model_particles( mesh, ice, SMB, &
+        call run_tracer_tracking_model_particles( mesh, geom, vel, SMB, &
           tracer_tracking%particles, time, tracer_tracking%age)
       end select
 
@@ -70,11 +72,10 @@ contains
 
   end subroutine run_tracer_tracking_model
 
-  subroutine initialise_tracer_tracking_model( mesh, ice, tracer_tracking)
+  subroutine initialise_tracer_tracking_model( mesh, tracer_tracking)
 
     ! In- and output variables
     type(type_mesh),                  intent(in   ) :: mesh
-    type(type_ice_model),             intent(in   ) :: ice
     type(type_tracer_tracking_model), intent(inout) :: tracer_tracking
 
     ! Local variables:
@@ -105,7 +106,7 @@ contains
     case default
       call crash('unknown choice_tracer_tracking_model "' // trim(C%choice_tracer_tracking_model) // '"')
     case ('particles')
-      call initialise_tracer_tracking_model_particles( mesh, ice, tracer_tracking%particles)
+      call initialise_tracer_tracking_model_particles( mesh, tracer_tracking%particles)
     end select
 
     ! Finalise routine path

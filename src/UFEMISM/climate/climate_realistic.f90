@@ -12,7 +12,7 @@ MODULE climate_realistic
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
   USE global_forcing_types                                   , ONLY: type_global_forcing
   USE global_forcings_main
@@ -37,7 +37,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_climate_model_realistic( mesh, ice, climate, forcing, time)
+  SUBROUTINE run_climate_model_realistic( mesh, geom, climate, forcing, time)
     ! Calculate the climate
     !
     ! Use an realistic climate scheme
@@ -46,7 +46,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     REAL(dp),                               INTENT(IN)    :: time
@@ -61,7 +61,7 @@ CONTAINS
 
     ! Update temperature and precipitation fields based on the mismatch between
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
-    CALL apply_geometry_downscaling_corrections( mesh, ice, climate)
+    CALL apply_geometry_downscaling_corrections( mesh, geom, climate)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
     IF (climate%snapshot%has_insolation) THEN
@@ -82,7 +82,7 @@ CONTAINS
 
   END SUBROUTINE run_climate_model_realistic
 
-  SUBROUTINE initialise_climate_model_realistic( mesh, ice, climate, forcing, region_name)
+  SUBROUTINE initialise_climate_model_realistic( mesh, geom, climate, forcing, region_name)
     ! Initialise the climate model
     !
     ! Use a realistic climate scheme
@@ -91,7 +91,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
@@ -156,7 +156,7 @@ CONTAINS
       CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
 
 
-      call apply_geometry_downscaling_corrections( mesh, ice, climate)
+      call apply_geometry_downscaling_corrections( mesh, geom, climate)
 
       ! Initialises the insolation (if needed)
       IF (climate%snapshot%has_insolation) THEN
@@ -183,14 +183,14 @@ CONTAINS
 
   END SUBROUTINE initialise_climate_model_realistic
 
-  SUBROUTINE apply_geometry_downscaling_corrections( mesh, ice, climate)
+  SUBROUTINE apply_geometry_downscaling_corrections( mesh, geom, climate)
     ! Applies the lapse rate corrections for temperature and precipitation
     ! to correct for the mismatch between T and P at the forcing's ice surface elevation and the model's ice surface elevation
 
     IMPLICIT NONE
 
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                  INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
 
     ! Local Variables
@@ -211,8 +211,8 @@ CONTAINS
       do vi = mesh%vi1, mesh%vi2
 
         ! we only apply corrections where it is not open ocean
-        if (ice%geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
-          deltaT  = (ice%geom%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
+        if (geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
+          deltaT  = (geom%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
           do m = 1, 12
             ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
             climate%T2m( vi, m)    = climate%T2m( vi, m)    + deltaT
@@ -220,7 +220,7 @@ CONTAINS
 
             ! Calculate inversion-layer temperatures
             T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
-            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot%lapse_rate_temp * (ice%geom%Hs( vi) - climate%snapshot%Hs( vi)))
+            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot%lapse_rate_temp * (geom%Hs( vi) - climate%snapshot%Hs( vi)))
             ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
             ! Same as implemented in IMAU-ICE
             climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))

@@ -9,7 +9,7 @@ module bed_roughness_nudging_main
   use model_configuration, only: C
   use parameters
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
   use bed_roughness_model_types, only: type_bed_roughness_model
   use region_types, only: type_model_region
   use bed_roughness_nudging_H_dHdt_flowline, only: initialise_bed_roughness_nudging_H_dHdt_flowline, run_bed_roughness_nudging_H_dHdt_flowline
@@ -88,9 +88,9 @@ contains
         case default
           call crash('unknown choice_inversion_target_geometry "' // trim( C%choice_inversion_target_geometry) // '"')
         case ('init')
-          call run_bed_roughness_nudging_H_dHdt_flowline( region%mesh, region%grid_smooth, region%ice, region%refgeo_init, region%bed_roughness)
+          call run_bed_roughness_nudging_H_dHdt_flowline( region%mesh, region%grid_smooth, region%ice, region%ice%geom, region%ice%vel, region%refgeo_init, region%bed_roughness)
         case ('PD')
-          call run_bed_roughness_nudging_H_dHdt_flowline( region%mesh, region%grid_smooth, region%ice, region%refgeo_PD, region%bed_roughness)
+          call run_bed_roughness_nudging_H_dHdt_flowline( region%mesh, region%grid_smooth, region%ice, region%ice%geom, region%ice%vel, region%refgeo_PD, region%bed_roughness)
         end select
       case ('H_dHdt_local')
         ! Run with the specified target geometry
@@ -99,11 +99,11 @@ contains
           call crash('unknown choice_inversion_target_geometry "' // trim( C%choice_inversion_target_geometry) // '"')
         case ('init')
           call run_bed_roughness_nudging_H_dHdt_local( region%mesh, region%grid_smooth, &
-            region%ice, region%refgeo_init, region%bed_roughness%generic_bed_roughness_prev, &
+            region%ice, region%ice%geom, region%refgeo_init, region%bed_roughness%generic_bed_roughness_prev, &
             region%bed_roughness%generic_bed_roughness_next, region%bed_roughness%nudging_H_dHdt_local)
         case ('PD')
           call run_bed_roughness_nudging_H_dHdt_local( region%mesh, region%grid_smooth, &
-            region%ice, region%refgeo_PD  , region%bed_roughness%generic_bed_roughness_prev, &
+            region%ice, region%ice%geom, region%refgeo_PD  , region%bed_roughness%generic_bed_roughness_prev, &
             region%bed_roughness%generic_bed_roughness_next, region%bed_roughness%nudging_H_dHdt_local)
         end select
       case ('H_u_flowline')
@@ -112,9 +112,9 @@ contains
         case default
           call crash('unknown choice_inversion_target_geometry "' // trim( C%choice_inversion_target_geometry) // '"')
         case ('init')
-          call run_bed_roughness_nudging_H_u_flowline( region%mesh, region%ice, region%refgeo_init, region%bed_roughness)
+          call run_bed_roughness_nudging_H_u_flowline( region%mesh, region%ice%geom, region%ice%vel, region%refgeo_init, region%bed_roughness)
         case ('PD')
-          call run_bed_roughness_nudging_H_u_flowline( region%mesh, region%ice, region%refgeo_PD, region%bed_roughness)
+          call run_bed_roughness_nudging_H_u_flowline( region%mesh, region%ice%geom, region%ice%vel, region%refgeo_PD, region%bed_roughness)
         end select
       end select
 

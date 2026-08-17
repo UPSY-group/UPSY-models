@@ -19,7 +19,6 @@ MODULE BMB_prescribed
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
   USE climate_model_types                                    , ONLY: type_climate_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use netcdf_io_main
@@ -31,12 +30,11 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model_prescribed( mesh, ice, BMB, region_name, time)
+  SUBROUTINE run_BMB_model_prescribed( mesh, BMB, region_name, time)
     ! Calculate the basal mass balance
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
@@ -52,7 +50,6 @@ CONTAINS
 
     ! To prevent compiler warnings
     dummy_dp   = mesh%xmin
-    dummy_dp   = ice%geom%Hi( mesh%vi1)
     dummy_dp   = BMB%BMB_shelf( mesh%vi1)
     dummy_char = region_name( 1:1)
     dummy_dp   = time

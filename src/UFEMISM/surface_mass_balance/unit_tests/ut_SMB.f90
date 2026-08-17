@@ -13,7 +13,7 @@ module ut_SMB
   use mesh_refinement_basic, only: refine_mesh_uniform
   use mesh_secondary, only: calc_all_secondary_mesh_data
   use mesh_disc_calc_matrix_operators_2D, only: calc_all_matrix_operators_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_main, only: type_ice_model
   use reference_geometry_types, only: type_reference_geometry
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
@@ -90,7 +90,7 @@ contains
     character(len=1024), parameter        :: test_name_local = 'idealised'
     character(len=1024)                   :: test_name
     class(atype_SMB_model), allocatable   :: SMB
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model) , allocatable    :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
     type(type_grid)              , target :: grid_smooth
@@ -109,7 +109,10 @@ contains
     ! Create idealised SMB model
     call create_SMB_model( SMB, 'idealised')
     call SMB%allocate ( 'ANT', mesh)
-    call SMB%initialise( ice, refgeo_init, refgeo_PD)
+    allocate( ice)
+    allocate( ice%geom)
+    call ice%geom%allocate( 'ANT', mesh)
+    call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
 
     ! Run idealised SMB model for static Halfar solution
     C%choice_SMB_model_idealised = 'Halfar_static'
@@ -117,7 +120,7 @@ contains
     C%refgeo_idealised_Halfar_R0 = 500e3_dp
     C%uniform_Glens_flow_factor  = 1e-16_dp
     time = 0._dp
-    call SMB%run( time, ice, climate, grid_smooth)
+    call SMB%run( time, ice, ice%geom, climate, grid_smooth)
 
     ! Verify that it worked
     test_result = .true.
@@ -134,7 +137,7 @@ contains
     call unit_test( test_result, test_name)
 
     ! Clean up after yourself
-    call SMB%deallocate
+    call SMB%deallocate()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -157,7 +160,7 @@ contains
     character(:), allocatable                   :: filename
     integer                                     :: ncid
     class(atype_SMB_model), allocatable         :: SMB
-    type(type_ice_model)         , target       :: ice
+    type(type_ice_model), allocatable           :: ice
     type(type_reference_geometry), target       :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target       :: climate
     type(type_grid)              , target       :: grid_smooth
@@ -192,7 +195,10 @@ contains
 
     call create_SMB_model( SMB, 'prescribed')
     call SMB%allocate( 'ANT', mesh)
-    call SMB%initialise( ice, refgeo_init, refgeo_PD)
+    allocate( ice)
+    allocate( ice%geom)
+    call ice%geom%allocate( 'ANT', mesh)
+    call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
 
     ! Verify that it worked
     test_result = .true.
@@ -203,7 +209,7 @@ contains
     call unit_test( test_result, test_name)
 
     ! Clean up after yourself
-    call SMB%deallocate
+    call SMB%deallocate()
     call deallocate_dist_shared( SMB_ref, wSMB_ref)
 
     ! Remove routine from call stack
@@ -225,7 +231,7 @@ contains
     real(dp)                              :: rp
     class(atype_SMB_model), allocatable   :: SMB
     real(dp)                              :: time
-    type(type_ice_model)         , target :: ice
+    type(type_ice_model), allocatable     :: ice
     type(type_reference_geometry), target :: refgeo_init, refgeo_PD
     type(type_climate_model)     , target :: climate
     type(type_grid)              , target :: grid_smooth
@@ -252,6 +258,7 @@ contains
     end do
 
     ! Set up simple ice model fields
+    allocate( ice)
     allocate( ice%geom)
     call ice%geom%allocate( 'ANT', mesh)
     ice%geom%Hi( mesh%vi1: mesh%vi2) = 0._dp
@@ -272,9 +279,9 @@ contains
     ! Create and run IMAU-ITM SMB model
     call create_SMB_model( SMB, 'IMAU-ITM')
     call SMB%allocate( 'ANT', mesh)
-    call SMB%initialise( ice, refgeo_init, refgeo_PD)
+    call SMB%initialise( ice%geom, refgeo_init, refgeo_PD)
     time = 0._dp
-    call SMB%run( time, ice, climate, grid_smooth)
+    call SMB%run( time, ice, ice%geom, climate, grid_smooth)
 
     ! Verify that it worked
     SMB_min = minval( SMB%SMB)
@@ -286,7 +293,7 @@ contains
       test_ge_le( SMB_max,  3.4_dp,  3.7_dp), test_name)
 
     ! Clean up after yourself
-    call SMB%deallocate
+    call SMB%deallocate()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -9,7 +9,9 @@ module basal_hydrology_main
   use model_configuration, only: C
   use parameters, only: grav, ice_density, pi, seawater_density
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use basal_hydrology_new, only: basal_hydrology, basal_hydrology_leg, allocate_basal_hydro, remap_basal_hydro_model_Salle2025
   use basal_hydrology_model_types, ONLY: type_basal_hydrology_model
   use crash_mod, only: crash
@@ -18,13 +20,15 @@ module basal_hydrology_main
 
 contains
 
-  subroutine run_basal_hydrology_model( mesh, ice, time, basal_hydro)
+  subroutine run_basal_hydrology_model( mesh, ice, geom, vel, time, basal_hydro)
 
     ! In/output variables:
-    type(type_mesh),                  intent(in   ) :: mesh
-    type(type_ice_model),             intent(inout) :: ice
-    real(dp),                         intent(in   ) :: time
-    type(type_basal_hydrology_model), intent(inout) :: basal_hydro
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
+    real(dp),                             intent(in   ) :: time
+    type(type_basal_hydrology_model),     intent(inout) :: basal_hydro
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_basal_hydrology_model'
@@ -65,37 +69,37 @@ contains
     ! ===========================================
 
     do vi = mesh%vi1, mesh%vi2
-      ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
+      ice%overburden_pressure( vi) = ice_density * grav * geom%Hi_eff( vi)
     end do
 
     select case (C%choice_basal_hydrology_model)
     case default
       call crash('unknown choice_basal_hydrology_model "' // trim( C%choice_basal_hydrology_model) // '"')
     case ('none')
-      call calc_pore_water_pressure_none( mesh, ice)
+      call calc_pore_water_pressure_none( mesh, ice, geom)
       ! Calculate effective pressure
       do vi = mesh%vi1, mesh%vi2
         ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
       end do
     case ('Martin2011')
-      call calc_pore_water_pressure_Martin2011( mesh, ice)
+      call calc_pore_water_pressure_Martin2011( mesh, ice, geom)
       ! Calculate effective pressure
       do vi = mesh%vi1, mesh%vi2
         ice%effective_pressure(  vi) = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
       end do
     case ('Salle2025')
-      call basal_hydrology_leg(mesh, ice, ice%hydro_Salle2025, time)
+      call basal_hydrology_leg( mesh, ice, geom, vel, ice%hydro_Salle2025, time)
       do vi = mesh%vi1, mesh%vi2
         ice%effective_pressure( vi) = basal_hydro%N_til( vi)
       end do
     case ('Leguy2014')
-      call calc_pore_water_pressure_none( mesh, ice)
-      call calc_effective_pressure_Leguy2014(mesh, ice)
+      call calc_pore_water_pressure_none( mesh, ice, geom)
+      call calc_effective_pressure_Leguy2014(mesh, ice, geom)
     case ('error_function_Martin2011')
-      call calc_pore_water_pressure_Martin2011( mesh, ice)   ! we need that for the maximum inland effective pressure
-      call calc_effective_pressure_error_function_M11(mesh, ice)
+      call calc_pore_water_pressure_Martin2011( mesh, ice, geom)   ! we need that for the maximum inland effective pressure
+      call calc_effective_pressure_error_function_M11(mesh, ice, geom)
     case ('error_function_constant')
-      call calc_effective_pressure_error_function_constant(mesh, ice)
+      call calc_effective_pressure_error_function_constant(mesh, ice, geom)
     end select
 
     ! Finalise routine path
@@ -103,11 +107,10 @@ contains
 
   end subroutine run_basal_hydrology_model
 
-  subroutine initialise_basal_hydro_model( mesh, ice, basal_hydro)
+  subroutine initialise_basal_hydro_model( mesh, basal_hydro)
 
     ! In/output variables:
     type(type_mesh),                  intent(in   ) :: mesh
-    type(type_ice_model),             intent(inout) :: ice
     type(type_basal_hydrology_model), intent(inout) :: basal_hydro
 
     ! Local variables:
@@ -127,7 +130,7 @@ contains
     case ('Martin2011')
       ! No need to do anything
     case ('Salle2025')
-      call allocate_basal_hydro( mesh, ice, basal_hydro)
+      call allocate_basal_hydro( mesh, basal_hydro)
     case ('Leguy2014')
       ! No need to do anything
     case ('error_function_Martin2011')
@@ -141,13 +144,12 @@ contains
 
   end subroutine initialise_basal_hydro_model
 
-  subroutine remap_basal_hydro_model( mesh_old, mesh_new, ice, basal_hydro, time)
+  subroutine remap_basal_hydro_model( mesh_old, mesh_new, basal_hydro, time)
     ! Remap the basal hydrology model
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
-    type(type_ice_model),                   intent(in)    :: ice
     TYPE(type_basal_hydrology_model),       INTENT(INOUT) :: basal_hydro
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -170,7 +172,7 @@ contains
     case ('Martin2011')
       ! No need to do anything (these are all ice model variables)
     case ('Salle2025')
-      call remap_basal_hydro_model_Salle2025( mesh_old, mesh_new, ice, basal_hydro, time)
+      call remap_basal_hydro_model_Salle2025( mesh_old, mesh_new, basal_hydro, time)
     case ('Leguy2014')
       ! No need to do anything
     case ('error_function_Martin2011')
@@ -184,11 +186,12 @@ contains
 
   END SUBROUTINE remap_basal_hydro_model
 
-  subroutine calc_pore_water_pressure_none( mesh, ice)
+  subroutine calc_pore_water_pressure_none( mesh, ice, geom)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_pore_water_pressure_none'
@@ -201,7 +204,7 @@ contains
     ! Compute pore water pressure based on the pore water fraction as
     ! the fraction of the overburden pressure supported by basal water
     do vi = mesh%vi1, mesh%vi2
-      ice%pore_water_pressure( vi) = ice%pore_water_fraction(vi) * ice_density * grav * ice%geom%Hi_eff( vi)
+      ice%pore_water_pressure( vi) = ice%pore_water_fraction(vi) * ice_density * grav * geom%Hi_eff( vi)
     end do
 
     ! Finalise routine path
@@ -209,12 +212,13 @@ contains
 
   end subroutine calc_pore_water_pressure_none
 
-  subroutine calc_pore_water_pressure_Martin2011( mesh, ice)
+  subroutine calc_pore_water_pressure_Martin2011( mesh, ice, geom)
     ! Calculate pore water pressure according to the parameterisation from Martin et al. (2011)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_pore_water_pressure_Martin2011'
@@ -227,10 +231,10 @@ contains
 
       ! Pore water pressure scaling factor (Martin et al., 2011, Eq. 12)
       ice%pore_water_fraction( vi) = min( 1._dp, max( 0._dp, &
-        1._dp - (ice%geom%Hb( vi) - ice%geom%SL( vi) - C%Martin2011_hydro_Hb_min) / (C%Martin2011_hydro_Hb_max - C%Martin2011_hydro_Hb_min) ))
+        1._dp - (geom%Hb( vi) - geom%SL( vi) - C%Martin2011_hydro_Hb_min) / (C%Martin2011_hydro_Hb_max - C%Martin2011_hydro_Hb_min) ))
 
       ! Pore water pressure (Martin et al., 2011, Eq. 11)
-      ice%pore_water_pressure( vi) = 0.96_dp * ice_density * grav * ice%geom%Hi_eff( vi) * ice%pore_water_fraction( vi)
+      ice%pore_water_pressure( vi) = 0.96_dp * ice_density * grav * geom%Hi_eff( vi) * ice%pore_water_fraction( vi)
 
     end do
 
@@ -239,12 +243,13 @@ contains
 
   end subroutine calc_pore_water_pressure_Martin2011
 
-  subroutine calc_effective_pressure_error_function_M11( mesh, ice)
+  subroutine calc_effective_pressure_error_function_M11( mesh, ice, geom)
     ! Calculate pore water pressure as an error function
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_pressure_error_function_M11'
@@ -255,7 +260,7 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
+        ice%overburden_pressure( vi) = ice_density * grav * geom%Hi_eff( vi)
         effective_pressure_max = max( 0._dp, ice%overburden_pressure( vi) - ice%pore_water_pressure( vi))
 
         if (effective_pressure_max == 0._dp) then
@@ -272,12 +277,13 @@ contains
   end subroutine calc_effective_pressure_error_function_M11
 
 
-  subroutine calc_effective_pressure_Leguy2014(mesh, ice)
+  subroutine calc_effective_pressure_Leguy2014( mesh, ice, geom)
     ! Calculate effective pressure based on Leguy et al. (2014)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_pressure_Leguy2014'
@@ -289,14 +295,14 @@ contains
 
     do vi = mesh%vi1, mesh%vi2
       ! check if ice is grounded first
-      if (ice%geom%mask_grounded_ice( vi) .eqv. .TRUE.) then
+      if (geom%mask_grounded_ice( vi) .eqv. .TRUE.) then
          ! prevent division by zero
-        if (ice%geom%Hi_eff( vi) == 0._dp) then
+        if (geom%Hi_eff( vi) == 0._dp) then
           ice%effective_pressure( vi) = 0.0_dp
         else
-          ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
-          Hi_f = max(0._dp, - seawater_density/ice_density * ice%geom%Hb( vi))
-          ice%effective_pressure( vi) = max( 0._dp, ice%overburden_pressure( vi) * ((1 - Hi_f/ice%geom%Hi_eff( vi)) ** C%Leguy2014_hydro_connect_exponent))
+          ice%overburden_pressure( vi) = ice_density * grav * geom%Hi_eff( vi)
+          Hi_f = max(0._dp, - seawater_density/ice_density * geom%Hb( vi))
+          ice%effective_pressure( vi) = max( 0._dp, ice%overburden_pressure( vi) * ((1 - Hi_f/geom%Hi_eff( vi)) ** C%Leguy2014_hydro_connect_exponent))
         end if
       else
         ice%effective_pressure( vi) = 0.0_dp
@@ -307,12 +313,13 @@ contains
     call finalise_routine( routine_name)
   end subroutine calc_effective_pressure_Leguy2014
 
-  subroutine calc_effective_pressure_error_function_constant( mesh, ice)
+  subroutine calc_effective_pressure_error_function_constant( mesh, ice, geom)
     ! Calculate pore water pressure as an error function
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_effective_pressure_error_function_constant'
@@ -322,7 +329,7 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-        ice%overburden_pressure( vi) = ice_density * grav * ice%geom%Hi_eff( vi)
+        ice%overburden_pressure( vi) = ice_density * grav * geom%Hi_eff( vi)
         ice%effective_pressure(  vi) = error_function(ice%overburden_pressure( vi)*sqrt(pi)/2._dp/C%error_function_max_effective_pressure)*C%error_function_max_effective_pressure
     end do
 

@@ -13,7 +13,8 @@ MODULE ocean_main
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
   use grid_types, only: type_grid
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   USE ocean_utilities                                        , ONLY: initialise_ocean_vertical_grid, calc_ocean_temperature_at_shelf_base, calc_ocean_freezing_point_at_shelf_base, interpolate_ocean_depth
@@ -34,13 +35,14 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_ocean_model( mesh, grid_smooth, ice, ocean, region_name, time)
+  SUBROUTINE run_ocean_model( mesh, grid_smooth, ice, geom, ocean, region_name, time)
     ! Calculate the ocean
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     type(type_grid),                        intent(in   ) :: grid_smooth
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
@@ -98,10 +100,10 @@ CONTAINS
     case ('idealised')
       call run_ocean_model_idealised( mesh, ice, ocean)
     case ('realistic')
-      call limit_ocean_supercooling( mesh, ice, ocean)
-      call run_ocean_model_realistic( mesh, ice, ocean, time)
+      call limit_ocean_supercooling( mesh, ocean)
+      call run_ocean_model_realistic( mesh, ocean, time)
     case ('snapshot+nudge2D')
-      call run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, ocean, time)
+      call run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, geom, ocean, time)
     case ('snapshot_plus_anomalies')
       call run_ocean_model_snapshot_plus_anomalies( mesh, ocean, time)
     case ('ISMIP7')
@@ -109,8 +111,8 @@ CONTAINS
     end select
 
     ! Compute secondary variables
-    CALL calc_ocean_temperature_at_shelf_base(    mesh, ice, ocean)
-    CALL calc_ocean_freezing_point_at_shelf_base( mesh, ice, ocean)
+    CALL calc_ocean_temperature_at_shelf_base(    mesh, geom, ocean)
+    CALL calc_ocean_freezing_point_at_shelf_base( mesh, geom, ocean)
 
     call checksum( mesh%pai_V, ocean%T, 'ocean%T')
     call checksum( mesh%pai_V, ocean%S, 'ocean%S')
@@ -120,12 +122,12 @@ CONTAINS
 
   END SUBROUTINE run_ocean_model
 
-  SUBROUTINE initialise_ocean_model( mesh, ice, ocean, region_name, start_time_of_run, refgeo_PD, refgeo_init)
+  SUBROUTINE initialise_ocean_model( mesh, geom, ocean, region_name, start_time_of_run, refgeo_PD, refgeo_init)
     ! Initialise the ocean model
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_ocean_model),                 INTENT(OUT)   :: ocean
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: start_time_of_run
@@ -181,7 +183,7 @@ CONTAINS
     case ('idealised')
       call initialise_ocean_model_idealised( mesh, ocean)
     case ('realistic')
-      call initialise_ocean_model_realistic( mesh, ice, ocean, region_name, start_time_of_run)
+      call initialise_ocean_model_realistic( mesh, geom, ocean, region_name, start_time_of_run)
     case ('snapshot+nudge2D')
       call initialise_ocean_model_snapshot_nudge2D( mesh, ocean%snapshot_nudge2D, region_name, refgeo_PD, refgeo_init)
     case ('snapshot_plus_anomalies')
@@ -386,14 +388,14 @@ CONTAINS
 
   END SUBROUTINE create_restart_file_ocean_model_region
 
-  SUBROUTINE remap_ocean_model( mesh_old, mesh_new, ice, ocean, region_name, time)
+  SUBROUTINE remap_ocean_model( mesh_old, mesh_new, geom, ocean, region_name, time)
     ! Remap the ocean model
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_old
     TYPE(type_mesh),                        INTENT(IN)    :: mesh_new
     TYPE(type_ocean_model),                 INTENT(INOUT) :: ocean
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -438,7 +440,7 @@ CONTAINS
     case ('idealised')
       call initialise_ocean_model_idealised( mesh_new, ocean)
     case ('realistic')
-      call remap_ocean_model_realistic( mesh_old, mesh_new, ice, ocean, region_name, time)
+      call remap_ocean_model_realistic( mesh_old, mesh_new, geom, ocean, region_name, time)
     case ('ISMIP7')
       call initialise_ocean_model_ISMIP7( mesh_new, ocean%ISMIP7)
     end select
@@ -448,7 +450,7 @@ CONTAINS
 
   END SUBROUTINE remap_ocean_model
 
-  SUBROUTINE limit_ocean_supercooling( mesh, ice, ocean)
+  SUBROUTINE limit_ocean_supercooling( mesh, ocean)
   ! Calculate the ocean freezing point at 6 km depth, taking it as the coldest temperature we will allow the ocean to be
     ! so we can prevent unrealistically high refreezing due to uniformly applied deltaT values that might not be representative of a certain region
 
@@ -456,7 +458,6 @@ CONTAINS
 
     ! In/output variables
     type(type_mesh),                    intent(in)    :: mesh
-    type(type_ice_model),               intent(in)    :: ice
     type(type_ocean_model),             intent(inout) :: ocean
 
     ! Local variables:

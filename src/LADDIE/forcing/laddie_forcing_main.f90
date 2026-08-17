@@ -13,7 +13,7 @@ module laddie_forcing_main
   use model_configuration, only: C
   use reference_geometry_types, only: type_reference_geometry
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_main, only: type_ice_model
   use ocean_model_types, only: type_ocean_model
   use laddie_forcing_types, only: type_laddie_forcing
   use netcdf_io_main
@@ -127,13 +127,13 @@ contains
     ! ===============
 
     ! Only uniform for now
-    call initialise_ice_temperature_uniform( mesh, ice, 'ANT')
+    call initialise_ice_temperature_uniform( mesh, ice, ice%geom, 'ANT')
 
 
     ! Ocean forcing
     ! =============
 
-    call initialise_ocean_model( mesh, ice, ocean, 'ANT', C%start_time_of_run, refgeo, refgeo)
+    call initialise_ocean_model( mesh, ice%geom, ocean, 'ANT', C%start_time_of_run, refgeo, refgeo)
 
     ! Allocate forcing
     ! ================

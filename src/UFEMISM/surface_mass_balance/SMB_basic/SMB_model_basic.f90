@@ -9,7 +9,8 @@ module SMB_model_basic
   use fields_main, only: third_dimension
   use SMB_model_data, only: atype_SMB_model_data
   use mpi_f08, only: MPI_WIN
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use climate_model_types, only: type_climate_model
   use grid_types, only: type_grid
   use reference_geometry_types, only: type_reference_geometry
@@ -64,30 +65,31 @@ module SMB_model_basic
       class(atype_SMB_model), intent(inout) :: self
     end subroutine SMB_model_deallocate_ifc
 
-    subroutine SMB_model_initialise_ifc( self, ice, refgeo_init, refgeo_PD)
-      import atype_SMB_model, type_ice_model, type_reference_geometry
-      class(atype_SMB_model),        intent(inout) :: self
-      type(type_ice_model),          intent(in   ) :: ice
-      type(type_reference_geometry), intent(in   ) :: refgeo_init
-      type(type_reference_geometry), intent(in   ) :: refgeo_PD
+    subroutine SMB_model_initialise_ifc( self, geom, refgeo_init, refgeo_PD)
+      import atype_SMB_model, atype_ice_geometry_model_data, type_reference_geometry
+      class(atype_SMB_model),               intent(inout) :: self
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
+      type(type_reference_geometry),        intent(in   ) :: refgeo_init
+      type(type_reference_geometry),        intent(in   ) :: refgeo_PD
     end subroutine SMB_model_initialise_ifc
 
-    subroutine SMB_model_run_ifc( self, time, ice, climate, grid_smooth)
-      import atype_SMB_model, dp, type_ice_model, type_climate_model, type_grid
-      class(atype_SMB_model),   intent(inout) :: self
-      real(dp),                 intent(in   ) :: time
-      type(type_ice_model),     intent(in   ) :: ice
-      type(type_climate_model), intent(inout) :: climate
-      type(type_grid),          intent(in   ) :: grid_smooth
+    subroutine SMB_model_run_ifc( self, time, ice, geom, climate, grid_smooth)
+      import atype_SMB_model, dp, atype_ice_model_data, atype_ice_geometry_model_data, type_climate_model, type_grid
+      class(atype_SMB_model),               intent(inout) :: self
+      real(dp),                             intent(in   ) :: time
+      class(atype_ice_model_data),          intent(in   ) :: ice
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
+      type(type_climate_model),             intent(inout) :: climate
+      type(type_grid),                      intent(in   ) :: grid_smooth
     end subroutine SMB_model_run_ifc
 
-    subroutine SMB_model_remap_ifc( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
-      import atype_SMB_model, type_mesh, dp, type_reference_geometry, type_ice_model
+    subroutine SMB_model_remap_ifc( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
+      import atype_SMB_model, type_mesh, dp, type_reference_geometry, atype_ice_geometry_model_data
       class(atype_SMB_model),                intent(inout) :: self
       type(type_mesh), target,               intent(in   ) :: mesh_new
       real(dp),                              intent(in   ) :: time
       type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-      type(type_ice_model),          target, intent(in   ) :: ice
+      class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     end subroutine SMB_model_remap_ifc
 
     function get_SMB_model_name_ifc( self) result( SMB_model_name)
@@ -160,13 +162,13 @@ contains
 
   end subroutine SMB_model_deallocate
 
-  subroutine SMB_model_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(atype_SMB_model),        intent(inout) :: self
-    type(type_ice_model),          intent(in   ) :: ice
-    type(type_reference_geometry), intent(in   ) :: refgeo_init
-    type(type_reference_geometry), intent(in   ) :: refgeo_PD
+    class(atype_SMB_model),               intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_initialise'
@@ -183,21 +185,22 @@ contains
     self%t_next = C%start_time_of_run
 
     ! Initialise stuff that is specific to each individual SMB model implementation
-    call self%initialise_SMB_model( ice, refgeo_init, refgeo_PD)
+    call self%initialise_SMB_model( geom, refgeo_init, refgeo_PD)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine SMB_model_initialise
 
-  subroutine SMB_model_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_run( self, time, ice, geom, climate, grid_smooth)
 
     ! In/output variables:
-    class(atype_SMB_model),   intent(inout) :: self
-    real(dp),                 intent(in   ) :: time
-    type(type_ice_model),     intent(in   ) :: ice
-    type(type_climate_model), intent(inout) :: climate
-    type(type_grid),          intent(in   ) :: grid_smooth
+    class(atype_SMB_model),               intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_run'
@@ -221,7 +224,7 @@ contains
         self%t_next = time + C%dt_SMB
 
         ! Run stuff that is specific to each individual SMB model implementation
-        call self%run_SMB_model( time, ice, climate, grid_smooth)
+        call self%run_SMB_model( time, ice, geom, climate, grid_smooth)
 
       elseif (time > self%t_next) then
         ! This should not be possible
@@ -235,7 +238,7 @@ contains
       self%t_next = time + C%dt_SMB
 
       ! Run stuff that is specific to each individual SMB model implementation
-      call self%run_SMB_model( time, ice, climate, grid_smooth)
+      call self%run_SMB_model( time, ice, geom, climate, grid_smooth)
 
     end if
 
@@ -244,14 +247,14 @@ contains
 
   end subroutine SMB_model_run
 
-  subroutine SMB_model_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(atype_SMB_model),                intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    type(type_ice_model),          target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_remap'
@@ -267,7 +270,7 @@ contains
     call self%remap_field( mesh_new, 'SMB', self%SMB)
 
     ! Remap stuff that is specific to each individual SMB model implementation
-    call self%remap_SMB_model( mesh_new, time, refgeo_init, refgeo_PD, ice)
+    call self%remap_SMB_model( mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -13,7 +13,9 @@ MODULE thermodynamics_main
   USE parameters
   USE region_types                                           , ONLY: type_model_region
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   USE climate_model_types                                    , ONLY: type_climate_model
   use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
@@ -63,7 +65,8 @@ CONTAINS
       IF     (C%choice_thermo_model == 'none') THEN
         ! No need to do anything
       ELSEIF (C%choice_thermo_model == '3D_heat_equation') THEN
-        CALL solve_3D_heat_equation( region%mesh, region%ice, region%climate, region%SMB, C%dt_thermodynamics)
+        CALL solve_3D_heat_equation( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
+          region%climate, region%SMB, C%dt_thermodynamics)
       ELSE
         CALL crash('unknown choice_thermo_model "' // TRIM( C%choice_thermo_model) // '"!')
       END IF
@@ -89,7 +92,7 @@ CONTAINS
     END DO
 
     ! Calculate Ti_pmp
-    CALL calc_pressure_melting_point( region%mesh, region%ice)
+    CALL calc_pressure_melting_point( region%mesh, region%ice, region%ice%geom)
 
     ! Calculate Ti_hom
     CALL calc_homologous_temperature( region%mesh, region%ice)
@@ -116,7 +119,7 @@ CONTAINS
     CALL init_routine( routine_name)
 
     ! Initialise ice temperatures
-    CALL initialise_ice_temperature( region%mesh, region%ice, region%climate, region%SMB, region%name)
+    CALL initialise_ice_temperature( region%mesh, region%ice, region%ice%geom, region%climate, region%SMB, region%name)
 
     ! Model states for thermodynamics model
     region%ice%t_Ti_prev = C%start_time_of_run
@@ -138,7 +141,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)              :: mesh
-    TYPE(type_ice_model),                INTENT(IN)              :: ice
+    class(atype_ice_model_data),         INTENT(IN)              :: ice
     REAL(dp),                            INTENT(IN)              :: time
 
     ! Local variables:
@@ -169,7 +172,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                     INTENT(IN)              :: mesh
-    TYPE(type_ice_model),                INTENT(INOUT)           :: ice
+    class(atype_ice_model_data),         INTENT(INOUT)           :: ice
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                                :: routine_name = 'create_restart_file_thermo'
@@ -194,14 +197,15 @@ CONTAINS
 ! ===== Initialise englacial temperatures =====
 ! =============================================
 
-  SUBROUTINE initialise_ice_temperature( mesh, ice, climate, SMB, region_name)
+  SUBROUTINE initialise_ice_temperature( mesh, ice, geom, climate, SMB, region_name)
     ! Initialise the englacial temperature at the start of a simulation
 
     IMPLICIT NONE
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     TYPE(type_climate_model),             INTENT(IN)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
@@ -228,16 +232,16 @@ CONTAINS
 
     IF     (choice_initial_ice_temperature == 'uniform') THEN
       ! Simple uniform temperature
-      CALL initialise_ice_temperature_uniform( mesh, ice, region_name)
+      CALL initialise_ice_temperature_uniform( mesh, ice, geom, region_name)
     ELSEIF (choice_initial_ice_temperature == 'linear') THEN
       ! Simple linear temperature profile
-      CALL initialise_ice_temperature_linear( mesh, ice, climate)
+      CALL initialise_ice_temperature_linear( mesh, ice, geom, climate)
     ELSEIF (choice_initial_ice_temperature == 'Robin') THEN
       ! Initialise with the Robin solution
-      CALL initialise_ice_temperature_Robin( mesh, ice, climate, SMB)
+      CALL initialise_ice_temperature_Robin( mesh, ice, geom, climate, SMB)
     ELSEIF (choice_initial_ice_temperature == 'read_from_file') THEN
       ! Initialise with the temperature field from a provided NetCDF file
-      CALL initialise_ice_temperature_from_file( mesh, ice, region_name)
+      CALL initialise_ice_temperature_from_file( mesh, ice, geom, region_name)
     ELSE
       CALL crash('unknown choice_initial_ice_temperature "' // TRIM( choice_initial_ice_temperature) // '"!')
     END IF
@@ -247,7 +251,7 @@ CONTAINS
 
   END SUBROUTINE initialise_ice_temperature
 
-  SUBROUTINE initialise_ice_temperature_uniform( mesh, ice, region_name)
+  SUBROUTINE initialise_ice_temperature_uniform( mesh, ice, geom, region_name)
     ! Initialise the englacial temperature at the start of a simulation
     !
     ! Simple uniform temperature
@@ -256,7 +260,8 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
 
     ! Local variables:
@@ -288,7 +293,7 @@ CONTAINS
     END DO
 
     ! Calculate Ti_pmp
-    CALL calc_pressure_melting_point( mesh, ice)
+    CALL calc_pressure_melting_point( mesh, ice, geom)
 
     ! Calculate Ti_hom
     CALL calc_homologous_temperature( mesh, ice)
@@ -298,7 +303,7 @@ CONTAINS
 
   END SUBROUTINE initialise_ice_temperature_uniform
 
-  SUBROUTINE initialise_ice_temperature_linear( mesh, ice, climate)
+  SUBROUTINE initialise_ice_temperature_linear( mesh, ice, geom, climate)
     ! Initialise the englacial temperature at the start of a simulation
     !
     ! Simple linear temperature profile
@@ -307,7 +312,8 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     TYPE(type_climate_model),             INTENT(IN)    :: climate
 
     ! Local variables:
@@ -324,9 +330,9 @@ CONTAINS
     DO vi = mesh%vi1, mesh%vi2
 
       T_surf_annual = MIN( T0, SUM( climate%T2m( vi,:)) / REAL( SIZE( climate%T2m( vi,:),1),dp))
-      T_PMP_base    = T0 - Clausius_Clapeyron_gradient * ice%geom%Hi_eff( vi)
+      T_PMP_base    = T0 - Clausius_Clapeyron_gradient * geom%Hi_eff( vi)
 
-      IF (ice%geom%Hi( vi) > 0._dp) THEN
+      IF (geom%Hi( vi) > 0._dp) THEN
         DO k = 1, mesh%nz
           ice%Ti( vi,k) = ((1._dp - mesh%zeta( k)) * T_surf_annual) + (mesh%zeta( k) * T_PMP_base)
         END DO
@@ -337,7 +343,7 @@ CONTAINS
     END DO
 
     ! Calculate Ti_pmp
-    CALL calc_pressure_melting_point( mesh, ice)
+    CALL calc_pressure_melting_point( mesh, ice, geom)
 
     ! Calculate Ti_hom
     CALL calc_homologous_temperature( mesh, ice)
@@ -347,7 +353,7 @@ CONTAINS
 
   END SUBROUTINE initialise_ice_temperature_linear
 
-  SUBROUTINE initialise_ice_temperature_Robin( mesh, ice, climate, SMB)
+  SUBROUTINE initialise_ice_temperature_Robin( mesh, ice, geom, climate, SMB)
     ! Initialise the englacial temperature at the start of a simulation
     !
     ! Initialise with the Robin solution
@@ -356,7 +362,8 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     TYPE(type_climate_model),             INTENT(IN)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
 
@@ -371,11 +378,11 @@ CONTAINS
     IF (par%primary) WRITE (0,*) '  Initialising ice temperatures with the Robin solution...'
 
     ! Calculate Ti_pmp
-    CALL calc_pressure_melting_point( mesh, ice)
+    CALL calc_pressure_melting_point( mesh, ice, geom)
 
     ! Initialise with the Robin solution
     DO vi = mesh%vi1, mesh%vi2
-      CALL replace_Ti_with_robin_solution( mesh, ice, climate, SMB, ice%Ti, vi)
+      CALL replace_Ti_with_robin_solution( mesh, ice, geom, climate, SMB, ice%Ti, vi)
     END DO
 
     ! Calculate Ti_hom
@@ -386,7 +393,7 @@ CONTAINS
 
   END SUBROUTINE initialise_ice_temperature_Robin
 
-  SUBROUTINE initialise_ice_temperature_from_file( mesh, ice, region_name)
+  SUBROUTINE initialise_ice_temperature_from_file( mesh, ice, geom, region_name)
     ! Initialise the englacial temperature at the start of a simulation
     !
     ! Initialise from an external NetCDF file
@@ -395,7 +402,8 @@ CONTAINS
 
     ! In/output variables
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(INOUT) :: ice
+    class(atype_ice_model_data),          INTENT(INOUT) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
 
     ! Local variables:
@@ -468,7 +476,7 @@ CONTAINS
     ice%Ti = Ti_read
 
     ! Calculate Ti_pmp
-    CALL calc_pressure_melting_point( mesh, ice)
+    CALL calc_pressure_melting_point( mesh, ice, geom)
 
     ! Calculate Ti_hom
     CALL calc_homologous_temperature( mesh, ice)

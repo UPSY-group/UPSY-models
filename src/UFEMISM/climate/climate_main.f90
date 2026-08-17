@@ -12,7 +12,8 @@ MODULE climate_main
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use SMB_model, only: atype_SMB_model
   use SMB_snapshot_plus_anomalies, only: type_SMB_model_snp_p_anml
   use reference_geometry_types, only: type_reference_geometry
@@ -36,7 +37,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_climate_model( mesh, grid, ice, climate, forcing, region_name, time, SMB)
+  SUBROUTINE run_climate_model( mesh, grid, ice, geom, climate, forcing, region_name, time, SMB)
     ! Calculate the climate
 
     IMPLICIT NONE
@@ -44,12 +45,13 @@ CONTAINS
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     TYPE(type_grid),             target,    INTENT(IN)    :: grid
-    TYPE(type_ice_model),        target,    INTENT(IN)    :: ice
+    class(atype_ice_model_data), target,    INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),    target,    INTENT(INOUT) :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
-    class(atype_SMB_model), optional,       INTENT(INOUT) :: SMB
+    class(atype_SMB_model),                 INTENT(INOUT) :: SMB
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'run_climate_model'
@@ -99,26 +101,26 @@ CONTAINS
     CASE ('none')
       ! No need to do anything
     CASE ('idealised')
-      CALL run_climate_model_idealised( mesh, ice, climate, time)
+      CALL run_climate_model_idealised( mesh, geom, climate, time)
     CASE ('realistic')
-      CALL run_climate_model_realistic( mesh, ice, climate, forcing, time)
+      CALL run_climate_model_realistic( mesh, geom, climate, forcing, time)
     CASE ('snapshot_plus_uniform_deltaT')
-      CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, time)
+      CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, geom, climate, time)
     CASE ('snapshot_plus_transient_deltaT')
-      CALL run_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, time)
+      CALL run_climate_model_snapshot_plus_transient_deltaT( mesh, geom, climate, time)
     CASE ('snapshot_plus_anomalies')
-      CALL run_climate_model_snp_p_anml( mesh, ice, climate, time)
+      CALL run_climate_model_snp_p_anml( mesh, geom, climate, time)
     CASE ('matrix')
-      call run_climate_model_matrix( mesh, grid, ice, SMB, climate, region_name, time, forcing)
+      call run_climate_model_matrix( mesh, grid, geom, SMB, climate, region_name, time, forcing)
     case ('SMB_snapshot_plus_anomalies')
       select type (snapshot_plus_anomalies => SMB)
       class default
         call crash('choice_climate_model = SMB_snapshot_plus_anomalies only works when choice_SMB_model = snapshot_plus_anomalies')
       class is (type_SMB_model_snp_p_anml)
-        call snapshot_plus_anomalies%run( time, ice, climate, grid)
+        call snapshot_plus_anomalies%run( time, ice, geom, climate, grid)
       end select
     case ('ISMIP7')
-      call climate%ISMIP7%run( ice, time)
+      call climate%ISMIP7%run( geom, time)
       climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%ISMIP7%T2m   ( mesh%vi1:mesh%vi2,:)
       climate%Precip( mesh%vi1:mesh%vi2,:) = climate%ISMIP7%Precip( mesh%vi1:mesh%vi2,:)
     CASE DEFAULT
@@ -133,7 +135,7 @@ CONTAINS
 
   END SUBROUTINE run_climate_model
 
-  SUBROUTINE initialise_climate_model( mesh, grid, ice, climate, forcing, refgeo_PD, refgeo_init, region_name)
+  SUBROUTINE initialise_climate_model( mesh, grid, ice, geom, climate, forcing, refgeo_PD, refgeo_init, region_name)
     ! Initialise the climate model
 
     IMPLICIT NONE
@@ -141,7 +143,8 @@ CONTAINS
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
     type(type_grid),                        intent(in)    :: grid
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_model_data),            INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(OUT)   :: climate
     TYPE(type_global_forcing),              INTENT(IN)    :: forcing
     type(type_reference_geometry),          intent(in)    :: refgeo_PD
@@ -200,16 +203,16 @@ CONTAINS
     case ('idealised')
       call initialise_climate_model_idealised( mesh, climate)
     case ('realistic')
-      call initialise_climate_model_realistic( mesh, ice, climate, forcing, region_name)
+      call initialise_climate_model_realistic( mesh, geom, climate, forcing, region_name)
     case ('snapshot_plus_uniform_deltaT')
-      call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, ice, climate, region_name)
+      call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, geom, climate, region_name)
     case ('snapshot_plus_transient_deltaT')
-      call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, region_name, C%start_time_of_run)
+      call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, geom, climate, region_name, C%start_time_of_run)
     CASE ('snapshot_plus_anomalies')
-      CALL initialise_climate_model_snp_p_anml( mesh, ice, climate, region_name)
+      CALL initialise_climate_model_snp_p_anml( mesh, geom, climate, region_name)
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
-      call initialise_climate_matrix( mesh, grid, ice, climate, region_name, forcing)
+      call initialise_climate_matrix( mesh, grid, ice, geom, climate, region_name, forcing)
     case ('SMB_snapshot_plus_anomalies')
       ! No need to do anything (initialisation is handled by the SMB model)
     case ('ISMIP7')
@@ -435,7 +438,8 @@ CONTAINS
 
   END SUBROUTINE create_restart_file_climate_model_region
 
-  SUBROUTINE remap_climate_model( mesh_old, mesh_new, climate, region_name, time, refgeo_PD, refgeo_init, grid, ice, forcing)
+  SUBROUTINE remap_climate_model( mesh_old, mesh_new, climate, region_name, time, &
+    refgeo_PD, refgeo_init, grid, ice, geom, forcing)
     ! Remap the climate model
 
     IMPLICIT NONE
@@ -448,9 +452,10 @@ CONTAINS
     REAL(dp),                               INTENT(IN)    :: time
     type(type_reference_geometry),          intent(in)    :: refgeo_PD
     type(type_reference_geometry),          intent(in)    :: refgeo_init
-    type(type_grid), optional,                    intent(in)    :: grid
-    type(type_ice_model), optional,               intent(in)    :: ice
-    type(type_global_forcing), optional,          intent(in) :: forcing
+    type(type_grid),                        intent(in)    :: grid
+    class(atype_ice_model_data),            intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    type(type_global_forcing),              intent(in   ) :: forcing
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_climate_model'
@@ -487,13 +492,13 @@ CONTAINS
     ELSEIF (choice_climate_model == 'realistic') THEN
       call remap_climate_realistic(mesh_old, mesh_new, climate, region_name)
     ELSEIF (choice_climate_model == 'snapshot_plus_uniform_deltaT')  THEN
-      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, ice, climate, region_name)
+      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, geom, climate, region_name)
     ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
-      call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, ice, climate, region_name, time)
+      call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, geom, climate, region_name, time)
     ELSEIF (choice_climate_model == 'snapshot_plus_anomalies')  THEN
-      call remap_climate_snp_p_anml(mesh_old, mesh_new, ice, climate, region_name, time)
+      call remap_climate_snp_p_anml(mesh_old, mesh_new, geom, climate, region_name, time)
     ELSEIF (choice_climate_model == 'matrix') THEN
-      call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, forcing)
+      call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, geom, forcing)
     elseif (choice_climate_model == 'ISMIP7') then
       call climate%ISMIP7%remap( mesh_new)
     ELSE

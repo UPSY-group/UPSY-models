@@ -6,7 +6,7 @@ module ice_thickness_safeties
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reference_geometry_types, only: type_reference_geometry
@@ -25,15 +25,14 @@ module ice_thickness_safeties
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, Hi_old, Hb, SL, Hi_new, refgeo, time)
+  subroutine alter_ice_thickness( mesh, ice, geom, Hi_old, Hi_new, refgeo, time)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
     type(type_mesh),                        intent(in   ) :: mesh
-    type(type_ice_model),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_old
-    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: Hb
-    real(dp), dimension(mesh%pai_V%i1_nih:mesh%pai_V%i2_nih), intent(in   ) :: SL
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
@@ -53,10 +52,10 @@ contains
 
     ! DENK DROM
     allocate( geom_new)
-    call geom_new%allocate( ice%geom%region_name(), mesh)
+    call geom_new%allocate( geom%region_name(), mesh)
     geom_new%Hi( mesh%vi1:mesh%vi2) = Hi_new     ( mesh%vi1:mesh%vi2)
-    geom_new%Hb( mesh%vi1:mesh%vi2) = ice%geom%Hb( mesh%vi1:mesh%vi2)
-    geom_new%SL( mesh%vi1:mesh%vi2) = ice%geom%SL( mesh%vi1:mesh%vi2)
+    geom_new%Hb( mesh%vi1:mesh%vi2) = geom%Hb( mesh%vi1:mesh%vi2)
+    geom_new%SL( mesh%vi1:mesh%vi2) = geom%SL( mesh%vi1:mesh%vi2)
 
     ! Save predicted ice thickness for future reference
     Hi_save = Hi_new
@@ -70,8 +69,8 @@ contains
     ! if desired, don't let grounded ice cross the floatation threshold
     if (C%do_protect_grounded_mask .and. time <= C%protect_grounded_mask_t_end) then
       do vi = mesh%vi1, mesh%vi2
-        if (ice%geom%mask_grounded_ice( vi)) then
-          Hi_new( vi) = max( Hi_new( vi), (ice%geom%SL( vi) - ice%geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
+        if (geom%mask_grounded_ice( vi)) then
+          Hi_new( vi) = max( Hi_new( vi), (geom%SL( vi) - geom%Hb( vi)) * seawater_density/ice_density + .1_dp)
         end if
       end do
     end if
@@ -89,7 +88,7 @@ contains
     ! if so specified, remove thin floating ice
     if (C%choice_calving_law == 'threshold_thickness') then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( geom_new%Hi_eff( vi), ice%geom%Hb( vi), ice%geom%SL( vi)) .and. geom_new%Hi_eff( vi) < C%calving_threshold_thickness_shelf) then
+        if (is_floating( geom_new%Hi_eff( vi), geom%Hb( vi), geom%SL( vi)) .and. geom_new%Hi_eff( vi) < C%calving_threshold_thickness_shelf) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -107,7 +106,7 @@ contains
     ! if so specified, remove all floating ice
     if (C%do_remove_shelves) then
       do vi = mesh%vi1, mesh%vi2
-        if (is_floating( geom_new%Hi_eff( vi), ice%geom%Hb( vi), ice%geom%SL( vi))) then
+        if (is_floating( geom_new%Hi_eff( vi), geom%Hb( vi), geom%SL( vi))) then
           Hi_new( vi) = 0._dp
         end if
       end do
@@ -223,7 +222,7 @@ contains
 
     case ('no_thick_inland')
       do vi = mesh%vi1, mesh%vi2
-        if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi)) then
+        if (geom%mask_grounded_ice( vi) .and. .not. geom%mask_gl_gr( vi)) then
           modiness_up( vi) = 1._dp
         end if
       end do
@@ -231,7 +230,7 @@ contains
 
     case ('no_thin_inland')
       do vi = mesh%vi1, mesh%vi2
-        if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi)) then
+        if (geom%mask_grounded_ice( vi) .and. .not. geom%mask_gl_gr( vi)) then
           modiness_down( vi) = 1._dp
         end if
       end do
@@ -252,27 +251,27 @@ contains
       fix_H_applied   = 0._dp
       limit_H_applied = 0._dp
 
-      if (    ice%geom%mask_gl_gr( vi)) then
+      if (    geom%mask_gl_gr( vi)) then
         fix_H_applied   = C%fixiness_H_gl_gr * fixiness
         limit_H_applied = C%limitness_H_gl_gr * limitness
 
-      elseif (ice%geom%mask_gl_fl( vi)) then
+      elseif (geom%mask_gl_fl( vi)) then
         fix_H_applied   = C%fixiness_H_gl_fl * fixiness
         limit_H_applied = C%limitness_H_gl_fl * limitness
 
-      elseif (ice%geom%mask_grounded_ice( vi)) then
+      elseif (geom%mask_grounded_ice( vi)) then
         fix_H_applied   = C%fixiness_H_grounded * fixiness
         limit_H_applied = C%limitness_H_grounded * limitness
 
-      elseif (ice%geom%mask_floating_ice( vi)) then
+      elseif (geom%mask_floating_ice( vi)) then
         fix_H_applied   = C%fixiness_H_floating * fixiness
         limit_H_applied = C%limitness_H_floating * limitness
 
-      elseif (ice%geom%mask_icefree_land( vi)) then
+      elseif (geom%mask_icefree_land( vi)) then
         if (C%fixiness_H_freeland .and. fixiness > 0._dp) fix_H_applied = 1._dp
         limit_H_applied = C%limitness_H_grounded * limitness
 
-      elseif (ice%geom%mask_icefree_ocean( vi)) then
+      elseif (geom%mask_icefree_ocean( vi)) then
         if (C%fixiness_H_freeocean .and. fixiness > 0._dp) fix_H_applied = 1._dp
         limit_H_applied = C%limitness_H_floating * limitness
       else

@@ -7,7 +7,7 @@ module climate_model_utilities
   use parameters
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER, MPI_BCAST
   use mesh_types                                             , only: type_mesh
-  use ice_model_types                                        , only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use grid_types                                             , only: type_grid
   use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
   use global_forcing_types                                   , only: type_global_forcing
@@ -470,14 +470,14 @@ module climate_model_utilities
     CALL finalise_routine( routine_name)
   END SUBROUTINE apply_precipitation_CC_correction
 
-  SUBROUTINE apply_geometry_downscaling_corrections( mesh, ice, climate, snapshot, deltaT_snapshot)
+  SUBROUTINE apply_geometry_downscaling_corrections( mesh, geom, climate, snapshot, deltaT_snapshot)
     ! Applies the lapse rate corrections for temperature and precipitation
     ! to correct for the mismatch between T and P at the forcing's ice surface elevation and the model's ice surface elevation
 
     IMPLICIT NONE
 
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                  INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
     TYPE(type_climate_model_snapshot),     INTENT(IN)    :: snapshot
     REAL(dp),                              INTENT(IN)    :: deltaT_snapshot
@@ -499,8 +499,8 @@ module climate_model_utilities
       do vi = mesh%vi1, mesh%vi2
 
         ! we only apply corrections where it is not open ocean
-        if (ice%geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
-          deltaT  = (ice%geom%Hs( vi) - snapshot%Hs( vi)) * (-1._dp * abs(snapshot%lapse_rate_temp))
+        if (geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
+          deltaT  = (geom%Hs( vi) - snapshot%Hs( vi)) * (-1._dp * abs(snapshot%lapse_rate_temp))
           do m = 1, 12
             ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
             climate%T2m( vi, m)    = snapshot%T2m( vi, m)  + deltaT_snapshot  + deltaT
@@ -508,7 +508,7 @@ module climate_model_utilities
 
             ! Calculate inversion-layer temperatures
             T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
-            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - snapshot%lapse_rate_temp * (ice%geom%Hs( vi) - snapshot%Hs( vi)))
+            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - snapshot%lapse_rate_temp * (geom%Hs( vi) - snapshot%Hs( vi)))
             ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
             ! Same as implemented in IMAU-ICE
             climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))

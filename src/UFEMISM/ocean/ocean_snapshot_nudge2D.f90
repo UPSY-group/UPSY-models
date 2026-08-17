@@ -8,7 +8,8 @@ module ocean_snapshot_nudge2D
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use grid_types, only: type_grid
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ocean_model_types, only: type_ocean_model, type_ocean_model_snapshot_nudge2D
   use netcdf_io_main
   use remapping_main
@@ -28,14 +29,15 @@ module ocean_snapshot_nudge2D
 
 contains
 
-  subroutine run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, ocean, time)
+  subroutine run_ocean_model_snapshot_nudge2D( mesh, grid_smooth, ice, geom, ocean, time)
 
     ! In/output variables:
-    type(type_mesh),        intent(in   ) :: mesh
-    type(type_grid),        intent(in   ) :: grid_smooth
-    type(type_ice_model),   intent(in   ) :: ice
-    type(type_ocean_model), intent(inout) :: ocean
-    real(dp),               intent(in   ) :: time
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_grid),                      intent(in   ) :: grid_smooth
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ocean_model),               intent(inout) :: ocean
+    real(dp),                             intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'run_ocean_model_snapshot_nudge2D'
@@ -46,7 +48,7 @@ contains
     ! Only nudge during the user-defined time window
     if (time < C%BMB_inversion_t_start .or.  time > C%BMB_inversion_t_end) return
 
-    call nudge_deltaT( mesh, grid_smooth, ice, ocean%snapshot_nudge2D)
+    call nudge_deltaT( mesh, grid_smooth, ice, geom, ocean%snapshot_nudge2D)
     call map_deltaT_to_reference_grid( mesh, ocean%snapshot_nudge2D)
     call add_deltaT_to_snapshot( mesh, ocean%snapshot_nudge2D)
     call set_applied_ocean_data( mesh, ocean)
@@ -59,12 +61,13 @@ contains
 
   end subroutine run_ocean_model_snapshot_nudge2D
 
-  subroutine nudge_deltaT( mesh, grid_smooth, ice, snapshot_nudge2D)
+  subroutine nudge_deltaT( mesh, grid_smooth, ice, geom, snapshot_nudge2D)
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
     type(type_grid),                         intent(in   ) :: grid_smooth
-    type(type_ice_model),                    intent(in   ) :: ice
+    class(atype_ice_model_data),             intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
     type(type_ocean_model_snapshot_nudge2D), intent(inout) :: snapshot_nudge2D
 
     ! Local variables:
@@ -78,8 +81,8 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    call calc_corrected_target_thickness( mesh, ice, snapshot_nudge2D, Hi_target_corr)
-    call calc_dTdt( mesh, grid_smooth, ice, Hi_target_corr, snapshot_nudge2D%target_mask_shelf, dTdt)
+    call calc_corrected_target_thickness( mesh, geom, snapshot_nudge2D, Hi_target_corr)
+    call calc_dTdt( mesh, grid_smooth, ice, geom, Hi_target_corr, snapshot_nudge2D%target_mask_shelf, dTdt)
 
     do vi = mesh%vi1, mesh%vi2
 
@@ -96,11 +99,11 @@ contains
 
   end subroutine nudge_deltaT
 
-  subroutine calc_corrected_target_thickness( mesh, ice, snapshot_nudge2D, Hi_target_corr)
+  subroutine calc_corrected_target_thickness( mesh, geom, snapshot_nudge2D, Hi_target_corr)
 
     ! In/output variables:
     type(type_mesh),                         intent(in   ) :: mesh
-    type(type_ice_model),                    intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
     type(type_ocean_model_snapshot_nudge2D), intent(in   ) :: snapshot_nudge2D
     real(dp), dimension(mesh%vi1:mesh%vi2),  intent(  out) :: Hi_target_corr
 
@@ -120,8 +123,8 @@ contains
     ! is often wrong (because of the difficulty of remapping a discontinuous
     ! field), so instead use the mean of the neighbouring non-front shelf
     ! vertices.
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_floating_ice, mask_floating_ice_tot)
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%mask_cf_fl       , mask_cf_fl_tot       )
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_floating_ice, mask_floating_ice_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%mask_cf_fl       , mask_cf_fl_tot       )
     call gather_to_all( Hi_target_corr       , Hi_target_tot)
 
     do vi = mesh%vi1, mesh% vi2
@@ -146,12 +149,13 @@ contains
 
   end subroutine calc_corrected_target_thickness
 
-  subroutine calc_dTdt( mesh, grid_smooth, ice, Hi_target_corr, target_mask_shelf, dTdt)
+  subroutine calc_dTdt( mesh, grid_smooth, ice, geom, Hi_target_corr, target_mask_shelf, dTdt)
 
     ! In/output variables:
     type(type_mesh),                        intent(in   ) :: mesh
     type(type_grid),                        intent(in   ) :: grid_smooth
-    type(type_ice_model),                   intent(in   ) :: ice
+    class(atype_ice_model_data),            intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: Hi_target_corr
     logical , dimension(mesh%vi1:mesh%vi2), intent(in   ) :: target_mask_shelf
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(  out) :: dTdt
@@ -174,11 +178,11 @@ contains
 
       ! Only apply nudging to fully floating shelf vertices,
       ! skipping the grounding line and calving front.
-      if (ice%geom%fraction_gr( vi) < 0.01_dp .and. ice%geom%Hi( vi) > 0.1_dp .and. .not. ice%geom%mask_margin( vi)) then
+      if (geom%fraction_gr( vi) < 0.01_dp .and. geom%Hi( vi) > 0.1_dp .and. .not. geom%mask_margin( vi)) then
 
         mask_extrapolation( vi) = 2
 
-        deltaH = ice%geom%Hi( vi) - Hi_target_corr( vi)
+        deltaH = geom%Hi( vi) - Hi_target_corr( vi)
         dHdt   = ice%dHi_dt( vi)
 
         dTdt( vi) = c_H * deltaH + c_dHdt * dHdt

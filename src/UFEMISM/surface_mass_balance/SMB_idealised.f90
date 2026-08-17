@@ -7,7 +7,8 @@ module SMB_idealised
   use mesh_types, only: type_mesh
   use SMB_model_basic, only: atype_SMB_model
   use Halfar_SIA_solution, only: Halfar
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use climate_model_types, only: type_climate_model
   use reference_geometry_types, only: type_reference_geometry
   use grid_types, only: type_grid
@@ -74,13 +75,13 @@ contains
 
   end subroutine SMB_model_idealised_deallocate
 
-  subroutine SMB_model_idealised_initialise( self, ice, refgeo_init, refgeo_PD)
+  subroutine SMB_model_idealised_initialise( self, geom, refgeo_init, refgeo_PD)
 
     ! In/output variables:
-    class(type_SMB_model_idealised), intent(inout) :: self
-    type(type_ice_model),            intent(in   ) :: ice
-    type(type_reference_geometry),   intent(in   ) :: refgeo_init
-    type(type_reference_geometry),   intent(in   ) :: refgeo_PD
+    class(type_SMB_model_idealised),      intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_idealised_initialise'
@@ -96,14 +97,15 @@ contains
 
   end subroutine SMB_model_idealised_initialise
 
-  subroutine SMB_model_idealised_run( self, time, ice, climate, grid_smooth)
+  subroutine SMB_model_idealised_run( self, time, ice, geom, climate, grid_smooth)
 
     ! In/output variables:
-    class(type_SMB_model_idealised), intent(inout) :: self
-    real(dp),                        intent(in   ) :: time
-    type(type_ice_model),            intent(in   ) :: ice
-    type(type_climate_model),        intent(inout) :: climate
-    type(type_grid),                 intent(in   ) :: grid_smooth
+    class(type_SMB_model_idealised),      intent(inout) :: self
+    real(dp),                             intent(in   ) :: time
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_climate_model),             intent(inout) :: climate
+    type(type_grid),                      intent(in   ) :: grid_smooth
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_SMB_model_idealised'
@@ -279,14 +281,14 @@ contains
 
   end subroutine run_SMB_model_idealised_Halfar_static
 
-  subroutine SMB_model_idealised_remap( self, mesh_new, time, refgeo_init, refgeo_PD, ice)
+  subroutine SMB_model_idealised_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_SMB_model_idealised),       intent(inout) :: self
     type(type_mesh), target,               intent(in   ) :: mesh_new
     real(dp),                              intent(in   ) :: time
     type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
-    type(type_ice_model),          target, intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'SMB_model_idealised_remap'

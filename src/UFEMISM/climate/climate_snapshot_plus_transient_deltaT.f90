@@ -11,7 +11,7 @@ MODULE climate_snapshot_plus_transient_deltaT
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
   USE global_forcing_types                                   , ONLY: type_global_forcing
   use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_insolation
@@ -37,14 +37,14 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, time)
+  SUBROUTINE run_climate_model_snapshot_plus_transient_deltaT( mesh, geom, climate, time)
     ! Calculate the climate
     !
     ! Use a snapshot plus a prescribed uniform deltaT
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -74,7 +74,7 @@ CONTAINS
     ! Update temperature and precipitation fields based on the mismatch between
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
     call apply_precipitation_CC_correction(mesh, climate, climate%snapshot_trans_dT%snapshot%precip_CC_correction, climate%snapshot_trans_dT%deltaT)
-    call apply_geometry_downscaling_corrections(mesh, ice, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
+    call apply_geometry_downscaling_corrections(mesh, geom, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
     IF (climate%snapshot%has_insolation) THEN
@@ -87,7 +87,7 @@ CONTAINS
 
   END SUBROUTINE run_climate_model_snapshot_plus_transient_deltaT
 
-  SUBROUTINE initialise_climate_model_snapshot_plus_transient_deltaT( mesh, ice, climate, region_name, start_time_of_run)
+  SUBROUTINE initialise_climate_model_snapshot_plus_transient_deltaT( mesh, geom, climate, region_name, start_time_of_run)
     ! Initialise the climate model
     !
     ! Use a realistic climate scheme
@@ -96,7 +96,7 @@ CONTAINS
 
     ! In- and output variables
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     real(dp),                               INTENT(IN)    :: start_time_of_run
@@ -166,7 +166,7 @@ CONTAINS
 
     ! apply corrections (increase in Precip due to deltaT, plus downscaling correction)
     call apply_precipitation_CC_correction(mesh, climate, climate%snapshot_trans_dT%snapshot%precip_CC_correction, climate%snapshot_trans_dT%deltaT)
-    call apply_geometry_downscaling_corrections(mesh, ice, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
+    call apply_geometry_downscaling_corrections(mesh, geom, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
 
     ! Initialises the insolation (if needed)
     IF (climate%snapshot_trans_dT%snapshot%has_insolation) THEN
@@ -190,11 +190,11 @@ CONTAINS
 
   END SUBROUTINE initialise_climate_model_snapshot_plus_transient_deltaT
 
-  SUBROUTINE remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, ice, climate, region_name, time)
+  SUBROUTINE remap_climate_snapshot_plus_transient_deltaT( mesh_old, mesh_new, geom, climate, region_name, time)
   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_old
     type(type_mesh),                        intent(in)    :: mesh_new
-    type(type_ice_model),                   intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     type(type_climate_model),               intent(inout) :: climate
     character(LEN=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: time
@@ -253,7 +253,7 @@ CONTAINS
 
     ! apply corrections (increase in Precip due to deltaT, plus downscaling correction)
     call apply_precipitation_CC_correction(mesh_new, climate, climate%snapshot_trans_dT%snapshot%precip_CC_correction, climate%snapshot_trans_dT%deltaT)
-    call apply_geometry_downscaling_corrections(mesh_new, ice, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
+    call apply_geometry_downscaling_corrections(mesh_new, geom, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

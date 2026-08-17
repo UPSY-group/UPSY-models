@@ -12,7 +12,7 @@ module ocean_deltaT_transient
   use model_configuration                                    , only: C
   use parameters
   use mesh_types                                             , only: type_mesh
-  use ice_model_types                                        , only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ocean_model_types                                      , only: type_ocean_model
   use netcdf_io_main
   use ocean_extrapolation                                    , only: extrapolate_ocean_forcing
@@ -25,14 +25,14 @@ contains
 ! ===== Main routines =====
 ! =========================
 
-subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_name, start_time_of_run)
+subroutine initialise_ocean_model_transient_deltaT( mesh, geom, ocean, region_name, start_time_of_run)
     ! Initialise the ocean model
     !
     ! Use an realistic ocean scheme
 
     ! In- and output variables
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_ice_model),                   intent(in)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in)    :: geom
     type(type_ocean_model),                 intent(inout) :: ocean
     character(len=3),                       intent(in)    :: region_name
     real(dp),                               intent(in)    :: start_time_of_run
@@ -76,8 +76,8 @@ subroutine initialise_ocean_model_transient_deltaT( mesh, ice, ocean, region_nam
             case('none')
               ! Do nothing (assume input ocean data has already been extrapolated)
             case('initialisation')
-              call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%T0)
-              call extrapolate_ocean_forcing( mesh, ice, ocean%deltaT_transient%S0)
+              call extrapolate_ocean_forcing( mesh, geom, ocean%deltaT_transient%T0)
+              call extrapolate_ocean_forcing( mesh, geom, ocean%deltaT_transient%S0)
             case default
               call crash('unknown choice_ocean_extrapolation_method "' // trim( C%choice_ocean_extrapolation_method) // '"')
             end select

@@ -10,7 +10,9 @@ module transects_main
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use transect_types, only: atype_transect, type_transect
   use UPSY_main, only: UPSY
   use netcdf_io_main
@@ -802,7 +804,7 @@ contains
     call init_routine( routine_name)
 
     do it = 1, size( region%transects)
-      call write_to_transect_netcdf_output_file( region%mesh, region%ice, region%BMB, &
+      call write_to_transect_netcdf_output_file( region%mesh, region%ice, region%ice%geom, region%ice%vel, region%BMB, &
         region%transects( it), region%time)
     end do
 
@@ -811,14 +813,16 @@ contains
 
   end subroutine write_to_transect_netcdf_output_files
 
-  subroutine write_to_transect_netcdf_output_file( mesh, ice, BMB, transect, time)
+  subroutine write_to_transect_netcdf_output_file( mesh, ice, geom, vel, BMB, transect, time)
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
-    type(type_BMB_model), intent(in   ) :: BMB
-    type(type_transect),  intent(in   ) :: transect
-    real(dp),             intent(in   ) :: time
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_model_data),          intent(in   ) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
+    type(type_BMB_model),                 intent(in   ) :: BMB
+    type(type_transect),                  intent(in   ) :: transect
+    real(dp),                             intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter                      :: routine_name = 'write_to_transect_netcdf_output_file'
@@ -860,20 +864,20 @@ contains
       UPSY%stru%colour_string( trim( filename), 'light blue'), '"...'
 
     ! Map ice model data to transect
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hi,       tHi_partial,     'trilin')
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hb,       tHb_partial,     'trilin')
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hs,       tHs_partial,     'trilin')
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hib,      tHib_partial,    'trilin')
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%SL,       tSL_partial,     'trilin')
-    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, ice%geom%Hi_eff,   tHi_eff_partial, 'nearest_neighbour')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, geom%Hi,       tHi_partial,     'trilin')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, geom%Hb,       tHb_partial,     'trilin')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, geom%Hs,       tHs_partial,     'trilin')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, geom%Hib,      tHib_partial,    'trilin')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, geom%SL,       tSL_partial,     'trilin')
+    call map_from_mesh_vertices_to_transect_2D ( mesh, transect, geom%Hi_eff,   tHi_eff_partial, 'nearest_neighbour')
     call map_from_mesh_vertices_to_transect_2D ( mesh, transect, BMB%BMB,      tBMB_partial,    'trilin')
     call map_from_mesh_vertices_to_transect_3D ( mesh, transect, ice%Ti,       tTi_partial,     'trilin')
-    call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%vel%u_3D_b,   tu_partial)
-    call map_from_mesh_triangles_to_transect_3D( mesh, transect, ice%vel%v_3D_b,   tv_partial)
-    call map_from_mesh_vertices_to_transect_3D ( mesh, transect, ice%vel%w_3D,     tw_partial,      'trilin')
-    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%vel%du_dx_3D, tdu_dx_partial,  'trilin')
-    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%vel%dv_dy_3D, tdv_dy_partial,  'trilin')
-    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, ice%vel%dw_dz_3D, tdw_dz_partial,  'trilin')
+    call map_from_mesh_triangles_to_transect_3D( mesh, transect, vel%u_3D_b,   tu_partial)
+    call map_from_mesh_triangles_to_transect_3D( mesh, transect, vel%v_3D_b,   tv_partial)
+    call map_from_mesh_vertices_to_transect_3D ( mesh, transect, vel%w_3D,     tw_partial,      'trilin')
+    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, vel%du_dx_3D, tdu_dx_partial,  'trilin')
+    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, vel%dv_dy_3D, tdv_dy_partial,  'trilin')
+    call map_from_mesh_vertices_to_transect_3D(  mesh, transect, vel%dw_dz_3D, tdw_dz_partial,  'trilin')
 
     ! Calculate parallel/orthogonal velocity components
     do k = 1, transect%nz

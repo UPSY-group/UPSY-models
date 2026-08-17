@@ -9,7 +9,9 @@ module predictor_corrector_scheme
   use model_configuration, only: C
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model, type_ice_pc
+  use ice_model_data, only: atype_ice_model_data, type_ice_pc
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reallocate_mod, only: reallocate_bounds
   use netcdf_io_main
   use time_step_criteria, only: calc_critical_timestep_adv
@@ -97,7 +99,7 @@ contains
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_star_np1)
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_star_np1)
       call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_star_np1)
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%geom%Hb, region%ice%geom%SL, &
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &
         region%ice%pc%Hi_star_np1, region%refgeo_PD, region%time)
       call checksum( region%mesh%pai_V, region%ice%pc%Hi_star_np1, 'region%ice%pc%Hi_star_np1')
 
@@ -112,7 +114,7 @@ contains
 
       ! Calculate ice velocities for the predicted geometry
       !   u_n+1 in Robinson et al., 2020, Eq. 31
-      call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
+      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%ice%vel, region%bed_roughness, &
         region%BMB%BMB, region%name, n_visc_its, n_Axb_its)
 
       ! Update stability info
@@ -138,7 +140,7 @@ contains
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_np1)
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
       call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%Hi_prev, region%ice%geom%Hb, region%ice%geom%SL, &
+      call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &
         region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
       call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')
 
@@ -146,12 +148,12 @@ contains
       ! ======================
 
       ! Estimate truncation error
-      call calc_pc_truncation_error( region%mesh, region%ice, region%ice%pc)
+      call calc_pc_truncation_error( region%mesh, region%ice%geom, region%ice%pc)
 
       ! == Error assessment ==
       ! ======================
 
-      call calc_n_guilty( region%mesh, region%ice, region%ice%pc, n_guilty, n_tot)
+      call calc_n_guilty( region%mesh, region%ice%geom, region%ice%pc, n_guilty, n_tot)
 
       ! Check if largest truncation error is small enough; if so, move on
       if (region%ice%pc%eta_np1 < C%pc_epsilon) then
@@ -223,7 +225,7 @@ contains
     dt_np1 = max( dt_np1, C%dt_ice_min)
 
     ! Limit time step to critical advective time step
-    call calc_critical_timestep_adv( region%mesh, region%ice, dt_crit_adv)
+    call calc_critical_timestep_adv( region%mesh, region%ice%geom, region%ice%vel, dt_crit_adv)
 
     dt_np1 = min( dt_np1, dt_crit_adv)
 
@@ -277,14 +279,14 @@ contains
 
   end subroutine forbid_negative_ice_thickness
 
-  subroutine calc_pc_truncation_error( mesh, ice, pc)
+  subroutine calc_pc_truncation_error( mesh, geom, pc)
     !< Calculate the truncation error tau in the ice thickness
     !< rate of change (Robinson et al., 2020, Eq. 32)
 
     ! In- and output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
-    type(type_ice_pc),    intent(inout) :: pc
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_pc),                    intent(inout) :: pc
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_pc_truncation_error'
@@ -301,7 +303,7 @@ contains
     ! Calculate the maximum truncation error eta over grounded ice only
     pc%eta_np1 = C%pc_eta_min
     do vi = mesh%vi1, mesh%vi2
-      if (ice%geom%mask_grounded_ice( vi) .and. .not. ice%geom%mask_gl_gr( vi) .and. ice%geom%fraction_gr( vi) == 1._dp) then
+      if (geom%mask_grounded_ice( vi) .and. .not. geom%mask_gl_gr( vi) .and. geom%fraction_gr( vi) == 1._dp) then
         pc%eta_np1 = MAX( pc%eta_np1, pc%tau_np1( vi))
       end if
     end do
@@ -314,15 +316,15 @@ contains
 
   end subroutine calc_pc_truncation_error
 
-  subroutine calc_n_guilty( mesh, ice, pc, n_guilty, n_tot)
+  subroutine calc_n_guilty( mesh, geom, pc, n_guilty, n_tot)
     !< Calculate the truncation error tau in the ice thickness
     !< rate of change (Robinson et al., 2020, Eq. 32)
 
     ! In- and output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
-    type(type_ice_pc),    intent(inout) :: pc
-    integer,              intent(  out) :: n_guilty, n_tot
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ice_pc),                    intent(inout) :: pc
+    integer,                              intent(  out) :: n_guilty, n_tot
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_n_guilty'
@@ -338,7 +340,7 @@ contains
     ! Determine number of unstable vertices
     do vi = mesh%vi1, mesh%vi2
       ! Only consider fully grounded vertices
-      if (ice%geom%fraction_gr( vi) < 1._dp) CYCLE
+      if (geom%fraction_gr( vi) < 1._dp) CYCLE
       ! if so, add to total vertex count
       n_tot = n_tot + 1
       ! if this vertex's error is larger than tolerance

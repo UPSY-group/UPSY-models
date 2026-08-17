@@ -7,7 +7,7 @@ module ice_dynamics_main
   use parameters, only: grav, ice_density, seawater_density
   use region_types, only: type_model_region
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
   use reference_geometry_types, only: type_reference_geometry
   use GIA_model_types, only: type_GIA_model
   use SMB_model, only: atype_SMB_model
@@ -42,9 +42,18 @@ module ice_dynamics_main
   use global_forcings_main, only: update_sealevel_in_model
   use bed_roughness_model_types, only: type_bed_roughness_model
   use checksum_mod, only: checksum
-  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_model_main, only: type_ice_model
 
   implicit none
+
+  private
+
+  public :: initialise_ice_dynamics_model
+  public :: run_ice_dynamics_model
+  public :: remap_ice_dynamics_model
+  public :: create_restart_files_ice_model
+  public :: write_to_restart_files_ice_model
+  public :: apply_geometry_relaxation
 
 contains
 
@@ -173,7 +182,7 @@ contains
     ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
     !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
     ! Calculate zeta gradients
-    call calc_zeta_gradients( region%mesh, region%ice)
+    call calc_zeta_gradients( region%mesh, region%ice, region%ice%geom)
 
     ! Calculate sub-grid grounded-area fractions
     call region%ice%geom%calc_grounded_fractions( region%ice%dHb)
@@ -188,7 +197,7 @@ contains
 
     ! In- and output variables
     type(type_mesh),               intent(in   ) :: mesh
-    type(type_ice_model),          intent(inout) :: ice
+    type(type_ice_model)       ,   intent(inout) :: ice
     type(type_reference_geometry), intent(in   ) :: refgeo_init
     type(type_reference_geometry), intent(in   ) :: refgeo_PD
     type(type_reference_geometry), intent(in   ) :: refgeo_GIAeq
@@ -306,7 +315,7 @@ contains
     call checksum( mesh%pai_V, ice%dHib_dt, 'ice%dHib_dt')
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh, ice)
+    call calc_zeta_gradients( mesh, ice, ice%geom)
 
     ! Model states for ice dynamics model
     ice%t_Hi_prev = C%start_time_of_run
@@ -397,9 +406,9 @@ contains
     !< Write to all the restart files for the ice dynamics model
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(in   ) :: ice
-    real(dp),             intent(in   ) :: time
+    type(type_mesh),             intent(in   ) :: mesh
+    type(type_ice_model)       , intent(in   ) :: ice
+    real(dp),                    intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_restart_files_ice_model'
@@ -429,8 +438,8 @@ contains
     !< Create all the restart files for the ice dynamics model
 
     ! In/output variables:
-    type(type_mesh),      intent(in   ) :: mesh
-    type(type_ice_model), intent(inout) :: ice
+    type(type_mesh),             intent(in   ) :: mesh
+    type(type_ice_model)       , intent(inout) :: ice
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_restart_files_ice_model'
@@ -462,7 +471,7 @@ contains
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh_old
     type(type_mesh),                intent(inout) :: mesh_new
-    type(type_ice_model),           intent(inout) :: ice
+    type(type_ice_model)       ,    intent(inout) :: ice
     type(type_bed_roughness_model), intent(inout) :: bed_roughness
     type(type_reference_geometry),  intent(in   ) :: refgeo_PD
     class(atype_SMB_model),         intent(in   ) :: SMB
@@ -650,11 +659,11 @@ contains
     end do
 
     ! Calculate zeta gradients
-    call calc_zeta_gradients( mesh_new, ice)
+    call calc_zeta_gradients( mesh_new, ice, ice%geom)
 
     ! Load target dHi_dt for inversions
     if (C%do_target_dHi_dt) then
-      call initialise_dHi_dt_target(mesh_new, ice, region_name)
+      call initialise_dHi_dt_target( mesh_new, ice, region_name)
     else
       ice%dHi_dt_target = 0._dp
     end if
@@ -693,13 +702,13 @@ contains
     !        move 'relax_calving_front' and 'remap_bed_roughness_model'
     !        to (to-be-created) 'remap_region'
 
-    call remap_bed_roughness_model( mesh_old, mesh_new, ice, bed_roughness, region_name)
+    call remap_bed_roughness_model( mesh_old, mesh_new, ice%geom, bed_roughness, region_name)
 
     ! Velocities
     ! ==========
 
     ! Remap data for the chosen velocity solver(s)
-    call remap_velocity_solver( mesh_old, mesh_new, ice)
+    call remap_velocity_solver( mesh_old, mesh_new, ice, ice%vel)
 
     ! Time stepping
     ! =============
@@ -740,7 +749,7 @@ contains
     ! In/output variables:
     type(type_mesh),                intent(in   ) :: mesh_old
     type(type_mesh),                intent(inout) :: mesh
-    type(type_ice_model),           intent(inout) :: ice
+    type(type_ice_model)       ,    intent(inout) :: ice
     type(type_bed_roughness_model), intent(in   ) :: bed_roughness
     class(atype_SMB_model),         intent(in   ) :: SMB
     type(type_BMB_model),           intent(in   ) :: BMB
@@ -951,7 +960,7 @@ contains
     pseudo_time: do while (t_pseudo < dt_relax)
 
       ! Update velocity solution around the calving front
-      call solve_stress_balance( mesh, ice, bed_roughness, BMB_new, region_name, &
+      call solve_stress_balance( mesh, ice, ice%geom, ice%vel, bed_roughness, BMB_new, region_name, &
         n_visc_its, n_Axb_its, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
@@ -1064,8 +1073,8 @@ contains
       end do
 
       ! Calculate ice velocities for the predicted geometry
-      call solve_stress_balance( region%mesh, region%ice, region%bed_roughness, &
-        BMB_dummy, region%name, n_visc_its, n_Axb_its)
+      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, &
+        region%ice%vel, region%bed_roughness, BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &
@@ -1132,7 +1141,7 @@ contains
       ! NOTE: as calculating the zeta gradients is quite expensive, only do so when necessary,
       !       i.e. when solving the heat equation or the Blatter-Pattyn stress balance
       ! Calculate zeta gradients
-      call calc_zeta_gradients( region%mesh, region%ice)
+      call calc_zeta_gradients( region%mesh, region%ice, region%ice%geom)
 
       ! Calculate sub-grid grounded-area fractions
       call region%ice%geom%calc_grounded_fractions( region%ice%dHb)

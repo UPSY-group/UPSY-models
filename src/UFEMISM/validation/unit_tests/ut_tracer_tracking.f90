@@ -20,7 +20,7 @@ module ut_tracer_tracking
 !   use tracer_tracking_model_types, only: type_tracer_tracking_model_particles, type_map_particles_to_mesh
 !   use tracer_tracking_model_particles, only: calc_particle_zeta, interpolate_3d_velocities_to_3D_point, &
 !     calc_particles_to_mesh_map, initialise_tracer_tracking_model_particles, add_particle
-!   use ice_model_types, only: type_ice_model
+!   use ice_model_data, only: atype_ice_model_data
 !   use ice_model_memory, only: allocate_ice_model
 !   use reference_geometries_main, only: calc_idealised_geometry
 
@@ -398,7 +398,7 @@ module ut_tracer_tracking
 !     character(len=1024), parameter             :: routine_name = 'test_particle_movement_slab_on_a_slope'
 !     character(len=1024), parameter             :: test_name_local = 'particle_movement_slab_on_a_slope'
 !     character(len=1024)                        :: test_name
-!     type(type_ice_model)                       :: ice
+!     class(atype_ice_model_data)                       :: ice
 !     integer                                    :: vi,k,i,j,ip
 !     character(len=1024)                        :: choice_refgeo_idealised
 !     real(dp), parameter                        :: theta = -0.01_dp
@@ -526,7 +526,7 @@ module ut_tracer_tracking
 !     character(len=1024), parameter             :: routine_name = 'test_particle_movement_vortex'
 !     character(len=1024), parameter             :: test_name_local = 'particle_movement_vortex'
 !     character(len=1024)                        :: test_name
-!     type(type_ice_model)                       :: ice
+!     class(atype_ice_model_data)                       :: ice
 !     integer                                    :: ti,k,i,j,ip
 !     real(dp), parameter                        :: Hi = 1000._dp
 !     real(dp), parameter                        :: time_rev_surf = 1000._dp

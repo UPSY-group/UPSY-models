@@ -13,7 +13,8 @@ MODULE UFEMISM_main_model
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE region_types                                           , ONLY: type_model_region
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE mesh_types                                             , ONLY: type_mesh
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE global_forcing_types                                   , ONLY: type_global_forcing
@@ -108,7 +109,7 @@ CONTAINS
           region%time > C%start_time_of_run) THEN
 
         ! Calculate the mesh fitness coefficient
-        CALL calc_mesh_fitness_coefficient( region%mesh, region%ice, mesh_fitness_coefficient)
+        CALL calc_mesh_fitness_coefficient( region%mesh, region%ice%geom, mesh_fitness_coefficient)
 
         ! If necessary and allowed, perform a mesh update
         IF (mesh_fitness_coefficient < C%minimum_mesh_fitness_coefficient) THEN
@@ -118,7 +119,8 @@ CONTAINS
       END IF ! IF (C%allow_mesh_updates) THEN
 
       ! Run the subglacial hydrology model
-      call run_basal_hydrology_model( region%mesh, region%ice, region%time, region%ice%hydro_Salle2025)
+      call run_basal_hydrology_model( region%mesh, region%ice, region%Ice%geom, region%ice%vel, &
+        region%time, region%ice%hydro_Salle2025)
 
       ! Update sea level if necessary
       IF  (C%choice_sealevel_model == 'prescribed') THEN
@@ -140,19 +142,22 @@ CONTAINS
       CALL run_thermodynamics_model( region)
 
       ! Calculate the climate
-      CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name, region%time, region%SMB)
+      CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+        region%climate, regional_forcing, region%name, region%time, region%SMB)
 
       ! Calculate the ocean
-      CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, region%time)
+      CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+        region%ocean, region%name, region%time)
 
       ! Calculate the surface mass balance
-      call region%SMB%run( region%time, region%ice, region%climate, region%grid_smooth)
+      call region%SMB%run( region%time, region%ice, region%ice%geom, region%climate, region%grid_smooth)
 
       ! Calculate the basal mass balance
-      CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, region%time, is_initial=.FALSE.)
+      CALL run_BMB_model( region%mesh, region%ice, region%ice%geom, region%ocean, &
+        region%refgeo_PD, region%BMB, region%name, region%time, is_initial=.FALSE.)
 
       ! Calculate the lateral mass balance
-      CALL run_LMB_model( region%mesh, region%ice, region%LMB, region%name, region%time)
+      CALL run_LMB_model( region%mesh, region%ice%geom, region%LMB, region%name, region%time)
 
       ! Calculate bedrock deformation at the desired time, and update
       ! predicted deformation if necessary
@@ -162,13 +167,15 @@ CONTAINS
       CALL run_bed_roughness_nudging_model( region)
 
       ! Run the tracer-tracking model
-      call run_tracer_tracking_model( region%mesh, region%ice, region%SMB, &
+      call run_tracer_tracking_model( region%mesh, region%ice%geom, region%ice%vel, region%SMB, &
         region%tracer_tracking, region%time)
 
       ! Calculate ice-sheet integrated values (total volume, area, etc.)
-      CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
+      CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
+        region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
       do i=1, region%nROI
-        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i), i)
+        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
+          region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i), i)
       end do
 
       ! Write to the main regional output NetCDF file
@@ -524,21 +531,25 @@ CONTAINS
     ! ===== Ice dynamics =====
     ! ========================
 
-    CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
+    allocate( region%ice)
+    CALL initialise_ice_dynamics_model( region%mesh, region%ice, region%refgeo_init, &
+      region%refgeo_PD, region%refgeo_GIAeq, region%GIA, region%name, regional_forcing, start_time_of_run)
 
-    call initialise_basal_hydro_model( region%mesh, region%ice, region%ice%hydro_Salle2025)
+    call initialise_basal_hydro_model( region%mesh, region%ice%hydro_Salle2025)
 
-    call initialise_bed_roughness_model( region%mesh, region%ice, region%bed_roughness, region%name)
+    call initialise_bed_roughness_model( region%mesh, region%ice%geom, region%bed_roughness, region%name)
 
     ! ===== Climate =====
     ! ===================
 
-    CALL initialise_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%refgeo_PD, region%refgeo_init, region%name)
+    CALL initialise_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+      region%climate, regional_forcing, region%refgeo_PD, region%refgeo_init, region%name)
 
     ! ===== Ocean =====
     ! =================
 
-    CALL initialise_ocean_model( region%mesh, region%ice, region%ocean, region%name, start_time_of_run, region%refgeo_PD, region%refgeo_init)
+    CALL initialise_ocean_model( region%mesh, region%ice%geom, region%ocean, region%name, &
+      start_time_of_run, region%refgeo_PD, region%refgeo_init)
 
     ! ===== Surface mass balance =====
     ! ================================
@@ -557,14 +568,15 @@ CONTAINS
     end select
 
     call region%SMB%allocate( region%name, region%mesh)
-    call region%SMB%initialise( region%ice, region%refgeo_init, region%refgeo_PD)
+    call region%SMB%initialise( region%ice%geom, region%refgeo_init, region%refgeo_PD)
 
     call checksum( region%mesh%pai_V, region%SMB%SMB, 'region%SMB%SMB')
 
     ! ===== Basal mass balance =====
     ! ==============================
 
-    CALL initialise_BMB_model( region%mesh, region%ice, region%ocean, region%BMB, region%refgeo_PD, region%refgeo_init, region%name)
+    CALL initialise_BMB_model( region%mesh, region%ice, region%ice%geom, region%ocean, &
+      region%BMB, region%refgeo_PD, region%refgeo_init, region%name)
 
     ! ===== Lateral mass balance =====
     ! ================================
@@ -579,17 +591,20 @@ CONTAINS
     ! ===== Tracer tracking model =====
     ! =================================
 
-    call initialise_tracer_tracking_model( region%mesh, region%ice, region%tracer_tracking)
+    call initialise_tracer_tracking_model( region%mesh, region%tracer_tracking)
 
     ! ===== Run the climate, ocean, SMB, BMB, and LMB models =====
     ! ============================================================
 
     ! Run the models
-    CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
-    CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ocean, region%name, C%start_time_of_run)
-    call region%SMB%run( C%start_time_of_run, region%ice, region%climate, region%grid_smooth)
-    CALL run_BMB_model( region%mesh, region%ice, region%ocean, region%refgeo_PD, region%BMB, region%name, C%start_time_of_run, is_initial=.TRUE.)
-    CALL run_LMB_model( region%mesh, region%ice, region%LMB, region%name, region%time)
+    CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+      region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
+    CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+      region%ocean, region%name, C%start_time_of_run)
+    call region%SMB%run( C%start_time_of_run, region%ice, region%ice%geom, region%climate, region%grid_smooth)
+    CALL run_BMB_model( region%mesh, region%ice, region%ice%geom, region%ocean, &
+      region%refgeo_PD, region%BMB, region%name, C%start_time_of_run, is_initial=.TRUE.)
+    CALL run_LMB_model( region%mesh, region%ice%geom, region%LMB, region%name, region%time)
 
     ! Reset the timers
     region%climate%t_next = C%start_time_of_run
@@ -629,9 +644,11 @@ CONTAINS
     ! ==============================
 
     ! Calculate ice-sheet integrated values (total volume, area, etc.)
-    CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
+    CALL calc_ice_mass_and_fluxes( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
+      region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars)
     do i=1, region%nROI
-        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i),i)
+        CALL calc_ice_mass_and_fluxes_ROI( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
+          region%SMB, region%BMB, region%LMB, region%refgeo_PD, region%scalars_ROI( i),i)
     end do
 
     ! ===== Regional output =====
@@ -1297,18 +1314,18 @@ CONTAINS
 
     ! Remap all the model data from the old mesh to the new mesh
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
-    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%refgeo_PD, region%refgeo_init, region%grid_smooth, region%ice, forcing)
-    CALL remap_ocean_model(           region%mesh, mesh_new, region%ice, region%ocean  , region%name, region%time)
-    call region%SMB%remap( mesh_new, region%time, region%refgeo_init, region%refgeo_PD, region%ice)
-    CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ocean, region%BMB    , region%name, region%time)
+    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%refgeo_PD, region%refgeo_init, region%grid_smooth, region%ice, region%ice%geom, forcing)
+    CALL remap_ocean_model(           region%mesh, mesh_new, region%ice%geom, region%ocean  , region%name, region%time)
+    call region%SMB%remap( mesh_new, region%time, region%refgeo_init, region%refgeo_PD, region%ice%geom)
+    CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ice%geom, region%ocean, region%BMB    , region%name, region%time)
     CALL remap_LMB_model(             region%mesh, mesh_new,             region%LMB    , region%name)
     CALL remap_AMB_model(             region%mesh, mesh_new,             region%AMB                 )
     CALL remap_GIA_model(             region%mesh, mesh_new,             region%GIA    , region%refgeo_GIAeq, region%ELRA)
-    call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice, region%ice%hydro_Salle2025,                region%time)
+    call remap_basal_hydro_model(     region%mesh, mesh_new, region%ice%hydro_Salle2025,                region%time)
 
     call remap_tracer_tracking_model( region%mesh, mesh_new, region%tracer_tracking, region%time)
 
-    call remap_ISMIP_output( region%mesh, mesh_new, region%ice, region%ismip_output)
+    call remap_ISMIP_output( region%mesh, mesh_new, region%ice%geom, region%ismip_output)
 
     ! Set all model component timers so that they will all be run right after the mesh update
     region%ice%t_Hi_next  = region%time
@@ -1341,7 +1358,7 @@ CONTAINS
 
   END SUBROUTINE update_mesh
 
-  SUBROUTINE calc_mesh_fitness_coefficient( mesh, ice, f)
+  SUBROUTINE calc_mesh_fitness_coefficient( mesh, geom, f)
     ! Calculate the fitness coefficient of the current mesh, which is defined as the
     ! fraction of the grounding line that is still covered by a good-resolution mesh
 
@@ -1349,7 +1366,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                                INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),                INTENT(IN)    :: geom
     REAL(dp),                                            INTENT(OUT)   :: f
 
     ! Local variables:
@@ -1380,7 +1397,7 @@ CONTAINS
       ! Check resolution criteria for the different lines
 
       ! Grounding line
-      IF (ice%geom%mask_gl_gr( vi) .OR. ice%geom%mask_gl_fl( vi)) THEN
+      IF (geom%mask_gl_gr( vi) .OR. geom%mask_gl_fl( vi)) THEN
         nV_grounding_line_tot = nV_grounding_line_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_grounding_line * C%mesh_resolution_tolerance) THEN
           nV_grounding_line_bad = nV_grounding_line_bad + 1
@@ -1388,7 +1405,7 @@ CONTAINS
       END IF
 
       ! Calving front
-      IF (ice%geom%mask_cf_gr( vi) .OR. ice%geom%mask_cf_fl( vi)) THEN
+      IF (geom%mask_cf_gr( vi) .OR. geom%mask_cf_fl( vi)) THEN
         nV_calving_front_tot = nV_calving_front_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_calving_front * C%mesh_resolution_tolerance) THEN
           nV_calving_front_bad = nV_calving_front_bad + 1
@@ -1396,7 +1413,7 @@ CONTAINS
       END IF
 
       ! Ice front
-      IF (ice%geom%mask_margin( vi)) THEN
+      IF (geom%mask_margin( vi)) THEN
         nV_ice_front_tot = nV_ice_front_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_ice_front * C%mesh_resolution_tolerance) THEN
           nV_ice_front_bad = nV_ice_front_bad + 1
@@ -1404,7 +1421,7 @@ CONTAINS
       END IF
 
       ! Coastline
-      IF (ice%geom%mask_coastline( vi)) THEN
+      IF (geom%mask_coastline( vi)) THEN
         nV_coastline_tot = nV_coastline_tot + 1
         IF (mesh%R( vi) > C%maximum_resolution_coastline * C%mesh_resolution_tolerance) THEN
           nV_coastline_bad = nV_coastline_bad + 1

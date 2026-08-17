@@ -12,7 +12,7 @@ MODULE climate_idealised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   USE climate_model_types                                    , ONLY: type_climate_model
 
   IMPLICIT NONE
@@ -22,7 +22,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_climate_model_idealised( mesh, ice, climate, time)
+  SUBROUTINE run_climate_model_idealised( mesh, geom, climate, time)
     ! Calculate the climate
     !
     ! Use an idealised climate scheme
@@ -31,7 +31,7 @@ CONTAINS
 
     ! In/output variables:
     TYPE(type_mesh),                        INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                   INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     TYPE(type_climate_model),               INTENT(INOUT) :: climate
     REAL(dp),                               INTENT(IN)    :: time
 
@@ -48,7 +48,7 @@ CONTAINS
             C%choice_climate_model_idealised == 'EISMINT1_D' .OR. &
             C%choice_climate_model_idealised == 'EISMINT1_E' .OR. &
             C%choice_climate_model_idealised == 'EISMINT1_F') THEN
-      CALL run_climate_model_idealised_EISMINT1( mesh, ice, climate, time)
+      CALL run_climate_model_idealised_EISMINT1( mesh, geom, climate, time)
     ELSE
       CALL crash('unknown choice_climate_model_idealised "' // TRIM( C%choice_climate_model_idealised) // '"')
     END IF
@@ -99,13 +99,13 @@ CONTAINS
   ! == EISMINT1
   ! ===========
 
-  SUBROUTINE run_climate_model_idealised_EISMINT1( mesh, ice, climate, time)
+  SUBROUTINE run_climate_model_idealised_EISMINT1( mesh, geom, climate, time)
     ! Temperature for the EISMINT1 experiments (Huybrechts et al., 1996)
 
     IMPLICIT NONE
 
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                 INTENT(IN)    :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
     TYPE(type_climate_model),             INTENT(INOUT) :: climate
     REAL(dp),                             INTENT(IN)    :: time
 
@@ -130,7 +130,7 @@ CONTAINS
 
       DO vi = mesh%vi1, mesh%vi2
         ! Calculate baseline temperature
-        climate%T2m( vi,:) = 270._dp - 0.01_dp * ice%geom%Hs( vi)
+        climate%T2m( vi,:) = 270._dp - 0.01_dp * geom%Hs( vi)
       END DO
 
     ELSEIF (C%choice_climate_model_idealised == 'EISMINT1_D' .OR. &

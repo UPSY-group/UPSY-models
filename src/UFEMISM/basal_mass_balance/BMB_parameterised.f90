@@ -12,10 +12,11 @@ MODULE BMB_parameterised
   USE model_configuration                                    , ONLY: C
   USE parameters
   USE mesh_types                                             , ONLY: type_mesh
-  USE ice_model_types                                        , ONLY: type_ice_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+
   IMPLICIT NONE
 
 CONTAINS
@@ -23,16 +24,16 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model_parameterised( mesh, ice, ocean, BMB)
+  SUBROUTINE run_BMB_model_parameterised( mesh, geom, ocean, BMB)
     ! Calculate the basal mass balance
     !
     ! Use a parameterised BMB scheme
 
     ! In/output variables:
-    TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(IN)    :: ice
-    TYPE(type_ocean_model),              INTENT(IN)    :: ocean
-    TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    TYPE(type_ocean_model),               INTENT(IN)    :: ocean
+    TYPE(type_BMB_model),                 INTENT(INOUT) :: BMB
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'run_BMB_model_parameterised'
@@ -43,9 +44,9 @@ CONTAINS
     ! Run the chosen parameterised BMB model
     SELECT CASE (C%choice_BMB_model_parameterised)
       CASE ('Favier2019')
-        CALL run_BMB_model_parameterised_Favier2019( mesh, ice, ocean, BMB)
+        CALL run_BMB_model_parameterised_Favier2019( mesh, geom, ocean, BMB)
       CASE ('Holland_notaper')
-        CALL run_BMB_model_parameterised_Holland_notaper( mesh, ice, ocean, BMB)
+        CALL run_BMB_model_parameterised_Holland_notaper( mesh, geom, ocean, BMB)
       CASE DEFAULT
         CALL crash('unknown choice_BMB_model_parameterised "' // TRIM( C%choice_BMB_model_parameterised) // '"')
     END SELECT
@@ -55,14 +56,14 @@ CONTAINS
 
   END SUBROUTINE run_BMB_model_parameterised
 
-  subroutine run_BMB_model_parameterised_Favier2019( mesh, ice, ocean, BMB)
+  subroutine run_BMB_model_parameterised_Favier2019( mesh, geom, ocean, BMB)
     ! The basal melt parameterisation used in Favier et al. (2019)
 
     ! In/output variables
-    type(type_mesh),                     intent(in)    :: mesh
-    type(type_ice_model),                intent(in)    :: ice
-    type(type_ocean_model),              intent(in)    :: ocean
-    type(type_BMB_model),                intent(inout) :: BMB
+    type(type_mesh),                      intent(in)    :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_ocean_model),               intent(in)    :: ocean
+    type(type_BMB_model),                 intent(inout) :: BMB
 
     ! Local variables:
     character(len=256), parameter                      :: routine_name = 'run_BMB_model_parameterised_Favier2019'
@@ -88,9 +89,9 @@ CONTAINS
         BMB%BMB_shelf( vi) =  -1._dp * sec_per_year * C%BMB_Favier2019_gamma * sign(1._dp,dT) * (seawater_density * cp_ocean * dT / (ice_density * L_fusion))**2._dp
 
         ! Apply grounded fractions
-        if (ice%geom%mask_gl_gr( vi) .and. ice%geom%Hib(vi) < ice%geom%SL(vi)) then
+        if (geom%mask_gl_gr( vi) .and. geom%Hib(vi) < geom%SL(vi)) then
           ! Subgrid basal melt rate
-          ! BMB%BMB_shelf( vi) = (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+          ! BMB%BMB_shelf( vi) = (1._dp - geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
           ! Limit it to only melt (refreezing is tricky)
           BMB%BMB_shelf( vi) = max( BMB%BMB_shelf( vi), 0._dp)
         end if
@@ -107,7 +108,7 @@ CONTAINS
 
   end subroutine run_BMB_model_parameterised_Favier2019
 
-  SUBROUTINE run_BMB_model_parameterised_Holland_notaper( mesh, ice, ocean, BMB)
+  SUBROUTINE run_BMB_model_parameterised_Holland_notaper( mesh, geom, ocean, BMB)
     ! Basal melt parameterisation using dT^3/2
     ! Including the dependency on the slope of the ice shelf base.
     ! Note that this is the "no tapering" case. This parameterisation was presented
@@ -121,10 +122,10 @@ CONTAINS
     ! as the parameterisation is already doing a good job based on initial tests.
 
     ! In/output variables
-    TYPE(type_mesh),                     INTENT(IN)    :: mesh
-    TYPE(type_ice_model),                INTENT(IN)    :: ice
-    TYPE(type_ocean_model),              INTENT(IN)    :: ocean
-    TYPE(type_BMB_model),                INTENT(INOUT) :: BMB
+    TYPE(type_mesh),                      INTENT(IN)    :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    TYPE(type_ocean_model),               INTENT(IN)    :: ocean
+    TYPE(type_BMB_model),                 INTENT(INOUT) :: BMB
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'run_BMB_model_parameterised_Holland_notaper'
@@ -140,8 +141,8 @@ CONTAINS
     BMB%BMB_shelf = 0._dp
     allocate( dHb_dx(   mesh%vi1:mesh%vi2         ))
     allocate( dHb_dy(   mesh%vi1:mesh%vi2         ))
-    call ddx_a_a_2D( mesh, ice%geom%Hb    , dHb_dx  )
-    call ddy_a_a_2D( mesh, ice%geom%Hb    , dHb_dy  )
+    call ddx_a_a_2D( mesh, geom%Hb    , dHb_dx  )
+    call ddy_a_a_2D( mesh, geom%Hb    , dHb_dy  )
 
     DO vi = mesh%vi1, mesh%vi2
 
@@ -160,9 +161,9 @@ CONTAINS
       BMB%BMB_shelf( vi) = C_melt * dT**(1.5_dp) * SIN(slope_angle)**(0.5_dp)
 
       ! Apply grounded fractions
-      IF (ice%geom%mask_gl_gr( vi) .AND. ice%geom%Hib(vi) < ice%geom%SL(vi)) THEN
+      IF (geom%mask_gl_gr( vi) .AND. geom%Hib(vi) < geom%SL(vi)) THEN
         ! Subgrid basal melt rate
-        ! BMB%BMB_shelf( vi) = (1._dp - ice%geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
+        ! BMB%BMB_shelf( vi) = (1._dp - geom%fraction_gr( vi)) * BMB%BMB_shelf( vi)
         ! Limit it to only melt (refreezing is tricky)
         BMB%BMB_shelf( vi) = MAX( BMB%BMB_shelf( vi), 0._dp)
       END IF

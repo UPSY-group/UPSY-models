@@ -7,7 +7,8 @@ module bed_roughness_nudging_H_u_flowline
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_types, only: type_ice_model
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reference_geometry_types, only: type_reference_geometry
   use bed_roughness_model_types, only: type_bed_roughness_model, type_bed_roughness_nudging_model_H_u_flowline
   use netcdf_io_main, only: read_field_from_file_2D_b, find_last_output_file, find_last_timeframe
@@ -27,14 +28,15 @@ module bed_roughness_nudging_H_u_flowline
 
 contains
 
-  subroutine run_bed_roughness_nudging_H_u_flowline( mesh, ice, target_geometry, bed_roughness)
+  subroutine run_bed_roughness_nudging_H_u_flowline( mesh, geom, vel, target_geometry, bed_roughness)
     ! Run the bed roughness nuding model based on flowline-averaged values of H and u
 
     ! In/output variables:
-    type(type_mesh),                intent(in   ) :: mesh
-    type(type_ice_model),           intent(in   ) :: ice
-    type(type_reference_geometry),  intent(in   ) :: target_geometry
-    type(type_bed_roughness_model), intent(inout) :: bed_roughness
+    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(atype_ice_velocity_model_data), intent(in   ) :: vel
+    type(type_reference_geometry),        intent(in   ) :: target_geometry
+    type(type_bed_roughness_model),       intent(inout) :: bed_roughness
 
     ! Local variables:
     character(len=1024), parameter         :: routine_name = 'run_bed_roughness_nudging_H_u_flowline'
@@ -42,15 +44,15 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call calc_nudging_vs_extrapolation_masks( mesh, ice, &
+    call calc_nudging_vs_extrapolation_masks( mesh, geom, &
       bed_roughness%nudging_H_u_flowline%mask_calc_dCdt_from_nudging, &
       bed_roughness%nudging_H_u_flowline%mask_calc_dCdt_from_extrapolation, &
       bed_roughness%nudging_H_u_flowline%mask_extrapolation)
 
-    call calc_flowline_averaged_deltaHs_deltau( mesh, ice, target_geometry, &
+    call calc_flowline_averaged_deltaHs_deltau( mesh, geom, vel, target_geometry, &
       bed_roughness%nudging_H_u_flowline)
 
-    call calc_dCdt( mesh, ice, bed_roughness, &
+    call calc_dCdt( mesh, geom, vel, bed_roughness, &
       bed_roughness%nudging_H_u_flowline)
 
     ! Calculate predicted bed roughness at t+dt
@@ -114,11 +116,12 @@ contains
 
   end subroutine initialise_bed_roughness_nudging_H_u_flowline
 
-  subroutine calc_flowline_averaged_deltaHs_deltau( mesh, ice, target_geometry, nudge)
+  subroutine calc_flowline_averaged_deltaHs_deltau( mesh, geom, vel, target_geometry, nudge)
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
-    type(type_ice_model),                                intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),                intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),                intent(in   ) :: vel
     type(type_reference_geometry),                       intent(in   ) :: target_geometry
     type(type_bed_roughness_nudging_model_H_u_flowline), intent(inout) :: nudge
 
@@ -143,21 +146,21 @@ contains
     call init_routine( routine_name)
 
     do vi = mesh%vi1, mesh%vi2
-      deltaHs( vi) = ice%geom%Hi( vi) - target_geometry%Hi( vi)
+      deltaHs( vi) = geom%Hi( vi) - target_geometry%Hi( vi)
     end do
 
     deltau = 0._dp
     do ti = mesh%ti1, mesh%ti2
       if (.not. isnan( nudge%uabs_surf_target_b( ti))) then
-        deltau( ti) = ice%vel%uabs_surf_b( ti) - nudge%uabs_surf_target_b( ti)
+        deltau( ti) = vel%uabs_surf_b( ti) - nudge%uabs_surf_target_b( ti)
       end if
     end do
 
-    call gather_dist_shared_to_all( mesh%pai_V, ice%geom%Hi, Hi_tot)
+    call gather_dist_shared_to_all( mesh%pai_V, geom%Hi, Hi_tot)
     call gather_to_all( deltaHs    , deltaHs_tot)
     call gather_to_all( deltau     , deltau_tot )
-    call gather_dist_shared_to_all( mesh%pai_Tri, ice%vel%u_vav_b, u_b_tot)
-    call gather_dist_shared_to_all( mesh%pai_Tri, ice%vel%v_vav_b, v_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, vel%u_vav_b, u_b_tot)
+    call gather_dist_shared_to_all( mesh%pai_Tri, vel%v_vav_b, v_b_tot)
 
     nudge%deltaHs_av_up   = 0._dp
     nudge%deltaHs_av_down = 0._dp
@@ -198,11 +201,12 @@ contains
 
   end subroutine calc_flowline_averaged_deltaHs_deltau
 
-  subroutine calc_dCdt( mesh, ice, bed_roughness, nudge)
+  subroutine calc_dCdt( mesh, geom, vel, bed_roughness, nudge)
 
     ! In/output variables:
     type(type_mesh),                                     intent(in   ) :: mesh
-    type(type_ice_model),                                intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),                intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),                intent(in   ) :: vel
     type(type_bed_roughness_model),                      intent(in   ) :: bed_roughness
     type(type_bed_roughness_nudging_model_H_u_flowline), intent(inout) :: nudge
 
@@ -241,7 +245,7 @@ contains
       if (nudge%mask_calc_dCdt_from_nudging( vi)) then
 
         nudge%R( vi) = max( 0._dp, min( 1._dp, &
-          ((ice%vel%uabs_vav( vi) * ice%geom%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
+          ((vel%uabs_vav( vi) * geom%Hi( vi)) / (C%bednudge_H_u_flowline_u_scale * C%bednudge_H_u_flowline_Hi_scale)) ))
 
         I1( vi) = -nudge%deltau_av_up  ( vi) / C%bednudge_H_u_flowline_u0
         I2( vi) = -nudge%deltau_av_down( vi) / C%bednudge_H_u_flowline_u0

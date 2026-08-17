@@ -4,6 +4,8 @@ module ice_velocity_model_dummy
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ice_velocity_model_basic, only: atype_ice_velocity_model
   use mesh_types, only: type_mesh
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -86,10 +88,12 @@ contains
 
   end subroutine ice_velocity_model_dummy_initialise
 
-  subroutine ice_velocity_model_dummy_run( self)
+  subroutine ice_velocity_model_dummy_run( self, ice, geom)
 
     ! In/output variables:
     class(type_ice_velocity_model_dummy), intent(inout) :: self
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_ice_velocity_model_dummy'

@@ -8,80 +8,114 @@ module ice_velocity_model_SIA
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_SIA
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use parameters, only: grav, ice_density
+  use parameters, only: grav, ice_density, NaN
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_a_b_3D, ddx_a_a_2D, ddy_a_a_2D
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap
+  use ice_velocity_model_basic, only: atype_ice_velocity_model
 
   implicit none
 
+  private
+
+  public :: type_ice_velocity_model_SIA
+
+  type, extends(atype_ice_velocity_model) :: type_ice_velocity_model_SIA
+
+      real(dp), dimension(:,:), allocatable :: D_3D_b             ! [m yr^-1] Diffusivity
+
+    contains
+
+      ! Procedures for model memory management and operation
+      procedure, public :: allocate_ice_velocity_model   => ice_velocity_model_SIA_allocate
+      procedure, public :: deallocate_ice_velocity_model => ice_velocity_model_SIA_deallocate
+      procedure, public :: initialise_ice_velocity_model => ice_velocity_model_SIA_initialise
+      procedure, public :: run_ice_velocity_model        => ice_velocity_model_SIA_run
+      procedure, public :: remap_ice_velocity_model      => ice_velocity_model_SIA_remap
+
+      procedure, public :: get_ice_velocity_model_name
+
+  end type type_ice_velocity_model_SIA
+
 contains
 
-  subroutine initialise_SIA_solver( mesh, SIA)
-    !< Initialise the SIA solver
+  subroutine ice_velocity_model_SIA_allocate( self)
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_velocity_solver_SIA), intent(  out) :: SIA
+    class(type_ice_velocity_model_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=1024) :: routine_name = 'initialise_SIA_solver'
+    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_allocate'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! allocate memory
-    call allocate_SIA_solver( mesh, SIA)
+    ! Allocate all the stuff that is specific to the SIA ice_velocity model
+    allocate( self%D_3D_b( self%mesh%ti1:self%mesh%ti2, 1:self%mesh%nz), source = NaN)
 
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine initialise_SIA_solver
+  end subroutine ice_velocity_model_SIA_allocate
 
-  subroutine allocate_SIA_solver( mesh, SIA)
-    !< allocate memory for the SIA solver
+  subroutine ice_velocity_model_SIA_deallocate( self)
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh
-    type(type_ice_velocity_solver_SIA), intent(  out) :: SIA
+    class(type_ice_velocity_model_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=1024) :: routine_name = 'allocate_SIA_solver'
+    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_deallocate'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
 
-    allocate( SIA%u_3D_b  ( mesh%ti1:mesh%ti2, mesh%nz))
-    allocate( SIA%v_3D_b  ( mesh%ti1:mesh%ti2, mesh%nz))
-    allocate( SIA%du_dz_3D( mesh%vi1:mesh%vi2, mesh%nz))
-    allocate( SIA%dv_dz_3D( mesh%vi1:mesh%vi2, mesh%nz))
-    allocate( SIA%D_3D_b  ( mesh%ti1:mesh%ti2, mesh%nz))
+    ! Deallocate all the stuff that is specific to ice_velocity model SIA
+    deallocate( self%D_3D_b)
 
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine allocate_SIA_solver
+  end subroutine ice_velocity_model_SIA_deallocate
 
-  subroutine solve_SIA( mesh, ice, geom, SIA)
-    !< Calculate ice velocities by solving the Shallow Ice Approximation with Glen's flow law
+  subroutine ice_velocity_model_SIA_initialise( self)
 
     ! In/output variables:
-    type(type_mesh),                      intent(in   ) :: mesh
+    class(type_ice_velocity_model_SIA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_initialise'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Initialise all the stuff that is specific to ice_velocity model SIA
+
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine ice_velocity_model_SIA_initialise
+
+  subroutine ice_velocity_model_SIA_run( self, ice, geom)
+
+    ! In/output variables:
+    class(type_ice_velocity_model_SIA),   intent(inout) :: self
     class(atype_ice_model_data),          intent(inout) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_ice_velocity_solver_SIA),   intent(inout) :: SIA
 
     ! Local variables:
-    character(len=1024)                     :: routine_name = 'solve_SIA'
-    real(dp), dimension(:    ), allocatable :: Hi_b, Hs_b, dHs_dx, dHs_dy, dHs_dx_b, dHs_dy_b
-    real(dp), dimension(:,:  ), allocatable :: A_flow_b
-    integer                                 :: vi,ti,k
-    real(dp)                                :: abs_grad_Hs
-    real(dp), dimension(mesh%nz)            :: z, int_A_hminzetan
+    character(len=*), parameter           :: routine_name = 'run_ice_velocity_model_SIA'
+    real(dp), dimension(:  ), allocatable :: Hi_b, Hs_b, dHs_dx, dHs_dy, dHs_dx_b, dHs_dy_b
+    real(dp), dimension(:,:), allocatable :: A_flow_b
+    integer                               :: vi,ti,k
+    real(dp)                              :: abs_grad_Hs
+    real(dp), dimension(self%mesh%nz)     :: z, int_A_hminzetan
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Run all the stuff that is specific to ice_velocity model SIA
 
     ! Safety
     if (.not. C%choice_flow_law == 'Glen') then
@@ -89,25 +123,25 @@ contains
     end if
 
     ! Allocate memory
-    allocate( Hi_b(     mesh%ti1:mesh%ti2         ))
-    allocate( Hs_b(     mesh%ti1:mesh%ti2         ))
-    allocate( dHs_dx(   mesh%vi1:mesh%vi2         ))
-    allocate( dHs_dy(   mesh%vi1:mesh%vi2         ))
-    allocate( dHs_dx_b( mesh%ti1:mesh%ti2         ))
-    allocate( dHs_dy_b( mesh%ti1:mesh%ti2         ))
-    allocate( A_flow_b( mesh%ti1:mesh%ti2, mesh%nz))
+    allocate( Hi_b(     self%mesh%ti1:self%mesh%ti2                ))
+    allocate( Hs_b(     self%mesh%ti1:self%mesh%ti2                ))
+    allocate( dHs_dx(   self%mesh%vi1:self%mesh%vi2                ))
+    allocate( dHs_dy(   self%mesh%vi1:self%mesh%vi2                ))
+    allocate( dHs_dx_b( self%mesh%ti1:self%mesh%ti2                ))
+    allocate( dHs_dy_b( self%mesh%ti1:self%mesh%ti2                ))
+    allocate( A_flow_b( self%mesh%ti1:self%mesh%ti2, 1:self%mesh%nz))
 
     ! Calculate flow factors
-    call calc_ice_rheology_Glen( mesh, ice, geom)
+    call calc_ice_rheology_Glen( self%mesh, ice, geom)
 
     ! Calculate ice thickness, surface elevation, surface slopes, and ice flow factor on the b-grid
-    call map_a_b_2D( mesh, geom%Hi   , Hi_b    )
-    call map_a_b_2D( mesh, geom%Hs   , Hs_b    )
-    call ddx_a_a_2D( mesh, geom%Hs   , dHs_dx  )
-    call ddy_a_a_2D( mesh, geom%Hs   , dHs_dy  )
-    call ddx_a_b_2D( mesh, geom%Hs   , dHs_dx_b)
-    call ddy_a_b_2D( mesh, geom%Hs   , dHs_dy_b)
-    call map_a_b_3D( mesh, ice%A_flow, A_flow_b)
+    call map_a_b_2D( self%mesh, geom%Hi   , Hi_b    )
+    call map_a_b_2D( self%mesh, geom%Hs   , Hs_b    )
+    call ddx_a_a_2D( self%mesh, geom%Hs   , dHs_dx  )
+    call ddy_a_a_2D( self%mesh, geom%Hs   , dHs_dy  )
+    call ddx_a_b_2D( self%mesh, geom%Hs   , dHs_dx_b)
+    call ddy_a_b_2D( self%mesh, geom%Hs   , dHs_dy_b)
+    call map_a_b_3D( self%mesh, ice%A_flow, A_flow_b)
 
     ! Calculate velocities and strain rates according to the analytical solution of the SIA:
     ! (see also Bueler and Brown, 2009, Eqs. 12-13)
@@ -120,76 +154,72 @@ contains
     !   dv/dz( z) = -2 (rho g)^n (abs(grad H))^(n-1) A(T*) (h - z)^n dh/dy
 
     ! Calculate velocities
-    do ti = mesh%ti1, mesh%ti2
+    do ti = self%mesh%ti1, self%mesh%ti2
 
       ! Calculate the integral from b to z of (A_flow * (h - zeta)^n) dzeta
-      z = Hs_b( ti) - mesh%zeta * Hi_b( ti)
+      z = Hs_b( ti) - self%mesh%zeta * Hi_b( ti)
       int_A_hminzetan = integrate_from_zeta_is_one_to_zeta_is_zetap( z, A_flow_b( ti,:) * (Hs_b( ti) - z)**C%Glens_flow_law_exponent)
 
       ! Calculate the diffusivity term
-      abs_grad_Hs = SQRT( dHs_dx_b( ti)**2 + dHs_dy_b( ti)**2)
-      SIA%D_3D_b( ti,:) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * int_A_hminzetan
+      abs_grad_Hs = sqrt( dHs_dx_b( ti)**2 + dHs_dy_b( ti)**2)
+      self%D_3D_b( ti,:) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+        abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * int_A_hminzetan
 
       ! Safety
-      SIA%D_3D_b( ti,:) = MAX( -C%SIA_maximum_diffusivity, SIA%D_3D_b( ti,:))
+      self%D_3D_b( ti,:) = max( -C%SIA_maximum_diffusivity, self%D_3D_b( ti,:))
 
       ! Calculate the velocities
-      SIA%u_3D_b( ti,:) = SIA%D_3D_b( ti,:) * dHs_dx_b( ti)
-      SIA%v_3D_b( ti,:) = SIA%D_3D_b( ti,:) * dHs_dy_b( ti)
+      self%u_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dx_b( ti)
+      self%v_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dy_b( ti)
 
     end do
 
     ! Calculate vertical shear strain rates (needed later to calculate strain heating in thermodynamics)
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
-      abs_grad_Hs = SQRT( dHs_dx( vi)**2 + dHs_dy( vi)**2)
-      z = geom%Hs( vi) - mesh%zeta * geom%Hi( vi)
+      abs_grad_Hs = sqrt( dHs_dx( vi)**2 + dHs_dy( vi)**2)
+      z = geom%Hs( vi) - self%mesh%zeta * geom%Hi( vi)
 
-      do k = 1, mesh%nz
-        SIA%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
+      do k = 1, self%mesh%nz
+        self%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+          abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
           ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dx( vi)
-        SIA%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
+        self%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+          abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
           ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dy( vi)
       end do
 
     end do
 
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine solve_SIA
+  end subroutine ice_velocity_model_SIA_run
 
-  subroutine remap_SIA_solver( mesh_old, mesh_new, SIA)
-    ! Remap the SIA solver
+  subroutine ice_velocity_model_SIA_remap( self, mesh_new)
 
     ! In/output variables:
-    type(type_mesh),                    intent(in   ) :: mesh_old
-    type(type_mesh),                    intent(in   ) :: mesh_new
-    type(type_ice_velocity_solver_SIA), intent(inout) :: SIA
+    class(type_ice_velocity_model_SIA), intent(inout) :: self
+    type(type_mesh), target,            intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=1024) :: routine_name = 'remap_SIA_solver'
-    real(dp)            :: dp_dummy
+    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_remap'
 
-    ! Add routine to path
+    ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! To prevent compiler warnings
-    dp_dummy = mesh_old%V( 1,1)
-    dp_dummy = mesh_new%V( 1,1)
+    ! Remap all the stuff that is specific to ice_velocity model SIA
+    call reallocate_bounds( self%D_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
 
-    ! Solution: reallocate
-    call reallocate_bounds( SIA%u_3D_b  , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( SIA%v_3D_b  , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( SIA%du_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( SIA%dv_dz_3D, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-
-    ! Intermediate data fields: reallocate
-    call reallocate_bounds( SIA%D_3D_b  , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-
-    ! Finalise routine path
+    ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine remap_SIA_solver
+  end subroutine ice_velocity_model_SIA_remap
+
+  function get_ice_velocity_model_name( self) result( model_name)
+    class(type_ice_velocity_model_SIA), intent(in) :: self
+    character(len=:), allocatable                  :: model_name
+    model_name = 'SIA'
+  end function get_ice_velocity_model_name
 
 end module ice_velocity_model_SIA

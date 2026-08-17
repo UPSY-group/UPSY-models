@@ -378,7 +378,7 @@ contains
     ! ==========
 
     ! Initialise data for the chosen velocity solver(s)
-    call initialise_velocity_solver( mesh, ice, region_name)
+    call initialise_velocity_solver( ice%vel, ice, region_name)
 
     ! Time stepping
     ! =============
@@ -708,7 +708,7 @@ contains
     ! ==========
 
     ! Remap data for the chosen velocity solver(s)
-    call remap_velocity_solver( mesh_old, mesh_new, ice, ice%vel)
+    call remap_velocity_solver( ice%vel, mesh_old, mesh_new, ice)
 
     ! Time stepping
     ! =============

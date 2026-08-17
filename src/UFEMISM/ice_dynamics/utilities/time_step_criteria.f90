@@ -16,70 +16,9 @@ module time_step_criteria
 
   private
 
-  public :: calc_critical_timestep_SIA, calc_critical_timestep_adv
+  public :: calc_critical_timestep_adv
 
 contains
-
-  subroutine calc_critical_timestep_SIA( mesh, ice, geom, dt_crit_SIA)
-    !< Calculate the critical time step for advective ice flow
-
-    ! NOTE: there is no "official" name for this criterion; some people
-    ! erroneously call it the "CFL-criterion", which is actually the
-    ! criterion for the advection equation (see below).
-
-    ! In- and output variables:
-    type(type_mesh),                      intent(in   ) :: mesh
-    class(atype_ice_model_data),          intent(in   ) :: ice
-    class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    real(dp),                             intent(  out) :: dt_crit_SIA
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'calc_critical_timestep_SIA'
-    real(dp), dimension(mesh%nV)   :: Hi_tot
-    integer                        :: ti, via, vib, vic
-    real(dp)                       :: d_ab, d_bc, d_ca, d_min, Hi, D_SIA, dt
-    real(dp), parameter            :: dt_correction_factor = 0.9_dp ! Make actual applied time step a little bit smaller, just to be sure.
-    integer                        :: ierr
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! Gather global ice thickness
-    call gather_dist_shared_to_all( mesh%pai_V, geom%Hi, Hi_tot)
-
-    ! Initialise time step with maximum allowed value
-    dt_crit_SIA = C%dt_ice_max
-
-    do ti = mesh%ti1, mesh%ti2
-
-      ! Calculate shortest triangle side
-      via = mesh%Tri( ti,1)
-      vib = mesh%Tri( ti,2)
-      vic = mesh%Tri( ti,3)
-
-      d_ab = norm2( mesh%V( vib,:) - mesh%V( via,:))
-      d_bc = norm2( mesh%V( vic,:) - mesh%V( vib,:))
-      d_ca = norm2( mesh%V( via,:) - mesh%V( vic,:))
-
-      d_min = minval([ d_ab, d_bc, d_ca])
-
-      ! Find maximum diffusivity in the vertical column
-      D_SIA = max( 1E2_dp, maxval( abs( ice%SIA%D_3D_b( ti,:))))
-
-      ! Calculate critical timestep
-      Hi = maxval( [0.1_dp, Hi_tot( via), Hi_tot( vib), Hi_tot( vic)])
-      dt = d_min**2 / (6._dp * Hi * D_SIA) * dt_correction_factor
-      dt_crit_SIA = min( dt_crit_SIA, dt)
-
-    end do
-
-    call MPI_ALLREDUCE( MPI_IN_PLACE, dt_crit_SIA, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
-    dt_crit_SIA = min( C%dt_ice_max, dt_crit_SIA)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine calc_critical_timestep_SIA
 
   subroutine calc_critical_timestep_adv( mesh, geom, vel, dt_crit_adv)
     !< Calculate the critical time step for advective ice flow (CFL criterion)

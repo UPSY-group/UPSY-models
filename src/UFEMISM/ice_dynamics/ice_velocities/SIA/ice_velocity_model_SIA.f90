@@ -6,7 +6,7 @@ module ice_velocity_model_SIA
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_SIA
+  use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use parameters, only: grav, ice_density, NaN
   use reallocate_mod, only: reallocate_bounds
@@ -14,6 +14,9 @@ module ice_velocity_model_SIA
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_a_b_3D, ddx_a_a_2D, ddy_a_a_2D
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap
   use ice_velocity_model_basic, only: atype_ice_velocity_model
+  use mpi_f08, only: MPI_WIN
+  use Arakawa_grid_mod, only: Arakawa_grid
+  use fields_dimensions, only: third_dimension
 
   implicit none
 
@@ -23,7 +26,8 @@ module ice_velocity_model_SIA
 
   type, extends(atype_ice_velocity_model) :: type_ice_velocity_model_SIA
 
-      real(dp), dimension(:,:), allocatable :: D_3D_b             ! [m yr^-1] Diffusivity
+      real(dp), dimension(:,:), contiguous, pointer :: D_3D_b  => null()   ! [m yr^-1] Diffusivity
+      type(MPI_WIN) :: wD_3D_b
 
     contains
 
@@ -52,7 +56,12 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is specific to the SIA ice_velocity model
-    allocate( self%D_3D_b( self%mesh%ti1:self%mesh%ti2, 1:self%mesh%nz), source = NaN)
+    call self%create_field( self%D_3D_b, self%wD_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'D_3D_b', &
+      long_name = '3-D SIA ice diffusivity on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -71,7 +80,7 @@ contains
     call init_routine( routine_name)
 
     ! Deallocate all the stuff that is specific to ice_velocity model SIA
-    deallocate( self%D_3D_b)
+    nullify( self%D_3D_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -209,7 +218,7 @@ contains
     call init_routine( routine_name)
 
     ! Remap all the stuff that is specific to ice_velocity model SIA
-    call reallocate_bounds( self%D_3D_b, mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call self%remap_field( mesh_new, 'D_3D_b', self%D_3D_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

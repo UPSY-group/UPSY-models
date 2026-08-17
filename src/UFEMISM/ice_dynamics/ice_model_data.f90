@@ -15,7 +15,6 @@ module ice_model_data
 
   private
 
-  public :: type_ice_velocity_solver_SIA
   public :: type_ice_velocity_solver_SSA
   public :: type_ice_velocity_solver_DIVA
   public :: type_ice_velocity_solver_DIVA_graphs
@@ -26,20 +25,6 @@ module ice_model_data
 
 ! ===== Types =====
 ! =================
-
-  TYPE type_ice_velocity_solver_SIA
-    ! Data fields needed to solve the Shallow Ice Approximation
-
-    ! Solution
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_3D_b                      ! [m yr^-1] 3-D ice velocity
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_3D_b
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dz_3D                    ! [yr^-1] Vertical shear strain rates
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dz_3D
-
-    ! Intermediate data fields
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: D_3D_b                      ! [m yr^-1] Diffusivity
-
-  END TYPE type_ice_velocity_solver_SIA
 
   TYPE type_ice_velocity_solver_SSA
     ! Data fields needed to solve the Shallow Shelf Approximation
@@ -385,7 +370,6 @@ module ice_model_data
   ! ======================
 
     ! Velocity solvers
-    TYPE(type_ice_velocity_solver_SIA)      :: SIA                         ! Shallow Ice Approximation
     TYPE(type_ice_velocity_solver_SSA)      :: SSA                         ! Shallow Shelf Approximation
     TYPE(type_ice_velocity_solver_DIVA)     :: DIVA                        ! Depth-Integrated Viscosity Approximation
     TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation

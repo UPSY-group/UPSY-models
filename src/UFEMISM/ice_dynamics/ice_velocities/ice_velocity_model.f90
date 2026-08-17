@@ -2,6 +2,7 @@ module ice_velocity_model
 
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use ice_velocity_model_basic, only: atype_ice_velocity_model
+  use ice_velocity_model_SIA, only: type_ice_velocity_model_SIA
   use ice_velocity_model_dummy, only: type_ice_velocity_model_dummy
 
   implicit none
@@ -31,7 +32,7 @@ contains
     case ('none')
       allocate( type_ice_velocity_model_dummy :: vel)
     case ('SIA')
-      allocate( type_ice_velocity_model_dummy :: vel)
+      allocate( type_ice_velocity_model_SIA :: vel)
     case ('SSA')
       allocate( type_ice_velocity_model_dummy :: vel)
     case ('SIA/SSA')

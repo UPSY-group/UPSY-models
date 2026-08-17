@@ -9,6 +9,8 @@ module ice_velocity_model_basic
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use model_configuration, only: C
+  use ice_model_data, only: atype_ice_model_data
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -59,9 +61,11 @@ module ice_velocity_model_basic
       class(atype_ice_velocity_model), intent(inout) :: self
     end subroutine ice_velocity_model_initialise_ifc
 
-    subroutine ice_velocity_model_run_ifc( self)
-      import atype_ice_velocity_model
-      class(atype_ice_velocity_model), intent(inout) :: self
+    subroutine ice_velocity_model_run_ifc( self, ice, geom)
+      import atype_ice_velocity_model, atype_ice_model_data, atype_ice_geometry_model_data
+      class(atype_ice_velocity_model),      intent(inout) :: self
+      class(atype_ice_model_data),          intent(inout) :: ice
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
     end subroutine ice_velocity_model_run_ifc
 
     subroutine ice_velocity_model_remap_ifc( self, mesh_new)
@@ -469,10 +473,12 @@ contains
 
   end subroutine ice_velocity_model_initialise
 
-  subroutine ice_velocity_model_run( self)
+  subroutine ice_velocity_model_run( self, ice, geom)
 
     ! In/output variables:
-    class(atype_ice_velocity_model), intent(inout) :: self
+    class(atype_ice_velocity_model),      intent(inout) :: self
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'ice_velocity_model_run'
@@ -486,7 +492,7 @@ contains
     ! Run stuff that is common to all ice_velocity models
 
     ! Run stuff that is specific to each individual ice_velocity model implementation
-    call self%run_ice_velocity_model()
+    call self%run_ice_velocity_model( ice, geom)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -1,4 +1,4 @@
-module momentum_balance_solver_data
+module momentum_balance_solver_plain_data
 
   use models_basic, only: atype_model
   use precisions, only: dp
@@ -8,9 +8,9 @@ module momentum_balance_solver_data
 
   private
 
-  public :: atype_momentum_balance_solver_data
+  public :: atype_momentum_balance_solver_plain_data
 
-  type, abstract, extends(atype_model) :: atype_momentum_balance_solver_data
+  type, abstract, extends(atype_model) :: atype_momentum_balance_solver_plain_data
 
     ! Parameters for solving the linearised momentum balance with PETSc
     real(dp) :: PETSc_rtol
@@ -18,6 +18,6 @@ module momentum_balance_solver_data
     integer  :: n_visc_its            ! Number of non-linear viscosity/friction iterations
     integer  :: n_Axb_its             ! Number of iterations needed by PETSc to solve the linearised momentum balance
 
-  end type atype_momentum_balance_solver_data
+  end type atype_momentum_balance_solver_plain_data
 
-end module momentum_balance_solver_data
+end module momentum_balance_solver_plain_data

@@ -1,5 +1,10 @@
 module momentum_balance_solver_basic
 
+  ! A wrapper class that can contain multiple instances of different
+  ! momentum balance solvers. This is needed for e.g. the SIA/SSA,
+  ! and for the hybrid DIVA/BPA, both of which need to run code from
+  ! two separate solvers.
+
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use momentum_balance_solver_data, only: atype_momentum_balance_solver_data
@@ -47,9 +52,11 @@ module momentum_balance_solver_basic
 
   abstract interface
 
-    subroutine momentum_balance_solver_allocate_ifc( self)
-      import atype_momentum_balance_solver
+    subroutine momentum_balance_solver_allocate_ifc( self, region_name, mesh)
+      import atype_momentum_balance_solver, type_mesh
       class(atype_momentum_balance_solver),  intent(inout) :: self
+      character(len=*),                      intent(in   ) :: region_name
+      type(type_mesh), target,               intent(in   ) :: mesh
     end subroutine momentum_balance_solver_allocate_ifc
 
     subroutine momentum_balance_solver_deallocate_ifc( self)
@@ -103,11 +110,11 @@ contains
     ! Allocate all the stuff that is common to all models
     call self%allocate_model( region_name, mesh)
 
-    ! Allocate all the stuff that is common to all momentum balance solver
+    ! Allocate all the stuff that is common to all momentum balance solver managers
 
 
-    ! Allocate stuff that is specific to each individual momentum balance implementation
-    call self%allocate_momentum_balance_solver()
+    ! Allocate stuff that is specific to each individual momentum balance solver manager
+    call self%allocate_momentum_balance_solver( region_name, mesh)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -128,10 +135,10 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is common to all momentum balances
+    ! Deallocate all the stuff that is common to all momentum balance solver managers
 
 
-    ! Deallocate stuff that is specific to each individual momentum balance implementation
+    ! Deallocate stuff that is specific to each individual momentum balance solver manager
     call self%deallocate_momentum_balance_solver()
 
     ! Remove routine from call stack
@@ -153,10 +160,10 @@ contains
     ! Initialise stuff that is common to all models
     call self%initialise_model()
 
-    ! Initialise stuff that is common to all momentum balances
+    ! Initialise all the stuff that is common to all momentum balance solver managers
 
 
-    ! Initialise stuff that is specific to each individual momentum balance implementation
+    ! Initialise stuff that is specific to each individual momentum balance solver manager
     call self%initialise_momentum_balance_solver()
 
     ! Remove routine from call stack
@@ -181,9 +188,9 @@ contains
     ! Run stuff that is common to all models
     call self%run_model()
 
-    ! Run stuff that is common to all momentum balances
+    ! Run all the stuff that is common to all momentum balance solver managers
 
-    ! Run stuff that is specific to each individual momentum balance implementation
+    ! Run stuff that is specific to each individual momentum balance solver manager
     call self%run_momentum_balance_solver( ice, geom, vel)
 
     ! Remove routine from call stack
@@ -195,7 +202,7 @@ contains
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
-    type(type_mesh),               intent(in   ) :: mesh_new
+    type(type_mesh),                              intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_remap'
@@ -206,10 +213,10 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is common to all momentum balances
+    ! Remap all the stuff that is common to all momentum balance solver managers
 
 
-    ! Remap stuff that is specific to each individual momentum balance implementation
+    ! Remap stuff that is specific to each individual momentum balance solver manager
     call self%remap_momentum_balance_solver( mesh_new)
 
     ! Remove routine from call stack

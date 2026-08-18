@@ -1,4 +1,4 @@
-module momentum_balance_solver_SIA
+module momentum_balance_solver_plain_SIA
 
   !< Routines for solving the Shallow Ice Approximation (SIA) to the momentum balance
 
@@ -14,7 +14,7 @@ module momentum_balance_solver_SIA
   use constitutive_equation, only: calc_ice_rheology_Glen
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_a_b_3D, ddx_a_a_2D, ddy_a_a_2D
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap
-  use momentum_balance_solver_basic, only: atype_momentum_balance_solver
+  use momentum_balance_solver_plain_basic, only: atype_momentum_balance_solver_plain
   use mpi_f08, only: MPI_WIN
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
@@ -23,9 +23,9 @@ module momentum_balance_solver_SIA
 
   private
 
-  public :: type_momentum_balance_solver_SIA
+  public :: type_momentum_balance_solver_plain_SIA
 
-  type, extends(atype_momentum_balance_solver) :: type_momentum_balance_solver_SIA
+  type, extends(atype_momentum_balance_solver_plain) :: type_momentum_balance_solver_plain_SIA
 
       real(dp), dimension(:,:), contiguous, pointer :: D_3D_b  => null()   ! [m yr^-1] Diffusivity
       type(MPI_WIN) :: wD_3D_b
@@ -33,25 +33,25 @@ module momentum_balance_solver_SIA
     contains
 
       ! Procedures for model memory management and operation
-      procedure, public :: allocate_momentum_balance_solver   => momentum_balance_solver_SIA_allocate
-      procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_SIA_deallocate
-      procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_SIA_initialise
-      procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_SIA_run
-      procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SIA_remap
+      procedure, public :: allocate_momentum_balance_solver_plain   => momentum_balance_solver_plain_SIA_allocate
+      procedure, public :: deallocate_momentum_balance_solver_plain => momentum_balance_solver_plain_SIA_deallocate
+      procedure, public :: initialise_momentum_balance_solver_plain => momentum_balance_solver_plain_SIA_initialise
+      procedure, public :: run_momentum_balance_solver_plain        => momentum_balance_solver_plain_SIA_run
+      procedure, public :: remap_momentum_balance_solver_plain      => momentum_balance_solver_plain_SIA_remap
 
-      procedure, public :: get_momentum_balance_solver_name
+      procedure, public :: get_momentum_balance_solver_plain_name
 
-  end type type_momentum_balance_solver_SIA
+  end type type_momentum_balance_solver_plain_SIA
 
 contains
 
-  subroutine momentum_balance_solver_SIA_allocate( self)
+  subroutine momentum_balance_solver_plain_SIA_allocate( self)
 
     ! In/output variables:
-    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_allocate'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_SIA_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -67,15 +67,15 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine momentum_balance_solver_SIA_allocate
+  end subroutine momentum_balance_solver_plain_SIA_allocate
 
-  subroutine momentum_balance_solver_SIA_deallocate( self)
+  subroutine momentum_balance_solver_plain_SIA_deallocate( self)
 
     ! In/output variables:
-    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_deallocate'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_SIA_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -86,15 +86,15 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine momentum_balance_solver_SIA_deallocate
+  end subroutine momentum_balance_solver_plain_SIA_deallocate
 
-  subroutine momentum_balance_solver_SIA_initialise( self)
+  subroutine momentum_balance_solver_plain_SIA_initialise( self)
 
     ! In/output variables:
-    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_initialise'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_SIA_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -105,18 +105,18 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine momentum_balance_solver_SIA_initialise
+  end subroutine momentum_balance_solver_plain_SIA_initialise
 
-  subroutine momentum_balance_solver_SIA_run( self, ice, geom, vel)
+  subroutine momentum_balance_solver_plain_SIA_run( self, ice, geom, vel)
 
     ! In/output variables:
-    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
     class(atype_ice_model_data),             intent(inout) :: ice
     class(atype_ice_geometry_model_data),    intent(in   ) :: geom
     class(atype_ice_velocity_model_data),    intent(inout) :: vel
 
     ! Local variables:
-    character(len=*), parameter           :: routine_name = 'run_momentum_balance_solver_SIA'
+    character(len=*), parameter           :: routine_name = 'run_momentum_balance_solver_plain_SIA'
     real(dp), dimension(:  ), allocatable :: Hi_b, Hs_b, dHs_dx, dHs_dy, dHs_dx_b, dHs_dy_b
     real(dp), dimension(:,:), allocatable :: A_flow_b
     integer                               :: vi,ti,k
@@ -205,16 +205,16 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine momentum_balance_solver_SIA_run
+  end subroutine momentum_balance_solver_plain_SIA_run
 
-  subroutine momentum_balance_solver_SIA_remap( self, mesh_new)
+  subroutine momentum_balance_solver_plain_SIA_remap( self, mesh_new)
 
     ! In/output variables:
-    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
     type(type_mesh), target,                 intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_remap'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_SIA_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -225,12 +225,12 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine momentum_balance_solver_SIA_remap
+  end subroutine momentum_balance_solver_plain_SIA_remap
 
-  function get_momentum_balance_solver_name( self) result( model_name)
-    class(type_momentum_balance_solver_SIA), intent(in) :: self
+  function get_momentum_balance_solver_plain_name( self) result( model_name)
+    class(type_momentum_balance_solver_plain_SIA), intent(in) :: self
     character(len=:), allocatable                  :: model_name
     model_name = 'SIA'
-  end function get_momentum_balance_solver_name
+  end function get_momentum_balance_solver_plain_name
 
-end module momentum_balance_solver_SIA
+end module momentum_balance_solver_plain_SIA

@@ -3,6 +3,7 @@ module momentum_balance_solver_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use momentum_balance_solver_dummy, only: type_momentum_balance_solver_dummy
+  use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
 
   implicit none
 

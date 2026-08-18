@@ -30,6 +30,7 @@ module ice_velocities_main
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
   use momentum_balance_solver_SSA, only: type_momentum_balance_solver_SSA
+  use momentum_balance_solver_SIASSA, only: type_momentum_balance_solver_SIASSA
 
   implicit none
 
@@ -65,7 +66,7 @@ contains
       case ('SSA')
         call momentum_balance_solver%initialise()
       case ('SIA/SSA')
-        call crash('FIXME')
+        call momentum_balance_solver%initialise()
       case ('DIVA')
         call initialise_DIVA_solver           ( vel%mesh, ice%DIVA  , region_name)
       case ('BPA')
@@ -104,7 +105,7 @@ contains
     real(dp), dimension(:,:), optional,     intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'solve_stress_balance'
+    character(len=*), parameter :: routine_name = 'solve_stress_balance'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -156,7 +157,17 @@ contains
       case ('SIA/SSA')
         ! Calculate velocities according to the hybrid SIA/SSA
 
-        call crash('FIXME')
+        call momentum_balance_solver%run( ice, geom, bed_roughness, &
+          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+        n_visc_its = momentum_balance_solver%n_visc_its
+        n_Axb_its  = momentum_balance_solver%n_Axb_its
+
+        select type (SIASSA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_SIASSA)
+          call set_ice_velocities_to_SIASSA_results( mesh, vel, SIASSA)
+        end select
 
       case ('DIVA')
         ! Calculate velocities according to the Depth-Integrated Viscosity Approximation
@@ -357,7 +368,14 @@ contains
 
       case ('SIA/SSA')
 
-        call crash('FIXME')
+        call momentum_balance_solver%remap( mesh_old, mesh_new)
+
+        select type (SIASSA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_SIASSA)
+          call set_ice_velocities_to_SIASSA_results( mesh_new, vel, SIASSA)
+        end select
 
       case ('DIVA')
 
@@ -467,6 +485,47 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine set_ice_velocities_to_SSA_results
+
+  subroutine set_ice_velocities_to_SIASSA_results( mesh, vel, SIASSA)
+    !< Set applied ice model velocities to SIA/SSA results
+
+    ! In/output variables:
+    type(type_mesh),                            intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data),       intent(inout) :: vel
+    class(type_momentum_balance_solver_SIASSA), intent(inout) :: SIASSA
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'set_ice_velocities_to_SIASSA_results'
+    integer                     :: ti,vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Velocities
+    do ti = mesh%ti1, mesh%ti2
+      vel%u_3D_b( ti,:) = SIASSA%solver_SIA%u_3D_b( ti,:) + SIASSA%solver_SSA%u_b( ti)
+      vel%v_3D_b( ti,:) = SIASSA%solver_SIA%v_3D_b( ti,:) + SIASSA%solver_SSA%v_b( ti)
+    end do
+
+    ! Strain rates
+    do vi = mesh%vi1, mesh%vi2
+      vel%du_dx_3D( vi,:) = SIASSA%solver_SSA%du_dx_a( vi  )
+      vel%du_dy_3D( vi,:) = SIASSA%solver_SSA%du_dy_a( vi  )
+      vel%du_dz_3D( vi,:) = SIASSA%solver_SIA%du_dz_3D  ( vi,:)
+      vel%dv_dx_3D( vi,:) = SIASSA%solver_SSA%dv_dx_a( vi  )
+      vel%dv_dy_3D( vi,:) = SIASSA%solver_SSA%dv_dy_a( vi  )
+      vel%dv_dz_3D( vi,:) = SIASSA%solver_SIA%dv_dz_3D  ( vi,:)
+    end do
+
+    ! In the SIA/SSA, all gradients of w are neglected
+    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine set_ice_velocities_to_SIASSA_results
 
   subroutine set_ice_velocities_to_DIVA_results( mesh, ice, vel, DIVA)
     !< Set applied ice model velocities to DIVA results
@@ -625,13 +684,20 @@ contains
 
         select type (SSA => momentum_balance_solver)
         class default
-          call crash('invaid momentum_balance_solver class')
+          call crash('invalid momentum_balance_solver class')
         class is (type_momentum_balance_solver_SSA)
           call SSA%solver%write_to_restart_file_SSA( time)
         end select
 
       case ('SIA/SSA')
-        call crash('FIXME')
+
+        select type (SIASSA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_SIASSA)
+          call SIASSA%solver_SSA%write_to_restart_file_SSA( time)
+        end select
+
       case ('DIVA')
         call write_to_restart_file_DIVA( mesh, ice%DIVA, time)
       case ('BPA')
@@ -670,13 +736,20 @@ contains
 
       select type (SSA => momentum_balance_solver)
       class default
-        call crash('invaid momentum_balance_solver class')
+        call crash('invalid momentum_balance_solver class')
       class is (type_momentum_balance_solver_SSA)
         call SSA%solver%create_restart_file_SSA()
       end select
 
     case ('SIA/SSA')
-      call crash('FIXME')
+
+      select type (SIASSA => momentum_balance_solver)
+      class default
+        call crash('invalid momentum_balance_solver class')
+      class is (type_momentum_balance_solver_SIASSA)
+        call SIASSA%solver_SSA%create_restart_file_SSA()
+      end select
+
     case ('DIVA')
       call create_restart_file_DIVA( mesh, ice%DIVA)
     case ('BPA')

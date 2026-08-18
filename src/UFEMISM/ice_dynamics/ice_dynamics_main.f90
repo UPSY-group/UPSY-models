@@ -378,7 +378,7 @@ contains
     ! ==========
 
     ! Initialise data for the chosen velocity solver(s)
-    call initialise_velocity_solver( ice%vel, ice, region_name)
+    call initialise_velocity_solver( ice%vel, ice, ice%momentum_balance_solver, region_name)
 
     ! Time stepping
     ! =============
@@ -708,7 +708,7 @@ contains
     ! ==========
 
     ! Remap data for the chosen velocity solver(s)
-    call remap_velocity_solver( ice%vel, mesh_old, mesh_new, ice)
+    call remap_velocity_solver( ice%vel, ice%momentum_balance_solver, mesh_old, mesh_new, ice)
 
     ! Time stepping
     ! =============
@@ -960,7 +960,8 @@ contains
     pseudo_time: do while (t_pseudo < dt_relax)
 
       ! Update velocity solution around the calving front
-      call solve_stress_balance( mesh, ice, ice%geom, ice%vel, bed_roughness, BMB_new, region_name, &
+      call solve_stress_balance( mesh, ice, ice%geom, ice%vel, &
+        ice%momentum_balance_solver, bed_roughness, BMB_new, region_name, &
         n_visc_its, n_Axb_its, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
@@ -1074,7 +1075,8 @@ contains
 
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%ice%geom, &
-        region%ice%vel, region%bed_roughness, BMB_dummy, region%name, n_visc_its, n_Axb_its)
+        region%ice%vel, region%ice%momentum_balance_solver, &
+        region%bed_roughness, BMB_dummy, region%name, n_visc_its, n_Axb_its)
 
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &

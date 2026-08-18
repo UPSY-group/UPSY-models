@@ -1,6 +1,6 @@
-module ice_velocity_model_SIA
+module momentum_balance_solver_SIA
 
-  !< Routines for calculating ice velocities using the Shallow Ice Approximation (SIA)
+  !< Routines for solving the Shallow Ice Approximation (SIA) to the momentum balance
 
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
@@ -8,12 +8,13 @@ module ice_velocity_model_SIA
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use parameters, only: grav, ice_density, NaN
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_a_b_3D, ddx_a_a_2D, ddy_a_a_2D
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap
-  use ice_velocity_model_basic, only: atype_ice_velocity_model
+  use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use mpi_f08, only: MPI_WIN
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
@@ -22,9 +23,9 @@ module ice_velocity_model_SIA
 
   private
 
-  public :: type_ice_velocity_model_SIA
+  public :: type_momentum_balance_solver_SIA
 
-  type, extends(atype_ice_velocity_model) :: type_ice_velocity_model_SIA
+  type, extends(atype_momentum_balance_solver) :: type_momentum_balance_solver_SIA
 
       real(dp), dimension(:,:), contiguous, pointer :: D_3D_b  => null()   ! [m yr^-1] Diffusivity
       type(MPI_WIN) :: wD_3D_b
@@ -32,30 +33,30 @@ module ice_velocity_model_SIA
     contains
 
       ! Procedures for model memory management and operation
-      procedure, public :: allocate_ice_velocity_model   => ice_velocity_model_SIA_allocate
-      procedure, public :: deallocate_ice_velocity_model => ice_velocity_model_SIA_deallocate
-      procedure, public :: initialise_ice_velocity_model => ice_velocity_model_SIA_initialise
-      procedure, public :: run_ice_velocity_model        => ice_velocity_model_SIA_run
-      procedure, public :: remap_ice_velocity_model      => ice_velocity_model_SIA_remap
+      procedure, public :: allocate_momentum_balance_solver   => momentum_balance_solver_SIA_allocate
+      procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_SIA_deallocate
+      procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_SIA_initialise
+      procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_SIA_run
+      procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SIA_remap
 
-      procedure, public :: get_ice_velocity_model_name
+      procedure, public :: get_momentum_balance_solver_name
 
-  end type type_ice_velocity_model_SIA
+  end type type_momentum_balance_solver_SIA
 
 contains
 
-  subroutine ice_velocity_model_SIA_allocate( self)
+  subroutine momentum_balance_solver_SIA_allocate( self)
 
     ! In/output variables:
-    class(type_ice_velocity_model_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_allocate'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_allocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Allocate all the stuff that is specific to the SIA ice_velocity model
+    ! Allocate all the stuff that is specific to the SIA momentum balance solver
     call self%create_field( self%D_3D_b, self%wD_3D_b, &
       self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
       name      = 'D_3D_b', &
@@ -66,55 +67,56 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine ice_velocity_model_SIA_allocate
+  end subroutine momentum_balance_solver_SIA_allocate
 
-  subroutine ice_velocity_model_SIA_deallocate( self)
+  subroutine momentum_balance_solver_SIA_deallocate( self)
 
     ! In/output variables:
-    class(type_ice_velocity_model_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_deallocate'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_deallocate'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is specific to ice_velocity model SIA
+    ! Deallocate all the stuff that is specific to momentum balance solver SIA
     nullify( self%D_3D_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine ice_velocity_model_SIA_deallocate
+  end subroutine momentum_balance_solver_SIA_deallocate
 
-  subroutine ice_velocity_model_SIA_initialise( self)
+  subroutine momentum_balance_solver_SIA_initialise( self)
 
     ! In/output variables:
-    class(type_ice_velocity_model_SIA), intent(inout) :: self
+    class(type_momentum_balance_solver_SIA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_initialise'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Initialise all the stuff that is specific to ice_velocity model SIA
+    ! Initialise all the stuff that is specific to momentum balance solver SIA
 
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine ice_velocity_model_SIA_initialise
+  end subroutine momentum_balance_solver_SIA_initialise
 
-  subroutine ice_velocity_model_SIA_run( self, ice, geom)
+  subroutine momentum_balance_solver_SIA_run( self, ice, geom, vel)
 
     ! In/output variables:
-    class(type_ice_velocity_model_SIA),   intent(inout) :: self
-    class(atype_ice_model_data),          intent(inout) :: ice
-    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    class(atype_ice_velocity_model_data),    intent(inout) :: vel
 
     ! Local variables:
-    character(len=*), parameter           :: routine_name = 'run_ice_velocity_model_SIA'
+    character(len=*), parameter           :: routine_name = 'run_momentum_balance_solver_SIA'
     real(dp), dimension(:  ), allocatable :: Hi_b, Hs_b, dHs_dx, dHs_dy, dHs_dx_b, dHs_dy_b
     real(dp), dimension(:,:), allocatable :: A_flow_b
     integer                               :: vi,ti,k
@@ -124,7 +126,7 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Run all the stuff that is specific to ice_velocity model SIA
+    ! Run all the stuff that is specific to momentum balance solver SIA
 
     ! Safety
     if (.not. C%choice_flow_law == 'Glen') then
@@ -178,8 +180,8 @@ contains
       self%D_3D_b( ti,:) = max( -C%SIA_maximum_diffusivity, self%D_3D_b( ti,:))
 
       ! Calculate the velocities
-      self%u_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dx_b( ti)
-      self%v_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dy_b( ti)
+      vel%u_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dx_b( ti)
+      vel%v_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dy_b( ti)
 
     end do
 
@@ -190,10 +192,10 @@ contains
       z = geom%Hs( vi) - self%mesh%zeta * geom%Hi( vi)
 
       do k = 1, self%mesh%nz
-        self%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+        vel%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
           abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
           ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dx( vi)
-        self%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+        vel%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
           abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
           ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dy( vi)
       end do
@@ -203,32 +205,32 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine ice_velocity_model_SIA_run
+  end subroutine momentum_balance_solver_SIA_run
 
-  subroutine ice_velocity_model_SIA_remap( self, mesh_new)
+  subroutine momentum_balance_solver_SIA_remap( self, mesh_new)
 
     ! In/output variables:
-    class(type_ice_velocity_model_SIA), intent(inout) :: self
-    type(type_mesh), target,            intent(in   ) :: mesh_new
+    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+    type(type_mesh), target,                 intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'ice_velocity_model_SIA_remap'
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_remap'
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Remap all the stuff that is specific to ice_velocity model SIA
+    ! Remap all the stuff that is specific to momentum balance solver SIA
     call self%remap_field( mesh_new, 'D_3D_b', self%D_3D_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine ice_velocity_model_SIA_remap
+  end subroutine momentum_balance_solver_SIA_remap
 
-  function get_ice_velocity_model_name( self) result( model_name)
-    class(type_ice_velocity_model_SIA), intent(in) :: self
+  function get_momentum_balance_solver_name( self) result( model_name)
+    class(type_momentum_balance_solver_SIA), intent(in) :: self
     character(len=:), allocatable                  :: model_name
     model_name = 'SIA'
-  end function get_ice_velocity_model_name
+  end function get_momentum_balance_solver_name
 
-end module ice_velocity_model_SIA
+end module momentum_balance_solver_SIA

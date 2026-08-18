@@ -4,13 +4,9 @@ module ice_velocity_model_basic
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use mesh_types, only: type_mesh
-  use parameters, only: NaN
-  use reallocate_mod, only: reallocate_bounds
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use model_configuration, only: C
-  use ice_model_data, only: atype_ice_model_data
-  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -18,69 +14,17 @@ module ice_velocity_model_basic
 
   public :: atype_ice_velocity_model
 
-  type, abstract, extends(atype_ice_velocity_model_data) :: atype_ice_velocity_model
+  type, extends(atype_ice_velocity_model_data) :: atype_ice_velocity_model
 
     contains
 
-      ! Procedures for model memory management and operation
-      procedure, public :: allocate   => ice_velocity_model_allocate
-      procedure, public :: deallocate => ice_velocity_model_deallocate
-      procedure, public :: initialise => ice_velocity_model_initialise
-      procedure, public :: run        => ice_velocity_model_run
-      procedure, public :: remap      => ice_velocity_model_remap
+      procedure, public :: allocate     => ice_velocity_model_allocate
+      procedure, public :: deallocate   => ice_velocity_model_deallocate
+      procedure, public :: remap        => ice_velocity_model_remap
 
-      ! Deferred procedures that must be overridden by each individual ice velocity model implementation
-      procedure(ice_velocity_model_allocate_ifc),   deferred :: allocate_ice_velocity_model
-      procedure(ice_velocity_model_deallocate_ifc), deferred :: deallocate_ice_velocity_model
-      procedure(ice_velocity_model_initialise_ifc), deferred :: initialise_ice_velocity_model
-      procedure(ice_velocity_model_run_ifc),        deferred :: run_ice_velocity_model
-      procedure(ice_velocity_model_remap_ifc),      deferred :: remap_ice_velocity_model
-
-      procedure, public                                    :: get_model_name
-      procedure(get_ice_velocity_model_name_ifc), deferred :: get_ice_velocity_model_name
+      procedure, public :: get_model_name
 
   end type atype_ice_velocity_model
-
-  ! Abstract interfaces for deferred procedures
-  ! ===========================================
-
-  abstract interface
-
-    subroutine ice_velocity_model_allocate_ifc( self)
-      import atype_ice_velocity_model
-      class(atype_ice_velocity_model),  intent(inout) :: self
-    end subroutine ice_velocity_model_allocate_ifc
-
-    subroutine ice_velocity_model_deallocate_ifc( self)
-      import atype_ice_velocity_model
-      class(atype_ice_velocity_model), intent(inout) :: self
-    end subroutine ice_velocity_model_deallocate_ifc
-
-    subroutine ice_velocity_model_initialise_ifc( self)
-      import atype_ice_velocity_model
-      class(atype_ice_velocity_model), intent(inout) :: self
-    end subroutine ice_velocity_model_initialise_ifc
-
-    subroutine ice_velocity_model_run_ifc( self, ice, geom)
-      import atype_ice_velocity_model, atype_ice_model_data, atype_ice_geometry_model_data
-      class(atype_ice_velocity_model),      intent(inout) :: self
-      class(atype_ice_model_data),          intent(inout) :: ice
-      class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    end subroutine ice_velocity_model_run_ifc
-
-    subroutine ice_velocity_model_remap_ifc( self, mesh_new)
-      import atype_ice_velocity_model, type_mesh
-      class(atype_ice_velocity_model), intent(inout) :: self
-      type(type_mesh), target,         intent(in   ) :: mesh_new
-    end subroutine ice_velocity_model_remap_ifc
-
-    function get_ice_velocity_model_name_ifc( self) result( ice_velocity_model_name)
-      import atype_ice_velocity_model
-      class(atype_ice_velocity_model), intent(in) :: self
-      character(len=:), allocatable :: ice_velocity_model_name
-    end function get_ice_velocity_model_name_ifc
-
-  end interface
 
 contains
 
@@ -100,7 +44,7 @@ contains
     ! Allocate all the stuff that is common to all models
     call self%allocate_model( region_name, mesh)
 
-    ! Allocate all the stuff that is common to all ice velocity models
+    ! Allocate all the stuff that is specific to the ice velocity model
 
     ! 3-D
     call self%create_field( self%u_3D, self%wu_3D, &
@@ -369,9 +313,6 @@ contains
       units     = '', &
       remap_method = 'reallocate')
 
-    ! Allocate stuff that is specific to each individual ice velocity model implementation
-    call self%allocate_ice_velocity_model()
-
     ! Remove routine from call stack
     call finalise_routine( routine_name, n_extra_MPI_windows_expected = 10)
 
@@ -391,7 +332,7 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is common to all ice velocity models
+    ! Deallocate stuff that is specific to the ice velocity model
 
     ! 3-D
     nullify( self%u_3D  )
@@ -441,63 +382,10 @@ contains
     ! Flow regime
     nullify( self%R_shear)
 
-    ! Deallocate stuff that is specific to each individual ice velocity model implementation
-    call self%deallocate_ice_velocity_model()
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine ice_velocity_model_deallocate
-
-  subroutine ice_velocity_model_initialise( self)
-
-    ! In/output variables:
-    class(atype_ice_velocity_model), intent(inout) :: self
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'ice_velocity_model_initialise'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Initialise stuff that is common to all models
-    call self%initialise_model()
-
-    ! Initialise stuff that is common to all ice_velocity models
-
-    ! Initialise stuff that is specific to each individual ice_velocity model implementation
-    call self%initialise_ice_velocity_model()
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine ice_velocity_model_initialise
-
-  subroutine ice_velocity_model_run( self, ice, geom)
-
-    ! In/output variables:
-    class(atype_ice_velocity_model),      intent(inout) :: self
-    class(atype_ice_model_data),          intent(inout) :: ice
-    class(atype_ice_geometry_model_data), intent(in   ) :: geom
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'ice_velocity_model_run'
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Run stuff that is common to all models
-    call self%run_model()
-
-    ! Run stuff that is common to all ice_velocity models
-
-    ! Run stuff that is specific to each individual ice_velocity model implementation
-    call self%run_ice_velocity_model( ice, geom)
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine ice_velocity_model_run
 
   subroutine ice_velocity_model_remap( self, mesh_new)
 
@@ -514,7 +402,7 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is common to all ice_velocity models
+    ! Remap stuff that is specific to the ice velocity model
 
     ! 3-D
     call self%remap_field( mesh_new, 'u_3D'  , self%u_3D  )
@@ -564,9 +452,6 @@ contains
     ! Flow regime
     call self%remap_field( mesh_new, 'R_shear', self%R_shear)
 
-    ! Remap stuff that is specific to each individual ice_velocity model implementation
-    call self%remap_ice_velocity_model( mesh_new)
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -575,7 +460,7 @@ contains
   function get_model_name( self) result( model_name)
     class(atype_ice_velocity_model), intent(in) :: self
     character(len=:), allocatable      :: model_name
-    model_name = 'ice_velocity_' // self%get_ice_velocity_model_name()
+    model_name = 'ice_velocity'
   end function get_model_name
 
 end module ice_velocity_model_basic

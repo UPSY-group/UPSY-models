@@ -3,6 +3,7 @@ module momentum_balance_solver_main
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use momentum_balance_solver_dummy, only: type_momentum_balance_solver_dummy
+  use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
 
   implicit none
 
@@ -31,7 +32,7 @@ contains
     case ('none')
       allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
     case ('SIA')
-      allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
+      allocate( type_momentum_balance_solver_SIA :: momentum_balance_solver)
     case ('SSA')
       allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
     case ('SIA/SSA')

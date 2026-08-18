@@ -11,7 +11,7 @@ module momentum_balance_solver_plain_basic
   use model_configuration, only: C
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_velocity_model_data, only: atype_ice_velocity_model_data
+  use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
 
@@ -62,19 +62,24 @@ module momentum_balance_solver_plain_basic
       class(atype_momentum_balance_solver_plain), intent(inout) :: self
     end subroutine momentum_balance_solver_plain_initialise_ifc
 
-    subroutine momentum_balance_solver_plain_run_ifc( self, ice, geom, vel)
+    subroutine momentum_balance_solver_plain_run_ifc( self, ice, geom, bed_roughness, &
+      BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
       import atype_momentum_balance_solver_plain, atype_ice_model_data, atype_ice_geometry_model_data, &
-        atype_ice_velocity_model_data
+        type_bed_roughness_model, dp
       class(atype_momentum_balance_solver_plain), intent(inout) :: self
-      class(atype_ice_model_data),          intent(inout) :: ice
-      class(atype_ice_geometry_model_data), intent(in   ) :: geom
-      class(atype_ice_velocity_model_data), intent(inout) :: vel
+      class(atype_ice_model_data),                intent(inout) :: ice
+      class(atype_ice_geometry_model_data),       intent(in   ) :: geom
+      type(type_bed_roughness_model),             intent(in   ) :: bed_roughness
+      integer,  dimension(:), optional,           intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+      real(dp), dimension(:), optional,           intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+      real(dp), dimension(:), optional,           intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
     end subroutine momentum_balance_solver_plain_run_ifc
 
-    subroutine momentum_balance_solver_plain_remap_ifc( self, mesh_new)
+    subroutine momentum_balance_solver_plain_remap_ifc( self, mesh_old, mesh_new)
       import atype_momentum_balance_solver_plain, type_mesh
       class(atype_momentum_balance_solver_plain), intent(inout) :: self
-      type(type_mesh), target,              intent(in   ) :: mesh_new
+      type(type_mesh),                            intent(in   ) :: mesh_old
+      type(type_mesh), target,                    intent(in   ) :: mesh_new
     end subroutine momentum_balance_solver_plain_remap_ifc
 
     function get_momentum_balance_solver_plain_name_ifc( self) result( momentum_balance_solver_plain_name)
@@ -167,13 +172,17 @@ contains
 
   end subroutine momentum_balance_solver_plain_initialise
 
-  subroutine momentum_balance_solver_plain_run( self, ice, geom, vel)
+  subroutine momentum_balance_solver_plain_run( self, ice, geom, bed_roughness, &
+    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
 
     ! In/output variables:
     class(atype_momentum_balance_solver_plain), intent(inout) :: self
     class(atype_ice_model_data),                intent(inout) :: ice
     class(atype_ice_geometry_model_data),       intent(in   ) :: geom
-    class(atype_ice_velocity_model_data),       intent(inout) :: vel
+    type(type_bed_roughness_model),             intent(in   ) :: bed_roughness
+    integer,  dimension(:), optional,           intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:), optional,           intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:), optional,           intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_run'
@@ -187,18 +196,20 @@ contains
     ! Run stuff that is common to all basic momentum balance solvers
 
     ! Run stuff that is specific to each individual basic momentum balance solver
-    call self%run_momentum_balance_solver_plain( ice, geom, vel)
+    call self%run_momentum_balance_solver_plain( ice, geom, bed_roughness, &
+      BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine momentum_balance_solver_plain_run
 
-  subroutine momentum_balance_solver_plain_remap( self, mesh_new)
+  subroutine momentum_balance_solver_plain_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
     class(atype_momentum_balance_solver_plain), intent(inout) :: self
-    type(type_mesh),                            intent(in   ) :: mesh_new
+    type(type_mesh),                            intent(in   ) :: mesh_old
+    type(type_mesh), target,                    intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_remap'
@@ -213,7 +224,7 @@ contains
 
 
     ! Remap stuff that is specific to each individual basic momentum balance solver
-    call self%remap_momentum_balance_solver_plain( mesh_new)
+    call self%remap_momentum_balance_solver_plain( mesh_old, mesh_new)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

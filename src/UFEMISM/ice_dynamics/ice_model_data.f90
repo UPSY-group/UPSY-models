@@ -15,7 +15,6 @@ module ice_model_data
 
   private
 
-  public :: type_ice_velocity_solver_SSA
   public :: type_ice_velocity_solver_DIVA
   public :: type_ice_velocity_solver_DIVA_graphs
   public :: type_ice_velocity_solver_BPA
@@ -25,39 +24,6 @@ module ice_model_data
 
 ! ===== Types =====
 ! =================
-
-  TYPE type_ice_velocity_solver_SSA
-    ! Data fields needed to solve the Shallow Shelf Approximation
-
-    ! Solution
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_b                         ! [m yr^-1] 2-D horizontal ice velocity
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_b
-
-    ! Intermediate data fields
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: A_flow_vav_a                ! [Pa^-3 y^-1] Vertically averaged Glen's flow law parameter
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: du_dx_a                     ! [yr^-1] 2-D horizontal strain rates
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: du_dy_a
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dv_dx_a
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dv_dy_a
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: eta_a                       ! Effective viscosity
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: N_a                         ! Product term N = eta * H
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: N_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dN_dx_b                     ! Gradients of N
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dN_dy_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: basal_friction_coefficient_b! Basal friction coefficient (tau_b = u * beta_b)
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: tau_dx_b                    ! Driving stress
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: tau_dy_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: u_b_prev                    ! Velocity solution from previous viscosity iteration
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: v_b_prev
-
-    ! Parameters for the iterative solver used to solve the matrix equation representing the linearised SSA
-    REAL(dp)                                :: PETSc_rtol
-    REAL(dp)                                :: PETSc_abstol
-
-    ! Restart file
-    CHARACTER(LEN=256)                      :: restart_filename
-
-  END TYPE type_ice_velocity_solver_SSA
 
   type type_ice_velocity_solver_DIVA_graphs
     ! Data fields needed to solve the Depth-Integrated Viscosity Approximation
@@ -370,7 +336,6 @@ module ice_model_data
   ! ======================
 
     ! Velocity solvers
-    TYPE(type_ice_velocity_solver_SSA)      :: SSA                         ! Shallow Shelf Approximation
     TYPE(type_ice_velocity_solver_DIVA)     :: DIVA                        ! Depth-Integrated Viscosity Approximation
     TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
     TYPE(type_ice_velocity_solver_hybrid)   :: hybrid                      ! Hybrid DIVA/BPA

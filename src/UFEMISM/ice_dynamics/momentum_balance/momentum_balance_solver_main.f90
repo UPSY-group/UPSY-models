@@ -4,6 +4,7 @@ module momentum_balance_solver_main
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use momentum_balance_solver_dummy, only: type_momentum_balance_solver_dummy
   use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
+  use momentum_balance_solver_SSA, only: type_momentum_balance_solver_SSA
 
   implicit none
 
@@ -34,7 +35,7 @@ contains
     case ('SIA')
       allocate( type_momentum_balance_solver_SIA :: momentum_balance_solver)
     case ('SSA')
-      allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
+      allocate( type_momentum_balance_solver_SSA :: momentum_balance_solver)
     case ('SIA/SSA')
       allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
     case ('DIVA')

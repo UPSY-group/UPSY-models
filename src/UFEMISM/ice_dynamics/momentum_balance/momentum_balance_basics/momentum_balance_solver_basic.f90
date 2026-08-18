@@ -103,10 +103,10 @@ contains
     ! Allocate all the stuff that is common to all models
     call self%allocate_model( region_name, mesh)
 
-    ! Allocate all the stuff that is common to all momentum balance solver
+    ! Allocate stuff that is common to all momentum balance solvers
 
 
-    ! Allocate stuff that is specific to each individual momentum balance implementation
+    ! Allocate stuff that is specific to each individual momentum balance solver
     call self%allocate_momentum_balance_solver()
 
     ! Remove routine from call stack
@@ -128,10 +128,10 @@ contains
     ! Deallocate stuff that is common to all models
     call self%deallocate_model()
 
-    ! Deallocate stuff that is common to all momentum balances
+    ! Deallocate stuff that is common to all momentum balance solvers
 
 
-    ! Deallocate stuff that is specific to each individual momentum balance implementation
+    ! Deallocate stuff that is specific to each individual momentum balance solver
     call self%deallocate_momentum_balance_solver()
 
     ! Remove routine from call stack
@@ -153,10 +153,13 @@ contains
     ! Initialise stuff that is common to all models
     call self%initialise_model()
 
-    ! Initialise stuff that is common to all momentum balances
+    ! Initialise stuff that is common to all momentum balance solvers
+    self%PETSc_rtol   = C%stress_balance_PETSc_rtol
+    self%PETSc_abstol = C%stress_balance_PETSc_abstol
+    self%n_visc_its   = 0
+    self%n_Axb_its    = 0
 
-
-    ! Initialise stuff that is specific to each individual momentum balance implementation
+    ! Initialise stuff that is specific to each individual momentum balance solver
     call self%initialise_momentum_balance_solver()
 
     ! Remove routine from call stack
@@ -181,9 +184,9 @@ contains
     ! Run stuff that is common to all models
     call self%run_model()
 
-    ! Run stuff that is common to all momentum balances
+    ! Run stuff that is common to all momentum balance solvers
 
-    ! Run stuff that is specific to each individual momentum balance implementation
+    ! Run stuff that is specific to each individual momentum balance solver
     call self%run_momentum_balance_solver( ice, geom, vel)
 
     ! Remove routine from call stack
@@ -206,10 +209,10 @@ contains
     ! Remap stuff that is common to all models
     call self%remap_model( mesh_new)
 
-    ! Remap stuff that is common to all momentum balances
+    ! Remap stuff that is common to all momentum balance solvers
 
 
-    ! Remap stuff that is specific to each individual momentum balance implementation
+    ! Remap stuff that is specific to each individual momentum balance solver
     call self%remap_momentum_balance_solver( mesh_new)
 
     ! Remove routine from call stack

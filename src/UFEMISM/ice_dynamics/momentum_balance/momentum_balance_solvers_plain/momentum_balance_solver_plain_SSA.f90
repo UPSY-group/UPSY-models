@@ -1,4 +1,4 @@
-module SSA_main
+module momentum_balance_solver_plain_SSA
 
   ! Routines for calculating ice velocities using the Shallow Shelf Approximation (SSA)
 
@@ -636,4 +636,4 @@ contains
 
   end subroutine create_restart_file_SSA
 
-end module SSA_main
+end module momentum_balance_solver_plain_SSA

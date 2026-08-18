@@ -85,6 +85,15 @@ elseif startsWith( strtrim( single_line),'ymin_ANT_config')
 elseif startsWith( strtrim( single_line),'ymax_ANT_config')
   single_line = ymax_ANT_config( opts);
 
+elseif startsWith( strtrim( single_line),'choice_refgeo_init_idealised_config')
+  single_line = choice_refgeo_init_idealised_config( opts);
+
+elseif startsWith( strtrim( single_line),'choice_refgeo_PD_idealised_config')
+  single_line = choice_refgeo_PD_idealised_config( opts);
+
+elseif startsWith( strtrim( single_line),'choice_refgeo_GIAeq_idealised_config')
+  single_line = choice_refgeo_GIAeq_idealised_config( opts);
+
 elseif startsWith( strtrim( single_line),'dx_refgeo_init_idealised_config')
   single_line = dx_refgeo_init_idealised_config( opts);
 
@@ -197,6 +206,51 @@ function single_line = ymax_ANT_config( opts)
       single_line = 'ymax_ANT_config = 5000.0';
     otherwise
       error(['invalid opts.length_scale ' opts.length_scale])
+  end
+end
+
+function single_line = choice_refgeo_init_idealised_config( opts)
+  switch opts.experiment
+    case 'A'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_A'";
+    case 'B'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_B'";
+    case 'C'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_C'";
+    case 'D'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_D'";
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
+  end
+end
+
+function single_line = choice_refgeo_PD_idealised_config( opts)
+  switch opts.experiment
+    case 'A'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_A'";
+    case 'B'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_B'";
+    case 'C'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_C'";
+    case 'D'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_D'";
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
+  end
+end
+
+function single_line = choice_refgeo_GIAeq_idealised_config( opts)
+  switch opts.experiment
+    case 'A'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_A'";
+    case 'B'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_B'";
+    case 'C'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_C'";
+    case 'D'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_D'";
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
   end
 end
 

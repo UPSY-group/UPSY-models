@@ -29,6 +29,7 @@ module ice_velocities_main
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use ice_velocity_model_basic, only: atype_ice_velocity_model
+  use momentum_balance_solver_basic, only: atype_momentum_balance_solver
 
   implicit none
 
@@ -36,13 +37,14 @@ contains
 
   ! == The main routines, to be called from the ice dynamics module
 
-  subroutine initialise_velocity_solver( vel, ice, region_name)
+  subroutine initialise_velocity_solver( vel, ice, momentum_balance_solver, region_name)
     !< Initialise the velocity solver for the chosen Stokes approximation
 
     ! In/output variables:
-    class(atype_ice_velocity_model), intent(inout) :: vel
-    class(atype_ice_model_data),     intent(inout) :: ice
-    character(len=3),                intent(in   ) :: region_name
+    class(atype_ice_velocity_model),      intent(inout) :: vel
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_momentum_balance_solver), intent(inout) :: momentum_balance_solver
+    character(len=3),                     intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'initialise_velocity_solver'
@@ -59,11 +61,11 @@ contains
       case ('none')
         ! No need to do anything
       case ('SIA')
-        call vel%initialise()
+        call momentum_balance_solver%initialise()
       case ('SSA')
         call initialise_SSA_solver            ( vel%mesh, ice%SSA   , region_name)
       case ('SIA/SSA')
-        call vel%initialise()
+        call momentum_balance_solver%initialise()
         call initialise_SSA_solver            ( vel%mesh, ice%SSA   , region_name)
       case ('DIVA')
         call initialise_DIVA_solver           ( vel%mesh, ice%DIVA  , region_name)
@@ -78,7 +80,7 @@ contains
 
   end subroutine initialise_velocity_solver
 
-  subroutine solve_stress_balance( mesh, ice, geom, vel, bed_roughness, BMB, region_name, n_visc_its, n_Axb_its, &
+  subroutine solve_stress_balance( mesh, ice, geom, vel, momentum_balance_solver, bed_roughness, BMB, region_name, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate all ice velocities based on the chosen stress balance approximation
 
@@ -87,6 +89,7 @@ contains
     class(atype_ice_model_data),            intent(inout) :: ice
     class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     class(atype_ice_velocity_model),        intent(inout) :: vel
+    class(atype_momentum_balance_solver),   intent(inout) :: momentum_balance_solver
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
     character(len=3),                       intent(in   ) :: region_name
@@ -123,7 +126,7 @@ contains
       case ('SIA')
         ! Calculate velocities according to the Shallow Ice Approximation
 
-        call vel%run( ice, geom)
+        call momentum_balance_solver%run( ice, geom, vel)
 
         n_visc_its = 0
         n_Axb_its  = 0
@@ -139,7 +142,7 @@ contains
       case ('SIA/SSA')
         ! Calculate velocities according to the hybrid SIA/SSA
 
-        call vel%run( ice, geom)
+        call momentum_balance_solver%run( ice, geom, vel)
         call solve_SSA( mesh, ice, geom, bed_roughness, ice%SSA, &
           n_visc_its, n_Axb_its, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
@@ -296,17 +299,18 @@ contains
 
   end subroutine calc_u_vav_perp
 
-  subroutine remap_velocity_solver( vel, mesh_old, mesh_new, ice)
+  subroutine remap_velocity_solver( vel, momentum_balance_solver, mesh_old, mesh_new, ice)
     !< Remap the velocity solver for the chosen stress balance approximation
 
     ! In/output variables:
-    class(atype_ice_velocity_model), intent(inout) :: vel
-    type(type_mesh),                 intent(in   ) :: mesh_old
-    type(type_mesh),                 intent(in   ) :: mesh_new
-    class(atype_ice_model_data),     intent(inout) :: ice
+    class(atype_ice_velocity_model),      intent(inout) :: vel
+    class(atype_momentum_balance_solver), intent(inout) :: momentum_balance_solver
+    type(type_mesh),                      intent(in   ) :: mesh_old
+    type(type_mesh),                      intent(in   ) :: mesh_new
+    class(atype_ice_model_data),          intent(inout) :: ice
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'remap_velocity_solver'
+    character(len=*), parameter :: routine_name = 'remap_velocity_solver'
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -321,7 +325,7 @@ contains
 
       case ('SIA')
 
-        call vel%remap( mesh_new)
+        call momentum_balance_solver%remap( mesh_new)
 
       case ('SSA')
 
@@ -330,7 +334,7 @@ contains
 
       case ('SIA/SSA')
 
-        call vel%remap( mesh_new)
+        call momentum_balance_solver%remap( mesh_new)
         call remap_SSA_solver(  mesh_old, mesh_new, ice%SSA)
         call set_ice_velocities_to_SIASSA_results( mesh_new, vel, ice%SSA)
 

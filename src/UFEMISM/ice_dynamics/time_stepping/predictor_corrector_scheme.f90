@@ -114,7 +114,8 @@ contains
 
       ! Calculate ice velocities for the predicted geometry
       !   u_n+1 in Robinson et al., 2020, Eq. 31
-      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%ice%vel, region%bed_roughness, &
+      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
+        region%ice%momentum_balance_solver, region%bed_roughness, &
         region%BMB%BMB, region%name, n_visc_its, n_Axb_its)
 
       ! Update stability info

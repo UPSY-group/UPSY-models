@@ -31,7 +31,7 @@ contains
     case ('none')
       allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
     case ('SIA')
-      allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
+      allocate( type_momentum_balance_solver_SIA :: momentum_balance_solver)
     case ('SSA')
       allocate( type_momentum_balance_solver_dummy :: momentum_balance_solver)
     case ('SIA/SSA')

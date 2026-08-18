@@ -6,7 +6,6 @@ module ice_model_memory
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use ice_model_main, only: type_ice_model
-  use ice_velocity_model, only: create_ice_velocity_model
   use momentum_balance_solver_main, only: create_momentum_balance_solver
 
   implicit none
@@ -33,7 +32,7 @@ contains
     allocate( ice%geom)
     call ice%geom%allocate( region_name, mesh)
 
-    call create_ice_velocity_model( ice%vel, C%choice_stress_balance_approximation)
+    allocate( ice%vel)
     call ice%vel%allocate( region_name, mesh)
 
     call create_momentum_balance_solver( ice%momentum_balance_solver, C%choice_stress_balance_approximation)

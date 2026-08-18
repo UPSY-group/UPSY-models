@@ -23,9 +23,9 @@ foreach experiment ($experiments)
 
       mpiexec -n 2 UFEMISM_program $config_dir/config_ISMIP_HOM_${exp_name}.cfg
 
-      # mv $exp_output_dir/transect_ISMIP-HOM.nc ${test_dir}/results/transect_${exp_name}.nc
+      mv $exp_output_dir/transect_ISMIP-HOM.nc ${test_dir}/results/transect_${exp_name}.nc
 
-      # rm -rf $exp_output_dir
+      rm -rf $exp_output_dir
 
     end
   end

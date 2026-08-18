@@ -403,9 +403,9 @@ function single_line = choice_idealised_sliding_law_config( opts)
     case {'A','B'}
       single_line = 'choice_idealised_sliding_law_config = ""';
     case 'C'
-      single_line = 'choice_idealised_sliding_law_config = "ISMIP_HOM_C"';
+      single_line = 'choice_idealised_sliding_law_config = "ISMIP-HOM_C"';
     case 'D'
-      single_line = 'choice_idealised_sliding_law_config = "ISMIP_HOM_D"';
+      single_line = 'choice_idealised_sliding_law_config = "ISMIP-HOM_D"';
     otherwise
       error(['invalid opts.experiment ' opts.experiment])
   end

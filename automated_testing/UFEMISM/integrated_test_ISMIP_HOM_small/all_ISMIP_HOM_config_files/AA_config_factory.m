@@ -85,6 +85,15 @@ elseif startsWith( strtrim( single_line),'ymin_ANT_config')
 elseif startsWith( strtrim( single_line),'ymax_ANT_config')
   single_line = ymax_ANT_config( opts);
 
+elseif startsWith( strtrim( single_line),'choice_refgeo_init_idealised_config')
+  single_line = choice_refgeo_init_idealised_config( opts);
+
+elseif startsWith( strtrim( single_line),'choice_refgeo_PD_idealised_config')
+  single_line = choice_refgeo_PD_idealised_config( opts);
+
+elseif startsWith( strtrim( single_line),'choice_refgeo_GIAeq_idealised_config')
+  single_line = choice_refgeo_GIAeq_idealised_config( opts);
+
 elseif startsWith( strtrim( single_line),'dx_refgeo_init_idealised_config')
   single_line = dx_refgeo_init_idealised_config( opts);
 
@@ -106,6 +115,12 @@ elseif startsWith( strtrim( single_line),'dx_square_grid_smooth_ANT_config')
 elseif startsWith( strtrim( single_line),'choice_stress_balance_approximation_config')
   single_line = choice_stress_balance_approximation_config( opts);
 
+elseif startsWith( strtrim( single_line),'choice_sliding_law_config')
+  single_line = choice_sliding_law_config( opts);
+
+elseif startsWith( strtrim( single_line),'choice_idealised_sliding_law_config')
+  single_line = choice_idealised_sliding_law_config( opts);
+
 elseif startsWith( strtrim( single_line),'dx_output_grid_ANT_config')
   single_line = dx_output_grid_ANT_config( opts);
   
@@ -120,7 +135,7 @@ end
 
 
 function single_line = fixed_output_dir_config( opts)
-  single_line = ['fixed_output_dir_config = "automated_testing/UFEMISM/integrated_test_ISMIP_HOM_small/' ...
+  single_line = ['fixed_output_dir_config = "automated_testing/UFEMISM/integrated_test_ISMIP_HOM_full/' ...
     'results_ISMIP_HOM_' opts.experiment '_' opts.length_scale '_' opts.Stokes_approx '"'];
 end
 
@@ -197,6 +212,51 @@ function single_line = ymax_ANT_config( opts)
       single_line = 'ymax_ANT_config = 5000.0';
     otherwise
       error(['invalid opts.length_scale ' opts.length_scale])
+  end
+end
+
+function single_line = choice_refgeo_init_idealised_config( opts)
+  switch opts.experiment
+    case 'A'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_A'";
+    case 'B'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_B'";
+    case 'C'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_C'";
+    case 'D'
+      single_line = "choice_refgeo_init_idealised_config = 'ISMIP-HOM_D'";
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
+  end
+end
+
+function single_line = choice_refgeo_PD_idealised_config( opts)
+  switch opts.experiment
+    case 'A'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_A'";
+    case 'B'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_B'";
+    case 'C'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_C'";
+    case 'D'
+      single_line = "choice_refgeo_PD_idealised_config = 'ISMIP-HOM_D'";
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
+  end
+end
+
+function single_line = choice_refgeo_GIAeq_idealised_config( opts)
+  switch opts.experiment
+    case 'A'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_A'";
+    case 'B'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_B'";
+    case 'C'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_C'";
+    case 'D'
+      single_line = "choice_refgeo_GIAeq_idealised_config = 'ISMIP-HOM_D'";
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
   end
 end
 
@@ -323,7 +383,31 @@ function single_line = choice_stress_balance_approximation_config( opts)
     case 'BPA'
       single_line = 'choice_stress_balance_approximation_config = "BPA"';
     otherwise
-      error(['invalid opts.length_scale ' opts.length_scale])
+      error(['invalid opts.Stokes_approx ' opts.Stokes_approx])
+  end
+end
+
+function single_line = choice_sliding_law_config( opts)
+  switch opts.experiment
+    case {'A','B'}
+      single_line = 'choice_sliding_law_config = "no_sliding"';
+    case {'C','D'}
+      single_line = 'choice_sliding_law_config = "idealised"';
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
+  end
+end
+
+function single_line = choice_idealised_sliding_law_config( opts)
+  switch opts.experiment
+    case {'A','B'}
+      single_line = 'choice_idealised_sliding_law_config = ""';
+    case 'C'
+      single_line = 'choice_idealised_sliding_law_config = "ISMIP_HOM_C"';
+    case 'D'
+      single_line = 'choice_idealised_sliding_law_config = "ISMIP_HOM_D"';
+    otherwise
+      error(['invalid opts.experiment ' opts.experiment])
   end
 end
 

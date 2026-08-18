@@ -18,6 +18,7 @@ module momentum_balance_solver_plain_SIA
   use mpi_f08, only: MPI_WIN
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
+  use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
 
@@ -27,8 +28,12 @@ module momentum_balance_solver_plain_SIA
 
   type, extends(atype_momentum_balance_solver_plain) :: type_momentum_balance_solver_plain_SIA
 
-      real(dp), dimension(:,:), contiguous, pointer :: D_3D_b  => null()   ! [m yr^-1] Diffusivity
-      type(MPI_WIN) :: wD_3D_b
+      real(dp), dimension(:,:), contiguous, pointer :: u_3D_b    => null()   ! [m yr^-1] 3-D ice velocity in the x-direction
+      real(dp), dimension(:,:), contiguous, pointer :: v_3D_b    => null()   ! [m yr^-1] 3-D ice velocity in the y-direction
+      real(dp), dimension(:,:), contiguous, pointer :: D_3D_b    => null()   ! [m yr^-1] Diffusivity
+      real(dp), dimension(:,:), contiguous, pointer :: du_dz_3D  => null()   ! [yr^-1]   3-D xz strain rate
+      real(dp), dimension(:,:), contiguous, pointer :: dv_dz_3D  => null()   ! [yr^-1]   3-D yz strain rate
+      type(MPI_WIN) :: wu_3D_b, wv_3D_b, wD_3D_b, wdu_dz_3D, wdv_dz_3D
 
     contains
 
@@ -57,11 +62,39 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is specific to the SIA momentum balance solver
+    call self%create_field( self%u_3D_b, self%wu_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'u_3D_b', &
+      long_name = '3-D ice velocity in the x-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_3D_b, self%wv_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'v_3D_b', &
+      long_name = '3-D ice velocity in the y-direction', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
     call self%create_field( self%D_3D_b, self%wD_3D_b, &
       self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
       name      = 'D_3D_b', &
       long_name = '3-D SIA ice diffusivity on the triangles', &
       units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%du_dz_3D, self%wdu_dz_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'du_dz_3D', &
+      long_name = '3-D xz strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dv_dz_3D, self%wdv_dz_3D, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dv_dz_3D', &
+      long_name = '3-D yz strain rate', &
+      units     = 'yr^-1', &
       remap_method = 'reallocate')
 
     ! Remove routine from call stack
@@ -81,7 +114,11 @@ contains
     call init_routine( routine_name)
 
     ! Deallocate all the stuff that is specific to momentum balance solver SIA
+    nullify( self%u_3D_b)
+    nullify( self%v_3D_b)
     nullify( self%D_3D_b)
+    nullify( self%du_dz_3D)
+    nullify( self%dv_dz_3D)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -107,13 +144,17 @@ contains
 
   end subroutine momentum_balance_solver_plain_SIA_initialise
 
-  subroutine momentum_balance_solver_plain_SIA_run( self, ice, geom, vel)
+  subroutine momentum_balance_solver_plain_SIA_run( self, ice, geom, bed_roughness, &
+    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
 
     ! In/output variables:
     class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
-    class(atype_ice_model_data),             intent(inout) :: ice
-    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
-    class(atype_ice_velocity_model_data),    intent(inout) :: vel
+    class(atype_ice_model_data),                   intent(inout) :: ice
+    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
+    type(type_bed_roughness_model),                intent(in   ) :: bed_roughness
+    integer,  dimension(:), optional,              intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:), optional,              intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:), optional,              intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'run_momentum_balance_solver_plain_SIA'
@@ -180,8 +221,8 @@ contains
       self%D_3D_b( ti,:) = max( -C%SIA_maximum_diffusivity, self%D_3D_b( ti,:))
 
       ! Calculate the velocities
-      vel%u_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dx_b( ti)
-      vel%v_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dy_b( ti)
+      self%u_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dx_b( ti)
+      self%v_3D_b( ti,:) = self%D_3D_b( ti,:) * dHs_dy_b( ti)
 
     end do
 
@@ -192,10 +233,10 @@ contains
       z = geom%Hs( vi) - self%mesh%zeta * geom%Hi( vi)
 
       do k = 1, self%mesh%nz
-        vel%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+        self%du_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
           abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
           ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dx( vi)
-        vel%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
+        self%dv_dz_3D( vi,k) = -2._dp * (ice_density * grav)**C%Glens_flow_law_exponent * &
           abs_grad_Hs**(C%Glens_flow_law_exponent - 1._dp) * &
           ice%A_flow( vi,k) * (geom%Hs( vi) - z( k))**C%Glens_flow_law_exponent * dHs_dy( vi)
       end do
@@ -207,11 +248,12 @@ contains
 
   end subroutine momentum_balance_solver_plain_SIA_run
 
-  subroutine momentum_balance_solver_plain_SIA_remap( self, mesh_new)
+  subroutine momentum_balance_solver_plain_SIA_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
     class(type_momentum_balance_solver_plain_SIA), intent(inout) :: self
-    type(type_mesh), target,                 intent(in   ) :: mesh_new
+    type(type_mesh),                               intent(in   ) :: mesh_old
+    type(type_mesh), target,                       intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_SIA_remap'
@@ -220,7 +262,11 @@ contains
     call init_routine( routine_name)
 
     ! Remap all the stuff that is specific to momentum balance solver SIA
-    call self%remap_field( mesh_new, 'D_3D_b', self%D_3D_b)
+    call self%remap_field( mesh_new, 'u_3D_b'  , self%u_3D_b  )
+    call self%remap_field( mesh_new, 'v_3D_b'  , self%v_3D_b  )
+    call self%remap_field( mesh_new, 'D_3D_b'  , self%D_3D_b  )
+    call self%remap_field( mesh_new, 'du_dz_3D', self%du_dz_3D)
+    call self%remap_field( mesh_new, 'dv_dz_3D', self%dv_dz_3D)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

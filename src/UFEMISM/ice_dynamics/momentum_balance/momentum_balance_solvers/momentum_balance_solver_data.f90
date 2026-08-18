@@ -17,6 +17,9 @@ module momentum_balance_solver_data
 
   type, abstract, extends(atype_model) :: atype_momentum_balance_solver_data
 
+    integer  :: n_visc_its            ! Number of non-linear viscosity/friction iterations
+    integer  :: n_Axb_its             ! Number of iterations needed by PETSc to solve the linearised momentum balance
+
   end type atype_momentum_balance_solver_data
 
 end module momentum_balance_solver_data

@@ -6,13 +6,13 @@ module momentum_balance_solver_dummy
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use parameters, only: grav, ice_density, NaN
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_a_b_3D, ddx_a_a_2D, ddy_a_a_2D
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
+  use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
 
@@ -41,8 +41,8 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_dummy), intent(inout) :: self
-    character(len=*),                                intent(in   ) :: region_name
-    type(type_mesh), target,                         intent(in   ) :: mesh
+    character(len=*),                          intent(in   ) :: region_name
+    type(type_mesh), target,                   intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_dummy_allocate'
@@ -93,13 +93,17 @@ contains
 
   end subroutine momentum_balance_solver_dummy_initialise
 
-  subroutine momentum_balance_solver_dummy_run( self, ice, geom, vel)
+  subroutine momentum_balance_solver_dummy_run( self, ice, geom, bed_roughness, &
+    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
 
     ! In/output variables:
     class(type_momentum_balance_solver_dummy), intent(inout) :: self
-    class(atype_ice_model_data),                     intent(inout) :: ice
-    class(atype_ice_geometry_model_data),            intent(in   ) :: geom
-    class(atype_ice_velocity_model_data),            intent(inout) :: vel
+    class(atype_ice_model_data),               intent(inout) :: ice
+    class(atype_ice_geometry_model_data),      intent(in   ) :: geom
+    type(type_bed_roughness_model),            intent(in   ) :: bed_roughness
+    integer,  dimension(:), optional,          intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:), optional,          intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:), optional,          intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_momentum_balance_solver_dummy'
@@ -114,11 +118,12 @@ contains
 
   end subroutine momentum_balance_solver_dummy_run
 
-  subroutine momentum_balance_solver_dummy_remap( self, mesh_new)
+  subroutine momentum_balance_solver_dummy_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
     class(type_momentum_balance_solver_dummy), intent(inout) :: self
-    type(type_mesh), target,                         intent(in   ) :: mesh_new
+    type(type_mesh),                           intent(in   ) :: mesh_old
+    type(type_mesh), target,                   intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_dummy_remap'

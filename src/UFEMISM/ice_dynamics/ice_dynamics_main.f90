@@ -43,6 +43,7 @@ module ice_dynamics_main
   use bed_roughness_model_types, only: type_bed_roughness_model
   use checksum_mod, only: checksum
   use ice_model_main, only: type_ice_model
+  use momentum_balance_solver_basic, only: atype_momentum_balance_solver
 
   implicit none
 
@@ -402,13 +403,14 @@ contains
 
   end subroutine initialise_ice_dynamics_model
 
-  subroutine write_to_restart_files_ice_model( mesh, ice, time)
+  subroutine write_to_restart_files_ice_model( mesh, ice, momentum_balance_solver, time)
     !< Write to all the restart files for the ice dynamics model
 
     ! In/output variables:
-    type(type_mesh),             intent(in   ) :: mesh
-    type(type_ice_model)       , intent(in   ) :: ice
-    real(dp),                    intent(in   ) :: time
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(in   ) :: ice
+    class(atype_momentum_balance_solver), intent(in   ) :: momentum_balance_solver
+    real(dp),                             intent(in   ) :: time
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'write_to_restart_files_ice_model'
@@ -417,7 +419,7 @@ contains
     call init_routine( routine_name)
 
     ! First for the velocity solver
-    call write_to_restart_file_ice_velocity( mesh, ice, time)
+    call write_to_restart_file_ice_velocity( mesh, ice, momentum_balance_solver, time)
 
     ! then for the time-stepper
     select case (C%choice_timestepping)
@@ -434,12 +436,13 @@ contains
 
   end subroutine write_to_restart_files_ice_model
 
-  subroutine create_restart_files_ice_model( mesh, ice)
+  subroutine create_restart_files_ice_model( mesh, ice, momentum_balance_solver)
     !< Create all the restart files for the ice dynamics model
 
     ! In/output variables:
-    type(type_mesh),             intent(in   ) :: mesh
-    type(type_ice_model)       , intent(inout) :: ice
+    type(type_mesh),                      intent(in   ) :: mesh
+    type(type_ice_model),                 intent(inout) :: ice
+    class(atype_momentum_balance_solver), intent(inout) :: momentum_balance_solver
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'create_restart_files_ice_model'
@@ -448,7 +451,7 @@ contains
     call init_routine( routine_name)
 
     ! First for the velocity solver
-    call create_restart_file_ice_velocity( mesh, ice)
+    call create_restart_file_ice_velocity( mesh, ice, momentum_balance_solver)
 
     ! then for the time-stepper
     select case (C%choice_timestepping)

@@ -290,7 +290,7 @@ CONTAINS
       CALL create_main_regional_output_file_mesh( region)
 
       ! Create the restart files for all the model components
-      CALL create_restart_files_ice_model   ( region%mesh, region%ice)
+      CALL create_restart_files_ice_model   ( region%mesh, region%ice, region%ice%momentum_balance_solver)
       CALL create_restart_file_thermo       ( region%mesh, region%ice)
       CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
       CALL create_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name)
@@ -324,7 +324,7 @@ CONTAINS
 
     IF (do_output_restart) THEN
       ! Write to the restart files for all the model components
-      CALL write_to_restart_files_ice_model   ( region%mesh, region%ice                 , region%time)
+      CALL write_to_restart_files_ice_model   ( region%mesh, region%ice, region%ice%momentum_balance_solver, region%time)
       CALL write_to_restart_file_thermo       ( region%mesh, region%ice                 , region%time)
       CALL write_to_restart_file_climate_model( region%mesh, region%climate, region%name, region%time)
       CALL write_to_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name, region%time)
@@ -682,7 +682,7 @@ CONTAINS
     CALL setup_ROI_grids_and_output_files( region)
 
     ! Create the restart files for all the model components
-    CALL create_restart_files_ice_model   ( region%mesh, region%ice)
+    CALL create_restart_files_ice_model   ( region%mesh, region%ice, region%ice%momentum_balance_solver)
     CALL create_restart_file_thermo       ( region%mesh, region%ice)
     CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
     CALL create_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name)

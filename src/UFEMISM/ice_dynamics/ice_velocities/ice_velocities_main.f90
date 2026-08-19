@@ -12,7 +12,7 @@ module ice_velocities_main
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data, &
     type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
-  use BPA_main, only: initialise_BPA_solver, solve_BPA, remap_BPA_solver, &
+  use momentum_balance_solver_plain_BPA, only: initialise_BPA_solver, solve_BPA, remap_BPA_solver, &
     create_restart_file_BPA, write_to_restart_file_BPA
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, map_b_a_2D, map_b_a_3D
   use mpi_distributed_memory, only: gather_to_all

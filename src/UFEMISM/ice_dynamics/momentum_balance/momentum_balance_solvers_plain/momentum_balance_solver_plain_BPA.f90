@@ -1,4 +1,4 @@
-module BPA_main
+module momentum_balance_solver_plain_BPA
 
   ! Routines for calculating ice velocities using the Blatter-Pattyn Approximation (BPA)
 
@@ -2303,4 +2303,4 @@ contains
 
   end subroutine create_restart_file_BPA
 
-end module BPA_main
+end module momentum_balance_solver_plain_BPA

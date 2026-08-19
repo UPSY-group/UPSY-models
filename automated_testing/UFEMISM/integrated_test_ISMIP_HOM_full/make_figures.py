@@ -264,13 +264,25 @@ def main():
                         if stokes not in COLOUR_BY_STOKES:
                             raise ValueError(f'Invalid Stokes approximation: {stokes}')
 
-                        ax.plot(
-                            run['x'],
-                            run['u_surf'],
-                            color=COLOUR_BY_STOKES[stokes],
-                            linewidth=3,
-                            zorder=2,
-                        )
+                        if (experiment == 'A' or experiment == 'C'):
+
+                            ax.plot(
+                                run['x'],
+                                run['u_surf'],
+                                color=COLOUR_BY_STOKES[stokes],
+                                linewidth=3,
+                                zorder=2,
+                            )
+
+                        else:
+
+                            ax.plot(
+                                1-run['x'],
+                                run['u_surf'],
+                                color=COLOUR_BY_STOKES[stokes],
+                                linewidth=3,
+                                zorder=2,
+                            )
 
         ax_legend.legend(loc='best', fontsize=12)
 

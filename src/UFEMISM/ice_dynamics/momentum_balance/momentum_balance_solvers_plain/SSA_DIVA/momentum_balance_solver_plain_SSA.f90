@@ -20,8 +20,6 @@ module momentum_balance_solver_plain_SSA
   use mesh_zeta, only: vertical_average
   use mpi_distributed_memory, only: gather_to_all
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
-  use SSA_DIVA_utilities, only: calc_driving_stress, calc_horizontal_strain_rates, relax_viscosity_iterations, &
-    apply_velocity_limits, calc_L2_norm_uv
   use solve_linearised_SSA_DIVA_infinite_slab, only: solve_SSA_DIVA_linearised
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D
   use bed_roughness_model_types, only: type_bed_roughness_model
@@ -277,8 +275,7 @@ contains
       BC_prescr_v_b_applied    = 0._dp
     end if
 
-    ! Calculate the driving stress
-    call calc_driving_stress( self%mesh, geom, self%tau_dx_b, self%tau_dy_b)
+    call self%calc_driving_stress( geom)
 
     ! Adaptive relaxation parameter for the viscosity iteration
     L2_uv                               = 1E9_dp
@@ -297,8 +294,7 @@ contains
       viscosity_iteration_i = viscosity_iteration_i + 1
 
       ! Calculate the strain rates for the current velocity solution
-      call calc_horizontal_strain_rates( self%mesh, self%u_vav_b, self%v_vav_b, &
-        self%du_dx_a, self%du_dy_a, self%dv_dx_a, self%dv_dy_a)
+      call self%calc_horizontal_strain_rates()
 
       ! Calculate the effective viscosity for the current velocity solution
       call self%calc_effective_viscosity( ice, geom, Glens_flow_law_epsilon_sq_0_applied)
@@ -317,14 +313,14 @@ contains
       self%n_Axb_its = self%n_Axb_its + n_Axb_its_visc_it
 
       ! Limit velocities for improved stability
-      call apply_velocity_limits( self%mesh, self%u_vav_b, self%v_vav_b)
+      call self%apply_velocity_limits()
 
       ! Reduce the change between velocity solutions
-      call relax_viscosity_iterations( self%mesh, self%u_vav_b, self%v_vav_b, self%u_vav_b_prev, self%v_vav_b_prev, visc_it_relax_applied)
+      call self%relax_viscosity_iterations( visc_it_relax_applied)
 
       ! Calculate the L2-norm of the two consecutive velocity solutions
       L2_uv_prev = L2_uv
-      call calc_L2_norm_uv( self%mesh, self%u_vav_b, self%v_vav_b, self%u_vav_b_prev, self%v_vav_b_prev, L2_uv)
+      call self%calc_L2_norm_uv( L2_uv)
 
       ! if the viscosity iteration diverges, lower the relaxation parameter
       if (L2_uv > L2_uv_prev) then

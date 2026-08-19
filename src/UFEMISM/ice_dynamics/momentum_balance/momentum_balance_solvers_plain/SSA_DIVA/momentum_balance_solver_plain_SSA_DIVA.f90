@@ -7,10 +7,15 @@ module momentum_balance_solver_plain_SSA_DIVA
   use momentum_balance_solver_plain_basic, only: atype_momentum_balance_solver_plain
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_types, only: type_mesh
-  use mesh_disc_apply_operators, only: map_b_a_2D, map_a_b_2D
+  use mesh_disc_apply_operators, only: map_b_a_2D, map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, &
+    ddx_b_a_2D, ddy_b_a_2D
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
   use model_configuration, only: C
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use parameters, only: ice_density, grav
+  use checksum_mod, only: checksum
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD
 
   implicit none
 
@@ -48,6 +53,12 @@ module momentum_balance_solver_plain_SSA_DIVA
       procedure, public :: allocate_shared_SSA_DIVA_fields
       procedure, public :: deallocate_shared_SSA_DIVA_fields
       procedure, public :: remap_shared_SSA_DIVA_fields
+
+      procedure, public :: calc_driving_stress
+      procedure, public :: calc_horizontal_strain_rates
+      procedure, public :: relax_viscosity_iterations
+      procedure, public :: apply_velocity_limits
+      procedure, public :: calc_L2_norm_uv
 
   end type atype_momentum_balance_solver_plain_SSA_DIVA
 
@@ -185,5 +196,182 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine remap_shared_SSA_DIVA_fields
+
+  ! == Calculate several intermediate terms in the SSA/DIVA
+
+  subroutine calc_driving_stress( self, geom)
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSA_DIVA), intent(inout) :: self
+    class(atype_ice_geometry_model_data),                intent(in   ) :: geom
+
+    ! Local variables:
+    character(len=*), parameter         :: routine_name = 'calc_driving_stress'
+    real(dp), dimension(:), allocatable :: Hi_b
+    real(dp), dimension(:), allocatable :: dHs_dx_b
+    real(dp), dimension(:), allocatable :: dHs_dy_b
+    integer                             :: ti
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! allocate shared memory
+    allocate( Hi_b(     self%mesh%ti1:self%mesh%ti2))
+    allocate( dHs_dx_b( self%mesh%ti1:self%mesh%ti2))
+    allocate( dHs_dy_b( self%mesh%ti1:self%mesh%ti2))
+
+    ! Calculate Hi, dHs/dx, and dHs/dy on the b-grid
+    call map_a_b_2D( self%mesh, geom%Hi, Hi_b    )
+    call ddx_a_b_2D( self%mesh, geom%Hs, dHs_dx_b)
+    call ddy_a_b_2D( self%mesh, geom%Hs, dHs_dy_b)
+
+    ! Calculate the driving stress
+    do ti = self%mesh%ti1, self%mesh%ti2
+      self%tau_dx_b( ti) = -ice_density * grav * Hi_b( ti) * dHs_dx_b( ti)
+      self%tau_dy_b( ti) = -ice_density * grav * Hi_b( ti) * dHs_dy_b( ti)
+    end do
+
+    call checksum( self%mesh%pai_Tri, self%tau_dx_b, 'tau_dx_b')
+    call checksum( self%mesh%pai_Tri, self%tau_dy_b, 'tau_dy_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_driving_stress
+
+  subroutine calc_horizontal_strain_rates( self)
+    !< Calculate the vertically averaged horizontal strain rates
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSA_DIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_horizontal_strain_rates'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate the strain rates
+    call ddx_b_a_2D( self%mesh, self%u_vav_b, self%du_dx_a)
+    call ddy_b_a_2D( self%mesh, self%u_vav_b, self%du_dy_a)
+    call ddx_b_a_2D( self%mesh, self%v_vav_b, self%dv_dx_a)
+    call ddy_b_a_2D( self%mesh, self%v_vav_b, self%dv_dy_a)
+
+    call checksum( self%mesh%pai_V, self%du_dx_a, 'du_dx_a')
+    call checksum( self%mesh%pai_V, self%du_dy_a, 'du_dy_a')
+    call checksum( self%mesh%pai_V, self%dv_dx_a, 'dv_dx_a')
+    call checksum( self%mesh%pai_V, self%dv_dy_a, 'dv_dy_a')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_horizontal_strain_rates
+
+  subroutine relax_viscosity_iterations( self, visc_it_relax)
+    !< Reduce the change between velocity solutions
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSA_DIVA), intent(inout) :: self
+    real(dp),                                            intent(in   ) :: visc_it_relax
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'relax_viscosity_iterations'
+    integer                     :: ti
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do ti = self%mesh%ti1, self%mesh%ti2
+      self%u_vav_b( ti) = (visc_it_relax * self%u_vav_b( ti)) + ((1._dp - visc_it_relax) * self%u_vav_b_prev( ti))
+      self%v_vav_b( ti) = (visc_it_relax * self%v_vav_b( ti)) + ((1._dp - visc_it_relax) * self%v_vav_b_prev( ti))
+    end do
+
+    call checksum( self%mesh%pai_Tri, self%u_vav_b, 'u_vav_b')
+    call checksum( self%mesh%pai_Tri, self%v_vav_b, 'v_vav_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine relax_viscosity_iterations
+
+  subroutine apply_velocity_limits( self)
+    !< Limit velocities for improved stability
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSA_DIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'apply_velocity_limits'
+    integer                     :: ti
+    real(dp)                    :: uabs
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do ti = self%mesh%ti1, self%mesh%ti2
+
+      ! Calculate absolute speed
+      uabs = sqrt( self%u_vav_b( ti)**2 + self%v_vav_b( ti)**2)
+
+      ! Reduce velocities if necessary
+      if (uabs > C%vel_max) then
+        self%u_vav_b( ti) = self%u_vav_b( ti) * C%vel_max / uabs
+        self%v_vav_b( ti) = self%v_vav_b( ti) * C%vel_max / uabs
+      end if
+
+    end do
+
+    call checksum( self%mesh%pai_Tri, self%u_vav_b, 'u_vav_b')
+    call checksum( self%mesh%pai_Tri, self%v_vav_b, 'v_vav_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_velocity_limits
+
+  subroutine calc_L2_norm_uv( self, L2_uv)
+    !< Calculate the L2-norm of the two consecutive velocity solutions
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSA_DIVA), intent(in   ) :: self
+    real(dp),                                            intent(  out) :: L2_uv
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_visc_iter_UV_resid'
+    integer                     :: ierr
+    integer                     :: ti
+    real(dp)                    :: res1, res2
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    res1 = 0._dp
+    res2 = 0._dp
+
+    do ti = self%mesh%ti1, self%mesh%ti2
+
+      if (.not. isnan( self%u_vav_b( ti)) .and. .not. isnan( self%v_vav_b( ti))) then
+
+        res1 = res1 + (self%u_vav_b( ti) - self%u_vav_b_prev( ti))**2
+        res1 = res1 + (self%v_vav_b( ti) - self%v_vav_b_prev( ti))**2
+
+        res2 = res2 + (self%u_vav_b( ti) + self%u_vav_b_prev( ti))**2
+        res2 = res2 + (self%v_vav_b( ti) + self%v_vav_b_prev( ti))**2
+
+      end if
+
+    end do
+
+    ! Combine results from all processes
+    call MPI_ALLREDUCE( MPI_IN_PLACE, res1, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, res2, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+
+    ! Calculate L2-norm
+    L2_uv = 2._dp * res1 / max( res2, 1E-8_dp)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_L2_norm_uv
 
 end module momentum_balance_solver_plain_SSA_DIVA

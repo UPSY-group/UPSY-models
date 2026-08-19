@@ -6,6 +6,7 @@ module momentum_balance_solver_plain_SSA_DIVA
   use precisions, only: dp
   use momentum_balance_solver_plain_basic, only: atype_momentum_balance_solver_plain
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use crash_mod, only: crash
   use mesh_types, only: type_mesh
   use mesh_disc_apply_operators, only: map_b_a_2D, map_a_b_2D, ddx_a_b_2D, ddy_a_b_2D, &
     ddx_b_a_2D, ddy_b_a_2D
@@ -60,7 +61,22 @@ module momentum_balance_solver_plain_SSA_DIVA
       procedure, public :: apply_velocity_limits
       procedure, public :: calc_L2_norm_uv
 
+      procedure, public :: solve_SSA_DIVA_linearised
+
   end type atype_momentum_balance_solver_plain_SSA_DIVA
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module subroutine solve_SSA_DIVA_linearised( self, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+      class(atype_momentum_balance_solver_plain_SSA_DIVA), intent(inout) :: self
+      integer,                                             intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
+      integer,  dimension(self%mesh%ti1:self%mesh%ti2),    intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),    intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),    intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    end subroutine solve_SSA_DIVA_linearised
+
+  end interface
 
 contains
 

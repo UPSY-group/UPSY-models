@@ -12,30 +12,30 @@ module hybrid_DIVA_BPA_main
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
-  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
+  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
-  use momentum_balance_solver_plain_DIVA, only: allocate_DIVA_solver, remap_DIVA_solver
-  use DIVA_solver_infinite_slab, only: &
-    calc_vertical_shear_strain_rates_DIVA => calc_vertical_shear_strain_rates, &
-    calc_effective_viscosity_DIVA => calc_effective_viscosity, &
-    calc_F_integrals_DIVA => calc_F_integrals, &
-    calc_effective_basal_friction_coefficient_DIVA => calc_effective_basal_friction_coefficient, &
-    calc_basal_shear_stress_DIVA => calc_basal_shear_stress, &
-    calc_basal_velocities_DIVA => calc_basal_velocities
-  use SSA_DIVA_utilities, only: calc_driving_stress_DIVA => calc_driving_stress, &
-    calc_horizontal_strain_rates_DIVA => calc_horizontal_strain_rates
-  use solve_linearised_SSA_DIVA_infinite_slab, only: calc_SSA_DIVA_stiffness_matrix_row_free, &
-    calc_SSA_DIVA_sans_stiffness_matrix_row_free, calc_SSA_DIVA_stiffness_matrix_row_BC
-  use BPA_main, only: allocate_BPA_solver , remap_BPA_solver, calc_BPA_stiffness_matrix_row_free, &
-    calc_BPA_stiffness_matrix_row_BC_west, calc_BPA_stiffness_matrix_row_BC_east, &
-    calc_BPA_stiffness_matrix_row_BC_south, calc_BPA_stiffness_matrix_row_BC_north, &
-    calc_BPA_stiffness_matrix_row_BC_base, calc_BPA_stiffness_matrix_row_BC_surf, &
-    calc_driving_stress_BPA => calc_driving_stress, &
-    calc_strain_rates_BPA => calc_strain_rates, &
-    calc_effective_viscosity_BPA => calc_effective_viscosity, &
-    calc_applied_basal_friction_coefficient_BPA => calc_applied_basal_friction_coefficient
+  ! use momentum_balance_solver_plain_DIVA, only: allocate_DIVA_solver, remap_DIVA_solver
+  ! use DIVA_solver_infinite_slab, only: &
+  !   calc_vertical_shear_strain_rates_DIVA => calc_vertical_shear_strain_rates, &
+  !   calc_effective_viscosity_DIVA => calc_effective_viscosity, &
+  !   calc_F_integrals_DIVA => calc_F_integrals, &
+  !   calc_effective_basal_friction_coefficient_DIVA => calc_effective_basal_friction_coefficient, &
+  !   calc_basal_shear_stress_DIVA => calc_basal_shear_stress, &
+  !   calc_basal_velocities_DIVA => calc_basal_velocities
+  ! use SSA_DIVA_utilities, only: calc_driving_stress_DIVA => calc_driving_stress, &
+  !   calc_horizontal_strain_rates_DIVA => calc_horizontal_strain_rates
+  ! use solve_linearised_SSA_DIVA_infinite_slab, only: calc_SSA_DIVA_stiffness_matrix_row_free, &
+  !   calc_SSA_DIVA_sans_stiffness_matrix_row_free, calc_SSA_DIVA_stiffness_matrix_row_BC
+  ! use BPA_main, only: allocate_BPA_solver , remap_BPA_solver, calc_BPA_stiffness_matrix_row_free, &
+  !   calc_BPA_stiffness_matrix_row_BC_west, calc_BPA_stiffness_matrix_row_BC_east, &
+  !   calc_BPA_stiffness_matrix_row_BC_south, calc_BPA_stiffness_matrix_row_BC_north, &
+  !   calc_BPA_stiffness_matrix_row_BC_base, calc_BPA_stiffness_matrix_row_BC_surf, &
+  !   calc_driving_stress_BPA => calc_driving_stress, &
+  !   calc_strain_rates_BPA => calc_strain_rates, &
+  !   calc_effective_viscosity_BPA => calc_effective_viscosity, &
+  !   calc_applied_basal_friction_coefficient_BPA => calc_applied_basal_friction_coefficient
   use mesh_disc_apply_operators, only: map_a_b_2D, map_b_a_2D, map_b_a_3D, map_a_b_3D
   use mesh_disc_calc_matrix_operators_3D, only: calc_3D_matrix_operators_mesh
   use mesh_ROI_polygons

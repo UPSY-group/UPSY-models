@@ -10,10 +10,7 @@ module ice_velocities_main
   use model_configuration, only: C
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
-  use ice_model_data, only: atype_ice_model_data, &
-    type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
-  use momentum_balance_solver_plain_BPA, only: initialise_BPA_solver, solve_BPA, remap_BPA_solver, &
-    create_restart_file_BPA, write_to_restart_file_BPA
+  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_hybrid
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, map_b_a_2D, map_b_a_3D
   use mpi_distributed_memory, only: gather_to_all
   use mesh_zeta, only: vertical_average
@@ -28,6 +25,7 @@ module ice_velocities_main
   use momentum_balance_solver_SSA, only: type_momentum_balance_solver_SSA
   use momentum_balance_solver_SIASSA, only: type_momentum_balance_solver_SIASSA
   use momentum_balance_solver_DIVA, only: type_momentum_balance_solver_DIVA
+  use momentum_balance_solver_BPA, only: type_momentum_balance_solver_BPA
 
   implicit none
 
@@ -57,7 +55,7 @@ contains
       case default
         call crash('unknown choice_stress_balance_approximation "' // TRIM( C%choice_stress_balance_approximation) // '"!')
       case ('none')
-        ! No need to do anything
+        call momentum_balance_solver%initialise()
       case ('SIA')
         call momentum_balance_solver%initialise()
       case ('SSA')
@@ -67,7 +65,7 @@ contains
       case ('DIVA')
         call momentum_balance_solver%initialise()
       case ('BPA')
-        call initialise_BPA_solver            ( vel%mesh, ice%BPA   , region_name)
+        call momentum_balance_solver%initialise()
       case ('hybrid DIVA/BPA')
         call crash('FIXME')
     end select
@@ -124,7 +122,7 @@ contains
         ! Calculate velocities according to the Shallow Ice Approximation
 
         call momentum_balance_solver%run( ice, geom, bed_roughness, &
-          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
         select type (SIA => momentum_balance_solver)
         class default
@@ -140,7 +138,7 @@ contains
         ! Calculate velocities according to the Shallow Shelf Approximation
 
         call momentum_balance_solver%run( ice, geom, bed_roughness, &
-          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
         n_visc_its = momentum_balance_solver%n_visc_its
         n_Axb_its  = momentum_balance_solver%n_Axb_its
 
@@ -155,7 +153,7 @@ contains
         ! Calculate velocities according to the hybrid SIA/SSA
 
         call momentum_balance_solver%run( ice, geom, bed_roughness, &
-          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
         n_visc_its = momentum_balance_solver%n_visc_its
         n_Axb_its  = momentum_balance_solver%n_Axb_its
 
@@ -170,7 +168,7 @@ contains
         ! Calculate velocities according to the Depth-Integrated Viscosity Approximation
 
         call momentum_balance_solver%run( ice, geom, bed_roughness, &
-          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
         n_visc_its = momentum_balance_solver%n_visc_its
         n_Axb_its  = momentum_balance_solver%n_Axb_its
 
@@ -184,10 +182,17 @@ contains
       case ('BPA')
         ! Calculate velocities according to the Blatter-Pattyn Approximation
 
-        call solve_BPA( mesh, ice, geom, bed_roughness, ice%BPA, &
-          n_visc_its, n_Axb_its, &
-          BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-        call set_ice_velocities_to_BPA_results( mesh, vel, ice%BPA)
+        call momentum_balance_solver%run( ice, geom, bed_roughness, &
+          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
+        n_visc_its = momentum_balance_solver%n_visc_its
+        n_Axb_its  = momentum_balance_solver%n_Axb_its
+
+        select type (BPA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_BPA)
+          call set_ice_velocities_to_BPA_results( mesh, vel, BPA)
+        end select
 
       case ('hybrid DIVA/BPA')
         ! Calculate velocities according to the hybrid DIVA/BPA
@@ -391,8 +396,14 @@ contains
 
       case ('BPA')
 
-        call remap_BPA_solver(  mesh_old, mesh_new, ice%BPA)
-        call set_ice_velocities_to_BPA_results( mesh_new, vel, ice%BPA)
+        call momentum_balance_solver%remap( mesh_old, mesh_new)
+
+        select type (BPA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_BPA)
+          call set_ice_velocities_to_BPA_results( mesh_new, vel, BPA)
+        end select
 
       case ('hybrid DIVA/BPA')
 
@@ -584,31 +595,31 @@ contains
     ! Set applied ice model velocities and strain rates to BPA results
 
     ! In/output variables:
-    type(type_mesh),                      intent(in   ) :: mesh
-    class(atype_ice_velocity_model_data), intent(inout) :: vel
-    type(type_ice_velocity_solver_BPA),   intent(in   ) :: BPA
+    type(type_mesh),                         intent(in   ) :: mesh
+    class(atype_ice_velocity_model_data),    intent(inout) :: vel
+    class(type_momentum_balance_solver_BPA), intent(inout) :: BPA
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_BPA_results'
-    integer                        :: ti,vi
+    character(len=*), parameter :: routine_name = 'set_ice_velocities_to_BPA_results'
+    integer                     :: ti,vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = BPA%u_bk( ti,:)
-      vel%v_3D_b( ti,:) = BPA%v_bk( ti,:)
+      vel%u_3D_b( ti,:) = BPA%solver%u_bk( ti,:)
+      vel%v_3D_b( ti,:) = BPA%solver%v_bk( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = BPA%du_dx_ak( vi,:)
-      vel%du_dy_3D( vi,:) = BPA%du_dy_ak( vi,:)
-      vel%du_dz_3D( vi,:) = BPA%du_dz_ak( vi,:)
-      vel%dv_dx_3D( vi,:) = BPA%dv_dx_ak( vi,:)
-      vel%dv_dy_3D( vi,:) = BPA%dv_dy_ak( vi,:)
-      vel%dv_dz_3D( vi,:) = BPA%dv_dz_ak( vi,:)
+      vel%du_dx_3D( vi,:) = BPA%solver%du_dx_ak( vi,:)
+      vel%du_dy_3D( vi,:) = BPA%solver%du_dy_ak( vi,:)
+      vel%du_dz_3D( vi,:) = BPA%solver%du_dz_ak( vi,:)
+      vel%dv_dx_3D( vi,:) = BPA%solver%dv_dx_ak( vi,:)
+      vel%dv_dy_3D( vi,:) = BPA%solver%dv_dy_ak( vi,:)
+      vel%dv_dz_3D( vi,:) = BPA%solver%dv_dz_ak( vi,:)
     end do
 
     ! In the BPA, gradients of w are neglected
@@ -714,7 +725,14 @@ contains
         end select
 
       case ('BPA')
-        call write_to_restart_file_BPA( mesh, ice%BPA, time)
+
+        select type (BPA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_BPA)
+          call BPA%solver%write_to_restart_file_BPA( time)
+        end select
+
       case ('hybrid DIVA/BPA')
         call warning('the hybrid DIVA/BPA does not have a restart file yet!')
     end select
@@ -773,7 +791,14 @@ contains
       end select
 
     case ('BPA')
-      call create_restart_file_BPA( mesh, ice%BPA)
+
+        select type (BPA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_BPA)
+          call BPA%solver%create_restart_file_BPA()
+        end select
+
     case ('hybrid DIVA/BPA')
       call warning('the hybrid DIVA/BPA does not have a restart file yet!')
     end select

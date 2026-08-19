@@ -17,7 +17,7 @@ module momentum_balance_solver_plain_DIVA
     map_from_mesh_to_mesh_with_reallocation_3D
   use bed_roughness_model_types, only: type_bed_roughness_model
   use mpi_distributed_memory, only: gather_to_all
-  use momentum_balance_solver_plain_basic, only: atype_momentum_balance_solver_plain
+  use momentum_balance_solver_plain_SSA_DIVA, only: atype_momentum_balance_solver_plain_SSA_DIVA
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, &
     MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX
   use checksum_mod, only: checksum
@@ -36,7 +36,7 @@ module momentum_balance_solver_plain_DIVA
 
   public :: type_momentum_balance_solver_plain_DIVA
 
-  type, extends(atype_momentum_balance_solver_plain) :: type_momentum_balance_solver_plain_DIVA
+  type, extends(atype_momentum_balance_solver_plain_SSA_DIVA) :: type_momentum_balance_solver_plain_DIVA
 
     ! Solution
     real(dp), dimension(:  ), allocatable :: u_vav_b                     ! [m yr^-1] 2-D horizontal ice velocity

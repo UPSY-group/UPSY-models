@@ -17,6 +17,7 @@ module momentum_balance_solver_plain_SSA_DIVA
   use parameters, only: ice_density, grav
   use checksum_mod, only: checksum
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
 
   implicit none
 
@@ -62,6 +63,9 @@ module momentum_balance_solver_plain_SSA_DIVA
       procedure, public :: calc_L2_norm_uv
 
       procedure, public :: solve_SSA_DIVA_linearised
+      procedure, public :: calc_SSA_DIVA_stiffness_matrix_row_free
+      procedure, public :: calc_SSA_DIVA_sans_stiffness_matrix_row_free
+      procedure, public :: calc_SSA_DIVA_stiffness_matrix_row_BC
 
   end type atype_momentum_balance_solver_plain_SSA_DIVA
 
@@ -75,6 +79,28 @@ module momentum_balance_solver_plain_SSA_DIVA
       real(dp), dimension(self%mesh%ti1:self%mesh%ti2),    intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
       real(dp), dimension(self%mesh%ti1:self%mesh%ti2),    intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
     end subroutine solve_SSA_DIVA_linearised
+
+    module subroutine calc_SSA_DIVA_stiffness_matrix_row_free( self, A_CSR, bb, row_tiuv)
+      class(atype_momentum_balance_solver_plain_SSA_DIVA),     intent(inout) :: self
+      type(type_CSR_matrix_dp),                                intent(inout) :: A_CSR
+      real(dp), dimension(self%mesh%ti1*2-1: self%mesh%ti2*2), intent(inout) :: bb
+      integer,                                                 intent(in   ) :: row_tiuv
+    end subroutine calc_SSA_DIVA_stiffness_matrix_row_free
+
+    module subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free( self, A_CSR, bb, row_tiuv)
+      class(atype_momentum_balance_solver_plain_SSA_DIVA),     intent(inout) :: self
+      type(type_CSR_matrix_dp),                                intent(inout) :: A_CSR
+      real(dp), dimension(self%mesh%ti1*2-1: self%mesh%ti2*2), intent(inout) :: bb
+      integer,                                                 intent(in   ) :: row_tiuv
+    end subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free
+
+    module subroutine calc_SSA_DIVA_stiffness_matrix_row_BC( self, A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
+      class(atype_momentum_balance_solver_plain_SSA_DIVA),     intent(inout) :: self
+      type(type_CSR_matrix_dp),                                intent(inout) :: A_CSR
+      real(dp), dimension(self%mesh%ti1*2-1: self%mesh%ti2*2), intent(inout) :: bb
+      integer,                                                 intent(in   ) :: row_tiuv
+      character(len=*),                                        intent(in   ) :: choice_BC_u, choice_BC_v
+    end subroutine calc_SSA_DIVA_stiffness_matrix_row_BC
 
   end interface
 

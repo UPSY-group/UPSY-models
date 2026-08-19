@@ -12,7 +12,7 @@ module hybrid_DIVA_BPA_main
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
-  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
+  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_hybrid
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D

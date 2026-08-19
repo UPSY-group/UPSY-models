@@ -16,7 +16,6 @@ module ice_model_data
   private
 
   public :: type_ice_velocity_solver_DIVA_graphs
-  public :: type_ice_velocity_solver_BPA
   public :: type_ice_velocity_solver_hybrid
   public :: type_ice_pc
   public :: atype_ice_model_data
@@ -107,51 +106,6 @@ module ice_model_data
 
   end type type_ice_velocity_solver_DIVA_graphs
 
-  TYPE type_ice_velocity_solver_BPA
-    ! Data fields needed to solve the Blatter-Pattyn Approximation
-
-    ! Solution
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_bk                        ! 3-D horizontal ice velocity [m yr^-1]
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_bk
-
-    ! Intermediate data fields
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dx_ak                    ! Strain rates [yr^-1]
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dy_ak
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dz_ak
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dx_ak
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dy_ak
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dz_ak
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dx_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dy_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: du_dz_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dx_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dy_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: dv_dz_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: eta_ak                      ! Effective viscosity
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: eta_bks
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: eta_bk
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: deta_dx_bk                  ! Gradients of eta
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: deta_dy_bk
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: deta_dz_bk
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: basal_friction_coefficient_b! Friction coefficient (tau_b = u * beta_b)
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dh_dx_b                     ! Surface slope
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dh_dy_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: db_dx_b                     ! Basal slope
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: db_dy_b
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: tau_dx_b                    ! Driving stress
-    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: tau_dy_b
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: u_bk_prev                   ! Previous velocity solution
-    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_bk_prev
-
-    ! Parameters for the iterative solver used to solve the matrix equation representing the linearised SSA
-    REAL(dp)                                :: PETSc_rtol
-    REAL(dp)                                :: PETSc_abstol
-
-    ! Restart file
-    CHARACTER(LEN=256)                      :: restart_filename
-
-  END TYPE type_ice_velocity_solver_BPA
-
   TYPE type_ice_velocity_solver_hybrid
     ! Data fields needed to solve the hybrid DIVA/BPA
 
@@ -163,7 +117,7 @@ module ice_model_data
 
     ! DIVA and BPA solvers
     ! TYPE(type_ice_velocity_solver_DIVA)     :: DIVA                        ! Depth-Integrated Viscosity Approximation
-    TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
+    ! TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
 
     ! Solving masks
     LOGICAL,  DIMENSION(:    ), ALLOCATABLE :: mask_DIVA_b                 ! T: solve the DIVA here, F: otherwise
@@ -285,7 +239,6 @@ module ice_model_data
   ! ======================
 
     ! Velocity solvers
-    TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
     TYPE(type_ice_velocity_solver_hybrid)   :: hybrid                      ! Hybrid DIVA/BPA
 
   ! == Ice flow regime ==

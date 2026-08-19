@@ -5,10 +5,10 @@ module momentum_balance_solver_plain_DIVA
   use mpi_basic, only: par
   use UPSY_main, only: UPSY
   use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
   use mesh_types, only: type_mesh
-  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_DIVA
+  use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use netcdf_io_main
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, map_b_a_2D, map_b_a_3D
@@ -16,10 +16,19 @@ module momentum_balance_solver_plain_DIVA
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, &
     map_from_mesh_to_mesh_with_reallocation_3D
   use bed_roughness_model_types, only: type_bed_roughness_model
-  use DIVA_solver_infinite_slab, only: solve_DIVA_infinite_slab
-  use DIVA_solver_ocean_pressure, only: solve_DIVA_ocean_pressure
   use mpi_distributed_memory, only: gather_to_all
-  use ice_model_data, only: type_ice_velocity_solver_DIVA_graphs
+  use momentum_balance_solver_plain_basic, only: atype_momentum_balance_solver_plain
+  use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, &
+    MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX
+  use checksum_mod, only: checksum
+  use sliding_laws, only: calc_basal_friction_coefficient
+  use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap, vertical_average
+  use constitutive_equation, only: calc_ice_rheology_Glen, calc_effective_viscosity_Glen_3D_uv_only
+  use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
+    map_b_a_2D, map_b_a_3D, ddx_b_a_2D, ddy_b_a_2D
+  use SSA_DIVA_utilities, only: calc_driving_stress, calc_horizontal_strain_rates, relax_viscosity_iterations, &
+    apply_velocity_limits, calc_L2_norm_uv
+  use solve_linearised_SSA_DIVA_infinite_slab, only: solve_SSA_DIVA_linearised
 
   implicit none
 
@@ -28,8 +37,6 @@ module momentum_balance_solver_plain_DIVA
   public :: type_momentum_balance_solver_plain_DIVA
 
   type, extends(atype_momentum_balance_solver_plain) :: type_momentum_balance_solver_plain_DIVA
-
-    type(type_ice_velocity_solver_DIVA_graphs) :: DIVA_graphs
 
     ! Solution
     real(dp), dimension(:  ), allocatable :: u_vav_b                     ! [m yr^-1] 2-D horizontal ice velocity
@@ -84,6 +91,13 @@ module momentum_balance_solver_plain_DIVA
       procedure, private :: write_to_restart_file_DIVA
 
       procedure, private :: initialise_DIVA_velocities_from_file
+      procedure, private :: calc_vertical_shear_strain_rates
+      procedure, private :: calc_effective_viscosity
+      procedure, private :: calc_F_integrals
+      procedure, private :: calc_effective_basal_friction_coefficient
+      procedure, private :: calc_basal_velocities
+      procedure, private :: calc_basal_shear_stress
+      procedure, private :: calc_3D_velocities
 
   end type type_momentum_balance_solver_plain_DIVA
 
@@ -103,40 +117,40 @@ contains
     call init_routine( routine_name)
 
     ! Solution
-    allocate( self%u_vav_b(  mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%v_vav_b(  mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%u_base_b( mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%v_base_b( mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%u_3D_b(   mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-    allocate( self%v_3D_b(   mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
+    allocate( self%u_vav_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%v_vav_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%u_base_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%v_base_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%u_3D_b(                       self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%v_3D_b(                       self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
 
     ! Intermediate data fields
-    allocate( self%du_dx_a(                      mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%du_dy_a(                      mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%dv_dx_a(                      mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%dv_dy_a(                      mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%du_dz_3D_a(                   mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( self%dv_dz_3D_a(                   mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( self%eta_3D_a(                     mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( self%eta_3D_b(                     mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-    allocate( self%eta_vav_a(                    mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%N_a(                          mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%N_b(                          mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%dN_dx_b(                      mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%dN_dy_b(                      mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%F1_3D_a(                      mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( self%F2_3D_a(                      mesh%vi1:mesh%vi2,mesh%nz), source = 0._dp)
-    allocate( self%F1_3D_b(                      mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-    allocate( self%F2_3D_b(                      mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-    allocate( self%basal_friction_coefficient_b( mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%beta_eff_a(                   mesh%vi1:mesh%vi2        ), source = 0._dp)
-    allocate( self%beta_eff_b(                   mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%tau_bx_b(                     mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%tau_by_b(                     mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%tau_dx_b(                     mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%tau_dy_b(                     mesh%ti1:mesh%ti2        ), source = 0._dp)
-    allocate( self%u_b_prev(                     mesh%nTri                ), source = 0._dp)
-    allocate( self%v_b_prev(                     mesh%nTri                ), source = 0._dp)
+    allocate( self%du_dx_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%du_dy_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%dv_dx_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%dv_dy_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%du_dz_3D_a(                   self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%dv_dz_3D_a(                   self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%eta_3D_a(                     self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%eta_3D_b(                     self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%dN_dx_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%dN_dy_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%F1_3D_a(                      self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%F2_3D_a(                      self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%F1_3D_b(                      self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%F2_3D_b(                      self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%beta_eff_a(                   self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
+    allocate( self%beta_eff_b(                   self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%tau_bx_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%tau_by_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%u_b_prev(                     self%mesh%nTri                            ), source = 0._dp)
+    allocate( self%v_b_prev(                     self%mesh%nTri                            ), source = 0._dp)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -207,9 +221,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! allocate memory
-    call allocate_DIVA_solver( mesh, self)
-
     ! Determine the choice of initial velocities for this model region
     select case (self%region_name())
     case default
@@ -232,7 +243,7 @@ contains
       self%u_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
       self%v_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
     case ('read_from_file')
-      call initialise_DIVA_velocities_from_file( mesh, self, region_name)
+      call self%initialise_DIVA_velocities_from_file()
     end select
 
     ! Set tolerances for PETSc matrix solver for the linearised DIVA
@@ -346,21 +357,165 @@ contains
     real(dp), dimension(:), optional,               intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_DIVA_run'
+    character(len=*), parameter         :: routine_name = 'momentum_balance_solver_plain_DIVA_run'
+    logical                             :: grounded_ice_exists
+    integer                             :: ierr
+    integer,  dimension(:), allocatable :: BC_prescr_mask_b_applied
+    real(dp), dimension(:), allocatable :: BC_prescr_u_b_applied
+    real(dp), dimension(:), allocatable :: BC_prescr_v_b_applied
+    integer                             :: viscosity_iteration_i
+    logical                             :: has_converged
+    real(dp)                            :: L2_uv, L2_uv_prev
+    real(dp)                            :: uv_min, uv_max
+    real(dp)                            :: visc_it_relax_applied
+    real(dp)                            :: Glens_flow_law_epsilon_sq_0_applied
+    integer                             :: nit_diverg_consec
+    integer                             :: n_Axb_its_visc_it
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    select case (C%BC_ice_front)
-    case default
-      call crash('unknown BC_ice_front "' // trim( C%BC_ice_front) // '"')
-    case ('infinite_slab')
-      call solve_DIVA_infinite_slab( mesh, ice, geom, bed_roughness, self, n_visc_its, n_Axb_its, &
-        BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-    case ('ocean_pressure')
-      call solve_DIVA_ocean_pressure( mesh, ice, geom, bed_roughness, self, n_visc_its, n_Axb_its, &
-        BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-    end select
+    ! if there is no grounded ice, no need (in fact, no way) to solve the DIVA
+    grounded_ice_exists = any( geom%mask_grounded_ice)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
+    if (.not. grounded_ice_exists) then
+      self%u_vav_b ( self%mesh%ti1:self%mesh%ti2  ) = 0._dp
+      self%v_vav_b ( self%mesh%ti1:self%mesh%ti2  ) = 0._dp
+      self%u_base_b( self%mesh%ti1:self%mesh%ti2  ) = 0._dp
+      self%v_base_b( self%mesh%ti1:self%mesh%ti2  ) = 0._dp
+      self%u_3D_b  ( self%mesh%ti1:self%mesh%ti2,:) = 0._dp
+      self%v_3D_b  ( self%mesh%ti1:self%mesh%ti2,:) = 0._dp
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Handle the optional prescribed u,v boundary conditions
+    allocate( BC_prescr_mask_b_applied( self%mesh%ti1:self%mesh%ti2))
+    allocate( BC_prescr_u_b_applied(    self%mesh%ti1:self%mesh%ti2))
+    allocate( BC_prescr_v_b_applied(    self%mesh%ti1:self%mesh%ti2))
+    if (present( BC_prescr_mask_b) .or. present( BC_prescr_u_b) .or. present( BC_prescr_v_b)) then
+      ! Safety
+      if (.not. (present( BC_prescr_mask_b) .and. present( BC_prescr_u_b) .and. present( BC_prescr_v_b))) then
+        call crash('need to provide prescribed u,v fields and mask!')
+      end if
+      BC_prescr_mask_b_applied = BC_prescr_mask_b
+      BC_prescr_u_b_applied    = BC_prescr_u_b
+      BC_prescr_v_b_applied    = BC_prescr_v_b
+    else
+      BC_prescr_mask_b_applied = 0
+      BC_prescr_u_b_applied    = 0._dp
+      BC_prescr_v_b_applied    = 0._dp
+    end if
+
+    ! Calculate the driving stress
+    call calc_driving_stress( self%mesh, geom, self%tau_dx_b, self%tau_dy_b)
+
+    ! Adaptive relaxation parameter for the viscosity iteration
+    L2_uv                               = 1E9_dp
+    nit_diverg_consec                   = 0
+    visc_it_relax_applied               = C%visc_it_relax
+    Glens_flow_law_epsilon_sq_0_applied = C%Glens_flow_law_epsilon_sq_0
+
+    ! Initialise stability info
+    self%n_visc_its = 0
+    self%n_Axb_its  = 0
+
+    ! The viscosity iteration
+    viscosity_iteration_i = 0
+    has_converged         = .false.
+    viscosity_iteration: do while (.not. has_converged)
+      viscosity_iteration_i = viscosity_iteration_i + 1
+
+      ! Calculate the horizontal strain rates for the current velocity solution
+      call calc_horizontal_strain_rates( self%mesh, self%u_vav_b, self%v_vav_b, &
+        self%du_dx_a, self%du_dy_a, self%dv_dx_a, self%dv_dy_a)
+
+      ! Calculate the vertical shear strain rates
+      call self%calc_vertical_shear_strain_rates()
+
+      ! Calculate the effective viscosity for the current velocity solution
+      call self%calc_effective_viscosity( ice, geom, Glens_flow_law_epsilon_sq_0_applied)
+
+      ! Calculate the F-integrals (Lipscomb et al. (2019), Eq. 30)
+      call self%calc_F_integrals( geom)
+
+      ! Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
+      call self%calc_effective_basal_friction_coefficient( ice, geom, bed_roughness)
+
+      ! Solve the linearised DIVA to calculate a new velocity solution
+      call solve_SSA_DIVA_linearised( self%mesh, self%u_vav_b, self%v_vav_b, &
+        self%N_b, self%dN_dx_b, self%dN_dy_b, &
+        self%beta_eff_b, self%tau_dx_b, self%tau_dy_b, self%u_b_prev, self%v_b_prev, &
+        self%PETSc_rtol, self%PETSc_abstol, n_Axb_its_visc_it, &
+        BC_prescr_mask_b_applied, BC_prescr_u_b_applied, BC_prescr_v_b_applied)
+
+      ! Update stability info
+      self%n_Axb_its = self%n_Axb_its + n_Axb_its_visc_it
+
+      ! Limit velocities for improved stability
+      call apply_velocity_limits( self%mesh, self%u_vav_b, self%v_vav_b)
+
+      ! Reduce the change between velocity solutions
+      call relax_viscosity_iterations( self%mesh, self%u_vav_b, self%v_vav_b, self%u_b_prev, self%v_b_prev, visc_it_relax_applied)
+
+      ! Calculate basal velocities
+      call self%calc_basal_velocities ()
+
+      ! Calculate basal shear stress
+      call self%calc_basal_shear_stress()
+
+      ! Calculate the L2-norm of the two consecutive velocity solutions
+      L2_uv_prev = L2_uv
+      call calc_L2_norm_uv( self%mesh, self%u_vav_b, self%v_vav_b, self%u_b_prev, self%v_b_prev, L2_uv)
+
+      ! if the viscosity iteration diverges, lower the relaxation parameter
+      if (L2_uv > L2_uv_prev) then
+        nit_diverg_consec = nit_diverg_consec + 1
+      else
+        nit_diverg_consec = 0
+      end if
+      if (nit_diverg_consec > 2) then
+        nit_diverg_consec = 0
+        visc_it_relax_applied               = visc_it_relax_applied               * 0.9_dp
+        Glens_flow_law_epsilon_sq_0_applied = Glens_flow_law_epsilon_sq_0_applied * 1.2_dp
+      end if
+      if (visc_it_relax_applied <= 0.05_dp .or. Glens_flow_law_epsilon_sq_0_applied >= 1E-5_dp) then
+        if (visc_it_relax_applied < 0.05_dp) then
+          call crash('viscosity iteration still diverges even with very low relaxation factor!')
+        elseif (Glens_flow_law_epsilon_sq_0_applied > 1E-5_dp) then
+          call crash('viscosity iteration still diverges even with very high effective strain rate regularisation!')
+        end if
+      end if
+
+      ! DENK DROM
+      uv_min = minval( self%u_vav_b)
+      uv_max = maxval( self%u_vav_b)
+      call MPI_ALLREDUCE( MPI_IN_PLACE, uv_min, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
+      call MPI_ALLREDUCE( MPI_IN_PLACE, uv_max, 1, MPI_doUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+      ! if (par%primary) WRITE(0,*) '    DIVA - viscosity iteration ', viscosity_iteration_i, ', u = [', uv_min, ' - ', uv_max, '], L2_uv = ', L2_uv
+
+      ! if the viscosity iteration has converged, or has reached the maximum allowed number of iterations, stop it.
+      has_converged = .false.
+      if (L2_uv < C%visc_it_norm_dUV_tol) then
+        has_converged = .true.
+      end if
+
+      ! if we've reached the maximum allowed number of iterations without converging, throw a warning
+      if (viscosity_iteration_i > C%visc_it_nit) then
+        if (par%primary) call warning('viscosity iteration failed to converge within {int_01} iterations!', int_01 = C%visc_it_nit)
+        exit viscosity_iteration
+      end if
+
+    end do viscosity_iteration
+
+    ! Calculate 3-D ice velocities
+    call self%calc_3D_velocities()
+
+    ! Stability info
+    self%n_visc_its = viscosity_iteration_i
+
+    call checksum( self%mesh%pai_Tri, self%u_vav_b, 'DIVA%u_vav_b')
+    call checksum( self%mesh%pai_Tri, self%v_vav_b, 'DIVA%v_vav_b')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -482,6 +637,336 @@ contains
     model_name = 'DIVA'
   end function get_momentum_balance_solver_plain_name
 
+  ! == Calculate several intermediate terms in the SSA
+
+  subroutine calc_vertical_shear_strain_rates( self)
+    ! Calculate the vertical shear strain rates
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter                                     :: routine_name = 'calc_vertical_shear_strain_rates'
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) :: du_dz_3D_b
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) :: dv_dz_3D_b
+    integer                                                         :: ti,k
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate (parameterised) vertical shear strain rates on the b-grid (Lipscomb et al., 2019, Eq. 36)
+    do ti = self%mesh%ti1, self%mesh%ti2
+    do k = 1, self%mesh%nz
+      du_dz_3D_b( ti,k) = self%tau_bx_b( ti) * self%mesh%zeta( k) / max( C%visc_eff_min, self%eta_3D_b( ti,k))
+      dv_dz_3D_b( ti,k) = self%tau_by_b( ti) * self%mesh%zeta( k) / max( C%visc_eff_min, self%eta_3D_b( ti,k))
+    end do
+    end do
+
+    ! Map vertical shear strain rates from the b-grid to the a-grid
+    call map_b_a_3D( self%mesh, du_dz_3D_b, self%du_dz_3D_a)
+    call map_b_a_3D( self%mesh, dv_dz_3D_b, self%dv_dz_3D_a)
+
+    call checksum( self%mesh%pai_V, self%du_dz_3D_a, 'DIVA%du_dz_3D_a')
+    call checksum( self%mesh%pai_V, self%dv_dz_3D_a, 'DIVA%dv_dz_3D_a')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_vertical_shear_strain_rates
+
+  subroutine calc_effective_viscosity( self, ice, geom, Glens_flow_law_epsilon_sq_0_applied)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+    class(atype_ice_model_data),                    intent(inout) :: ice
+    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
+    real(dp),                                       intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
+
+    ! Local variables:
+    character(len=*), parameter       :: routine_name = 'calc_effective_viscosity'
+    integer                           :: vi,k
+    real(dp)                          :: A_min, eta_max
+    real(dp), dimension(self%mesh%nz) :: prof
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate maximum allowed effective viscosity, for stability
+    A_min = 1E-18_dp
+    eta_max = 0.5_dp * A_min**(-1._dp / C%Glens_flow_law_exponent) * &
+      (Glens_flow_law_epsilon_sq_0_applied)**((1._dp - C%Glens_flow_law_exponent)/(2._dp*C%Glens_flow_law_exponent))
+
+    ! Calculate the effective viscosity eta
+    if (C%choice_flow_law == 'Glen') then
+      ! Calculate the effective viscosity eta according to Glen's flow law
+
+      ! Calculate flow factors
+      call calc_ice_rheology_Glen( self%mesh, ice, geom)
+
+      ! Calculate effective viscosity
+      do vi = self%mesh%vi1, self%mesh%vi2
+      do k  = 1, self%mesh%nz
+        self%eta_3D_a( vi,k) = calc_effective_viscosity_Glen_3D_uv_only( &
+          Glens_flow_law_epsilon_sq_0_applied, &
+          self%du_dx_a( vi), self%du_dy_a( vi), self%du_dz_3D_a( vi,k), &
+          self%dv_dx_a( vi), self%dv_dy_a( vi), self%dv_dz_3D_a( vi,k), ice%A_flow( vi,k))
+      end do
+      end do
+
+    else
+      call crash('unknown choice_flow_law "' // TRIM( C%choice_flow_law) // '"!')
+    end if
+
+    ! Safety
+    self%eta_3D_a = min( max( self%eta_3D_a, C%visc_eff_min), eta_max)
+
+    ! Map effective viscosity to the b-grid
+    call map_a_b_3D( self%mesh, self%eta_3D_a, self%eta_3D_b)
+
+    ! Calculate vertically averaged effective viscosity on the a-grid
+    do vi = self%mesh%vi1, self%mesh%vi2
+      prof = self%eta_3D_a( vi,:)
+      self%eta_vav_a( vi) = vertical_average( self%mesh%zeta, prof)
+    end do
+
+    ! Calculate the product term N = eta * H on the a-grid
+    do vi = self%mesh%vi1, self%mesh%vi2
+      self%N_a( vi) = self%eta_vav_a( vi) * max( 0.1, geom%Hi( vi))
+    end do
+
+    ! Calculate the product term N and its gradients on the b-grid
+    call map_a_b_2D( self%mesh, self%N_a, self%N_b    )
+    call ddx_a_b_2D( self%mesh, self%N_a, self%dN_dx_b)
+    call ddy_a_b_2D( self%mesh, self%N_a, self%dN_dy_b)
+
+    call checksum( self%mesh%pai_V  , self%eta_3D_a , 'DIVA%eta_3D_a')
+    call checksum( self%mesh%pai_Tri, self%eta_3D_b , 'DIVA%eta_3D_b')
+    call checksum( self%mesh%pai_V  , self%eta_vav_a, 'DIVA%eta_vav_a')
+    call checksum( self%mesh%pai_V  , self%N_a      , 'DIVA%N_a')
+    call checksum( self%mesh%pai_Tri, self%N_b      , 'DIVA%N_b')
+    call checksum( self%mesh%pai_Tri, self%dN_dx_b  , 'DIVA%dN_dx_b')
+    call checksum( self%mesh%pai_Tri, self%dN_dy_b  , 'DIVA%dN_dy_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_effective_viscosity
+
+  subroutine calc_F_integrals( self, geom)
+    !< Calculate the F-integrals on the a-grid (Lipscomb et al. (2019), Eq. 30)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
+
+    ! Local variables:
+    character(len=*), parameter       :: routine_name = 'calc_F_integrals'
+    integer                           :: vi,k
+    real(dp), dimension(self%mesh%nz) :: prof
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = self%mesh%vi1, self%mesh%vi2
+
+      ! F1
+      do k = 1, self%mesh%nz
+        prof( k) = (self%mesh%zeta( k)    / self%eta_3D_a( vi,k))
+      end do
+      self%F1_3D_a( vi,:) = -max( 0.1_dp, geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( self%mesh%zeta, prof)
+
+      ! F2
+      do k = 1, self%mesh%nz
+        prof( k) = (self%mesh%zeta( k)**2 / self%eta_3D_a( vi,k))
+      end do
+      self%F2_3D_a( vi,:) = -max( 0.1_dp, geom%Hi( vi)) * integrate_from_zeta_is_one_to_zeta_is_zetap( self%mesh%zeta, prof)
+
+    end do
+
+    ! Map F-integrals from the a-grid to the b-grid
+    call map_a_b_3D( self%mesh, self%F1_3D_a, self%F1_3D_b)
+    call map_a_b_3D( self%mesh, self%F2_3D_a, self%F2_3D_b)
+
+    call checksum( self%mesh%pai_Tri, self%F1_3D_b, 'DIVA%F1_3D_b')
+    call checksum( self%mesh%pai_Tri, self%F2_3D_b, 'DIVA%F2_3D_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_F_integrals
+
+  subroutine calc_effective_basal_friction_coefficient( self, ice, geom, bed_roughness)
+    !< Calculate the "effective" friction coefficient (turning the SSA into the DIVA)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+    class(atype_ice_model_data),                    intent(inout) :: ice
+    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
+    type(type_bed_roughness_model),                 intent(in   ) :: bed_roughness
+
+    ! Local variables:
+    character(len=*), parameter                      :: routine_name = 'calc_effective_basal_friction_coefficient'
+    integer                                          :: vi,ti
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: u_base_a
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: v_base_a
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate the basal friction coefficient beta_b for the current velocity solution
+    ! This is where the sliding law is called!
+    call map_b_a_2D( self%mesh, self%u_base_b, u_base_a)
+    call map_b_a_2D( self%mesh, self%v_base_b, v_base_a)
+    call calc_basal_friction_coefficient( self%mesh, geom, bed_roughness, u_base_a, v_base_a, &
+      ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
+
+    ! Calculate beta_eff on the a-grid
+    if (C%choice_sliding_law == 'no_sliding') then
+      ! Exception for the case of no sliding (Lipscomb et al., 2019, Eq. 35)
+
+      do vi = self%mesh%vi1, self%mesh%vi2
+        self%beta_eff_a( vi) = 1._dp / self%F2_3D_a( vi,1)
+      end do
+
+    else ! if (C%choice_sliding_law == 'no_sliding') then
+      ! Lipscomb et al., 2019, Eq. 33
+
+      do vi = self%mesh%vi1, self%mesh%vi2
+        self%beta_eff_a( vi) = ice%basal_friction_coefficient( vi) / (1._dp + ice%basal_friction_coefficient( vi) * self%F2_3D_a( vi,1))
+      end do
+
+    end if ! if (C%choice_sliding_law == 'no_sliding') then
+
+    ! Map basal friction coefficient beta_b and effective basal friction coefficient beta_eff to the b-grid
+    call map_a_b_2D( self%mesh, ice%basal_friction_coefficient, self%basal_friction_coefficient_b)
+    call map_a_b_2D( self%mesh, self%beta_eff_a               , self%beta_eff_b                  )
+
+    ! Apply the sub-grid grounded fraction, and limit the friction coefficient to improve stability
+    if (C%do_GL_subgrid_friction) then
+      ! On the b-grid
+      do ti = self%mesh%ti1, self%mesh%ti2
+        self%beta_eff_b( ti) = self%beta_eff_b( ti) * geom%fraction_gr_b( ti)**C%subgrid_friction_exponent_on_B_grid
+      end do
+    end if
+
+    call checksum( self%mesh%pai_V  , ice%basal_friction_coefficient   , 'ice%basal_friction_coefficient')
+    call checksum( self%mesh%pai_Tri, self%basal_friction_coefficient_b, 'DIVA%basal_friction_coefficient_b')
+    call checksum( self%mesh%pai_V  , self%beta_eff_a                  , 'DIVA%beta_eff_a')
+    call checksum( self%mesh%pai_Tri, self%beta_eff_b                  , 'DIVA%beta_eff_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_effective_basal_friction_coefficient
+
+  subroutine calc_basal_velocities( self)
+    !< Calculate basal velocities (Lipscomb et al., 2019, Eq. 32)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_basal_shear_stress'
+    integer                     :: ti
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (C%choice_sliding_law == 'no_sliding') then
+      ! Exception for the case of no sliding
+
+      self%u_base_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+      self%v_base_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+
+    else
+
+      ! Calculate basal velocities (Lipscomb et al., 2019, Eq. 32)
+      do ti = self%mesh%ti1, self%mesh%ti2
+        self%u_base_b( ti) = self%u_vav_b( ti) / (1._dp + self%basal_friction_coefficient_b( ti) * self%F2_3D_b( ti,1))
+        self%v_base_b( ti) = self%v_vav_b( ti) / (1._dp + self%basal_friction_coefficient_b( ti) * self%F2_3D_b( ti,1))
+      end do
+
+    end if
+
+    call checksum( self%mesh%pai_Tri, self%u_base_b, 'DIVA%u_base_b')
+    call checksum( self%mesh%pai_Tri, self%v_base_b, 'DIVA%v_base_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_basal_velocities
+
+  subroutine calc_basal_shear_stress( self)
+    !< Calculate the basal shear stress (Lipscomb et al., 2019, just above Eq. 33)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_basal_shear_stress'
+    integer                     :: ti
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do ti = self%mesh%ti1, self%mesh%ti2
+      ! Lipscomb et al., 2019, just above Eq. 33
+      self%tau_bx_b( ti) = self%u_vav_b( ti) * self%beta_eff_b( ti)
+      self%tau_by_b( ti) = self%v_vav_b( ti) * self%beta_eff_b( ti)
+    end do
+
+    call checksum( self%mesh%pai_Tri, self%tau_bx_b, 'DIVA%tau_bx_b')
+    call checksum( self%mesh%pai_Tri, self%tau_by_b, 'DIVA%tau_by_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_basal_shear_stress
+
+  subroutine calc_3D_velocities( self)
+    !< Calculate 3D velocities (Lipscomb et al., 2019, Eq. 29)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_plain_DIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_3D_velocities'
+    integer                     :: ti,k
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (C%choice_sliding_law == 'no_sliding') then
+      ! Exception for the case of no sliding
+
+      do ti = self%mesh%ti1, self%mesh%ti2
+      do k = 1, self%mesh%nz
+        ! Lipscomb et al., 2019, Eq. 29, and text between Eqs. 33 and 34
+        self%u_3D_b( ti,k) = self%tau_bx_b( ti) * self%F1_3D_b( ti,k)
+        self%v_3D_b( ti,k) = self%tau_by_b( ti) * self%F1_3D_b( ti,k)
+      end do
+      end do
+
+    else
+
+      do ti = self%mesh%ti1, self%mesh%ti2
+      do k = 1, self%mesh%nz
+        ! Lipscomb et al., 2019, Eq. 29
+        self%u_3D_b( ti,k) = self%u_base_b( ti) * (1._dp + self%basal_friction_coefficient_b( ti) * self%F1_3D_b( ti,k))
+        self%v_3D_b( ti,k) = self%v_base_b( ti) * (1._dp + self%basal_friction_coefficient_b( ti) * self%F1_3D_b( ti,k))
+      end do
+      end do
+
+    end if
+
+    call checksum( self%mesh%pai_Tri, self%u_3D_b, 'DIVA%u_3D_b')
+    call checksum( self%mesh%pai_Tri, self%v_3D_b, 'DIVA%v_3D_b')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_3D_velocities
+
   ! == Restart NetCDF files
 
   subroutine write_to_restart_file_DIVA( self, time)
@@ -595,13 +1080,13 @@ contains
     call create_new_netcdf_file_for_writing( self%restart_filename, ncid)
 
     ! Set up the mesh in the file
-    call setup_mesh_in_netcdf_file( self%restart_filename, ncid, mesh)
+    call setup_mesh_in_netcdf_file( self%restart_filename, ncid, self%mesh)
 
     ! Add a time dimension to the file
     call add_time_dimension_to_file( self%restart_filename, ncid)
 
     ! Add a zeta dimension to the file
-    call add_zeta_dimension_to_file( self%restart_filename, ncid, mesh%zeta)
+    call add_zeta_dimension_to_file( self%restart_filename, ncid, self%mesh%zeta)
 
     ! Solution
     call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'u_vav_b'                     , long_name = 'Vertically averaged horizontal ice velocity in the x-direction', units = 'm/yr')

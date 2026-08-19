@@ -344,7 +344,7 @@ contains
   end subroutine initialise_DIVA_velocities_from_file
 
   subroutine momentum_balance_solver_plain_DIVA_run( self, ice, geom, bed_roughness, &
-    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate ice velocities by solving the Depth-Integrated Viscosity Approximation
 
     ! In/output variables:
@@ -352,9 +352,12 @@ contains
     class(atype_ice_model_data),                    intent(inout) :: ice
     class(atype_ice_geometry_model_data),           intent(in   ) :: geom
     type(type_bed_roughness_model),                 intent(in   ) :: bed_roughness
-    integer,  dimension(:), optional,               intent(in   ) :: BC_prescr_mask_b         ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:), optional,               intent(in   ) :: BC_prescr_u_b            ! Prescribed velocities in the x-direction
-    real(dp), dimension(:), optional,               intent(in   ) :: BC_prescr_v_b            ! Prescribed velocities in the y-direction
+    integer,  dimension(:  ), optional,             intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,             intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,             intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,             intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,             intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,             intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'momentum_balance_solver_plain_DIVA_run'

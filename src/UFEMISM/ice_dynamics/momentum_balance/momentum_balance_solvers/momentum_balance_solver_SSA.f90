@@ -100,16 +100,19 @@ contains
   end subroutine momentum_balance_solver_SSA_initialise
 
   subroutine momentum_balance_solver_SSA_run( self, ice, geom, bed_roughness, &
-    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
     class(atype_ice_model_data),             intent(inout) :: ice
     class(atype_ice_geometry_model_data),    intent(in   ) :: geom
     type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
-    integer,  dimension(:), optional,        intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:), optional,        intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:), optional,        intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:  ), optional,      intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,      intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_momentum_balance_solver_SSA'
@@ -119,7 +122,7 @@ contains
 
     ! Run all the stuff that is specific to the SSA momentum balance solver
     call self%solver%run( ice, geom, bed_roughness, &
-      BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+      BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     self%n_visc_its = self%solver%n_visc_its
     self%n_Axb_its  = self%solver%n_Axb_its

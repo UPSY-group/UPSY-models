@@ -339,17 +339,17 @@ end
 function single_line = maximum_resolution_uniform_config( opts)
   switch opts.length_scale
     case '160'
-      single_line = 'maximum_resolution_uniform_config = 8000.0';
-    case '80'
       single_line = 'maximum_resolution_uniform_config = 4000.0';
-    case '40'
+    case '80'
       single_line = 'maximum_resolution_uniform_config = 2000.0';
-    case '20'
+    case '40'
       single_line = 'maximum_resolution_uniform_config = 1000.0';
-    case '10'
+    case '20'
       single_line = 'maximum_resolution_uniform_config = 500.0';
-    case '5'
+    case '10'
       single_line = 'maximum_resolution_uniform_config = 250.0';
+    case '5'
+      single_line = 'maximum_resolution_uniform_config = 125.0';
     otherwise
       error(['invalid opts.length_scale ' opts.length_scale])
   end

@@ -46,7 +46,7 @@ module momentum_balance_solver_plain_SSA_DIVA
       real(dp), dimension(:  ), allocatable :: v_vav_b_prev
 
       ! Restart file
-      character(len=:), allocatable :: restart_filename
+      character(len=1024) :: restart_filename
 
     contains
 

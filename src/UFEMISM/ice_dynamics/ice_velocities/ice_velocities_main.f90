@@ -11,13 +11,9 @@ module ice_velocities_main
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data, &
-    type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
-  use momentum_balance_solver_plain_DIVA, only: initialise_DIVA_solver, solve_DIVA, remap_DIVA_solver, &
-    create_restart_file_DIVA, write_to_restart_file_DIVA
+    type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
   use BPA_main, only: initialise_BPA_solver, solve_BPA, remap_BPA_solver, &
     create_restart_file_BPA, write_to_restart_file_BPA
-  use hybrid_DIVA_BPA_main, only: initialise_hybrid_DIVA_BPA_solver, solve_hybrid_DIVA_BPA, &
-    remap_hybrid_DIVA_BPA_solver
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, map_b_a_2D, map_b_a_3D
   use mpi_distributed_memory, only: gather_to_all
   use mesh_zeta, only: vertical_average
@@ -31,6 +27,7 @@ module ice_velocities_main
   use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
   use momentum_balance_solver_SSA, only: type_momentum_balance_solver_SSA
   use momentum_balance_solver_SIASSA, only: type_momentum_balance_solver_SIASSA
+  use momentum_balance_solver_DIVA, only: type_momentum_balance_solver_DIVA
 
   implicit none
 
@@ -68,11 +65,11 @@ contains
       case ('SIA/SSA')
         call momentum_balance_solver%initialise()
       case ('DIVA')
-        call initialise_DIVA_solver           ( vel%mesh, ice%DIVA  , region_name)
+        call momentum_balance_solver%initialise()
       case ('BPA')
         call initialise_BPA_solver            ( vel%mesh, ice%BPA   , region_name)
       case ('hybrid DIVA/BPA')
-        call initialise_hybrid_DIVA_BPA_solver( vel%mesh, ice%hybrid, region_name)
+        call crash('FIXME')
     end select
 
     ! Finalise routine path
@@ -172,10 +169,17 @@ contains
       case ('DIVA')
         ! Calculate velocities according to the Depth-Integrated Viscosity Approximation
 
-        call solve_DIVA( mesh, ice, geom, bed_roughness, ice%DIVA, &
-          n_visc_its, n_Axb_its, &
+        call momentum_balance_solver%run( ice, geom, bed_roughness, &
           BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-        call set_ice_velocities_to_DIVA_results( mesh, ice, vel, ice%DIVA)
+        n_visc_its = momentum_balance_solver%n_visc_its
+        n_Axb_its  = momentum_balance_solver%n_Axb_its
+
+        select type (DIVA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_DIVA)
+          call set_ice_velocities_to_DIVA_results( mesh, ice, vel, DIVA)
+        end select
 
       case ('BPA')
         ! Calculate velocities according to the Blatter-Pattyn Approximation
@@ -188,10 +192,7 @@ contains
       case ('hybrid DIVA/BPA')
         ! Calculate velocities according to the hybrid DIVA/BPA
 
-        call solve_hybrid_DIVA_BPA( mesh, ice, geom, bed_roughness, ice%hybrid, region_name, &
-          n_visc_its, n_Axb_its, &
-          BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
-        call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, vel, ice%hybrid)
+        call crash('FIXME')
 
     end select
 
@@ -379,8 +380,14 @@ contains
 
       case ('DIVA')
 
-        call remap_DIVA_solver( mesh_old, mesh_new, ice%DIVA)
-        call set_ice_velocities_to_DIVA_results( mesh_new, ice, vel, ice%DIVA)
+        call momentum_balance_solver%remap( mesh_old, mesh_new)
+
+        select type (DIVA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_DIVA)
+          call set_ice_velocities_to_DIVA_results( mesh_new, ice, vel, DIVA)
+        end select
 
       case ('BPA')
 
@@ -389,8 +396,7 @@ contains
 
       case ('hybrid DIVA/BPA')
 
-        call remap_hybrid_DIVA_BPA_solver(  mesh_old, mesh_new, ice%hybrid)
-        call set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh_new, vel, ice%hybrid)
+        call crash('FIXME')
 
     end select
 
@@ -531,32 +537,32 @@ contains
     !< Set applied ice model velocities to DIVA results
 
     ! In/output variables:
-    type(type_mesh),                      intent(in   ) :: mesh
-    class(atype_ice_model_data),          intent(inout) :: ice
-    class(atype_ice_velocity_model_data), intent(inout) :: vel
-    type(type_ice_velocity_solver_DIVA),  intent(in   ) :: DIVA
+    type(type_mesh),                          intent(in   ) :: mesh
+    class(atype_ice_model_data),              intent(inout) :: ice
+    class(atype_ice_velocity_model_data),     intent(inout) :: vel
+    class(type_momentum_balance_solver_DIVA), intent(inout) :: DIVA
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_DIVA_results'
-    integer                        :: ti,vi
+    character(len=*), parameter :: routine_name = 'set_ice_velocities_to_DIVA_results'
+    integer                     :: ti,vi
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
-      vel%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
+      vel%u_3D_b( ti,:) = DIVA%solver%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = DIVA%solver%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = DIVA%du_dx_a(    vi  )
-      vel%du_dy_3D( vi,:) = DIVA%du_dy_a(    vi  )
-      vel%du_dz_3D( vi,:) = DIVA%du_dz_3D_a( vi,:)
-      vel%dv_dx_3D( vi,:) = DIVA%dv_dx_a(    vi  )
-      vel%dv_dy_3D( vi,:) = DIVA%dv_dy_a(    vi  )
-      vel%dv_dz_3D( vi,:) = DIVA%dv_dz_3D_a( vi,:)
+      vel%du_dx_3D( vi,:) = DIVA%solver%du_dx_a(    vi  )
+      vel%du_dy_3D( vi,:) = DIVA%solver%du_dy_a(    vi  )
+      vel%du_dz_3D( vi,:) = DIVA%solver%du_dz_3D_a( vi,:)
+      vel%dv_dx_3D( vi,:) = DIVA%solver%dv_dx_a(    vi  )
+      vel%dv_dy_3D( vi,:) = DIVA%solver%dv_dy_a(    vi  )
+      vel%dv_dz_3D( vi,:) = DIVA%solver%dv_dz_3D_a( vi,:)
     end do
 
     ! In the DIVA, gradients of w are neglected
@@ -566,7 +572,7 @@ contains
 
     ! Stresses
     do ti = mesh%ti1, mesh%ti2
-      ice%basal_shear_stress( ti) = hypot( ice%DIVA%tau_bx_b( ti), ice%DIVA%tau_by_b( ti))
+      ice%basal_shear_stress( ti) = hypot( DIVA%solver%tau_bx_b( ti), DIVA%solver%tau_by_b( ti))
     end do
 
     ! Finalise routine path
@@ -615,46 +621,46 @@ contains
 
   end subroutine set_ice_velocities_to_BPA_results
 
-  subroutine set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, vel, hybrid)
-    !< Set applied ice model velocities and strain rates to hybrid DIVA/BPA results
+  ! subroutine set_ice_velocities_to_hybrid_DIVA_BPA_results( mesh, vel, hybrid)
+  !   !< Set applied ice model velocities and strain rates to hybrid DIVA/BPA results
 
-    ! In/output variables:
-    type(type_mesh),                       intent(in   ) :: mesh
-    class(atype_ice_velocity_model_data),  intent(inout) :: vel
-    type(type_ice_velocity_solver_hybrid), intent(in   ) :: hybrid
+  !   ! In/output variables:
+  !   type(type_mesh),                       intent(in   ) :: mesh
+  !   class(atype_ice_velocity_model_data),  intent(inout) :: vel
+  !   type(type_ice_velocity_solver_hybrid), intent(in   ) :: hybrid
 
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_hybrid_DIVA_BPA_results'
-    integer                        :: ti,vi
+  !   ! Local variables:
+  !   character(len=1024), parameter :: routine_name = 'set_ice_velocities_to_hybrid_DIVA_BPA_results'
+  !   integer                        :: ti,vi
 
-    ! Add routine to path
-    call init_routine( routine_name)
+  !   ! Add routine to path
+  !   call init_routine( routine_name)
 
-    ! Velocities
-    do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
-      vel%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
-    end do
+  !   ! Velocities
+  !   do ti = mesh%ti1, mesh%ti2
+  !     vel%u_3D_b( ti,:) = hybrid%u_bk( ti,:)
+  !     vel%v_3D_b( ti,:) = hybrid%v_bk( ti,:)
+  !   end do
 
-    ! Strain rates
-    do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = hybrid%BPA%du_dx_ak( vi,:)
-      vel%du_dy_3D( vi,:) = hybrid%BPA%du_dy_ak( vi,:)
-      vel%du_dz_3D( vi,:) = hybrid%BPA%du_dz_ak( vi,:)
-      vel%dv_dx_3D( vi,:) = hybrid%BPA%dv_dx_ak( vi,:)
-      vel%dv_dy_3D( vi,:) = hybrid%BPA%dv_dy_ak( vi,:)
-      vel%dv_dz_3D( vi,:) = hybrid%BPA%dv_dz_ak( vi,:)
-    end do
+  !   ! Strain rates
+  !   do vi = mesh%vi1, mesh%vi2
+  !     vel%du_dx_3D( vi,:) = hybrid%BPA%du_dx_ak( vi,:)
+  !     vel%du_dy_3D( vi,:) = hybrid%BPA%du_dy_ak( vi,:)
+  !     vel%du_dz_3D( vi,:) = hybrid%BPA%du_dz_ak( vi,:)
+  !     vel%dv_dx_3D( vi,:) = hybrid%BPA%dv_dx_ak( vi,:)
+  !     vel%dv_dy_3D( vi,:) = hybrid%BPA%dv_dy_ak( vi,:)
+  !     vel%dv_dz_3D( vi,:) = hybrid%BPA%dv_dz_ak( vi,:)
+  !   end do
 
-    ! In the hybrid DIVA/BPA, gradients of w are neglected
-    vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
-    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+  !   ! In the hybrid DIVA/BPA, gradients of w are neglected
+  !   vel%dw_dx_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+  !   vel%dw_dy_3D( mesh%vi1:mesh%vi2,:) = 0._dp
+  !   ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
-    ! Finalise routine path
-    call finalise_routine( routine_name)
+  !   ! Finalise routine path
+  !   call finalise_routine( routine_name)
 
-  end subroutine set_ice_velocities_to_hybrid_DIVA_BPA_results
+  ! end subroutine set_ice_velocities_to_hybrid_DIVA_BPA_results
 
   ! == Restart NetCDF files
 
@@ -699,7 +705,14 @@ contains
         end select
 
       case ('DIVA')
-        call write_to_restart_file_DIVA( mesh, ice%DIVA, time)
+
+        select type (DIVA => momentum_balance_solver)
+        class default
+          call crash('invalid momentum_balance_solver class')
+        class is (type_momentum_balance_solver_DIVA)
+          call DIVA%solver%write_to_restart_file_DIVA( time)
+        end select
+
       case ('BPA')
         call write_to_restart_file_BPA( mesh, ice%BPA, time)
       case ('hybrid DIVA/BPA')
@@ -751,7 +764,14 @@ contains
       end select
 
     case ('DIVA')
-      call create_restart_file_DIVA( mesh, ice%DIVA)
+
+      select type (DIVA => momentum_balance_solver)
+      class default
+        call crash('invalid momentum_balance_solver class')
+      class is (type_momentum_balance_solver_DIVA)
+        call DIVA%solver%create_restart_file_DIVA()
+      end select
+
     case ('BPA')
       call create_restart_file_BPA( mesh, ice%BPA)
     case ('hybrid DIVA/BPA')

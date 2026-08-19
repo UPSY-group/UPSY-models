@@ -87,8 +87,8 @@ module momentum_balance_solver_plain_DIVA
       procedure, public :: run_momentum_balance_solver_plain        => momentum_balance_solver_plain_DIVA_run
       procedure, public :: remap_momentum_balance_solver_plain      => momentum_balance_solver_plain_DIVA_remap
 
-      procedure, private :: create_restart_file_DIVA
-      procedure, private :: write_to_restart_file_DIVA
+      procedure, public :: create_restart_file_DIVA
+      procedure, public :: write_to_restart_file_DIVA
 
       procedure, private :: initialise_DIVA_velocities_from_file
       procedure, private :: calc_vertical_shear_strain_rates

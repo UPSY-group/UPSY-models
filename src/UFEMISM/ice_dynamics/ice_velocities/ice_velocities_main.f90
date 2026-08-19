@@ -479,8 +479,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = SSA%solver%u_b( ti)
-      vel%v_3D_b( ti,:) = SSA%solver%v_b( ti)
+      vel%u_3D_b( ti,:) = SSA%solver%u_vav_b( ti)
+      vel%v_3D_b( ti,:) = SSA%solver%v_vav_b( ti)
     end do
 
     ! Strain rates
@@ -520,8 +520,8 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = SIASSA%solver_SIA%u_3D_b( ti,:) + SIASSA%solver_SSA%u_b( ti)
-      vel%v_3D_b( ti,:) = SIASSA%solver_SIA%v_3D_b( ti,:) + SIASSA%solver_SSA%v_b( ti)
+      vel%u_3D_b( ti,:) = SIASSA%solver_SIA%u_3D_b( ti,:) + SIASSA%solver_SSA%u_vav_b( ti)
+      vel%v_3D_b( ti,:) = SIASSA%solver_SIA%v_3D_b( ti,:) + SIASSA%solver_SSA%v_vav_b( ti)
     end do
 
     ! Strain rates

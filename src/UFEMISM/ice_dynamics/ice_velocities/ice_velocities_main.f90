@@ -12,7 +12,7 @@ module ice_velocities_main
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data, &
     type_ice_velocity_solver_DIVA, type_ice_velocity_solver_BPA, type_ice_velocity_solver_hybrid
-  use DIVA_main, only: initialise_DIVA_solver, solve_DIVA, remap_DIVA_solver, &
+  use momentum_balance_solver_plain_DIVA, only: initialise_DIVA_solver, solve_DIVA, remap_DIVA_solver, &
     create_restart_file_DIVA, write_to_restart_file_DIVA
   use BPA_main, only: initialise_BPA_solver, solve_BPA, remap_BPA_solver, &
     create_restart_file_BPA, write_to_restart_file_BPA

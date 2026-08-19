@@ -1,4 +1,4 @@
-module DIVA_main
+module momentum_balance_solver_plain_DIVA
 
   ! Routines for calculating ice velocities using the Depth-Integrated Viscosity Approximation (DIVA)
 
@@ -541,4 +541,4 @@ contains
 
   end subroutine create_restart_file_DIVA
 
-end module DIVA_main
+end module momentum_balance_solver_plain_DIVA

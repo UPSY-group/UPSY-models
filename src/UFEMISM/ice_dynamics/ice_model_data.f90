@@ -162,7 +162,7 @@ module ice_model_data
     REAL(dp), DIMENSION(:,:  ), ALLOCATABLE :: v_bk
 
     ! DIVA and BPA solvers
-    TYPE(type_ice_velocity_solver_DIVA)     :: DIVA                        ! Depth-Integrated Viscosity Approximation
+    ! TYPE(type_ice_velocity_solver_DIVA)     :: DIVA                        ! Depth-Integrated Viscosity Approximation
     TYPE(type_ice_velocity_solver_BPA)      :: BPA                         ! Blatter-Pattyn Approximation
 
     ! Solving masks

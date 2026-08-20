@@ -382,58 +382,17 @@ contains
     type(type_mesh), target,                       intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=*), parameter         :: routine_name = 'momentum_balance_solver_plain_SSA_remap'
-    real(dp), dimension(:), allocatable :: u_a
-    real(dp), dimension(:), allocatable :: v_a
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_plain_SSA_remap'
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Remap the fields that are re-used during the viscosity iteration
-    ! ================================================================
+    ! Remap variables that are shared between the SSA and DIVA solvers
+    call self%remap_shared_SSA_DIVA_variables( mesh_old, mesh_new)
 
-    ! allocate memory for velocities on the a-grid (vertices)
-    allocate( u_a( mesh_old%vi1: mesh_old%vi2))
-    allocate( v_a( mesh_old%vi1: mesh_old%vi2))
+    ! Remap variables that are specific to the SSA solver
 
-    ! Map velocities from the triangles of the old mesh to the vertices of the old mesh
-    call map_b_a_2D( mesh_old, self%u_vav_b, u_a)
-    call map_b_a_2D( mesh_old, self%v_vav_b, v_a)
-
-    ! Remap velocities from the vertices of the old mesh to the vertices of the new mesh
-    call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, u_a, '2nd_order_conservative')
-    call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, v_a, '2nd_order_conservative')
-
-    ! reallocate memory for the velocities on the triangles
-    call reallocate_bounds( self%u_vav_b, mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%v_vav_b, mesh_new%ti1, mesh_new%ti2)
-
-    ! Map velocities from the vertices of the new mesh to the triangles of the new mesh
-    call map_a_b_2D( mesh_new, u_a, self%u_vav_b)
-    call map_a_b_2D( mesh_new, v_a, self%v_vav_b)
-
-    ! Clean up after yourself
-    deallocate( u_a)
-    deallocate( v_a)
-
-    ! reallocate everything else
-    ! ==========================
-
-    call reallocate_bounds( self%A_flow_vav_a                , mesh_new%vi1, mesh_new%vi2)           ! [Pa^-3 y^-1] Vertically averaged Glen's flow law parameter
-    call reallocate_bounds( self%du_dx_a                     , mesh_new%vi1, mesh_new%vi2)           ! [yr^-1] 2-D horizontal strain rates
-    call reallocate_bounds( self%du_dy_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%dv_dx_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%dv_dy_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%eta_vav_a                   , mesh_new%vi1, mesh_new%vi2)           ! Effective viscosity
-    call reallocate_bounds( self%N_a                         , mesh_new%vi1, mesh_new%vi2)           ! Product term N = eta * H
-    call reallocate_bounds( self%N_b                         , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%dN_dx_b                     , mesh_new%ti1, mesh_new%ti2)           ! Gradients of N
-    call reallocate_bounds( self%dN_dy_b                     , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%basal_friction_coefficient_b, mesh_new%ti1, mesh_new%ti2)           ! Basal friction coefficient (basal_shear_stress = u * basal_friction_coefficient)
-    call reallocate_bounds( self%tau_dx_b                    , mesh_new%ti1, mesh_new%ti2)           ! Driving stress
-    call reallocate_bounds( self%tau_dy_b                    , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_clean ( self%u_vav_b_prev                , mesh_new%nTri             )           ! Velocity solution from previous viscosity iteration
-    call reallocate_clean ( self%v_vav_b_prev                , mesh_new%nTri             )
+    call reallocate_bounds( self%A_flow_vav_a, mesh_new%vi1, mesh_new%vi2)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

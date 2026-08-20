@@ -493,8 +493,6 @@ contains
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'momentum_balance_solver_plain_DIVA_remap'
-    real(dp), dimension(:  ), allocatable :: u_vav_a
-    real(dp), dimension(:  ), allocatable :: v_vav_a
     real(dp), dimension(:  ), allocatable :: tau_bx_a
     real(dp), dimension(:  ), allocatable :: tau_by_a
     real(dp), dimension(:,:), allocatable :: eta_3D_a
@@ -504,12 +502,15 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Remap variables that are shared between the SSA and DIVA solvers
+    call self%remap_shared_SSA_DIVA_variables( mesh_old, mesh_new)
+
+    ! Remap variables that are specific to the DIVA solver
+
     ! Remap the fields that are re-used during the viscosity iteration
     ! ================================================================
 
     ! allocate memory for velocities on the a-grid (vertices)
-    allocate( u_vav_a ( mesh_old%vi1: mesh_old%vi2             ))
-    allocate( v_vav_a ( mesh_old%vi1: mesh_old%vi2             ))
     allocate( tau_bx_a( mesh_old%vi1: mesh_old%vi2             ))
     allocate( tau_by_a( mesh_old%vi1: mesh_old%vi2             ))
     allocate( eta_3D_a( mesh_old%vi1: mesh_old%vi2, mesh_old%nz))
@@ -517,8 +518,6 @@ contains
     allocate( v_3D_a  ( mesh_old%vi1: mesh_old%vi2, mesh_old%nz))
 
     ! Map data from the triangles of the old mesh to the vertices of the old mesh
-    call map_b_a_2D( mesh_old, self%u_vav_b , u_vav_a )
-    call map_b_a_2D( mesh_old, self%v_vav_b , v_vav_a )
     call map_b_a_2D( mesh_old, self%tau_bx_b, tau_bx_a)
     call map_b_a_2D( mesh_old, self%tau_by_b, tau_by_a)
     call map_b_a_3D( mesh_old, self%eta_3D_b, eta_3D_a)
@@ -526,8 +525,6 @@ contains
     call map_b_a_3D( mesh_old, self%v_3D_b  , v_3D_a  )
 
     ! Remap data from the vertices of the old mesh to the vertices of the new mesh
-    call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, u_vav_a , '2nd_order_conservative')
-    call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, v_vav_a , '2nd_order_conservative')
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, tau_bx_a, '2nd_order_conservative')
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, tau_by_a, '2nd_order_conservative')
     call map_from_mesh_to_mesh_with_reallocation_3D( mesh_old, mesh_new, C%output_dir, eta_3D_a, '2nd_order_conservative')
@@ -535,8 +532,6 @@ contains
     call map_from_mesh_to_mesh_with_reallocation_3D( mesh_old, mesh_new, C%output_dir, v_3D_a  , '2nd_order_conservative')
 
     ! reallocate memory for the data on the triangles
-    call reallocate_bounds( self%u_vav_b  , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%v_vav_b  , mesh_new%ti1, mesh_new%ti2             )
     call reallocate_bounds( self%tau_bx_b , mesh_new%ti1, mesh_new%ti2             )
     call reallocate_bounds( self%tau_by_b , mesh_new%ti1, mesh_new%ti2             )
     call reallocate_bounds( self%eta_3D_b , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
@@ -544,8 +539,6 @@ contains
     call reallocate_bounds( self%v_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
 
     ! Map data from the vertices of the new mesh to the triangles of the new mesh
-    call map_a_b_2D( mesh_new, u_vav_a , self%u_vav_b )
-    call map_a_b_2D( mesh_new, v_vav_a , self%v_vav_b )
     call map_a_b_2D( mesh_new, tau_bx_a, self%tau_bx_b)
     call map_a_b_2D( mesh_new, tau_by_a, self%tau_by_b)
     call map_a_b_3D( mesh_new, eta_3D_a, self%eta_3D_b)
@@ -555,38 +548,22 @@ contains
     ! reallocate everything else
     ! ==========================
 
-    ! call reallocate_bounds( DIVA%u_vav_b                     , mesh_new%ti1, mesh_new%ti2             )           ! [m yr^-1] 2-D vertically averaged horizontal ice velocity
-    ! call reallocate_bounds( DIVA%v_vav_b                     , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%u_base_b                    , mesh_new%ti1, mesh_new%ti2             )           ! [m yr^-1] 2-D horizontal ice velocity at the ice base
-    call reallocate_bounds( self%v_base_b                    , mesh_new%ti1, mesh_new%ti2             )
-    ! call reallocate_bounds( DIVA%u_3D_b                      , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)           ! [m yr^-1] 3-D horizontal ice velocity
-    ! call reallocate_bounds( DIVA%v_3D_b                      , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%du_dx_a                     , mesh_new%vi1, mesh_new%vi2             )           ! [yr^-1] 2-D horizontal strain rates
-    call reallocate_bounds( self%du_dy_a                     , mesh_new%vi1, mesh_new%vi2             )
-    call reallocate_bounds( self%dv_dx_a                     , mesh_new%vi1, mesh_new%vi2             )
-    call reallocate_bounds( self%dv_dy_a                     , mesh_new%vi1, mesh_new%vi2             )
-    call reallocate_bounds( self%du_dz_3D_a                  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)           ! [yr^-1] 3-D vertical shear strain rates
-    call reallocate_bounds( self%dv_dz_3D_a                  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%eta_3D_a                    , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)           ! Effective viscosity
-    ! call reallocate_bounds( DIVA%eta_3D_b                    , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%eta_vav_a                   , mesh_new%vi1, mesh_new%vi2             )
-    call reallocate_bounds( self%N_a                         , mesh_new%vi1, mesh_new%vi2             )           ! Product term N = eta * H
-    call reallocate_bounds( self%N_b                         , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%dN_dx_b                     , mesh_new%ti1, mesh_new%ti2             )           ! Gradients of N
-    call reallocate_bounds( self%dN_dy_b                     , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%F1_3D_a                     , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)           ! F-integrals
-    call reallocate_bounds( self%F2_3D_a                     , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%F1_3D_b                     , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%F2_3D_b                     , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%basal_friction_coefficient_b, mesh_new%ti1, mesh_new%ti2             )           ! Basal friction coefficient (basal_shear_stress = u * basal_friction_coefficient)
-    call reallocate_bounds( self%beta_eff_a                  , mesh_new%vi1, mesh_new%vi2             )           ! "Effective" friction coefficient (turning the SSA into the DIVA)
-    call reallocate_bounds( self%beta_eff_b                  , mesh_new%ti1, mesh_new%ti2             )
-    ! call reallocate_bounds( DIVA%tau_bx_b                    , mesh_new%ti1, mesh_new%ti2             )           ! Basal shear stress
-    ! call reallocate_bounds( DIVA%tau_by_b                    , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%tau_dx_b                    , mesh_new%ti1, mesh_new%ti2             )           ! Driving stress
-    call reallocate_bounds( self%tau_dy_b                    , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_clean ( self%u_vav_b_prev                , mesh_new%nTri                          )           ! Velocity solution from previous viscosity iteration
-    call reallocate_clean ( self%v_vav_b_prev                , mesh_new%nTri                          )
+    call reallocate_bounds( self%u_base_b  , mesh_new%ti1, mesh_new%ti2             )
+    call reallocate_bounds( self%v_base_b  , mesh_new%ti1, mesh_new%ti2             )
+   !call reallocate_bounds( DIVA%u_3D_b    , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+   !call reallocate_bounds( DIVA%v_3D_b    , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( self%du_dz_3D_a, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%dv_dz_3D_a, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%eta_3D_a  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+   !call reallocate_bounds( DIVA%eta_3D_b  , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( self%F1_3D_a   , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%F2_3D_a   , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
+    call reallocate_bounds( self%F1_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( self%F2_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call reallocate_bounds( self%beta_eff_a, mesh_new%vi1, mesh_new%vi2             )
+    call reallocate_bounds( self%beta_eff_b, mesh_new%ti1, mesh_new%ti2             )
+   !call reallocate_bounds( DIVA%tau_bx_b  , mesh_new%ti1, mesh_new%ti2             )
+   !call reallocate_bounds( DIVA%tau_by_b  , mesh_new%ti1, mesh_new%ti2             )
 
     ! Finalise routine path
     call finalise_routine( routine_name)

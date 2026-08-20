@@ -36,8 +36,8 @@ module momentum_balance_solver_plain_SSA
   type, extends(atype_momentum_balance_solver_plain) :: type_momentum_balance_solver_plain_SSA
 
       ! Solution
-      real(dp), dimension(:), allocatable :: u_b                         ! [m yr^-1] 2-D horizontal ice velocity
-      real(dp), dimension(:), allocatable :: v_b
+      real(dp), dimension(:), allocatable :: u_vav_b                     ! [m yr^-1] 2-D horizontal ice velocity
+      real(dp), dimension(:), allocatable :: v_vav_b
 
       ! Intermediate data fields
       real(dp), dimension(:), allocatable :: A_flow_vav_a                ! [Pa^-3 y^-1] Vertically averaged Glen's flow law parameter
@@ -53,8 +53,8 @@ module momentum_balance_solver_plain_SSA
       real(dp), dimension(:), allocatable :: basal_friction_coefficient_b! Basal friction coefficient (tau_b = u * beta_b)
       real(dp), dimension(:), allocatable :: tau_dx_b                    ! Driving stress
       real(dp), dimension(:), allocatable :: tau_dy_b
-      real(dp), dimension(:), allocatable :: u_b_prev                    ! Velocity solution from previous viscosity iteration
-      real(dp), dimension(:), allocatable :: v_b_prev
+      real(dp), dimension(:), allocatable :: u_vav_b_prev                ! Velocity solution from previous viscosity iteration
+      real(dp), dimension(:), allocatable :: v_vav_b_prev
 
       ! Restart file
       character(len=256)                  :: restart_filename
@@ -95,8 +95,8 @@ contains
     call init_routine( routine_name)
 
     ! Solution
-    allocate( self%u_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%v_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%u_vav_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%v_vav_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
 
     ! Intermediate data fields
     allocate( self%A_flow_vav_a(                 self%mesh%vi1:self%mesh%vi2), source = 0._dp)
@@ -112,8 +112,8 @@ contains
     allocate( self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2), source = 0._dp)
     allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
     allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%u_b_prev(                     self%mesh%nTri             ), source = 0._dp)
-    allocate( self%v_b_prev(                     self%mesh%nTri             ), source = 0._dp)
+    allocate( self%u_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
+    allocate( self%v_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -132,8 +132,8 @@ contains
     call init_routine( routine_name)
 
     ! Solution
-    deallocate( self%u_b)
-    deallocate( self%v_b)
+    deallocate( self%u_vav_b)
+    deallocate( self%v_vav_b)
 
     ! Intermediate data fields
     deallocate( self%A_flow_vav_a)
@@ -149,8 +149,8 @@ contains
     deallocate( self%basal_friction_coefficient_b)
     deallocate( self%tau_dx_b)
     deallocate( self%tau_dy_b)
-    deallocate( self%u_b_prev)
-    deallocate( self%v_b_prev)
+    deallocate( self%u_vav_b_prev)
+    deallocate( self%v_vav_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -188,8 +188,8 @@ contains
     case default
       call crash('unknown choice_initial_velocity "' // trim( choice_initial_velocity) // '"!')
     case ('zero')
-      self%u_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
-      self%v_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+      self%u_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+      self%v_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
     case ('read_from_file')
       call initialise_SSA_velocities_from_file( self)
     end select
@@ -248,12 +248,12 @@ contains
     ! Read velocities from the file
     if (timeframe == 1E9_dp) then
       ! Assume the file has no time dimension
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_b', self%u_b)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_b', self%v_b)
+      call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b', self%u_vav_b)
+      call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b', self%v_vav_b)
     else
       ! Read specified timeframe
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_b', self%u_b, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_b', self%v_b, time_to_read = timeframe)
+      call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b', self%u_vav_b, time_to_read = timeframe)
+      call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b', self%v_vav_b, time_to_read = timeframe)
     end if
 
     ! Finalise routine path
@@ -300,8 +300,8 @@ contains
     grounded_ice_exists = any( geom%mask_grounded_ice)
     call MPI_ALLREDUCE( MPI_IN_PLACE, grounded_ice_exists, 1, MPI_logical, MPI_LOR, MPI_COMM_WORLD, ierr)
     if (.not. grounded_ice_exists .or. C%choice_sliding_law == 'no_sliding') then
-      self%u_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
-      self%v_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+      self%u_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
+      self%v_vav_b( self%mesh%ti1:self%mesh%ti2) = 0._dp
       call finalise_routine( routine_name)
       return
     end if
@@ -344,7 +344,7 @@ contains
       viscosity_iteration_i = viscosity_iteration_i + 1
 
       ! Calculate the strain rates for the current velocity solution
-      call calc_horizontal_strain_rates( self%mesh, self%u_b, self%v_b, &
+      call calc_horizontal_strain_rates( self%mesh, self%u_vav_b, self%v_vav_b, &
         self%du_dx_a, self%du_dy_a, self%dv_dx_a, self%dv_dy_a)
 
       ! Calculate the effective viscosity for the current velocity solution
@@ -354,9 +354,9 @@ contains
       call self%calc_applied_basal_friction_coefficient( ice, geom, bed_roughness)
 
       ! Solve the linearised SSA to calculate a new velocity solution
-      call solve_SSA_DIVA_linearised( self%mesh, self%u_b, self%v_b, self%N_b, &
+      call solve_SSA_DIVA_linearised( self%mesh, self%u_vav_b, self%v_vav_b, self%N_b, &
         self%dN_dx_b, self%dN_dy_b, &
-        self%basal_friction_coefficient_b, self%tau_dx_b, self%tau_dy_b, self%u_b_prev, self%v_b_prev, &
+        self%basal_friction_coefficient_b, self%tau_dx_b, self%tau_dy_b, self%u_vav_b_prev, self%v_vav_b_prev, &
         self%PETSc_rtol, self%PETSc_abstol, n_Axb_its_visc_it, &
         BC_prescr_mask_b_applied, BC_prescr_u_b_applied, BC_prescr_v_b_applied)
 
@@ -364,14 +364,14 @@ contains
       self%n_Axb_its = self%n_Axb_its + n_Axb_its_visc_it
 
       ! Limit velocities for improved stability
-      call apply_velocity_limits( self%mesh, self%u_b, self%v_b)
+      call apply_velocity_limits( self%mesh, self%u_vav_b, self%v_vav_b)
 
       ! Reduce the change between velocity solutions
-      call relax_viscosity_iterations( self%mesh, self%u_b, self%v_b, self%u_b_prev, self%v_b_prev, visc_it_relax_applied)
+      call relax_viscosity_iterations( self%mesh, self%u_vav_b, self%v_vav_b, self%u_vav_b_prev, self%v_vav_b_prev, visc_it_relax_applied)
 
       ! Calculate the L2-norm of the two consecutive velocity solutions
       L2_uv_prev = L2_uv
-      call calc_L2_norm_uv( self%mesh, self%u_b, self%v_b, self%u_b_prev, self%v_b_prev, L2_uv)
+      call calc_L2_norm_uv( self%mesh, self%u_vav_b, self%v_vav_b, self%u_vav_b_prev, self%v_vav_b_prev, L2_uv)
 
       ! if the viscosity iteration diverges, lower the relaxation parameter
       if (L2_uv > L2_uv_prev) then
@@ -393,8 +393,8 @@ contains
       end if
 
       ! DENK DROM
-      uv_min = minval( self%u_b( self%mesh%ti1:self%mesh%ti2))
-      uv_max = maxval( self%u_b( self%mesh%ti1:self%mesh%ti2))
+      uv_min = minval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2))
+      uv_max = maxval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2))
       call MPI_ALLREDUCE( MPI_IN_PLACE, uv_min, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
       call MPI_ALLREDUCE( MPI_IN_PLACE, uv_max, 1, MPI_doUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
       ! if (par%primary) write(0,*) '    SSA - viscosity iteration ', viscosity_iteration_i, ', u = [', uv_min, ' - ', uv_max, '], L2_uv = ', L2_uv
@@ -444,20 +444,20 @@ contains
     allocate( v_a( mesh_old%vi1: mesh_old%vi2))
 
     ! Map velocities from the triangles of the old mesh to the vertices of the old mesh
-    call map_b_a_2D( mesh_old, self%u_b, u_a)
-    call map_b_a_2D( mesh_old, self%v_b, v_a)
+    call map_b_a_2D( mesh_old, self%u_vav_b, u_a)
+    call map_b_a_2D( mesh_old, self%v_vav_b, v_a)
 
     ! Remap velocities from the vertices of the old mesh to the vertices of the new mesh
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, u_a, '2nd_order_conservative')
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, v_a, '2nd_order_conservative')
 
     ! reallocate memory for the velocities on the triangles
-    call reallocate_bounds( self%u_b                         , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%v_b                         , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%u_vav_b                         , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%v_vav_b                         , mesh_new%ti1, mesh_new%ti2)
 
     ! Map velocities from the vertices of the new mesh to the triangles of the new mesh
-    call map_a_b_2D( mesh_new, u_a, self%u_b)
-    call map_a_b_2D( mesh_new, v_a, self%v_b)
+    call map_a_b_2D( mesh_new, u_a, self%u_vav_b)
+    call map_a_b_2D( mesh_new, v_a, self%v_vav_b)
 
     ! Clean up after yourself
     deallocate( u_a)
@@ -479,8 +479,8 @@ contains
     call reallocate_bounds( self%basal_friction_coefficient_b, mesh_new%ti1, mesh_new%ti2)           ! Basal friction coefficient (basal_shear_stress = u * basal_friction_coefficient)
     call reallocate_bounds( self%tau_dx_b                    , mesh_new%ti1, mesh_new%ti2)           ! Driving stress
     call reallocate_bounds( self%tau_dy_b                    , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_clean ( self%u_b_prev                    , mesh_new%nTri             )           ! Velocity solution from previous viscosity iteration
-    call reallocate_clean ( self%v_b_prev                    , mesh_new%nTri             )
+    call reallocate_clean ( self%u_vav_b_prev                    , mesh_new%nTri             )           ! Velocity solution from previous viscosity iteration
+    call reallocate_clean ( self%v_vav_b_prev                    , mesh_new%nTri             )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -594,16 +594,17 @@ contains
     ! Local variables:
     character(len=*), parameter                      :: routine_name = 'calc_applied_basal_friction_coefficient'
     integer                                          :: ti
-    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: u_a, v_a
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: u_vav_a
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: v_vav_a
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Calculate the basal friction coefficient for the current velocity solution
     ! This is where the sliding law is called!
-    call map_b_a_2D( self%mesh, self%u_b, u_a)
-    call map_b_a_2D( self%mesh, self%v_b, v_a)
-    call calc_basal_friction_coefficient( self%mesh, geom, bed_roughness, u_a, v_a, &
+    call map_b_a_2D( self%mesh, self%u_vav_b, u_vav_a)
+    call map_b_a_2D( self%mesh, self%v_vav_b, v_vav_a)
+    call calc_basal_friction_coefficient( self%mesh, geom, bed_roughness, u_vav_a, v_vav_a, &
       ice%effective_pressure, ice%till_yield_stress, ice%basal_friction_coefficient)
 
     ! Map the basal friction coefficient to the b-grid
@@ -654,8 +655,8 @@ contains
     call write_time_to_file( self%restart_filename, ncid, time)
 
     ! write the velocity fields to the file
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_b', self%u_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_b', self%v_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b', self%u_vav_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b', self%v_vav_b)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -702,8 +703,8 @@ contains
     call add_time_dimension_to_file( self%restart_filename, ncid)
 
     ! Add the velocity fields to the file
-    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'u_b', long_name = '2-D horizontal ice velocity in the x-direction', units = 'm/yr')
-    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'v_b', long_name = '2-D horizontal ice velocity in the y-direction', units = 'm/yr')
+    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'u_vav_b', long_name = '2-D horizontal ice velocity in the x-direction', units = 'm/yr')
+    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'v_vav_b', long_name = '2-D horizontal ice velocity in the y-direction', units = 'm/yr')
 
     ! Close the file
     call close_netcdf_file( ncid)

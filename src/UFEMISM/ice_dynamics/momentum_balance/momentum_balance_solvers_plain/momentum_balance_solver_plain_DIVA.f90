@@ -97,41 +97,30 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Allocate variables that are shared between the SSA and DIVA solvers
+    call self%allocate_shared_SSA_DIVA_variables()
+
+    ! Allocate variables that are specific to the DIVA solver
+
     ! Solution
-    allocate( self%u_vav_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%v_vav_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%u_base_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%v_base_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%u_3D_b(                       self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
     allocate( self%v_3D_b(                       self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
 
     ! Intermediate data fields
-    allocate( self%du_dx_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
-    allocate( self%du_dy_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
-    allocate( self%dv_dx_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
-    allocate( self%dv_dy_a(                      self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
     allocate( self%du_dz_3D_a(                   self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
     allocate( self%dv_dz_3D_a(                   self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
     allocate( self%eta_3D_a(                     self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
     allocate( self%eta_3D_b(                     self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
-    allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
-    allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%dN_dx_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%dN_dy_b(                      self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%F1_3D_a(                      self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
     allocate( self%F2_3D_a(                      self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
     allocate( self%F1_3D_b(                      self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
     allocate( self%F2_3D_b(                      self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%beta_eff_a(                   self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
     allocate( self%beta_eff_b(                   self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%tau_bx_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%tau_by_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%u_vav_b_prev(                 self%mesh%nTri                            ), source = 0._dp)
-    allocate( self%v_vav_b_prev(                 self%mesh%nTri                            ), source = 0._dp)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -149,41 +138,30 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Deallocate variables that are shared between the SSA and DIVA solvers
+    call self%deallocate_shared_SSA_DIVA_variables()
+
+    ! Deallocate variables that are specific to the DIVA solver
+
     ! Solution
-    deallocate( self%u_vav_b)
-    deallocate( self%v_vav_b)
     deallocate( self%u_base_b)
     deallocate( self%v_base_b)
     deallocate( self%u_3D_b)
     deallocate( self%v_3D_b)
 
     ! Intermediate data fields
-    deallocate( self%du_dx_a)
-    deallocate( self%du_dy_a)
-    deallocate( self%dv_dx_a)
-    deallocate( self%dv_dy_a)
     deallocate( self%du_dz_3D_a)
     deallocate( self%dv_dz_3D_a)
     deallocate( self%eta_3D_a)
     deallocate( self%eta_3D_b)
-    deallocate( self%eta_vav_a)
-    deallocate( self%N_a)
-    deallocate( self%N_b)
-    deallocate( self%dN_dx_b)
-    deallocate( self%dN_dy_b)
     deallocate( self%F1_3D_a)
     deallocate( self%F2_3D_a)
     deallocate( self%F1_3D_b)
     deallocate( self%F2_3D_b)
-    deallocate( self%basal_friction_coefficient_b)
     deallocate( self%beta_eff_a)
     deallocate( self%beta_eff_b)
     deallocate( self%tau_bx_b)
     deallocate( self%tau_by_b)
-    deallocate( self%tau_dx_b)
-    deallocate( self%tau_dy_b)
-    deallocate( self%u_vav_b_prev)
-    deallocate( self%v_vav_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

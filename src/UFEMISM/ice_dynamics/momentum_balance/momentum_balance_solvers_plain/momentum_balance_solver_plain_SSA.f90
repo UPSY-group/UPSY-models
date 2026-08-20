@@ -73,26 +73,13 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Solution
-    allocate( self%u_vav_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%v_vav_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    ! Allocate variables that are shared between the SSA and DIVA solvers
+    call self%allocate_shared_SSA_DIVA_variables()
+
+    ! Allocate variables that are specific to the SSA solver
 
     ! Intermediate data fields
-    allocate( self%A_flow_vav_a(                 self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%du_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%du_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%dv_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%dv_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%dN_dx_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%dN_dy_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%u_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
-    allocate( self%v_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
+    allocate( self%A_flow_vav_a( self%mesh%vi1:self%mesh%vi2), source = 0._dp)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -110,26 +97,13 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! Solution
-    deallocate( self%u_vav_b)
-    deallocate( self%v_vav_b)
+    ! Deallocate variables that are shared between the SSA and DIVA solvers
+    call self%deallocate_shared_SSA_DIVA_variables()
+
+    ! Deallocate variables that are specific to the SSA solver
 
     ! Intermediate data fields
     deallocate( self%A_flow_vav_a)
-    deallocate( self%du_dx_a)
-    deallocate( self%du_dy_a)
-    deallocate( self%dv_dx_a)
-    deallocate( self%dv_dy_a)
-    deallocate( self%eta_vav_a)
-    deallocate( self%N_a)
-    deallocate( self%N_b)
-    deallocate( self%dN_dx_b)
-    deallocate( self%dN_dy_b)
-    deallocate( self%basal_friction_coefficient_b)
-    deallocate( self%tau_dx_b)
-    deallocate( self%tau_dy_b)
-    deallocate( self%u_vav_b_prev)
-    deallocate( self%v_vav_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

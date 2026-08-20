@@ -42,8 +42,83 @@ module momentum_balance_solver_plain_SSADIVA
 
     contains
 
+      procedure, public :: allocate_shared_SSA_DIVA_variables
+      procedure, public :: deallocate_shared_SSA_DIVA_variables
+
   end type atype_momentum_balance_solver_plain_SSADIVA
 
 contains
+
+  subroutine allocate_shared_SSA_DIVA_variables( self)
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'allocate_shared_SSA_DIVA_variables'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Solution
+    allocate( self%u_vav_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%v_vav_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+
+    ! Intermediate data fields
+    allocate( self%du_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%du_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%dv_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%dv_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%dN_dx_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%dN_dy_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+    allocate( self%u_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
+    allocate( self%v_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine allocate_shared_SSA_DIVA_variables
+
+  subroutine deallocate_shared_SSA_DIVA_variables( self)
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'deallocate_shared_SSA_DIVA_variables'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Solution
+    deallocate( self%u_vav_b)
+    deallocate( self%v_vav_b)
+
+    ! Intermediate data fields
+    deallocate( self%du_dx_a)
+    deallocate( self%du_dy_a)
+    deallocate( self%dv_dx_a)
+    deallocate( self%dv_dy_a)
+    deallocate( self%eta_vav_a)
+    deallocate( self%N_a)
+    deallocate( self%N_b)
+    deallocate( self%dN_dx_b)
+    deallocate( self%dN_dy_b)
+    deallocate( self%basal_friction_coefficient_b)
+    deallocate( self%tau_dx_b)
+    deallocate( self%tau_dy_b)
+    deallocate( self%u_vav_b_prev)
+    deallocate( self%v_vav_b_prev)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine deallocate_shared_SSA_DIVA_variables
 
 end module momentum_balance_solver_plain_SSADIVA

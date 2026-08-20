@@ -39,43 +39,24 @@ module momentum_balance_solver_plain_DIVA
   type, extends(atype_momentum_balance_solver_plain_SSADIVA) :: type_momentum_balance_solver_plain_DIVA
 
     ! Solution
-    real(dp), dimension(:  ), allocatable :: u_vav_b                     ! [m yr^-1] 2-D horizontal ice velocity
-    real(dp), dimension(:  ), allocatable :: v_vav_b
     real(dp), dimension(:  ), allocatable :: u_base_b                    ! [m yr^-1] 2-D horizontal ice velocity at the ice base
     real(dp), dimension(:  ), allocatable :: v_base_b
     real(dp), dimension(:,:), allocatable :: u_3D_b                      ! [m yr^-1] 3-D horizontal ice velocity
     real(dp), dimension(:,:), allocatable :: v_3D_b
 
     ! Intermediate data fields
-    real(dp), dimension(:  ), allocatable :: du_dx_a                     ! [yr^-1] 2-D horizontal strain rates
-    real(dp), dimension(:  ), allocatable :: du_dy_a
-    real(dp), dimension(:  ), allocatable :: dv_dx_a
-    real(dp), dimension(:  ), allocatable :: dv_dy_a
     real(dp), dimension(:,:), allocatable :: du_dz_3D_a                  ! [yr^-1] 3-D vertical shear strain rates
     real(dp), dimension(:,:), allocatable :: dv_dz_3D_a
     real(dp), dimension(:,:), allocatable :: eta_3D_a                    ! Effective viscosity
     real(dp), dimension(:,:), allocatable :: eta_3D_b
-    real(dp), dimension(:  ), allocatable :: eta_vav_a
-    real(dp), dimension(:  ), allocatable :: N_a                         ! Product term N = eta * H
-    real(dp), dimension(:  ), allocatable :: N_b
-    real(dp), dimension(:  ), allocatable :: dN_dx_b                     ! Gradients of N
-    real(dp), dimension(:  ), allocatable :: dN_dy_b
     real(dp), dimension(:,:), allocatable :: F1_3D_a                     ! F-integrals
     real(dp), dimension(:,:), allocatable :: F2_3D_a
     real(dp), dimension(:,:), allocatable :: F1_3D_b
     real(dp), dimension(:,:), allocatable :: F2_3D_b
-    real(dp), dimension(:  ), allocatable :: basal_friction_coefficient_b! Basal friction coefficient (tau_b = u * beta_b)
     real(dp), dimension(:  ), allocatable :: beta_eff_a                  ! "Effective" friction coefficient (turning the SSA into the DIVA)
     real(dp), dimension(:  ), allocatable :: beta_eff_b
     real(dp), dimension(:  ), allocatable :: tau_bx_b                    ! Basal shear stress
     real(dp), dimension(:  ), allocatable :: tau_by_b
-    real(dp), dimension(:  ), allocatable :: tau_dx_b                    ! Driving stress
-    real(dp), dimension(:  ), allocatable :: tau_dy_b
-    real(dp), dimension(:  ), allocatable :: u_b_prev                    ! Velocity solution from previous viscosity iteration
-    real(dp), dimension(:  ), allocatable :: v_b_prev
-
-    ! Restart file
-    character(len=256)                    :: restart_filename
 
     contains
 
@@ -149,8 +130,8 @@ contains
     allocate( self%tau_by_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
     allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%u_b_prev(                     self%mesh%nTri                            ), source = 0._dp)
-    allocate( self%v_b_prev(                     self%mesh%nTri                            ), source = 0._dp)
+    allocate( self%u_vav_b_prev(                 self%mesh%nTri                            ), source = 0._dp)
+    allocate( self%v_vav_b_prev(                 self%mesh%nTri                            ), source = 0._dp)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -201,8 +182,8 @@ contains
     deallocate( self%tau_by_b)
     deallocate( self%tau_dx_b)
     deallocate( self%tau_dy_b)
-    deallocate( self%u_b_prev)
-    deallocate( self%v_b_prev)
+    deallocate( self%u_vav_b_prev)
+    deallocate( self%v_vav_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -265,8 +246,8 @@ contains
     character(len=*), parameter                      :: routine_name = 'initialise_DIVA_velocities_from_file'
     character(len=:), allocatable                    :: filename
     real(dp)                                         :: timeframe
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_b_prev_loc
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_b_prev_loc
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_vav_b_prev_loc
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_vav_b_prev_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -332,11 +313,11 @@ contains
     call read_field_from_mesh_file_dp_2D_b( filename, 'tau_by_b'                    , self%tau_by_b                    , time_to_read = timeframe)
     call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dx_b'                    , self%tau_dx_b                    , time_to_read = timeframe)
     call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dy_b'                    , self%tau_dy_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'u_b_prev'                    , u_b_prev_loc                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'v_b_prev'                    , v_b_prev_loc                     , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b_prev'                , u_vav_b_prev_loc                 , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b_prev'                , v_vav_b_prev_loc                 , time_to_read = timeframe)
 
-    call gather_to_all( u_b_prev_loc, self%u_b_prev)
-    call gather_to_all( v_b_prev_loc, self%v_b_prev)
+    call gather_to_all( u_vav_b_prev_loc, self%u_vav_b_prev)
+    call gather_to_all( v_vav_b_prev_loc, self%v_vav_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -448,7 +429,7 @@ contains
       ! Solve the linearised DIVA to calculate a new velocity solution
       call solve_SSA_DIVA_linearised( self%mesh, self%u_vav_b, self%v_vav_b, &
         self%N_b, self%dN_dx_b, self%dN_dy_b, &
-        self%beta_eff_b, self%tau_dx_b, self%tau_dy_b, self%u_b_prev, self%v_b_prev, &
+        self%beta_eff_b, self%tau_dx_b, self%tau_dy_b, self%u_vav_b_prev, self%v_vav_b_prev, &
         self%PETSc_rtol, self%PETSc_abstol, n_Axb_its_visc_it, &
         BC_prescr_mask_b_applied, BC_prescr_u_b_applied, BC_prescr_v_b_applied)
 
@@ -459,7 +440,7 @@ contains
       call apply_velocity_limits( self%mesh, self%u_vav_b, self%v_vav_b)
 
       ! Reduce the change between velocity solutions
-      call relax_viscosity_iterations( self%mesh, self%u_vav_b, self%v_vav_b, self%u_b_prev, self%v_b_prev, visc_it_relax_applied)
+      call relax_viscosity_iterations( self%mesh, self%u_vav_b, self%v_vav_b, self%u_vav_b_prev, self%v_vav_b_prev, visc_it_relax_applied)
 
       ! Calculate basal velocities
       call self%calc_basal_velocities ()
@@ -469,7 +450,7 @@ contains
 
       ! Calculate the L2-norm of the two consecutive velocity solutions
       L2_uv_prev = L2_uv
-      call calc_L2_norm_uv( self%mesh, self%u_vav_b, self%v_vav_b, self%u_b_prev, self%v_b_prev, L2_uv)
+      call calc_L2_norm_uv( self%mesh, self%u_vav_b, self%v_vav_b, self%u_vav_b_prev, self%v_vav_b_prev, L2_uv)
 
       ! if the viscosity iteration diverges, lower the relaxation parameter
       if (L2_uv > L2_uv_prev) then
@@ -626,8 +607,8 @@ contains
     ! call reallocate_bounds( DIVA%tau_by_b                    , mesh_new%ti1, mesh_new%ti2             )
     call reallocate_bounds( self%tau_dx_b                    , mesh_new%ti1, mesh_new%ti2             )           ! Driving stress
     call reallocate_bounds( self%tau_dy_b                    , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_clean ( self%u_b_prev                    , mesh_new%nTri                          )           ! Velocity solution from previous viscosity iteration
-    call reallocate_clean ( self%v_b_prev                    , mesh_new%nTri                          )
+    call reallocate_clean ( self%u_vav_b_prev                , mesh_new%nTri                          )           ! Velocity solution from previous viscosity iteration
+    call reallocate_clean ( self%v_vav_b_prev                , mesh_new%nTri                          )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -982,8 +963,8 @@ contains
     ! Local variables:
     character(len=*), parameter                      :: routine_name = 'write_to_restart_file_DIVA'
     integer                                          :: ncid
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_b_prev_loc
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_b_prev_loc
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_vav_b_prev_loc
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_vav_b_prev_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -1037,10 +1018,10 @@ contains
     call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_by_b'                    , self%tau_by_b)
     call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_dx_b'                    , self%tau_dx_b)
     call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_dy_b'                    , self%tau_dy_b)
-    u_b_prev_loc = self%u_b_prev( self%mesh%ti1:self%mesh%ti2)
-    v_b_prev_loc = self%v_b_prev( self%mesh%ti1:self%mesh%ti2)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_b_prev'                    , u_b_prev_loc)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_b_prev'                    , v_b_prev_loc)
+    u_vav_b_prev_loc = self%u_vav_b_prev( self%mesh%ti1:self%mesh%ti2)
+    v_vav_b_prev_loc = self%v_vav_b_prev( self%mesh%ti1:self%mesh%ti2)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b_prev'                , u_vav_b_prev_loc)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b_prev'                , v_vav_b_prev_loc)
 
     ! Close the file
     call close_netcdf_file( ncid)
@@ -1124,8 +1105,8 @@ contains
     call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'tau_by_b'                    , long_name = 'Basal shear stress in the y-direction', units = 'Pa')
     call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'tau_dx_b'                    , long_name = 'Driving stress in the x-direction', units = 'Pa')
     call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'tau_dy_b'                    , long_name = 'Driving stress in the y-direction', units = 'Pa')
-    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'u_b_prev'                    , long_name = 'Previous iteration of u_b', units = 'm yr^-1')
-    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'v_b_prev'                    , long_name = 'Previous iteration of v_b', units = 'm yr^-1')
+    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'u_vav_b_prev'                , long_name = 'Previous iteration of u_b', units = 'm yr^-1')
+    call add_field_mesh_dp_2D_b( self%restart_filename, ncid, 'v_vav_b_prev'                , long_name = 'Previous iteration of v_b', units = 'm yr^-1')
 
     ! Close the file
     call close_netcdf_file( ncid)

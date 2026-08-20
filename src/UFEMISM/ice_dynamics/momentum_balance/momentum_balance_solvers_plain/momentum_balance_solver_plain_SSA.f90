@@ -45,7 +45,7 @@ module momentum_balance_solver_plain_SSA
       real(dp), dimension(:), allocatable :: du_dy_a
       real(dp), dimension(:), allocatable :: dv_dx_a
       real(dp), dimension(:), allocatable :: dv_dy_a
-      real(dp), dimension(:), allocatable :: eta_a                       ! Effective viscosity
+      real(dp), dimension(:), allocatable :: eta_vav_a                   ! Effective viscosity
       real(dp), dimension(:), allocatable :: N_a                         ! Product term N = eta * H
       real(dp), dimension(:), allocatable :: N_b
       real(dp), dimension(:), allocatable :: dN_dx_b                     ! Gradients of N
@@ -104,7 +104,7 @@ contains
     allocate( self%du_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
     allocate( self%dv_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
     allocate( self%dv_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%eta_a(                        self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2), source = 0._dp)
     allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2), source = 0._dp)
     allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
     allocate( self%dN_dx_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
@@ -141,7 +141,7 @@ contains
     deallocate( self%du_dy_a)
     deallocate( self%dv_dx_a)
     deallocate( self%dv_dy_a)
-    deallocate( self%eta_a)
+    deallocate( self%eta_vav_a)
     deallocate( self%N_a)
     deallocate( self%N_b)
     deallocate( self%dN_dx_b)
@@ -452,8 +452,8 @@ contains
     call map_from_mesh_to_mesh_with_reallocation_2D( mesh_old, mesh_new, C%output_dir, v_a, '2nd_order_conservative')
 
     ! reallocate memory for the velocities on the triangles
-    call reallocate_bounds( self%u_vav_b                         , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%v_vav_b                         , mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%u_vav_b, mesh_new%ti1, mesh_new%ti2)
+    call reallocate_bounds( self%v_vav_b, mesh_new%ti1, mesh_new%ti2)
 
     ! Map velocities from the vertices of the new mesh to the triangles of the new mesh
     call map_a_b_2D( mesh_new, u_a, self%u_vav_b)
@@ -471,7 +471,7 @@ contains
     call reallocate_bounds( self%du_dy_a                     , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%dv_dx_a                     , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%dv_dy_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%eta_a                       , mesh_new%vi1, mesh_new%vi2)           ! Effective viscosity
+    call reallocate_bounds( self%eta_vav_a                   , mesh_new%vi1, mesh_new%vi2)           ! Effective viscosity
     call reallocate_bounds( self%N_a                         , mesh_new%vi1, mesh_new%vi2)           ! Product term N = eta * H
     call reallocate_bounds( self%N_b                         , mesh_new%ti1, mesh_new%ti2)
     call reallocate_bounds( self%dN_dx_b                     , mesh_new%ti1, mesh_new%ti2)           ! Gradients of N
@@ -479,8 +479,8 @@ contains
     call reallocate_bounds( self%basal_friction_coefficient_b, mesh_new%ti1, mesh_new%ti2)           ! Basal friction coefficient (basal_shear_stress = u * basal_friction_coefficient)
     call reallocate_bounds( self%tau_dx_b                    , mesh_new%ti1, mesh_new%ti2)           ! Driving stress
     call reallocate_bounds( self%tau_dy_b                    , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_clean ( self%u_vav_b_prev                    , mesh_new%nTri             )           ! Velocity solution from previous viscosity iteration
-    call reallocate_clean ( self%v_vav_b_prev                    , mesh_new%nTri             )
+    call reallocate_clean ( self%u_vav_b_prev                , mesh_new%nTri             )           ! Velocity solution from previous viscosity iteration
+    call reallocate_clean ( self%v_vav_b_prev                , mesh_new%nTri             )
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -553,7 +553,7 @@ contains
 
       ! Calculate effective viscosity
       do vi = self%mesh%vi1, self%mesh%vi2
-        self%eta_a( vi) = calc_effective_viscosity_Glen_2D( Glens_flow_law_epsilon_sq_0_applied, &
+        self%eta_vav_a( vi) = calc_effective_viscosity_Glen_2D( Glens_flow_law_epsilon_sq_0_applied, &
           self%du_dx_a( vi), self%du_dy_a( vi), self%dv_dx_a( vi), self%dv_dy_a( vi), self%A_flow_vav_a( vi))
       end do
 
@@ -563,10 +563,10 @@ contains
 
     do vi = self%mesh%vi1, self%mesh%vi2
       ! Safety
-      self%eta_a( vi) = min( max( self%eta_a( vi), C%visc_eff_min), eta_max)
+      self%eta_vav_a( vi) = min( max( self%eta_vav_a( vi), C%visc_eff_min), eta_max)
 
       ! Calculate the product term N = eta * H on the a-grid
-      self%N_a( vi) = self%eta_a( vi) * max( 0.1_dp, geom%Hi( vi))
+      self%N_a( vi) = self%eta_vav_a( vi) * max( 0.1_dp, geom%Hi( vi))
     end do
 
     ! Calculate the product term N and its gradients on the b-grid

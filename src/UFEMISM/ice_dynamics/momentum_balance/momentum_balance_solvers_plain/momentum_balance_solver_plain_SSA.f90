@@ -20,7 +20,6 @@ module momentum_balance_solver_plain_SSA
   use mesh_zeta, only: vertical_average
   use mpi_distributed_memory, only: gather_to_all
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
-  use solve_linearised_SSA_DIVA_infinite_slab, only: solve_SSA_DIVA_linearised
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D
   use bed_roughness_model_types, only: type_bed_roughness_model
   use momentum_balance_solver_plain_SSADIVA, only: atype_momentum_balance_solver_plain_SSADIVA
@@ -304,10 +303,7 @@ contains
       call self%calc_applied_basal_friction_coefficient( ice, geom, bed_roughness)
 
       ! Solve the linearised SSA to calculate a new velocity solution
-      call solve_SSA_DIVA_linearised( self%mesh, self%u_vav_b, self%v_vav_b, self%N_b, &
-        self%dN_dx_b, self%dN_dy_b, &
-        self%basal_friction_coefficient_b, self%tau_dx_b, self%tau_dy_b, self%u_vav_b_prev, self%v_vav_b_prev, &
-        self%PETSc_rtol, self%PETSc_abstol, n_Axb_its_visc_it, &
+      call self%solve_SSA_DIVA_linearised( n_Axb_its_visc_it, &
         BC_prescr_mask_b_applied, BC_prescr_u_b_applied, BC_prescr_v_b_applied)
 
       ! Update stability info

@@ -1,83 +1,61 @@
-module solve_linearised_SSA_DIVA_infinite_slab
-
-  use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use model_configuration, only: C
-  use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
-  use mpi_distributed_memory, only: gather_to_all
-  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
+submodule(momentum_balance_solver_plain_SSADIVA) solve_linearised_SSA_DIVA_infinite_slab
 
   implicit none
 
-  private
-
-  public :: solve_SSA_DIVA_linearised, calc_SSA_DIVA_stiffness_matrix_row_BC, &
-    calc_SSA_DIVA_stiffness_matrix_row_free, calc_SSA_DIVA_sans_stiffness_matrix_row_free
-
 contains
 
-  subroutine solve_SSA_DIVA_linearised( mesh, u_b, v_b, N_b, dN_dx_b, dN_dy_b, &
-    basal_friction_coefficient_b, tau_dx_b, tau_dy_b, u_b_prev, v_b_prev, &
-    PETSc_rtol, PETSc_abstol, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+  subroutine solve_SSA_DIVA_linearised( self, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Solve the linearised SSA
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(inout) :: u_b, v_b
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: N_b, dN_dx_b, dN_dy_b
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: basal_friction_coefficient_b
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: tau_dx_b, tau_dy_b
-    real(dp), dimension(mesh%nTri),         intent(inout) :: u_b_prev, v_b_prev
-    real(dp),                               intent(in   ) :: PETSc_rtol, PETSc_abstol
-    integer,                                intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
-    integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+    integer,                                            intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
+    integer,  dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised'
+    character(len=*), parameter         :: routine_name = 'solve_SSA_DIVA_linearised'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_CSR_matrix_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)            :: A_CSR
     real(dp), dimension(:), allocatable :: bb
     real(dp), dimension(:), allocatable :: uv_buv
     integer                             :: row_tiuv,ti,uv
-    character(len=256)                  :: choice_BC_u, choice_BC_v
+    character(len=:), allocatable       :: choice_BC_u, choice_BC_v
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Store the previous solution
-    call gather_to_all( u_b, u_b_prev)
-    call gather_to_all( v_b, v_b_prev)
+    call gather_to_all( self%u_vav_b, self%u_vav_b_prev)
+    call gather_to_all( self%v_vav_b, self%v_vav_b_prev)
 
     ! == Initialise the stiffness matrix using the native UFEMISM CSR-matrix format
     ! =============================================================================
 
     ! Matrix size
-    ncols           = mesh%nTri     * 2      ! from
-    ncols_loc       = mesh%nTri_loc * 2
-    nrows           = mesh%nTri     * 2      ! to
-    nrows_loc       = mesh%nTri_loc * 2
-    nnz_est_proc    = mesh%M2_ddx_b_b%nnz * 4
+    ncols           = self%mesh%nTri     * 2      ! from
+    ncols_loc       = self%mesh%nTri_loc * 2
+    nrows           = self%mesh%nTri     * 2      ! to
+    nrows_loc       = self%mesh%nTri_loc * 2
+    nnz_est_proc    = self%mesh%M2_ddx_b_b%nnz * 4
 
     call A_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
-    allocate( bb(     mesh%ti1*2-1: mesh%ti2*2))
-    allocate( uv_buv( mesh%ti1*2-1: mesh%ti2*2))
+    allocate( bb(     self%mesh%ti1*2-1: self%mesh%ti2*2))
+    allocate( uv_buv( self%mesh%ti1*2-1: self%mesh%ti2*2))
 
     ! Fill in the current velocity solution
-    do ti = mesh%ti1, mesh%ti2
+    do ti = self%mesh%ti1, self%mesh%ti2
 
       ! u
-      row_tiuv = mesh%tiuv2n( ti,1)
-      uv_buv( row_tiuv) = u_b( ti)
+      row_tiuv = self%mesh%tiuv2n( ti,1)
+      uv_buv( row_tiuv) = self%u_vav_b( ti)
 
       ! v
-      row_tiuv = mesh%tiuv2n( ti,2)
-      uv_buv( row_tiuv) = v_b( ti)
+      row_tiuv = self%mesh%tiuv2n( ti,2)
+      uv_buv( row_tiuv) = self%v_vav_b( ti)
 
     end do
 
@@ -86,8 +64,8 @@ contains
 
     do row_tiuv = A_CSR%i1, A_CSR%i2
 
-      ti = mesh%n2tiuv( row_tiuv,1)
-      uv = mesh%n2tiuv( row_tiuv,2)
+      ti = self%mesh%n2tiuv( row_tiuv,1)
+      uv = self%mesh%n2tiuv( row_tiuv,2)
 
       if (BC_prescr_mask_b( ti) == 1) then
         ! Dirichlet boundary condition; velocities are prescribed for this triangle
@@ -104,10 +82,10 @@ contains
           call crash('uv can only be 1 or 2!')
         end if
 
-      elseif (mesh%TriBI( ti) > 0) then
+      elseif (self%mesh%TriBI( ti) > 0) then
         ! Domain border: apply boundary conditions
 
-        select case (mesh%TriBI( ti))
+        select case (self%mesh%TriBI( ti))
         case default
           call crash('invalid TriBI value at triangle {int_01}', int_01 = ti)
         case (1,2)
@@ -128,45 +106,42 @@ contains
           choice_BC_v = C%BC_v_west
         end select
 
-        call calc_SSA_DIVA_stiffness_matrix_row_BC( mesh, u_b_prev, v_b_prev, &
-          A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
+        call self%calc_SSA_DIVA_stiffness_matrix_row_BC( A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
 
       else
         ! No boundary conditions apply; solve the SSA
 
         if (C%do_include_SSADIVA_crossterms) then
           ! Calculate matrix coefficients for the full SSA
-          call calc_SSA_DIVA_stiffness_matrix_row_free( mesh, N_b, dN_dx_b, dN_dy_b, &
-            basal_friction_coefficient_b, tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)
+          call self%calc_SSA_DIVA_stiffness_matrix_row_free( A_CSR, bb, row_tiuv)
         else
           ! Calculate matrix coefficients for the SSA sans the gradients of the effective viscosity (the "cross-terms")
-          call calc_SSA_DIVA_sans_stiffness_matrix_row_free( mesh, N_b, &
-            basal_friction_coefficient_b, tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)
+          call self%calc_SSA_DIVA_sans_stiffness_matrix_row_free( A_CSR, bb, row_tiuv)
         end if
 
       end if
 
     end do
 
-    call A_CSR%finalise
+    call A_CSR%finalise()
 
     ! == Solve the matrix equation
     ! ============================
 
     ! Use PETSc to solve the matrix equation
-    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_buv, PETSc_rtol, PETSc_abstol, n_Axb_its, &
+    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_buv, self%PETSc_rtol, self%PETSc_abstol, n_Axb_its, &
       PETSc_KSPtype = C%stress_balance_PETSc_KSPtype, PETSc_PCtype = C%stress_balance_PETSc_PCtype)
 
     ! Disentangle the u and v components of the velocity solution
-    do ti = mesh%ti1, mesh%ti2
+    do ti = self%mesh%ti1, self%mesh%ti2
 
       ! u
-      row_tiuv = mesh%tiuv2n( ti,1)
-      u_b( ti) = uv_buv( row_tiuv)
+      row_tiuv = self%mesh%tiuv2n( ti,1)
+      self%u_vav_b( ti) = uv_buv( row_tiuv)
 
       ! v
-      row_tiuv = mesh%tiuv2n( ti,2)
-      v_b( ti) = uv_buv( row_tiuv)
+      row_tiuv = self%mesh%tiuv2n( ti,2)
+      self%v_vav_b( ti) = uv_buv( row_tiuv)
 
     end do
 
@@ -175,8 +150,7 @@ contains
 
   end subroutine solve_SSA_DIVA_linearised
 
-  subroutine calc_SSA_DIVA_stiffness_matrix_row_free( mesh, N_b, dN_dx_b, dN_dy_b, &
-    basal_friction_coefficient_b, tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)
+  subroutine calc_SSA_DIVA_stiffness_matrix_row_free( self, A_CSR, bb, row_tiuv)
     !< Add coefficients to this matrix row to represent the linearised SSA
 
     ! The SSA reads;
@@ -206,13 +180,10 @@ contains
     ! product term N = eta H on the a-grid (vertices).
 
     ! In/output variables:
-    type(type_mesh),                               intent(in   ) :: mesh
-    real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: N_b, dN_dx_b, dN_dy_b
-    real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: basal_friction_coefficient_b
-    real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_CSR_matrix_dp),               intent(inout) :: A_CSR
-    real(dp), dimension(mesh%ti1*2-1: mesh%ti2*2), intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tiuv
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+    type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
+    integer,                                            intent(in   ) :: row_tiuv
 
     ! Local variables:
     integer                             :: ti, uv
@@ -228,31 +199,31 @@ contains
     integer                             :: k, tj, col_tju, col_tjv
 
     ! Relevant indices for this triangle
-    ti = mesh%n2tiuv( row_tiuv,1)
-    uv = mesh%n2tiuv( row_tiuv,2)
+    ti = self%mesh%n2tiuv( row_tiuv,1)
+    uv = self%mesh%n2tiuv( row_tiuv,2)
 
     ! N, dN/dx, dN/dy, basal_friction_coefficient_b, tau_dx, and tau_dy on this triangle
-    N                          = N_b(      ti)
-    dN_dx                      = dN_dx_b(  ti)
-    dN_dy                      = dN_dy_b(  ti)
-    basal_friction_coefficient = basal_friction_coefficient_b( ti)
-    tau_dx                     = tau_dx_b( ti)
-    tau_dy                     = tau_dy_b( ti)
+    N                          = self%N_b(      ti)
+    dN_dx                      = self%dN_dx_b(  ti)
+    dN_dy                      = self%dN_dy_b(  ti)
+    basal_friction_coefficient = self%basal_friction_coefficient_b( ti)
+    tau_dx                     = self%tau_dx_b( ti)
+    tau_dy                     = self%tau_dy_b( ti)
 
     ! allocate memory for single matrix rows
-    allocate( single_row_ind(        mesh%nC_mem*2))
-    allocate( single_row_ddx_val(    mesh%nC_mem*2))
-    allocate( single_row_ddy_val(    mesh%nC_mem*2))
-    allocate( single_row_d2dx2_val(  mesh%nC_mem*2))
-    allocate( single_row_d2dxdy_val( mesh%nC_mem*2))
-    allocate( single_row_d2dy2_val(  mesh%nC_mem*2))
+    allocate( single_row_ind(        self%mesh%nC_mem*2))
+    allocate( single_row_ddx_val(    self%mesh%nC_mem*2))
+    allocate( single_row_ddy_val(    self%mesh%nC_mem*2))
+    allocate( single_row_d2dx2_val(  self%mesh%nC_mem*2))
+    allocate( single_row_d2dxdy_val( self%mesh%nC_mem*2))
+    allocate( single_row_d2dy2_val(  self%mesh%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call self%mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call self%mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call self%mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call self%mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call self%mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -261,22 +232,22 @@ contains
 
         ! Relevant indices for this neighbouring triangle
         tj      = single_row_ind( k)
-        col_tju = mesh%tiuv2n( tj,1)
-        col_tjv = mesh%tiuv2n( tj,2)
+        col_tju = self%mesh%tiuv2n( tj,1)
+        col_tjv = self%mesh%tiuv2n( tj,2)
 
         !   4 N d2u/dx2  + 4 dN/dx du/dx + N d2u/dy2 + dN/dy du/dy - beta_b u + ...
         !   3 N d2v/dxdy + 2 dN/dx dv/dy +             dN/dy dv/dx = -tau_dx
 
         ! Combine the mesh operators
         Au = 4._dp * N     * single_row_d2dx2_val(  k) + &  ! 4  N    d2u/dx2
-            4._dp * dN_dx * single_row_ddx_val(    k) + &  ! 4 dN/dx du/dx
-                    N     * single_row_d2dy2_val(  k) + &  !    N    d2u/dy2
-                    dN_dy * single_row_ddy_val(    k)      !   dN/dy du/dy
+             4._dp * dN_dx * single_row_ddx_val(    k) + &  ! 4 dN/dx du/dx
+                     N     * single_row_d2dy2_val(  k) + &  !    N    d2u/dy2
+                     dN_dy * single_row_ddy_val(    k)      !   dN/dy du/dy
         if (tj == ti) Au = Au - basal_friction_coefficient  ! - beta_b u
 
         Av = 3._dp * N     * single_row_d2dxdy_val( k) + &  ! 3  N    d2v/dxdy
-            2._dp * dN_dx * single_row_ddy_val(    k) + &  ! 2 dN/dx dv/dy
-                    dN_dy * single_row_ddx_val(    k)      !   dN/dy dv/dx
+             2._dp * dN_dx * single_row_ddy_val(    k) + &  ! 2 dN/dx dv/dy
+                     dN_dy * single_row_ddx_val(    k)      !   dN/dy dv/dx
 
         ! Add coefficients to the stiffness matrix
         call A_CSR%add_entry( row_tiuv, col_tju, Au)
@@ -294,22 +265,22 @@ contains
 
         ! Relevant indices for this neighbouring triangle
         tj      = single_row_ind( k)
-        col_tju = mesh%tiuv2n( tj,1)
-        col_tjv = mesh%tiuv2n( tj,2)
+        col_tju = self%mesh%tiuv2n( tj,1)
+        col_tjv = self%mesh%tiuv2n( tj,2)
 
         !   4 N d2v/dy2  + 4 dN/dy dv/dy + N d2v/dx2 + dN/dx dv/dx - beta_b v + ...
         !   3 N d2u/dxdy + 2 dN/dy du/dx +             dN/dx du/dy = -tau_dy
 
         ! Combine the mesh operators
         Av = 4._dp * N     * single_row_d2dy2_val(  k) + &  ! 4  N    d2v/dy2
-            4._dp * dN_dy * single_row_ddy_val(    k) + &  ! 4 dN/dy dv/dy
-                    N     * single_row_d2dx2_val(  k) + &  !    N    d2v/dx2
-                    dN_dx * single_row_ddx_val(    k)      !   dN/dx dv/dx
+             4._dp * dN_dy * single_row_ddy_val(    k) + &  ! 4 dN/dy dv/dy
+                     N     * single_row_d2dx2_val(  k) + &  !    N    d2v/dx2
+                     dN_dx * single_row_ddx_val(    k)      !   dN/dx dv/dx
         if (tj == ti) Av = Av - basal_friction_coefficient  ! - beta_b v
 
         Au = 3._dp * N     * single_row_d2dxdy_val( k) + &  ! 3  N    d2u/dxdy
-            2._dp * dN_dy * single_row_ddx_val(    k) + &  ! 2 dN/dy du/dx
-                    dN_dx * single_row_ddy_val(    k)      !   dN/dx du/dy
+             2._dp * dN_dy * single_row_ddx_val(    k) + &  ! 2 dN/dy du/dx
+                     dN_dx * single_row_ddy_val(    k)      !   dN/dx du/dy
 
         ! Add coefficients to the stiffness matrix
         call A_CSR%add_entry( row_tiuv, col_tju, Au)
@@ -326,8 +297,7 @@ contains
 
   end subroutine calc_SSA_DIVA_stiffness_matrix_row_free
 
-  subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free( mesh, N_b, basal_friction_coefficient_b, &
-    tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)
+  subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free( self, A_CSR, bb, row_tiuv)
     !< Add coefficients to this matrix row to represent the linearised SSA
     !< sans the gradients of the effective viscosity (the "cross-terms")
 
@@ -368,13 +338,10 @@ contains
     ! product term N = eta H on the a-grid (vertices).
 
     ! In/output variables:
-    type(type_mesh),                               intent(in   ) :: mesh
-    real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: N_b
-    real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: basal_friction_coefficient_b
-    real(dp), dimension(mesh%ti1:mesh%ti2),        intent(in   ) :: tau_dx_b, tau_dy_b
-    type(type_CSR_matrix_dp),               intent(inout) :: A_CSR
-    real(dp), dimension(mesh%ti1*2-1: mesh%ti2*2), intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tiuv
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+    type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
+    integer,                                            intent(in   ) :: row_tiuv
 
     ! Local variables:
     integer                             :: ti, uv
@@ -390,29 +357,29 @@ contains
     integer                             :: k, tj, col_tju, col_tjv
 
     ! Relevant indices for this triangle
-    ti = mesh%n2tiuv( row_tiuv,1)
-    uv = mesh%n2tiuv( row_tiuv,2)
+    ti = self%mesh%n2tiuv( row_tiuv,1)
+    uv = self%mesh%n2tiuv( row_tiuv,2)
 
     ! N, beta_b, tau_dx, and tau_dy on this triangle
-    N                          = N_b(      ti)
-    basal_friction_coefficient = basal_friction_coefficient_b( ti)
-    tau_dx                     = tau_dx_b( ti)
-    tau_dy                     = tau_dy_b( ti)
+    N                          = self%N_b(      ti)
+    basal_friction_coefficient = self%basal_friction_coefficient_b( ti)
+    tau_dx                     = self%tau_dx_b( ti)
+    tau_dy                     = self%tau_dy_b( ti)
 
     ! allocate memory for single matrix rows
-    allocate( single_row_ind(        mesh%nC_mem*2))
-    allocate( single_row_ddx_val(    mesh%nC_mem*2))
-    allocate( single_row_ddy_val(    mesh%nC_mem*2))
-    allocate( single_row_d2dx2_val(  mesh%nC_mem*2))
-    allocate( single_row_d2dxdy_val( mesh%nC_mem*2))
-    allocate( single_row_d2dy2_val(  mesh%nC_mem*2))
+    allocate( single_row_ind(        self%mesh%nC_mem*2))
+    allocate( single_row_ddx_val(    self%mesh%nC_mem*2))
+    allocate( single_row_ddy_val(    self%mesh%nC_mem*2))
+    allocate( single_row_d2dx2_val(  self%mesh%nC_mem*2))
+    allocate( single_row_d2dxdy_val( self%mesh%nC_mem*2))
+    allocate( single_row_d2dy2_val(  self%mesh%nC_mem*2))
 
     ! Read coefficients of the operator matrices
-    call mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
-    call mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
-    call mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
-    call mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
-    call mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
+    call self%mesh%M2_ddx_b_b%read_single_row(    ti, single_row_ind, single_row_ddx_val   , single_row_nnz)
+    call self%mesh%M2_ddy_b_b%read_single_row(    ti, single_row_ind, single_row_ddy_val   , single_row_nnz)
+    call self%mesh%M2_d2dx2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dx2_val , single_row_nnz)
+    call self%mesh%M2_d2dxdy_b_b%read_single_row( ti, single_row_ind, single_row_d2dxdy_val, single_row_nnz)
+    call self%mesh%M2_d2dy2_b_b%read_single_row(  ti, single_row_ind, single_row_d2dy2_val , single_row_nnz)
 
     if (uv == 1) then
       ! x-component
@@ -421,14 +388,14 @@ contains
 
         ! Relevant indices for this neighbouring triangle
         tj      = single_row_ind( k)
-        col_tju = mesh%tiuv2n( tj,1)
-        col_tjv = mesh%tiuv2n( tj,2)
+        col_tju = self%mesh%tiuv2n( tj,1)
+        col_tjv = self%mesh%tiuv2n( tj,2)
 
         !   4 d2u/dx2 + d2u/dy2 + 3 d2v/dxdy - beta_b u / N = -tau_dx / N
 
         ! Combine the mesh operators
         Au = 4._dp * single_row_d2dx2_val(  k) + &             ! 4 d2u/dx2
-                    single_row_d2dy2_val(  k)                 !   d2u/dy2
+                     single_row_d2dy2_val(  k)                 !   d2u/dy2
         if (tj == ti) Au = Au - basal_friction_coefficient / N ! - beta_b u / N
 
         Av = 3._dp * single_row_d2dxdy_val( k)                 ! 3 d2v/dxdy
@@ -449,14 +416,14 @@ contains
 
         ! Relevant indices for this neighbouring triangle
         tj      = single_row_ind( k)
-        col_tju = mesh%tiuv2n( tj,1)
-        col_tjv = mesh%tiuv2n( tj,2)
+        col_tju = self%mesh%tiuv2n( tj,1)
+        col_tjv = self%mesh%tiuv2n( tj,2)
 
         !   4 d2v/dy2 + d2v/dx2 + 3 d2u/dxdy - beta_b v / N = -tau_dy / N
 
         ! Combine the mesh operators
         Av = 4._dp * single_row_d2dy2_val(  k) + &             ! 4 d2v/dy2
-                    single_row_d2dx2_val(  k)                 !   d2v/dx2
+                     single_row_d2dx2_val(  k)                 !   d2v/dx2
         if (tj == ti) Av = Av - basal_friction_coefficient / N ! - beta_b v / N
 
         Au = 3._dp * single_row_d2dxdy_val( k)                 ! 3 d2u/dxdy
@@ -476,29 +443,27 @@ contains
 
   end subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free
 
-  subroutine calc_SSA_DIVA_stiffness_matrix_row_BC( mesh, u_b_prev, v_b_prev, &
-    A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
+  subroutine calc_SSA_DIVA_stiffness_matrix_row_BC( self, A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
     !< Add coefficients to this matrix row to represent boundary conditions at the domain border.
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%nTri),         intent(in   ) :: u_b_prev, v_b_prev
-    type(type_CSR_matrix_dp),        intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2), intent(inout) :: bb
-    integer,                                intent(in   ) :: row_tiuv
-    character(len=*),                       intent(in   ) :: choice_BC_u, choice_BC_v
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+    type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
+    integer,                                            intent(in   ) :: row_tiuv
+    character(len=*),                                   intent(in   ) :: choice_BC_u, choice_BC_v
 
     ! Local variables:
-    integer                          :: ti,uv,row_ti
-    integer                          :: tj, col_tjuv
-    integer,  dimension(mesh%nC_mem) :: ti_copy
-    real(dp), dimension(mesh%nC_mem) :: wti_copy
-    real(dp)                         :: u_fixed, v_fixed
-    integer                          :: n, n_neighbours
+    integer                               :: ti,uv,row_ti
+    integer                               :: tj, col_tjuv
+    integer,  dimension(self%mesh%nC_mem) :: ti_copy
+    real(dp), dimension(self%mesh%nC_mem) :: wti_copy
+    real(dp)                              :: u_fixed, v_fixed
+    integer                               :: n, n_neighbours
 
-    ti = mesh%n2tiuv( row_tiuv,1)
-    uv = mesh%n2tiuv( row_tiuv,2)
-    row_ti = mesh%ti2n( ti)
+    ti = self%mesh%n2tiuv( row_tiuv,1)
+    uv = self%mesh%n2tiuv( row_tiuv,2)
+    row_ti = self%mesh%ti2n( ti)
 
     select case (uv)
     case default
@@ -517,10 +482,10 @@ contains
         ! Set u on this triangle equal to the average value on its neighbours
         n_neighbours = 0
         do n = 1, 3
-          tj = mesh%TriC( ti,n)
+          tj = self%mesh%TriC( ti,n)
           if (tj == 0) cycle
           n_neighbours = n_neighbours + 1
-          col_tjuv = mesh%tiuv2n( tj,uv)
+          col_tjuv = self%mesh%tiuv2n( tj,uv)
           call A_CSR%add_entry( row_tiuv, col_tjuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
@@ -542,18 +507,18 @@ contains
         ! u(x,y) = u(x+-L/2,y+-L/2)
 
         ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
+        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
         call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
         u_fixed = 0._dp
-        do n = 1, mesh%nC_mem
+        do n = 1, self%mesh%nC_mem
           tj = ti_copy( n)
           if (tj == 0) cycle
-          u_fixed = u_fixed + wti_copy( n) * u_b_prev( tj)
+          u_fixed = u_fixed + wti_copy( n) * self%u_vav_b_prev( tj)
         end do
         ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * u_b_prev( ti))
+        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_vav_b_prev( ti))
         ! Set load vector
         bb( row_tiuv) = u_fixed
 
@@ -561,18 +526,18 @@ contains
         ! du/dx = 0 everywhere
 
         ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_SSA_icestream_infinite( mesh, ti, ti_copy, wti_copy)
+        call find_ti_copy_SSA_icestream_infinite( self%mesh, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
         call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
         u_fixed = 0._dp
-        do n = 1, mesh%nC_mem
+        do n = 1, self%mesh%nC_mem
           tj = ti_copy( n)
           if (tj == 0) cycle
-          u_fixed = u_fixed + wti_copy( n) * u_b_prev( tj)
+          u_fixed = u_fixed + wti_copy( n) * self%u_vav_b_prev( tj)
         end do
         ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * u_b_prev( ti))
+        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_vav_b_prev( ti))
         ! Set load vector
         bb( row_tiuv) = u_fixed
 
@@ -592,10 +557,10 @@ contains
         ! Set v on this triangle equal to the average value on its neighbours
         n_neighbours = 0
         do n = 1, 3
-          tj = mesh%TriC( ti,n)
+          tj = self%mesh%TriC( ti,n)
           if (tj == 0) cycle
           n_neighbours = n_neighbours + 1
-          col_tjuv = mesh%tiuv2n( tj,uv)
+          col_tjuv = self%mesh%tiuv2n( tj,uv)
           call A_CSR%add_entry( row_tiuv, col_tjuv, 1._dp)
         end do
         if (n_neighbours == 0) call crash('whaa!')
@@ -617,18 +582,18 @@ contains
         ! v(x,y) = v(x+-L/2,y+-L/2)
 
         ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
+        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
 
         ! Set value at ti equal to value at ti_copy
         call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
         v_fixed = 0._dp
-        do n = 1, mesh%nC_mem
+        do n = 1, self%mesh%nC_mem
           tj = ti_copy( n)
           if (tj == 0) cycle
-          v_fixed = v_fixed + wti_copy( n) * v_b_prev( tj)
+          v_fixed = v_fixed + wti_copy( n) * self%v_vav_b_prev( tj)
         end do
         ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * v_b_prev( ti))
+        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_vav_b_prev( ti))
         ! Set load vector
         bb( row_tiuv) = v_fixed
 
@@ -638,4 +603,4 @@ contains
 
   end subroutine calc_SSA_DIVA_stiffness_matrix_row_BC
 
-end module solve_linearised_SSA_DIVA_infinite_slab
+end submodule solve_linearised_SSA_DIVA_infinite_slab

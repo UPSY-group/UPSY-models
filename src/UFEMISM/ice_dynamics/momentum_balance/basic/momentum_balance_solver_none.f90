@@ -116,6 +116,9 @@ contains
 
     ! Run all the stuff that is specific to the 'none' momentum balance solver
 
+    self%n_visc_its = 0
+    self%n_Axb_its  = 0
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 

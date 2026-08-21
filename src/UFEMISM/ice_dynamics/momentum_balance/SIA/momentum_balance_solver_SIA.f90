@@ -178,6 +178,9 @@ contains
       call crash('the analytical solution to the SIA is only valid when using Glens flow law!')
     end if
 
+    self%n_visc_its = 0
+    self%n_Axb_its  = 0
+
     ! Allocate memory
     allocate( Hi_b(     self%mesh%ti1:self%mesh%ti2                ))
     allocate( Hs_b(     self%mesh%ti1:self%mesh%ti2                ))

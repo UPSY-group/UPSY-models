@@ -64,9 +64,8 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call momentum_balance_solver%run( ice, geom, bed_roughness, &
+    call momentum_balance_solver%run( ice, geom, bed_roughness, vel, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-    call momentum_balance_solver%set_velocities_to_solver_results( ice, vel)
     call calc_secondary_velocities( mesh, vel)
     call calc_vertical_velocities( vel, mesh, ice, geom, BMB)
 

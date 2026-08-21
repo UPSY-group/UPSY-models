@@ -125,9 +125,9 @@ contains
     call init_routine( routine_name)
 
     ! Run all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%SIA%run( ice, geom, bed_roughness, &
+    call self%SIA%run_momentum_balance_solver( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-    call self%SSA%run( ice, geom, bed_roughness, &
+    call self%SSA%run_momentum_balance_solver( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     self%n_visc_its = self%SSA%n_visc_its

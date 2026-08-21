@@ -12,8 +12,8 @@ module momentum_balance_solver_SIASSA
   use mesh_disc_apply_operators, only: ddx_a_b_2D, ddy_a_b_2D, map_a_b_2D, map_a_b_3D, ddx_a_a_2D, ddy_a_a_2D
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
-  use momentum_balance_solver_plain_SIA, only: type_momentum_balance_solver_plain_SIA
-  use momentum_balance_solver_plain_SSA, only: type_momentum_balance_solver_plain_SSA
+  use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
+  use momentum_balance_solver_SSA, only: type_momentum_balance_solver_SSA
   use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
@@ -24,8 +24,8 @@ module momentum_balance_solver_SIASSA
 
   type, extends(atype_momentum_balance_solver) :: type_momentum_balance_solver_SIASSA
 
-      type(type_momentum_balance_solver_plain_SIA) :: solver_SIA
-      type(type_momentum_balance_solver_plain_SSA) :: solver_SSA
+      type(type_momentum_balance_solver_SIA) :: SIA
+      type(type_momentum_balance_solver_SSA) :: SSA
 
     contains
 
@@ -42,13 +42,10 @@ module momentum_balance_solver_SIASSA
 
 contains
 
-  subroutine momentum_balance_solver_SIASSA_allocate( self, region_name, mesh)
+  subroutine momentum_balance_solver_SIASSA_allocate( self)
 
     ! In/output variables:
     class(type_momentum_balance_solver_SIASSA), intent(inout) :: self
-    character(len=*),                        intent(in   ) :: region_name
-    type(type_mesh), target,                 intent(in   ) :: mesh
-
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIASSA_allocate'
 
@@ -56,8 +53,8 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%solver_SIA%allocate( region_name, mesh)
-    call self%solver_SSA%allocate( region_name, mesh)
+    call self%SIA%allocate( self%region_name(), self%mesh)
+    call self%SSA%allocate( self%region_name(), self%mesh)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -76,8 +73,8 @@ contains
     call init_routine( routine_name)
 
     ! Deallocate all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%solver_SIA%deallocate()
-    call self%solver_SSA%deallocate()
+    call self%SIA%deallocate()
+    call self%SSA%deallocate()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -96,8 +93,8 @@ contains
     call init_routine( routine_name)
 
     ! Initialise all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%solver_SIA%initialise()
-    call self%solver_SSA%initialise()
+    call self%SIA%initialise()
+    call self%SSA%initialise()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -126,13 +123,13 @@ contains
     call init_routine( routine_name)
 
     ! Run all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%solver_SIA%run( ice, geom, bed_roughness, &
+    call self%SIA%run( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-    call self%solver_SSA%run( ice, geom, bed_roughness, &
+    call self%SSA%run( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
-    self%n_visc_its = self%solver_SSA%n_visc_its
-    self%n_Axb_its  = self%solver_SSA%n_Axb_its
+    self%n_visc_its = self%SSA%n_visc_its
+    self%n_Axb_its  = self%SSA%n_Axb_its
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -143,8 +140,8 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SIASSA), intent(inout) :: self
-    type(type_mesh),                         intent(in   ) :: mesh_old
-    type(type_mesh), target,                 intent(in   ) :: mesh_new
+    type(type_mesh),                            intent(in   ) :: mesh_old
+    type(type_mesh), target,                    intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIASSA_remap'
@@ -153,8 +150,8 @@ contains
     call init_routine( routine_name)
 
     ! Remap all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%solver_SIA%remap( mesh_old, mesh_new)
-    call self%solver_SSA%remap( mesh_old, mesh_new)
+    call self%SIA%remap( mesh_old, mesh_new)
+    call self%SSA%remap( mesh_old, mesh_new)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

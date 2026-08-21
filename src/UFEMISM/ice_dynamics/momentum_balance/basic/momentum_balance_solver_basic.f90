@@ -13,7 +13,7 @@ module momentum_balance_solver_basic
   use model_configuration, only: C
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_velocity_model_data, only: atype_ice_velocity_model_data
+  use ice_velocity_model_basic, only: atype_ice_velocity_model
   use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
@@ -83,10 +83,10 @@ module momentum_balance_solver_basic
     end subroutine momentum_balance_solver_run_ifc
 
     subroutine momentum_balance_solver_set_vel_ifc( self, ice, vel)
-      import atype_momentum_balance_solver, atype_ice_model_data, atype_ice_velocity_model_data
+      import atype_momentum_balance_solver, atype_ice_model_data, atype_ice_velocity_model
       class(atype_momentum_balance_solver), intent(in   ) :: self
       class(atype_ice_model_data),          intent(inout) :: ice
-      class(atype_ice_velocity_model_data), intent(inout) :: vel
+      class(atype_ice_velocity_model),      intent(inout) :: vel
     end subroutine momentum_balance_solver_set_vel_ifc
 
     subroutine momentum_balance_solver_remap_ifc( self, mesh_old, mesh_new)
@@ -189,21 +189,22 @@ contains
 
   end subroutine momentum_balance_solver_initialise
 
-  recursive subroutine momentum_balance_solver_run( self, ice, geom, bed_roughness, vel, &
+  recursive subroutine momentum_balance_solver_run( self, ice, geom, bed_roughness, vel, BMB, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     ! In/output variables:
-    class(atype_momentum_balance_solver), intent(inout) :: self
-    class(atype_ice_model_data),          intent(inout) :: ice
-    class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
-    class(atype_ice_velocity_model_data), intent(inout) :: vel
-    integer,  dimension(:  ), optional,   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,   intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_momentum_balance_solver),             intent(inout) :: self
+    class(atype_ice_model_data),                      intent(inout) :: ice
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    type(type_bed_roughness_model),                   intent(in   ) :: bed_roughness
+    class(atype_ice_velocity_model),                  intent(inout) :: vel
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
+    integer,  dimension(:  ), optional,               intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,               intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,               intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,               intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,               intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,               intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_run'
@@ -219,19 +220,26 @@ contains
     ! Run stuff that is specific to each individual basic momentum balance solver
     call self%run_momentum_balance_solver( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
+
+    ! Update the velocity model
     call self%set_velocities_to_solver_results( ice, vel)
+    call vel%calc_secondary_velocities( ice, geom, BMB)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine momentum_balance_solver_run
 
-  recursive subroutine momentum_balance_solver_remap( self, mesh_old, mesh_new)
+  recursive subroutine momentum_balance_solver_remap( self, mesh_old, mesh_new, ice, geom, vel, BMB)
 
     ! In/output variables:
-    class(atype_momentum_balance_solver), intent(inout) :: self
-    type(type_mesh),                      intent(in   ) :: mesh_old
-    type(type_mesh), target,              intent(in   ) :: mesh_new
+    class(atype_momentum_balance_solver),           intent(inout) :: self
+    type(type_mesh),                                intent(in   ) :: mesh_old
+    type(type_mesh), target,                        intent(in   ) :: mesh_new
+    class(atype_ice_model_data),                    intent(inout) :: ice
+    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
+    class(atype_ice_velocity_model),                intent(inout) :: vel
+    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: BMB
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_remap'
@@ -247,6 +255,10 @@ contains
 
     ! Remap stuff that is specific to each individual basic momentum balance solver
     call self%remap_momentum_balance_solver( mesh_old, mesh_new)
+
+    ! Update the velocity model
+    call self%set_velocities_to_solver_results( ice, vel)
+    call vel%calc_secondary_velocities( ice, geom, BMB)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

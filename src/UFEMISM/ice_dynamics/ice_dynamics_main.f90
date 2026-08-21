@@ -17,8 +17,7 @@ module ice_dynamics_main
   use global_forcing_types, only: type_global_forcing
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_main, only: Atlas
-  use ice_velocities_main, only: solve_stress_balance, remap_velocity_solver, &
-    create_restart_file_ice_velocity, write_to_restart_file_ice_velocity
+  use ice_velocities_main, only: create_restart_file_ice_velocity, write_to_restart_file_ice_velocity
   use conservation_of_mass_main, only: calc_dHi_dt, apply_mask_noice_direct
   use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
   use ice_geometry_basics, only: ice_surface_elevation, &
@@ -711,7 +710,7 @@ contains
     ! ==========
 
     ! Remap data for the chosen velocity solver(s)
-    call remap_velocity_solver( ice%vel, ice%momentum_balance_solver, mesh_old, mesh_new, ice)
+    call ice%momentum_balance_solver%remap( mesh_old, mesh_new, ice, ice%geom, ice%vel, BMB%BMB)
 
     ! Time stepping
     ! =============
@@ -961,8 +960,8 @@ contains
     pseudo_time: do while (t_pseudo < dt_relax)
 
       ! Update velocity solution around the calving front
-      call solve_stress_balance( mesh, ice, ice%geom, ice%vel, &
-        ice%momentum_balance_solver, bed_roughness, BMB_new, region_name, &
+      call ice%momentum_balance_solver%run( ice, ice%geom, &
+        bed_roughness, ice%vel, BMB_new, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
       ! Calculate dH/dt around the calving front
@@ -1072,9 +1071,8 @@ contains
       end do
 
       ! Calculate ice velocities for the predicted geometry
-      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, &
-        region%ice%vel, region%ice%momentum_balance_solver, &
-        region%bed_roughness, BMB_dummy, region%name)
+      call region%ice%momentum_balance_solver%run( region%ice, region%ice%geom, &
+        region%bed_roughness, region%ice%vel, BMB_dummy)
 
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &

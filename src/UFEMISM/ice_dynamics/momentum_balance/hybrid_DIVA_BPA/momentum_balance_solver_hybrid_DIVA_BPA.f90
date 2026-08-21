@@ -14,7 +14,7 @@ module momentum_balance_solver_hybrid_DIVA_BPA
   use graph_types, only: type_graph_pair
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_velocity_model_data, only: atype_ice_velocity_model_data
+  use ice_velocity_model_basic, only: atype_ice_velocity_model
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
   use mesh_disc_apply_operators, only: map_a_b_2D, map_b_a_2D, map_b_a_3D, map_a_b_3D
@@ -436,7 +436,7 @@ contains
     ! In/output variables:
     class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(in   ) :: self
     class(atype_ice_model_data),                         intent(inout) :: ice
-    class(atype_ice_velocity_model_data),                intent(inout) :: vel
+    class(atype_ice_velocity_model),                     intent(inout) :: vel
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_hybrid_DIVA_BPA_set_velocities'

@@ -1,4 +1,4 @@
-module hybrid_DIVA_BPA_main
+module momentum_balance_solver_hybrid_DIVA_BPA
 
   ! Routines for calculating ice velocities using the hybrid DIVA/BPA
 
@@ -12,7 +12,7 @@ module hybrid_DIVA_BPA_main
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
-  use ice_model_data, only: atype_ice_model_data, type_ice_velocity_solver_hybrid
+  use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reallocate_mod, only: reallocate_bounds
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
@@ -47,88 +47,197 @@ module hybrid_DIVA_BPA_main
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary
   use netcdf_io_main
   use bed_roughness_model_types, only: type_bed_roughness_model
+  use momentum_balance_solver_basic, only: atype_momentum_balance_solver
+  use momentum_balance_solver_DIVA, only: type_momentum_balance_solver_DIVA
+  use momentum_balance_solver_BPA, only: type_momentum_balance_solver_BPA
 
   implicit none
+
+  private
+
+  public :: type_momentum_balance_solver_hybrid_DIVA_BPA
+
+  type, extends(atype_momentum_balance_solver) :: type_momentum_balance_solver_hybrid_DIVA_BPA
+
+      ! Solution
+      real(dp), dimension(:  ), allocatable :: u_vav_b                     ! Vertically averaged horizontal ice velocity [m yr^-1]
+      real(dp), dimension(:  ), allocatable :: v_vav_b
+      real(dp), dimension(:,:), allocatable :: u_bk                        ! 3-D horizontal ice velocity [m yr^-1]
+      real(dp), dimension(:,:), allocatable :: v_bk
+
+      ! DIVA and BPA solvers
+      class(type_momentum_balance_solver_DIVA), allocatable :: DIVA        ! Depth-Integrated Viscosity Approximation
+      class(type_momentum_balance_solver_BPA),  allocatable :: BPA         ! Blatter-Pattyn Approximation
+
+      ! Solving masks
+      logical,  dimension(:  ), allocatable :: mask_DIVA_b                 ! T: solve the DIVA here, F: otherwise
+      logical,  dimension(:  ), allocatable :: mask_BPA_b                  ! T: solve the BPA  here, F: otherwise
+      logical,  dimension(:  ), allocatable :: mask_3D_from_DIVA_b         ! T: calculate 3-D velocities from the vertically averaged DIVA solution here, F: otherwise
+      logical,  dimension(:  ), allocatable :: mask_vav_from_BPA_b         ! T: calculate vertically averaged velocities from the 3-D BPA  solution here, F: otherwise
+
+      ! Intermediate data fields
+      real(dp), dimension(:,:), allocatable :: u_bk_prev                   ! Previous velocity solution
+      real(dp), dimension(:,:), allocatable :: v_bk_prev
+
+      ! Restart file
+      character(len=256)                    :: restart_filename
+
+    contains
+
+      ! Procedures for model memory management and operation
+      procedure, public :: get_momentum_balance_solver_name
+      procedure, public :: allocate_momentum_balance_solver   => momentum_balance_solver_hybrid_DIVA_BPA_allocate
+      procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_hybrid_DIVA_BPA_deallocate
+      procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_hybrid_DIVA_BPA_initialise
+      procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_hybrid_DIVA_BPA_run
+      procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_hybrid_DIVA_BPA_remap
+
+  end type type_momentum_balance_solver_hybrid_DIVA_BPA
 
 contains
 
 ! == Main routines
 
-  subroutine initialise_hybrid_DIVA_BPA_solver( mesh, hybrid, region_name)
+  subroutine momentum_balance_solver_hybrid_DIVA_BPA_allocate( self)
 
     ! In/output variables:
-    type(type_mesh),                       intent(in   ) :: mesh
-    type(type_ice_velocity_solver_hybrid), intent(  out) :: hybrid
-    character(len=3),                      intent(in   ) :: region_name
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(inout) :: self
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_hybrid_DIVA_BPA_solver'
-    character(len=256)             :: choice_initial_velocity
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_hybrid_DIVA_BPA_allocate'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Solution
+    allocate( self%u_vav_b( self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%v_vav_b( self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    allocate( self%u_bk   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+    allocate( self%v_bk   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+
+    ! Separate DIVA/BPA solvers
+    call self%DIVA%allocate( self%region_name(), self%mesh)
+    call self%BPA %allocate( self%region_name(), self%mesh)
+
+    ! Solver masks
+    allocate( self%mask_DIVA_b        ( self%mesh%ti1:self%mesh%ti2), source = .false.)
+    allocate( self%mask_BPA_b         ( self%mesh%ti1:self%mesh%ti2), source = .false.)
+    allocate( self%mask_3D_from_DIVA_b( self%mesh%ti1:self%mesh%ti2), source = .false.)
+    allocate( self%mask_vav_from_BPA_b( self%mesh%ti1:self%mesh%ti2), source = .false.)
+
+    ! Intermediate data fields
+    allocate( self%u_bk_prev( self%mesh%nTri,self%mesh%nz), source = 0._dp)
+    allocate( self%v_bk_prev( self%mesh%nTri,self%mesh%nz), source = 0._dp)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_hybrid_DIVA_BPA_allocate
+
+  subroutine momentum_balance_solver_hybrid_DIVA_BPA_deallocate( self)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_hybrid_DIVA_BPA_deallocate'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Solution
+    deallocate( self%u_vav_b)
+    deallocate( self%v_vav_b)
+    deallocate( self%u_bk)
+    deallocate( self%v_bk)
+
+    ! Separate DIVA/BPA solvers
+    call self%DIVA%deallocate()
+    call self%BPA %deallocate()
+
+    ! Solver masks
+    deallocate( self%mask_DIVA_b)
+    deallocate( self%mask_BPA_b)
+    deallocate( self%mask_3D_from_DIVA_b)
+    deallocate( self%mask_vav_from_BPA_b)
+
+    ! Intermediate data fields
+    deallocate( self%u_bk_prev)
+    deallocate( self%v_bk_prev)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_hybrid_DIVA_BPA_deallocate
+
+  subroutine momentum_balance_solver_hybrid_DIVA_BPA_initialise( self)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'momentum_balance_solver_hybrid_DIVA_BPA_initialise'
+    character(len=:), allocatable :: choice_initial_velocity
 
     ! Add routine to path
     call init_routine( routine_name)
 
     call crash('FIXME')
 
-    ! ! allocate memory
-    ! call allocate_hybrid_DIVA_BPA_solver( mesh, hybrid)
+    ! Determine the choice of initial velocities for this model region
+    select case (self%region_name())
+    case default
+      call crash('unknown model region "' // self%region_name() // '"!')
+    case ('NAM')
+      choice_initial_velocity  = C%choice_initial_velocity_NAM
+    case ('EAS')
+      choice_initial_velocity  = C%choice_initial_velocity_EAS
+    case ('GRL')
+      choice_initial_velocity  = C%choice_initial_velocity_GRL
+    case ('ANT')
+      choice_initial_velocity  = C%choice_initial_velocity_ANT
+    end select
 
-    ! ! Determine the choice of initial velocities for this model region
-    ! select case (region_name)
-    ! case default
-    !   call crash('unknown model region "' // region_name // '"!')
-    ! case ('NAM')
-    !   choice_initial_velocity  = C%choice_initial_velocity_NAM
-    ! case ('EAS')
-    !   choice_initial_velocity  = C%choice_initial_velocity_EAS
-    ! case ('GRL')
-    !   choice_initial_velocity  = C%choice_initial_velocity_GRL
-    ! case ('ANT')
-    !   choice_initial_velocity  = C%choice_initial_velocity_ANT
-    ! end select
+    ! Initialise velocities according to the specified method
+    select case (choice_initial_velocity)
+    case default
+      call crash('unknown choice_initial_velocity "' // trim( choice_initial_velocity) // '"!')
+    case ('zero')
+      self%u_vav_b( self%mesh%ti1:self%mesh%ti2  ) = 0._dp
+      self%v_vav_b( self%mesh%ti1:self%mesh%ti2  ) = 0._dp
+      self%u_bk   ( self%mesh%ti1:self%mesh%ti2,:) = 0._dp
+      self%v_bk   ( self%mesh%ti1:self%mesh%ti2,:) = 0._dp
+    case ('read_from_file')
+      call crash('restarting ice velocities not yet possible for the hybrid DIVA/BPA!')
+    end select
 
-    ! ! Initialise velocities according to the specified method
-    ! select case (choice_initial_velocity)
-    ! case default
-    !   call crash('unknown choice_initial_velocity "' // trim( choice_initial_velocity) // '"!')
-    ! case ('zero')
-    !   hybrid%u_vav_b = 0._dp
-    !   hybrid%v_vav_b = 0._dp
-    !   hybrid%u_bk    = 0._dp
-    !   hybrid%v_bk    = 0._dp
-    ! case ('read_from_file')
-    !   call crash('restarting ice velocities not yet possible for the hybrid DIVA/BPA!')
-    ! end select
-
-    ! ! Set tolerances for PETSc matrix solver for the linearised hybrid DIVA/BPA
-    ! hybrid%PETSc_rtol   = C%stress_balance_PETSc_rtol
-    ! hybrid%PETSc_abstol = C%stress_balance_PETSc_abstol
+    ! Set tolerances for PETSc matrix solver for the linearised hybrid DIVA/BPA
+    self%PETSc_rtol   = C%stress_balance_PETSc_rtol
+    self%PETSc_abstol = C%stress_balance_PETSc_abstol
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine initialise_hybrid_DIVA_BPA_solver
+  end subroutine momentum_balance_solver_hybrid_DIVA_BPA_initialise
 
-  subroutine solve_hybrid_DIVA_BPA( mesh, ice, geom, bed_roughness, hybrid, region_name, &
-    n_visc_its, n_Axb_its, &
-    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+  subroutine momentum_balance_solver_hybrid_DIVA_BPA_run( self, ice, geom, bed_roughness, &
+    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate ice velocities by solving the hybrid DIVA/BPA
 
     ! In/output variables:
-    type(type_mesh),                       intent(inout) :: mesh
-    class(atype_ice_model_data),           intent(inout) :: ice
-    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
-    type(type_bed_roughness_model),        intent(in   ) :: bed_roughness
-    type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
-    character(len=3),                      intent(in   ) :: region_name
-    integer,                               intent(  out) :: n_visc_its            ! Number of non-linear viscosity iterations
-    integer,                               intent(  out) :: n_Axb_its             ! Number of iterations in iterative solver for linearised momentum balance
-    integer,  dimension(:), optional,      intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:), optional,      intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:), optional,      intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(inout) :: self
+    class(atype_ice_model_data),                         intent(inout) :: ice
+    class(atype_ice_geometry_model_data),                intent(in   ) :: geom
+    type(type_bed_roughness_model),                      intent(in   ) :: bed_roughness
+    integer,  dimension(:  ), optional,                  intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,                  intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,                  intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,                  intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,                  intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,                  intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'solve_hybrid_DIVA_BPA'
+    character(len=*), parameter         :: routine_name = 'solve_hybrid_DIVA_BPA'
     logical                             :: grounded_ice_exists
     integer                             :: ierr
     integer,  dimension(:), allocatable :: BC_prescr_mask_b_applied
@@ -327,17 +436,17 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine solve_hybrid_DIVA_BPA
+  end subroutine momentum_balance_solver_hybrid_DIVA_BPA_run
 
-  subroutine remap_hybrid_DIVA_BPA_solver( mesh_old, mesh_new, hybrid)
+  subroutine momentum_balance_solver_hybrid_DIVA_BPA_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
-    type(type_mesh),                       intent(in   ) :: mesh_old
-    type(type_mesh),                       intent(in   ) :: mesh_new
-    type(type_ice_velocity_solver_hybrid), intent(inout) :: hybrid
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(inout) :: self
+    type(type_mesh),                                     intent(in   ) :: mesh_old
+    type(type_mesh), target,                             intent(in   ) :: mesh_new
 
     ! Local variables:
-    character(len=1024), parameter        :: routine_name = 'remap_hybrid_DIVA_BPA_solver'
+    character(*), parameter               :: routine_name = 'remap_hybrid_DIVA_BPA_solver'
     real(dp), dimension(:  ), allocatable :: u_vav_a
     real(dp), dimension(:  ), allocatable :: v_vav_a
     real(dp), dimension(:,:), allocatable :: u_ak
@@ -390,7 +499,13 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine remap_hybrid_DIVA_BPA_solver
+  end subroutine momentum_balance_solver_hybrid_DIVA_BPA_remap
+
+  function get_momentum_balance_solver_name( self) result( model_name)
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(in) :: self
+    character(len=:), allocatable :: model_name
+    model_name = 'hybrid_DIVA_BPA'
+  end function get_momentum_balance_solver_name
 
 ! == Basic masks and translation tables for the hybrid solver
 
@@ -1486,41 +1601,4 @@ contains
 
 ! == Initialisation
 
-  ! subroutine allocate_hybrid_DIVA_BPA_solver( mesh, hybrid)
-
-  !   ! In/output variables:
-  !   type(type_mesh),                       intent(in   ) :: mesh
-  !   type(type_ice_velocity_solver_hybrid), intent(  out) :: hybrid
-
-  !   ! Local variables:
-  !   character(len=1024), parameter :: routine_name = 'allocate_hybrid_DIVA_BPA_solver'
-
-  !   ! Add routine to path
-  !   call init_routine( routine_name)
-
-  !   ! Solution
-  !   allocate( hybrid%u_vav_b( mesh%ti1:mesh%ti2        ), source = 0._dp)
-  !   allocate( hybrid%v_vav_b( mesh%ti1:mesh%ti2        ), source = 0._dp)
-  !   allocate( hybrid%u_bk   ( mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-  !   allocate( hybrid%v_bk   ( mesh%ti1:mesh%ti2,mesh%nz), source = 0._dp)
-
-  !   ! Separate DIVA/BPA solvers
-  !   call allocate_DIVA_solver( mesh, hybrid%DIVA)
-  !   call allocate_BPA_solver ( mesh, hybrid%BPA )
-
-  !   ! Solver masks
-  !   allocate( hybrid%mask_DIVA_b        ( mesh%ti1:mesh%ti2), source = .false.)
-  !   allocate( hybrid%mask_BPA_b         ( mesh%ti1:mesh%ti2), source = .false.)
-  !   allocate( hybrid%mask_3D_from_DIVA_b( mesh%ti1:mesh%ti2), source = .false.)
-  !   allocate( hybrid%mask_vav_from_BPA_b( mesh%ti1:mesh%ti2), source = .false.)
-
-  !   ! Intermediate data fields
-  !   allocate( hybrid%u_bk_prev( mesh%nTri,mesh%nz), source = 0._dp)
-  !   allocate( hybrid%v_bk_prev( mesh%nTri,mesh%nz), source = 0._dp)
-
-  !   ! Finalise routine path
-  !   call finalise_routine( routine_name)
-
-  ! end subroutine allocate_hybrid_DIVA_BPA_solver
-
-end module hybrid_DIVA_BPA_main
+end module momentum_balance_solver_hybrid_DIVA_BPA

@@ -1,83 +1,60 @@
-module solve_linearised_SSA_DIVA_infinite_slab
-
-  use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use model_configuration, only: C
-  use mesh_types, only: type_mesh
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
-  use mpi_distributed_memory, only: gather_to_all
-  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
-
-  implicit none
-
-  private
-
-  public :: solve_SSA_DIVA_linearised, calc_SSA_DIVA_stiffness_matrix_row_BC, &
-    calc_SSA_DIVA_stiffness_matrix_row_free, calc_SSA_DIVA_sans_stiffness_matrix_row_free
+submodule(momentum_balance_solver_plain_SSADIVA) solve_linearised_SSA_DIVA_infinite_slab
 
 contains
 
-  subroutine solve_SSA_DIVA_linearised( mesh, u_b, v_b, N_b, dN_dx_b, dN_dy_b, &
-    basal_friction_coefficient_b, tau_dx_b, tau_dy_b, u_b_prev, v_b_prev, &
-    PETSc_rtol, PETSc_abstol, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+  subroutine solve_SSA_DIVA_linearised( self, u_ii_term, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
     !< Solve the linearised SSA
 
     ! In/output variables:
-    type(type_mesh),                        intent(in   ) :: mesh
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(inout) :: u_b, v_b
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: N_b, dN_dx_b, dN_dy_b
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: basal_friction_coefficient_b
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: tau_dx_b, tau_dy_b
-    real(dp), dimension(mesh%nTri),         intent(inout) :: u_b_prev, v_b_prev
-    real(dp),                               intent(in   ) :: PETSc_rtol, PETSc_abstol
-    integer,                                intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
-    integer,  dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(mesh%ti1:mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
+    integer,                                            intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
+    integer,  dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
-    character(len=1024), parameter      :: routine_name = 'solve_SSA_DIVA_linearised'
+    character(len=*), parameter         :: routine_name = 'solve_SSA_DIVA_linearised'
     integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    type(type_CSR_matrix_dp)     :: A_CSR
+    type(type_CSR_matrix_dp)            :: A_CSR
     real(dp), dimension(:), allocatable :: bb
     real(dp), dimension(:), allocatable :: uv_buv
     integer                             :: row_tiuv,ti,uv
-    character(len=256)                  :: choice_BC_u, choice_BC_v
+    character(len=:), allocatable       :: choice_BC_u, choice_BC_v
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Store the previous solution
-    call gather_to_all( u_b, u_b_prev)
-    call gather_to_all( v_b, v_b_prev)
+    call gather_to_all( self%u_vav_b, self%u_vav_b_prev)
+    call gather_to_all( self%v_vav_b, self%v_vav_b_prev)
 
     ! == Initialise the stiffness matrix using the native UFEMISM CSR-matrix format
     ! =============================================================================
 
     ! Matrix size
-    ncols           = mesh%nTri     * 2      ! from
-    ncols_loc       = mesh%nTri_loc * 2
-    nrows           = mesh%nTri     * 2      ! to
-    nrows_loc       = mesh%nTri_loc * 2
-    nnz_est_proc    = mesh%M2_ddx_b_b%nnz * 4
+    ncols           = self%mesh%nTri     * 2      ! from
+    ncols_loc       = self%mesh%nTri_loc * 2
+    nrows           = self%mesh%nTri     * 2      ! to
+    nrows_loc       = self%mesh%nTri_loc * 2
+    nnz_est_proc    = self%mesh%M2_ddx_b_b%nnz * 4
 
     call A_CSR%allocate( nrows, ncols, nrows_loc, ncols_loc, nnz_est_proc)
 
     ! allocate memory for the load vector and the solution
-    allocate( bb(     mesh%ti1*2-1: mesh%ti2*2))
-    allocate( uv_buv( mesh%ti1*2-1: mesh%ti2*2))
+    allocate( bb(     self%mesh%ti1*2-1: self%mesh%ti2*2))
+    allocate( uv_buv( self%mesh%ti1*2-1: self%mesh%ti2*2))
 
     ! Fill in the current velocity solution
-    do ti = mesh%ti1, mesh%ti2
+    do ti = self%mesh%ti1, self%mesh%ti2
 
       ! u
-      row_tiuv = mesh%tiuv2n( ti,1)
-      uv_buv( row_tiuv) = u_b( ti)
+      row_tiuv = self%mesh%tiuv2n( ti,1)
+      uv_buv( row_tiuv) = self%u_vav_b( ti)
 
       ! v
-      row_tiuv = mesh%tiuv2n( ti,2)
-      uv_buv( row_tiuv) = v_b( ti)
+      row_tiuv = self%mesh%tiuv2n( ti,2)
+      uv_buv( row_tiuv) = self%v_vav_b( ti)
 
     end do
 
@@ -86,8 +63,8 @@ contains
 
     do row_tiuv = A_CSR%i1, A_CSR%i2
 
-      ti = mesh%n2tiuv( row_tiuv,1)
-      uv = mesh%n2tiuv( row_tiuv,2)
+      ti = self%mesh%n2tiuv( row_tiuv,1)
+      uv = self%mesh%n2tiuv( row_tiuv,2)
 
       if (BC_prescr_mask_b( ti) == 1) then
         ! Dirichlet boundary condition; velocities are prescribed for this triangle
@@ -104,10 +81,10 @@ contains
           call crash('uv can only be 1 or 2!')
         end if
 
-      elseif (mesh%TriBI( ti) > 0) then
+      elseif (self%mesh%TriBI( ti) > 0) then
         ! Domain border: apply boundary conditions
 
-        select case (mesh%TriBI( ti))
+        select case (self%mesh%TriBI( ti))
         case default
           call crash('invalid TriBI value at triangle {int_01}', int_01 = ti)
         case (1,2)
@@ -128,7 +105,7 @@ contains
           choice_BC_v = C%BC_v_west
         end select
 
-        call calc_SSA_DIVA_stiffness_matrix_row_BC( mesh, u_b_prev, v_b_prev, &
+        call calc_SSA_DIVA_stiffness_matrix_row_BC( self%mesh, self%u_vav_b_prev, self%v_vav_b_prev, &
           A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
 
       else
@@ -136,37 +113,37 @@ contains
 
         if (C%do_include_SSADIVA_crossterms) then
           ! Calculate matrix coefficients for the full SSA
-          call calc_SSA_DIVA_stiffness_matrix_row_free( mesh, N_b, dN_dx_b, dN_dy_b, &
-            basal_friction_coefficient_b, tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)
+          call calc_SSA_DIVA_stiffness_matrix_row_free( self%mesh, self%N_b, self%dN_dx_b, self%dN_dy_b, &
+            u_ii_term, self%tau_dx_b, self%tau_dy_b, A_CSR, bb, row_tiuv)
         else
           ! Calculate matrix coefficients for the SSA sans the gradients of the effective viscosity (the "cross-terms")
-          call calc_SSA_DIVA_sans_stiffness_matrix_row_free( mesh, N_b, &
-            basal_friction_coefficient_b, tau_dx_b, tau_dy_b, A_CSR, bb, row_tiuv)
+          call calc_SSA_DIVA_sans_stiffness_matrix_row_free( self%mesh, self%N_b, &
+            u_ii_term, self%tau_dx_b, self%tau_dy_b, A_CSR, bb, row_tiuv)
         end if
 
       end if
 
     end do
 
-    call A_CSR%finalise
+    call A_CSR%finalise()
 
     ! == Solve the matrix equation
     ! ============================
 
     ! Use PETSc to solve the matrix equation
-    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_buv, PETSc_rtol, PETSc_abstol, n_Axb_its, &
+    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_buv, self%PETSc_rtol, self%PETSc_abstol, n_Axb_its, &
       PETSc_KSPtype = C%stress_balance_PETSc_KSPtype, PETSc_PCtype = C%stress_balance_PETSc_PCtype)
 
     ! Disentangle the u and v components of the velocity solution
-    do ti = mesh%ti1, mesh%ti2
+    do ti = self%mesh%ti1, self%mesh%ti2
 
       ! u
-      row_tiuv = mesh%tiuv2n( ti,1)
-      u_b( ti) = uv_buv( row_tiuv)
+      row_tiuv = self%mesh%tiuv2n( ti,1)
+      self%u_vav_b( ti) = uv_buv( row_tiuv)
 
       ! v
-      row_tiuv = mesh%tiuv2n( ti,2)
-      v_b( ti) = uv_buv( row_tiuv)
+      row_tiuv = self%mesh%tiuv2n( ti,2)
+      self%v_vav_b( ti) = uv_buv( row_tiuv)
 
     end do
 
@@ -638,4 +615,4 @@ contains
 
   end subroutine calc_SSA_DIVA_stiffness_matrix_row_BC
 
-end module solve_linearised_SSA_DIVA_infinite_slab
+end submodule solve_linearised_SSA_DIVA_infinite_slab

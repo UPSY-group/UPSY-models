@@ -26,7 +26,6 @@ module momentum_balance_solver_plain_DIVA
   use constitutive_equation, only: calc_ice_rheology_Glen, calc_effective_viscosity_Glen_3D_uv_only
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
     map_b_a_2D, map_b_a_3D, ddx_b_a_2D, ddy_b_a_2D
-  use solve_linearised_SSA_DIVA_infinite_slab, only: solve_SSA_DIVA_linearised
 
   implicit none
 
@@ -402,10 +401,7 @@ contains
       call self%calc_effective_basal_friction_coefficient( ice, geom, bed_roughness)
 
       ! Solve the linearised DIVA to calculate a new velocity solution
-      call solve_SSA_DIVA_linearised( self%mesh, self%u_vav_b, self%v_vav_b, &
-        self%N_b, self%dN_dx_b, self%dN_dy_b, &
-        self%beta_eff_b, self%tau_dx_b, self%tau_dy_b, self%u_vav_b_prev, self%v_vav_b_prev, &
-        self%PETSc_rtol, self%PETSc_abstol, n_Axb_its_visc_it, &
+      call self%solve_SSA_DIVA_linearised( self%beta_eff_b, n_Axb_its_visc_it, &
         BC_prescr_mask_b_applied, BC_prescr_u_b_applied, BC_prescr_v_b_applied)
 
       ! Update stability info

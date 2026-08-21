@@ -4,6 +4,7 @@ module demo_model
   use demo_model_basic, only: atype_demo_model
   use demo_model_a, only: type_demo_model_a
   use demo_model_b, only: type_demo_model_b
+  use demo_model_c, only: type_demo_model_c
 
   implicit none
 
@@ -21,7 +22,7 @@ contains
     character(len=*),                     intent(in   ) :: choice_demo_model
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'create_demo_model'
+    character(len=*), parameter :: routine_name = 'create_demo_model'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -33,6 +34,8 @@ contains
       allocate( type_demo_model_a :: demo)
     case ('demo_b')
       allocate( type_demo_model_b :: demo)
+    case ('demo_c')
+      allocate( type_demo_model_c :: demo)
     end select
 
     ! Remove routine from call stack

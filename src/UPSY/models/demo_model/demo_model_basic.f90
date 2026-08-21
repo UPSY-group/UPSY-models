@@ -89,7 +89,7 @@ module demo_model_basic
 
 contains
 
-  subroutine demo_model_allocate( self, region_name, mesh, nz)
+  recursive subroutine demo_model_allocate( self, region_name, mesh, nz)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -151,7 +151,7 @@ contains
 
   end subroutine demo_model_allocate
 
-  subroutine demo_model_deallocate( self)
+  recursive subroutine demo_model_deallocate( self)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -180,7 +180,7 @@ contains
 
   end subroutine demo_model_deallocate
 
-  subroutine demo_model_initialise( self, H0, till_friction_angle_uniform, beta_sq_uniform)
+  recursive subroutine demo_model_initialise( self, H0, till_friction_angle_uniform, beta_sq_uniform)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -238,7 +238,7 @@ contains
 
   end subroutine demo_model_initialise
 
-  subroutine demo_model_run( self, H_new, dH)
+  recursive subroutine demo_model_run( self, H_new, dH)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self
@@ -264,7 +264,7 @@ contains
 
   end subroutine demo_model_run
 
-  subroutine demo_model_remap( self, mesh_new)
+  recursive subroutine demo_model_remap( self, mesh_new)
 
     ! In/output variables:
     class(atype_demo_model), intent(inout) :: self

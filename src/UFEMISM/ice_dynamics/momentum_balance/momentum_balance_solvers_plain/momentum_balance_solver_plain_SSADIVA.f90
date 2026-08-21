@@ -5,6 +5,7 @@ module momentum_balance_solver_plain_SSADIVA
 
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use crash_mod, only: crash
   use model_configuration, only: C
   use mesh_types, only: type_mesh
   use momentum_balance_solver_plain_basic, only: atype_momentum_balance_solver_plain
@@ -14,8 +15,11 @@ module momentum_balance_solver_plain_SSADIVA
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, MPI_SUM
   use parameters, only: ice_density, grav
-  use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use checksum_mod, only: checksum
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
+  use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
+  use mpi_distributed_memory, only: gather_to_all
+  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
 
   implicit none
 
@@ -60,7 +64,50 @@ module momentum_balance_solver_plain_SSADIVA
       procedure, public :: apply_velocity_limits
       procedure, public :: calc_L2_norm_uv
 
+      procedure, public :: solve_SSA_DIVA_linearised
+      procedure, public :: calc_SSA_DIVA_stiffness_matrix_row_free
+      procedure, public :: calc_SSA_DIVA_sans_stiffness_matrix_row_free
+      procedure, public :: calc_SSA_DIVA_stiffness_matrix_row_BC
+
   end type atype_momentum_balance_solver_plain_SSADIVA
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module subroutine solve_SSA_DIVA_linearised( self, u_ii_term, n_Axb_its, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b)
+      class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
+      integer,                                            intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
+      integer,  dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    end subroutine solve_SSA_DIVA_linearised
+
+    module subroutine calc_SSA_DIVA_stiffness_matrix_row_free( self, u_ii_term, A_CSR, bb, row_tiuv)
+      class(atype_momentum_balance_solver_plain_SSADIVA), intent(in   ) :: self
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
+      type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
+      real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
+      integer,                                            intent(in   ) :: row_tiuv
+    end subroutine calc_SSA_DIVA_stiffness_matrix_row_free
+
+    module subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free( self, u_ii_term, A_CSR, bb, row_tiuv)
+      class(atype_momentum_balance_solver_plain_SSADIVA), intent(in   ) :: self
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
+      type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
+      real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
+      integer,                                            intent(in   ) :: row_tiuv
+    end subroutine calc_SSA_DIVA_sans_stiffness_matrix_row_free
+
+    module subroutine calc_SSA_DIVA_stiffness_matrix_row_BC( self, A_CSR, bb, row_tiuv, choice_BC_u, choice_BC_v)
+      class(atype_momentum_balance_solver_plain_SSADIVA), intent(in   ) :: self
+      type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
+      real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
+      integer,                                            intent(in   ) :: row_tiuv
+      character(len=*),                                   intent(in   ) :: choice_BC_u, choice_BC_v
+    end subroutine calc_SSA_DIVA_stiffness_matrix_row_BC
+
+  end interface
 
 contains
 

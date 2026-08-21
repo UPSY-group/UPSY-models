@@ -53,7 +53,7 @@ module momentum_balance_solver_basic
 
     subroutine momentum_balance_solver_allocate_ifc( self)
       import atype_momentum_balance_solver
-      class(atype_momentum_balance_solver),  intent(inout) :: self
+      class(atype_momentum_balance_solver), intent(inout) :: self
     end subroutine momentum_balance_solver_allocate_ifc
 
     subroutine momentum_balance_solver_deallocate_ifc( self)
@@ -71,15 +71,15 @@ module momentum_balance_solver_basic
       import atype_momentum_balance_solver, atype_ice_model_data, atype_ice_geometry_model_data, &
         type_bed_roughness_model, dp
       class(atype_momentum_balance_solver), intent(inout) :: self
-      class(atype_ice_model_data),                intent(inout) :: ice
-      class(atype_ice_geometry_model_data),       intent(in   ) :: geom
-      type(type_bed_roughness_model),             intent(in   ) :: bed_roughness
-      integer,  dimension(:  ), optional,         intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-      real(dp), dimension(:  ), optional,         intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-      real(dp), dimension(:  ), optional,         intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-      integer,  dimension(:,:), optional,         intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-      real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-      real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+      class(atype_ice_model_data),          intent(inout) :: ice
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
+      type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+      integer,  dimension(:  ), optional,   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+      real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+      real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+      integer,  dimension(:,:), optional,   intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+      real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+      real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
     end subroutine momentum_balance_solver_run_ifc
 
     subroutine momentum_balance_solver_set_vel_ifc( self, ice, vel)
@@ -92,8 +92,8 @@ module momentum_balance_solver_basic
     subroutine momentum_balance_solver_remap_ifc( self, mesh_old, mesh_new)
       import atype_momentum_balance_solver, type_mesh
       class(atype_momentum_balance_solver), intent(inout) :: self
-      type(type_mesh),                            intent(in   ) :: mesh_old
-      type(type_mesh), target,                    intent(in   ) :: mesh_new
+      type(type_mesh),                      intent(in   ) :: mesh_old
+      type(type_mesh), target,              intent(in   ) :: mesh_new
     end subroutine momentum_balance_solver_remap_ifc
 
     function get_momentum_balance_solver_name_ifc( self) result( momentum_balance_solver_name)
@@ -110,8 +110,8 @@ contains
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
-    character(len=*),              intent(in   ) :: region_name
-    type(type_mesh), target,       intent(in   ) :: mesh
+    character(len=*),                     intent(in   ) :: region_name
+    type(type_mesh), target,              intent(in   ) :: mesh
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_allocate'
@@ -194,15 +194,15 @@ contains
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
-    class(atype_ice_model_data),                intent(inout) :: ice
-    class(atype_ice_geometry_model_data),       intent(in   ) :: geom
-    type(type_bed_roughness_model),             intent(in   ) :: bed_roughness
-    integer,  dimension(:  ), optional,         intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,         intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,         intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,         intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
+    integer,  dimension(:  ), optional,   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,   intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_run'
@@ -228,8 +228,8 @@ contains
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
-    type(type_mesh),                            intent(in   ) :: mesh_old
-    type(type_mesh), target,                    intent(in   ) :: mesh_new
+    type(type_mesh),                      intent(in   ) :: mesh_old
+    type(type_mesh), target,              intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_remap'

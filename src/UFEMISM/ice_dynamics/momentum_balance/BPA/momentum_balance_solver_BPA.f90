@@ -324,15 +324,15 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    type(type_bed_roughness_model),                intent(in   ) :: bed_roughness
-    integer,  dimension(:  ), optional,            intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,            intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,            intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,            intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,            intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,            intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
+    integer,  dimension(:  ), optional,      intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,      intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'momentum_balance_solver_BPA_run'
@@ -527,8 +527,8 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
-    type(type_mesh),                               intent(in   ) :: mesh_old
-    type(type_mesh), target,                       intent(in   ) :: mesh_new
+    type(type_mesh),                         intent(in   ) :: mesh_old
+    type(type_mesh), target,                 intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'momentum_balance_solver_BPA_remap'
@@ -609,7 +609,7 @@ contains
     BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     ! In/output variables:
-    class(type_momentum_balance_solver_BPA),                   intent(inout) :: self
+    class(type_momentum_balance_solver_BPA),                         intent(inout) :: self
     class(atype_ice_model_data),                                     intent(in   ) :: ice
     integer,                                                         intent(  out) :: n_Axb_its              ! Number of iterations used in the iterative solver
     integer,  dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), intent(in   ) :: BC_prescr_mask_bk      ! Mask of triangles where velocity is prescribed
@@ -789,9 +789,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                             :: ti, k, uv
@@ -988,10 +988,10 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    class(atype_ice_model_data),                   intent(in   ) :: ice
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    class(atype_ice_model_data),             intent(in   ) :: ice
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                             :: ti, k, uv
@@ -1246,10 +1246,10 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    class(atype_ice_model_data),                   intent(in   ) :: ice
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    class(atype_ice_model_data),             intent(in   ) :: ice
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                             :: ti, k, uv
@@ -1443,9 +1443,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                               :: ti,k,uv,row_ti
@@ -1582,9 +1582,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                               :: ti,k,uv,row_ti
@@ -1721,9 +1721,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                               :: ti,k,uv,row_ti
@@ -1860,9 +1860,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                      intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),        intent(inout) :: bb
-    integer,                                       intent(in   ) :: row_tikuv
+    type(type_CSR_matrix_dp),                intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),  intent(inout) :: bb
+    integer,                                 intent(in   ) :: row_tikuv
 
     ! Local variables:
     integer                               :: ti,k,uv,row_ti
@@ -1999,7 +1999,7 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_driving_stress'
@@ -2082,9 +2082,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    real(dp),                                      intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    real(dp),                                intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'calc_effective_viscosity'
@@ -2208,9 +2208,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    type(type_bed_roughness_model),                intent(in   ) :: bed_roughness
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
 
     ! Local variables:
     character(len=*), parameter                      :: routine_name = 'calc_applied_basal_friction_coefficient'
@@ -2257,7 +2257,7 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
-    real(dp),                                      intent(in   ) :: visc_it_relax
+    real(dp),                                intent(in   ) :: visc_it_relax
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'relax_viscosity_iterations'
@@ -2281,7 +2281,7 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    real(dp),                                      intent(  out) :: resid_UV
+    real(dp),                                intent(  out) :: resid_UV
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_visc_iter_UV_resid'
@@ -2359,7 +2359,7 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_BPA), intent(in   ) :: self
-    real(dp),                                      intent(in   ) :: time
+    real(dp),                                intent(in   ) :: time
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'write_to_restart_file_BPA'

@@ -219,15 +219,15 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    type(type_bed_roughness_model),                intent(in   ) :: bed_roughness
-    integer,  dimension(:  ), optional,            intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,            intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,            intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,            intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,            intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,            intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
+    integer,  dimension(:  ), optional,      intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,      intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'momentum_balance_solver_SSA_run'
@@ -413,8 +413,8 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
-    type(type_mesh),                               intent(in   ) :: mesh_old
-    type(type_mesh), target,                       intent(in   ) :: mesh_new
+    type(type_mesh),                         intent(in   ) :: mesh_old
+    type(type_mesh), target,                 intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_SSA_remap'
@@ -447,7 +447,7 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(in   ) :: ice
+    class(atype_ice_model_data),             intent(in   ) :: ice
 
     ! Local variables:
     character(len=*), parameter        :: routine_name = 'calc_vertically_averaged_flow_parameter'
@@ -473,9 +473,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    real(dp),                                      intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    real(dp),                                intent(in   ) :: Glens_flow_law_epsilon_sq_0_applied
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_effective_viscosity'
@@ -534,9 +534,9 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    type(type_bed_roughness_model),                intent(in   ) :: bed_roughness
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
 
     ! Local variables:
     character(len=*), parameter                      :: routine_name = 'calc_applied_basal_friction_coefficient'
@@ -576,7 +576,7 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(in   ) :: self
-    real(dp),                                      intent(in   ) :: time
+    real(dp),                                intent(in   ) :: time
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'write_to_restart_file_SSA'

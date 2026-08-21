@@ -95,7 +95,7 @@ module momentum_balance_solver_basic
 
 contains
 
-  subroutine momentum_balance_solver_allocate( self, region_name, mesh)
+  recursive subroutine momentum_balance_solver_allocate( self, region_name, mesh)
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
@@ -122,7 +122,7 @@ contains
 
   end subroutine momentum_balance_solver_allocate
 
-  subroutine momentum_balance_solver_deallocate( self)
+  recursive subroutine momentum_balance_solver_deallocate( self)
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
@@ -147,7 +147,7 @@ contains
 
   end subroutine momentum_balance_solver_deallocate
 
-  subroutine momentum_balance_solver_initialise( self)
+  recursive subroutine momentum_balance_solver_initialise( self)
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self
@@ -175,7 +175,7 @@ contains
 
   end subroutine momentum_balance_solver_initialise
 
-  subroutine momentum_balance_solver_run( self, ice, geom, bed_roughness, &
+  recursive subroutine momentum_balance_solver_run( self, ice, geom, bed_roughness, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     ! In/output variables:
@@ -210,7 +210,7 @@ contains
 
   end subroutine momentum_balance_solver_run
 
-  subroutine momentum_balance_solver_remap( self, mesh_old, mesh_new)
+  recursive subroutine momentum_balance_solver_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
     class(atype_momentum_balance_solver), intent(inout) :: self

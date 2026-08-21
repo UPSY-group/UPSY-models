@@ -68,14 +68,14 @@ module momentum_balance_solver_DIVA
       procedure, public :: create_restart_file_DIVA
       procedure, public :: write_to_restart_file_DIVA
 
-      procedure, private :: initialise_DIVA_velocities_from_file
-      procedure, private :: calc_vertical_shear_strain_rates
-      procedure, private :: calc_effective_viscosity
-      procedure, private :: calc_F_integrals
-      procedure, private :: calc_effective_basal_friction_coefficient
-      procedure, private :: calc_basal_velocities
-      procedure, private :: calc_basal_shear_stress
-      procedure, private :: calc_3D_velocities
+      procedure, public :: initialise_DIVA_velocities_from_file
+      procedure, public :: calc_vertical_shear_strain_rates
+      procedure, public :: calc_effective_viscosity
+      procedure, public :: calc_F_integrals
+      procedure, public :: calc_effective_basal_friction_coefficient
+      procedure, public :: calc_basal_velocities
+      procedure, public :: calc_basal_shear_stress
+      procedure, public :: calc_3D_velocities
 
   end type type_momentum_balance_solver_DIVA
 

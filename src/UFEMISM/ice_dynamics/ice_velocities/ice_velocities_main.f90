@@ -60,7 +60,6 @@ contains
 
     call momentum_balance_solver%run( ice, geom, bed_roughness, vel, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-    call vel%calc_secondary_velocities()
     call calc_vertical_velocities( vel, mesh, ice, geom, BMB)
 
     ! Finalise routine path

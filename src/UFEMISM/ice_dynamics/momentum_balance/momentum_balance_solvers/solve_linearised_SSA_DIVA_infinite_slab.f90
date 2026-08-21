@@ -1,4 +1,4 @@
-submodule(momentum_balance_solver_plain_SSADIVA) solve_linearised_SSA_DIVA_infinite_slab
+submodule(momentum_balance_solver_SSADIVA) solve_linearised_SSA_DIVA_infinite_slab
 
 contains
 
@@ -6,7 +6,7 @@ contains
     !< Solve the linearised SSA
 
     ! In/output variables:
-    class(atype_momentum_balance_solver_plain_SSADIVA), intent(inout) :: self
+    class(atype_momentum_balance_solver_SSADIVA), intent(inout) :: self
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
     integer,                                            intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
     integer,  dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
@@ -179,7 +179,7 @@ contains
     ! product term N = eta H on the a-grid (vertices).
 
     ! In/output variables:
-    class(atype_momentum_balance_solver_plain_SSADIVA), intent(in   ) :: self
+    class(atype_momentum_balance_solver_SSADIVA), intent(in   ) :: self
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
     type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
@@ -338,7 +338,7 @@ contains
     ! product term N = eta H on the a-grid (vertices).
 
     ! In/output variables:
-    class(atype_momentum_balance_solver_plain_SSADIVA), intent(in   ) :: self
+    class(atype_momentum_balance_solver_SSADIVA), intent(in   ) :: self
     real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
     type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
@@ -448,7 +448,7 @@ contains
     !< Add coefficients to this matrix row to represent boundary conditions at the domain border.
 
     ! In/output variables:
-    class(atype_momentum_balance_solver_plain_SSADIVA), intent(in   ) :: self
+    class(atype_momentum_balance_solver_SSADIVA), intent(in   ) :: self
     type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
     real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
     integer,                                            intent(in   ) :: row_tiuv

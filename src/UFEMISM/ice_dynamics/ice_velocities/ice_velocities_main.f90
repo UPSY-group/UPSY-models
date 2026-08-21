@@ -438,14 +438,14 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = SIA%solver%u_3D_b( ti,:)
-      vel%v_3D_b( ti,:) = SIA%solver%v_3D_b( ti,:)
+      vel%u_3D_b( ti,:) = SIA%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = SIA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dz_3D( vi,:) = SIA%solver%du_dz_3D( vi,:)
-      vel%dv_dz_3D( vi,:) = SIA%solver%dv_dz_3D( vi,:)
+      vel%du_dz_3D( vi,:) = SIA%du_dz_3D( vi,:)
+      vel%dv_dz_3D( vi,:) = SIA%dv_dz_3D( vi,:)
     end do
 
     ! In the SIA, horizontal gradients of u,v, and all gradients of w, are neglected
@@ -479,16 +479,16 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = SSA%solver%u_vav_b( ti)
-      vel%v_3D_b( ti,:) = SSA%solver%v_vav_b( ti)
+      vel%u_3D_b( ti,:) = SSA%u_vav_b( ti)
+      vel%v_3D_b( ti,:) = SSA%v_vav_b( ti)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = SSA%solver%du_dx_a( vi)
-      vel%du_dy_3D( vi,:) = SSA%solver%du_dy_a( vi)
-      vel%dv_dx_3D( vi,:) = SSA%solver%dv_dx_a( vi)
-      vel%dv_dy_3D( vi,:) = SSA%solver%dv_dy_a( vi)
+      vel%du_dx_3D( vi,:) = SSA%du_dx_a( vi)
+      vel%du_dy_3D( vi,:) = SSA%du_dy_a( vi)
+      vel%dv_dx_3D( vi,:) = SSA%dv_dx_a( vi)
+      vel%dv_dy_3D( vi,:) = SSA%dv_dy_a( vi)
     end do
 
     ! In the SSA, vertical gradients of u,v, and all gradients of w, are neglected
@@ -520,18 +520,18 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = SIASSA%solver_SIA%u_3D_b( ti,:) + SIASSA%solver_SSA%u_vav_b( ti)
-      vel%v_3D_b( ti,:) = SIASSA%solver_SIA%v_3D_b( ti,:) + SIASSA%solver_SSA%v_vav_b( ti)
+      vel%u_3D_b( ti,:) = SIASSA%SIA%u_3D_b( ti,:) + SIASSA%SSA%u_vav_b( ti)
+      vel%v_3D_b( ti,:) = SIASSA%SIA%v_3D_b( ti,:) + SIASSA%SSA%v_vav_b( ti)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = SIASSA%solver_SSA%du_dx_a( vi  )
-      vel%du_dy_3D( vi,:) = SIASSA%solver_SSA%du_dy_a( vi  )
-      vel%du_dz_3D( vi,:) = SIASSA%solver_SIA%du_dz_3D  ( vi,:)
-      vel%dv_dx_3D( vi,:) = SIASSA%solver_SSA%dv_dx_a( vi  )
-      vel%dv_dy_3D( vi,:) = SIASSA%solver_SSA%dv_dy_a( vi  )
-      vel%dv_dz_3D( vi,:) = SIASSA%solver_SIA%dv_dz_3D  ( vi,:)
+      vel%du_dx_3D( vi,:) = SIASSA%SSA%du_dx_a( vi  )
+      vel%du_dy_3D( vi,:) = SIASSA%SSA%du_dy_a( vi  )
+      vel%du_dz_3D( vi,:) = SIASSA%SIA%du_dz_3D  ( vi,:)
+      vel%dv_dx_3D( vi,:) = SIASSA%SSA%dv_dx_a( vi  )
+      vel%dv_dy_3D( vi,:) = SIASSA%SSA%dv_dy_a( vi  )
+      vel%dv_dz_3D( vi,:) = SIASSA%SIA%dv_dz_3D  ( vi,:)
     end do
 
     ! In the SIA/SSA, all gradients of w are neglected
@@ -562,18 +562,18 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = DIVA%solver%u_3D_b( ti,:)
-      vel%v_3D_b( ti,:) = DIVA%solver%v_3D_b( ti,:)
+      vel%u_3D_b( ti,:) = DIVA%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = DIVA%v_3D_b( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = DIVA%solver%du_dx_a(    vi  )
-      vel%du_dy_3D( vi,:) = DIVA%solver%du_dy_a(    vi  )
-      vel%du_dz_3D( vi,:) = DIVA%solver%du_dz_3D_a( vi,:)
-      vel%dv_dx_3D( vi,:) = DIVA%solver%dv_dx_a(    vi  )
-      vel%dv_dy_3D( vi,:) = DIVA%solver%dv_dy_a(    vi  )
-      vel%dv_dz_3D( vi,:) = DIVA%solver%dv_dz_3D_a( vi,:)
+      vel%du_dx_3D( vi,:) = DIVA%du_dx_a(    vi  )
+      vel%du_dy_3D( vi,:) = DIVA%du_dy_a(    vi  )
+      vel%du_dz_3D( vi,:) = DIVA%du_dz_3D_a( vi,:)
+      vel%dv_dx_3D( vi,:) = DIVA%dv_dx_a(    vi  )
+      vel%dv_dy_3D( vi,:) = DIVA%dv_dy_a(    vi  )
+      vel%dv_dz_3D( vi,:) = DIVA%dv_dz_3D_a( vi,:)
     end do
 
     ! In the DIVA, gradients of w are neglected
@@ -583,7 +583,7 @@ contains
 
     ! Stresses
     do ti = mesh%ti1, mesh%ti2
-      ice%basal_shear_stress( ti) = hypot( DIVA%solver%tau_bx_b( ti), DIVA%solver%tau_by_b( ti))
+      ice%basal_shear_stress( ti) = hypot( DIVA%tau_bx_b( ti), DIVA%tau_by_b( ti))
     end do
 
     ! Finalise routine path
@@ -608,18 +608,18 @@ contains
 
     ! Velocities
     do ti = mesh%ti1, mesh%ti2
-      vel%u_3D_b( ti,:) = BPA%solver%u_bk( ti,:)
-      vel%v_3D_b( ti,:) = BPA%solver%v_bk( ti,:)
+      vel%u_3D_b( ti,:) = BPA%u_bk( ti,:)
+      vel%v_3D_b( ti,:) = BPA%v_bk( ti,:)
     end do
 
     ! Strain rates
     do vi = mesh%vi1, mesh%vi2
-      vel%du_dx_3D( vi,:) = BPA%solver%du_dx_ak( vi,:)
-      vel%du_dy_3D( vi,:) = BPA%solver%du_dy_ak( vi,:)
-      vel%du_dz_3D( vi,:) = BPA%solver%du_dz_ak( vi,:)
-      vel%dv_dx_3D( vi,:) = BPA%solver%dv_dx_ak( vi,:)
-      vel%dv_dy_3D( vi,:) = BPA%solver%dv_dy_ak( vi,:)
-      vel%dv_dz_3D( vi,:) = BPA%solver%dv_dz_ak( vi,:)
+      vel%du_dx_3D( vi,:) = BPA%du_dx_ak( vi,:)
+      vel%du_dy_3D( vi,:) = BPA%du_dy_ak( vi,:)
+      vel%du_dz_3D( vi,:) = BPA%du_dz_ak( vi,:)
+      vel%dv_dx_3D( vi,:) = BPA%dv_dx_ak( vi,:)
+      vel%dv_dy_3D( vi,:) = BPA%dv_dy_ak( vi,:)
+      vel%dv_dz_3D( vi,:) = BPA%dv_dz_ak( vi,:)
     end do
 
     ! In the BPA, gradients of w are neglected
@@ -703,7 +703,7 @@ contains
         class default
           call crash('invalid momentum_balance_solver class')
         class is (type_momentum_balance_solver_SSA)
-          call SSA%solver%write_to_restart_file_SSA( time)
+          call SSA%write_to_restart_file_SSA( time)
         end select
 
       case ('SIA/SSA')
@@ -712,7 +712,7 @@ contains
         class default
           call crash('invalid momentum_balance_solver class')
         class is (type_momentum_balance_solver_SIASSA)
-          call SIASSA%solver_SSA%write_to_restart_file_SSA( time)
+          call SIASSA%SSA%write_to_restart_file_SSA( time)
         end select
 
       case ('DIVA')
@@ -721,7 +721,7 @@ contains
         class default
           call crash('invalid momentum_balance_solver class')
         class is (type_momentum_balance_solver_DIVA)
-          call DIVA%solver%write_to_restart_file_DIVA( time)
+          call DIVA%write_to_restart_file_DIVA( time)
         end select
 
       case ('BPA')
@@ -730,7 +730,7 @@ contains
         class default
           call crash('invalid momentum_balance_solver class')
         class is (type_momentum_balance_solver_BPA)
-          call BPA%solver%write_to_restart_file_BPA( time)
+          call BPA%write_to_restart_file_BPA( time)
         end select
 
       case ('hybrid DIVA/BPA')
@@ -769,7 +769,7 @@ contains
       class default
         call crash('invalid momentum_balance_solver class')
       class is (type_momentum_balance_solver_SSA)
-        call SSA%solver%create_restart_file_SSA()
+        call SSA%create_restart_file_SSA()
       end select
 
     case ('SIA/SSA')
@@ -778,7 +778,7 @@ contains
       class default
         call crash('invalid momentum_balance_solver class')
       class is (type_momentum_balance_solver_SIASSA)
-        call SIASSA%solver_SSA%create_restart_file_SSA()
+        call SIASSA%SSA%create_restart_file_SSA()
       end select
 
     case ('DIVA')
@@ -787,7 +787,7 @@ contains
       class default
         call crash('invalid momentum_balance_solver class')
       class is (type_momentum_balance_solver_DIVA)
-        call DIVA%solver%create_restart_file_DIVA()
+        call DIVA%create_restart_file_DIVA()
       end select
 
     case ('BPA')
@@ -796,7 +796,7 @@ contains
         class default
           call crash('invalid momentum_balance_solver class')
         class is (type_momentum_balance_solver_BPA)
-          call BPA%solver%create_restart_file_BPA()
+          call BPA%create_restart_file_BPA()
         end select
 
     case ('hybrid DIVA/BPA')

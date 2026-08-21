@@ -89,24 +89,24 @@ module momentum_balance_solver_BPA
       procedure, public :: create_restart_file_BPA
       procedure, public :: write_to_restart_file_BPA
 
-      procedure, private :: initialise_BPA_velocities_from_file
+      procedure, public :: initialise_BPA_velocities_from_file
 
-      procedure, private :: solve_BPA_linearised
-      procedure, private :: calc_BPA_stiffness_matrix_row_free
-      procedure, private :: calc_BPA_stiffness_matrix_row_BC_surf
-      procedure, private :: calc_BPA_stiffness_matrix_row_BC_base
-      procedure, private :: calc_BPA_stiffness_matrix_row_BC_west
-      procedure, private :: calc_BPA_stiffness_matrix_row_BC_east
-      procedure, private :: calc_BPA_stiffness_matrix_row_BC_south
-      procedure, private :: calc_BPA_stiffness_matrix_row_BC_north
+      procedure, public :: solve_BPA_linearised
+      procedure, public :: calc_BPA_stiffness_matrix_row_free
+      procedure, public :: calc_BPA_stiffness_matrix_row_BC_surf
+      procedure, public :: calc_BPA_stiffness_matrix_row_BC_base
+      procedure, public :: calc_BPA_stiffness_matrix_row_BC_west
+      procedure, public :: calc_BPA_stiffness_matrix_row_BC_east
+      procedure, public :: calc_BPA_stiffness_matrix_row_BC_south
+      procedure, public :: calc_BPA_stiffness_matrix_row_BC_north
 
-      procedure, private :: calc_driving_stress
-      procedure, private :: calc_strain_rates
-      procedure, private :: calc_effective_viscosity
-      procedure, private :: calc_applied_basal_friction_coefficient
-      procedure, private :: relax_viscosity_iterations
-      procedure, private :: calc_visc_iter_UV_resid
-      procedure, private :: apply_velocity_limits
+      procedure, public :: calc_driving_stress
+      procedure, public :: calc_strain_rates
+      procedure, public :: calc_effective_viscosity
+      procedure, public :: calc_applied_basal_friction_coefficient
+      procedure, public :: relax_viscosity_iterations
+      procedure, public :: calc_visc_iter_UV_resid
+      procedure, public :: apply_velocity_limits
 
   end type type_momentum_balance_solver_BPA
 

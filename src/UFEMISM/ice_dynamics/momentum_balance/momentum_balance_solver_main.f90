@@ -9,6 +9,7 @@ module momentum_balance_solver_main
   use momentum_balance_solver_SIASSA, only: type_momentum_balance_solver_SIASSA
   use momentum_balance_solver_DIVA, only: type_momentum_balance_solver_DIVA
   use momentum_balance_solver_BPA, only: type_momentum_balance_solver_BPA
+  use momentum_balance_solver_hybrid_DIVA_BPA, only: type_momentum_balance_solver_hybrid_DIVA_BPA
 
   implicit none
 
@@ -47,7 +48,7 @@ contains
     case ('BPA')
       allocate( type_momentum_balance_solver_BPA :: momentum_balance_solver)
     case ('hybrid DIVA/BPA')
-      call crash('FIXME')
+      allocate( type_momentum_balance_solver_hybrid_DIVA_BPA :: momentum_balance_solver)
     end select
 
     ! Remove routine from call stack

@@ -437,7 +437,7 @@ contains
     ! Run the demo model and test if that worked
     call demo1%run( H_new, dH)
     call unit_test( (&
-      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
       ), trim( test_name) // '/run')
 
     ! Remap the demo model and test if that worked

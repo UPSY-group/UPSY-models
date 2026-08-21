@@ -34,48 +34,6 @@ contains
 
   ! == The main routines, to be called from the ice dynamics module
 
-  subroutine initialise_velocity_solver( vel, ice, momentum_balance_solver, region_name)
-    !< Initialise the velocity solver for the chosen Stokes approximation
-
-    ! In/output variables:
-    class(atype_ice_velocity_model),      intent(inout) :: vel
-    class(atype_ice_model_data),          intent(inout) :: ice
-    class(atype_momentum_balance_solver), intent(inout) :: momentum_balance_solver
-    character(len=3),                     intent(in   ) :: region_name
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_velocity_solver'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    if (par%primary) write(*,"(A)") '   Initialising ' // &
-      UPSY%stru%colour_string( trim( C%choice_stress_balance_approximation),'light blue') // ' solver...'
-
-    select case (C%choice_stress_balance_approximation)
-      case default
-        call crash('unknown choice_stress_balance_approximation "' // TRIM( C%choice_stress_balance_approximation) // '"!')
-      case ('none')
-        call momentum_balance_solver%initialise()
-      case ('SIA')
-        call momentum_balance_solver%initialise()
-      case ('SSA')
-        call momentum_balance_solver%initialise()
-      case ('SIA/SSA')
-        call momentum_balance_solver%initialise()
-      case ('DIVA')
-        call momentum_balance_solver%initialise()
-      case ('BPA')
-        call momentum_balance_solver%initialise()
-      case ('hybrid DIVA/BPA')
-        call momentum_balance_solver%initialise()
-    end select
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_velocity_solver
-
   subroutine solve_stress_balance( mesh, ice, geom, vel, momentum_balance_solver, bed_roughness, BMB, region_name, n_visc_its, n_Axb_its, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate all ice velocities based on the chosen stress balance approximation

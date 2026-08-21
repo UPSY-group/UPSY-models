@@ -1,6 +1,8 @@
 module momentum_balance_solver_basic
 
+  use UPSY_main, only: UPSY
   use precisions, only: dp
+  use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use momentum_balance_solver_data, only: atype_momentum_balance_solver_data
   use mesh_types, only: type_mesh
@@ -157,6 +159,9 @@ contains
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    if (par%primary) write(*,"(A)") '   Initialising ' // &
+      UPSY%stru%colour_string( trim( C%choice_stress_balance_approximation),'light blue') // ' solver...'
 
     ! Initialise stuff that is common to all models
     call self%initialise_model()

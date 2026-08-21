@@ -18,7 +18,7 @@ module ice_dynamics_main
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_main, only: Atlas
   use ice_velocities_main, only: solve_stress_balance, remap_velocity_solver, &
-    create_restart_file_ice_velocity, write_to_restart_file_ice_velocity, initialise_velocity_solver
+    create_restart_file_ice_velocity, write_to_restart_file_ice_velocity
   use conservation_of_mass_main, only: calc_dHi_dt, apply_mask_noice_direct
   use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
   use ice_geometry_basics, only: ice_surface_elevation, &
@@ -379,7 +379,7 @@ contains
     ! ==========
 
     ! Initialise data for the chosen velocity solver(s)
-    call initialise_velocity_solver( ice%vel, ice, ice%momentum_balance_solver, region_name)
+    call ice%momentum_balance_solver%initialise()
 
     ! Time stepping
     ! =============

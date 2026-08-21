@@ -47,9 +47,7 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call momentum_balance_solver%remap( mesh_old, mesh_new)
-    call momentum_balance_solver%set_velocities_to_solver_results( ice, vel)
-    call vel%calc_secondary_velocities( ice, geom, BMB)
+    call momentum_balance_solver%remap( mesh_old, mesh_new, ice, geom, vel, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

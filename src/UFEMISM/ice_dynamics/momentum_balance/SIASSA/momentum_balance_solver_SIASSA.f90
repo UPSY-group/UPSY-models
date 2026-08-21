@@ -192,8 +192,8 @@ contains
     call init_routine( routine_name)
 
     ! Remap all the stuff that is specific to the SIA/SSA momentum balance solver
-    call self%SIA%remap( mesh_old, mesh_new)
-    call self%SSA%remap( mesh_old, mesh_new)
+    call self%SIA%remap_momentum_balance_solver( mesh_old, mesh_new)
+    call self%SSA%remap_momentum_balance_solver( mesh_old, mesh_new)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

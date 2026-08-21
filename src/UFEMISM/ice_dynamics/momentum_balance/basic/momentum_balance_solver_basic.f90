@@ -220,6 +220,8 @@ contains
     ! Run stuff that is specific to each individual basic momentum balance solver
     call self%run_momentum_balance_solver( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
+
+    ! Update the velocity model
     call self%set_velocities_to_solver_results( ice, vel)
     call vel%calc_secondary_velocities( ice, geom, BMB)
 
@@ -228,12 +230,16 @@ contains
 
   end subroutine momentum_balance_solver_run
 
-  recursive subroutine momentum_balance_solver_remap( self, mesh_old, mesh_new)
+  recursive subroutine momentum_balance_solver_remap( self, mesh_old, mesh_new, ice, geom, vel, BMB)
 
     ! In/output variables:
-    class(atype_momentum_balance_solver), intent(inout) :: self
-    type(type_mesh),                      intent(in   ) :: mesh_old
-    type(type_mesh), target,              intent(in   ) :: mesh_new
+    class(atype_momentum_balance_solver),           intent(inout) :: self
+    type(type_mesh),                                intent(in   ) :: mesh_old
+    type(type_mesh), target,                        intent(in   ) :: mesh_new
+    class(atype_ice_model_data),                    intent(inout) :: ice
+    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
+    class(atype_ice_velocity_model),                intent(inout) :: vel
+    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: BMB
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_remap'
@@ -249,6 +255,10 @@ contains
 
     ! Remap stuff that is specific to each individual basic momentum balance solver
     call self%remap_momentum_balance_solver( mesh_old, mesh_new)
+
+    ! Update the velocity model
+    call self%set_velocities_to_solver_results( ice, vel)
+    call vel%calc_secondary_velocities( ice, geom, BMB)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

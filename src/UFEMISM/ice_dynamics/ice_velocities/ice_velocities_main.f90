@@ -1,20 +1,10 @@
 module ice_velocities_main
 
-  !< Contains all the routines needed to solve for conservation of momentum
-  !< and calculate instantaneous ice velocities for the current modelled ice-sheet geometry.
-
-  use mpi_basic, only: par
   use precisions, only: dp
-  use UPSY_main, only: UPSY
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use model_configuration, only: C
-  use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
-  use bed_roughness_model_types, only: type_bed_roughness_model
-  use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_velocity_model_data, only: atype_ice_velocity_model_data
-  use ice_velocity_model_basic, only: atype_ice_velocity_model
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use momentum_balance_solver_SIA, only: type_momentum_balance_solver_SIA
   use momentum_balance_solver_SSA, only: type_momentum_balance_solver_SSA
@@ -26,35 +16,6 @@ module ice_velocities_main
   implicit none
 
 contains
-
-  ! == The main routines, to be called from the ice dynamics module
-
-  subroutine remap_velocity_solver( vel, momentum_balance_solver, mesh_old, mesh_new, ice, geom, BMB)
-    !< Remap the velocity solver for the chosen stress balance approximation
-
-    ! In/output variables:
-    class(atype_ice_velocity_model),                intent(inout) :: vel
-    class(atype_momentum_balance_solver),           intent(inout) :: momentum_balance_solver
-    type(type_mesh),                                intent(in   ) :: mesh_old
-    type(type_mesh),                                intent(in   ) :: mesh_new
-    class(atype_ice_model_data),                    intent(inout) :: ice
-    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
-    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: BMB
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'remap_velocity_solver'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call momentum_balance_solver%remap( mesh_old, mesh_new, ice, geom, vel, BMB)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine remap_velocity_solver
-
-  ! == Restart NetCDF files
 
   subroutine write_to_restart_file_ice_velocity( mesh, ice, momentum_balance_solver, time)
     !< Write to the restart NetCDF file for the ice velocity solver

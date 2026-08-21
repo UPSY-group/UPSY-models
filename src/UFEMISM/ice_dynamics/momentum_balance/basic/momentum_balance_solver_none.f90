@@ -6,6 +6,7 @@ module momentum_balance_solver_none
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use parameters, only: grav, ice_density, NaN
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
@@ -29,6 +30,7 @@ module momentum_balance_solver_none
       procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_none_deallocate
       procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_none_initialise
       procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_none_run
+      procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_none_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_none_remap
 
       procedure, public :: get_momentum_balance_solver_name
@@ -118,6 +120,23 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine momentum_balance_solver_none_run
+
+  subroutine momentum_balance_solver_none_set_velocities( self, vel)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_none), intent(in   ) :: self
+    class(atype_ice_velocity_model_data),     intent(inout) :: vel
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_none_set_velocities'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_none_set_velocities
 
   subroutine momentum_balance_solver_none_remap( self, mesh_old, mesh_new)
 

@@ -10,6 +10,7 @@ module momentum_balance_solver_DIVA
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use netcdf_io_main
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, map_b_a_2D, map_b_a_3D
   use reallocate_mod, only: reallocate_bounds, reallocate_clean
@@ -63,6 +64,7 @@ module momentum_balance_solver_DIVA
       procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_DIVA_deallocate
       procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_DIVA_initialise
       procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_DIVA_run
+      procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_DIVA_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_DIVA_remap
 
       procedure, public :: create_restart_file_DIVA
@@ -476,6 +478,23 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine momentum_balance_solver_DIVA_run
+
+  subroutine momentum_balance_solver_DIVA_set_velocities( self, vel)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_DIVA), intent(in   ) :: self
+    class(atype_ice_velocity_model_data),     intent(inout) :: vel
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_DIVA_set_velocities'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_DIVA_set_velocities
 
   subroutine momentum_balance_solver_DIVA_remap( self, mesh_old, mesh_new)
 

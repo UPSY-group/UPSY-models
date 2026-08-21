@@ -13,6 +13,7 @@ module momentum_balance_solver_basic
   use model_configuration, only: C
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use bed_roughness_model_types, only: type_bed_roughness_model
 
   implicit none
@@ -37,9 +38,10 @@ module momentum_balance_solver_basic
       procedure(momentum_balance_solver_deallocate_ifc), deferred :: deallocate_momentum_balance_solver
       procedure(momentum_balance_solver_initialise_ifc), deferred :: initialise_momentum_balance_solver
       procedure(momentum_balance_solver_run_ifc),        deferred :: run_momentum_balance_solver
+      procedure(momentum_balance_solver_set_vel_ifc),    deferred :: set_velocities_to_solver_results
       procedure(momentum_balance_solver_remap_ifc),      deferred :: remap_momentum_balance_solver
 
-      procedure, public                                               :: get_model_name
+      procedure, public                                         :: get_model_name
       procedure(get_momentum_balance_solver_name_ifc), deferred :: get_momentum_balance_solver_name
 
   end type atype_momentum_balance_solver
@@ -79,6 +81,12 @@ module momentum_balance_solver_basic
       real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
       real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
     end subroutine momentum_balance_solver_run_ifc
+
+    subroutine momentum_balance_solver_set_vel_ifc( self, vel)
+      import atype_momentum_balance_solver, atype_ice_velocity_model_data
+      class(atype_momentum_balance_solver), intent(in   ) :: self
+      class(atype_ice_velocity_model_data), intent(inout) :: vel
+    end subroutine momentum_balance_solver_set_vel_ifc
 
     subroutine momentum_balance_solver_remap_ifc( self, mesh_old, mesh_new)
       import atype_momentum_balance_solver, type_mesh

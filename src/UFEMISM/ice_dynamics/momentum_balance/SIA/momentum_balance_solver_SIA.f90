@@ -42,6 +42,7 @@ module momentum_balance_solver_SIA
       procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_SIA_deallocate
       procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_SIA_initialise
       procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_SIA_run
+      procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_SIA_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SIA_remap
 
       procedure, public :: get_momentum_balance_solver_name
@@ -250,6 +251,23 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine momentum_balance_solver_SIA_run
+
+  subroutine momentum_balance_solver_SIA_set_velocities( self, vel)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_SIA), intent(in   ) :: self
+    class(atype_ice_velocity_model_data),    intent(inout) :: vel
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_set_velocities'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_SIA_set_velocities
 
   subroutine momentum_balance_solver_SIA_remap( self, mesh_old, mesh_new)
 

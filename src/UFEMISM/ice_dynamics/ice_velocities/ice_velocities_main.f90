@@ -34,7 +34,7 @@ contains
 
   ! == The main routines, to be called from the ice dynamics module
 
-  subroutine solve_stress_balance( mesh, ice, geom, vel, momentum_balance_solver, bed_roughness, BMB, region_name, n_visc_its, n_Axb_its, &
+  subroutine solve_stress_balance( mesh, ice, geom, vel, momentum_balance_solver, bed_roughness, BMB, region_name, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     !< Calculate all ice velocities based on the chosen stress balance approximation
 
@@ -47,8 +47,6 @@ contains
     type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
     character(len=3),                       intent(in   ) :: region_name
-    integer,                                intent(out)   :: n_visc_its            ! Number of non-linear viscosity iterations
-    integer,                                intent(out)   :: n_Axb_its             ! Number of iterations in iterative solver for linearised momentum balance
     ! Prescribed velocities for the SSA/DIVA
     integer,  dimension(:  ), optional,     intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
     real(dp), dimension(:  ), optional,     intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
@@ -68,9 +66,6 @@ contains
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     call calc_secondary_velocities( mesh, vel)
     call calc_vertical_velocities( vel, mesh, ice, geom, BMB)
-
-    n_visc_its = momentum_balance_solver%n_visc_its
-    n_Axb_its  = momentum_balance_solver%n_Axb_its
 
     ! Finalise routine path
     call finalise_routine( routine_name)

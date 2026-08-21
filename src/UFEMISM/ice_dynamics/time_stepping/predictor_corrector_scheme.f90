@@ -44,8 +44,6 @@ contains
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: Hi_dummy
     real(dp)                                             :: beta_1, beta_2
     integer                                              :: n_guilty, n_tot
-    integer                                              :: n_visc_its
-    integer                                              :: n_Axb_its
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2) :: SMB_loc
 
     ! Add routine to path
@@ -116,12 +114,12 @@ contains
       !   u_n+1 in Robinson et al., 2020, Eq. 31
       call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
         region%ice%momentum_balance_solver, region%bed_roughness, &
-        region%BMB%BMB, region%name, n_visc_its, n_Axb_its)
+        region%BMB%BMB, region%name)
 
       ! Update stability info
       region%ice%dt_ice     = region%ice%pc%dt_np1
-      region%ice%n_visc_its = n_visc_its
-      region%ice%n_Axb_its  = n_Axb_its
+      region%ice%n_visc_its = region%ice%momentum_balance_solver%n_visc_its
+      region%ice%n_Axb_its  = region%ice%momentum_balance_solver%n_Axb_its
 
       ! == Corrector step ==
       ! ====================

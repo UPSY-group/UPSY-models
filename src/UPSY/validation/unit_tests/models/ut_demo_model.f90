@@ -38,6 +38,7 @@ contains
     call test_demo_model_b( test_name, mesh1, mesh2)
     call test_demo_model_abstract_a( test_name, mesh1, mesh2)
     call test_demo_model_abstract_b( test_name, mesh1, mesh2)
+    call test_demo_model_abstract_c( test_name, mesh1, mesh2)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -390,6 +391,92 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine test_demo_model_abstract_b
+
+  subroutine test_demo_model_abstract_c( test_name_parent, mesh1, mesh2)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+    type(type_mesh),  intent(in) :: mesh1, mesh2
+
+    ! Local variables:
+    character(len=1024), parameter       :: routine_name = 'test_demo_model_abstract_c'
+    character(len=1024), parameter       :: test_name_local = 'abstract/c'
+    character(len=1024)                  :: test_name
+    integer, parameter                   :: nz = 10
+    real(dp), parameter                  :: H0 = 0.1_dp
+    real(dp), parameter                  :: till_friction_angle_uniform = 0.1_dp
+    real(dp), parameter                  :: beta_sq_uniform = 1e4_dp
+    real(dp), parameter                  :: H_new = 0.2_dp
+    real(dp), parameter                  :: dH = 1._dp
+    class(atype_demo_model), allocatable :: demo1, demo2
+    character(:), allocatable            :: filename
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Allocate the demo model and test if that worked
+    call create_demo_model( demo1, 'demo_c')
+    call demo1%allocate( 'ccc', mesh1, nz)
+    call unit_test( ( &
+      trim( demo1%region_name()) == 'ccc' .and. &
+      trim( demo1%mesh%name)     == trim( mesh1%name) .and. &
+      size( demo1%H   ,1) == mesh1%pai_V%n_nih .and. &
+      size( demo1%u_3D,1) == mesh1%pai_Tri%n_nih .and. &
+      size( demo1%u_3D,2) == nz &
+      ), trim( test_name) // '/allocate')
+
+    ! Initialise the demo model and test if that worked
+    call demo1%initialise( H0, till_friction_angle_uniform, beta_sq_uniform)
+    call unit_test( (&
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 &
+      ), trim( test_name) // '/initialise')
+
+    ! Run the demo model and test if that worked
+    call demo1%run( H_new, dH)
+    call unit_test( (&
+      minval( demo1%H( mesh1%pai_V%i1: mesh1%pai_V%i2)) == H0 + dH &
+      ), trim( test_name) // '/run')
+
+    ! Remap the demo model and test if that worked
+    call demo1%remap( mesh2)
+    call unit_test( ( &
+      demo1%mesh%name     == mesh2%name .and. &
+      size( demo1%H   ,1) == mesh2%pai_V%n_nih .and. &
+      size( demo1%u_3D,1) == mesh2%pai_Tri%n_nih .and. &
+      size( demo1%u_3D,2) == nz &
+      ), trim( test_name) // '/remap')
+
+    ! Write the demo model to a restart file,
+    ! then allocate a new demo model and initialise it from that
+    ! restart file; test if all of that worked
+    call demo1%write_to_restart_file( foldername_unit_tests_output, filename)
+    call create_demo_model( demo2, 'demo_c')
+    call demo2%allocate( 'ccc', mesh2, nz)
+    call demo2%read_from_restart_file( filename)
+    call unit_test( demo1 == demo2, trim( test_name) // '/restart')
+
+    ! Deallocate the demo model and test if that worked
+    call demo1%deallocate
+    call unit_test( ( &
+      trim( demo1%region_name()) == '!!!' .and. &
+      .not. associated( demo1%mesh) .and. &
+      .not. associated( demo1%H) .and. &
+      .not. associated( demo1%u_3D) .and. &
+      .not. associated( demo1%v_3D) .and. &
+      .not. associated( demo1%mask_ice) .and. &
+      .not. associated( demo1%T2m) &
+      ), trim( test_name) // '/deallocate')
+
+    ! Clean up after yourself
+    call delete_file( filename)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_demo_model_abstract_c
 
   subroutine delete_file( filename)
 

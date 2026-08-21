@@ -6,6 +6,7 @@ module momentum_balance_solver_none
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use parameters, only: grav, ice_density, NaN
   use reallocate_mod, only: reallocate_bounds
   use constitutive_equation, only: calc_ice_rheology_Glen
@@ -29,6 +30,7 @@ module momentum_balance_solver_none
       procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_none_deallocate
       procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_none_initialise
       procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_none_run
+      procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_none_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_none_remap
 
       procedure, public :: get_momentum_balance_solver_name
@@ -96,15 +98,15 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_none), intent(inout) :: self
-    class(atype_ice_model_data),               intent(inout) :: ice
-    class(atype_ice_geometry_model_data),      intent(in   ) :: geom
-    type(type_bed_roughness_model),            intent(in   ) :: bed_roughness
-    integer,  dimension(:  ), optional,        intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,        intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,        intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,        intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,        intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,        intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_ice_model_data),              intent(inout) :: ice
+    class(atype_ice_geometry_model_data),     intent(in   ) :: geom
+    type(type_bed_roughness_model),           intent(in   ) :: bed_roughness
+    integer,  dimension(:  ), optional,       intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,       intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,       intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,       intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,       intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,       intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'run_momentum_balance_solver_none'
@@ -114,17 +116,38 @@ contains
 
     ! Run all the stuff that is specific to the 'none' momentum balance solver
 
+    self%n_visc_its = 0
+    self%n_Axb_its  = 0
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine momentum_balance_solver_none_run
 
+  subroutine momentum_balance_solver_none_set_velocities( self, ice, vel)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_none), intent(in   ) :: self
+    class(atype_ice_model_data),              intent(inout) :: ice
+    class(atype_ice_velocity_model_data),     intent(inout) :: vel
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_none_set_velocities'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_none_set_velocities
+
   subroutine momentum_balance_solver_none_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
     class(type_momentum_balance_solver_none), intent(inout) :: self
-    type(type_mesh),                           intent(in   ) :: mesh_old
-    type(type_mesh), target,                   intent(in   ) :: mesh_new
+    type(type_mesh),                          intent(in   ) :: mesh_old
+    type(type_mesh), target,                  intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_none_remap'

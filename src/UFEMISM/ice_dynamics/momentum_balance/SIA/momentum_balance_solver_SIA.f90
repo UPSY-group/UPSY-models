@@ -42,6 +42,7 @@ module momentum_balance_solver_SIA
       procedure, public :: deallocate_momentum_balance_solver => momentum_balance_solver_SIA_deallocate
       procedure, public :: initialise_momentum_balance_solver => momentum_balance_solver_SIA_initialise
       procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_SIA_run
+      procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_SIA_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SIA_remap
 
       procedure, public :: get_momentum_balance_solver_name
@@ -149,15 +150,15 @@ contains
 
     ! In/output variables:
     class(type_momentum_balance_solver_SIA), intent(inout) :: self
-    class(atype_ice_model_data),                   intent(inout) :: ice
-    class(atype_ice_geometry_model_data),          intent(in   ) :: geom
-    type(type_bed_roughness_model),                intent(in   ) :: bed_roughness
-    integer,  dimension(:  ), optional,            intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,            intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,            intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,            intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,            intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,            intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_geometry_model_data),    intent(in   ) :: geom
+    type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
+    integer,  dimension(:  ), optional,      intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,      intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'run_momentum_balance_solver_SIA'
@@ -176,6 +177,9 @@ contains
     if (.not. C%choice_flow_law == 'Glen') then
       call crash('the analytical solution to the SIA is only valid when using Glens flow law!')
     end if
+
+    self%n_visc_its = 0
+    self%n_Axb_its  = 0
 
     ! Allocate memory
     allocate( Hi_b(     self%mesh%ti1:self%mesh%ti2                ))
@@ -251,12 +255,52 @@ contains
 
   end subroutine momentum_balance_solver_SIA_run
 
+  subroutine momentum_balance_solver_SIA_set_velocities( self, ice, vel)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_SIA), intent(in   ) :: self
+    class(atype_ice_model_data),             intent(inout) :: ice
+    class(atype_ice_velocity_model_data),    intent(inout) :: vel
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_set_velocities'
+    integer                     :: ti, vi
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Velocities
+    do ti = self%mesh%ti1, self%mesh%ti2
+      vel%u_3D_b( ti,:) = self%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = self%v_3D_b( ti,:)
+    end do
+
+    ! Strain rates
+    do vi = self%mesh%vi1, self%mesh%vi2
+      vel%du_dz_3D( vi,:) = self%du_dz_3D( vi,:)
+      vel%dv_dz_3D( vi,:) = self%dv_dz_3D( vi,:)
+    end do
+
+    ! In the SIA, horizontal gradients of u,v, and all gradients of w, are neglected
+    vel%du_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%du_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dv_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dv_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dw_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine momentum_balance_solver_SIA_set_velocities
+
   subroutine momentum_balance_solver_SIA_remap( self, mesh_old, mesh_new)
 
     ! In/output variables:
     class(type_momentum_balance_solver_SIA), intent(inout) :: self
-    type(type_mesh),                               intent(in   ) :: mesh_old
-    type(type_mesh), target,                       intent(in   ) :: mesh_new
+    type(type_mesh),                         intent(in   ) :: mesh_old
+    type(type_mesh), target,                 intent(in   ) :: mesh_new
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_remap'

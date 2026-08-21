@@ -18,7 +18,7 @@ module ice_dynamics_main
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_main, only: Atlas
   use ice_velocities_main, only: solve_stress_balance, remap_velocity_solver, &
-    create_restart_file_ice_velocity, write_to_restart_file_ice_velocity, initialise_velocity_solver
+    create_restart_file_ice_velocity, write_to_restart_file_ice_velocity
   use conservation_of_mass_main, only: calc_dHi_dt, apply_mask_noice_direct
   use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
   use ice_geometry_basics, only: ice_surface_elevation, &
@@ -379,7 +379,7 @@ contains
     ! ==========
 
     ! Initialise data for the chosen velocity solver(s)
-    call initialise_velocity_solver( ice%vel, ice, ice%momentum_balance_solver, region_name)
+    call ice%momentum_balance_solver%initialise()
 
     ! Time stepping
     ! =============
@@ -804,8 +804,6 @@ contains
     real(dp)                                       :: Glens_flow_law_epsilon_sq_0_save
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: Hi_tplusdt
     real(dp), dimension(mesh%vi1:mesh%vi2)         :: divQ
-    integer                                        :: n_visc_its
-    integer                                        :: n_Axb_its
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -965,7 +963,6 @@ contains
       ! Update velocity solution around the calving front
       call solve_stress_balance( mesh, ice, ice%geom, ice%vel, &
         ice%momentum_balance_solver, bed_roughness, BMB_new, region_name, &
-        n_visc_its, n_Axb_its, &
         BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
       ! Calculate dH/dt around the calving front
@@ -1020,8 +1017,6 @@ contains
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2)  :: Hi_new, dHi_dt_new
     real(dp), dimension(region%mesh%vi1:region%mesh%vi2)  :: SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, dHi_dt_target_dummy
     character(len=256)                                    :: r_time, r_step, r_adv
-    integer                                               :: n_visc_its
-    integer                                               :: n_Axb_its
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -1079,7 +1074,7 @@ contains
       ! Calculate ice velocities for the predicted geometry
       call solve_stress_balance( region%mesh, region%ice, region%ice%geom, &
         region%ice%vel, region%ice%momentum_balance_solver, &
-        region%bed_roughness, BMB_dummy, region%name, n_visc_its, n_Axb_its)
+        region%bed_roughness, BMB_dummy, region%name)
 
       ! Calculate thinning rates for current geometry and velocity
       call calc_dHi_dt( region%mesh, region%ice%geom, region%ice%vel, SMB_dummy, BMB_dummy, LMB_dummy, AMB_dummy, &

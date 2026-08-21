@@ -29,42 +29,6 @@ contains
 
   ! == The main routines, to be called from the ice dynamics module
 
-  subroutine solve_stress_balance( mesh, ice, geom, vel, momentum_balance_solver, bed_roughness, BMB, region_name, &
-    BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-    !< Calculate all ice velocities based on the chosen stress balance approximation
-
-    ! In/output variables:
-    type(type_mesh),                        intent(inout) :: mesh
-    class(atype_ice_model_data),            intent(inout) :: ice
-    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
-    class(atype_ice_velocity_model),        intent(inout) :: vel
-    class(atype_momentum_balance_solver),   intent(inout) :: momentum_balance_solver
-    type(type_bed_roughness_model),         intent(in   ) :: bed_roughness
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
-    character(len=3),                       intent(in   ) :: region_name
-    ! Prescribed velocities for the SSA/DIVA
-    integer,  dimension(:  ), optional,     intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,     intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,     intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    ! Prescribed velocities for the BPA
-    integer,  dimension(:,:), optional,     intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,     intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,     intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'solve_stress_balance'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call momentum_balance_solver%run( ice, geom, bed_roughness, vel, BMB, &
-      BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine solve_stress_balance
-
   subroutine remap_velocity_solver( vel, momentum_balance_solver, mesh_old, mesh_new, ice, geom, BMB)
     !< Remap the velocity solver for the chosen stress balance approximation
 

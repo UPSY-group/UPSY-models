@@ -17,7 +17,6 @@ module predictor_corrector_scheme
   use time_step_criteria, only: calc_critical_timestep_adv
   use conservation_of_mass_main, only: calc_dHi_dt
   use ice_thickness_safeties, only: alter_ice_thickness
-  use ice_velocities_main, only: solve_stress_balance
   use checksum_mod, only: checksum
   use remove_unconnected_shelves_mod, only: remove_unconnected_shelves
 
@@ -112,9 +111,8 @@ contains
 
       ! Calculate ice velocities for the predicted geometry
       !   u_n+1 in Robinson et al., 2020, Eq. 31
-      call solve_stress_balance( region%mesh, region%ice, region%ice%geom, region%ice%vel, &
-        region%ice%momentum_balance_solver, region%bed_roughness, &
-        region%BMB%BMB, region%name)
+      call region%ice%momentum_balance_solver%run( region%ice, region%ice%geom, &
+        region%bed_roughness, region%ice%vel, region%BMB%BMB)
 
       ! Update stability info
       region%ice%dt_ice     = region%ice%pc%dt_np1

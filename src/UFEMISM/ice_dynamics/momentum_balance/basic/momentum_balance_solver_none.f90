@@ -121,10 +121,11 @@ contains
 
   end subroutine momentum_balance_solver_none_run
 
-  subroutine momentum_balance_solver_none_set_velocities( self, vel)
+  subroutine momentum_balance_solver_none_set_velocities( self, ice, vel)
 
     ! In/output variables:
     class(type_momentum_balance_solver_none), intent(in   ) :: self
+    class(atype_ice_model_data),              intent(inout) :: ice
     class(atype_ice_velocity_model_data),     intent(inout) :: vel
 
     ! Local variables:

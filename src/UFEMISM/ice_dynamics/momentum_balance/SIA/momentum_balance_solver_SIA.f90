@@ -252,17 +252,40 @@ contains
 
   end subroutine momentum_balance_solver_SIA_run
 
-  subroutine momentum_balance_solver_SIA_set_velocities( self, vel)
+  subroutine momentum_balance_solver_SIA_set_velocities( self, ice, vel)
 
     ! In/output variables:
     class(type_momentum_balance_solver_SIA), intent(in   ) :: self
+    class(atype_ice_model_data),             intent(inout) :: ice
     class(atype_ice_velocity_model_data),    intent(inout) :: vel
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_SIA_set_velocities'
+    integer                     :: ti, vi
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Velocities
+    do ti = self%mesh%ti1, self%mesh%ti2
+      vel%u_3D_b( ti,:) = self%u_3D_b( ti,:)
+      vel%v_3D_b( ti,:) = self%v_3D_b( ti,:)
+    end do
+
+    ! Strain rates
+    do vi = self%mesh%vi1, self%mesh%vi2
+      vel%du_dz_3D( vi,:) = self%du_dz_3D( vi,:)
+      vel%dv_dz_3D( vi,:) = self%dv_dz_3D( vi,:)
+    end do
+
+    ! In the SIA, horizontal gradients of u,v, and all gradients of w, are neglected
+    vel%du_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%du_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dv_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dv_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dw_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

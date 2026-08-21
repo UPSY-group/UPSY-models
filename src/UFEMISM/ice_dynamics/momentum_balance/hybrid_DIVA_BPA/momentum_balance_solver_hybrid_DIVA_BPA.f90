@@ -431,17 +431,40 @@ contains
 
   end subroutine momentum_balance_solver_hybrid_DIVA_BPA_run
 
-  subroutine momentum_balance_solver_hybrid_DIVA_BPA_set_velocities( self, vel)
+  subroutine momentum_balance_solver_hybrid_DIVA_BPA_set_velocities( self, ice, vel)
 
     ! In/output variables:
     class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(in   ) :: self
+    class(atype_ice_model_data),                         intent(inout) :: ice
     class(atype_ice_velocity_model_data),                intent(inout) :: vel
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_hybrid_DIVA_BPA_set_velocities'
+    integer                     :: ti, vi
 
     ! Add routine to call stack
     call init_routine( routine_name)
+
+    ! Velocities
+    do ti = self%mesh%ti1, self%mesh%ti2
+      vel%u_3D_b( ti,:) = self%u_bk( ti,:)
+      vel%v_3D_b( ti,:) = self%v_bk( ti,:)
+    end do
+
+    ! Strain rates
+    do vi = self%mesh%vi1, self%mesh%vi2
+      vel%du_dx_3D( vi,:) = self%BPA%du_dx_ak( vi,:)
+      vel%du_dy_3D( vi,:) = self%BPA%du_dy_ak( vi,:)
+      vel%du_dz_3D( vi,:) = self%BPA%du_dz_ak( vi,:)
+      vel%dv_dx_3D( vi,:) = self%BPA%dv_dx_ak( vi,:)
+      vel%dv_dy_3D( vi,:) = self%BPA%dv_dy_ak( vi,:)
+      vel%dv_dz_3D( vi,:) = self%BPA%dv_dz_ak( vi,:)
+    end do
+
+    ! In the hybrid DIVA/BPA, gradients of w are neglected
+    vel%dw_dx_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    vel%dw_dy_3D( self%mesh%vi1:self%mesh%vi2,:) = 0._dp
+    ! vel%dw_dz_3D = 0._dp ! Because we now always calculate dw/dz in calc_vertical_velocities
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

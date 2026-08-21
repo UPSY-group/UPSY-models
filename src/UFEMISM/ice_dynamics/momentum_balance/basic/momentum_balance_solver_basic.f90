@@ -82,9 +82,10 @@ module momentum_balance_solver_basic
       real(dp), dimension(:,:), optional,         intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
     end subroutine momentum_balance_solver_run_ifc
 
-    subroutine momentum_balance_solver_set_vel_ifc( self, vel)
-      import atype_momentum_balance_solver, atype_ice_velocity_model_data
+    subroutine momentum_balance_solver_set_vel_ifc( self, ice, vel)
+      import atype_momentum_balance_solver, atype_ice_model_data, atype_ice_velocity_model_data
       class(atype_momentum_balance_solver), intent(in   ) :: self
+      class(atype_ice_model_data),          intent(inout) :: ice
       class(atype_ice_velocity_model_data), intent(inout) :: vel
     end subroutine momentum_balance_solver_set_vel_ifc
 

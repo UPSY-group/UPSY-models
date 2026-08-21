@@ -189,21 +189,22 @@ contains
 
   end subroutine momentum_balance_solver_initialise
 
-  recursive subroutine momentum_balance_solver_run( self, ice, geom, bed_roughness, vel, &
+  recursive subroutine momentum_balance_solver_run( self, ice, geom, bed_roughness, vel, BMB, &
     BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
 
     ! In/output variables:
-    class(atype_momentum_balance_solver), intent(inout) :: self
-    class(atype_ice_model_data),          intent(inout) :: ice
-    class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_bed_roughness_model),       intent(in   ) :: bed_roughness
-    class(atype_ice_velocity_model),      intent(inout) :: vel
-    integer,  dimension(:  ), optional,   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,   intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,   intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    class(atype_momentum_balance_solver),             intent(inout) :: self
+    class(atype_ice_model_data),                      intent(inout) :: ice
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    type(type_bed_roughness_model),                   intent(in   ) :: bed_roughness
+    class(atype_ice_velocity_model),                  intent(inout) :: vel
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
+    integer,  dimension(:  ), optional,               intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:  ), optional,               intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(:  ), optional,               intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(:,:), optional,               intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(:,:), optional,               intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(:,:), optional,               intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'momentum_balance_solver_run'
@@ -220,7 +221,7 @@ contains
     call self%run_momentum_balance_solver( ice, geom, bed_roughness, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
     call self%set_velocities_to_solver_results( ice, vel)
-    call vel%calc_secondary_velocities()
+    call vel%calc_secondary_velocities( ice, geom, BMB)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

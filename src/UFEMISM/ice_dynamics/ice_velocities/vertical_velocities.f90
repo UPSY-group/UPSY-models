@@ -1,28 +1,8 @@
-module vertical_velocities
-  !< Routines for calculating vertical ice velocities
-
-  use precisions, only: dp
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use model_configuration, only: C
-  use mesh_types, only: type_mesh
-  use ice_model_data, only: atype_ice_model_data
-  use parameters, only: ice_density, seawater_density, NaN
-  use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
-  use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_3D
-  use mpi_distributed_memory, only: gather_to_all
-  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
-  use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use ice_velocity_model_data, only: atype_ice_velocity_model_data
-
-  implicit none
-
-  private
-
-  public :: calc_vertical_velocities
+submodule(ice_velocity_model_basic) vertical_velocities
 
 contains
 
-  subroutine calc_vertical_velocities( vel, mesh, ice, geom, BMB)
+  subroutine calc_vertical_velocities( self, ice, geom, BMB)
     !< Calculate vertical velocities w from conservation of mass
 
     ! NOTE: since the vertical velocities for floating ice depend on
@@ -67,11 +47,10 @@ contains
     ! With this boundary condition, dw/dzeta can be integrated over zeta to yield w( z).
 
     ! In- and output variables:
-    class(atype_ice_velocity_model_data),   intent(inout) :: vel
-    type(type_mesh),                        intent(in   ) :: mesh
-    class(atype_ice_model_data),            intent(in   ) :: ice
-    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
-    real(dp), dimension(mesh%vi1:mesh%vi2), intent(in   ) :: BMB
+    class(atype_ice_velocity_model),                  intent(inout) :: self
+    class(atype_ice_model_data),                      intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'calc_vertical_velocities'
@@ -92,15 +71,15 @@ contains
     call init_routine( routine_name)
 
     ! Allocate shared memory
-    allocate( dHib_dx   ( mesh%vi1:mesh%vi2              ))
-    allocate( dHib_dy   ( mesh%vi1:mesh%vi2              ))
-    allocate( dHib_dt   ( mesh%vi1:mesh%vi2              ))
-    allocate( u_3D_c    ( mesh%ei1:mesh%ei2, mesh%nz))
-    allocate( v_3D_c    ( mesh%ei1:mesh%ei2, mesh%nz))
-    allocate( u_3D_c_tot( mesh%nE, mesh%nz               ))
-    allocate( v_3D_c_tot( mesh%nE, mesh%nz               ))
+    allocate( dHib_dx   ( self%mesh%vi1:self%mesh%vi2              ))
+    allocate( dHib_dy   ( self%mesh%vi1:self%mesh%vi2              ))
+    allocate( dHib_dt   ( self%mesh%vi1:self%mesh%vi2              ))
+    allocate( u_3D_c    ( self%mesh%ei1:self%mesh%ei2, self%mesh%nz))
+    allocate( v_3D_c    ( self%mesh%ei1:self%mesh%ei2, self%mesh%nz))
+    allocate( u_3D_c_tot( self%mesh%nE,                self%mesh%nz))
+    allocate( v_3D_c_tot( self%mesh%nE,                self%mesh%nz))
 
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! Calculate rate of change of ice base elevation
       if     (geom%mask_grounded_ice( vi)) then
@@ -117,20 +96,20 @@ contains
     end do
 
     ! Calculate slopes of the ice base
-    call ddx_a_a_2D( mesh, geom%Hib, dHib_dx)
-    call ddy_a_a_2D( mesh, geom%Hib, dHib_dy)
+    call ddx_a_a_2D( self%mesh, geom%Hib, dHib_dx)
+    call ddy_a_a_2D( self%mesh, geom%Hib, dHib_dy)
 
     ! Calculate u,v on the c-grid (edges)
-    call map_velocities_from_b_to_c_3D( mesh, vel%u_3D_b, vel%v_3D_b, u_3D_c, v_3D_c)
+    call map_velocities_from_b_to_c_3D( self%mesh, self%u_3D_b, self%v_3D_b, u_3D_c, v_3D_c)
     call gather_to_all( u_3D_c, u_3D_c_tot)
     call gather_to_all( v_3D_c, v_3D_c_tot)
 
     ! Calculate vertical velocities by solving conservation of mass in each 3-D cell
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! No ice means no velocity
       if (.not. (geom%mask_grounded_ice( vi) .or. geom%mask_floating_ice( vi))) then
-        vel%w_3D( vi,:) = 0._dp
+        self%w_3D( vi,:) = 0._dp
         cycle
       end if
 
@@ -142,14 +121,14 @@ contains
 
       if (geom%mask_floating_ice( vi)) then
 
-        vel%w_3D( vi,C%nz) = (vel%u_3D( vi,C%nz) * dHib_dx( vi)) + &
-                            (vel%v_3D( vi,C%nz) * dHib_dy( vi)) + &
+        self%w_3D( vi,C%nz) = (self%u_3D( vi,C%nz) * dHib_dx( vi)) + &
+                              (self%v_3D( vi,C%nz) * dHib_dy( vi)) + &
                               dHib_dt( vi) + MIN( 0._dp, BMB( vi))
 
       else
 
-        vel%w_3D( vi,C%nz) = (vel%u_3D( vi,C%nz) * dHib_dx( vi)) + &
-                            (vel%v_3D( vi,C%nz) * dHib_dy( vi)) + &
+        self%w_3D( vi,C%nz) = (self%u_3D( vi,C%nz) * dHib_dx( vi)) + &
+                              (self%v_3D( vi,C%nz) * dHib_dy( vi)) + &
                               dHib_dt( vi) + MIN( 0._dp, BMB( vi))
 
       end if
@@ -158,28 +137,28 @@ contains
       ! Exception for very thin ice / ice margin: assume horizontal stretching
       ! is negligible, so that w( z) = w( z = b)
       if (geom%Hi( vi) < 10._dp) then
-        vel%w_3D( vi,:) = vel%w_3D( vi,C%nz)
+        self%w_3D( vi,:) = self%w_3D( vi,C%nz)
         cycle
       end if
 
       ! Calculate vertical velocities by integrating dw/dz over the vertical column
 
-      do ks = mesh%nz-1, 1, -1
+      do ks = self%mesh%nz-1, 1, -1
 
-        dzeta = mesh%zeta( ks+1) - mesh%zeta( ks)
+        dzeta = self%mesh%zeta( ks+1) - self%mesh%zeta( ks)
 
         ! Integrate u*n_hat around the Voronoi cell boundary
         cint_un_dS = 0._dp
-        do ci = 1, mesh%nC( vi)
-          vj = mesh%C(  vi,ci)
-          ei = mesh%VE( vi,ci)
+        do ci = 1, self%mesh%nC( vi)
+          vj = self%mesh%C(  vi,ci)
+          ei = self%mesh%VE( vi,ci)
           ! Velocities at this section of the boundary
           u_ks = 0.5_dp * (u_3D_c_tot( ei,ks) + u_3D_c_tot( ei,ks+1))
           v_ks = 0.5_dp * (v_3D_c_tot( ei,ks) + v_3D_c_tot( ei,ks+1))
           ! Length of this section of the boundary
-          dS = mesh%Cw( vi,ci)
+          dS = self%mesh%Cw( vi,ci)
           ! Outward normal vector to this section of the boundary
-          n_hat = mesh%V( vj,:) - mesh%V( vi,:)
+          n_hat = self%mesh%V( vj,:) - self%mesh%V( vi,:)
           n_hat = n_hat / NORM2( n_hat)
           ! Line integral over this section of the boundary
           un_dS = (u_ks * n_hat( 1) + v_ks * n_hat( 2)) * dS
@@ -188,11 +167,11 @@ contains
         end do
 
         ! Calculate grad uv from the divergence theorem
-        grad_uv_ks = cint_un_dS / mesh%A( vi)
+        grad_uv_ks = cint_un_dS / self%mesh%A( vi)
 
         ! Calculate du/dzeta, dv/dzeta
-        du_dzeta_ks = (vel%u_3D( vi,ks+1) - vel%u_3D( vi,ks)) / dzeta
-        dv_dzeta_ks = (vel%v_3D( vi,ks+1) - vel%v_3D( vi,ks)) / dzeta
+        du_dzeta_ks = (self%u_3D( vi,ks+1) - self%u_3D( vi,ks)) / dzeta
+        dv_dzeta_ks = (self%v_3D( vi,ks+1) - self%v_3D( vi,ks)) / dzeta
 
         ! Calculate dzeta/dx, dzeta/dy, dzeta/dz
         dzeta_dx_ks = 0.5_dp * (ice%dzeta_dx_ak( vi,ks) + ice%dzeta_dx_ak( vi,ks+1))
@@ -203,52 +182,51 @@ contains
         dw_dzeta_ks = -1._dp / dzeta_dz_ks * (grad_uv_ks + dzeta_dx_ks * du_dzeta_ks + dzeta_dy_ks * dv_dzeta_ks)
 
         ! Calculate w
-        vel%w_3D( vi,ks) = vel%w_3D( vi,ks+1) - dzeta * dw_dzeta_ks
+        self%w_3D( vi,ks) = self%w_3D( vi,ks+1) - dzeta * dw_dzeta_ks
 
       end do
 
     end do
 
     ! Also calculate dw/dz (inexpensive, no need to allow turning this off)
-    call calc_dw_dz( vel, mesh, geom)
+    call self%calc_dw_dz( geom)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine calc_vertical_velocities
 
-  subroutine calc_dw_dz( vel, mesh, geom)
+  subroutine calc_dw_dz( self, geom)
 
     ! In- and output variables:
-    class(atype_ice_velocity_model_data), intent(inout) :: vel
-    type(type_mesh),                      intent(in   ) :: mesh
+    class(atype_ice_velocity_model),      intent(inout) :: self
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter       :: routine_name = 'calc_dw_dz'
     integer                           :: vi
-    real(dp), dimension(mesh%nz) :: w_prof, dw_dzeta_prof
+    real(dp), dimension(self%mesh%nz) :: w_prof, dw_dzeta_prof
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    do vi = mesh%vi1, mesh%vi2
+    do vi = self%mesh%vi1, self%mesh%vi2
 
       ! No ice means undefined velocity
       if (.not. (geom%mask_grounded_ice( vi) .or. geom%mask_floating_ice( vi))) then
-        vel%dw_dz_3D( vi,:) = NaN
+        self%dw_dz_3D( vi,:) = NaN
         cycle
       end if
 
       ! Calculate dw/dzeta in the vertical column, on the regular zeta-grid (use two-sided differencing)
-      w_prof = vel%w_3D( vi,:)
-      call multiply_CSR_matrix_with_vector_local( mesh%M_ddzeta_k_k_1D, w_prof, dw_dzeta_prof)
+      w_prof = self%w_3D( vi,:)
+      call multiply_CSR_matrix_with_vector_local( self%mesh%M_ddzeta_k_k_1D, w_prof, dw_dzeta_prof)
 
       ! Calculate dw/dz from dw/dzeta (see Eqs. C2-C3 in Berends et al., 2024:
       ! Berends, C. J., van de Wal, R. S. W., and Zegeling, P. A.: Improvements
       ! on the discretisation of boundary conditions to the momentum balance
       ! for glacial ice, Journal of Glaciology, 1-15, doi: 10.1017/jog.2024.45, 2024)
-      vel%dw_dz_3D( vi,:) = -1._dp / geom%Hi( vi) * dw_dzeta_prof
+      self%dw_dz_3D( vi,:) = -1._dp / geom%Hi( vi) * dw_dzeta_prof
 
     end do
 
@@ -257,4 +235,4 @@ contains
 
   end subroutine calc_dw_dz
 
-end module vertical_velocities
+end submodule vertical_velocities

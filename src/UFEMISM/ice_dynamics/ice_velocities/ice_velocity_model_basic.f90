@@ -11,6 +11,11 @@ module ice_velocity_model_basic
   use mesh_zeta, only: vertical_average
   use mpi_distributed_memory, only: gather_to_all
   use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
+  use ice_model_data, only: atype_ice_model_data
+  use parameters, only: ice_density, seawater_density, NaN
+  use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_3D
+  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -29,8 +34,27 @@ module ice_velocity_model_basic
 
       procedure, public :: calc_secondary_velocities
       procedure, public :: calc_u_vav_perp
+      procedure, public :: calc_vertical_velocities
+      procedure, public :: calc_dw_dz
 
   end type atype_ice_velocity_model
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module subroutine calc_vertical_velocities( self, ice, geom, BMB)
+      class(atype_ice_velocity_model),                  intent(inout) :: self
+      class(atype_ice_model_data),                      intent(in   ) :: ice
+      class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
+    end subroutine calc_vertical_velocities
+
+    module subroutine calc_dw_dz( self, geom)
+      class(atype_ice_velocity_model),      intent(inout) :: self
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    end subroutine calc_dw_dz
+
+  end interface
 
 contains
 
@@ -469,12 +493,15 @@ contains
     model_name = 'ice_velocity'
   end function get_model_name
 
-  subroutine calc_secondary_velocities( self)
+  subroutine calc_secondary_velocities( self, ice, geom, BMB)
     !< Calculate all secondary ice velocities (surface, base, vertical average)
     !< from the 3-D velocities on the b-grid
 
     ! In/output variables:
-    class(atype_ice_velocity_model), intent(inout) :: self
+    class(atype_ice_velocity_model),                  intent(inout) :: self
+    class(atype_ice_model_data),                      intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
 
     ! Local variables:
     character(len=*), parameter       :: routine_name = 'calc_secondary_velocities'
@@ -531,6 +558,7 @@ contains
     end do
 
     call self%calc_u_vav_perp()
+    call self%calc_vertical_velocities( ice, geom, BMB)
 
     ! Slide/shear ratio
     do vi = self%mesh%vi1, self%mesh%vi2

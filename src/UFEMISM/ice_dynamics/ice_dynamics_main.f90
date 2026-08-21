@@ -711,7 +711,7 @@ contains
     ! ==========
 
     ! Remap data for the chosen velocity solver(s)
-    call remap_velocity_solver( ice%vel, ice%momentum_balance_solver, mesh_old, mesh_new, ice)
+    call remap_velocity_solver( ice%vel, ice%momentum_balance_solver, mesh_old, mesh_new, ice, ice%geom, BMB%BMB)
 
     ! Time stepping
     ! =============

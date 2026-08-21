@@ -11,7 +11,6 @@ module ice_velocities_main
   use parameters, only: ice_density, seawater_density, pi
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
-  use vertical_velocities, only: calc_vertical_velocities
   use bed_roughness_model_types, only: type_bed_roughness_model
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
@@ -58,24 +57,25 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    call momentum_balance_solver%run( ice, geom, bed_roughness, vel, &
+    call momentum_balance_solver%run( ice, geom, bed_roughness, vel, BMB, &
       BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk)
-    call calc_vertical_velocities( vel, mesh, ice, geom, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine solve_stress_balance
 
-  subroutine remap_velocity_solver( vel, momentum_balance_solver, mesh_old, mesh_new, ice)
+  subroutine remap_velocity_solver( vel, momentum_balance_solver, mesh_old, mesh_new, ice, geom, BMB)
     !< Remap the velocity solver for the chosen stress balance approximation
 
     ! In/output variables:
-    class(atype_ice_velocity_model),      intent(inout) :: vel
-    class(atype_momentum_balance_solver), intent(inout) :: momentum_balance_solver
-    type(type_mesh),                      intent(in   ) :: mesh_old
-    type(type_mesh),                      intent(in   ) :: mesh_new
-    class(atype_ice_model_data),          intent(inout) :: ice
+    class(atype_ice_velocity_model),                intent(inout) :: vel
+    class(atype_momentum_balance_solver),           intent(inout) :: momentum_balance_solver
+    type(type_mesh),                                intent(in   ) :: mesh_old
+    type(type_mesh),                                intent(in   ) :: mesh_new
+    class(atype_ice_model_data),                    intent(inout) :: ice
+    class(atype_ice_geometry_model_data),           intent(in   ) :: geom
+    real(dp), dimension(mesh_new%vi1:mesh_new%vi2), intent(in   ) :: BMB
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'remap_velocity_solver'
@@ -85,7 +85,7 @@ contains
 
     call momentum_balance_solver%remap( mesh_old, mesh_new)
     call momentum_balance_solver%set_velocities_to_solver_results( ice, vel)
-    call vel%calc_secondary_velocities()
+    call vel%calc_secondary_velocities( ice, geom, BMB)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

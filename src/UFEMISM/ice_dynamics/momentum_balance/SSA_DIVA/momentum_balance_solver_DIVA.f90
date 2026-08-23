@@ -445,8 +445,8 @@ contains
       end if
 
       ! DENK DROM
-      uv_min = minval( self%u_vav_b)
-      uv_max = maxval( self%u_vav_b)
+      uv_min = min( minval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2)), minval( self%v_vav_b( self%mesh%ti1:self%mesh%ti2)))
+      uv_max = max( maxval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2)), maxval( self%v_vav_b( self%mesh%ti1:self%mesh%ti2)))
       call MPI_ALLREDUCE( MPI_IN_PLACE, uv_min, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
       call MPI_ALLREDUCE( MPI_IN_PLACE, uv_max, 1, MPI_doUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
       ! if (par%primary) WRITE(0,*) '    DIVA - viscosity iteration ', viscosity_iteration_i, ', u = [', uv_min, ' - ', uv_max, '], L2_uv = ', L2_uv

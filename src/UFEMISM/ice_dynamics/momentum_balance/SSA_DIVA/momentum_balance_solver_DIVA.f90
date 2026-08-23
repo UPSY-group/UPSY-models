@@ -67,8 +67,8 @@ module momentum_balance_solver_DIVA
       procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_DIVA_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_DIVA_remap
 
-      procedure, public :: create_restart_file_DIVA
-      procedure, public :: write_to_restart_file_DIVA
+      procedure, public :: create_restart_file_old            => create_restart_file_old_DIVA
+      procedure, public :: write_to_restart_file_old          => write_to_restart_file_old_DIVA
 
       procedure, public :: initialise_DIVA_velocities_from_file
       procedure, public :: calc_vertical_shear_strain_rates
@@ -948,85 +948,7 @@ contains
 
   ! == Restart NetCDF files
 
-  subroutine write_to_restart_file_DIVA( self, time)
-    ! Write to the restart NetCDF file for the DIVA solver
-
-    ! In/output variables:
-    class(type_momentum_balance_solver_DIVA), intent(in   ) :: self
-    real(dp),                                 intent(in   ) :: time
-
-    ! Local variables:
-    character(len=*), parameter                      :: routine_name = 'write_to_restart_file_DIVA'
-    integer                                          :: ncid
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_vav_b_prev_loc
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_vav_b_prev_loc
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_netcdf_output) then
-      call finalise_routine( routine_name)
-      return
-    end if
-
-    ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to DIVA restart file "' // &
-      UPSY%stru%colour_string( trim( self%restart_filename), 'light blue') // '"...'
-
-    ! Open the NetCDF file
-    call open_existing_netcdf_file_for_writing( self%restart_filename, ncid)
-
-    ! Write the time to the file
-    call write_time_to_file( self%restart_filename, ncid, time)
-
-    ! Solution
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b'                     , self%u_vav_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b'                     , self%v_vav_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_base_b'                    , self%u_base_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_base_b'                    , self%v_base_b)
-    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'u_3D_b'                      , self%u_3D_b)
-    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'v_3D_b'                      , self%v_3D_b)
-
-    ! Intermediate data fields
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'du_dx_a'                     , self%du_dx_a)
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'du_dy_a'                     , self%du_dy_a)
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'dv_dx_a'                     , self%dv_dx_a)
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'dv_dy_a'                     , self%dv_dy_a)
-    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'du_dz_3D_a'                  , self%du_dz_3D_a)
-    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'dv_dz_3D_a'                  , self%dv_dz_3D_a)
-    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'eta_3D_a'                    , self%eta_3D_a)
-    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'eta_3D_b'                    , self%eta_3D_b)
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'eta_vav_a'                   , self%eta_vav_a)
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'N_a'                         , self%N_a)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'N_b'                         , self%N_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'dN_dx_b'                     , self%dN_dx_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'dN_dy_b'                     , self%dN_dy_b)
-    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'F1_3D_a'                     , self%F1_3D_a)
-    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'F2_3D_a'                     , self%F2_3D_a)
-    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'F1_3D_b'                     , self%F1_3D_b)
-    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'F2_3D_b'                     , self%F2_3D_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'basal_friction_coefficient_b', self%basal_friction_coefficient_b)
-    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'beta_eff_a'                  , self%beta_eff_a)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'beta_eff_b'                  , self%beta_eff_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_bx_b'                    , self%tau_bx_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_by_b'                    , self%tau_by_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_dx_b'                    , self%tau_dx_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_dy_b'                    , self%tau_dy_b)
-    u_vav_b_prev_loc = self%u_vav_b_prev( self%mesh%ti1:self%mesh%ti2)
-    v_vav_b_prev_loc = self%v_vav_b_prev( self%mesh%ti1:self%mesh%ti2)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b_prev'                , u_vav_b_prev_loc)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b_prev'                , v_vav_b_prev_loc)
-
-    ! Close the file
-    call close_netcdf_file( ncid)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_to_restart_file_DIVA
-
-  subroutine create_restart_file_DIVA( self)
+  subroutine create_restart_file_old_DIVA( self)
     ! Create a restart NetCDF file for the DIVA solver
     ! Includes generation of the procedural filename (e.g. "restart_DIVA_00001.nc")
 
@@ -1034,7 +956,7 @@ contains
     class(type_momentum_balance_solver_DIVA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter   :: routine_name = 'create_restart_file_DIVA'
+    character(len=*), parameter   :: routine_name = 'create_restart_file_old_DIVA'
     character(len=:), allocatable :: filename_base
     integer                       :: ncid
 
@@ -1109,6 +1031,84 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine create_restart_file_DIVA
+  end subroutine create_restart_file_old_DIVA
+
+  subroutine write_to_restart_file_old_DIVA( self, time)
+    ! Write to the restart NetCDF file for the DIVA solver
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_DIVA), intent(in   ) :: self
+    real(dp),                                 intent(in   ) :: time
+
+    ! Local variables:
+    character(len=*), parameter                      :: routine_name = 'write_to_restart_file_old_DIVA'
+    integer                                          :: ncid
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_vav_b_prev_loc
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_vav_b_prev_loc
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! if no NetCDF output should be created, do nothing
+    if (.not. C%do_create_netcdf_output) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Print to terminal
+    if (par%primary) write(0,'(A)') '   Writing to DIVA restart file "' // &
+      UPSY%stru%colour_string( trim( self%restart_filename), 'light blue') // '"...'
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( self%restart_filename, ncid)
+
+    ! Write the time to the file
+    call write_time_to_file( self%restart_filename, ncid, time)
+
+    ! Solution
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b'                     , self%u_vav_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b'                     , self%v_vav_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_base_b'                    , self%u_base_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_base_b'                    , self%v_base_b)
+    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'u_3D_b'                      , self%u_3D_b)
+    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'v_3D_b'                      , self%v_3D_b)
+
+    ! Intermediate data fields
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'du_dx_a'                     , self%du_dx_a)
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'du_dy_a'                     , self%du_dy_a)
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'dv_dx_a'                     , self%dv_dx_a)
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'dv_dy_a'                     , self%dv_dy_a)
+    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'du_dz_3D_a'                  , self%du_dz_3D_a)
+    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'dv_dz_3D_a'                  , self%dv_dz_3D_a)
+    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'eta_3D_a'                    , self%eta_3D_a)
+    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'eta_3D_b'                    , self%eta_3D_b)
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'eta_vav_a'                   , self%eta_vav_a)
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'N_a'                         , self%N_a)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'N_b'                         , self%N_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'dN_dx_b'                     , self%dN_dx_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'dN_dy_b'                     , self%dN_dy_b)
+    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'F1_3D_a'                     , self%F1_3D_a)
+    call write_to_field_multopt_mesh_dp_3D  ( self%mesh, self%restart_filename, ncid, 'F2_3D_a'                     , self%F2_3D_a)
+    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'F1_3D_b'                     , self%F1_3D_b)
+    call write_to_field_multopt_mesh_dp_3D_b( self%mesh, self%restart_filename, ncid, 'F2_3D_b'                     , self%F2_3D_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'basal_friction_coefficient_b', self%basal_friction_coefficient_b)
+    call write_to_field_multopt_mesh_dp_2D  ( self%mesh, self%restart_filename, ncid, 'beta_eff_a'                  , self%beta_eff_a)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'beta_eff_b'                  , self%beta_eff_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_bx_b'                    , self%tau_bx_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_by_b'                    , self%tau_by_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_dx_b'                    , self%tau_dx_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'tau_dy_b'                    , self%tau_dy_b)
+    u_vav_b_prev_loc = self%u_vav_b_prev( self%mesh%ti1:self%mesh%ti2)
+    v_vav_b_prev_loc = self%v_vav_b_prev( self%mesh%ti1:self%mesh%ti2)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b_prev'                , u_vav_b_prev_loc)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b_prev'                , v_vav_b_prev_loc)
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_restart_file_old_DIVA
 
 end module momentum_balance_solver_DIVA

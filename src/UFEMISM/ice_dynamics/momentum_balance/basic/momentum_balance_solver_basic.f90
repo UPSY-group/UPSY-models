@@ -44,6 +44,9 @@ module momentum_balance_solver_basic
       procedure, public                                         :: get_model_name
       procedure(get_momentum_balance_solver_name_ifc), deferred :: get_momentum_balance_solver_name
 
+      procedure(create_restart_file_old_ifc),   deferred :: create_restart_file_old
+      procedure(write_to_restart_file_old_ifc), deferred :: write_to_restart_file_old
+
   end type atype_momentum_balance_solver
 
   ! Abstract interfaces for deferred procedures
@@ -101,6 +104,17 @@ module momentum_balance_solver_basic
       class(atype_momentum_balance_solver), intent(in) :: self
       character(len=:), allocatable :: momentum_balance_solver_name
     end function get_momentum_balance_solver_name_ifc
+
+    subroutine create_restart_file_old_ifc( self)
+      import atype_momentum_balance_solver
+      class(atype_momentum_balance_solver), intent(inout) :: self
+    end subroutine create_restart_file_old_ifc
+
+    subroutine write_to_restart_file_old_ifc( self, time)
+      import atype_momentum_balance_solver, dp
+      class(atype_momentum_balance_solver), intent(in   ) :: self
+      real(dp),                             intent(in   ) :: time
+    end subroutine write_to_restart_file_old_ifc
 
   end interface
 

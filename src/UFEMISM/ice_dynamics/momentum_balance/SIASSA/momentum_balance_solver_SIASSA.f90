@@ -39,6 +39,8 @@ module momentum_balance_solver_SIASSA
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SIASSA_remap
 
       procedure, public :: get_momentum_balance_solver_name
+      procedure, public :: create_restart_file_old            => create_restart_file_old_SIASSA
+      procedure, public :: write_to_restart_file_old          => write_to_restart_file_old_SIASSA
 
   end type type_momentum_balance_solver_SIASSA
 
@@ -205,5 +207,14 @@ contains
     character(len=:), allocatable :: model_name
     model_name = 'SIASSA'
   end function get_momentum_balance_solver_name
+
+  subroutine create_restart_file_old_SIASSA( self)
+    class(type_momentum_balance_solver_SIASSA), intent(inout) :: self
+  end subroutine create_restart_file_old_SIASSA
+
+  subroutine write_to_restart_file_old_SIASSA( self, time)
+    class(type_momentum_balance_solver_SIASSA), intent(in   ) :: self
+    real(dp),                                   intent(in   ) :: time
+  end subroutine write_to_restart_file_old_SIASSA
 
 end module momentum_balance_solver_SIASSA

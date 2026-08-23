@@ -46,6 +46,8 @@ module momentum_balance_solver_SIA
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SIA_remap
 
       procedure, public :: get_momentum_balance_solver_name
+      procedure, public :: create_restart_file_old            => create_restart_file_old_SIA
+      procedure, public :: write_to_restart_file_old          => write_to_restart_file_old_SIA
 
   end type type_momentum_balance_solver_SIA
 
@@ -325,5 +327,14 @@ contains
     character(len=:), allocatable                  :: model_name
     model_name = 'SIA'
   end function get_momentum_balance_solver_name
+
+  subroutine create_restart_file_old_SIA( self)
+    class(type_momentum_balance_solver_SIA), intent(inout) :: self
+  end subroutine create_restart_file_old_SIA
+
+  subroutine write_to_restart_file_old_SIA( self, time)
+    class(type_momentum_balance_solver_SIA), intent(in   ) :: self
+    real(dp),                                intent(in   ) :: time
+  end subroutine write_to_restart_file_old_SIA
 
 end module momentum_balance_solver_SIA

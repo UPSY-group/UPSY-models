@@ -17,7 +17,6 @@ module ct_mass_conservation
   use conservation_of_mass_main, only: calc_dHi_dt
   use parameters, only: pi
   use ice_model_memory, only: allocate_ice_model
-  use ice_velocities_main, only: calc_u_vav_perp
 
   implicit none
 
@@ -197,7 +196,7 @@ contains
 
     ice%vel%u_vav_b( mesh%ti1:mesh%ti2) = u_vav_b
     ice%vel%v_vav_b( mesh%ti1:mesh%ti2) = v_vav_b
-    call calc_u_vav_perp( mesh, ice%vel)
+    call ice%vel%calc_u_vav_perp()
 
     ! Calculate modelled thinning rates using different solvers
     ! =========================================================

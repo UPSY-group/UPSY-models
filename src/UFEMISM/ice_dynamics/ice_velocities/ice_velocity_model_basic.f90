@@ -7,6 +7,15 @@ module ice_velocity_model_basic
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use model_configuration, only: C
+  use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D, map_b_a_2D, map_b_a_3D
+  use mesh_zeta, only: vertical_average
+  use mpi_distributed_memory, only: gather_to_all
+  use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_2D
+  use ice_model_data, only: atype_ice_model_data
+  use parameters, only: ice_density, seawater_density, NaN
+  use map_velocities_to_c_grid, only: map_velocities_from_b_to_c_3D
+  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_local
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -18,13 +27,34 @@ module ice_velocity_model_basic
 
     contains
 
+      procedure, public :: get_model_name
       procedure, public :: allocate     => ice_velocity_model_allocate
       procedure, public :: deallocate   => ice_velocity_model_deallocate
       procedure, public :: remap        => ice_velocity_model_remap
 
-      procedure, public :: get_model_name
+      procedure, public :: calc_secondary_velocities
+      procedure, public :: calc_u_vav_perp
+      procedure, public :: calc_vertical_velocities
+      procedure, public :: calc_dw_dz
 
   end type atype_ice_velocity_model
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module subroutine calc_vertical_velocities( self, ice, geom, BMB)
+      class(atype_ice_velocity_model),                  intent(inout) :: self
+      class(atype_ice_model_data),                      intent(in   ) :: ice
+      class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+      real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
+    end subroutine calc_vertical_velocities
+
+    module subroutine calc_dw_dz( self, geom)
+      class(atype_ice_velocity_model),      intent(inout) :: self
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    end subroutine calc_dw_dz
+
+  end interface
 
 contains
 
@@ -462,5 +492,122 @@ contains
     character(len=:), allocatable      :: model_name
     model_name = 'ice_velocity'
   end function get_model_name
+
+  subroutine calc_secondary_velocities( self, ice, geom, BMB)
+    !< Calculate all secondary ice velocities (surface, base, vertical average)
+    !< from the 3-D velocities on the b-grid
+
+    ! In/output variables:
+    class(atype_ice_velocity_model),                  intent(inout) :: self
+    class(atype_ice_model_data),                      intent(in   ) :: ice
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: BMB
+
+    ! Local variables:
+    character(len=*), parameter       :: routine_name = 'calc_secondary_velocities'
+    integer                           :: vi,ti
+    real(dp), dimension(self%mesh%nz) :: u_prof, v_prof
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do ti = self%mesh%ti1, self%mesh%ti2
+
+      ! Surface
+      self%u_surf_b(    ti) = self%u_3D_b( ti,1)
+      self%v_surf_b(    ti) = self%v_3D_b( ti,1)
+      self%uabs_surf_b( ti) = hypot( self%u_surf_b( ti), self%v_surf_b( ti))
+
+      ! Base
+      self%u_base_b(    ti) = self%u_3D_b( ti,C%nz)
+      self%v_base_b(    ti) = self%v_3D_b( ti,C%nz)
+      self%uabs_base_b( ti) = hypot( self%u_base_b( ti), self%v_base_b( ti))
+
+      ! Vertical average
+      u_prof = self%u_3D_b( ti,:)
+      v_prof = self%v_3D_b( ti,:)
+      self%u_vav_b( ti) = vertical_average( self%mesh%zeta, u_prof)
+      self%v_vav_b( ti) = vertical_average( self%mesh%zeta, v_prof)
+      self%uabs_vav_b( ti) = hypot( self%u_vav_b( ti), self%v_vav_b( ti))
+
+    end do
+
+    ! == Calculate velocities on the a-grid (needed to calculate the vertical velocity w, and for writing to output)
+
+    ! 3-D
+    call map_b_a_3D( self%mesh, self%u_3D_b  , self%u_3D  )
+    call map_b_a_3D( self%mesh, self%v_3D_b  , self%v_3D  )
+
+    ! Surface
+    call map_b_a_2D( self%mesh, self%u_surf_b, self%u_surf)
+    call map_b_a_2D( self%mesh, self%v_surf_b, self%v_surf)
+
+    ! Base
+    call map_b_a_2D( self%mesh, self%u_base_b, self%u_base)
+    call map_b_a_2D( self%mesh, self%v_base_b, self%v_base)
+
+    ! Vertical average
+    call map_b_a_2D( self%mesh, self%u_vav_b , self%u_vav )
+    call map_b_a_2D( self%mesh, self%v_vav_b , self%v_vav )
+
+    ! Absolute
+    do vi = self%mesh%vi1, self%mesh%vi2
+      self%uabs_surf( vi) = hypot( self%u_surf( vi), self%v_surf( vi))
+      self%uabs_base( vi) = hypot( self%u_base( vi), self%v_base( vi))
+      self%uabs_vav(  vi) = hypot( self%u_vav(  vi), self%v_vav(  vi))
+    end do
+
+    call self%calc_u_vav_perp()
+    call self%calc_vertical_velocities( ice, geom, BMB)
+
+    ! Slide/shear ratio
+    do vi = self%mesh%vi1, self%mesh%vi2
+      self%R_shear( vi) = (self%uabs_base( vi) + 0.1_dp) / (self%uabs_surf( vi) + 0.1_dp)
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_secondary_velocities
+
+  subroutine calc_u_vav_perp( self)
+    !< Calculate the vertically averaged ice velocity component
+    !< perpendicular to the shared Voronoi cell boundaries
+
+    ! In/output variables:
+    class(atype_ice_velocity_model), intent(inout) :: self
+
+    ! Local variables:
+    character(len=*), parameter                      :: routine_name = 'calc_u_vav_perp'
+    real(dp), dimension(self%mesh%ei1:self%mesh%ei2) :: u_vav_c, v_vav_c
+    real(dp), dimension(self%mesh%nE)                :: u_vav_c_tot, v_vav_c_tot
+    integer                                          :: vi, ci, ei, vj
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Calculate vertically averaged ice velocities on the edges
+    call map_velocities_from_b_to_c_2D( self%mesh, self%u_vav_b, self%v_vav_b, u_vav_c, v_vav_c)
+    call gather_to_all( u_vav_c, u_vav_c_tot)
+    call gather_to_all( v_vav_c, v_vav_c_tot)
+
+    do vi = self%mesh%vi1, self%mesh%vi2
+      do ci = 1, self%mesh%nC( vi)
+
+        ! Connection ci from vertex vi leads through edge ei to vertex vj
+        ei = self%mesh%VE( vi,ci)
+
+        ! Calculate vertically averaged ice velocity component perpendicular to this shared Voronoi cell boundary section
+        self%u_vav_perp( vi, ci) = &
+          u_vav_c_tot( ei) * self%mesh%D_x( vi, ci) / self%mesh%D( vi, ci) + &
+          v_vav_c_tot( ei) * self%mesh%D_y( vi, ci) / self%mesh%D( vi, ci)
+
+      end do
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_u_vav_perp
 
 end module ice_velocity_model_basic

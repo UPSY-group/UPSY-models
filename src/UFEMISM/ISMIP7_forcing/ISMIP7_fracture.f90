@@ -145,7 +145,7 @@ contains
 
     ! Calculate the remapping operator
     self%grid_raw%name = 'ISMIP7_input_grid_' // trim( self%name())
-    call create_map_from_xy_grid_to_mesh_vertices( self%grid_raw, self%mesh, C%output_dir, self%map, '2nd_order_conservative')
+    call create_map_from_xy_grid_to_mesh_vertices( self%grid_raw, self%mesh, C%output_dir, self%map, '1st_order_conservative')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -179,8 +179,6 @@ contains
     call self%read_single_timeframe_from_netcdf( ti0, self%mask_dp_t0)
     call self%read_single_timeframe_from_netcdf( ti1, self%mask_dp_t1)
 
-    call crash('whoopsiedaisy')
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -200,6 +198,7 @@ contains
     integer                                          :: ncid, id_var
     real(dp), dimension(:    ), allocatable          :: mask_grid_dp_vec_partial
     real(dp), dimension(self%mesh%vi1:self%mesh%vi2) :: mask_dp_dist
+    integer                                          :: vi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -220,7 +219,7 @@ contains
 
     call open_existing_netcdf_file_for_reading( self%filename, ncid)
     call inquire_var( self%filename, ncid, 'mask', id_var)
-    call read_var_primary( self%filename, ncid, id_var, mask_grid_tot_with_time)
+    call read_var_primary( self%filename, ncid, id_var, mask_grid_tot_with_time, start = [1,1,ti], count = [self%grid_raw%nx, self%grid_raw%ny, 1])
     if (par%primary) mask_grid_dp_tot = real( mask_grid_tot_with_time( :,:,1), dp)
     deallocate( mask_grid_tot_with_time)
     call close_netcdf_file( ncid)
@@ -233,6 +232,11 @@ contains
     ! Remap data to mesh
     call apply_map_xy_grid_to_mesh_2D( self%grid_raw, self%mesh, self%map, mask_grid_dp_vec_partial, mask_dp_dist)
     call dist_to_hybrid( self%mesh%pai_V, mask_dp_dist, mask_dp)
+
+    ! Limit mask values to [0,1]
+    do vi = self%mesh%vi1, self%mesh%vi2
+      mask_dp( vi) = max( 0._dp, min( 1._dp, mask_dp( vi)))
+    end do
 
     ! Finalise routine path
     call finalise_routine( routine_name)

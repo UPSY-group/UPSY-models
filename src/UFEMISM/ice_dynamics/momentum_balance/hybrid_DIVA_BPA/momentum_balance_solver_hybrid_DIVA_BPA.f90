@@ -73,6 +73,8 @@ module momentum_balance_solver_hybrid_DIVA_BPA
       procedure, public :: run_momentum_balance_solver        => momentum_balance_solver_hybrid_DIVA_BPA_run
       procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_hybrid_DIVA_BPA_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_hybrid_DIVA_BPA_remap
+      procedure, public :: create_restart_file_old            => create_restart_file_old_hybrid_DIVA_BPA
+      procedure, public :: write_to_restart_file_old          => write_to_restart_file_old_hybrid_DIVA_BPA
 
       procedure, public :: calc_hybrid_solver_masks_basic
       procedure, public :: calc_hybrid_solver_masks_basic_ROI
@@ -1615,5 +1617,14 @@ contains
   end subroutine calc_visc_iter_UV_resid
 
 ! == Initialisation
+
+  subroutine create_restart_file_old_hybrid_DIVA_BPA( self)
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(inout) :: self
+  end subroutine create_restart_file_old_hybrid_DIVA_BPA
+
+  subroutine write_to_restart_file_old_hybrid_DIVA_BPA( self, time)
+    class(type_momentum_balance_solver_hybrid_DIVA_BPA), intent(in   ) :: self
+    real(dp),                                            intent(in   ) :: time
+  end subroutine write_to_restart_file_old_hybrid_DIVA_BPA
 
 end module momentum_balance_solver_hybrid_DIVA_BPA

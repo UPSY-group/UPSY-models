@@ -26,8 +26,8 @@ contains
     call init_routine( routine_name)
 
     ! Store the previous solution
-    call gather_to_all( self%u_vav_b, self%u_vav_b_prev)
-    call gather_to_all( self%v_vav_b, self%v_vav_b_prev)
+    call gather_dist_shared_to_all( self%mesh%pai_Tri, self%u_vav_b, self%u_vav_b_prev)
+    call gather_dist_shared_to_all( self%mesh%pai_Tri, self%v_vav_b, self%v_vav_b_prev)
 
     ! == Initialise the stiffness matrix using the native UFEMISM CSR-matrix format
     ! =============================================================================

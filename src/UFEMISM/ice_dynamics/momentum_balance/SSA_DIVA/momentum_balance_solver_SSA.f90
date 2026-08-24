@@ -47,8 +47,8 @@ module momentum_balance_solver_SSA
       procedure, public :: set_velocities_to_solver_results   => momentum_balance_solver_SSA_set_velocities
       procedure, public :: remap_momentum_balance_solver      => momentum_balance_solver_SSA_remap
 
-      procedure, public :: create_restart_file_SSA
-      procedure, public :: write_to_restart_file_SSA
+      procedure, public :: create_restart_file_old            => create_restart_file_old_SSA
+      procedure, public :: write_to_restart_file_old          => write_to_restart_file_old_SSA
 
       procedure, private :: initialise_SSA_velocities_from_file
       procedure, private :: calc_vertically_averaged_flow_parameter
@@ -162,9 +162,10 @@ contains
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter   :: routine_name = 'initialise_SSA_velocities_from_file'
-    character(len=:), allocatable :: filename
-    real(dp)                      :: timeframe
+    character(len=*), parameter                      :: routine_name = 'initialise_SSA_velocities_from_file'
+    character(len=:), allocatable                    :: filename
+    real(dp)                                         :: timeframe
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: d_loc_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -198,15 +199,10 @@ contains
       UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read velocities from the file
-    if (timeframe == 1E9_dp) then
-      ! Assume the file has no time dimension
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b', self%u_vav_b)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b', self%v_vav_b)
-    else
-      ! Read specified timeframe
-      call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b', self%u_vav_b, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b', self%v_vav_b, time_to_read = timeframe)
-    end if
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b', d_loc_b, time_to_read = timeframe)
+    self%u_vav_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b', d_loc_b, time_to_read = timeframe)
+    self%v_vav_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -341,8 +337,8 @@ contains
       end if
 
       ! DENK DROM
-      uv_min = minval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2))
-      uv_max = maxval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2))
+      uv_min = min( minval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2)), minval( self%v_vav_b( self%mesh%ti1:self%mesh%ti2)))
+      uv_max = max( maxval( self%u_vav_b( self%mesh%ti1:self%mesh%ti2)), maxval( self%v_vav_b( self%mesh%ti1:self%mesh%ti2)))
       call MPI_ALLREDUCE( MPI_IN_PLACE, uv_min, 1, MPI_doUBLE_PRECISION, MPI_MIN, MPI_COMM_WORLD, ierr)
       call MPI_ALLREDUCE( MPI_IN_PLACE, uv_max, 1, MPI_doUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
       ! if (par%primary) write(0,*) '    SSA - viscosity iteration ', viscosity_iteration_i, ', u = [', uv_min, ' - ', uv_max, '], L2_uv = ', L2_uv
@@ -572,54 +568,13 @@ contains
 
   ! == Restart NetCDF files
 
-  subroutine write_to_restart_file_SSA( self, time)
-
-    ! In/output variables:
-    class(type_momentum_balance_solver_SSA), intent(in   ) :: self
-    real(dp),                                intent(in   ) :: time
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'write_to_restart_file_SSA'
-    integer                     :: ncid
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! if no NetCDF output should be created, do nothing
-    if (.not. C%do_create_netcdf_output) then
-      call finalise_routine( routine_name)
-      return
-    end if
-
-    ! Print to terminal
-    if (par%primary) write(0,'(A)') '   Writing to SSA restart file "' // &
-      UPSY%stru%colour_string( trim( self%restart_filename), 'light blue') // '"...'
-
-    ! Open the NetCDF file
-    call open_existing_netcdf_file_for_writing( self%restart_filename, ncid)
-
-    ! write the time to the file
-    call write_time_to_file( self%restart_filename, ncid, time)
-
-    ! write the velocity fields to the file
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b', self%u_vav_b)
-    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b', self%v_vav_b)
-
-    ! Close the file
-    call close_netcdf_file( ncid)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_to_restart_file_SSA
-
-  subroutine create_restart_file_SSA( self)
+  subroutine create_restart_file_old_SSA( self)
 
     ! In/output variables:
     class(type_momentum_balance_solver_SSA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter   :: routine_name = 'create_restart_file_SSA'
+    character(len=*), parameter   :: routine_name = 'create_restart_file_old_SSA'
     character(len=:), allocatable :: filename_base
     integer                       :: ncid
 
@@ -659,6 +614,47 @@ contains
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine create_restart_file_SSA
+  end subroutine create_restart_file_old_SSA
+
+  subroutine write_to_restart_file_old_SSA( self, time)
+
+    ! In/output variables:
+    class(type_momentum_balance_solver_SSA), intent(in   ) :: self
+    real(dp),                                intent(in   ) :: time
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'write_to_restart_file_old_SSA'
+    integer                     :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! if no NetCDF output should be created, do nothing
+    if (.not. C%do_create_netcdf_output) then
+      call finalise_routine( routine_name)
+      return
+    end if
+
+    ! Print to terminal
+    if (par%primary) write(0,'(A)') '   Writing to SSA restart file "' // &
+      UPSY%stru%colour_string( trim( self%restart_filename), 'light blue') // '"...'
+
+    ! Open the NetCDF file
+    call open_existing_netcdf_file_for_writing( self%restart_filename, ncid)
+
+    ! write the time to the file
+    call write_time_to_file( self%restart_filename, ncid, time)
+
+    ! write the velocity fields to the file
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'u_vav_b', self%u_vav_b)
+    call write_to_field_multopt_mesh_dp_2D_b( self%mesh, self%restart_filename, ncid, 'v_vav_b', self%v_vav_b)
+
+    ! Close the file
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine write_to_restart_file_old_SSA
 
 end module momentum_balance_solver_SSA

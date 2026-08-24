@@ -220,11 +220,13 @@ contains
     class(type_momentum_balance_solver_DIVA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter                      :: routine_name = 'initialise_DIVA_velocities_from_file'
-    character(len=:), allocatable                    :: filename
-    real(dp)                                         :: timeframe
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: u_vav_b_prev_loc
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2) :: v_vav_b_prev_loc
+    character(len=*), parameter                                     :: routine_name = 'initialise_DIVA_velocities_from_file'
+    character(len=:), allocatable                                   :: filename
+    real(dp)                                                        :: timeframe
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2               ) :: d_loc_a
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2               ) :: d_loc_b
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz) :: d_loc_3D_a
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) :: d_loc_3D_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -258,43 +260,73 @@ contains
       UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Solution
-    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b'                     , self%u_vav_b                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b'                     , self%v_vav_b                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'u_base_b'                    , self%u_base_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'v_base_b'                    , self%v_base_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D_b( filename, 'u_3D_b'                      , self%u_3D_b                      , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D_b( filename, 'v_3D_b'                      , self%v_3D_b                      , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b', d_loc_b, time_to_read = timeframe)
+    self%u_vav_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b', d_loc_b, time_to_read = timeframe)
+    self%v_vav_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_base_b', d_loc_b, time_to_read = timeframe)
+    self%u_base_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_base_b', d_loc_b, time_to_read = timeframe)
+    self%v_base_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_3D_b( filename, 'u_3D_b', d_loc_3D_b, time_to_read = timeframe)
+    self%u_3D_b( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
+    call read_field_from_mesh_file_dp_3D_b( filename, 'v_3D_b', d_loc_3D_b, time_to_read = timeframe)
+    self%v_3D_b( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
 
     ! Intermediate data fields
-    call read_field_from_mesh_file_dp_2D  ( filename, 'du_dx_a'                     , self%du_dx_a                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D  ( filename, 'du_dy_a'                     , self%du_dy_a                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D  ( filename, 'dv_dx_a'                     , self%dv_dx_a                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D  ( filename, 'dv_dy_a'                     , self%dv_dy_a                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D  ( filename, 'du_dz_3D_a'                  , self%du_dz_3D_a                  , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D  ( filename, 'dv_dz_3D_a'                  , self%dv_dz_3D_a                  , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D  ( filename, 'eta_3D_a'                    , self%eta_3D_a                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D_b( filename, 'eta_3D_b'                    , self%eta_3D_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D  ( filename, 'eta_vav_a'                   , self%eta_vav_a                   , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D  ( filename, 'N_a'                         , self%N_a                         , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'N_b'                         , self%N_b                         , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'dN_dx_b'                     , self%dN_dx_b                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'dN_dy_b'                     , self%dN_dy_b                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D  ( filename, 'F1_3D_a'                     , self%F1_3D_a                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D  ( filename, 'F2_3D_a'                     , self%F2_3D_a                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D_b( filename, 'F1_3D_b'                     , self%F1_3D_b                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_3D_b( filename, 'F2_3D_b'                     , self%F2_3D_b                     , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'basal_friction_coefficient_b', self%basal_friction_coefficient_b, time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D  ( filename, 'beta_eff_a'                  , self%beta_eff_a                  , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'beta_eff_b'                  , self%beta_eff_b                  , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_bx_b'                    , self%tau_bx_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_by_b'                    , self%tau_by_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dx_b'                    , self%tau_dx_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dy_b'                    , self%tau_dy_b                    , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b_prev'                , u_vav_b_prev_loc                 , time_to_read = timeframe)
-    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b_prev'                , v_vav_b_prev_loc                 , time_to_read = timeframe)
+    call read_field_from_mesh_file_dp_2D  ( filename, 'du_dx_a', d_loc_a, time_to_read = timeframe)
+    self%du_dx_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_2D  ( filename, 'du_dy_a', d_loc_a, time_to_read = timeframe)
+    self%du_dy_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_2D  ( filename, 'dv_dx_a', d_loc_a, time_to_read = timeframe)
+    self%dv_dx_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_2D  ( filename, 'dv_dy_a', d_loc_a, time_to_read = timeframe)
+    self%dv_dy_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_3D  ( filename, 'du_dz_3D_a', d_loc_3D_a, time_to_read = timeframe)
+    self%du_dz_3D_a( self%mesh%vi1:self%mesh%vi2,:) = d_loc_3D_a
+    call read_field_from_mesh_file_dp_3D  ( filename, 'dv_dz_3D_a', d_loc_3D_a, time_to_read = timeframe)
+    self%dv_dz_3D_a( self%mesh%vi1:self%mesh%vi2,:) = d_loc_3D_a
+    call read_field_from_mesh_file_dp_3D  ( filename, 'eta_3D_a', d_loc_3D_a, time_to_read = timeframe)
+    self%eta_3D_a( self%mesh%vi1:self%mesh%vi2,:) = d_loc_3D_a
+    call read_field_from_mesh_file_dp_3D_b( filename, 'eta_3D_b', d_loc_3D_b, time_to_read = timeframe)
+    self%eta_3D_b( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
+    call read_field_from_mesh_file_dp_2D  ( filename, 'eta_vav_a', d_loc_a, time_to_read = timeframe)
+    self%eta_vav_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_2D  ( filename, 'N_a', d_loc_a, time_to_read = timeframe)
+    self%N_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_2D_b( filename, 'N_b', d_loc_b, time_to_read = timeframe)
+    self%N_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'dN_dx_b', d_loc_b, time_to_read = timeframe)
+    self%dN_dx_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'dN_dy_b', d_loc_b, time_to_read = timeframe)
+    self%dN_dy_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_3D  ( filename, 'F1_3D_a', d_loc_3D_a, time_to_read = timeframe)
+    self%F1_3D_a( self%mesh%vi1:self%mesh%vi2,:) = d_loc_3D_a
+    call read_field_from_mesh_file_dp_3D  ( filename, 'F2_3D_a', d_loc_3D_a, time_to_read = timeframe)
+    self%F2_3D_a( self%mesh%vi1:self%mesh%vi2,:) = d_loc_3D_a
+    call read_field_from_mesh_file_dp_3D_b( filename, 'F1_3D_b', d_loc_3D_b, time_to_read = timeframe)
+    self%F1_3D_b( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
+    call read_field_from_mesh_file_dp_3D_b( filename, 'F2_3D_b', d_loc_3D_b, time_to_read = timeframe)
+    self%F2_3D_b( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'basal_friction_coefficient_b', d_loc_b, time_to_read = timeframe)
+    self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2  ) = d_loc_b
+    call read_field_from_mesh_file_dp_2D  ( filename, 'beta_eff_a', d_loc_a, time_to_read = timeframe)
+    self%beta_eff_a( self%mesh%vi1:self%mesh%vi2) = d_loc_a
+    call read_field_from_mesh_file_dp_2D_b( filename, 'beta_eff_b', d_loc_b, time_to_read = timeframe)
+    self%beta_eff_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_bx_b', d_loc_b, time_to_read = timeframe)
+    self%tau_bx_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_by_b', d_loc_b, time_to_read = timeframe)
+    self%tau_by_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dx_b', d_loc_b, time_to_read = timeframe)
+    self%tau_dx_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
+    call read_field_from_mesh_file_dp_2D_b( filename, 'tau_dy_b', d_loc_b, time_to_read = timeframe)
+    self%tau_dy_b( self%mesh%ti1:self%mesh%ti2) = d_loc_b
 
-    call gather_to_all( u_vav_b_prev_loc, self%u_vav_b_prev)
-    call gather_to_all( v_vav_b_prev_loc, self%v_vav_b_prev)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'u_vav_b_prev', d_loc_b, time_to_read = timeframe)
+    call gather_to_all( d_loc_b, self%u_vav_b_prev)
+    call read_field_from_mesh_file_dp_2D_b( filename, 'v_vav_b_prev', d_loc_b, time_to_read = timeframe)
+    call gather_to_all( d_loc_b, self%v_vav_b_prev)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

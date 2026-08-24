@@ -25,6 +25,7 @@ module ISMIP7_fracture
   use mpi_basic, only: par
   use mpi_distributed_memory_grid, only: distribute_gridded_data_from_primary
   use dist_to_hybrid_mod, only: dist_to_hybrid
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
 
   implicit none
 
@@ -35,21 +36,27 @@ module ISMIP7_fracture
   type, extends(atype_model) :: type_ISMIP7_fracture_model
 
       character(len=:), allocatable               :: filename
-      real(dp), dimension(:), allocatable         :: time_in_file              ! List of timeframes in the NetCDF file
+      real(dp), dimension(:), allocatable         :: time_in_file                    !       List of timeframes in the NetCDF file
 
-      type(type_grid)                             :: grid_raw                  ! The x/y-grid that the ISMIP7 folks provided the data on
-      type(type_map)                              :: map                       ! Mapping object to remap data from the ISMIP7 grid to the UFEMISM mesh
+      type(type_grid)                             :: grid_raw                        !       The x/y-grid that the ISMIP7 folks provided the data on
+      type(type_map)                              :: map                             !       Mapping object to remap data from the ISMIP7 grid to the UFEMISM mesh
 
-      real(dp)                                    :: t0, t1                    ! Timestamps of enveloping timeframes
-      real(dp), dimension(:), contiguous, pointer :: mask_dp_t0   => null()    ! Left  enveloping timeframe
-      real(dp), dimension(:), contiguous, pointer :: mask_dp_t1   => null()    ! Right enveloping timeframe
+      real(dp)                                    :: t0, t1                          !       Timestamps of enveloping timeframes
+      real(dp), dimension(:), contiguous, pointer :: mask_dp_t0         => null()    ! [0-1] Left  enveloping timeframe
+      real(dp), dimension(:), contiguous, pointer :: mask_dp_t1         => null()    ! [0-1] Right enveloping timeframe
       type(MPI_WIN) :: wmask_dp_t0, wmask_dp_t1
+
+      real(dp), dimension(:), contiguous, pointer :: max_ice_fraction   => null()    ! [0-1] Maximum allowed ice-covered fraction
+      real(dp), dimension(:), contiguous, pointer :: Hi_max             => null()    ! [m]   Maximum allowed ice thickness
+      real(dp), dimension(:), contiguous, pointer :: dHi_calved         => null()    ! [m]   Ice thickness lost to calving
+      type(MPI_WIN) :: wmax_ice_fraction, wHi_max, wdHi_calved
 
     contains
 
       procedure, public :: get_model_name
       procedure, public :: allocate   => ISMIP7_fracture_model_allocate
       procedure, public :: initialise => ISMIP7_fracture_model_initialise
+      procedure, public :: run        => ISMIP7_fracture_model_run
 
       procedure, private :: initialise_remapping_object
       procedure, private :: update_timeframes
@@ -90,6 +97,27 @@ contains
       units     = '0-1', &
       remap_method = 'reallocate')
 
+    call self%create_field( self%max_ice_fraction, self%wmax_ice_fraction, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'max_ice_fraction', &
+      long_name = 'Maximum allowed ice-covered fraction', &
+      units     = '0-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Hi_max, self%wHi_max, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hi_max', &
+      long_name = 'Maximum allowed ice thickness', &
+      units     = 'm', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dHi_calved, self%wdHi_calved, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'dHi_calved', &
+      long_name = 'Ice thickness lost to calving', &
+      units     = 'm', &
+      remap_method = 'reallocate')
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -101,7 +129,7 @@ contains
     class(type_ISMIP7_fracture_model), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter   :: routine_name = 'ISMIP7_fracture_model_initialise'
+    character(len=*), parameter :: routine_name = 'ISMIP7_fracture_model_initialise'
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -119,12 +147,68 @@ contains
     self%t1 = C%start_time_of_run - 1._dp
     call self%update_timeframes( C%start_time_of_run)
 
-    call crash('whoopsiedaisy')
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine ISMIP7_fracture_model_initialise
+
+  subroutine ISMIP7_fracture_model_run( self, time, geom, Hi)
+
+    ! In/output variables:
+    class(type_ISMIP7_fracture_model),                                  intent(inout) :: self
+    real(dp),                                                           intent(in   ) :: time
+    class(atype_ice_geometry_model_data),                               intent(in   ) :: geom
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(inout) :: Hi
+    ! real(dp), dimension(self%mesh%pai_V%i1_nih:self%mesh%pai_V%i2_nih), intent(inout) :: Hi
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'ISMIP7_fracture_model_run'
+    real(dp)                    :: wt0, wt1
+    integer                     :: vi
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (time < self%t0 .or. time > self%t1) then
+      call self%update_timeframes( time)
+    end if
+
+    ! Calculate time interpolation weights
+    wt0 = (self%t1 - time) / (self%t1 - self%t0)
+    wt0 = max( 0._dp, min( 1._dp, wt0 ))
+    wt1 = 1._dp - wt0
+
+    do vi = self%mesh%vi1, self%mesh%vi2
+
+      if (.not. geom%mask_grounded_ice( vi)) then
+        ! Hydrofracturing can only occur on shelves
+
+        ! Interpolate timeframes in time to find the maximum allowed ice fraction
+        self%max_ice_fraction( vi) = 1._dp - (wt0 * self%mask_dp_t0( vi) + wt1 * self%mask_dp_t1( vi))
+
+        ! Calculate maximum allowed ice thickness
+        self%Hi_max( vi) = geom%Hi_eff( vi) * self%max_ice_fraction( vi)
+
+        ! Apply maximum allowed ice thickness
+        if (Hi( vi) > self%Hi_max( vi)) then
+          self%dHi_calved( vi) = Hi( vi) - self%Hi_max( vi)
+          Hi( vi) = self%Hi_max( vi)
+        else
+          self%dHi_calved( vi) = 0._dp
+        end if
+
+      else
+        self%max_ice_fraction( vi) = 1._dp
+        self%Hi_max          ( vi) = Hi( vi)
+        self%dHi_calved      ( vi) = 0._dp
+      end if
+
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine ISMIP7_fracture_model_run
 
   subroutine initialise_remapping_object( self)
 

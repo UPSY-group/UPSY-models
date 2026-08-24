@@ -94,6 +94,9 @@ contains
           beta_2 * region%ice%pc%dHi_dt_Hi_nm1_u_nm1( vi))
       end do
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_star_np1)
+      if (C%do_apply_ISMIP7_fracture_mask) then
+        call region%ice%ISMIP7_fracture%run( region%time, region%ice%geom, region%ice%pc%Hi_star_np1)
+      end if
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_star_np1)
       call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_star_np1)
       call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &
@@ -135,6 +138,9 @@ contains
       region%ice%pc%Hi_np1 = region%ice%Hi_prev + (region%ice%pc%dt_np1 / 2._dp) * &
         (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
       call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_np1)
+      if (C%do_apply_ISMIP7_fracture_mask) then
+        call region%ice%ISMIP7_fracture%run( region%time, region%ice%geom, region%ice%pc%Hi_np1)
+      end if
       call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
       call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
       call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &

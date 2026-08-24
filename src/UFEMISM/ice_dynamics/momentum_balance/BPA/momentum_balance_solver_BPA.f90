@@ -389,12 +389,12 @@ contains
     class(atype_ice_model_data),             intent(inout) :: ice
     class(atype_ice_geometry_model_data),    intent(in   ) :: geom
     type(type_bed_roughness_model),          intent(in   ) :: bed_roughness
-    integer,  dimension(:  ), optional,      intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(:  ), optional,      intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
-    integer,  dimension(:,:), optional,      intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
-    real(dp), dimension(:,:), optional,      intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
+    integer,  dimension(self%mesh%ti1:self%mesh%ti2),                optional, intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),                optional, intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),                optional, intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    integer,  dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), optional, intent(in   ) :: BC_prescr_mask_bk     ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), optional, intent(in   ) :: BC_prescr_u_bk        ! Prescribed velocities in the x-direction
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), optional, intent(in   ) :: BC_prescr_v_bk        ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter           :: routine_name = 'momentum_balance_solver_BPA_run'
@@ -434,13 +434,13 @@ contains
       if (.not. (present( BC_prescr_mask_bk) .and. present( BC_prescr_u_bk) .and. present( BC_prescr_v_bk))) then
         call crash('need to provide prescribed u,v fields and mask!')
       end if
-      BC_prescr_mask_bk_applied = BC_prescr_mask_bk
-      BC_prescr_u_bk_applied    = BC_prescr_u_bk
-      BC_prescr_v_bk_applied    = BC_prescr_v_bk
+      BC_prescr_mask_bk_applied( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) = BC_prescr_mask_bk( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz)
+      BC_prescr_u_bk_applied   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) = BC_prescr_u_bk   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz)
+      BC_prescr_v_bk_applied   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) = BC_prescr_v_bk   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz)
     else
-      BC_prescr_mask_bk_applied = 0
-      BC_prescr_u_bk_applied    = 0._dp
-      BC_prescr_v_bk_applied    = 0._dp
+      BC_prescr_mask_bk_applied( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) = 0
+      BC_prescr_u_bk_applied   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) = 0._dp
+      BC_prescr_v_bk_applied   ( self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) = 0._dp
     end if
 
     ! Calculate zeta gradients

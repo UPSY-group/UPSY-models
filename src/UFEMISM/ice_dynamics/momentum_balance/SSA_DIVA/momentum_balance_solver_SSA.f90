@@ -3,7 +3,7 @@ module momentum_balance_solver_SSA
   ! Routines for calculating ice velocities using the Shallow Shelf Approximation (SSA)
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, &
-    MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX
+    MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX, MPI_WIN
   use UPSY_main, only: UPSY
   use mpi_basic, only: par
   use precisions, only: dp
@@ -24,6 +24,7 @@ module momentum_balance_solver_SSA
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D
   use bed_roughness_model_types, only: type_bed_roughness_model
   use momentum_balance_solver_SSADIVA, only: atype_momentum_balance_solver_SSADIVA
+  use Arakawa_grid_mod, only: Arakawa_grid
 
   implicit none
 
@@ -34,7 +35,8 @@ module momentum_balance_solver_SSA
   type, extends(atype_momentum_balance_solver_SSADIVA) :: type_momentum_balance_solver_SSA
 
       ! Intermediate data fields
-      real(dp), dimension(:), allocatable :: A_flow_vav_a                ! [Pa^-3 y^-1] Vertically averaged Glen's flow law parameter
+      real(dp), dimension(:), contiguous, pointer :: A_flow_vav_a  => null()   ! [Pa^-3 y^-1] Vertically averaged Glen's flow law parameter
+      type(MPI_WIN) :: wA_flow_vav_a
 
     contains
 
@@ -77,8 +79,12 @@ contains
 
     ! Allocate variables that are specific to the SSA solver
 
-    ! Intermediate data fields
-    allocate( self%A_flow_vav_a( self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    call self%create_field( self%A_flow_vav_a, self%wA_flow_vav_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'A_flow_vav_a', &
+      long_name = 'Vertically averaged flow parameter in Glens flow law', &
+      units     = 'Pa^-n y^-1', &
+      remap_method = 'reallocate')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -101,8 +107,7 @@ contains
 
     ! Deallocate variables that are specific to the SSA solver
 
-    ! Intermediate data fields
-    deallocate( self%A_flow_vav_a)
+    nullify( self%A_flow_vav_a)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -423,7 +428,7 @@ contains
 
     ! Remap variables that are specific to the SSA solver
 
-    call reallocate_bounds( self%A_flow_vav_a, mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new,'A_flow_vav_a', self%A_flow_vav_a)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

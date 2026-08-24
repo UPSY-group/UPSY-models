@@ -20,13 +20,15 @@ module momentum_balance_solver_DIVA
   use mpi_distributed_memory, only: gather_to_all
   use momentum_balance_solver_SSADIVA, only: atype_momentum_balance_solver_SSADIVA
   use mpi_f08, only: MPI_COMM_WORLD, MPI_ALLREDUCE, MPI_DOUBLE_PRECISION, MPI_IN_PLACE, &
-    MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX
+    MPI_LOR, MPI_LOGICAL, MPI_MIN, MPI_MAX, MPI_WIN
   use checksum_mod, only: checksum
   use sliding_laws, only: calc_basal_friction_coefficient
   use mesh_zeta, only: integrate_from_zeta_is_one_to_zeta_is_zetap, vertical_average
   use constitutive_equation, only: calc_ice_rheology_Glen, calc_effective_viscosity_Glen_3D_uv_only
   use mesh_disc_apply_operators, only: map_a_b_2D, map_a_b_3D, ddx_a_b_2D, ddy_a_b_2D, &
     map_b_a_2D, map_b_a_3D, ddx_b_a_2D, ddy_b_a_2D
+  use Arakawa_grid_mod, only: Arakawa_grid
+  use fields_dimensions, only: third_dimension
 
   implicit none
 
@@ -37,24 +39,28 @@ module momentum_balance_solver_DIVA
   type, extends(atype_momentum_balance_solver_SSADIVA) :: type_momentum_balance_solver_DIVA
 
     ! Solution
-    real(dp), dimension(:  ), allocatable :: u_base_b                    ! [m yr^-1] 2-D horizontal ice velocity at the ice base
-    real(dp), dimension(:  ), allocatable :: v_base_b
-    real(dp), dimension(:,:), allocatable :: u_3D_b                      ! [m yr^-1] 3-D horizontal ice velocity
-    real(dp), dimension(:,:), allocatable :: v_3D_b
+    real(dp), dimension(:  ), contiguous, pointer :: u_base_b     => null()   ! [m yr^-1] 2-D horizontal ice velocity at the ice base
+    real(dp), dimension(:  ), contiguous, pointer :: v_base_b     => null()
+    real(dp), dimension(:,:), contiguous, pointer :: u_3D_b       => null()   ! [m yr^-1] 3-D horizontal ice velocity
+    real(dp), dimension(:,:), contiguous, pointer :: v_3D_b       => null()
+    type(MPI_WIN) :: wu_base_b, wv_base_b, wu_3D_b, wv_3D_b
 
     ! Intermediate data fields
-    real(dp), dimension(:,:), allocatable :: du_dz_3D_a                  ! [yr^-1] 3-D vertical shear strain rates
-    real(dp), dimension(:,:), allocatable :: dv_dz_3D_a
-    real(dp), dimension(:,:), allocatable :: eta_3D_a                    ! Effective viscosity
-    real(dp), dimension(:,:), allocatable :: eta_3D_b
-    real(dp), dimension(:,:), allocatable :: F1_3D_a                     ! F-integrals
-    real(dp), dimension(:,:), allocatable :: F2_3D_a
-    real(dp), dimension(:,:), allocatable :: F1_3D_b
-    real(dp), dimension(:,:), allocatable :: F2_3D_b
-    real(dp), dimension(:  ), allocatable :: beta_eff_a                  ! "Effective" friction coefficient (turning the SSA into the DIVA)
-    real(dp), dimension(:  ), allocatable :: beta_eff_b
-    real(dp), dimension(:  ), allocatable :: tau_bx_b                    ! Basal shear stress
-    real(dp), dimension(:  ), allocatable :: tau_by_b
+    real(dp), dimension(:,:), contiguous, pointer :: du_dz_3D_a   => null()   ! [yr^-1] 3-D vertical shear strain rates
+    real(dp), dimension(:,:), contiguous, pointer :: dv_dz_3D_a   => null()
+    real(dp), dimension(:,:), contiguous, pointer :: eta_3D_a     => null()   ! Effective viscosity
+    real(dp), dimension(:,:), contiguous, pointer :: eta_3D_b     => null()
+    real(dp), dimension(:,:), contiguous, pointer :: F1_3D_a      => null()   ! F-integrals
+    real(dp), dimension(:,:), contiguous, pointer :: F2_3D_a      => null()
+    real(dp), dimension(:,:), contiguous, pointer :: F1_3D_b      => null()
+    real(dp), dimension(:,:), contiguous, pointer :: F2_3D_b      => null()
+    real(dp), dimension(:  ), contiguous, pointer :: beta_eff_a   => null()   ! "Effective" friction coefficient (turning the SSA into the DIVA)
+    real(dp), dimension(:  ), contiguous, pointer :: beta_eff_b   => null()
+    real(dp), dimension(:  ), contiguous, pointer :: tau_bx_b     => null()   ! Basal shear stress
+    real(dp), dimension(:  ), contiguous, pointer :: tau_by_b     => null()
+    type(MPI_WIN) :: wdu_dz_3D_a, wdv_dz_3D_a, weta_3D_a, weta_3D_b
+    type(MPI_WIN) :: wF1_3D_a, wF2_3D_a, wF1_3D_b, wF2_3D_b
+    type(MPI_WIN) :: wbeta_eff_a, wbeta_eff_b, wtau_bx_b, wtau_by_b
 
     contains
 
@@ -102,24 +108,118 @@ contains
     ! Allocate variables that are specific to the DIVA solver
 
     ! Solution
-    allocate( self%u_base_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%v_base_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%u_3D_b(                       self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%v_3D_b(                       self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
+    call self%create_field( self%u_base_b, self%wu_base_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'u_base_b', &
+      long_name = 'Basal ice velocity in the x-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_base_b, self%wv_base_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'v_base_b', &
+      long_name = 'Basal ice velocity in the y-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%u_3D_b, self%wu_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'u_3D_b', &
+      long_name = '3-D ice velocity in the x-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%v_3D_b, self%wv_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'v_3D_b', &
+      long_name = '3-D ice velocity in the y-direction on the triangles', &
+      units     = 'm yr^-1', &
+      remap_method = 'reallocate')
 
     ! Intermediate data fields
-    allocate( self%du_dz_3D_a(                   self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%dv_dz_3D_a(                   self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%eta_3D_a(                     self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%eta_3D_b(                     self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%F1_3D_a(                      self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%F2_3D_a(                      self%mesh%vi1:self%mesh%vi2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%F1_3D_b(                      self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%F2_3D_b(                      self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), source = 0._dp)
-    allocate( self%beta_eff_a(                   self%mesh%vi1:self%mesh%vi2               ), source = 0._dp)
-    allocate( self%beta_eff_b(                   self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%tau_bx_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
-    allocate( self%tau_by_b(                     self%mesh%ti1:self%mesh%ti2               ), source = 0._dp)
+    call self%create_field( self%du_dz_3D_a, self%wdu_dz_3D_a, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'du_dz_3D_a', &
+      long_name = '3-D xz strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dv_dz_3D_a, self%wdv_dz_3D_a, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'dv_dz_3D_a', &
+      long_name = '3-D yz strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%eta_3D_a, self%weta_3D_a, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'eta_3D_a', &
+      long_name = '3-D effective viscosity on the vertices', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%eta_3D_b, self%weta_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'eta_3D_b', &
+      long_name = '3-D effective viscosity on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%F1_3D_a, self%wF1_3D_a, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'F1_3D_a', &
+      long_name = '3-D F-1 integral on the vertices', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%F2_3D_a, self%wF2_3D_a, &
+      self%mesh, Arakawa_grid%a(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'F2_3D_a', &
+      long_name = '3-D F-2 integral on the vertices', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%F1_3D_b, self%wF1_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'F1_3D_b', &
+      long_name = '3-D F-1 integral on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%F2_3D_b, self%wF2_3D_b, &
+      self%mesh, Arakawa_grid%b(), third_dimension%ice_zeta( C%nz, C%choice_zeta_grid, C%zeta_irregular_log_R), &
+      name      = 'F2_3D_b', &
+      long_name = '3-D F-2 integral on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%beta_eff_a, self%wbeta_eff_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'beta_eff_a', &
+      long_name = 'beta_eff on the vertices', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%beta_eff_b, self%wbeta_eff_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'beta_eff_b', &
+      long_name = 'beta_eff on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%tau_bx_b, self%wtau_bx_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'tau_bx_b', &
+      long_name = 'Basal shear stress in the x-direction on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%tau_by_b, self%wtau_by_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'tau_by_b', &
+      long_name = 'Basal shear stress in the y-direction on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -143,24 +243,24 @@ contains
     ! Deallocate variables that are specific to the DIVA solver
 
     ! Solution
-    deallocate( self%u_base_b)
-    deallocate( self%v_base_b)
-    deallocate( self%u_3D_b)
-    deallocate( self%v_3D_b)
+    nullify( self%u_base_b)
+    nullify( self%v_base_b)
+    nullify( self%u_3D_b)
+    nullify( self%v_3D_b)
 
     ! Intermediate data fields
-    deallocate( self%du_dz_3D_a)
-    deallocate( self%dv_dz_3D_a)
-    deallocate( self%eta_3D_a)
-    deallocate( self%eta_3D_b)
-    deallocate( self%F1_3D_a)
-    deallocate( self%F2_3D_a)
-    deallocate( self%F1_3D_b)
-    deallocate( self%F2_3D_b)
-    deallocate( self%beta_eff_a)
-    deallocate( self%beta_eff_b)
-    deallocate( self%tau_bx_b)
-    deallocate( self%tau_by_b)
+    nullify( self%du_dz_3D_a)
+    nullify( self%dv_dz_3D_a)
+    nullify( self%eta_3D_a)
+    nullify( self%eta_3D_b)
+    nullify( self%F1_3D_a)
+    nullify( self%F2_3D_a)
+    nullify( self%F1_3D_b)
+    nullify( self%F2_3D_b)
+    nullify( self%beta_eff_a)
+    nullify( self%beta_eff_b)
+    nullify( self%tau_bx_b)
+    nullify( self%tau_by_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -604,11 +704,11 @@ contains
     call map_from_mesh_to_mesh_with_reallocation_3D( mesh_old, mesh_new, C%output_dir, v_3D_a  , '2nd_order_conservative')
 
     ! reallocate memory for the data on the triangles
-    call reallocate_bounds( self%tau_bx_b , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%tau_by_b , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%eta_3D_b , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%u_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%v_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
+    call self%remap_field( mesh_new, 'tau_bx_b', self%tau_bx_b)
+    call self%remap_field( mesh_new, 'tau_by_b', self%tau_by_b)
+    call self%remap_field( mesh_new, 'eta_3D_b', self%eta_3D_b)
+    call self%remap_field( mesh_new, 'u_3D_b'  , self%u_3D_b  )
+    call self%remap_field( mesh_new, 'v_3D_b'  , self%v_3D_b  )
 
     ! Map data from the vertices of the new mesh to the triangles of the new mesh
     call map_a_b_2D( mesh_new, tau_bx_a, self%tau_bx_b)
@@ -620,22 +720,17 @@ contains
     ! reallocate everything else
     ! ==========================
 
-    call reallocate_bounds( self%u_base_b  , mesh_new%ti1, mesh_new%ti2             )
-    call reallocate_bounds( self%v_base_b  , mesh_new%ti1, mesh_new%ti2             )
-   !call reallocate_bounds( DIVA%u_3D_b    , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-   !call reallocate_bounds( DIVA%v_3D_b    , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%du_dz_3D_a, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%dv_dz_3D_a, mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%eta_3D_a  , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-   !call reallocate_bounds( DIVA%eta_3D_b  , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%F1_3D_a   , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%F2_3D_a   , mesh_new%vi1, mesh_new%vi2, mesh_new%nz)
-    call reallocate_bounds( self%F1_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%F2_3D_b   , mesh_new%ti1, mesh_new%ti2, mesh_new%nz)
-    call reallocate_bounds( self%beta_eff_a, mesh_new%vi1, mesh_new%vi2             )
-    call reallocate_bounds( self%beta_eff_b, mesh_new%ti1, mesh_new%ti2             )
-   !call reallocate_bounds( DIVA%tau_bx_b  , mesh_new%ti1, mesh_new%ti2             )
-   !call reallocate_bounds( DIVA%tau_by_b  , mesh_new%ti1, mesh_new%ti2             )
+    call self%remap_field( mesh_new, 'u_base_b'  , self%u_base_b  )
+    call self%remap_field( mesh_new, 'v_base_b'  , self%v_base_b  )
+    call self%remap_field( mesh_new, 'du_dz_3D_a', self%du_dz_3D_a)
+    call self%remap_field( mesh_new, 'dv_dz_3D_a', self%dv_dz_3D_a)
+    call self%remap_field( mesh_new, 'eta_3D_a'  , self%eta_3D_a  )
+    call self%remap_field( mesh_new, 'F1_3D_a'   , self%F1_3D_a   )
+    call self%remap_field( mesh_new, 'F2_3D_a'   , self%F2_3D_a   )
+    call self%remap_field( mesh_new, 'F1_3D_b'   , self%F1_3D_b   )
+    call self%remap_field( mesh_new, 'F2_3D_b'   , self%F2_3D_b   )
+    call self%remap_field( mesh_new, 'beta_eff_a', self%beta_eff_a)
+    call self%remap_field( mesh_new, 'beta_eff_b', self%beta_eff_b)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

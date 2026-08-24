@@ -721,15 +721,15 @@ contains
           Glens_flow_law_epsilon_sq_0_applied, &
           self%du_dx_a( vi), self%du_dy_a( vi), self%du_dz_3D_a( vi,k), &
           self%dv_dx_a( vi), self%dv_dy_a( vi), self%dv_dz_3D_a( vi,k), ice%A_flow( vi,k))
+
+        ! Safety
+        self%eta_3D_a( vi,k) = min( max( self%eta_3D_a( vi,k), C%visc_eff_min), eta_max)
       end do
       end do
 
     else
       call crash('unknown choice_flow_law "' // TRIM( C%choice_flow_law) // '"!')
     end if
-
-    ! Safety
-    self%eta_3D_a = min( max( self%eta_3D_a, C%visc_eff_min), eta_max)
 
     ! Map effective viscosity to the b-grid
     call map_a_b_3D( self%mesh, self%eta_3D_a, self%eta_3D_b)

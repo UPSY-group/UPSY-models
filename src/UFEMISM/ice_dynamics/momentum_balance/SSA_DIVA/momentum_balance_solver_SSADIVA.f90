@@ -43,17 +43,19 @@ module momentum_balance_solver_SSADIVA
       real(dp), dimension(:), contiguous, pointer :: du_dy_a                       => null()
       real(dp), dimension(:), contiguous, pointer :: dv_dx_a                       => null()
       real(dp), dimension(:), contiguous, pointer :: dv_dy_a                       => null()
-      real(dp), dimension(:), allocatable :: eta_vav_a                   ! Effective viscosity
-      real(dp), dimension(:), allocatable :: N_a                         ! Product term N = eta * H
-      real(dp), dimension(:), allocatable :: N_b
-      real(dp), dimension(:), allocatable :: dN_dx_b                     ! Gradients of N
-      real(dp), dimension(:), allocatable :: dN_dy_b
-      real(dp), dimension(:), allocatable :: basal_friction_coefficient_b! Basal friction coefficient (tau_b = u * beta_b)
-      real(dp), dimension(:), allocatable :: tau_dx_b                    ! Driving stress
-      real(dp), dimension(:), allocatable :: tau_dy_b
-      real(dp), dimension(:), allocatable :: u_vav_b_prev                ! Velocity solution from previous viscosity iteration
+      real(dp), dimension(:), contiguous, pointer :: eta_vav_a                     => null()   ! Effective viscosity
+      real(dp), dimension(:), contiguous, pointer :: N_a                           => null()   ! Product term N = eta * H
+      real(dp), dimension(:), contiguous, pointer :: N_b                           => null()
+      real(dp), dimension(:), contiguous, pointer :: dN_dx_b                       => null()   ! Gradients of N
+      real(dp), dimension(:), contiguous, pointer :: dN_dy_b                       => null()
+      real(dp), dimension(:), contiguous, pointer :: basal_friction_coefficient_b  => null()   ! Basal friction coefficient (tau_b = u * beta_b)
+      real(dp), dimension(:), contiguous, pointer :: tau_dx_b                      => null()   ! Driving stress
+      real(dp), dimension(:), contiguous, pointer :: tau_dy_b                      => null()
+      real(dp), dimension(:), allocatable :: u_vav_b_prev                    ! Velocity solution from previous viscosity iteration
       real(dp), dimension(:), allocatable :: v_vav_b_prev
-      type(MPI_WIN) :: wdu_dx_a, wdu_dy_a, wdv_dx_a, wdv_dy_a
+      type(MPI_WIN) :: wdu_dx_a, wdu_dy_a, wdv_dx_a, wdv_dy_a, weta_vav_a, wN_a, wN_b
+      type(MPI_WIN) :: wdN_dx_b, wdN_dy_b, wbasal_friction_coefficient_b
+      type(MPI_WIN) :: wtau_dx_b, wtau_dy_b
 
       ! Restart file
       character(len=256)                  :: restart_filename
@@ -135,6 +137,7 @@ contains
       long_name = 'Vertically averaged ice velocity in the x-direction on the triangles', &
       units     = 'm yr^-1', &
       remap_method = 'reallocate')
+
     call self%create_field( self%v_vav_b, self%wv_vav_b, &
       self%mesh, Arakawa_grid%b(), &
       name      = 'v_vav_b', &
@@ -149,32 +152,85 @@ contains
       long_name = 'Vertically averaged xx strain rate', &
       units     = 'yr^-1', &
       remap_method = 'reallocate')
+
     call self%create_field( self%du_dy_a, self%wdu_dy_a, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'du_dy_a', &
       long_name = 'Vertically averaged xy strain rate', &
       units     = 'yr^-1', &
       remap_method = 'reallocate')
+
     call self%create_field( self%dv_dx_a, self%wdv_dx_a, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'dv_dx_a', &
       long_name = 'Vertically averaged yx strain rate', &
       units     = 'yr^-1', &
       remap_method = 'reallocate')
+
     call self%create_field( self%dv_dy_a, self%wdv_dy_a, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'dv_dy_a', &
       long_name = 'Vertically averaged yy strain rate', &
       units     = 'yr^-1', &
       remap_method = 'reallocate')
-    allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%dN_dx_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%dN_dy_b(                      self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%basal_friction_coefficient_b( self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%tau_dx_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
-    allocate( self%tau_dy_b(                     self%mesh%ti1:self%mesh%ti2), source = 0._dp)
+
+    call self%create_field( self%eta_vav_a, self%weta_vav_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'eta_vav_a', &
+      long_name = 'Vertically averaged effective viscosity', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%N_a, self%wN_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'N_a', &
+      long_name = 'Product term N = eta * H on the vertices', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%N_b, self%wN_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'N_b', &
+      long_name = 'Product term N = eta * H on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dN_dx_b, self%wdN_dx_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'dN_dx_b', &
+      long_name = 'Derivative of N in the x-direction on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%dN_dy_b, self%wdN_dy_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'dN_dy_b', &
+      long_name = 'Derivative of N in the y-direction on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%basal_friction_coefficient_b, self%wbasal_friction_coefficient_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'basal_friction_coefficient_b', &
+      long_name = 'Basal friction coefficient on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%tau_dx_b, self%wtau_dx_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'tau_dx_b', &
+      long_name = 'Driving stress in the x-direction on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%tau_dy_b, self%wtau_dy_b, &
+      self%mesh, Arakawa_grid%b(), &
+      name      = 'tau_dy_b', &
+      long_name = 'Driving stress in the y-direction on the triangles', &
+      units     = '', &
+      remap_method = 'reallocate')
+
+    ! DENK DROM
     allocate( self%u_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
     allocate( self%v_vav_b_prev(                 self%mesh%nTri             ), source = 0._dp)
 
@@ -203,14 +259,14 @@ contains
     nullify( self%du_dy_a)
     nullify( self%dv_dx_a)
     nullify( self%dv_dy_a)
-    deallocate( self%eta_vav_a)
-    deallocate( self%N_a)
-    deallocate( self%N_b)
-    deallocate( self%dN_dx_b)
-    deallocate( self%dN_dy_b)
-    deallocate( self%basal_friction_coefficient_b)
-    deallocate( self%tau_dx_b)
-    deallocate( self%tau_dy_b)
+    nullify( self%eta_vav_a)
+    nullify( self%N_a)
+    nullify( self%N_b)
+    nullify( self%dN_dx_b)
+    nullify( self%dN_dy_b)
+    nullify( self%basal_friction_coefficient_b)
+    nullify( self%tau_dx_b)
+    nullify( self%tau_dy_b)
     deallocate( self%u_vav_b_prev)
     deallocate( self%v_vav_b_prev)
 
@@ -266,14 +322,14 @@ contains
     call self%remap_field( mesh_new, 'du_dy_a'                     , self%du_dy_a                     )
     call self%remap_field( mesh_new, 'dv_dx_a'                     , self%dv_dx_a                     )
     call self%remap_field( mesh_new, 'dv_dy_a'                     , self%dv_dy_a                     )
-    call reallocate_bounds( self%eta_vav_a                   , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%N_a                         , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%N_b                         , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%dN_dx_b                     , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%dN_dy_b                     , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%basal_friction_coefficient_b, mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%tau_dx_b                    , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%tau_dy_b                    , mesh_new%ti1, mesh_new%ti2)
+    call self%remap_field( mesh_new, 'eta_vav_a'                   , self%eta_vav_a                   )
+    call self%remap_field( mesh_new, 'N_a'                         , self%N_a                         )
+    call self%remap_field( mesh_new, 'N_b'                         , self%N_b                         )
+    call self%remap_field( mesh_new, 'dN_dx_b'                     , self%dN_dx_b                     )
+    call self%remap_field( mesh_new, 'dN_dy_b'                     , self%dN_dy_b                     )
+    call self%remap_field( mesh_new, 'basal_friction_coefficient_b', self%basal_friction_coefficient_b)
+    call self%remap_field( mesh_new, 'tau_dx_b'                    , self%tau_dx_b                    )
+    call self%remap_field( mesh_new, 'tau_dy_b'                    , self%tau_dy_b                    )
     call reallocate_clean ( self%u_vav_b_prev                , mesh_new%nTri             )
     call reallocate_clean ( self%v_vav_b_prev                , mesh_new%nTri             )
 

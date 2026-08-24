@@ -39,10 +39,10 @@ module momentum_balance_solver_SSADIVA
       type(MPI_WIN) :: wu_vav_b, wv_vav_b
 
       ! Intermediate data fields
-      real(dp), dimension(:), allocatable :: du_dx_a                     ! [yr^-1] 2-D horizontal strain rates
-      real(dp), dimension(:), allocatable :: du_dy_a
-      real(dp), dimension(:), allocatable :: dv_dx_a
-      real(dp), dimension(:), allocatable :: dv_dy_a
+      real(dp), dimension(:), contiguous, pointer :: du_dx_a                       => null()   ! [yr^-1] 2-D horizontal strain rates
+      real(dp), dimension(:), contiguous, pointer :: du_dy_a                       => null()
+      real(dp), dimension(:), contiguous, pointer :: dv_dx_a                       => null()
+      real(dp), dimension(:), contiguous, pointer :: dv_dy_a                       => null()
       real(dp), dimension(:), allocatable :: eta_vav_a                   ! Effective viscosity
       real(dp), dimension(:), allocatable :: N_a                         ! Product term N = eta * H
       real(dp), dimension(:), allocatable :: N_b
@@ -53,6 +53,7 @@ module momentum_balance_solver_SSADIVA
       real(dp), dimension(:), allocatable :: tau_dy_b
       real(dp), dimension(:), allocatable :: u_vav_b_prev                ! Velocity solution from previous viscosity iteration
       real(dp), dimension(:), allocatable :: v_vav_b_prev
+      type(MPI_WIN) :: wdu_dx_a, wdu_dy_a, wdv_dx_a, wdv_dy_a
 
       ! Restart file
       character(len=256)                  :: restart_filename
@@ -142,10 +143,30 @@ contains
       remap_method = 'reallocate')
 
     ! Intermediate data fields
-    allocate( self%du_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%du_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%dv_dx_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
-    allocate( self%dv_dy_a(                      self%mesh%vi1:self%mesh%vi2), source = 0._dp)
+    call self%create_field( self%du_dx_a, self%wdu_dx_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'du_dx_a', &
+      long_name = 'Vertically averaged xx strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%du_dy_a, self%wdu_dy_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'du_dy_a', &
+      long_name = 'Vertically averaged xy strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%dv_dx_a, self%wdv_dx_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'dv_dx_a', &
+      long_name = 'Vertically averaged yx strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
+    call self%create_field( self%dv_dy_a, self%wdv_dy_a, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'dv_dy_a', &
+      long_name = 'Vertically averaged yy strain rate', &
+      units     = 'yr^-1', &
+      remap_method = 'reallocate')
     allocate( self%eta_vav_a(                    self%mesh%vi1:self%mesh%vi2), source = 0._dp)
     allocate( self%N_a(                          self%mesh%vi1:self%mesh%vi2), source = 0._dp)
     allocate( self%N_b(                          self%mesh%ti1:self%mesh%ti2), source = 0._dp)
@@ -178,10 +199,10 @@ contains
     nullify( self%v_vav_b)
 
     ! Intermediate data fields
-    deallocate( self%du_dx_a)
-    deallocate( self%du_dy_a)
-    deallocate( self%dv_dx_a)
-    deallocate( self%dv_dy_a)
+    nullify( self%du_dx_a)
+    nullify( self%du_dy_a)
+    nullify( self%dv_dx_a)
+    nullify( self%dv_dy_a)
     deallocate( self%eta_vav_a)
     deallocate( self%N_a)
     deallocate( self%N_b)
@@ -241,10 +262,10 @@ contains
 
    !call reallocate_bounds( DIVA%u_vav_b                     , mesh_new%ti1, mesh_new%ti2)
    !call reallocate_bounds( DIVA%v_vav_b                     , mesh_new%ti1, mesh_new%ti2)
-    call reallocate_bounds( self%du_dx_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%du_dy_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%dv_dx_a                     , mesh_new%vi1, mesh_new%vi2)
-    call reallocate_bounds( self%dv_dy_a                     , mesh_new%vi1, mesh_new%vi2)
+    call self%remap_field( mesh_new, 'du_dx_a'                     , self%du_dx_a                     )
+    call self%remap_field( mesh_new, 'du_dy_a'                     , self%du_dy_a                     )
+    call self%remap_field( mesh_new, 'dv_dx_a'                     , self%dv_dx_a                     )
+    call self%remap_field( mesh_new, 'dv_dy_a'                     , self%dv_dy_a                     )
     call reallocate_bounds( self%eta_vav_a                   , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%N_a                         , mesh_new%vi1, mesh_new%vi2)
     call reallocate_bounds( self%N_b                         , mesh_new%ti1, mesh_new%ti2)

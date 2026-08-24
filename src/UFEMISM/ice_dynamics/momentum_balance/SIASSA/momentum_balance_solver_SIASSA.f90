@@ -162,11 +162,11 @@ contains
 
     ! Strain rates
     do vi = self%mesh%vi1, self%mesh%vi2
-      vel%du_dx_3D( vi,:) = self%SSA%du_dx_a( vi  )
-      vel%du_dy_3D( vi,:) = self%SSA%du_dy_a( vi  )
+      vel%du_dx_3D( vi,:) = self%SSA%du_dx_a   ( vi  )
+      vel%du_dy_3D( vi,:) = self%SSA%du_dy_a   ( vi  )
       vel%du_dz_3D( vi,:) = self%SIA%du_dz_3D  ( vi,:)
-      vel%dv_dx_3D( vi,:) = self%SSA%dv_dx_a( vi  )
-      vel%dv_dy_3D( vi,:) = self%SSA%dv_dy_a( vi  )
+      vel%dv_dx_3D( vi,:) = self%SSA%dv_dx_a   ( vi  )
+      vel%dv_dy_3D( vi,:) = self%SSA%dv_dy_a   ( vi  )
       vel%dv_dz_3D( vi,:) = self%SIA%dv_dz_3D  ( vi,:)
     end do
 

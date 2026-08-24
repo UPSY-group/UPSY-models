@@ -396,6 +396,11 @@ contains
     ice%n_visc_its = 0
     ice%n_Axb_its  = 0
 
+    ! ISMIP7 mask-based hydrofracture model
+    if (C%do_apply_ISMIP7_fracture_mask) then
+      call ice%ISMIP7_fracture%initialise()
+    end if
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

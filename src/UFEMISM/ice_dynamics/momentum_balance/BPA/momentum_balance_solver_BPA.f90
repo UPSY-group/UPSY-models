@@ -333,9 +333,10 @@ contains
     class(type_momentum_balance_solver_BPA), intent(inout) :: self
 
     ! Local variables:
-    character(len=*), parameter   :: routine_name = 'initialise_BPA_velocities_from_file'
-    character(len=:), allocatable :: filename
-    real(dp)                      :: timeframe
+    character(len=*), parameter                                     :: routine_name = 'initialise_BPA_velocities_from_file'
+    character(len=:), allocatable                                   :: filename
+    real(dp)                                                        :: timeframe
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz) :: d_loc_3D_b
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -369,15 +370,10 @@ contains
       UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
     ! Read velocities from the file
-    if (timeframe == 1E9_dp) then
-      ! Assume the file has no time dimension
-      call read_field_from_mesh_file_dp_3D_b( filename, 'u_bk', self%u_bk)
-      call read_field_from_mesh_file_dp_3D_b( filename, 'v_bk', self%v_bk)
-    else
-      ! Read specified timeframe
-      call read_field_from_mesh_file_dp_3D_b( filename, 'u_bk', self%u_bk, time_to_read = timeframe)
-      call read_field_from_mesh_file_dp_3D_b( filename, 'v_bk', self%v_bk, time_to_read = timeframe)
-    end if
+    call read_field_from_mesh_file_dp_3D_b( filename, 'u_bk', d_loc_3D_b, time_to_read = timeframe)
+    self%u_bk( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
+    call read_field_from_mesh_file_dp_3D_b( filename, 'v_bk', d_loc_3D_b, time_to_read = timeframe)
+    self%v_bk( self%mesh%ti1:self%mesh%ti2,:) = d_loc_3D_b
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -434,6 +434,9 @@ module model_configuration_type_and_namelist
     logical             :: continental_shelf_calving_config             = .false.                          ! If set to TRUE, all ice beyond the continental shelf edge (set by a maximum depth) is removed
     real(dp)            :: continental_shelf_min_height_config          = -2000._dp                        ! Maximum depth of the continental shelf
 
+    logical             :: do_apply_ISMIP7_fracture_mask_config         = .false.                          ! Whether or not to apply the ISMIP7 mask-based hydrofracturing forcing
+    character(len=1024) :: filename_ISMIP7_fracture_mask_config         = ''                               ! The full path to the NetCDF file containing the ISMIP7 hydrofracturing mask
+
   ! == Ice dynamics - stabilisation
   ! ===============================
 
@@ -489,7 +492,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: Salle2025_hydro_meltwater_config             = 2.186523556E-7_dp                ! [kg m^-2 s^-1] of meltwater added to basal hydrology system
     real(dp)            :: Salle2025_W_til_max_config                   = 2.0_dp                           ! [m] Maximum allowed till water layer thickness
     real(dp)            :: Salle2025_initial_W_til_config               = 2.0_dp                           ! [m] Initial till water layer thickness
-    real(dp)            :: Salle2025_initial_W_config                   = 0.01_dp                          ! [m] Initial subglacial water layer thickness 
+    real(dp)            :: Salle2025_initial_W_config                   = 0.01_dp                          ! [m] Initial subglacial water layer thickness
     real(dp)            :: Salle2025_Cd_config                          = 3.168874718E-11_dp               ! [m s^-1] Water leaking back from the till to the water layer above
     real(dp)            :: Salle2025_phi_config                         = 26.565_dp                        ! [degrees] till yield stress angle
 
@@ -1691,6 +1694,9 @@ module model_configuration_type_and_namelist
     logical             :: continental_shelf_calving
     real(dp)            :: continental_shelf_min_height
 
+    logical             :: do_apply_ISMIP7_fracture_mask
+    character(len=1024) :: filename_ISMIP7_fracture_mask
+
   ! == Ice dynamics - stabilisation
   ! ===============================
 
@@ -2833,6 +2839,8 @@ contains
       remove_shelves_larger_than_PD_config                        , &
       continental_shelf_calving_config                            , &
       continental_shelf_min_height_config                         , &
+      do_apply_ISMIP7_fracture_mask_config                        , &
+      filename_ISMIP7_fracture_mask_config                        , &
       choice_mask_noice_config                                    , &
       Hi_min_config                                               , &
       Hi_thin_config                                              , &
@@ -2867,7 +2875,7 @@ contains
       error_function_max_effective_pressure_config                , &
       Leguy2014_hydro_connect_exponent_config                     , &
       Salle2025_hydro_meltwater_config                            , &
-      Salle2025_W_til_max_config                                  , & 
+      Salle2025_W_til_max_config                                  , &
       Salle2025_initial_W_til_config                              , &
       Salle2025_initial_W_config                                  , &
       Salle2025_Cd_config                                         , &
@@ -3841,6 +3849,9 @@ contains
     C%continental_shelf_calving                              = continental_shelf_calving_config
     C%continental_shelf_min_height                           = continental_shelf_min_height_config
 
+    C%do_apply_ISMIP7_fracture_mask                          = do_apply_ISMIP7_fracture_mask_config
+    C%filename_ISMIP7_fracture_mask                          = filename_ISMIP7_fracture_mask_config
+
     ! == Ice dynamics - stabilisation
     ! ===============================
 
@@ -4426,12 +4437,12 @@ contains
 
     ! Initialisation
     C%choice_laddie_model_initialisation                     = choice_laddie_model_initialisation_config
- 
-    ! Initialisation 'read_from_file' 
+
+    ! Initialisation 'read_from_file'
     C%filename_laddie_restart                                = filename_laddie_restart_config
     C%timeframe_laddie_restart                               = timeframe_laddie_restart_config
- 
-    ! Initialisation 'uniform' 
+
+    ! Initialisation 'uniform'
     C%laddie_initial_thickness                               = laddie_initial_thickness_config
     C%laddie_initial_T_offset                                = laddie_initial_T_offset_config
     C%laddie_initial_S_offset                                = laddie_initial_S_offset_config

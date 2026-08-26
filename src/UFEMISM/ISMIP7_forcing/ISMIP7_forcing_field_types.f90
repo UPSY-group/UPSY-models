@@ -506,7 +506,7 @@ module ISMIP7_forcing_field_types
         call crash('invalid field name ' // trim( self%name))
       case ('tas','tas-anomaly')
         ! No unit conversion needed for these fields
-      case ('pr','pr-anomaly')
+      case ('pr')
         call unit_conversion_precipitation_monthly( mesh, val)
       case ('acabf','acabf-anomaly')
         call unit_conversion_SMB_monthly( mesh, val)

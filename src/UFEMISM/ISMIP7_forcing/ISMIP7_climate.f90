@@ -8,7 +8,6 @@ module ISMIP7_climate
   ! - dtsdz      : the vertical surface temp gradient, to correct for differences in elevation between
   !                the observed and modelled ice-sheet geometry
   ! - pr         : the absolute precipitation (in kg m^-2 s^-1)
-  ! - pr-anomaly : the precipitation anomaly relative to the 1960-1989 baseline
   !
   ! The directory structure for the forcing data is:
   !
@@ -39,12 +38,6 @@ module ISMIP7_climate
   !              pr_somethingsomethingsomething_2015.nc
   !              pr_somethingsomethingsomething_2016.nc
   !              pr_somethingsomethingsomething_2017.nc
-  !              ...
-  !          pr-anomaly/
-  !            version/
-  !              pr-anomaly_somethingsomethingsomething_2015.nc
-  !              pr-anomaly_somethingsomethingsomething_2016.nc
-  !              pr-anomaly_somethingsomethingsomething_2017.nc
   !              ...
   !
   ! In the config, you only need to provide the path/to/base_folder and the version; UFEMISM will take
@@ -85,7 +78,6 @@ module ISMIP7_climate
       type(type_ISMIP7_forcing_field_monthly) :: tas                 !< [K]                GCM-derived monthly mean surface air temperature
       type(type_ISMIP7_forcing_field_monthly) :: tas_anomaly         !< [K]                GCM-derived monthly mean surface air temperature anomaly
       type(type_ISMIP7_forcing_field_monthly) :: pr                  !< [m.w.e. month^-1]  GCM-derived monthly total precipitation
-      type(type_ISMIP7_forcing_field_monthly) :: pr_anomaly          !< [m.w.e. month^-1]  GCM-derived monthly total precipitation anomaly
       type(type_ISMIP7_forcing_field_yearly)  :: dtsdz               !< [K m^-1]           GCM-derived anual mean vertical temperature gradient
 
       ! Elevation-based temperature correction
@@ -151,7 +143,6 @@ contains
 
       ! Allocate anomalies (as ISMIP7 forcing fields)
       call self%tas_anomaly%allocate( self, 'tas-anomaly', 'Monthly mean 2-m air temperature anomaly', 'K')
-      call self%pr_anomaly%allocate ( self, 'pr-anomaly' , 'Monthly total precipitation anomaly', 'm.w.e. month^-1')
 
     end select
 
@@ -207,7 +198,6 @@ contains
     ! call self%tas%deallocate()
     ! call self%tas_anomaly%deallocate()
     ! call self%pr%deallocate()
-    ! call self%pr_anomaly%deallocate()
     ! call self%dtsdz%deallocate()
 
     ! Elevation-based temperature correction
@@ -249,7 +239,6 @@ contains
       call self%initialise_climate_baseline_fixed()
 
       call self%tas_anomaly%initialise( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
-      call self%pr_anomaly%initialise ( C%climate_ISMIP7_forcing_foldername, C%climate_ISMIP7_forcing_version, self%mesh)
 
     end select
 
@@ -279,6 +268,7 @@ contains
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'initialise_climate_baseline_fixed'
     character(len=:), allocatable :: filename
+    integer                       :: vi, mi
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -291,6 +281,13 @@ contains
     ! Read the fixed baseline climate
     call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
     call read_field_from_file_2D_monthly( C%climate_ISMIP7_filename_baseline, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
+
+    ! Just use baseline precipitation
+    do vi = self%mesh%vi1, self%mesh%vi2
+      do mi = 1, 12
+        self%Precip( vi, mi) = self%Precip_baseline( vi, mi)
+      end do
+    end do
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -343,13 +340,11 @@ contains
 
       ! Update and interpolate timeframes
       call self%tas_anomaly%update_and_interpolate( self%mesh, time)
-      call self%pr_anomaly%update_and_interpolate ( self%mesh, time)
 
       ! Calculate monthly climate
       do vi = self%mesh%vi1, self%mesh%vi2
         do mi = 1, 12
-          self%T2m   ( vi, mi) =             self%T2m_baseline   ( vi, mi) + self%tas_anomaly%val_interp( vi, mi) + self%delta_ts( vi)
-          self%Precip( vi, mi) = max( 0._dp, self%Precip_baseline( vi, mi) + self%pr_anomaly%val_interp ( vi, mi))   ! Must be positive
+          self%T2m   ( vi, mi) = self%T2m_baseline   ( vi, mi) + self%tas_anomaly%val_interp( vi, mi) + self%delta_ts( vi)
         end do
       end do
 

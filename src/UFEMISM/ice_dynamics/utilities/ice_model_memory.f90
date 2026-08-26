@@ -38,6 +38,11 @@ contains
     call create_momentum_balance_solver( ice%momentum_balance_solver, C%choice_stress_balance_approximation)
     call ice%momentum_balance_solver%allocate( region_name, mesh)
 
+    if (C%do_apply_ISMIP7_fracture_mask) then
+      allocate( ice%ISMIP7_fracture)
+      call ice%ISMIP7_fracture%allocate( region_name, mesh)
+    end if
+
     ! Geometry changes
     allocate( ice%dHi ( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( ice%dHb ( mesh%vi1:mesh%vi2), source = 0._dp)

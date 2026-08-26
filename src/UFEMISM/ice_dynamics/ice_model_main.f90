@@ -4,6 +4,7 @@ module ice_model_main
   use ice_geometry_model_basic, only: type_ice_geometry_model
   use ice_velocity_model_basic, only: atype_ice_velocity_model
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
+  use ISMIP7_fracture, only: type_ISMIP7_fracture_model
 
   implicit none
 
@@ -16,6 +17,7 @@ module ice_model_main
       class(type_ice_geometry_model),       allocatable :: geom                      !< Ice-sheet geometry
       class(atype_ice_velocity_model),      allocatable :: vel                       !< Ice-sheet velocity
       class(atype_momentum_balance_solver), allocatable :: momentum_balance_solver   !< The momentum balance solver
+      class(type_ISMIP7_fracture_model),    allocatable :: ISMIP7_fracture           !< The ISMIP7 mask-based hydrofracture model
 
     contains
 

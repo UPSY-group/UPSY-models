@@ -7,7 +7,8 @@ module netcdf_read_var_primary
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
   use netcdf_field_name_options
   use netcdf_basic_wrappers
-  use netcdf, only: NF90_MAX_VAR_DIMS, NF90_DOUBLE, NF90_FLOAT, NF90_INT, NF90_INT64, NF90_GET_VAR
+  use netcdf, only: NF90_MAX_VAR_DIMS, NF90_DOUBLE, NF90_FLOAT, NF90_INT, NF90_INT64, NF90_GET_VAR, &
+    NF90_BYTE
 
   implicit none
 
@@ -69,8 +70,8 @@ subroutine read_var_primary_logical_0D(  filename, ncid, id_var, d)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 0) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -119,8 +120,8 @@ subroutine read_var_primary_logical_1D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 1) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -204,8 +205,8 @@ subroutine read_var_primary_logical_2D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 2) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -289,8 +290,8 @@ subroutine read_var_primary_logical_3D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 3) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -374,8 +375,8 @@ subroutine read_var_primary_logical_4D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 4) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -455,8 +456,8 @@ subroutine read_var_primary_int_0D(  filename, ncid, id_var, d)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 0) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -503,8 +504,8 @@ subroutine read_var_primary_int_1D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 1) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -586,8 +587,8 @@ subroutine read_var_primary_int_2D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 2) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -669,8 +670,8 @@ subroutine read_var_primary_int_3D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 3) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -752,8 +753,8 @@ subroutine read_var_primary_int_4D( filename, ncid, id_var, d, start, count)
   call inquire_var_info( filename, ncid, id_var, var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
 
   ! Check variable type
-  if (.not. (var_type == NF90_INT)) &
-    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT!')
+  if (.not. (var_type == NF90_INT .or. var_type == NF90_BYTE)) &
+    call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" is not of type NF90_INT or NF90_BYTE!')
 
   ! Check number of dimensions
   if (ndims_of_var /= 4) call crash('variable "' // trim( var_name) // '" in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
@@ -804,8 +805,8 @@ subroutine read_var_primary_int_4D( filename, ncid, id_var, d, start, count)
 
 end subroutine read_var_primary_int_4D
 
-! ===== integer =====
-! ===================
+! ===== 64-bit/8-byte integer =====
+! =================================
 
 subroutine read_var_primary_int64_0D(  filename, ncid, id_var, d)
   ! Read data from a NetCDF file

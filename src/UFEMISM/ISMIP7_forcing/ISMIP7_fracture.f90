@@ -184,6 +184,8 @@ contains
         ! Hydrofracturing can only occur on shelves
 
         ! Interpolate timeframes in time to find the maximum allowed ice fraction
+        ! Note that the provided mask is true (or actually 1) when hydrofracturing
+        ! occurs, so the ice fraction is the inverse of that mask.
         self%max_ice_fraction( vi) = 1._dp - (wt0 * self%mask_dp_t0( vi) + wt1 * self%mask_dp_t1( vi))
 
         ! Calculate maximum allowed ice thickness
@@ -303,7 +305,12 @@ contains
 
     call open_existing_netcdf_file_for_reading( self%filename, ncid)
     call inquire_var( self%filename, ncid, 'mask', id_var)
+
+    ! Read the raw mask data, which is supposed to be a logical, but since NetCDF doesn't support that,
+    ! is read as an 8-bit (half-precision) integer, which only has values 0 and 1.
     call read_var_primary( self%filename, ncid, id_var, mask_grid_tot_with_time, start = [1,1,ti], count = [self%grid_raw%nx, self%grid_raw%ny, 1])
+    ! Convert to floating point, so we can interpolate it to the mesh. The interpolated field
+    ! essentially represents 'which fraction of each Voronoi cell overlaps with grid cells of value 1'.
     if (par%primary) mask_grid_dp_tot = real( mask_grid_tot_with_time( :,:,1), dp)
     deallocate( mask_grid_tot_with_time)
     call close_netcdf_file( ncid)

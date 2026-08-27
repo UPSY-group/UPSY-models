@@ -35,7 +35,7 @@ module ISMIP7_forcing_field_types
     type, abstract :: atype_ISMIP7_forcing_field
       !< Metadata of monthly/yearly ISMIP7 forcing fields
 
-      character(len=1024)                            :: name          !           'tas', 'pr', 'acabf', 'dacabfdz', etc
+      character(len=1024)                            :: name          !           'tas', 'pr', 'acabf', 'dmrrodz', etc
       character(len=1024)                            :: foldername    !           Foldername that contains all files
       character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
 
@@ -580,7 +580,7 @@ module ISMIP7_forcing_field_types
       select case (self%name)
       case ('dtsdz')
         ! No unit conversion needed for these fields
-      case ('dacabfdz')
+      case ('dmrrodz')
         call unit_conversion_SMB_yearly( mesh, val)
       case default
         call crash('invalid field name ' // trim( self%name))

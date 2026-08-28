@@ -5,7 +5,7 @@ module ISMIP7_SMB
   !
   ! - acabf        : the absolute SMB (in kg m^-2 s^-1)
   ! - acabf-anomaly: the SMB anomaly relative to the 1960-1989 baseline
-  ! - dacabfdz     : the vertical SMB gradient, to correct for differences in elevation between
+  ! - dmrrodz     : the vertical SMB gradient, to correct for differences in elevation between
   !                  the observed and modelled ice-sheet geometry
   !
   ! The directory structure for the forcing data is:
@@ -26,11 +26,11 @@ module ISMIP7_SMB
   !              acabf-anomaly_somethingsomethingsomething_2016.nc
   !              acabf-anomaly_somethingsomethingsomething_2017.nc
   !              ...
-  !          dacabfdz/
+  !          dmrrodz/
   !            version/
-  !              dacabfdz_somethingsomethingsomething_2015.nc
-  !              dacabfdz_somethingsomethingsomething_2016.nc
-  !              dacabfdz_somethingsomethingsomething_2017.nc
+  !              dmrrodz_somethingsomethingsomething_2015.nc
+  !              dmrrodz_somethingsomethingsomething_2016.nc
+  !              dmrrodz_somethingsomethingsomething_2017.nc
   !              ...
   !
   ! In the config, you only need to provide the path/to/base_folder and the version; UFEMISM will take
@@ -73,7 +73,7 @@ module ISMIP7_SMB
       ! ISMIP7-style input forcing fields
       type(type_ISMIP7_forcing_field_monthly)       :: acabf                     !< [m.i.e. month^_1]        Monthly total SMB          (scaled from SI units to ice model units upon reading)
       type(type_ISMIP7_forcing_field_monthly)       :: acabf_anomaly             !< [m.i.e. month^_1]        Monthly total SMB anomaly  (scaled from SI units to ice model units upon reading)
-      type(type_ISMIP7_forcing_field_yearly)        :: dacabfdz                  !< [m.i.e. yr^-1 m^-1]      Vertical SMB gradient      (scaled from SI units to ice model units upon reading)
+      type(type_ISMIP7_forcing_field_yearly)        :: dmrrodz                   !< [m.i.e. yr^-1 m^-1]      Vertical runoff gradient      (scaled from SI units to ice model units upon reading)
 
       ! Elevation-induced SMB change
       real(dp), dimension(:), contiguous, pointer   :: delta_z       => null()   !< [m]                      Surface elevation change w.r.t. baseline
@@ -148,7 +148,7 @@ contains
     end select
 
     ! Initialise vertical gradient (as ISMIP7 forcing field)
-    call self%dacabfdz%allocate( self, 'dacabfdz', 'Vertical SMB gradient', 'm.i.e. yr^-1 m^-1')
+    call self%dmrrodz%allocate( self, 'dmrrodz', 'Vertical runoff gradient', 'm.i.e. yr^-1 m^-1')
 
     ! Elevation-based temperature correction
     call self%create_field( self%Hs_baseline, self%wHs_baseline, &
@@ -207,7 +207,7 @@ contains
     ! ! ISMIP7-style input forcing fields
     ! call self%acabf%deallocate()
     ! call self%acabf_anomaly%deallocate()
-    ! call self%dacabfdz%deallocate()
+    ! call self%dmrrodz%deallocate()
 
     ! Elevation-induced SMB change
     nullify( self%delta_z)
@@ -254,7 +254,7 @@ contains
     end select
 
     ! Initialise vertical gradient
-    call self%dacabfdz%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, self%mesh)
+    call self%dmrrodz%initialise( C%SMB_ISMIP7_forcing_foldername, C%SMB_ISMIP7_forcing_version, self%mesh)
 
     ! Initialise the baseline surface elevation
     select case (C%SMB_ISMIP7_choice_refgeo)
@@ -334,12 +334,12 @@ contains
 
     ! Run all the stuff that is specific to SMB model idealised
 
-    ! Calculate elevation-based T2m correction
-    call self%dacabfdz%update_and_interpolate( self%mesh, time)
+    ! Calculate elevation-based SMB correction
+    call self%dmrrodz%update_and_interpolate( self%mesh, time)
 
     do vi = self%mesh%vi1, self%mesh%vi2
       self%delta_z  ( vi) = geom%Hs( vi) - self%Hs_baseline ( vi)
-      self%delta_SMB( vi) = self%delta_z( vi) * self%dacabfdz%val_interp( vi)
+      self%delta_SMB( vi) = - self%delta_z( vi) * self%dmrrodz%val_interp( vi)
     end do
 
     ! Calculate monthly climate

@@ -20,6 +20,7 @@ set all_tests = ( \
   component_test_mesh_creation \
   component_test_mesh_discretisation \
   component_test_mesh_focussing \
+  component_test_mesh_remapping_grid_grid \
   component_test_mesh_remapping_mesh_grid \
   component_test_mesh_remapping_mesh_mesh)
 

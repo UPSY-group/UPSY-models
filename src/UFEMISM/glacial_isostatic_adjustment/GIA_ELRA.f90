@@ -212,15 +212,57 @@ contains
       end do
     end if
 
-    ! Calculate the reference load
-    ! ===============================
-
     call initialise_ELRA_reference_load( mesh, grid, ELRA, refgeo_GIAeq)
+    call initialise_ELRA_relaxation_time( grid, ELRA)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine initialise_ELRA_model
+
+  subroutine initialise_ELRA_relaxation_time( grid, ELRA)
+
+    ! In/output variables:
+    type(type_grid),       intent(in   ) :: grid
+    type(type_ELRA_model), intent(inout) :: ELRA
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_ELRA_relaxation_time'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    select case (C%choice_GIA_ELRA_relaxation_time)
+    case default
+      call crash('unknown choice_GIA_ELRA_relaxation_time "' // trim( C%choice_GIA_ELRA_relaxation_time) // '"')
+    case ('uniform')
+      ELRA%relaxation_time_grid = C%ELRA_bedrock_relaxation_time
+    case ('read_from_file')
+      call initialise_ELRA_relaxation_time_from_file( grid, ELRA, C%filename_GIA_ELRA_relaxation_time_config)
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_ELRA_relaxation_time
+
+  subroutine initialise_ELRA_relaxation_time_from_file( grid, ELRA, filename)
+
+    ! In/output variables:
+    type(type_grid),       intent(in   ) :: grid
+    type(type_ELRA_model), intent(inout) :: ELRA
+    character(len=*),      intent(in   ) :: filename
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'initialise_ELRA_relaxation_time_from_file'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_ELRA_relaxation_time_from_file
 
   subroutine initialise_ELRA_reference_load( mesh, grid, ELRA, refgeo_GIAeq)
 

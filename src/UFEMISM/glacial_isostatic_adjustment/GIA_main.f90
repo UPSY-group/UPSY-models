@@ -247,7 +247,7 @@ contains
     ! Determine which GIA model to remap
     select case (C%choice_GIA_model)
     case default
-      call crash('unknown choice_GIA_model "' // TRIM( C%choice_GIA_model) // '"')
+      call crash('unknown choice_GIA_model "' // trim( C%choice_GIA_model) // '"')
     case ('none')
       ! No need to do anything
     case ('ELRA')

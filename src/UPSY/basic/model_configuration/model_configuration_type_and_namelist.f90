@@ -1123,7 +1123,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: dt_GIA_config                                = 100._dp                         ! [yr] GIA model time step
     real(dp)            :: dx_GIA_config                                = 50E3_dp                         ! [m]  GIA model square grid resolution
     real(dp)            :: ELRA_lithosphere_flex_rigidity_config        = 1.0E+25                         ! [kg m^2 s^-2] Lithospheric flexural rigidity
-    character(len=1024) :: choice_GIA_ELRA_relaxation_time_config       = 'uniform'                       ! 'uniform', 'LV-ELRA'
+    character(len=1024) :: choice_GIA_ELRA_relaxation_time_config       = 'uniform'                       ! 'uniform', 'read_from_file'
     real(dp)            :: ELRA_bedrock_relaxation_time_config          = 3000.0                          ! [yr] Relaxation time for bedrock adjustment
     character(len=1024) :: filename_GIA_ELRA_relaxation_time_config     = ''                              ! Path to a NetCDF file containing a laterally varying bedrock relaxation time field (variable name 'tau')
     real(dp)            :: ELRA_mantle_density_config                   = 3300.0                          ! [kg m^-3] Mantle density

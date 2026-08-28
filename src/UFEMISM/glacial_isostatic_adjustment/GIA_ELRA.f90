@@ -173,18 +173,19 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if (par%primary) WRITE (0,*) '    Initialising ELRA GIA model...'
+    if (par%primary) write (0,*) '    Initialising ELRA GIA model...'
 
     ! Allocate memory
-    allocate( ELRA%surface_load_GIAeq( mesh%vi1:mesh%vi2))
-    allocate( ELRA%relative_surface_load_grid_tot( grid%nx, grid%ny))
-    allocate( ELRA%surface_load_mesh( mesh%vi1:mesh%vi2))
-    allocate( ELRA%dHb_eq_grid( grid%nx, grid%ny))
-    allocate( ELRA%dHb_grid_partial( grid%n1:grid%n2))
-    allocate( ELRA%dHb_grid_tot( grid%nx, grid%ny))
-    allocate( ELRA%dHb_dt_grid( grid%nx, grid%ny))
-    allocate( ELRA%dHb_dt_grid_partial( grid%n1:grid%n2))
-    allocate( ELRA%dHb_dt_mesh( mesh%vi1:mesh%vi2))
+    allocate( ELRA%surface_load_mesh             ( mesh%vi1:mesh%vi2))
+    allocate( ELRA%dHb_grid_partial              ( grid%n1 :grid%n2 ))
+    allocate( ELRA%dHb_grid_tot                  ( grid%nx, grid%ny ))
+    allocate( ELRA%relaxation_time_grid          ( grid%nx, grid%ny ))
+    allocate( ELRA%dHb_eq_grid                   ( grid%nx, grid%ny ))
+    allocate( ELRA%dHb_dt_grid                   ( grid%nx, grid%ny ))
+    allocate( ELRA%dHb_dt_grid_partial           ( grid%n1 :grid%n2 ))
+    allocate( ELRA%dHb_dt_mesh                   ( mesh%vi1:mesh%vi2))
+    allocate( ELRA%relative_surface_load_grid_tot( grid%nx, grid%ny ))
+    allocate( ELRA%surface_load_GIAeq            ( mesh%vi1:mesh%vi2))
 
     ! Fill in the 2D flexural profile (= Kelvin function), with which
     ! a surface load is convoluted to find the surface deformation

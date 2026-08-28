@@ -35,6 +35,7 @@ module GIA_model_types
     real(dp), dimension(:  ), allocatable :: surface_load_mesh                ! [Pa]   Total surface load applied at each mesh point
     real(dp), dimension(:  ), allocatable :: dHb_grid_partial                 ! [m]    Partial bedrock displacement on the grid
     real(dp), dimension(:,:), allocatable :: dHb_grid_tot                     ! [m]    Total bedrock displacement on the grid
+    real(dp), dimension(:,:), allocatable :: relaxation_time_grid             ! [yr]   Bedrock relaxation time on the grid
     real(dp), dimension(:,:), allocatable :: dHb_eq_grid                      ! [m]    Bedrock displacement at equilibrium (computed from relative surface load)
     real(dp), dimension(:,:), allocatable :: dHb_dt_grid                      ! [m/yr] Bedrock deformation rate on the grid
     real(dp), dimension(:  ), allocatable :: dHb_dt_grid_partial              ! [m/yr] Partial bedrock deformation rate on the grid

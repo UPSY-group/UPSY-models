@@ -54,10 +54,10 @@ contains
 
     if (par%primary) then
       allocate( d_grid_src( grid_src%nx, grid_src%ny), source = 0._dp)
-      allocate( d_grid_src( grid_src%nx, grid_src%ny), source = 0._dp)
+      allocate( d_grid_dst( grid_dst%nx, grid_dst%ny), source = 0._dp)
     else
       allocate( d_grid_src( 0,0))
-      allocate( d_grid_src( 0,0))
+      allocate( d_grid_dst( 0,0))
     end if
     call gather_gridded_data_to_primary( grid_src, d_grid_src_vec_partial, d_grid_src)
 

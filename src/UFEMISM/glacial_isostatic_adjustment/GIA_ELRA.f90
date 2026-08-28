@@ -62,6 +62,7 @@ contains
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE run_ELRA_model
+
   SUBROUTINE calculate_ELRA_bedrock_deformation_rate( mesh, grid, ice, geom, GIA, ELRA)
     ! Use the ELRA model to update bedrock deformation rates.
 
@@ -225,6 +226,7 @@ contains
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE initialise_ELRA_model
+
   SUBROUTINE initialise_ELRA_reference_load( mesh, grid, ELRA, refgeo_GIAeq)
 
     ! In/output variables:
@@ -255,6 +257,7 @@ contains
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE initialise_ELRA_reference_load
+
   SUBROUTINE remap_ELRA_model( mesh_old, mesh_new, ELRA, refgeo_GIAeq, grid)
     ! Remap or reallocate all the data fields
 

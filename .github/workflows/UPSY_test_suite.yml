@@ -36,6 +36,12 @@ jobs:
       test_path: automated_testing/UPSY/component_test_mesh_discretisation
       compile_script: compile_UPSY.csh
 
+  mesh_remapping_grid_grid:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_mesh_remapping_grid_grid
+      compile_script: compile_UPSY.csh
+
   mesh_remapping_mesh_grid:
     uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:

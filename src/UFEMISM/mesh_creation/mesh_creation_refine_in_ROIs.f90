@@ -73,7 +73,7 @@ contains
           exit
         case ('PineIsland','Thwaites','Amery','RiiserLarsen','RiiL_IQ2300','SipleCoast', 'LarsenC', &
               'TransMounts','DotsonCrosson', 'Franka_WAIS', 'Dotson_channel','Wilkes', &
-              'Antarctic_Peninsula', 'Institute', &                                           ! Antarctica
+              'Antarctic_Peninsula', 'Institute', 'Denman', &                                 ! Antarctica
               'Narsarsuaq','Nuuk','Jakobshavn','NGIS','Qaanaaq', &                            ! Greenland
               'Patagonia', &                                                                  ! Patagonia
               'CalvMIP_quarter')                                                              ! Idealised
@@ -160,6 +160,8 @@ contains
               call calc_polygon_Antarctic_Peninsula( poly_ROI)
             CASE ('Institute')
               CALL calc_polygon_Institute_basin( poly_ROI)
+            CASE ('Denman')
+              CALL calc_polygon_Denman_glacier( poly_ROI)
             case default
               ! Requested area not in this model domain; skip
               cycle

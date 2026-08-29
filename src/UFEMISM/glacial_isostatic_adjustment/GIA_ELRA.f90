@@ -140,7 +140,7 @@ contains
       ! Calculate the bedrock deformation rate from the difference between the current and the equilibrium deformation
       do i = 1, grid%nx
       do j = 1, grid%ny
-        ELRA%dHb_dt_grid( i,j) = (ELRA%dHb_eq_grid( i,j) - ELRA%dHb_grid_tot( i,j)) / C%ELRA_bedrock_relaxation_time
+        ELRA%dHb_dt_grid( i,j) = (ELRA%dHb_eq_grid( i,j) - ELRA%dHb_grid_tot( i,j)) / ELRA%relaxation_time_grid( i,j)
       end do
       end do
 

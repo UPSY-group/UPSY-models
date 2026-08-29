@@ -12,12 +12,16 @@ module GIA_ELRA
   use region_types, only: type_model_region
   use grid_basic, only: setup_square_grid
   use reallocate_mod, only: reallocate_bounds
-  use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary
+  use mpi_distributed_memory_grid, only: gather_gridded_data_to_primary, distribute_gridded_data_from_primary, &
+    gather_gridded_data_to_all
   use grid_types, only: type_grid
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
   use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, map_from_xy_grid_to_mesh_2D
   use kelvin_function, only: kelvin
+  use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, &
+    close_netcdf_file, read_field_from_xy_file_dp_2D
+  use remapping_grid_to_grid, only: map_from_xy_grid_to_xy_grid_2D
 
   implicit none
 
@@ -238,7 +242,7 @@ contains
     case ('uniform')
       ELRA%relaxation_time_grid = C%ELRA_bedrock_relaxation_time
     case ('read_from_file')
-      call initialise_ELRA_relaxation_time_from_file( grid, ELRA, C%filename_GIA_ELRA_relaxation_time_config)
+      call initialise_ELRA_relaxation_time_from_file( grid, ELRA, C%filename_GIA_ELRA_relaxation_time)
     end select
 
     ! Finalise routine path
@@ -254,10 +258,26 @@ contains
     character(len=*),      intent(in   ) :: filename
 
     ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_ELRA_relaxation_time_from_file'
+    character(len=*), parameter         :: routine_name = 'initialise_ELRA_relaxation_time_from_file'
+    integer                             :: ncid
+    type(type_grid)                     :: grid_from_file
+    real(dp), dimension(:), allocatable :: tau_from_file
+    real(dp), dimension(:), allocatable :: tau
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Read the spatially variable relaxation time on its original grid
+    call open_existing_netcdf_file_for_reading( filename, ncid)
+    call setup_xy_grid_from_file( filename, ncid, grid_from_file)
+    allocate( tau_from_file( grid_from_file%n1:grid_from_file%n2), source = 0._dp)
+    call read_field_from_xy_file_dp_2D( filename, 'tau', tau_from_file)
+    call close_netcdf_file( ncid)
+
+    ! Remap to the GIA grid
+    allocate( tau( grid%n1:grid%n2), source = 0._dp)
+    call map_from_xy_grid_to_xy_grid_2D( grid_from_file, grid, tau_from_file, tau)
+    call gather_gridded_data_to_all( grid, tau, ELRA%relaxation_time_grid)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

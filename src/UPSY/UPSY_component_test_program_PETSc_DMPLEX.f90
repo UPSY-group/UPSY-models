@@ -13,7 +13,7 @@ program UPSY_component_test_program_PETSc_DMPLEX
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
   use ct_basic, only: create_component_tests_output_folder
-  use ct_PETSc_matrix_solving, only: run_all_PETSc_matrix_solving_tests
+  use ct_PETSc_DMPLEX_basics, only: create_simple_DMPLEX
 
   implicit none
 
@@ -52,6 +52,7 @@ program UPSY_component_test_program_PETSc_DMPLEX
   end if
 
   call create_component_tests_output_folder( foldername_output)
+  call create_simple_DMPLEX()
 
   ! Stop the clock
   tstop = MPI_WTIME()

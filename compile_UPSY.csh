@@ -73,6 +73,36 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
+# Force the conda environment to be active for this build, so PETSc and MPI come from
+# the same installation and not from a stale Homebrew copy.
+if ($?CONDA_PREFIX == 0) then
+  source /Users/Beren017/miniforge3/etc/profile.d/conda.csh
+  if ($status != 0) then
+    echo "Warning: failed to source conda.csh hook; continuing with the current environment"
+  endif
+endif
+
+if ($?CONDA_PREFIX == 0) then
+  setenv PATH "/Users/Beren017/miniforge3/envs/upsy/bin:$PATH"
+  setenv LD_LIBRARY_PATH "/Users/Beren017/miniforge3/envs/upsy/lib:$LD_LIBRARY_PATH"
+  setenv LIBRARY_PATH "/Users/Beren017/miniforge3/envs/upsy/lib:$LIBRARY_PATH"
+endif
+
+set petsc_dir = "$CONDA_PREFIX"
+if ("$petsc_dir" == "") then
+  set petsc_dir = "/Users/Beren017/miniforge3/envs/upsy"
+endif
+
+if (! -d "$petsc_dir") then
+  echo "Error: PETSc environment not found at $petsc_dir"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+if ($?CONDA_PREFIX != 0) then
+  echo "Using PETSc from $petsc_dir"
+endif
+
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
 if ($status != 0) then
@@ -88,14 +118,14 @@ set in_build_dir = 1
 
 if ($version == 'dev') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
     -DEXTRA_Fortran_FLAGS="$cmake_flags" ..
 
 else if ($version == 'perf') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \
     -DEXTRA_Fortran_FLAGS="$cmake_flags" ..

@@ -23,6 +23,7 @@ dependencies = [
     "cmocean",
     "dask",
     "geopandas",
+    "h5py",
     "matplotlib",
     "netcdf4",
     "numpy",

@@ -6,6 +6,7 @@ dependencies:
   - python=3.12
   - numpy=2.4.3
   - netcdf4=1.7.4
+  - h5py
 
   # Stuff to compile models
   - openmpi=5.0.10
@@ -31,7 +32,7 @@ dependencies:
   - pyshp
   - scipy
   - shapely
-  - xarray 
+  - xarray
   - pip
   - setuptools >=61
   - tqdm

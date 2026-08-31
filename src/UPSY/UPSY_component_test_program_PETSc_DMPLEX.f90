@@ -51,7 +51,7 @@ program UPSY_component_test_program_PETSc_DMPLEX
   end if
 
   call create_component_tests_output_folder( foldername_output)
-  call create_simple_DMPLEX()
+  call create_simple_DMPLEX( foldername_output)
 
   ! Stop the clock
   tstop = MPI_WTIME()

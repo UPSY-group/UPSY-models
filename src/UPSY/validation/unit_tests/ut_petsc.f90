@@ -12,7 +12,7 @@ module ut_petsc
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D
   use petsc_matrices, only: mat_CSR2petsc, mat_petsc2CSR
-  use petsc_basic, only: multiply_petsc_matrix_with_vector_1D
+  use petsc_matrix_vector_multiplication, only: multiply_petsc_matrix_with_vector_1D
   use tests_main
   use assertions_basic
   use ut_basic

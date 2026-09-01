@@ -11,7 +11,7 @@ module apply_maps
   use grid_types, only: type_grid, type_grid_lonlat
   use remapping_types, only: type_map
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc_basic, only: multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
+  use petsc_matrix_vector_multiplication, only: multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
   use petsc_matrices, only: mat_petsc2CSR
   use mesh_utilities, only: set_border_vertices_to_interior_mean_dp_2D, set_border_vertices_to_interior_mean_dp_3D, &
     set_border_triangles_to_interior_mean_dp_2D, set_border_triangles_to_interior_mean_dp_3D

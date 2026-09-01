@@ -14,140 +14,18 @@ MODULE petsc_basic
   USE reallocate_mod                                         , ONLY: reallocate
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use mpi_distributed_memory, only: partition_list, gather_to_all
+  use petsc_vectors, only: vec_double2petsc, vec_petsc2double
 
   IMPLICIT NONE
 
   private
 
-  public :: vec_double2petsc, vec_petsc2double, &
-    mat_CSR2petsc, mat_petsc2CSR, multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
+  public :: mat_CSR2petsc, mat_petsc2CSR, multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
 
   INTEGER :: perr    ! Error flag for PETSc routines
   character(len=:), allocatable :: PETSc_KSPtype_printed, PETSc_PCtype_printed
 
 CONTAINS
-
-! == Conversion between 1-D Fortran double-precision arrays and PETSc parallel vectors
-  subroutine vec_double2petsc( xx, x)
-    ! Convert a regular 1-D Fortran double-precision array to a PETSc parallel vector
-
-    ! In- and output variables:
-    real(dp), dimension(:), intent(in)  :: xx
-    type(tVec),             intent(out) :: x
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'vec_double2petsc'
-    integer                        :: ierr
-    integer                        :: nF_loc
-    integer, dimension(1:par%n)    :: nF_loc_all
-    integer                        :: nF_glob, i1F_glob, i2F_glob, iF_loc
-    integer, dimension(size(xx))   :: iP_glob
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! == Determine local and global size and local ownership range of Fortran vector
-
-    ! Local size
-    nF_loc = size( xx,1)
-
-    ! Global size
-    call MPI_ALLGATHER( nF_loc, 1, MPI_INTEGER, nF_loc_all, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
-    nF_glob = sum( nF_loc_all)
-
-    ! Local ownership ranges
-    i1F_glob = sum( nF_loc_all( 1:par%i)) + 1
-    i2F_glob = i1F_glob + nF_loc - 1
-
-    ! Create parallel vector
-    call VecCreate( PETSC_COMM_WORLD, x, perr)
-    call VecSetSizes( x, nF_loc, nF_glob, perr)
-    call VecSetFromOptions( x, perr)
-
-    ! Determine global PETSc indices
-    do iF_loc = 1, nF_loc
-      iP_glob( iF_loc) = i1F_glob - 2 + iF_loc
-    end do
-
-    ! Set PETSc vector values
-    call VecSetValues( x, nF_loc, iP_glob, xx, INSERT_VALUES, perr)
-
-    ! Assemble vectors, using the 2-step process:
-    !   VecAssemblyBegin(), VecAssemblyEnd()
-    ! Computations can be done while messages are in transition
-    ! by placing code between these two statements.
-
-    call VecAssemblyBegin( x, perr)
-    call VecAssemblyEnd(   x, perr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine vec_double2petsc
-
-  subroutine vec_petsc2double( x, xx)
-    ! Convert a PETSc parallel vector to a regular 1-D Fortran double-precision array
-
-    ! In- and output variables:
-    type(tVec),             intent(in)  :: x
-    real(dp), dimension(:), intent(out) :: xx
-
-    ! Local variables:
-    character(len=1024), parameter :: routine_name = 'vec_petsc2double'
-    integer                        :: ierr
-    integer                        :: nF_loc
-    integer, dimension(1:par%n)    :: nF_loc_all
-    integer                        :: nF_glob, i1F_glob, i2F_glob, iF_loc
-    integer, dimension(size(xx))   :: iP_glob
-    integer                        :: nP_loc, nP_glob, i1P_glob, i2P_glob
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! == Determine local and global size and local ownership range of Fortran vector
-
-    ! Local size
-    nF_loc = size( xx,1)
-
-    ! Global size
-    call MPI_ALLGATHER( nF_loc, 1, MPI_INTEGER, nF_loc_all, 1, MPI_INTEGER, MPI_COMM_WORLD, ierr)
-    nF_glob = sum( nF_loc_all)
-
-    ! Local ownership ranges
-    i1F_glob = sum( nF_loc_all( 1:par%i)) + 1
-    i2F_glob = i1F_glob + nF_loc - 1
-
-    ! == Determine local and global size and local ownership range of PETSc vector
-
-    ! Local size
-    call VecGetLocalSize( x, nP_loc, perr)
-
-    ! Global size
-    call VecGetSize( x, nP_glob, perr)
-
-    ! Safety
-    call VecGetOwnershipRange( x, i1P_glob, i2P_glob, perr)
-
-#if (DO_ASSERTIONS)
-    ! Safety
-    call assert( nF_loc == nP_loc, 'nF_loc /= nP_loc')
-    call assert( nF_glob == nP_glob, 'nF_glob /= nP_glob')
-    call assert( i1F_glob == i1P_glob+1, 'i1F_glob /= i1P_glob+1')
-    call assert( i2F_glob == i2P_glob, 'i2F_glob /= i2P_glob')
-#endif
-
-    ! Determine global PETSc indices
-    do iF_loc = 1, nF_loc
-      iP_glob( iF_loc) = i1F_glob - 2 + iF_loc
-    end do
-
-    ! Get PETSc vector values
-    call VecGetValues( x, nF_loc, iP_glob, xx, perr)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine vec_petsc2double
 
   SUBROUTINE mat_petsc2CSR( A, AA)
     ! Convert a PETSC parallel matrix to a CSR-format matrix in regular Fortran arrays

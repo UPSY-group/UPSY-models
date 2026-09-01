@@ -8,7 +8,8 @@ module petsc_matrix_solving
     KSPGetIterationNumber, KSPDestroy, VecDestroy, KSPGetType, PCGetType, &
     KSPSolve, KSPGMRES, KSPLGMRES, KSPFGMRES, KSPPGMRES, KSPBICG, KSPBCGS, KSPIBCGS, &
     PCBJACOBI, PCASM, PCGASM, PCGAMG, PCNONE, KSPSetType, PCSetType, KSPGetPC, MatDestroy
-  use petsc_basic, only: mat_CSR2petsc, vec_double2petsc, vec_petsc2double
+  use petsc_basic, only: mat_CSR2petsc
+  use petsc_vectors, only: vec_double2petsc, vec_petsc2double
   use crash_mod, only: crash
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, colour_string

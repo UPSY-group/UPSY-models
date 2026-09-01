@@ -183,10 +183,10 @@ contains
     type(tPC),  intent(in) :: precond
 
     ! Local variables:
-    character(len=*), parameter   :: routine_name = 'solve_matrix_equation_PETSc'
-    character(len=:), allocatable :: PETSc_KSPtype_applied, PETSc_PCtype_applied
-    logical                       :: do_print_KSP, do_print_PC
-    integer                       :: perr
+    character(len=*), parameter :: routine_name = 'solve_matrix_equation_PETSc'
+    character(len=1024)         :: PETSc_KSPtype_applied, PETSc_PCtype_applied
+    logical                     :: do_print_KSP, do_print_PC
+    integer                     :: perr
 
     ! Add routine to path
     call init_routine( routine_name)

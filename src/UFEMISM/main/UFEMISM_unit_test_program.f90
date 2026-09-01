@@ -11,6 +11,7 @@ program UFEMISM_unit_test_program
   use unit_tests, only: run_all_unit_tests
   use crash_mod, only: crash
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
+  use mpi_f08, only: MPI_WTIME
 
   implicit none
 

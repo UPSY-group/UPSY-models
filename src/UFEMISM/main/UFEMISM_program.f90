@@ -30,6 +30,7 @@ program UFEMISM_program
   use component_tests, only: run_all_component_tests
   use checksum_mod, only: create_checksum_logfile
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
+  use mpi_f08, only: MPI_WTIME, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD
 
   implicit none
 

@@ -24,7 +24,9 @@ program LADDIE_program
 ! ===== Preamble =====
 ! ====================
 
-  use petsc, only: PetscFinalize
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, PetscFinalize
   use precisions, only: dp
   use basic_program_info, only: program_name
   use mpi_basic, only: par, initialise_parallelisation
@@ -146,7 +148,7 @@ program LADDIE_program
   call print_model_end( tcomp)
 
   ! Finalise PETSc and MPI parallelisation
-  call PetscFinalize( perr)
+  PetscCall( PetscFinalize( perr))
 
 
 end program LADDIE_program

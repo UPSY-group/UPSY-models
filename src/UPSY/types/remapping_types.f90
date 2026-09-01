@@ -2,7 +2,9 @@ module remapping_types
 
   ! Derived types used for remapping
 
-  use petsc, only: tMat, MatDestroy
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, tMat, MatDestroy
   use precisions, only: dp
 
   implicit none
@@ -36,8 +38,8 @@ contains
 
   subroutine finalise( self)
     type(type_map) :: self
-    integer :: perr
-    call MatDestroy( self%M, perr)
+    integer :: ierr
+    PetscCall( MatDestroy( self%M, ierr))
   end subroutine finalise
 
 end module remapping_types

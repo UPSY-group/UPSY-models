@@ -1,6 +1,8 @@
 module remapping_grid_to_mesh_vertices
 
-  use petsc, only: tMat, MatDuplicate, MatDestroy, MatMatMult, &
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, tMat, MatDuplicate, MatDestroy, MatMatMult, &
     MatConvert, MatAXPY, DIFFERENT_NONZERO_PATTERN, MAT_INITIAL_MATRIX, &
     MATAIJ, PETSC_DEFAULT_REAL, MAT_COPY_VALUES
   use mpi_basic, only: par
@@ -101,11 +103,11 @@ contains
         call MatDuplicate( M_cons_2nd_order, MAT_COPY_VALUES, map%M, ierr)
     end select
 
-    call MatDestroy( w0, ierr)
-    call MatDestroy( w1x, ierr)
-    call MatDestroy( w1y, ierr)
-    call MatDestroy( M_cons_1st_order, ierr)
-    call MatDestroy( M_cons_2nd_order, ierr)
+    PetscCall(  MatDestroy( w0, ierr))
+    PetscCall(  MatDestroy( w1x, ierr))
+    PetscCall(  MatDestroy( w1y, ierr))
+    PetscCall(  MatDestroy( M_cons_1st_order, ierr))
+    PetscCall(  MatDestroy( M_cons_2nd_order, ierr))
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
@@ -551,21 +553,21 @@ contains
     ! M = w0 + w1x * M_ddx + w1y * M_ddy
 
     ! 1st order M = w0
-    call MatDuplicate( w0, MAT_COPY_VALUES, M_cons_1st_order, ierr)
+    PetscCall(  MatDuplicate( w0, MAT_COPY_VALUES, M_cons_1st_order, ierr))
 
     ! 2nd order M = w0 + w1x * M_ddx + w1y * M+ddy
-    call MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)
-    call MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
+    PetscCall(  MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr))
+    PetscCall(  MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr))
 
-    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, ierr)
-    call MatAXPY( M_cons_2nd_order, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
-    call MatAXPY( M_cons_2nd_order, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
+    PetscCall(  MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, ierr))
+    PetscCall(  MatAXPY( M_cons_2nd_order, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr))
+    PetscCall(  MatAXPY( M_cons_2nd_order, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr))
 
     ! Destroy matrices
-    call MatDestroy( grid_M_ddx, ierr)
-    call MatDestroy( grid_M_ddy, ierr)
-    call MatDestroy( M1, ierr)
-    call MatDestroy( M2, ierr)
+    PetscCall(  MatDestroy( grid_M_ddx, ierr))
+    PetscCall(  MatDestroy( grid_M_ddy, ierr))
+    PetscCall(  MatDestroy( M1, ierr))
+    PetscCall(  MatDestroy( M2, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)

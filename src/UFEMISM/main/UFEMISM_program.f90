@@ -11,7 +11,9 @@ program UFEMISM_program
   ! =                                                                             =
   ! ===============================================================================
 
-  use petsc, only: PetscFinalize
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, PetscFinalize
   use precisions, only: dp
   use basic_program_info, only: program_name
   use mpi_basic, only: par, initialise_parallelisation
@@ -136,6 +138,6 @@ program UFEMISM_program
   call print_model_end( tcomp)
 
   ! Finalise PETSc and MPI parallelisation
-  call PetscFinalize( perr)
+  PetscCall( PetscFinalize( perr))
 
 end program UFEMISM_program

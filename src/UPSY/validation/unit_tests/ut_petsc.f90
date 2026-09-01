@@ -4,8 +4,7 @@ module ut_petsc
   !
   ! Convention: xx = Fortran, x = PETSc
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
+  use petsc, only: tMat, MatDestroy
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
@@ -63,7 +62,7 @@ contains
     character(len=1024), parameter          :: routine_name = 'test_multiply_PETSc_matrix_with_vector_1D'
     character(len=1024), parameter          :: test_name_local = 'multiply_PETSc_matrix_with_vector_1D'
     character(len=1024)                     :: test_name
-    type(type_CSR_matrix_dp)         :: AA
+    type(type_CSR_matrix_dp)                :: AA
     type(tMat)                              :: A
     real(dp), dimension(:    ), allocatable :: xx, yy, yy_correct
     integer                                 :: perr
@@ -181,7 +180,7 @@ contains
     character(len=1024), parameter  :: routine_name = 'test_matrix_PETSc_CSR_conversion'
     character(len=1024), parameter  :: test_name_local = 'matrix_PETSc_CSR_conversion'
     character(len=1024)             :: test_name
-    type(type_CSR_matrix_dp) :: AA, AA2
+    type(type_CSR_matrix_dp)        :: AA, AA2
     type(tMat)                      :: A
     logical                         :: found_errors
 

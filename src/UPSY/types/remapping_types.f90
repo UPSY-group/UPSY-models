@@ -2,8 +2,7 @@ module remapping_types
 
   ! Derived types used for remapping
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
+  use petsc, only: tMat, MatDestroy
   use precisions, only: dp
 
   implicit none

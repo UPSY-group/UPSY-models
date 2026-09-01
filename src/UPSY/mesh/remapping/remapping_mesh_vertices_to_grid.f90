@@ -2,8 +2,8 @@ module remapping_mesh_vertices_to_grid
 
   ! Create remapping objects between a square Cartesian grid and a mesh.
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
+  use petsc, only: tMat, MatDestroy, MatMatMult, MatAXPY, MAT_INITIAL_MATRIX, &
+    PETSC_DEFAULT_REAL, DIFFERENT_NONZERO_PATTERN, MatGetRow, MatRestoreRow
   use mpi_basic, only: par
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
@@ -18,6 +18,7 @@ module remapping_mesh_vertices_to_grid
   use line_tracing_triangles, only: trace_line_tri
   use line_tracing_Voronoi, only: trace_line_Vor
   use netcdf_output
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD
 
   implicit none
 
@@ -45,7 +46,7 @@ contains
     type(type_CSR_matrix_dp)        :: A_xdy_g_b_CSR, A_mxydx_g_b_CSR, A_xydy_g_b_CSR
     type(tMat)                             :: w0, w1x, w1y
     character(len=1024)                    :: filename_grid, filename_mesh
-    integer                                :: perr
+    integer                                :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -75,9 +76,9 @@ contains
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
-    call MatDestroy( w0, perr)
-    call MatDestroy( w1x, perr)
-    call MatDestroy( w1y, perr)
+    call MatDestroy( w0, ierr)
+    call MatDestroy( w1x, ierr)
+    call MatDestroy( w1y, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -495,7 +496,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'calc_remapping_matrix'
-    type(PetscErrorCode)           :: perr
+    integer                        :: ierr
     type(tMat)                     :: M_map_a_b, M_ddx_a_b, M_ddy_a_b
     type(tMat)                     :: M1, M2
 
@@ -510,21 +511,21 @@ contains
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
 
     ! M = (w0 * M_map_a_b)
-    call MatMatMult( w0,  M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M, perr)
+    call MatMatMult( w0,  M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M, ierr)
 
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b)
-    call MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M1, perr)
-    call MatAXPY( M, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
+    call MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)
+    call MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
 
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
-    call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
-    call MatAXPY( M, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+    call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
+    call MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
 
-    call MatDestroy( M_map_a_b, perr)
-    call MatDestroy( M_ddx_a_b, perr)
-    call MatDestroy( M_ddy_a_b, perr)
-    call MatDestroy( M1, perr)
-    call MatDestroy( M2, perr)
+    call MatDestroy( M_map_a_b, ierr)
+    call MatDestroy( M_ddx_a_b, ierr)
+    call MatDestroy( M_ddy_a_b, ierr)
+    call MatDestroy( M1, ierr)
+    call MatDestroy( M2, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -541,7 +542,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter              :: routine_name = 'check_remapping_matrix_validity'
-    type(PetscErrorCode)                        :: perr
+    integer                                     :: ierr
     integer                                     :: k, row
     integer                                     :: nnz_per_row_max
     integer                                     :: ncols_row
@@ -565,7 +566,7 @@ contains
 
     do row = grid%n1, grid%n2
 
-      call MatGetRow( M, row-1, ncols_row, cols_row_, vals_row_, perr)
+      call MatGetRow( M, row-1, ncols_row, cols_row_, vals_row_, ierr)
 
       if (ncols_row == 0) call crash('ncols == 0!')
 
@@ -575,7 +576,7 @@ contains
       end do
       if (.not. has_value) call crash('only zeroes!')
 
-      call MatRestoreRow( M, row-1, ncols_row, cols_row_, vals_row_, perr)
+      call MatRestoreRow( M, row-1, ncols_row, cols_row_, vals_row_, ierr)
 
     end do
 

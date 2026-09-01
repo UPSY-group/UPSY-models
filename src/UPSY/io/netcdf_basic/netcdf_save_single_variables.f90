@@ -1,8 +1,6 @@
 module netcdf_save_single_variables
   !< Contains routines for quickly writing variables to NetCDF to check their content.
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
@@ -12,6 +10,7 @@ module netcdf_save_single_variables
   use netcdf_inquire_grid_mesh
   use netcdf_write_var_primary
   use netcdf_basic_wrappers
+  use mpi_f08, only: MPI_ALLREDUCE, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD
 
   implicit none
 

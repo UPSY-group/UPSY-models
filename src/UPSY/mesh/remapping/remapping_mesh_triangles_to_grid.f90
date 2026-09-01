@@ -1,7 +1,6 @@
 module remapping_mesh_triangles_to_grid
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
+  use petsc, only: tMat
   use mpi_basic, only: par
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash

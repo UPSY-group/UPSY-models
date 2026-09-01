@@ -1,7 +1,8 @@
 module remapping_grid_to_mesh_vertices
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
+  use petsc, only: tMat, MatDuplicate, MatDestroy, MatMatMult, &
+    MatConvert, MatAXPY, DIFFERENT_NONZERO_PATTERN, MAT_INITIAL_MATRIX, &
+    MATAIJ, PETSC_DEFAULT_REAL, MAT_COPY_VALUES
   use mpi_basic, only: par
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
@@ -54,7 +55,7 @@ contains
     type(tMat)                            :: M_cons_1st_order, M_cons_2nd_order
     type(type_CSR_matrix_dp)       :: grid_M_ddx_CSR, grid_M_ddy_CSR
     character(len=1024)                   :: filename_grid, filename_mesh
-    type(PetscErrorCode)                  :: perr
+    integer                               :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -95,16 +96,16 @@ contains
       case default
         call crash('unknown method for grid_to_mesh remapping "' // trim( map%method) // '"')
       case ('1st_order_conservative')
-        call MatDuplicate( M_cons_1st_order, MAT_COPY_VALUES, map%M, perr)
+        call MatDuplicate( M_cons_1st_order, MAT_COPY_VALUES, map%M, ierr)
       case ('2nd_order_conservative')
-        call MatDuplicate( M_cons_2nd_order, MAT_COPY_VALUES, map%M, perr)
+        call MatDuplicate( M_cons_2nd_order, MAT_COPY_VALUES, map%M, ierr)
     end select
 
-    call MatDestroy( w0, perr)
-    call MatDestroy( w1x, perr)
-    call MatDestroy( w1y, perr)
-    call MatDestroy( M_cons_1st_order, perr)
-    call MatDestroy( M_cons_2nd_order, perr)
+    call MatDestroy( w0, ierr)
+    call MatDestroy( w1x, ierr)
+    call MatDestroy( w1y, ierr)
+    call MatDestroy( M_cons_1st_order, ierr)
+    call MatDestroy( M_cons_2nd_order, ierr)
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
@@ -538,7 +539,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter  :: routine_name = 'calc_remapping_matrix'
-    type(PetscErrorCode)            :: perr
+    integer                         :: ierr
     type(tMat)                      :: grid_M_ddx, grid_M_ddy, M1, M2
 
     ! Add routine to path
@@ -550,21 +551,21 @@ contains
     ! M = w0 + w1x * M_ddx + w1y * M_ddy
 
     ! 1st order M = w0
-    call MatDuplicate( w0, MAT_COPY_VALUES, M_cons_1st_order, perr)
+    call MatDuplicate( w0, MAT_COPY_VALUES, M_cons_1st_order, ierr)
 
     ! 2nd order M = w0 + w1x * M_ddx + w1y * M+ddy
-    call MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M1, perr)
-    call MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_real, M2, perr)
+    call MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)
+    call MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
 
-    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, perr)
-    call MatAXPY( M_cons_2nd_order, 1._dp, M1, DifFERENT_NONZERO_PATTERN, perr)
-    call MatAXPY( M_cons_2nd_order, 1._dp, M2, DifFERENT_NONZERO_PATTERN, perr)
+    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M_cons_2nd_order, ierr)
+    call MatAXPY( M_cons_2nd_order, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
+    call MatAXPY( M_cons_2nd_order, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
 
     ! Destroy matrices
-    call MatDestroy( grid_M_ddx, perr)
-    call MatDestroy( grid_M_ddy, perr)
-    call MatDestroy( M1, perr)
-    call MatDestroy( M2, perr)
+    call MatDestroy( grid_M_ddx, ierr)
+    call MatDestroy( grid_M_ddy, ierr)
+    call MatDestroy( M1, ierr)
+    call MatDestroy( M2, ierr)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

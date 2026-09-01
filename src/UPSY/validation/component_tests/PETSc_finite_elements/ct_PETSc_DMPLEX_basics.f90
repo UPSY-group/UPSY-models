@@ -4,16 +4,13 @@ module ct_PETSc_DMPLEX_basics
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use crash_mod, only: warning
-  use petsc, only: tDM, tVec, tPetscViewer, tPetscSection, DMPlexCreate, DMSetDimension, &
+  use petsc, only: PetscErrorF, tDM, tVec, tPetscViewer, tPetscSection, DMPlexCreate, DMSetDimension, &
     DMSetCoordinateDim, DMPlexSetChart, DMPlexSetConeSize, DMSetUp, DMPlexSetCone, &
     DMPlexSymmetrize, DMPlexStratify, DMGetCoordinateSection, DMGetCoordinateDM, &
     DMCreateLocalVector, DMSetCoordinatesLocal, PetscSectionSetChart, PetscSectionSetDof, &
     PetscSectionSetUp, VecSetValues, VecAssemblyBegin, VecAssemblyEnd, INSERT_VALUES, &
-    VecDestroy, PetscViewerCreate, PetscViewerSetType, &
-    PETSCVIEWERHDF5, PetscViewerFileSetMode, FILE_MODE_WRITE, &
-    PetscViewerFileSetName, PetscViewerPushFormat, PetscViewerPopFormat, &
-    DMView, PetscViewerDestroy, PETSC_COMM_WORLD, &
-    DMDestroy, PetscObjectSetName, PETSC_VIEWER_HDF5_PETSC, PetscErrorF
+    VecDestroy, PETSC_COMM_WORLD, DMDestroy, PetscObjectSetName
+  use petsc_basic, only: write_dmplex_to_hdf5
 
   implicit none
 
@@ -161,42 +158,5 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine create_simple_DMPLEX
-
-  subroutine write_dmplex_to_hdf5( dm, filename)
-
-    ! In/output variables:
-    type(tDM),        intent(in) :: dm
-    character(len=*), intent(in) :: filename
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'write_dmplex_to_hdf5'
-    type(tPetscViewer)          :: viewer
-    integer                     :: ierr
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    ! Export DMPLEX to an HDF5 file with the actual topology and coordinate arrays,
-    ! not just the high-level metadata summary.
-
-    ! Open the HDF5 file
-    PetscCall( PetscViewerCreate( PETSC_COMM_WORLD, viewer, ierr))
-    PetscCall( PetscViewerSetType( viewer, PETSCVIEWERHDF5, ierr))
-    PetscCall( PetscViewerFileSetMode( viewer, FILE_MODE_WRITE, ierr))
-    PetscCall( PetscViewerFileSetName( viewer, trim( filename), ierr))
-
-    ! This format is important for saving a DMPlex
-    PetscCall( PetscViewerPushFormat( viewer, PETSC_VIEWER_HDF5_PETSC, ierr))
-
-    ! Write topology + coordinates + labels
-    PetscCall( DMView( dm, viewer, ierr))
-
-    PetscCall( PetscViewerPopFormat( viewer, ierr))
-    PetscCall( PetscViewerDestroy( viewer, ierr))
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine write_dmplex_to_hdf5
 
 end module ct_PETSc_DMPLEX_basics

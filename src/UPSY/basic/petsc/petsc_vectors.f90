@@ -1,19 +1,4 @@
-module petsc_vectors
-
-  use precisions, only: dp
-  use petsc, only: tVec, VecCreate, VecSetSizes, VecSetFromOptions, VecSetValues, &
-    VecAssemblyBegin, VecAssemblyEnd, VecGetLocalSize, VecGetSize, VecGetOwnershipRange, &
-    VecGetValues, INSERT_VALUES, PETSC_COMM_WORLD
-  use assertions_basic, only: assert
-  use mpi_basic, only: par
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use mpi_f08, only: MPI_ALLGATHER, MPI_INTEGER, MPI_COMM_WORLD
-
-  implicit none
-
-  private
-
-  public :: vec_double2petsc, vec_petsc2double
+submodule(petsc_basic) petsc_vectors
 
 contains
 
@@ -136,4 +121,4 @@ contains
 
   end subroutine vec_petsc2double
 
-end module petsc_vectors
+end submodule petsc_vectors

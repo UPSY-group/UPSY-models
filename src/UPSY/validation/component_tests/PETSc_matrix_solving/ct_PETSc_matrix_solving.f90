@@ -11,7 +11,7 @@ module ct_PETSc_matrix_solving
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, inquire_var, read_var_primary, &
     close_netcdf_file
   use mpi_distributed_memory, only: distribute_from_primary
-  use petsc_matrix_solving, only: solve_matrix_equation_CSR_PETSc
+  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_WTIME
 
   implicit none

@@ -1,24 +1,4 @@
-module petsc_matrix_solving
-
-  use precisions, only: dp
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc, only: tMat, tVec, tKSP, tPC, MatGetSize, MatGetLocalSize, &
-    KSPcreate, PETSC_COMM_WORLD, KSPSetOperators, KSPSetInitialGuessNonzero, &
-    PETSC_TRUE, KSPSetTolerances, PETSC_DEFAULT_REAL, KSPSetFromOptions, &
-    KSPGetIterationNumber, KSPDestroy, VecDestroy, KSPGetType, PCGetType, &
-    KSPSolve, KSPGMRES, KSPLGMRES, KSPFGMRES, KSPPGMRES, KSPBICG, KSPBCGS, KSPIBCGS, &
-    PCBJACOBI, PCASM, PCGASM, PCGAMG, PCNONE, KSPSetType, PCSetType, KSPGetPC, MatDestroy
-  use petsc_matrices, only: mat_CSR2petsc
-  use petsc_vectors, only: vec_double2petsc, vec_petsc2double
-  use crash_mod, only: crash
-  use mpi_basic, only: par
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, colour_string
-
-  implicit none
-
-  private
-
-  public :: solve_matrix_equation_CSR_PETSc
+submodule(petsc_basic) petsc_matrix_solving
 
   character(len=:), allocatable :: PETSc_KSPtype_printed, PETSc_PCtype_printed
 
@@ -282,4 +262,4 @@ contains
 
   end subroutine solve_matrix_equation_PETSc_KSPSolve
 
-end module petsc_matrix_solving
+end submodule petsc_matrix_solving

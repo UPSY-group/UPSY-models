@@ -7,7 +7,7 @@ module conservation_of_mass_semiimplicit
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc_matrix_solving, only: solve_matrix_equation_csr_petsc
+  use petsc_basic, only: solve_matrix_equation_csr_petsc
   use CSR_matrix_vector_multiplication, only: multiply_csr_matrix_with_vector_1d_wrapper
   use conservation_of_mass_utilities, only: calc_ice_flux_divergence_matrix_upwind
   use conservation_of_mass_explicit, only: calc_dHi_dt_explicit

@@ -20,7 +20,7 @@ module momentum_balance_solver_SSADIVA
   use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
-  use petsc_matrix_solving, only: solve_matrix_equation_CSR_PETSc
+  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mpi_f08, only: MPI_WIN
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension

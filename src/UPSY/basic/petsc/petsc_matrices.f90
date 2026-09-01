@@ -1,18 +1,4 @@
-module petsc_matrices
-
-  use precisions, only: dp
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc, only: tMat, MatGetSize, MatGetLocalSize, MatGetOwnershipRange, &
-    MatGetRow, MatRestoreRow, MatCreateMPIAIJWithArrays, PETSC_COMM_WORLD, &
-    MatAssemblyBegin, MatAssemblyEnd, MAT_FINAL_ASSEMBLY
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use crash_mod, only: crash
-
-  implicit none
-
-  private
-
-  public :: mat_petsc2CSR, mat_CSR2petsc
+submodule(petsc_basic) petsc_matrices
 
 contains
 
@@ -149,4 +135,4 @@ contains
 
   end subroutine mat_CSR2petsc
 
-end module petsc_matrices
+end submodule petsc_matrices

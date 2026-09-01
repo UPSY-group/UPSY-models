@@ -10,7 +10,7 @@ module remapping_mesh_to_mesh
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use plane_geometry, only: triangle_area
   use mesh_utilities, only: calc_Voronoi_cell, find_containing_triangle, find_containing_vertex
-  use petsc_matrices, only: mat_CSR2petsc, mat_petsc2CSR
+  use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
   use line_tracing_triangles, only: trace_line_tri
   use line_tracing_Voronoi, only: trace_line_Vor
   use netcdf_output

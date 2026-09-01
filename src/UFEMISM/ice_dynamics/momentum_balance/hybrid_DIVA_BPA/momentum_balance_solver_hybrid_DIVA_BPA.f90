@@ -9,7 +9,7 @@ module momentum_balance_solver_hybrid_DIVA_BPA
   use call_stack_and_comp_time_tracking, only: warning, crash, init_routine, finalise_routine
   use model_configuration, only: C
   use parameters
-  use petsc_matrix_solving, only: solve_matrix_equation_CSR_PETSc
+  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use graph_types, only: type_graph_pair
   use ice_model_data, only: atype_ice_model_data

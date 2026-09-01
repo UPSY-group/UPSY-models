@@ -9,7 +9,7 @@ module remapping_gridlonlat_to_mesh
   use mesh_types, only: type_mesh
   use remapping_types, only: type_map
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc_matrices, only: mat_CSR2petsc
+  use petsc_basic, only: mat_CSR2petsc
 
   implicit none
 

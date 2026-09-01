@@ -1,21 +1,4 @@
-module petsc_matrix_vector_multiplication
-
-  use precisions, only: dp
-  use mpi_basic, only: par
-  use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc, only: tMat, tVec, MatGetSize, MatGetLocalSize, &
-    VecCreate, VecSetSizes, VecSetFromOptions, MatMult, VecDestroy, &
-    PETSC_COMM_WORLD
-  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
-  use crash_mod, only: crash
-  use mpi_f08, only: MPI_ALLGATHER, MPI_INTEGER, MPI_COMM_WORLD
-  use petsc_vectors, only: vec_petsc2double, vec_double2petsc
-
-  implicit none
-
-  private
-
-  public :: multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
+submodule(petsc_basic) petsc_matrix_vector_multiplication
 
 contains
 
@@ -147,4 +130,4 @@ contains
 
   end subroutine multiply_PETSc_matrix_with_vector_2D
 
-end module petsc_matrix_vector_multiplication
+end submodule petsc_matrix_vector_multiplication

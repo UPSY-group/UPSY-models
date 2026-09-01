@@ -11,7 +11,7 @@ module remapping_grid_to_mesh_vertices
   use remapping_types, only: type_single_row_mapping_matrices, type_map
   use plane_geometry, only: is_in_triangle
   use mesh_utilities, only: find_containing_triangle, calc_Voronoi_cell, is_in_Voronoi_cell
-  use petsc_matrices, only: mat_CSR2petsc
+  use petsc_basic, only: mat_CSR2petsc
   use line_tracing_grid, only: trace_line_grid
   use line_tracing_triangles, only: trace_line_tri
   use line_tracing_Voronoi, only: trace_line_Vor

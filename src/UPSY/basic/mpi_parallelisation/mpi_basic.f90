@@ -41,7 +41,6 @@ contains
     integer :: ierr, i, n, perr
 
     ! Use MPI to create copies of the program on all the processors, so the model can run in parallel.
-    ! call MPI_INIT( ierr)
     call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
     ! Get global number and rank of processes
@@ -87,7 +86,7 @@ contains
     integer :: ierr, i, n
 
     ! Use MPI to create copies of the program on all the processors, so the model can run in parallel.
-    call MPI_INIT( ierr)
+    call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
     ! Get global number and rank of processes
     call MPI_COMM_SIZE( MPI_COMM_WORLD, par%n, ierr)

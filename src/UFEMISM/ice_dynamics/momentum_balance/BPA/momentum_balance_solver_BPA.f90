@@ -9,7 +9,7 @@ module momentum_balance_solver_BPA
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
   use model_configuration, only: C
-  use petsc_basic, only: solve_matrix_equation_CSR_PETSc
+  use petsc_matrix_solving, only: solve_matrix_equation_CSR_PETSc
   use mesh_types, only: type_mesh
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data

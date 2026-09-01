@@ -12,7 +12,7 @@ module ct_discretisation_solve_Laplace_eq
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_CHAR, MPI_WIN
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc_basic, only: solve_matrix_equation_csr_petsc
+  use petsc_matrix_solving, only: solve_matrix_equation_csr_petsc
   use netcdf_io_main
 
   implicit none

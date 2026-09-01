@@ -6,7 +6,7 @@
 !   use ice_model_data, only: type_ice_velocity_solver_DIVA_graphs
 !   use CSR_matrix_mod, only: type_CSR_matrix_dp
 !   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
-!   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
+!   use petsc_matrix_solving, only: solve_matrix_equation_CSR_PETSc
 !   use graph_types, only: type_graph_pair
 
 !   use netcdf_io_main

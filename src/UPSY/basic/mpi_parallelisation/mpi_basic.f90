@@ -83,7 +83,7 @@ contains
     ! the hybrid distributed/shared memory code.
 
     ! Local variables:
-    integer :: ierr, i, n
+    integer :: perr, ierr, i, n
 
     ! Use MPI to create copies of the program on all the processors, so the model can run in parallel.
     call PetscInitialize( PETSC_NULL_CHARACTER, perr)

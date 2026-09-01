@@ -1,6 +1,24 @@
-submodule(petsc_basic) petsc_dmplex
+module petsc_dmplex
 
 #include <petsc/finclude/petscsys.h>
+  use precisions, only: dp
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
+  use petsc, only: PetscErrorF, PETSC_COMM_WORLD, tDM, tPetscViewer, PetscViewerCreate, &
+    PetscViewerSetType, PETSCVIEWERHDF5, PetscViewerFileSetMode, FILE_MODE_WRITE, &
+    PetscViewerFileSetName, PetscViewerPushFormat, PETSC_VIEWER_HDF5_PETSC, DMView, &
+    PetscViewerPopFormat, PetscViewerDestroy
+  use assertions_basic, only: assert
+  use mpi_basic, only: par
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use crash_mod, only: crash
+  use mpi_f08, only: MPI_ALLGATHER, MPI_INTEGER, MPI_COMM_WORLD
+  use string_module, only: colour_string
+
+  implicit none
+
+  private
+
+  public :: write_dmplex_to_hdf5
 
 contains
 
@@ -41,4 +59,4 @@ contains
 
   end subroutine write_dmplex_to_hdf5
 
-end submodule petsc_dmplex
+end module petsc_dmplex

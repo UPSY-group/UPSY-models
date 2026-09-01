@@ -3,7 +3,7 @@ module petsc_basic
 #include <petsc/finclude/petscsys.h>
   use precisions, only: dp
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc, only: tVec, VecCreate, VecSetSizes, VecSetFromOptions, VecSetValues, &
+  use petsc, only: PetscErrorF, tVec, VecCreate, VecSetSizes, VecSetFromOptions, VecSetValues, &
     VecAssemblyBegin, VecAssemblyEnd, VecGetLocalSize, VecGetSize, VecGetOwnershipRange, &
     VecGetValues, INSERT_VALUES, PETSC_COMM_WORLD, &
     tMat, MatGetSize, MatGetLocalSize, MatGetOwnershipRange, &
@@ -13,10 +13,7 @@ module petsc_basic
     PETSC_TRUE, KSPSetTolerances, PETSC_DEFAULT_REAL, KSPSetFromOptions, &
     KSPGetIterationNumber, KSPDestroy, KSPGetType, PCGetType, &
     KSPSolve, KSPGMRES, KSPLGMRES, KSPFGMRES, KSPPGMRES, KSPBICG, KSPBCGS, KSPIBCGS, &
-    PCBJACOBI, PCASM, PCGASM, PCGAMG, PCNONE, KSPSetType, PCSetType, KSPGetPC, MatDestroy, &
-    PetscErrorF, tDM, tPetscViewer, PetscViewerCreate, PetscViewerSetType, PETSCVIEWERHDF5, &
-    PetscViewerFileSetMode, FILE_MODE_WRITE, PetscViewerFileSetName, PetscViewerPushFormat, &
-    PETSC_VIEWER_HDF5_PETSC, DMView, PetscViewerPopFormat, PetscViewerDestroy
+    PCBJACOBI, PCASM, PCGASM, PCGAMG, PCNONE, KSPSetType, PCSetType, KSPGetPC, MatDestroy
   use assertions_basic, only: assert
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
@@ -32,7 +29,6 @@ module petsc_basic
   public :: mat_petsc2CSR, mat_CSR2petsc
   public :: multiply_PETSc_matrix_with_vector_1D, multiply_PETSc_matrix_with_vector_2D
   public :: solve_matrix_equation_CSR_PETSc
-  public :: write_dmplex_to_hdf5
 
   ! Interfaces for procedures defined in submodules
   interface
@@ -79,11 +75,6 @@ module petsc_basic
       character(len=*), optional,          intent(in   ) :: PETSc_KSPtype
       character(len=*), optional,          intent(in   ) :: PETSc_PCtype
     end subroutine solve_matrix_equation_CSR_PETSc
-
-    module subroutine write_dmplex_to_hdf5( dm, filename)
-      type(tDM),        intent(in) :: dm
-      character(len=*), intent(in) :: filename
-    end subroutine write_dmplex_to_hdf5
 
   end interface
 

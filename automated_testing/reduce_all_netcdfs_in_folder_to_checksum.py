@@ -12,7 +12,7 @@ Usage:
 Behavior:
 - Reads all *.nc files from <test_folder>/results
 - Excludes *_checksum.nc and resource_tracking.nc
-- Creates <test_folder>/results_checksum if needed
+- Creates <test_folder>/results_checksum only when files are found
 - For each file:
     - Creates results_checksum/<name>_checksum.nc containing:
         - one 3-value stats checksum variable per original variable
@@ -188,11 +188,6 @@ def reduce_all_netcdfs_in_folder_to_checksum(test_folder: str) -> None:
     if not os.path.isdir(results_dir):
         raise FileNotFoundError(f'Could not find results folder "{results_dir}"')
 
-    results_checksum_dir = os.path.join(test_folder, "results_checksum")
-    if os.path.exists(results_checksum_dir):
-        raise FileExistsError(f'Folder already exists: "{results_checksum_dir}"')
-    os.makedirs(results_checksum_dir)
-
     files = sorted(
         name
         for name in os.listdir(results_dir)
@@ -200,6 +195,13 @@ def reduce_all_netcdfs_in_folder_to_checksum(test_folder: str) -> None:
         and not name.endswith("_checksum.nc")
         and name.lower() != "resource_tracking.nc"
     )
+    if not files:
+        return
+
+    results_checksum_dir = os.path.join(test_folder, "results_checksum")
+    if os.path.exists(results_checksum_dir):
+        raise FileExistsError(f'Folder already exists: "{results_checksum_dir}"')
+    os.makedirs(results_checksum_dir)
 
     for i, name in enumerate(files, start=1):
         print(f"Reducing file {i}/{len(files)}: {name}")

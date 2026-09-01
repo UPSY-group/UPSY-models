@@ -67,6 +67,19 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
+# Prefer the PETSc installation from the active conda environment, if available.
+# This keeps the build and runtime environment consistent for the UPSY project.
+set petsc_dir = "$CONDA_PREFIX"
+if ("$petsc_dir" == "") then
+  set petsc_dir = "/Users/Beren017/miniforge3/envs/upsy"
+endif
+
+if (! -d "$petsc_dir") then
+  echo "Error: PETSc environment not found at $petsc_dir"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
 set compile_exit_code = 0
 set in_build_dir = 0
 
@@ -85,7 +98,7 @@ set in_build_dir = 1
 
 if ($version == 'dev') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DBUILD_UFEMISM=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
@@ -93,7 +106,7 @@ if ($version == 'dev') then
 
 else if ($version == 'perf') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DBUILD_UFEMISM=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \

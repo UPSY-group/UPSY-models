@@ -6,6 +6,7 @@ module mpi_basic
     MPI_COMM_SPLIT_TYPE, MPI_COMM_TYPE_SHARED, MPI_BARRIER, MPI_INFO_NULL, MPI_COMM_SPLIT, &
     MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, MPI_SUM, MPI_SEND, MPI_RECV, MPI_STATUS, &
     MPI_ANY_TAG
+  use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER
 
   implicit none
 
@@ -37,10 +38,10 @@ contains
   subroutine initialise_parallelisation
 
     ! Local variables:
-    integer :: ierr, i, n
+    integer :: ierr, i, n, perr
 
     ! Use MPI to create copies of the program on all the processors, so the model can run in parallel.
-    call MPI_INIT( ierr)
+    call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
     ! Get global number and rank of processes
     call MPI_COMM_SIZE( MPI_COMM_WORLD, par%n, ierr)
@@ -82,10 +83,10 @@ contains
     ! the hybrid distributed/shared memory code.
 
     ! Local variables:
-    integer :: ierr, i, n
+    integer :: perr, ierr, i, n
 
     ! Use MPI to create copies of the program on all the processors, so the model can run in parallel.
-    call MPI_INIT( ierr)
+    call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
     ! Get global number and rank of processes
     call MPI_COMM_SIZE( MPI_COMM_WORLD, par%n, ierr)

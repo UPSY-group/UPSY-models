@@ -1,6 +1,6 @@
 program UFEMISM_unit_test_program
 
-  use petscksp
+  use petsc, only: PetscFinalize
   use precisions, only: dp
   use basic_program_info, only: program_name
   use mpi_basic, only: par, initialise_parallelisation
@@ -11,6 +11,7 @@ program UFEMISM_unit_test_program
   use unit_tests, only: run_all_unit_tests
   use crash_mod, only: crash
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
+  use mpi_f08, only: MPI_WTIME
 
   implicit none
 
@@ -22,7 +23,6 @@ program UFEMISM_unit_test_program
 
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
-  call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
   call print_git_commit_hash_and_package_versions
 
@@ -59,6 +59,5 @@ program UFEMISM_unit_test_program
 
   ! Finalise PETSc and MPI parallelisation
   call PetscFinalize( perr)
-  call MPI_FINALIZE( ierr)
 
 end program UFEMISM_unit_test_program

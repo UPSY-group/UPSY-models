@@ -6,7 +6,7 @@ program UPSY_unit_test_program
   use mpi_basic, only: par
   use crash_mod, only: crash
   use model_configuration, only: C
-  use petscksp, only: PetscInitialize, PETSC_NULL_CHARACTER, PetscFinalize
+  use petsc, only: PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
   use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker
@@ -35,7 +35,6 @@ program UPSY_unit_test_program
 
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
-  call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
   call print_git_commit_hash_and_package_versions
 
@@ -84,6 +83,5 @@ program UPSY_unit_test_program
 
   ! Finalise PETSc and MPI parallelisation
   call PetscFinalize( perr)
-  call MPI_FINALIZE( ierr)
 
 end program UPSY_unit_test_program

@@ -24,7 +24,7 @@ program LADDIE_program
 ! ===== Preamble =====
 ! ====================
 
-  use petscksp
+  use petsc, only: PetscFinalize
   use precisions, only: dp
   use basic_program_info, only: program_name
   use mpi_basic, only: par, initialise_parallelisation
@@ -82,7 +82,6 @@ program LADDIE_program
 
   ! Initialise MPI parallelisation and PETSc
   call initialise_parallelisation
-  call PetscInitialize( PETSC_NULL_CHARACTER, perr)
 
   call print_git_commit_hash_and_package_versions
 
@@ -148,7 +147,6 @@ program LADDIE_program
 
   ! Finalise PETSc and MPI parallelisation
   call PetscFinalize( perr)
-  call MPI_FINALIZE( ierr)
 
 
 end program LADDIE_program

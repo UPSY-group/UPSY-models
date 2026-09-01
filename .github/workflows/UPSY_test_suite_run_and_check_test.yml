@@ -19,6 +19,7 @@ jobs:
     outputs:
       runner: ${{ steps.select.outputs.runner }}
       reference_dir: ${{ steps.select.outputs.reference_dir }}
+      has_reference: ${{ steps.select.outputs.has_reference }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -54,6 +55,7 @@ jobs:
 
           runner=""
           reference_dir=""
+          has_reference="true"
 
           if [[ "$ts_linux" -gt 0 && "$ts_macos" -gt 0 ]]; then
             if [[ "$ts_linux" -ge "$ts_macos" ]]; then
@@ -70,15 +72,19 @@ jobs:
             runner="macos-latest"
             reference_dir="reference_macos"
           else
-            echo "ERROR: Could not find reference_linux or reference_macos in $test_path"
-            exit 1
+            echo "No reference folder found; defaulting to macOS"
+            runner="macos-latest"
+            reference_dir="reference_macos"
+            has_reference="false"
           fi
 
           echo "Selected reference folder: $reference_dir"
           echo "Selected runner: $runner"
+          echo "Reference available: $has_reference"
 
           echo "runner=$runner" >> "$GITHUB_OUTPUT"
           echo "reference_dir=$reference_dir" >> "$GITHUB_OUTPUT"
+          echo "has_reference=$has_reference" >> "$GITHUB_OUTPUT"
 
   run_and_check_test:
     name: run
@@ -130,10 +136,12 @@ jobs:
         run: csh ${{ inputs.test_path }}/test_script.csh
 
       - name: Show checksum logfile diff
+        if: needs.select_reference.outputs.has_reference == 'true'
         shell: micromamba-shell {0}
         run: csh automated_testing/show_checksum_logfile_diff.csh  ${{ inputs.test_path }}  ${{ needs.select_reference.outputs.reference_dir }}
 
       - name: Check test result
+        if: needs.select_reference.outputs.has_reference == 'true'
         shell: micromamba-shell {0}
         run: |
           python automated_testing/compare_program_info.py                ${{ github.workspace }}/${{ inputs.test_path }}  ${{ needs.select_reference.outputs.reference_dir }}

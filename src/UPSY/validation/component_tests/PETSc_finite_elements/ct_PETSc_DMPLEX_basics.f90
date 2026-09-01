@@ -1,5 +1,6 @@
 module ct_PETSc_DMPLEX_basics
 
+#include <petsc/finclude/petscsys.h>
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use crash_mod, only: warning
@@ -8,12 +9,11 @@ module ct_PETSc_DMPLEX_basics
     DMPlexSymmetrize, DMPlexStratify, DMGetCoordinateSection, DMGetCoordinateDM, &
     DMCreateLocalVector, DMSetCoordinatesLocal, PetscSectionSetChart, PetscSectionSetDof, &
     PetscSectionSetUp, VecSetValues, VecAssemblyBegin, VecAssemblyEnd, INSERT_VALUES, &
-    VecDestroy, DMPlexTopologyView, &
-    DMPlexCoordinatesView, PetscViewerCreate, PetscViewerSetType, &
-    PETSCVIEWERASCII, PETSCVIEWERHDF5, PetscViewerFileSetMode, FILE_MODE_WRITE, &
+    VecDestroy, PetscViewerCreate, PetscViewerSetType, &
+    PETSCVIEWERHDF5, PetscViewerFileSetMode, FILE_MODE_WRITE, &
     PetscViewerFileSetName, PetscViewerPushFormat, PetscViewerPopFormat, &
-    PETSC_VIEWER_ASCII_INFO_DETAIL, DMView, PetscViewerDestroy, PETSC_COMM_WORLD, &
-    DMDestroy, PetscObjectSetName, PETSC_VIEWER_HDF5_PETSC
+    DMView, PetscViewerDestroy, PETSC_COMM_WORLD, &
+    DMDestroy, PetscObjectSetName, PETSC_VIEWER_HDF5_PETSC, PetscErrorF
 
   implicit none
 
@@ -52,7 +52,7 @@ contains
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'create_simple_DMPLEX'
     type(tDM)                           :: dm
-    integer                             :: perr
+    integer                             :: ierr
     real(dp), dimension(0:3,2)          :: vertex_coords
     real(dp), dimension(0:3,2)          :: coords_nby2
     real(dp), dimension(:), allocatable :: coords_2n
@@ -68,42 +68,42 @@ contains
     call init_routine( routine_name)
 
     ! Create a DMPlex object
-    call DMPlexCreate( PETSC_COMM_WORLD, dm, perr)
-    call PetscObjectSetName( dm, 'demo_dmplex', perr)
-    call DMSetDimension( dm, 2, perr)
-    call DMSetCoordinateDim( dm, 2, perr)
+    PetscCall( DMPlexCreate( PETSC_COMM_WORLD, dm, ierr))
+    PetscCall( PetscObjectSetName( dm, 'demo_dmplex', ierr))
+    PetscCall( DMSetDimension( dm, 2, ierr))
+    PetscCall( DMSetCoordinateDim( dm, 2, ierr))
 
     ! The example mesh has 11 'points' (vertices, faces, and edges)
-    call DMPlexSetChart( dm, 0, 11, perr)
+    PetscCall( DMPlexSetChart( dm, 0, 11, ierr))
 
     ! In 2 dimensions the convention is to first number faces, then vertices, and then edges.
     ! PETSc indexes from zero
     !    DMPlexSetConeSize( dm, point, number of points that cover the point)
-    call DMPlexSetConeSize( dm, 0, 3, perr)  ! Points 0 and 1 are faces, each connected to 3 edges.
-    call DMPlexSetConeSize( dm, 1, 3, perr)
-    call DMPlexSetConeSize( dm, 6, 2, perr)  ! Points 6-10 are edges, each connected to 2 vertices.
-    call DMPlexSetConeSize( dm, 7, 2, perr)
-    call DMPlexSetConeSize( dm, 8, 2, perr)
-    call DMPlexSetConeSize( dm, 9, 2, perr)
-    call DMPlexSetConeSize( dm, 10, 2, perr)
-    call DMSetUp( dm, perr)
+    PetscCall( DMPlexSetConeSize( dm,  0, 3, ierr))  ! Points 0 and 1 are faces, each connected to 3 edges.
+    PetscCall( DMPlexSetConeSize( dm,  1, 3, ierr))
+    PetscCall( DMPlexSetConeSize( dm,  6, 2, ierr))  ! Points 6-10 are edges, each connected to 2 vertices.
+    PetscCall( DMPlexSetConeSize( dm,  7, 2, ierr))
+    PetscCall( DMPlexSetConeSize( dm,  8, 2, ierr))
+    PetscCall( DMPlexSetConeSize( dm,  9, 2, ierr))
+    PetscCall( DMPlexSetConeSize( dm, 10, 2, ierr))
+    PetscCall( DMSetUp( dm, ierr))
 
     !    DMPlexSetCone( dm, point, [points that cover the point])
-    call DMPlexSetCone( dm,  0, [6, 7,  8], perr) ! Point  0 (= face 0) is connected to points [6,7, 8] (= edges [0,1,2])
-    call DMPlexSetCone( dm,  1, [7, 9, 10], perr) ! Point  1 (= face 1) is connected to points [7,9,10] (= edges [1,3,4])  ...so not necessarily counter-clockwise
-    call DMPlexSetCone( dm,  6, [2, 3    ], perr) ! Point  6 (= edge 0) is connected to points [2,3] (= vertices [0,1])
-    call DMPlexSetCone( dm,  7, [3, 4    ], perr) ! Point  7 (= edge 1) is connected to points [3,4] (= vertices [1,2])
-    call DMPlexSetCone( dm,  8, [4, 2    ], perr) ! Point  8 (= edge 2) is connected to points [4,2] (= vertices [2,0])
-    call DMPlexSetCone( dm,  9, [4, 5    ], perr) ! Point  9 (= edge 3) is connected to points [4,5] (= vertices [2,3])
-    call DMPlexSetCone( dm, 10, [5, 3    ], perr) ! Point 10 (= edge 4) is connected to points [5,3] (= vertices [3,1])
+    PetscCall( DMPlexSetCone( dm,  0, [6, 7,  8], ierr))   ! Point  0 (= face 0) is connected to points [6,7, 8] (= edges [0,1,2])
+    PetscCall( DMPlexSetCone( dm,  1, [7, 9, 10], ierr))   ! Point  1 (= face 1) is connected to points [7,9,10] (= edges [1,3,4])  ...so not necessarily counter-clockwise
+    PetscCall( DMPlexSetCone( dm,  6, [2, 3    ], ierr))   ! Point  6 (= edge 0) is connected to points [2,3] (= vertices [0,1])
+    PetscCall( DMPlexSetCone( dm,  7, [3, 4    ], ierr))   ! Point  7 (= edge 1) is connected to points [3,4] (= vertices [1,2])
+    PetscCall( DMPlexSetCone( dm,  8, [4, 2    ], ierr))   ! Point  8 (= edge 2) is connected to points [4,2] (= vertices [2,0])
+    PetscCall( DMPlexSetCone( dm,  9, [4, 5    ], ierr))   ! Point  9 (= edge 3) is connected to points [4,5] (= vertices [2,3])
+    PetscCall( DMPlexSetCone( dm, 10, [5, 3    ], ierr))   ! Point 10 (= edge 4) is connected to points [5,3] (= vertices [3,1])
 
     ! Let PETSc automatically figure out the 'supports', i.e. the backward connections (so each
     ! vertex knows which edges and faces it spans)
-    call DMPlexSymmetrize( dm, perr)
+    PetscCall( DMPlexSymmetrize( dm, ierr))
 
     ! In order to support efficient queries, we construct fast search structures
     ! and indices for the different types of points
-    call DMPlexStratify( dm, perr)
+    PetscCall( DMPlexStratify( dm, ierr))
 
     ! ADDITION: set coordinates
 
@@ -132,30 +132,30 @@ contains
 
     ! Define two coordinate degrees of freedom for each vertex. The coordinate
     ! vector must use this DMPlex-owned layout rather than a general parallel Vec.
-    call DMGetCoordinateSection( dm, coordinate_section, perr)
-    call PetscSectionSetChart( coordinate_section, 0, 11, perr)
+    PetscCall( DMGetCoordinateSection( dm, coordinate_section, ierr))
+    PetscCall( PetscSectionSetChart( coordinate_section, 0, 11, ierr))
     do i = 2, 5
-      call PetscSectionSetDof( coordinate_section, i, 2, perr)
+      PetscCall( PetscSectionSetDof( coordinate_section, i, 2, ierr))
     end do
-    call PetscSectionSetUp( coordinate_section, perr)
+    PetscCall( PetscSectionSetUp( coordinate_section, ierr))
 
     ! Create and fill the coordinate DM's local vector.
-    call DMGetCoordinateDM( dm, coordinate_dm, perr)
-    call DMCreateLocalVector( coordinate_dm, coords, perr)
+    PetscCall( DMGetCoordinateDM( dm, coordinate_dm, ierr))
+    PetscCall( DMCreateLocalVector( coordinate_dm, coords, ierr))
     do i = 0, 7
       coords_indices( i) = i
     end do
-    call VecSetValues( coords, n, coords_indices, coords_2n, INSERT_VALUES, perr)
-    call VecAssemblyBegin( coords, perr)
-    call VecAssemblyEnd( coords, perr)
-    call DMSetCoordinatesLocal( dm, coords, perr)
-    call VecDestroy( coords, perr)
+    PetscCall( VecSetValues( coords, n, coords_indices, coords_2n, INSERT_VALUES, ierr))
+    PetscCall( VecAssemblyBegin( coords, ierr))
+    PetscCall( VecAssemblyEnd( coords, ierr))
+    PetscCall( DMSetCoordinatesLocal( dm, coords, ierr))
+    PetscCall( VecDestroy( coords, ierr))
 
     filename = trim( foldername_output) // '/PETSc_DMPLEX_output.h5'
     call write_dmplex_to_hdf5( dm, filename)
 
     ! Clean up after yourself
-    call DMDestroy( dm, perr)
+    PetscCall( DMDestroy( dm, ierr))
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -171,7 +171,7 @@ contains
     ! Local variables:
     character(len=*), parameter :: routine_name = 'write_dmplex_to_hdf5'
     type(tPetscViewer)          :: viewer
-    integer                     :: perr
+    integer                     :: ierr
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -180,19 +180,19 @@ contains
     ! not just the high-level metadata summary.
 
     ! Open the HDF5 file
-    call PetscViewerCreate( PETSC_COMM_WORLD, viewer, perr)
-    call PetscViewerSetType( viewer, PETSCVIEWERHDF5, perr)
-    call PetscViewerFileSetMode( viewer, FILE_MODE_WRITE, perr)
-    call PetscViewerFileSetName( viewer, trim( filename), perr)
+    PetscCall( PetscViewerCreate( PETSC_COMM_WORLD, viewer, ierr))
+    PetscCall( PetscViewerSetType( viewer, PETSCVIEWERHDF5, ierr))
+    PetscCall( PetscViewerFileSetMode( viewer, FILE_MODE_WRITE, ierr))
+    PetscCall( PetscViewerFileSetName( viewer, trim( filename), ierr))
 
     ! This format is important for saving a DMPlex
-    call PetscViewerPushFormat( viewer, PETSC_VIEWER_HDF5_PETSC, perr)
+    PetscCall( PetscViewerPushFormat( viewer, PETSC_VIEWER_HDF5_PETSC, ierr))
 
     ! Write topology + coordinates + labels
-    call DMView( dm, viewer, perr)
+    PetscCall( DMView( dm, viewer, ierr))
 
-    call PetscViewerPopFormat( viewer, perr)
-    call PetscViewerDestroy( viewer, perr)
+    PetscCall( PetscViewerPopFormat( viewer, ierr))
+    PetscCall( PetscViewerDestroy( viewer, ierr))
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -7,7 +7,6 @@ module grid_basic
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use parameters
-  use petsc_basic, only: mat_CSR2petsc
   use reallocate_mod, only: reallocate
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection

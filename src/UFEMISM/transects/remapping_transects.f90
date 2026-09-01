@@ -6,7 +6,7 @@ module remapping_transects
   use transect_types, only: type_transect
   use remapping_types, only: type_map
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc_basic, only: mat_CSR2petsc
+  use petsc_matrices, only: mat_CSR2petsc
   use mesh_utilities, only: find_containing_triangle, find_containing_vertex
   use plane_geometry, only: triangle_area
   use apply_maps, only: Atlas

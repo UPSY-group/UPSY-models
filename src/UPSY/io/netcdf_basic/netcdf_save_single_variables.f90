@@ -7,7 +7,6 @@ module netcdf_save_single_variables
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc_basic, only: mat_petsc2CSR
   use mpi_distributed_memory, only: gather_to_primary
   use netcdf, only: NF90_INT, NF90_DOUBLE
   use netcdf_inquire_grid_mesh

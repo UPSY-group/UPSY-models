@@ -28,7 +28,6 @@ module ice_dynamics_main
   use remapping_main, only: map_from_mesh_to_mesh_2D, map_from_mesh_to_mesh_with_reallocation_2D, &
     map_from_mesh_to_mesh_with_reallocation_3D
   use reallocate_mod, only: reallocate_bounds
-  use petsc_basic, only: mat_petsc2CSR
   use inversion_utilities, only: initialise_dHi_dt_target
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
   use geothermal_heat_flux, only: initialise_geothermal_heat_flux

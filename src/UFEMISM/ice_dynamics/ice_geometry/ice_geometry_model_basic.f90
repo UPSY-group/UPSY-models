@@ -26,7 +26,7 @@ module ice_geometry_model_basic
   use global_forcings_main, only: update_sealevel_in_model
   use masks_mod, only: calc_mask_noice
   use ice_thickness_boundary_conditions, only: apply_ice_thickness_BC_explicit
-  use petsc_basic, only: mat_petsc2csr, mat_petsc2CSR
+  use petsc_matrices, only: mat_petsc2csr, mat_petsc2CSR
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
   use remapping_grid_to_mesh_vertices, only: create_map_from_xy_grid_to_mesh_vertices
   use remapping_grid_to_mesh_triangles, only: create_map_from_xy_grid_to_mesh_triangles

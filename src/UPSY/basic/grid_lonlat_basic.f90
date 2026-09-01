@@ -6,7 +6,6 @@ MODULE grid_lonlat_basic
   USE mpi_basic                                              , ONLY: par, sync
   USE call_stack_and_comp_time_tracking                  , ONLY: warning, crash, happy, init_routine, finalise_routine, colour_string
   USE parameters
-  use petsc_basic, only: mat_CSR2petsc
   USE reallocate_mod                                         , ONLY: reallocate
   use interpolation, only: linint_points
   use projections, only: inverse_oblique_sg_projection

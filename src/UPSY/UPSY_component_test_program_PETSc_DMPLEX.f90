@@ -12,14 +12,17 @@ program UPSY_component_test_program_PETSc_DMPLEX
   use crash_mod, only: crash
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
 
+  use ct_create_test_meshes, only: list_test_meshes_and_grids_in_folder
   use ct_basic, only: create_component_tests_output_folder
-  use ct_PETSc_DMPLEX_basics, only: create_simple_DMPLEX
+  use ct_PETSc_DMPLEX_basics, only: create_simple_DMPLEX, ct_convert_meshes_to_dmplex
 
   implicit none
 
-  integer             :: perr, ierr
-  character(len=1024) :: foldername_output, foldername_test_matrix_equations
-  real(dp)            :: tstart, tstop, tcomp
+  integer                                        :: perr, ierr
+  character(len=1024)                            :: foldername_test_meshes_and_grids, foldername_output
+  character(len=1024), dimension(:), allocatable :: test_mesh_filenames
+  character(len=1024), dimension(:), allocatable :: test_grid_filenames
+  real(dp)                                       :: tstart, tstop, tcomp
 
   program_name = 'UPSY_component_test_program_PETSc_DMPLEX'
 
@@ -42,16 +45,19 @@ program UPSY_component_test_program_PETSc_DMPLEX
 
   ! Get the input arguments
   if (iargc() == 2) then
-    call getarg( 1, foldername_output               )  ! path/to/UPSY-models/automated_testing/UPSY/component_test_PETSc_matrix_solving/results
-    call getarg( 2, foldername_test_matrix_equations)  ! path/to/UPSY-models/automated_testing/UPSY/test_matrix_equations
+    call getarg( 1, foldername_test_meshes_and_grids)  ! path/to/UPSY-models/automated_testing/test_meshes_and_grids
+    call getarg( 2, foldername_output)                 ! path/to/UPSY-models/automated_testing/component_test_mesh_remapping_mesh_grid/results
     if (par%primary) write(0,*) ''
+    if (par%primary) write(0,*) '   Reading test meshes and grids from ' // trim( foldername_test_meshes_and_grids) // '...'
     if (par%primary) write(0,*) '   Writing component test results to  ' // trim( foldername_output) // '...'
   else
-    call crash('needs input argument [foldername_output] and [foldername_test_matrix_equations]')
+    call crash('needs input arguments foldername_test_meshes_and_grids and foldername_output')
   end if
 
+  call list_test_meshes_and_grids_in_folder( foldername_test_meshes_and_grids, test_grid_filenames, test_mesh_filenames)
   call create_component_tests_output_folder( foldername_output)
   call create_simple_DMPLEX( foldername_output)
+  call ct_convert_meshes_to_dmplex( foldername_output, test_mesh_filenames, test_grid_filenames)
 
   ! Stop the clock
   tstop = MPI_WTIME()

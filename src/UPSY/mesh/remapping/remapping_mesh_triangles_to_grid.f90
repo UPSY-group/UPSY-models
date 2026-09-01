@@ -1,7 +1,6 @@
 module remapping_mesh_triangles_to_grid
 
-#include <petsc/finclude/petscksp.h>
-  use petscksp
+  use petsc, only: tMat
   use mpi_basic, only: par
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
@@ -9,7 +8,6 @@ module remapping_mesh_triangles_to_grid
   use mesh_types, only: type_mesh
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use remapping_types, only: type_map
-  use petsc_basic, only: mat_CSR2petsc
   use remapping_mesh_vertices_to_grid, only: calc_approximate_overlaps, calc_A_matrices, &
     calc_w_matrices, dump_grid_and_mesh_to_netcdf, delete_grid_and_mesh_netcdf_dump_files
 

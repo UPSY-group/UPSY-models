@@ -29,8 +29,8 @@ contains
 
     ! Local variables:
     character(len=*), parameter                    :: routine_name = 'run_all_PETSc_matrix_solving_tests'
-    character(len=1024), dimension(10)             :: PETSc_KSPtypes
-    character(len=1024), dimension(6)              :: PETSc_PCtypes
+    character(len=1024), dimension(7)              :: PETSc_KSPtypes
+    character(len=1024), dimension(5)              :: PETSc_PCtypes
     character(len=1024), dimension(:), allocatable :: list_of_test_matrix_names
     character(len=:), allocatable                  :: filename_output
     integer                                        :: i
@@ -40,22 +40,18 @@ contains
     call init_routine( routine_name)
 
     PETSc_KSPtypes(  1) = 'gmres'
-    PETSc_KSPtypes(  2) = 'pipegmres'
-    PETSc_KSPtypes(  3) = 'cg'
-    PETSc_KSPtypes(  4) = 'pipecg'
+    PETSc_KSPtypes(  2) = 'lgmres'
+    PETSc_KSPtypes(  3) = 'fgmres'
+    PETSc_KSPtypes(  4) = 'pipegmres'
     PETSc_KSPtypes(  5) = 'bicg'
     PETSc_KSPtypes(  6) = 'bicgstab'
     PETSc_KSPtypes(  7) = 'ibicgstab'
-    PETSc_KSPtypes(  8) = 'minres'
-    PETSc_KSPtypes(  9) = 'cr'
-    PETSc_KSPtypes( 10) = 'pipecr'
 
     PETSc_PCtypes( 1) = 'bjacobi'
     PETSc_PCtypes( 2) = 'asm'
-    PETSc_PCtypes( 3) = 'gamg'
-    PETSc_PCtypes( 4) = 'gasm'
-    PETSc_PCtypes( 5) = 'jacobi'
-    PETSc_PCtypes( 6) = 'none'
+    PETSc_PCtypes( 3) = 'gasm'
+    PETSc_PCtypes( 4) = 'gamg'
+    PETSc_PCtypes( 5) = 'none'
 
     call list_test_matrix_equations( foldername_test_matrix_equations, list_of_test_matrix_names)
 

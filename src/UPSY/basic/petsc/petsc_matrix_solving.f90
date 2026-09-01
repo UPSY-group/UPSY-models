@@ -1,5 +1,7 @@
 submodule(petsc_basic) petsc_matrix_solving
 
+#include <petsc/finclude/petscsys.h>
+
   character(len=:), allocatable :: PETSc_KSPtype_printed, PETSc_PCtype_printed
 
 contains
@@ -19,7 +21,7 @@ contains
     ! Local variables
     character(len=*), parameter :: routine_name = 'solve_matrix_equation_CSR_PETSc'
     type(tMat)                  :: A
-    integer                     :: perr
+    integer                     :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -30,7 +32,7 @@ contains
     call mat_CSR2petsc( AA, A)
     call solve_matrix_equation_PETSc( A, bb, xx, rtol, abstol, &
       n_Axb_its, PETSc_KSPtype, PETSc_PCtype)
-    call MatDestroy( A, perr)
+    PetscCall( MatDestroy( A, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -52,7 +54,7 @@ contains
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'solve_matrix_equation_PETSc'
-    integer                       :: perr
+    integer                       :: ierr
     integer                       :: m, n, m_local, n_local
     type(tVec)                    :: b
     type(tVec)                    :: x
@@ -77,8 +79,8 @@ contains
     end if
 
     ! Safety
-    call MatGetSize( A, m, n, perr)
-    call MatGetLocalSize( A, m_local, n_local, perr)
+    PetscCall( MatGetSize( A, m, n, ierr))
+    PetscCall( MatGetLocalSize( A, m_local, n_local, ierr))
 
     if (n_local /= size( xx,1) .or. m_local /= size( bb,1)) then
       call crash('matrix and vector sub-sizes dont match')
@@ -94,11 +96,11 @@ contains
     ! =================
 
     ! Set up the KSP solver
-    call KSPcreate( PETSC_COMM_WORLD, KSP_solver, perr)
+    PetscCall( KSPcreate( PETSC_COMM_WORLD, KSP_solver, ierr))
 
     ! Set operators. Here the matrix that defines the linear system
     ! also serves as the preconditioning matrix.
-    call KSPSetOperators( KSP_solver, A, A, perr)
+    PetscCall( KSPSetOperators( KSP_solver, A, A, ierr))
 
     ! Set the type of KSP solver
     ! NOTE: copied the list of options from ISSM. From some brief
@@ -108,50 +110,50 @@ contains
     case default
       call crash('unknown PETSc_KSPtype "' // trim( PETSc_KSPtype_) // '"')
     case ('gmres')
-      call KSPSetType( KSP_solver, KSPGMRES, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPGMRES, ierr))
     case ('lgmres')
-      call KSPSetType( KSP_solver, KSPLGMRES, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPLGMRES, ierr))
     case ('fgmres')
-      call KSPSetType( KSP_solver, KSPFGMRES, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPFGMRES, ierr))
     case ('pipegmres')
-      call KSPSetType( KSP_solver, KSPPGMRES, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPPGMRES, ierr))
     case ('bicg')
-      call KSPSetType( KSP_solver, KSPBICG, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPBICG, ierr))
     case ('bicgstab')
-      call KSPSetType( KSP_solver, KSPBCGS, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPBCGS, ierr))
     case ('ibicgstab')
-      call KSPSetType( KSP_solver, KSPIBCGS, perr)
+      PetscCall( KSPSetType( KSP_solver, KSPIBCGS, ierr))
     end select
 
     ! Set preconditioner
-    call KSPGetPC( KSP_solver, precond, perr)
+    call KSPGetPC( KSP_solver, precond, ierr)
     select case (PETSc_PCtype_)
     case default
       call crash('unknown PETSc_PCtype "' // trim( PETSc_PCtype_) // '"')
     case ('bjacobi')
-      call PCSetType( precond, PCBJACOBI, perr)
+      PetscCall( PCSetType( precond, PCBJACOBI, ierr))
     case ('asm')
-      call PCSetType( precond, PCASM, perr)
+      PetscCall( PCSetType( precond, PCASM, ierr))
     case ('gasm')
-      call PCSetType( precond, PCGASM, perr)
+      PetscCall( PCSetType( precond, PCGASM, ierr))
     case ('gamg')
-      call PCSetType( precond, PCGAMG, perr)
+      PetscCall( PCSetType( precond, PCGAMG, ierr))
     case ('none')
-      call PCSetType( precond, PCNONE, perr)
+      PetscCall( PCSetType( precond, PCNONE, ierr))
     end select
 
     ! Make sure PETSc knows we're starting from an initial guess
-    call KSPSetInitialGuessNonzero( KSP_solver, PETSC_TRUE, perr)
+    PetscCall( KSPSetInitialGuessNonzero( KSP_solver, PETSC_TRUE, ierr))
 
     ! Iterative solver tolerances
-    call KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 1000, perr)
+    PetscCall( KSPSetTolerances( KSP_solver, rtol, abstol, PETSC_DEFAULT_REAL, 1000, ierr))
 
     ! Set runtime options, e.g.,
     !     -ksp_type <type> -pc_type <type> -ksp_monitor -ksp_rtol <rtol>
     ! These options will override those specified above as long as
     ! KSPSetFromOptions() is called _after_ any other customization routines.
-    call KSPSetFromOptions( KSP_solver, perr)
-    call print_PETSc_KSP_PC_type( KSP_solver, precond)
+    PetscCall( KSPSetFromOptions( KSP_solver, ierr))
+    PetscCall( print_PETSc_KSP_PC_type( KSP_solver, precond))
 
     ! == Solve Ax=b
     ! =============
@@ -160,15 +162,15 @@ contains
     call solve_matrix_equation_PETSc_KSPSolve( KSP_solver, b, x)
 
     ! Find out how many iterations it took
-    call KSPGetIterationNumber( KSP_solver, n_Axb_its, perr)
+    PetscCall( KSPGetIterationNumber( KSP_solver, n_Axb_its, ierr))
 
     ! Get the solution back to the native UFEMISM storage structure
     call vec_petsc2double( x, xx)
 
     ! Clean up after yourself
-    call KSPDestroy( KSP_solver, perr)
-    call VecDestroy( x, perr)
-    call VecDestroy( b, perr)
+    PetscCall( KSPDestroy( KSP_solver, ierr))
+    PetscCall( VecDestroy( x, ierr))
+    PetscCall( VecDestroy( b, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -186,13 +188,13 @@ contains
     character(len=*), parameter :: routine_name = 'solve_matrix_equation_PETSc'
     character(len=1024)         :: PETSc_KSPtype_applied, PETSc_PCtype_applied
     logical                     :: do_print_KSP, do_print_PC
-    integer                     :: perr
+    integer                     :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! KSP solver
-    call KSPGetType( KSP_solver, PETSc_KSPtype_applied, perr)
+    PetscCall( KSPGetType( KSP_solver, PETSc_KSPtype_applied, ierr))
 
     do_print_KSP = .false.
     if (.not. allocated( PETSc_KSPtype_printed)) then
@@ -212,7 +214,7 @@ contains
     end if
 
     ! Preconditioner
-    call PCGetType( precond, PETSc_PCtype_applied, perr)
+    PetscCall( PCGetType( precond, PETSc_PCtype_applied, ierr))
 
     do_print_PC = .false.
     if (.not. allocated( PETSc_PCtype_printed)) then
@@ -249,13 +251,13 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'solve_matrix_equation_PETSc_KSPSolve'
-    integer                     :: perr
+    integer                     :: ierr
 
     ! Add routine to path
     call init_routine( routine_name)
 
     ! Solve the linear system
-    call KSPSolve( KSP_solver, b, x, perr)
+    PetscCall( KSPSolve( KSP_solver, b, x, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)

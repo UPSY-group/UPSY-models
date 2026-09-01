@@ -18,6 +18,18 @@ jobs:
   unit_tests:
     uses: ./.github/workflows/UPSY_test_suite_unit_tests.yml
 
+  PETSc_matrix_solving:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_PETSc_matrix_solving
+      compile_script: compile_UPSY.csh
+
+  PETSc_DMPLEX:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_PETSc_DMPLEX
+      compile_script: compile_UPSY.csh
+
   mesh_creation:
     uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:

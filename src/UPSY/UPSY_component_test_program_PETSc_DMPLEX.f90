@@ -17,6 +17,7 @@ program UPSY_component_test_program_PETSc_DMPLEX
   use ct_create_test_meshes, only: list_test_meshes_and_grids_in_folder
   use ct_basic, only: create_component_tests_output_folder
   use ct_PETSc_DMPLEX_basics, only: create_simple_DMPLEX, ct_convert_meshes_to_dmplex
+  use ct_PETSc_SNES_Poisson, only: ct_solve_Poisson_eq_with_PETSc_SNES
 
   implicit none
 
@@ -60,6 +61,7 @@ program UPSY_component_test_program_PETSc_DMPLEX
   call create_component_tests_output_folder( foldername_output)
   call create_simple_DMPLEX( foldername_output)
   call ct_convert_meshes_to_dmplex( foldername_output, test_mesh_filenames, test_grid_filenames)
+  call ct_solve_Poisson_eq_with_PETSc_SNES( foldername_output, test_mesh_filenames, test_grid_filenames)
 
   ! Stop the clock
   tstop = MPI_WTIME()

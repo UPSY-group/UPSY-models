@@ -1,10 +1,10 @@
  -= Checksum logfile =-
-  Git commit hash        : 673b0bb729f93adafb0a5cb22462f536d89a5152
-  has uncommitted changes:  T
-  PETSc version          : 3.25.1
+  Git commit hash        : 368f5a4d53a475b79d9e10f80310c5754234d38a
+  has uncommitted changes:  F
+  PETSc version          : 3.25.5
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10
-  Compiler               : GNU Fortran (GCC) 14.3.0
+  Compiler               : GNU Fortran (conda-forge gcc 15.3.0-4) 15.3.0
   Compiler flags         : -fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -march=native -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33
  ice%geom%Hi: sum(d^2) = 0.287086E+10, sum(abs) = 0.271073E+07, max(abs) = 0.149993E+04 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]
  ice%geom%Hb: sum(d^2) = 0.299858E+10, sum(abs) = 0.271721E+07, max(abs) = 0.176441E+04 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model]

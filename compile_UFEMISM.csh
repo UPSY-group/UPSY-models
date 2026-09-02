@@ -67,21 +67,26 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
-# Prefer the PETSc installation from the active conda environment, if available.
-# This keeps the build and runtime environment consistent for the UPSY project.
-set petsc_dir = "$CONDA_PREFIX"
-if ("$petsc_dir" == "") then
-  set petsc_dir = "/Users/Beren017/miniforge3/envs/upsy"
-endif
+set compile_exit_code = 0
+set in_build_dir = 0
 
-if (! -d "$petsc_dir") then
-  echo "Error: PETSc environment not found at $petsc_dir"
+# Build against the active Conda toolchain, independent of any Homebrew
+# pkg-config metadata.
+if ($?CONDA_PREFIX == 0 || "$CONDA_PREFIX" == "") then
+  echo "Error: Activate the upsy Conda environment before compiling"
   set compile_exit_code = 1
   goto cleanup
 endif
 
-set compile_exit_code = 0
-set in_build_dir = 0
+set petsc_dir = "$CONDA_PREFIX"
+if (! -f "$petsc_dir/lib/pkgconfig/PETSc.pc") then
+  echo "Error: Active Conda environment does not provide PETSc: $petsc_dir"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+unsetenv PKG_CONFIG_PATH
+setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
 
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"

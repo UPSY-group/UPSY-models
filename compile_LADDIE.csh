@@ -70,6 +70,24 @@ if ($selection == 'changed') rm -f build/CMakeCache.txt
 set compile_exit_code = 0
 set in_build_dir = 0
 
+# Build against the active Conda toolchain, independent of any Homebrew
+# pkg-config metadata.
+if ($?CONDA_PREFIX == 0 || "$CONDA_PREFIX" == "") then
+  echo "Error: Activate the upsy Conda environment before compiling"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+set petsc_dir = "$CONDA_PREFIX"
+if (! -f "$petsc_dir/lib/pkgconfig/PETSc.pc") then
+  echo "Error: Active Conda environment does not provide PETSc: $petsc_dir"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+unsetenv PKG_CONFIG_PATH
+setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
+
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
 if ($status != 0) then
@@ -85,7 +103,7 @@ set in_build_dir = 1
 
 if ($version == 'dev') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
@@ -93,7 +111,7 @@ if ($version == 'dev') then
 
 else if ($version == 'perf') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \

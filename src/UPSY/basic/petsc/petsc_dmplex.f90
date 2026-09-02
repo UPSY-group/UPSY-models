@@ -4,7 +4,7 @@ module petsc_dmplex
 
   use precisions, only: dp
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use petsc, only: PetscErrorF, PETSC_COMM_WORLD, tDM, tPetscViewer, PetscViewerCreate, &
+  use petsc, only: PetscErrorF, PETSC_COMM_WORLD, PETSC_FALSE, PETSC_TRUE, tDM, tPetscViewer, PetscViewerCreate, &
     PetscViewerSetType, PETSCVIEWERHDF5, PetscViewerFileSetMode, FILE_MODE_WRITE, &
     PetscViewerFileSetName, PetscViewerPushFormat, PETSC_VIEWER_HDF5_PETSC, DMView, &
     PetscViewerPopFormat, PetscViewerDestroy, tVec, tPetscSection, DMPlexCreate, &
@@ -12,7 +12,7 @@ module petsc_dmplex
     DMPlexSetConeSize, DMSetUp, DMPlexSetCone, DMPlexSymmetrize, DMPlexStratify, &
     DMGetCoordinateSection, PetscSectionSetChart, PetscSectionSetDof, PetscSectionSetUp, &
     DMGetCoordinateDM, DMCreateLocalVector, VecSetValues, INSERT_VALUES, VecAssemblyBegin, &
-    VecAssemblyEnd, DMSetCoordinatesLocal, VecDestroy
+    VecAssemblyEnd, DMSetCoordinatesLocal, DMPlexCreateCoordinateSpace, VecDestroy
   use assertions_basic, only: assert
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
@@ -100,6 +100,9 @@ contains
     PetscCall( VecAssemblyEnd( coords, ierr))
     PetscCall( DMSetCoordinatesLocal( dm, coords, ierr))
     PetscCall( VecDestroy( coords, ierr))
+
+    ! DMPlex FEM operations require a coordinate finite-element field.
+    PetscCall( DMPlexCreateCoordinateSpace( dm, 1, PETSC_FALSE, PETSC_TRUE, ierr))
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

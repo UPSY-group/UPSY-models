@@ -73,26 +73,17 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
-# Build against the project's Conda toolchain, independent of the shell's active
-# environment or any Homebrew pkg-config metadata.
-set conda_hook = "/Users/Beren017/miniforge3/etc/profile.d/conda.csh"
-if (! -f "$conda_hook") then
-  echo "Error: Conda activation hook not found at $conda_hook"
-  set compile_exit_code = 1
-  goto cleanup
-endif
-
-source "$conda_hook"
-conda activate upsy
-if ($status != 0) then
-  echo "Error: Failed to activate the upsy Conda environment"
+# Build against the active Conda toolchain, independent of any Homebrew
+# pkg-config metadata.
+if ($?CONDA_PREFIX == 0 || "$CONDA_PREFIX" == "") then
+  echo "Error: Activate the upsy Conda environment before compiling"
   set compile_exit_code = 1
   goto cleanup
 endif
 
 set petsc_dir = "$CONDA_PREFIX"
-if (! -d "$petsc_dir") then
-  echo "Error: PETSc environment not found at $petsc_dir"
+if (! -f "$petsc_dir/lib/pkgconfig/PETSc.pc") then
+  echo "Error: Active Conda environment does not provide PETSc: $petsc_dir"
   set compile_exit_code = 1
   goto cleanup
 endif

@@ -1,9 +1,11 @@
 program UPSY_component_test_program_PETSc_matrix_solving
 
+#include <petsc/finclude/petscsys.h>
+
   use basic_program_info, only: program_name
   use precisions, only: dp
   use mpi_basic, only: par
-  use petsc, only: PetscFinalize
+  use petsc, only: PetscErrorF, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
   use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker, routine_path
@@ -61,6 +63,6 @@ program UPSY_component_test_program_PETSc_matrix_solving
   call print_model_end( tcomp)
 
   ! Finalise PETSc and MPI parallelisation
-  call PetscFinalize( perr)
+  PetscCall( PetscFinalize( ierr))
 
 end program UPSY_component_test_program_PETSc_matrix_solving

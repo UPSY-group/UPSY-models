@@ -1,5 +1,7 @@
 submodule(petsc_basic) petsc_matrices
 
+#include <petsc/finclude/petscsys.h>
+
 contains
 
   subroutine mat_petsc2CSR( A, AA)
@@ -26,9 +28,9 @@ contains
     call init_routine( routine_name)
 
     ! Retrieve global and local matrix size and ownership range
-    call MatGetSize(           A, m_glob, n_glob, ierr)
-    call MatGetLocalSize(      A, m_loc , n_loc , ierr)
-    call MatGetOwnershipRange( A, istart, iend  , ierr)
+    PetscCall( MatGetSize(           A, m_glob, n_glob, ierr))
+    PetscCall( MatGetLocalSize(      A, m_loc , n_loc , ierr))
+    PetscCall( MatGetOwnershipRange( A, istart, iend  , ierr))
 
     ! Find number of non-zeros in each row
     allocate( nnz_row_loc( m_loc ))
@@ -40,9 +42,9 @@ contains
 
     do row_glob = istart+1, iend ! +1 because PETSc indexes from 0
       row_loc = row_glob - istart
-      call MatGetRow( A, row_glob-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A, row_glob-1, ncols, cols_, vals_, ierr))
       nnz_row_loc( row_loc) = ncols
-      call MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, ierr))
     end do
 
     nnz_loc = sum( nnz_row_loc)
@@ -51,11 +53,11 @@ contains
 
     ! Copy data from the PETSc matrix to the CSR arrays
     do row_glob = istart+1, iend ! +1 because PETSc indexes from 0
-      call MatGetRow( A, row_glob-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A, row_glob-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         call AA%add_entry( row_glob, cols_( k)+1, vals_( k))
       end do
-      call MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, ierr))
     end do
 
     call AA%finalise()
@@ -120,15 +122,15 @@ contains
     ptr_proc( AA%m_loc) = AA%ptr( AA%i2+1) - AA%ptr( AA%i1)
 
     ! Create PETSc matrix
-    call MatCreateMPIAIJWithArrays( PETSC_COMM_WORLD, AA%m_loc, AA%n_loc, AA%m, AA%n, ptr_proc, ind_proc, val_proc, A, ierr)
+    PetscCall( MatCreateMPIAIJWithArrays( PETSC_COMM_WORLD, AA%m_loc, AA%n_loc, AA%m, AA%n, ptr_proc, ind_proc, val_proc, A, ierr))
 
     ! Assemble matrix and vectors, using the 2-step process:
     !   MatAssemblyBegin(), MatAssemblyEnd()
     ! Computations can be done while messages are in transition
     ! by placing code between these two statements.
 
-    call MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   A, MAT_FINAL_ASSEMBLY, ierr)
+    PetscCall( MatAssemblyBegin( A, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   A, MAT_FINAL_ASSEMBLY, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)

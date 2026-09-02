@@ -1,6 +1,8 @@
 module remapping_grid_to_mesh_triangles
 
-  use petsc, only: tMat, MatDestroy, MatDuplicate, MatMatMult, MatAXPY, &
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, tMat, MatDestroy, MatDuplicate, MatMatMult, MatAXPY, &
     DIFFERENT_NONZERO_PATTERN, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, &
     MAT_COPY_VALUES
   use mpi_basic, only: par
@@ -82,9 +84,9 @@ contains
 
     call calc_remapping_matrix( w0, w1x, w1y, grid_M_ddx_CSR, grid_M_ddy_CSR, map%M)
 
-    call MatDestroy( w0, ierr)
-    call MatDestroy( w1x, ierr)
-    call MatDestroy( w1y, ierr)
+    PetscCall( MatDestroy( w0, ierr))
+    PetscCall( MatDestroy( w1x, ierr))
+    PetscCall( MatDestroy( w1y, ierr))
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
@@ -531,20 +533,20 @@ contains
     ! M = w0 + w1x * M_ddx + w1y * M_ddy
 
     ! M = w0
-    call MatDuplicate( w0, MAT_COPY_VALUES, M, ierr)
+    PetscCall( MatDuplicate( w0, MAT_COPY_VALUES, M, ierr))
 
     ! M = w0 + w1x * M_ddx
-    call MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)
+    PetscCall( MatMatMult( w1x, grid_M_ddx, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr))
     call MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
 
     ! M = w0 + w1x * M_ddx + w1y * M_ddy
-    call MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
-    call MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
+    PetscCall( MatMatMult( w1y, grid_M_ddy, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr))
+    PetscCall( MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr))
 
-    call MatDestroy( grid_M_ddx, ierr)
-    call MatDestroy( grid_M_ddy, ierr)
-    call MatDestroy( M1, ierr)
-    call MatDestroy( M2, ierr)
+    PetscCall( MatDestroy( grid_M_ddx, ierr))
+    PetscCall( MatDestroy( grid_M_ddy, ierr))
+    PetscCall( MatDestroy( M1, ierr))
+    PetscCall( MatDestroy( M2, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)

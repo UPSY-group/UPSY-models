@@ -1,12 +1,14 @@
 program UPSY_unit_test_program
   !< A program to run all of UPSY's unit tests
 
+#include <petsc/finclude/petscsys.h>
+
   use basic_program_info, only: program_name
   use precisions, only: dp
   use mpi_basic, only: par
   use crash_mod, only: crash
   use model_configuration, only: C
-  use petsc, only: PetscFinalize
+  use petsc, only: PetscErrorF, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
   use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker
@@ -26,7 +28,7 @@ program UPSY_unit_test_program
 
   implicit none
 
-  integer                        :: perr, ierr
+  integer                        :: ierr
   character(len=1024)            :: foldername_output
   character(len=1024), parameter :: test_name = 'UPSY'
   real(dp)                       :: tstart, tstop, tcomp
@@ -82,6 +84,6 @@ program UPSY_unit_test_program
   call print_model_end( tcomp)
 
   ! Finalise PETSc and MPI parallelisation
-  call PetscFinalize( perr)
+  PetscCall( PetscFinalize( ierr))
 
 end program UPSY_unit_test_program

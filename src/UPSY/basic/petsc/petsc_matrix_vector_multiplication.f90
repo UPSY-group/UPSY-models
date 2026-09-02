@@ -1,5 +1,7 @@
 submodule(petsc_basic) petsc_matrix_vector_multiplication
 
+#include <petsc/finclude/petscsys.h>
+
 contains
 
   subroutine multiply_PETSc_matrix_with_vector_1D( A, xx, yy)
@@ -55,8 +57,8 @@ contains
 
     ! == Determine local and global size and local ownership range of PETSc matrix
 
-    call MatGetSize(      A, mA_glob, nA_glob, ierr)
-    call MatGetLocalSize( A, mA_loc , nA_loc , ierr)
+    PetscCall( MatGetSize(      A, mA_glob, nA_glob, ierr))
+    PetscCall( MatGetLocalSize( A, mA_loc , nA_loc , ierr))
 
     ! Safety
     if (nA_loc /= nFx_loc .or. mA_loc /= nFy_loc) then
@@ -67,19 +69,19 @@ contains
     call vec_double2petsc( xx, x)
 
     ! Create parallel vector
-    call VecCreate( PETSC_COMM_WORLD, y, ierr)
-    call VecSetSizes( y, nFy_loc, nFy_glob, ierr)
-    call VecSetFromOptions( y, ierr)
+    PetscCall( VecCreate( PETSC_COMM_WORLD, y, ierr))
+    PetscCall( VecSetSizes( y, nFy_loc, nFy_glob, ierr))
+    PetscCall( VecSetFromOptions( y, ierr))
 
     ! Compute the matrix-vector product
-    call MatMult( A, x, y, ierr)
+    PetscCall( MatMult( A, x, y, ierr))
 
     ! Convert PETSc vector y to Fortran array yy
     call vec_petsc2double( y, yy)
 
     ! Clean up after yourself
-    call VecDestroy( x, ierr)
-    call VecDestroy( y, ierr)
+    PetscCall( VecDestroy( x, ierr))
+    PetscCall( VecDestroy( y, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)

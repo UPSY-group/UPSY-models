@@ -4,7 +4,9 @@ module ut_petsc
   !
   ! Convention: xx = Fortran, x = PETSc
 
-  use petsc, only: tMat, MatDestroy
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, tMat, MatDestroy
   use precisions, only: dp
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: warning, crash, happy, init_routine, finalise_routine
@@ -65,7 +67,7 @@ contains
     type(type_CSR_matrix_dp)                :: AA
     type(tMat)                              :: A
     real(dp), dimension(:    ), allocatable :: xx, yy, yy_correct
-    integer                                 :: perr
+    integer                                 :: ierr
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -161,7 +163,7 @@ contains
 
     ! Clean up after yourself
     call  AA%deallocate
-    call MatDestroy( A, perr)
+    PetscCall( MatDestroy( A, ierr))
     deallocate( xx)
     deallocate( yy)
 
@@ -183,6 +185,7 @@ contains
     type(type_CSR_matrix_dp)        :: AA, AA2
     type(tMat)                      :: A
     logical                         :: found_errors
+    integer                         :: ierr
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -260,6 +263,9 @@ contains
 
     ! Check results
     call unit_test( test_tol ( AA, AA2, 1e-12_dp), test_name)
+
+    ! Clean up after yourself
+    PetscCall( MatDestroy( A, ierr))
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

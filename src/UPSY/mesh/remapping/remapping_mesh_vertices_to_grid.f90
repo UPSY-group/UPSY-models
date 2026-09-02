@@ -2,7 +2,9 @@ module remapping_mesh_vertices_to_grid
 
   ! Create remapping objects between a square Cartesian grid and a mesh.
 
-  use petsc, only: tMat, MatDestroy, MatMatMult, MatAXPY, MAT_INITIAL_MATRIX, &
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, tMat, MatDestroy, MatMatMult, MatAXPY, MAT_INITIAL_MATRIX, &
     PETSC_DEFAULT_REAL, DIFFERENT_NONZERO_PATTERN, MatGetRow, MatRestoreRow
   use mpi_basic, only: par
   use precisions, only: dp
@@ -76,9 +78,9 @@ contains
 
     call delete_grid_and_mesh_netcdf_dump_files( filename_grid, filename_mesh)
 
-    call MatDestroy( w0, ierr)
-    call MatDestroy( w1x, ierr)
-    call MatDestroy( w1y, ierr)
+    PetscCall(  MatDestroy( w0, ierr))
+    PetscCall(  MatDestroy( w1x, ierr))
+    PetscCall(  MatDestroy( w1y, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -511,21 +513,21 @@ contains
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
 
     ! M = (w0 * M_map_a_b)
-    call MatMatMult( w0,  M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M, ierr)
+    PetscCall(  MatMatMult( w0,  M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M, ierr))
 
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b)
-    call MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)
-    call MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
+    PetscCall(  MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr))
+    PetscCall(  MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr))
 
     ! M = (w0 * M_map_a_b) + (w1x * M_ddx_a_b) + (w1y * M_ddy_a_b)
-    call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
-    call MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
+    PetscCall(  MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr))
+    PetscCall(  MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr))
 
-    call MatDestroy( M_map_a_b, ierr)
-    call MatDestroy( M_ddx_a_b, ierr)
-    call MatDestroy( M_ddy_a_b, ierr)
-    call MatDestroy( M1, ierr)
-    call MatDestroy( M2, ierr)
+    PetscCall(  MatDestroy( M_map_a_b, ierr))
+    PetscCall(  MatDestroy( M_ddx_a_b, ierr))
+    PetscCall(  MatDestroy( M_ddy_a_b, ierr))
+    PetscCall(  MatDestroy( M1, ierr))
+    PetscCall(  MatDestroy( M2, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -566,7 +568,7 @@ contains
 
     do row = grid%n1, grid%n2
 
-      call MatGetRow( M, row-1, ncols_row, cols_row_, vals_row_, ierr)
+      PetscCall(  MatGetRow( M, row-1, ncols_row, cols_row_, vals_row_, ierr))
 
       if (ncols_row == 0) call crash('ncols == 0!')
 
@@ -576,7 +578,7 @@ contains
       end do
       if (.not. has_value) call crash('only zeroes!')
 
-      call MatRestoreRow( M, row-1, ncols_row, cols_row_, vals_row_, ierr)
+      PetscCall(  MatRestoreRow( M, row-1, ncols_row, cols_row_, vals_row_, ierr))
 
     end do
 

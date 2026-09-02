@@ -1,6 +1,8 @@
 module remapping_mesh_to_mesh
 
-  use petsc, only: tMat, MatDestroy, MatCreateTranspose, MatAXPY, &
+#include <petsc/finclude/petscsys.h>
+
+  use petsc, only: PetscErrorF, tMat, MatDestroy, MatCreateTranspose, MatAXPY, &
     UNKNOWN_NONZERO_PATTERN, MatConvert, MatGetRow, MatRestoreRow, MatSetValues, &
     MatAssemblyBegin, MatAssemblyEnd, MatMatMult, DIFFERENT_NONZERO_PATTERN, &
     MAT_INITIAL_MATRIX, MATAIJ, PETSC_DEFAULT_REAL, INSERT_VALUES, MAT_FINAL_ASSEMBLY, &
@@ -258,13 +260,13 @@ contains
     call correct_mesh_to_mesh_map( mesh_src, mesh_dst, output_dir, M_cons_1st_order, map%M)
 
     ! Clean up after yourself
-    call MatDestroy( A_xdy_a_b, ierr)
-    call MatDestroy( A_mxydx_a_b, ierr)
-    call MatDestroy( A_xydy_a_b, ierr)
-    call MatDestroy( w0, ierr)
-    call MatDestroy( w1x, ierr)
-    call MatDestroy( w1y, ierr)
-    call MatDestroy( M_cons_1st_order, ierr)
+    PetscCall( MatDestroy( A_xdy_a_b, ierr))
+    PetscCall( MatDestroy( A_mxydx_a_b, ierr))
+    PetscCall( MatDestroy( A_xydy_a_b, ierr))
+    PetscCall( MatDestroy( w0, ierr))
+    PetscCall( MatDestroy( w1x, ierr))
+    PetscCall( MatDestroy( w1y, ierr))
+    PetscCall( MatDestroy( M_cons_1st_order, ierr))
 
     ! Delete mesh netcdf dumps
     if (par%primary) then
@@ -320,13 +322,13 @@ contains
     call calc_remapping_matrix_tri( mesh_src, w0, w1x, w1y, M_cons_1st_order, map%M)
 
     ! Clean up after yourself
-    call MatDestroy( A_xdy, ierr)
-    call MatDestroy( A_mxydx, ierr)
-    call MatDestroy( A_xydy, ierr)
-    call MatDestroy( w0, ierr)
-    call MatDestroy( w1x, ierr)
-    call MatDestroy( w1y, ierr)
-    call MatDestroy( M_cons_1st_order, ierr)
+    PetscCall( MatDestroy( A_xdy, ierr))
+    PetscCall( MatDestroy( A_mxydx, ierr))
+    PetscCall( MatDestroy( A_xydy, ierr))
+    PetscCall( MatDestroy( w0, ierr))
+    PetscCall( MatDestroy( w1x, ierr))
+    PetscCall( MatDestroy( w1y, ierr))
+    PetscCall( MatDestroy( M_cons_1st_order, ierr))
 
     ! Delete mesh netcdf dumps
     if (par%primary) then
@@ -368,21 +370,21 @@ contains
     call integrate_triangles_through_Voronoi_cells( mesh_src, mesh_dst, A_xdy_b_a, A_mxydx_b_a, A_xydy_b_a, count_coincidences)
 
     ! Transpose line integral matrices
-    call MatCreateTranspose( A_xdy_b_a  , A_xdy_b_a_T  , ierr)
-    call MatCreateTranspose( A_mxydx_b_a, A_mxydx_b_a_T, ierr)
-    call MatCreateTranspose( A_xydy_b_a , A_xydy_b_a_T , ierr)
+    PetscCall( MatCreateTranspose( A_xdy_b_a  , A_xdy_b_a_T  , ierr))
+    PetscCall( MatCreateTranspose( A_mxydx_b_a, A_mxydx_b_a_T, ierr))
+    PetscCall( MatCreateTranspose( A_xydy_b_a , A_xydy_b_a_T , ierr))
 
     ! Combine line integrals around areas of overlap to get surface integrals over areas of overlap
-    call MatAXPY( A_xdy_a_b  , 1._dp, A_xdy_b_a_T  , UNKNOWN_NONZERO_PATTERN, ierr)
-    call MatAXPY( A_mxydx_a_b, 1._dp, A_mxydx_b_a_T, UNKNOWN_NONZERO_PATTERN, ierr)
-    call MatAXPY( A_xydy_a_b , 1._dp, A_xydy_b_a_T , UNKNOWN_NONZERO_PATTERN, ierr)
+    PetscCall( MatAXPY( A_xdy_a_b  , 1._dp, A_xdy_b_a_T  , UNKNOWN_NONZERO_PATTERN, ierr))
+    PetscCall( MatAXPY( A_mxydx_a_b, 1._dp, A_mxydx_b_a_T, UNKNOWN_NONZERO_PATTERN, ierr))
+    PetscCall( MatAXPY( A_xydy_a_b , 1._dp, A_xydy_b_a_T , UNKNOWN_NONZERO_PATTERN, ierr))
 
-    call MatDestroy( A_xdy_b_a  , ierr)
-    call MatDestroy( A_mxydx_b_a, ierr)
-    call MatDestroy( A_xydy_b_a , ierr)
-    call MatDestroy( A_xdy_b_a_T  , ierr)
-    call MatDestroy( A_mxydx_b_a_T, ierr)
-    call MatDestroy( A_xydy_b_a_T , ierr)
+    PetscCall( MatDestroy( A_xdy_b_a  , ierr))
+    PetscCall( MatDestroy( A_mxydx_b_a, ierr))
+    PetscCall( MatDestroy( A_xydy_b_a , ierr))
+    PetscCall( MatDestroy( A_xdy_b_a_T  , ierr))
+    PetscCall( MatDestroy( A_mxydx_b_a_T, ierr))
+    PetscCall( MatDestroy( A_xydy_b_a_T , ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -416,21 +418,21 @@ contains
     call integrate_triangles_through_triangles( mesh_src, mesh_dst, A_xdy_src_dst, A_mxydx_src_dst, A_xydy_src_dst, count_coincidences)
 
     ! Transpose line integral matrices
-    call MatCreateTranspose( A_xdy_src_dst  , A_xdy_src_dst_T  , ierr)
-    call MatCreateTranspose( A_mxydx_src_dst, A_mxydx_src_dst_T, ierr)
-    call MatCreateTranspose( A_xydy_src_dst , A_xydy_src_dst_T , ierr)
+    PetscCall( MatCreateTranspose( A_xdy_src_dst  , A_xdy_src_dst_T  , ierr))
+    PetscCall( MatCreateTranspose( A_mxydx_src_dst, A_mxydx_src_dst_T, ierr))
+    PetscCall( MatCreateTranspose( A_xydy_src_dst , A_xydy_src_dst_T , ierr))
 
     ! Combine line integrals around areas of overlap to get surface integrals over areas of overlap
-    call MatAXPY( A_xdy  , 1._dp, A_xdy_src_dst_T  , UNKNOWN_NONZERO_PATTERN, ierr)
-    call MatAXPY( A_mxydx, 1._dp, A_mxydx_src_dst_T, UNKNOWN_NONZERO_PATTERN, ierr)
-    call MatAXPY( A_xydy , 1._dp, A_xydy_src_dst_T , UNKNOWN_NONZERO_PATTERN, ierr)
+    PetscCall( MatAXPY( A_xdy  , 1._dp, A_xdy_src_dst_T  , UNKNOWN_NONZERO_PATTERN, ierr))
+    PetscCall( MatAXPY( A_mxydx, 1._dp, A_mxydx_src_dst_T, UNKNOWN_NONZERO_PATTERN, ierr))
+    PetscCall( MatAXPY( A_xydy , 1._dp, A_xydy_src_dst_T , UNKNOWN_NONZERO_PATTERN, ierr))
 
-    call MatDestroy( A_xdy_src_dst  , ierr)
-    call MatDestroy( A_mxydx_src_dst, ierr)
-    call MatDestroy( A_xydy_src_dst , ierr)
-    call MatDestroy( A_xdy_src_dst_T, ierr)
-    call MatDestroy( A_mxydx_src_dst_T, ierr)
-    call MatDestroy( A_xydy_src_dst_T, ierr)
+    PetscCall( MatDestroy( A_xdy_src_dst  , ierr))
+    PetscCall( MatDestroy( A_mxydx_src_dst, ierr))
+    PetscCall( MatDestroy( A_xydy_src_dst , ierr))
+    PetscCall( MatDestroy( A_xdy_src_dst_T, ierr))
+    PetscCall( MatDestroy( A_mxydx_src_dst_T, ierr))
+    PetscCall( MatDestroy( A_xydy_src_dst_T, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -462,9 +464,9 @@ contains
     call init_routine( routine_name)
 
     ! Calculate w0, w1x, w1y for the mesh-to-grid remapping operator
-    call MatConvert( A_xdy_a_b, MATAIJ, MAT_INITIAL_MATRIX, w0, ierr)
-    call MatConvert( A_xdy_a_b, MATAIJ, MAT_INITIAL_MATRIX, w1x, ierr)
-    call MatConvert( A_xdy_a_b, MATAIJ, MAT_INITIAL_MATRIX, w1y, ierr)
+    PetscCall( MatConvert( A_xdy_a_b, MATAIJ, MAT_INITIAL_MATRIX, w0, ierr))
+    PetscCall( MatConvert( A_xdy_a_b, MATAIJ, MAT_INITIAL_MATRIX, w1x, ierr))
+    PetscCall( MatConvert( A_xdy_a_b, MATAIJ, MAT_INITIAL_MATRIX, w1y, ierr))
 
     ! Estimate maximum number of non-zeros per row (i.e. maximum number of grid cells overlapping with a mesh triangle)
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh_src%TriA) / minval( mesh_dst%A   )), &
@@ -483,53 +485,53 @@ contains
     w1x_row_ => w1x_row
     w1y_row_ => w1y_row
 
-    call MatGetOwnershipRange( A_xdy_a_b  , istart, iend, ierr)
+    PetscCall( MatGetOwnershipRange( A_xdy_a_b  , istart, iend, ierr))
 
     do n = istart+1, iend ! +1 because PETSc indexes from 0
 
       ! Calculate area of overlap
-      call MatGetRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr))
       A_overlap_tot = sum( vals_( 1:ncols))
-      call MatRestoreRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr))
 
       ! Skip vertices with zero overlap (which can happen if the boundary
       ! of their Voronoi cell coincides with that of this one)
       if (A_overlap_tot <= tiny( A_overlap_tot) * 16._dp) cycle
 
       ! w0
-      call MatGetRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         w0_row_( k) = vals_( k) / A_overlap_tot
-        call MatSetValues( w0, 1, [n-1], 1, [cols_( k)], [w0_row_( k)], INSERT_VALUES, ierr)
+        PetscCall( MatSetValues( w0, 1, [n-1], 1, [cols_( k)], [w0_row_( k)], INSERT_VALUES, ierr))
       end do
-      call MatRestoreRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_xdy_a_b, n-1, ncols, cols_, vals_, ierr))
 
       ! w1x
-      call MatGetRow( A_mxydx_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_mxydx_a_b, n-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         ti = cols_( k)+1
         w1x_row_( k) = (vals_( k) / A_overlap_tot) - (mesh_src%TriGC( ti,1) * w0_row( k))
-        call MatSetValues( w1x, 1, [n-1], 1, [cols_( k)], [w1x_row_( k)], INSERT_VALUES, ierr)
+        PetscCall( MatSetValues( w1x, 1, [n-1], 1, [cols_( k)], [w1x_row_( k)], INSERT_VALUES, ierr))
       end do
-      call MatRestoreRow( A_mxydx_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_mxydx_a_b, n-1, ncols, cols_, vals_, ierr))
 
       ! w1y
-      call MatGetRow( A_xydy_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_xydy_a_b, n-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         ti = cols_( k)+1
         w1y_row_( k) = (vals_( k) / A_overlap_tot) - (mesh_src%TriGC( ti,2) * w0_row( k))
-        call MatSetValues( w1y, 1, [n-1], 1, [cols_( k)], [w1y_row_( k)], INSERT_VALUES, ierr)
+        PetscCall( MatSetValues( w1y, 1, [n-1], 1, [cols_( k)], [w1y_row_( k)], INSERT_VALUES, ierr))
       end do
-      call MatRestoreRow( A_xydy_a_b, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_xydy_a_b, n-1, ncols, cols_, vals_, ierr))
 
     end do
 
-    call MatAssemblyBegin( w0, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   w0, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyBegin( w1x, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   w1x, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyBegin( w1y, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   w1y, MAT_FINAL_ASSEMBLY, ierr)
+    PetscCall( MatAssemblyBegin( w0, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   w0, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyBegin( w1x, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   w1x, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyBegin( w1y, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   w1y, MAT_FINAL_ASSEMBLY, ierr))
 
     deallocate( cols)
     deallocate( vals)
@@ -567,9 +569,9 @@ contains
     call init_routine( routine_name)
 
     ! Calculate w0, w1x, w1y for the mesh-to-grid remapping operator
-    call MatConvert( A_xdy, MATAIJ, MAT_INITIAL_MATRIX, w0, ierr)
-    call MatConvert( A_xdy, MATAIJ, MAT_INITIAL_MATRIX, w1x, ierr)
-    call MatConvert( A_xdy, MATAIJ, MAT_INITIAL_MATRIX, w1y, ierr)
+    PetscCall( MatConvert( A_xdy, MATAIJ, MAT_INITIAL_MATRIX, w0, ierr))
+    PetscCall( MatConvert( A_xdy, MATAIJ, MAT_INITIAL_MATRIX, w1x, ierr))
+    PetscCall( MatConvert( A_xdy, MATAIJ, MAT_INITIAL_MATRIX, w1y, ierr))
 
     ! Estimate maximum number of non-zeros per row (i.e. maximum number of grid cells overlapping with a mesh triangle)
     nnz_per_row_max = max( 32, max( ceiling( 2._dp * maxval( mesh_src%TriA) / minval( mesh_dst%A   )), &
@@ -593,48 +595,48 @@ contains
     do n = istart+1, iend ! +1 because PETSc indexes from 0
 
       ! Calculate area of overlap
-      call MatGetRow( A_xdy, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_xdy, n-1, ncols, cols_, vals_, ierr))
       A_overlap_tot = sum( vals_( 1:ncols))
-      call MatRestoreRow( A_xdy, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_xdy, n-1, ncols, cols_, vals_, ierr))
 
       ! Skip vertices with zero overlap (which can happen if the boundary
       ! of their Voronoi cell coincides with that of this one)
       if (A_overlap_tot <= tiny( A_overlap_tot) * 16._dp) cycle
 
       ! w0
-      call MatGetRow( A_xdy, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_xdy, n-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         w0_row_( k) = vals_( k) / A_overlap_tot
-        call MatSetValues( w0, 1, [n-1], 1, [cols_( k)], [w0_row_( k)], INSERT_VALUES, ierr)
+        PetscCall( MatSetValues( w0, 1, [n-1], 1, [cols_( k)], [w0_row_( k)], INSERT_VALUES, ierr))
       end do
-      call MatRestoreRow( A_xdy, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_xdy, n-1, ncols, cols_, vals_, ierr))
 
       ! w1x
-      call MatGetRow( A_mxydx, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_mxydx, n-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         ti = cols_( k)+1
         w1x_row_( k) = (vals_( k) / A_overlap_tot) - (mesh_src%TriGC( ti,1) * w0_row( k))
-        call MatSetValues( w1x, 1, [n-1], 1, [cols_( k)], [w1x_row_( k)], INSERT_VALUES, ierr)
+        PetscCall( MatSetValues( w1x, 1, [n-1], 1, [cols_( k)], [w1x_row_( k)], INSERT_VALUES, ierr))
       end do
-      call MatRestoreRow( A_mxydx, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_mxydx, n-1, ncols, cols_, vals_, ierr))
 
       ! w1y
-      call MatGetRow( A_xydy, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatGetRow( A_xydy, n-1, ncols, cols_, vals_, ierr))
       do k = 1, ncols
         ti = cols_( k)+1
         w1y_row_( k) = (vals_( k) / A_overlap_tot) - (mesh_src%TriGC( ti,2) * w0_row( k))
-        call MatSetValues( w1y, 1, [n-1], 1, [cols_( k)], [w1y_row_( k)], INSERT_VALUES, ierr)
+        PetscCall( MatSetValues( w1y, 1, [n-1], 1, [cols_( k)], [w1y_row_( k)], INSERT_VALUES, ierr))
       end do
-      call MatRestoreRow( A_xydy, n-1, ncols, cols_, vals_, ierr)
+      PetscCall( MatRestoreRow( A_xydy, n-1, ncols, cols_, vals_, ierr))
 
     end do
 
-    call MatAssemblyBegin( w0, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   w0, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyBegin( w1x, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   w1x, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyBegin( w1y, MAT_FINAL_ASSEMBLY, ierr)
-    call MatAssemblyEnd(   w1y, MAT_FINAL_ASSEMBLY, ierr)
+    PetscCall( MatAssemblyBegin( w0 , MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   w0 , MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyBegin( w1x, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   w1x, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyBegin( w1y, MAT_FINAL_ASSEMBLY, ierr))
+    PetscCall( MatAssemblyEnd(   w1y, MAT_FINAL_ASSEMBLY, ierr))
 
     deallocate( cols)
     deallocate( vals)
@@ -675,21 +677,21 @@ contains
     call mat_CSR2petsc( mesh_src%M_ddy_a_b, M_ddy_a_b)
 
     ! 1st-order = w0 * map_a_b
-    call MatMatMult( w0 , M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M_cons_1st_order, ierr)
+    PetscCall( MatMatMult( w0 , M_map_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M_cons_1st_order, ierr))
 
     ! 2nd-order = 1st-order + w1x * ddx_a_b + w1y * ddy_a_b
-    call MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)  ! This can be done more efficiently now that the non-zero structure is known...
-    call MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
+    PetscCall( MatMatMult( w1x, M_ddx_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr))  ! This can be done more efficiently now that the non-zero structure is known...
+    PetscCall( MatMatMult( w1y, M_ddy_a_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr))
 
-    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, ierr)
-    call MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
-    call MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
+    PetscCall( MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, ierr))
+    PetscCall( MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr))
+    PetscCall( MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr))
 
-    call MatDestroy( M_map_a_b, ierr)
-    call MatDestroy( M_ddx_a_b, ierr)
-    call MatDestroy( M_ddy_a_b, ierr)
-    call MatDestroy( M1, ierr)
-    call MatDestroy( M2, ierr)
+    PetscCall( MatDestroy( M_map_a_b, ierr))
+    PetscCall( MatDestroy( M_ddx_a_b, ierr))
+    PetscCall( MatDestroy( M_ddy_a_b, ierr))
+    PetscCall( MatDestroy( M1, ierr))
+    PetscCall( MatDestroy( M2, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -723,20 +725,20 @@ contains
     call mat_CSR2petsc( mesh_src%M_ddy_b_b, M_ddy_b_b)
 
     ! 1st-order = w0
-    call MatConvert( w0, MATAIJ, MAT_INITIAL_MATRIX, M_cons_1st_order, ierr)
+    PetscCall( MatConvert( w0, MATAIJ, MAT_INITIAL_MATRIX, M_cons_1st_order, ierr))
 
     ! 2nd-order = 1st-order + w1x * ddx_b_b + w1y * ddy_b_b
-    call MatMatMult( w1x, M_ddx_b_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr)  ! This can be done more efficiently now that the non-zero structure is known...
-    call MatMatMult( w1y, M_ddy_b_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr)
+    PetscCall( MatMatMult( w1x, M_ddx_b_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M1, ierr))  ! This can be done more efficiently now that the non-zero structure is known...
+    PetscCall( MatMatMult( w1y, M_ddy_b_b, MAT_INITIAL_MATRIX, PETSC_DEFAULT_REAL, M2, ierr))
 
-    call MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, ierr)
-    call MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr)
-    call MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr)
+    PetscCall( MatConvert( M_cons_1st_order, MATAIJ, MAT_INITIAL_MATRIX, M, ierr))
+    PetscCall( MatAXPY( M, 1._dp, M1, DIFFERENT_NONZERO_PATTERN, ierr))
+    PetscCall( MatAXPY( M, 1._dp, M2, DIFFERENT_NONZERO_PATTERN, ierr))
 
-    call MatDestroy( M_ddx_b_b, ierr)
-    call MatDestroy( M_ddy_b_b, ierr)
-    call MatDestroy( M1, ierr)
-    call MatDestroy( M2, ierr)
+    PetscCall( MatDestroy( M_ddx_b_b, ierr))
+    PetscCall( MatDestroy( M_ddy_b_b, ierr))
+    PetscCall( MatDestroy( M1, ierr))
+    PetscCall( MatDestroy( M2, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -979,7 +981,7 @@ contains
     end do ! do i = M_cons_2nd_order_CSR%i1, M_cons_2nd_order_CSR%i2
 
     ! Convert back to PETSc format
-    call MatDestroy( M_cons_2nd_order, ierr)
+    PetscCall( MatDestroy( M_cons_2nd_order, ierr))
     call mat_CSR2petsc( M_cons_2nd_order_CSR, M_cons_2nd_order)
 
     ! Clean up after yourself

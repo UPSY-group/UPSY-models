@@ -1,5 +1,7 @@
 submodule(petsc_basic) petsc_vectors
 
+#include <petsc/finclude/petscsys.h>
+
 contains
 
   subroutine vec_double2petsc( xx, x)
@@ -34,9 +36,9 @@ contains
     i2F_glob = i1F_glob + nF_loc - 1
 
     ! Create parallel vector
-    call VecCreate( PETSC_COMM_WORLD, x, ierr)
-    call VecSetSizes( x, nF_loc, nF_glob, ierr)
-    call VecSetFromOptions( x, ierr)
+    PetscCall( VecCreate( PETSC_COMM_WORLD, x, ierr))
+    PetscCall( VecSetSizes( x, nF_loc, nF_glob, ierr))
+    PetscCall( VecSetFromOptions( x, ierr))
 
     ! Determine global PETSc indices
     do iF_loc = 1, nF_loc
@@ -44,15 +46,15 @@ contains
     end do
 
     ! Set PETSc vector values
-    call VecSetValues( x, nF_loc, iP_glob, xx, INSERT_VALUES, ierr)
+    PetscCall( VecSetValues( x, nF_loc, iP_glob, xx, INSERT_VALUES, ierr))
 
     ! Assemble vectors, using the 2-step process:
     !   VecAssemblyBegin(), VecAssemblyEnd()
     ! Computations can be done while messages are in transition
     ! by placing code between these two statements.
 
-    call VecAssemblyBegin( x, ierr)
-    call VecAssemblyEnd(   x, ierr)
+    PetscCall( VecAssemblyBegin( x, ierr))
+    PetscCall( VecAssemblyEnd(   x, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -94,13 +96,13 @@ contains
     ! == Determine local and global size and local ownership range of PETSc vector
 
     ! Local size
-    call VecGetLocalSize( x, nP_loc, ierr)
+    PetscCall( VecGetLocalSize( x, nP_loc, ierr))
 
     ! Global size
-    call VecGetSize( x, nP_glob, ierr)
+    PetscCall( VecGetSize( x, nP_glob, ierr))
 
     ! Safety
-    call VecGetOwnershipRange( x, i1P_glob, i2P_glob, ierr)
+    PetscCall( VecGetOwnershipRange( x, i1P_glob, i2P_glob, ierr))
 
     ! Safety
     call assert( nF_loc == nP_loc, 'nF_loc /= nP_loc')
@@ -114,7 +116,7 @@ contains
     end do
 
     ! Get PETSc vector values
-    call VecGetValues( x, nF_loc, iP_glob, xx, ierr)
+    PetscCall( VecGetValues( x, nF_loc, iP_glob, xx, ierr))
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -73,35 +73,32 @@ if ($selection == 'clean') rm -rf build/*
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
 
-# Force the conda environment to be active for this build, so PETSc and MPI come from
-# the same installation and not from a stale Homebrew copy.
-if ($?CONDA_PREFIX == 0) then
-  source /Users/Beren017/miniforge3/etc/profile.d/conda.csh
-  if ($status != 0) then
-    echo "Warning: failed to source conda.csh hook; continuing with the current environment"
-  endif
+# Build against the project's Conda toolchain, independent of the shell's active
+# environment or any Homebrew pkg-config metadata.
+set conda_hook = "/Users/Beren017/miniforge3/etc/profile.d/conda.csh"
+if (! -f "$conda_hook") then
+  echo "Error: Conda activation hook not found at $conda_hook"
+  set compile_exit_code = 1
+  goto cleanup
 endif
 
-if ($?CONDA_PREFIX == 0) then
-  setenv PATH "/Users/Beren017/miniforge3/envs/upsy/bin:$PATH"
-  setenv LD_LIBRARY_PATH "/Users/Beren017/miniforge3/envs/upsy/lib:$LD_LIBRARY_PATH"
-  setenv LIBRARY_PATH "/Users/Beren017/miniforge3/envs/upsy/lib:$LIBRARY_PATH"
+source "$conda_hook"
+conda activate upsy
+if ($status != 0) then
+  echo "Error: Failed to activate the upsy Conda environment"
+  set compile_exit_code = 1
+  goto cleanup
 endif
 
 set petsc_dir = "$CONDA_PREFIX"
-if ("$petsc_dir" == "") then
-  set petsc_dir = "/Users/Beren017/miniforge3/envs/upsy"
-endif
-
 if (! -d "$petsc_dir") then
   echo "Error: PETSc environment not found at $petsc_dir"
   set compile_exit_code = 1
   goto cleanup
 endif
 
-if ($?CONDA_PREFIX != 0) then
-  echo "Using PETSc from $petsc_dir"
-endif
+unsetenv PKG_CONFIG_PATH
+setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
 
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"

@@ -70,6 +70,33 @@ if ($selection == 'changed') rm -f build/CMakeCache.txt
 set compile_exit_code = 0
 set in_build_dir = 0
 
+# Build against the project's Conda toolchain, independent of the shell's active
+# environment or any Homebrew pkg-config metadata.
+set conda_hook = "/Users/Beren017/miniforge3/etc/profile.d/conda.csh"
+if (! -f "$conda_hook") then
+  echo "Error: Conda activation hook not found at $conda_hook"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+source "$conda_hook"
+conda activate upsy
+if ($status != 0) then
+  echo "Error: Failed to activate the upsy Conda environment"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+set petsc_dir = "$CONDA_PREFIX"
+if (! -d "$petsc_dir") then
+  echo "Error: PETSc environment not found at $petsc_dir"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+unsetenv PKG_CONFIG_PATH
+setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
+
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
 if ($status != 0) then
@@ -85,7 +112,7 @@ set in_build_dir = 1
 
 if ($version == 'dev') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
@@ -93,7 +120,7 @@ if ($version == 'dev') then
 
 else if ($version == 'perf') then
 
-  cmake -G Ninja -DPETSC_DIR=`brew --prefix petsc` \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
     -DBUILD_LADDIE=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \

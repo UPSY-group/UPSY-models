@@ -9,14 +9,19 @@ module ct_PETSc_SNES_Poisson
   use mpi_basic, only: par
   use mesh_types, only: type_mesh
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_mesh_from_file, &
-    close_netcdf_file
+    close_netcdf_file, save_variable_as_netcdf_dp_1D
   use petsc, only: PetscErrorF, PETSC_COMM_SELF, PETSC_COMM_WORLD, PETSC_TRUE, PETSC_FALSE, &
-    PETSC_NULL_DMLABEL, PETSC_NULL_VEC, DM_BC_ESSENTIAL, tDM, tVec, tSNES, tKSP, tPC, &
-    tPetscObject, tPetscFE, tPetscDS, tDMLabel, DMDestroy, &
-    VecDestroy, SNESDestroy, PetscFEDestroy, PetscFECreateDefault, PetscObjectSetName, DMSetField, &
+    PETSC_NULL_DMLABEL, PETSC_NULL_VEC, DM_BC_ESSENTIAL, tDM, tVec, tMat, tSNES, tKSP, tPC, &
+    tPetscObject, tPetscFE, tPetscDS, tDMLabel, tPetscSection, DMDestroy, MatDestroy, &
+    VecDestroy, SNESDestroy, PetscFEDestroy, PetscFECreateLagrange, PetscObjectSetName, DMSetField, &
     DMCreateDS, DMGetDS, PetscDSSetConstants, DMCreateLabel, DMGetLabel, DMPlexMarkBoundaryFaces, &
     SNESCreate, SNESSetDM, SNESSetType, SNESSetTolerances, SNESGetKSP, SNESNEWTONLS, &
-    KSPSetType, KSPGetPC, KSPPREONLY, PCSetType, PCLU, DMCreateGlobalVector, VecSet, SNESSolve
+    KSPSetType, KSPGetPC, KSPPREONLY, PCSetType, PCLU, DMCreateGlobalVector, DMCreateLocalVector, DMCreateMatrix, &
+    VecDuplicate, &
+    DMGlobalToLocalBegin, DMGlobalToLocalEnd, DMGetLocalSection, PetscSectionGetOffset, VecGetArrayRead, &
+    VecRestoreArrayRead, &
+    INSERT_VALUES, VecSet, VecNorm, MatNorm, NORM_INFINITY, SNESComputeFunction, SNESComputeJacobian, MatGetDiagonal, &
+    SNESSolve, SNESGetIterationNumber
   use petsc_dmplex, only: mesh_to_dmplex
   use string_module, only: strrep
 
@@ -27,6 +32,7 @@ module ct_PETSc_SNES_Poisson
   public :: ct_solve_Poisson_eq_with_PETSc_SNES
 
   real(dp), dimension(4) :: poisson_domain
+  integer                :: poisson_g3_call_count = 0
   integer(c_int), parameter :: dm_bc_essential_value = 1_c_int
   real(dp), parameter :: poisson_snes_relative_tolerance = 1.0e-10_dp
   real(dp), parameter :: poisson_snes_absolute_tolerance = 1.0e-10_dp
@@ -48,7 +54,7 @@ module ct_PETSc_SNES_Poisson
     integer(c_int) function petsc_ds_set_residual( ds, field, f0, f1) bind(C, name='PetscDSSetResidual')
       import :: c_funptr, c_int, c_intptr_t
       integer(c_intptr_t), value :: ds
-      integer(c_int),      value :: field
+      integer(c_intptr_t), value :: field
       type(c_funptr),      value :: f0, f1
     end function petsc_ds_set_residual
 
@@ -56,15 +62,21 @@ module ct_PETSc_SNES_Poisson
       bind(C, name='PetscDSSetJacobian')
       import :: c_funptr, c_int, c_intptr_t
       integer(c_intptr_t), value :: ds
-      integer(c_int),      value :: field_test, field_trial
+      integer(c_intptr_t), value :: field_test, field_trial
       type(c_funptr),      value :: g0, g1, g2, g3
     end function petsc_ds_set_jacobian
+
+    integer(c_int) function petsc_ds_has_jacobian( ds, has_jacobian) bind(C, name='PetscDSHasJacobian')
+      import :: c_bool, c_int, c_intptr_t
+      integer(c_intptr_t), value       :: ds
+      logical(kind=c_bool), intent(out) :: has_jacobian
+    end function petsc_ds_has_jacobian
 
     integer(c_int) function petsc_ds_set_exact_solution( ds, field, function, ctx) &
       bind(C, name='PetscDSSetExactSolution')
       import :: c_funptr, c_int, c_intptr_t, c_ptr
       integer(c_intptr_t), value :: ds
-      integer(c_int),      value :: field
+      integer(c_intptr_t), value :: field
       type(c_funptr),      value :: function
       type(c_ptr),          value :: ctx
     end function petsc_ds_set_exact_solution
@@ -73,12 +85,48 @@ module ct_PETSc_SNES_Poisson
       components, boundary_function, boundary_time_derivative, ctx, boundary_index) bind(C, name='DMAddBoundary')
       import :: c_char, c_funptr, c_int, c_intptr_t, c_ptr
       integer(c_intptr_t),                value :: dm, label
-      integer(c_int),                     value :: boundary_type, nvalues, field, ncomponents
+      integer(c_int),                     value :: boundary_type
+      integer(c_intptr_t),                value :: nvalues, field, ncomponents
       character(kind=c_char), dimension(*), intent(in) :: name
       type(c_ptr),                        value :: values, components, ctx
       type(c_funptr),                     value :: boundary_function, boundary_time_derivative
-      integer(c_int),                   intent(out) :: boundary_index
+      integer(c_intptr_t),             intent(out) :: boundary_index
     end function dm_add_boundary
+
+    integer(c_int) function snes_get_converged_reason( snes, reason) bind(C, name='SNESGetConvergedReason')
+      import :: c_int, c_intptr_t
+      integer(c_intptr_t), value :: snes
+      integer(c_int),      intent(out) :: reason
+    end function snes_get_converged_reason
+
+    integer(c_int) function snes_set_jacobian( snes, jacobian, preconditioner, function, ctx) &
+      bind(C, name='SNESSetJacobian')
+      import :: c_funptr, c_int, c_intptr_t, c_ptr
+      integer(c_intptr_t), value :: snes, jacobian, preconditioner
+      type(c_funptr),      value :: function
+      type(c_ptr),         value :: ctx
+    end function snes_set_jacobian
+
+    integer(c_int) function petsc_section_has_constraints( section, has_constraints) &
+      bind(C, name='PetscSectionHasConstraints')
+      import :: c_bool, c_int, c_intptr_t
+      integer(c_intptr_t),      value       :: section
+      logical(kind=c_bool), intent(out) :: has_constraints
+    end function petsc_section_has_constraints
+
+    integer(c_int) function petsc_section_get_storage_size( section, storage_size) &
+      bind(C, name='PetscSectionGetStorageSize')
+      import :: c_int, c_intptr_t
+      integer(c_intptr_t),   value       :: section
+      integer(c_intptr_t), intent(out) :: storage_size
+    end function petsc_section_get_storage_size
+
+    integer(c_int) function petsc_section_get_constrained_storage_size( section, constrained_storage_size) &
+      bind(C, name='PetscSectionGetConstrainedStorageSize')
+      import :: c_int, c_intptr_t
+      integer(c_intptr_t),   value       :: section
+      integer(c_intptr_t), intent(out) :: constrained_storage_size
+    end function petsc_section_get_constrained_storage_size
   end interface
 
 contains
@@ -128,16 +176,24 @@ contains
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'ct_solve_Poisson_eq_with_PETSc_SNES_on_mesh'
     type(tDM)                     :: dm
-    type(tVec)                    :: solution
+    type(tVec)                    :: solution, residual
+    type(tMat)                    :: jacobian
     type(tSNES)                   :: snes
     type(tPetscFE)                :: fe
     type(tPetscObject)            :: fe_object
     type(tPetscDS)                :: ds
     type(tDMLabel)                :: boundary_label
-    integer                       :: ierr
-    integer(c_int)                :: boundary_index
-    integer(c_int), target, dimension(1) :: boundary_ids, unused_components
+    type(tPetscSection)           :: local_section
+    integer                       :: ierr, snes_iterations
+    logical(kind=c_bool)          :: ds_has_jacobian, local_section_has_constraints
+    integer(c_int)                :: snes_reason
+    integer(c_intptr_t)           :: boundary_index
+    integer(c_intptr_t)           :: local_section_storage_size, local_section_constrained_storage_size
+    integer(c_intptr_t), target, dimension(1) :: boundary_ids, unused_components
     integer(c_intptr_t)           :: no_context
+    real(dp)                      :: initial_residual_norm, jacobian_diagonal_norm, jacobian_norm, solution_norm
+    real(dp), dimension(:), allocatable, target :: solution_on_vertices
+    real(dp), dimension(:), pointer :: solution_on_vertices_loc
     character(len=:), allocatable :: mesh_name_cleaned
     character(len=:), allocatable :: filename
 
@@ -157,7 +213,7 @@ contains
     no_context = 0_c_intptr_t
 
     ! Attach one scalar P1 field, u, to the DMPlex.
-    PetscCall( PetscFECreateDefault( PETSC_COMM_SELF, 2, 1, PETSC_TRUE, 'poisson_', -1, fe, ierr))
+    PetscCall( PetscFECreateLagrange( PETSC_COMM_SELF, 2, 1, PETSC_TRUE, 1, -1, fe, ierr))
     PetscCall( PetscObjectSetName( fe, 'u', ierr))
     PetscObjectSpecificCast( fe_object, fe)
     PetscCall( DMSetField( dm, 0, PETSC_NULL_DMLABEL, fe_object, ierr))
@@ -169,12 +225,14 @@ contains
     !     Strong form: -grad^2 u = f within the domain, u = 0 on the border
     !            with: f = pi^2 (1 / w_x^2 + 1 / w_y^2) sin( pi x / w_x) sin( pi y / w_y)
     !            where [w_x,w_y] is the size of the rectangular domain.
-    ierr = petsc_ds_set_residual( ds%v, 0_c_int, c_funloc( poisson_f0), c_funloc( poisson_f1))
+    ierr = petsc_ds_set_residual( ds%v, 0_c_intptr_t, c_funloc( poisson_f0), c_funloc( poisson_f1))
     CHKERRQ( ierr)
-    ierr = petsc_ds_set_jacobian( ds%v, 0_c_int, 0_c_int, c_null_funptr, c_null_funptr, c_null_funptr, &
+    ierr = petsc_ds_set_jacobian( ds%v, 0_c_intptr_t, 0_c_intptr_t, c_null_funptr, c_null_funptr, c_null_funptr, &
       c_funloc( poisson_g3))
     CHKERRQ( ierr)
-    ierr = petsc_ds_set_exact_solution( ds%v, 0_c_int, c_funloc( poisson_exact_solution), c_null_ptr)
+    ierr = petsc_ds_has_jacobian( ds%v, ds_has_jacobian)
+    CHKERRQ( ierr)
+    ierr = petsc_ds_set_exact_solution( ds%v, 0_c_intptr_t, c_funloc( poisson_exact_solution), c_null_ptr)
     CHKERRQ( ierr)
 
     ! Mark all exterior faces and impose the manufactured solution on them. The
@@ -182,10 +240,10 @@ contains
     PetscCall( DMCreateLabel( dm, 'boundary', ierr))
     PetscCall( DMGetLabel( dm, 'boundary', boundary_label, ierr))
     PetscCall( DMPlexMarkBoundaryFaces( dm, 1, boundary_label, ierr))
-    boundary_ids = [1_c_int]
-    unused_components = 0_c_int
-    ierr = dm_add_boundary( dm%v, dm_bc_essential_value, boundary_label_name, boundary_label%v, 1_c_int, &
-      c_loc( boundary_ids), 0_c_int, 0_c_int, c_loc( unused_components), c_funloc( poisson_dirichlet_boundary), &
+    boundary_ids = [1_c_intptr_t]
+    unused_components = 0_c_intptr_t
+    ierr = dm_add_boundary( dm%v, dm_bc_essential_value, boundary_label_name, boundary_label%v, 1_c_intptr_t, &
+      c_loc( boundary_ids), 0_c_intptr_t, 0_c_intptr_t, c_loc( unused_components), c_funloc( poisson_dirichlet_boundary), &
       c_null_funptr, c_null_ptr, boundary_index)
     CHKERRQ( ierr)
 
@@ -193,11 +251,54 @@ contains
     PetscCall( SNESCreate( PETSC_COMM_WORLD, snes, ierr))
     PetscCall( SNESSetDM( snes, dm, ierr))
     PetscCall( DMPlexSetSNESLocalFEM( dm, PETSC_FALSE, no_context, ierr))
+    PetscCall( DMCreateMatrix( dm, jacobian, ierr))
+    PetscCall( DMGetLocalSection( dm, local_section, ierr))
+    ierr = petsc_section_has_constraints( local_section%v, local_section_has_constraints)
+    CHKERRQ( ierr)
+    ierr = petsc_section_get_storage_size( local_section%v, local_section_storage_size)
+    CHKERRQ( ierr)
+    ierr = petsc_section_get_constrained_storage_size( local_section%v, local_section_constrained_storage_size)
+    CHKERRQ( ierr)
+    ierr = snes_set_jacobian( snes%v, jacobian%v, jacobian%v, c_null_funptr, c_null_ptr)
+    CHKERRQ( ierr)
     call configure_PETSc_SNES_for_Poisson( snes)
 
     PetscCall( DMCreateGlobalVector( dm, solution, ierr))
     PetscCall( VecSet( solution, 0._dp, ierr))
+    PetscCall( VecDuplicate( solution, residual, ierr))
+    PetscCall( SNESComputeFunction( snes, solution, residual, ierr))
+    PetscCall( VecNorm( residual, NORM_INFINITY, initial_residual_norm, ierr))
+    poisson_g3_call_count = 0
+    PetscCall( SNESComputeJacobian( snes, solution, jacobian, jacobian, ierr))
+    PetscCall( MatNorm( jacobian, NORM_INFINITY, jacobian_norm, ierr))
+    PetscCall( MatGetDiagonal( jacobian, residual, ierr))
+    PetscCall( VecNorm( residual, NORM_INFINITY, jacobian_diagonal_norm, ierr))
     PetscCall( SNESSolve( snes, PETSC_NULL_VEC, solution, ierr))
+    PetscCall( VecNorm( solution, NORM_INFINITY, solution_norm, ierr))
+    PetscCall( SNESGetIterationNumber( snes, snes_iterations, ierr))
+    ierr = snes_get_converged_reason( snes%v, snes_reason)
+    CHKERRQ( ierr)
+    if (par%primary) write(0,*) '      PetscDS has Jacobian  = ', ds_has_jacobian
+    if (par%primary) write(0,*) '      poisson_g3 calls      = ', poisson_g3_call_count
+    if (par%primary) write(0,*) '      Local section constrained = ', local_section_has_constraints
+    if (par%primary) write(0,*) '      Local section storage size = ', local_section_storage_size
+    if (par%primary) write(0,*) '      Local section free dofs    = ', local_section_constrained_storage_size
+    if (par%primary) write(0,*) '      Initial residual norm = ', initial_residual_norm
+    if (par%primary) write(0,*) '      Jacobian matrix norm   = ', jacobian_norm
+    if (par%primary) write(0,*) '      Jacobian diagonal norm = ', jacobian_diagonal_norm
+    if (par%primary) write(0,*) '      PETSc solution norm   = ', solution_norm
+    if (par%primary) write(0,*) '      SNES iterations       = ', snes_iterations
+    if (par%primary) write(0,*) '      SNES convergence code = ', snes_reason
+    call copy_PETSc_solution_to_mesh_vertices( dm, solution, mesh%nV, solution_on_vertices)
+    write(0,*) 'max = ', maxval( solution_on_vertices)
+
+    solution_on_vertices_loc => solution_on_vertices( mesh%vi1:mesh%vi2)
+    mesh_name_cleaned = trim( mesh%name)
+    mesh_name_cleaned = strrep( mesh_name_cleaned, '"', '')
+    mesh_name_cleaned = strrep( mesh_name_cleaned, '.', '_')
+    mesh_name_cleaned = strrep( mesh_name_cleaned, '/', '_')
+    filename = trim( mesh_name_cleaned) // '_solution'
+    call save_variable_as_netcdf_dp_1D( foldername_output, solution_on_vertices_loc, filename)
 
     ! ========================================================================
     ! NEXT STEPS
@@ -234,7 +335,9 @@ contains
 
 
     ! Clean up after yourself
+  PetscCall( VecDestroy( residual, ierr))
     PetscCall( VecDestroy( solution, ierr))
+  PetscCall( MatDestroy( jacobian, ierr))
     PetscCall( SNESDestroy( snes, ierr))
     PetscCall( PetscFEDestroy( fe, ierr))
     PetscCall( DMDestroy( dm, ierr))
@@ -264,9 +367,40 @@ contains
 
   end subroutine configure_PETSc_SNES_for_Poisson
 
+  subroutine copy_PETSc_solution_to_mesh_vertices( dm, solution, n_vertices, solution_on_vertices)
+
+    type(tDM),                                  intent(in)  :: dm
+    type(tVec),                                 intent(in)  :: solution
+    integer,                                    intent(in)  :: n_vertices
+    real(dp), dimension(:), allocatable, target, intent(out) :: solution_on_vertices
+
+    type(tVec)                 :: local_solution
+    type(tPetscSection)        :: local_section
+    real(dp), dimension(:), pointer :: local_solution_values
+    integer                    :: ierr, vi, point, local_offset
+
+    allocate( solution_on_vertices( 1:n_vertices))
+
+    PetscCall( DMCreateLocalVector( dm, local_solution, ierr))
+    PetscCall( DMGlobalToLocalBegin( dm, solution, INSERT_VALUES, local_solution, ierr))
+    PetscCall( DMGlobalToLocalEnd(   dm, solution, INSERT_VALUES, local_solution, ierr))
+    PetscCall( DMGetLocalSection( dm, local_section, ierr))
+    PetscCall( VecGetArrayRead( local_solution, local_solution_values, ierr))
+
+    do vi = 1, n_vertices
+      point = vi - 1
+      PetscCall( PetscSectionGetOffset( local_section, point, local_offset, ierr))
+      solution_on_vertices( vi) = local_solution_values( local_offset + 1)
+    end do
+
+    PetscCall( VecRestoreArrayRead( local_solution, local_solution_values, ierr))
+    PetscCall( VecDestroy( local_solution, ierr))
+
+  end subroutine copy_PETSc_solution_to_mesh_vertices
+
   integer(c_int) function poisson_exact_solution( dim, time, x, ncomp, u, ctx) bind(C)
 
-    integer(c_int),        value :: dim, ncomp
+    integer(c_intptr_t),   value :: dim, ncomp
     real(c_double),        value :: time
     type(c_ptr),           value :: x, u, ctx
     real(c_double), pointer      :: x_values(:), u_values(:)
@@ -281,7 +415,7 @@ contains
 
   integer(c_int) function poisson_dirichlet_boundary( dim, time, x, ncomp, u, ctx) bind(C)
 
-    integer(c_int),        value :: dim, ncomp
+    integer(c_intptr_t),   value :: dim, ncomp
     real(c_double),        value :: time
     type(c_ptr),           value :: x, u, ctx
     real(c_double), pointer      :: u_values(:)
@@ -295,7 +429,7 @@ contains
   subroutine poisson_f0( dim, nf, nfaux, uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, &
     time, x, nconstants, constants, f0) bind(C)
 
-    integer(c_int), value :: dim, nf, nfaux, nconstants
+    integer(c_intptr_t), value :: dim, nf, nfaux, nconstants
     type(c_ptr),    value :: uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, x, constants, f0
     real(c_double), value :: time
     real(c_double), pointer :: x_values(:), constants_values(:), f0_values(:)
@@ -317,7 +451,7 @@ contains
   subroutine poisson_f1( dim, nf, nfaux, uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, &
     time, x, nconstants, constants, f1) bind(C)
 
-    integer(c_int), value :: dim, nf, nfaux, nconstants
+    integer(c_intptr_t), value :: dim, nf, nfaux, nconstants
     type(c_ptr),    value :: uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, x, constants, f1
     real(c_double), value :: time
     real(c_double), pointer :: u_x_values(:), f1_values(:)
@@ -331,16 +465,16 @@ contains
   subroutine poisson_g3( dim, nf, nfaux, uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, &
     time, u_tshift, x, nconstants, constants, g3) bind(C)
 
-    integer(c_int), value :: dim, nf, nfaux, nconstants
-    type(c_ptr),    value :: uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, x, constants, g3
+    integer(c_intptr_t), value :: dim, nf, nfaux, nconstants
+    type(c_ptr),    value :: uoff, uoff_x, u, u_t, u_x, aoff, aoff_x, a, a_t, a_x, x, constants
     real(c_double), value :: time, u_tshift
-    real(c_double), pointer :: g3_values(:)
+    real(c_double), intent(out) :: g3(*)
     integer                 :: d
 
-    call c_f_pointer( g3, g3_values, [int( dim * dim)])
-    g3_values( 1:dim*dim) = 0._c_double
+    poisson_g3_call_count = poisson_g3_call_count + 1
+    g3( 1:dim*dim) = 0._c_double
     do d = 1, dim
-      g3_values( (d - 1) * dim + d) = 1._c_double
+      g3( (d - 1) * dim + d) = 1._c_double
     end do
 
   end subroutine poisson_g3

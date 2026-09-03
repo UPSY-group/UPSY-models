@@ -10,6 +10,7 @@ module petsc_dmplex
     PetscViewerPopFormat, PetscViewerDestroy, tVec, tPetscSection, DMPlexCreate, &
     PetscObjectSetName, DMSetDimension, DMSetCoordinateDim, DMPlexSetChart, &
     DMPlexSetConeSize, DMSetUp, DMPlexSetCone, DMPlexSymmetrize, DMPlexStratify, &
+    DMPlexSetConeOrientation, &
     DMGetCoordinateSection, PetscSectionSetChart, PetscSectionSetDof, PetscSectionSetUp, &
     DMGetCoordinateDM, DMCreateLocalVector, VecSetValues, INSERT_VALUES, VecAssemblyBegin, &
     VecAssemblyEnd, DMSetCoordinatesLocal, DMPlexCreateCoordinateSpace, VecDestroy
@@ -176,8 +177,10 @@ contains
     ! Local variables:
     character(len=*), parameter :: routine_name = 'set_dmplex_topology'
     integer                     :: ierr
-    integer                     :: vi, ti, ei, p
+    integer                     :: vi, ti, ei, p, i
     integer, dimension(3)       :: cone_triangle
+    integer, dimension(3)       :: cone_triangle_orientation
+    integer, dimension(3)       :: triangle_vertices, triangle_edges, edge_start_vertices, edge_end_vertices
     integer, dimension(2)       :: cone_edge
 
     ! Add routine to call stack
@@ -213,9 +216,24 @@ contains
     ! Triangle-edge connectivity
     do ti = 1, mesh%nTri
       p = ti2p( ti)
-      cone_triangle = [ei2p( mesh%TriE( ti,1)), ei2p( mesh%TriE( ti,2)), ei2p( mesh%TriE( ti,3))]
+      triangle_vertices = mesh%Tri( ti,:)
+      triangle_edges = [mesh%TriE( ti,3), mesh%TriE( ti,1), mesh%TriE( ti,2)]
+      edge_start_vertices = triangle_vertices
+      edge_end_vertices = [triangle_vertices( 2), triangle_vertices( 3), triangle_vertices( 1)]
+      cone_triangle = ei2p( triangle_edges)
+      do i = 1, 3
+        ei = triangle_edges( i)
+        if (mesh%EV( ei,1) == edge_start_vertices( i) .and. mesh%EV( ei,2) == edge_end_vertices( i)) then
+          cone_triangle_orientation( i) = 0
+        elseif (mesh%EV( ei,1) == edge_end_vertices( i) .and. mesh%EV( ei,2) == edge_start_vertices( i)) then
+          cone_triangle_orientation( i) = -1
+        else
+          call crash('inconsistent triangle-edge connectivity')
+        end if
+      end do
       ! DMPlexSetCone( dm, point, [points that cover the point])
       PetscCall( DMPlexSetCone( dm, p, cone_triangle, ierr))
+      PetscCall( DMPlexSetConeOrientation( dm, p, cone_triangle_orientation, ierr))
     end do
 
     ! Edge-vertex connectivity

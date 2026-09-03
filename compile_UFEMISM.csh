@@ -85,6 +85,22 @@ if (! -f "$petsc_dir/lib/pkgconfig/PETSc.pc") then
   goto cleanup
 endif
 
+set mpi_fortran_compiler = "$petsc_dir/bin/mpifort"
+if (! -x "$mpi_fortran_compiler") then
+  echo "Error: Active Conda environment does not provide an MPI Fortran compiler: $mpi_fortran_compiler"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+which gfortran >& /dev/null
+if ($status != 0) then
+  echo "Error: No Fortran compiler found on PATH"
+  set compile_exit_code = 1
+  goto cleanup
+endif
+
+setenv OMPI_FC `which gfortran`
+
 unsetenv PKG_CONFIG_PATH
 setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
 
@@ -103,7 +119,7 @@ set in_build_dir = 1
 
 if ($version == 'dev') then
 
-  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" -DMPI_Fortran_COMPILER="$mpi_fortran_compiler" \
     -DBUILD_UFEMISM=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
@@ -111,7 +127,7 @@ if ($version == 'dev') then
 
 else if ($version == 'perf') then
 
-  cmake -G Ninja -DPETSC_DIR="$petsc_dir" \
+  cmake -G Ninja -DPETSC_DIR="$petsc_dir" -DMPI_Fortran_COMPILER="$mpi_fortran_compiler" \
     -DBUILD_UFEMISM=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \

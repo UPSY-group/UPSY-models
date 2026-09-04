@@ -14,7 +14,7 @@ module SMB_ITM_v2
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use climate_model_types, only: type_climate_model, type_climate_model_snapshot
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
-  use parameters, only: ice_density, T0, L_fusion, sec_per_year
+  use parameters, only: freshwater_density, ice_density, T0, L_fusion, sec_per_year
   use climate_model_utilities, only: get_insolation_at_time
   use climate_realistic, only: initialise_insolation_forcing
   use reference_geometry_types, only: type_reference_geometry
@@ -33,7 +33,6 @@ module SMB_ITM_v2
     !< Variables and functions that are specific to the ITM_v2 SMB model
 
       ! Main data fields
-      real(dp), dimension(:  ), contiguous, pointer :: AlbedoSurf       => null() !< Surface albedo underneath the snow layer (water, rock or ice)
       real(dp), dimension(:  ), contiguous, pointer :: MeltPreviousYear => null() !< [m.w.e.] total melt in the previous year
       real(dp), dimension(:,:), contiguous, pointer :: FirnDepth        => null() !< [m] depth of the firn layer
       real(dp), dimension(:,:), contiguous, pointer :: Rainfall         => null() !< Monthly rainfall (m)
@@ -46,7 +45,7 @@ module SMB_ITM_v2
       real(dp), dimension(:,:), contiguous, pointer :: Albedo           => null() !< Monthly albedo
       real(dp), dimension(:  ), contiguous, pointer :: Albedo_year      => null() !< Yearly albedo
       real(dp), dimension(:,:), contiguous, pointer :: SMB_monthly      => null() !< [m] Monthly SMB
-      type(MPI_WIN) :: wAlbedoSurf, wMeltPreviousYear, wFirnDepth, wRainfall
+      type(MPI_WIN) :: wMeltPreviousYear, wFirnDepth, wRainfall
       type(MPI_WIN) :: wSnowfall, wAddedFirn, wMelt, wRefreezing, wRefreezing_year
       type(MPI_WIN) :: wRunoff, wAlbedo, wAlbedo_year, wSMB_monthly
 
@@ -90,12 +89,6 @@ contains
     call init_routine( routine_name)
 
     ! Allocate all the stuff that is specific to the ITM_v2 SMB model
-
-    call self%create_field( self%AlbedoSurf, self%wAlbedoSurf, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'AlbedoSurf', &
-      long_name = 'Surface albedo underneath the snow layer (water, rock or ice)', &
-      units     = '-')
 
     call self%create_field( self%MeltPreviousYear, self%wMeltPreviousYear, &
       self%mesh, Arakawa_grid%a(), &
@@ -187,7 +180,6 @@ contains
 
     ! Deallocate all the stuff that is specific to SMB model ITM_v2
 
-    nullify( self%AlbedoSurf)
     nullify( self%MeltPreviousYear)
     nullify( self%FirnDepth)
     nullify( self%Rainfall)
@@ -282,23 +274,6 @@ contains
       call self%initialise_ITM_v2_firn_from_file( self%mesh, self%region_name())
     end select
 
-    ! Initialise albedo
-    do vi = self%mesh%vi1, self%mesh%vi2
-
-      ! Background albedo
-      if (geom%Hb( vi) < 0._dp) then
-        self%AlbedoSurf( vi) = self%albedo_water
-      else
-        self%AlbedoSurf( vi) = self%albedo_soil
-      end if
-      if (geom%Hi( vi) > 0._dp) then
-        self%AlbedoSurf( vi) = self%albedo_snow
-      end if
-
-      self%Albedo( vi,:) = self%AlbedoSurf( vi)
-
-    end do
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -384,68 +359,87 @@ contains
 
     ! Run all the stuff that is specific to SMB model idealised
 
-    ! Initialise insolation if needed
+    ! Check whether insolation is present
     if (.not. allocated(climate%Q_TOA)) then
-      allocate( climate%Q_TOA  ( self%mesh%vi1:self%mesh%vi2, 12),source=0.0_dp)
-      CALL initialise_insolation_forcing( snapshot_dummy, self%mesh)
-
-      IF (C%start_time_of_run < 0._dp) THEN
-        timeframe_init_insolation = C%start_time_of_run
-      ELSE
-        timeframe_init_insolation = 0._dp
-      END IF
-      CALL get_insolation_at_time( self%mesh, timeframe_init_insolation, snapshot_dummy)
-      do vi = self%mesh%vi1, self%mesh%vi2
-        do m=1,12
-          climate%Q_TOA(vi, m) = snapshot_dummy%Q_TOA(vi, m)
-        end do
-      end do
-    else
+      call crash(' Need insolation in climate forcing to run ITM_v2')
     end if
+
 
     do vi = self%mesh%vi1, self%mesh%vi2
 
-      if (geom%Hi( vi) > 0._dp) then
-        ! Ice-covered cells, so compute ITM
+      if (geom%mask_icefree_ocean( vi)) then
+        ! Set everything to zero for ocean. No SMB allowed here.
+        ! NOTE for advancing calving fronts, advection or extrapolation
+        ! of the FirnDepth should be added.
+        self%Refreezing_year( vi) = 0._dp
+        self%SMB( vi) = 0._dp
+        do m = 1, 12
+          self%Albedo( vi, m) = self%albedo_water
+          self%Melt( vi, m) = 0._dp
+          self%Snowfall( vi, m) = 0._dp
+          self%Rainfall( vi, m) = 0._dp
+          self%AddedFirn( vi, m) = 0._dp
+          self%FirnDepth( vi, m) = 0._dp
+          self%Refreezing( vi, m) = 0._dp
+          self%Runoff( vi, m) = 0._dp
+          self%SMB_monthly( vi, m) = 0._dp
+        end do
 
+      else
+        ! Potentially ice-covered cells, so compute ITM
+
+        ! Compute monthly albedo and melt
         do m = 1, 12  ! Month loop
 
+          ! Define the previous month index
           mprev = m - 1
           if (mprev==0) mprev = 12
 
-          ! Determine monthly albedo based on the firn depth of the previous month
-          ! and the melt over the previous year. For ice-covered cells, this albedo 
-          ! is always bounded between albedo_snow and albedo_ice.
           if (geom%Hi( vi) > 0._dp) then
+            ! Determine monthly albedo based on the firn depth of the previous month
+            ! and the melt over the previous year. For ice-covered cells, this albedo 
+            ! is always bounded between albedo_snow and albedo_ice.
             self%Albedo( vi,m) = &
               min( self%albedo_snow, &
               max( self%albedo_ice, &
                 self%albedo_snow - (self%albedo_snow - self%albedo_ice) * &
                   exp(-15._dp * self%FirnDepth( vi,mprev)) - 0.015_dp * self%MeltPreviousYear( vi)))
+
+            ! Determine ablation as a function of surface temperature 
+            ! and albedo/insolation according to Bintanja et al. (2002)
+            self%Melt( vi,m) = &
+              max(0._dp, &
+                (self%C_abl_Ts * max(0._dp, (climate%T2m( vi,m) - T0)) &
+                + self%C_abl_Q  * (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m) &
+                - self%C_abl_constant)) &
+                  * sec_per_year / (L_fusion * freshwater_density * 12._dp)
+          else
+            ! Ice free land
+            self%Albedo( vi, m) = self%albedo_soil
+            self%Melt( vi, m) = 0._dp
           end if
 
-          ! Determine ablation as a function of surface temperature and albedo/insolation according to Bintanja et al. (2002)
-          self%Melt( vi,m) = &
-            max(0._dp, &
-              (self%C_abl_Ts * max(0._dp, (climate%T2m( vi,m) - T0)) &
-              + self%C_abl_Q  * (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m) &
-              - self%C_abl_constant)) &
-                * sec_per_year / (L_fusion * freshwater_density * 12._dp)
+          ! Determine the snow fraction based on an empirical fit to RACMO2.4p1 data
+          ! The usage of a tanh-curve ensures convergence to 1 for low temperatures
+          ! and 0 for high temperatures
+          snowfrac = 0.5_dp * (1- tanh((climate%T2m( vi, m) - 274.46_dp) / 2.4736_dp))
 
-          ! Determine accumulation with snow/rain fraction from Ohmura et al. (1999), liquid water content (rain and melt water) and snow depth
-
-          ! snowfrac = max(0._dp, min(1._dp, &
-          !   0.5_dp * (1 - atan((climate%T2m(vi,m) - T0) / 3.5_dp) / 1.25664_dp))) ! IMAU-ice version (removed the erroneous one which did not converge to 0 snowfraction
-          snowfrac = 0.5_dp * (1- tanh((climate%T2m( vi, m) - 274.46_dp) / 2.4736_dp)) ! New RACMO fit
-
+          ! Exctract snowfall and rainfall from snowfraction and total precipitation
           self%Snowfall( vi, m) = climate%Precip( vi, m) *          snowfrac
           self%Rainfall( vi, m) = climate%Precip( vi, m) * (1._dp - snowfrac)
 
           ! Add this month's snow accumulation to next month's initial snow depth.
-          self%AddedFirn( vi, m) = self%Snowfall( vi, m) - self%Melt( vi, m)
-          self%FirnDepth( vi, m) = & 
-            min( 10._dp, max( 0._dp, &
-              self%FirnDepth( vi, mprev) + self%AddedFirn( vi, m) ))
+          if (geom%Hi( vi) > 0._dp) then
+            self%AddedFirn( vi, m) = self%Snowfall( vi, m) - self%Melt( vi, m)
+            ! TODO create config parameter for max. firn depth
+            self%FirnDepth( vi, m) = & 
+              min( 100._dp, max( 0._dp, &
+                self%FirnDepth( vi, mprev) + self%AddedFirn( vi, m) ))
+          else
+            ! Ice free land
+            self%AddedFirn( vi, m) = 0._dp
+            self%FirnDepth( vi, m) = 0._dp
+          end if
 
         end do
 
@@ -464,12 +458,16 @@ contains
         ! Note: Refreezing is limited by the ability of the firn layer to store melt water. 
         ! Currently a ten meter firn layer can store 2.5 m of water. 
         ! However, this is based on expert judgement, NOT empirical evidence.
-        self%Refreezing_year( vi) = &
-          min( min( &
-            min( sup_imp_wat, liquid_water), &
-            sum(climate%Precip( vi,:))), 
-            0.25_dp * sum( self%FirnDepth( vi,:) / 12._dp)) ! version from IMAU-ICE dev branch
-        !SMB%Refreezing_year( vi) = min( min( sup_imp_wat, liquid_water), sum( climate%Precip( vi,:))) ! outdated version on main branch
+        if (geom%Hi( vi) > 0._dp) then
+          self%Refreezing_year( vi) = &
+            min( min( &
+              min( sup_imp_wat, liquid_water), &
+              sum(climate%Precip( vi,:))), &
+              0.25_dp * sum( self%FirnDepth( vi,:) / 12._dp)) ! version from IMAU-ICE dev branch
+        else
+          ! Ice free land
+          self%Refreezing_year( vi) = 0._dp
+        end if
 
         do m = 1, 12
           self%Refreezing(  vi,m) = self%Refreezing_year( vi) / 12._dp
@@ -481,6 +479,8 @@ contains
 
         ! Calculate total melt over this year, to be used for determining next year's albedo
         self%MeltPreviousYear( vi) = sum( self%Melt( vi,:))
+
+      end if
 
     end do
 
@@ -510,7 +510,6 @@ contains
 
     ! Remap all the stuff that is specific to SMB model ITM_v2
 
-    call self%remap_field( mesh_new, 'AlbedoSurf'      , self%AlbedoSurf       )
     call self%remap_field( mesh_new, 'MeltPreviousYear', self%MeltPreviousYear )
     call self%remap_field( mesh_new, 'FirnDepth'       , self%FirnDepth        )
     call self%remap_field( mesh_new, 'Rainfall'        , self%Rainfall         )

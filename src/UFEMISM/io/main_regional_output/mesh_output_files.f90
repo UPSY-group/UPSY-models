@@ -16,6 +16,7 @@ module mesh_output_files
   use mesh_contour, only: calc_mesh_contour
   use parameters, only: NaN
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use SMB_ITM_v2, only: type_SMB_model_ITM_v2
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_a_2D, ddy_a_a_2D
   use parallel_array_info_type, only: type_par_arr_info
 
@@ -629,25 +630,31 @@ contains
       case ('SMB')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SMB', region%SMB%SMB)
       case ('Albedo')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('Albedo only defined for SMB model IMAU-ITM')
+          call crash('Albedo only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', IMAU_ITM%Albedo)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', SMB_model%Albedo)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', SMB_model%Albedo)
         end select
       CASE ('FirnDepth')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('FirnDepth only defined for SMB model IMAU-ITM')
+          call crash('FirnDepth only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', IMAU_ITM%FirnDepth)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', SMB_model%FirnDepth)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', SMB_model%FirnDepth)
         end select
       CASE ('MeltPreviousYear')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
+          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', IMAU_ITM%MeltPreviousYear)
+          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
         end select
 
     ! == Basal mass balance ==

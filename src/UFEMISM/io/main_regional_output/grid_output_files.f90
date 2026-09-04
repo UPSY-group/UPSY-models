@@ -14,6 +14,7 @@ module grid_output_files
     map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
   use mpi_distributed_memory, only: gather_to_all
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use SMB_ITM_v2, only: type_SMB_model_ITM_v2
 
   implicit none
 
@@ -791,27 +792,36 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%SMB, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'SMB', d_grid_vec_partial_2D)
       case ('Albedo')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('Albedo only defined for SMB model IMAU-ITM')
+          call crash('Albedo only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, IMAU_ITM%Albedo, d_grid_vec_partial_2D_monthly)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Albedo, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Albedo, d_grid_vec_partial_2D_monthly)
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
         end select
       case ('FirnDepth')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('FirnDepth only defined for SMB model IMAU-ITM')
+          call crash('FirnDepth only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, IMAU_ITM%FirnDepth, d_grid_vec_partial_2D_monthly)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%FirnDepth, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnDepth', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%FirnDepth, d_grid_vec_partial_2D_monthly)
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnDepth', d_grid_vec_partial_2D_monthly)
         end select
       case ('MeltPreviousYear')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
+          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, IMAU_ITM%MeltPreviousYear, d_grid_vec_partial_2D)
+          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, SMB_model%MeltPreviousYear, d_grid_vec_partial_2D)
+          call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'MeltPreviousYear', d_grid_vec_partial_2D)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, SMB_model%MeltPreviousYear, d_grid_vec_partial_2D)
           call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'MeltPreviousYear', d_grid_vec_partial_2D)
         end select
 

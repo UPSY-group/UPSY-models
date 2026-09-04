@@ -178,21 +178,21 @@ contains
       filename_climate_snapshot      = C%filename_climate_snapshot_EAS
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_EAS
       self%lapse_rate_temp           = C%lapse_rate_temp_EAS
-      if (C%choice_SMB_model_EAS == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
+      if (C%choice_SMB_model_EAS == 'IMAU-ITM' .or. C%choice_SMB_model_EAS == 'ITM_v2') then
          self%has_insolation = .true.
       end if
     elseif (region_name == 'GRL') then
       filename_climate_snapshot      = C%filename_climate_snapshot_GRL
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_GRL
       self%lapse_rate_temp           = C%lapse_rate_temp_GRL
-      if (C%choice_SMB_model_GRL == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
+      if (C%choice_SMB_model_GRL == 'IMAU-ITM' .or. C%choice_SMB_model_GRL == 'ITM_v2') then
          self%has_insolation = .true.
       end if
     elseif (region_name == 'ANT') then
       filename_climate_snapshot      = C%filename_climate_snapshot_ANT
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_ANT
       self%lapse_rate_temp           = C%lapse_rate_temp_ANT
-      if (C%choice_SMB_model_ANT == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
+      if (C%choice_SMB_model_ANT == 'IMAU-ITM' .or. C%choice_SMB_model_ANT == 'ITM_v2') then
          self%has_insolation = .true.
       end if
     else

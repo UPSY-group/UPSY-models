@@ -127,7 +127,6 @@ CONTAINS
       call climate%snapshot_lapse%run( geom, time)
       climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%T2m   ( mesh%vi1:mesh%vi2,:)
       climate%Precip( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%Precip( mesh%vi1:mesh%vi2,:)
-      climate%Q_TOA ( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%Q_TOA ( mesh%vi1:mesh%vi2,:)
     CASE DEFAULT
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT

@@ -638,7 +638,7 @@ contains
         class is (type_SMB_model_ITM_v2)
           call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', SMB_model%Albedo)
         end select
-      CASE ('FirnDepth')
+      case ('FirnDepth')
         select type (SMB_model => region%SMB)
         class default
           call crash('FirnDepth only defined for SMB model IMAU-ITM or ITM_v2')
@@ -647,7 +647,7 @@ contains
         class is (type_SMB_model_ITM_v2)
           call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', SMB_model%FirnDepth)
         end select
-      CASE ('MeltPreviousYear')
+      case ('MeltPreviousYear')
         select type (SMB_model => region%SMB)
         class default
           call crash('MeltPreviousYear only defined for SMB model IMAU-ITM or ITM_v2')
@@ -655,6 +655,15 @@ contains
           call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
         class is (type_SMB_model_ITM_v2)
           call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
+        end select
+      case ('SurfaceMelt')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('SurfaceMelt only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%Melt)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%Melt)
         end select
 
     ! == Basal mass balance ==
@@ -1418,6 +1427,8 @@ contains
         CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'FirnDepth', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn layer depth', units = 'm')
       CASE ('MeltPreviousYear')
         CALL add_field_mesh_dp_2D( filename, ncid, 'MeltPreviousYear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Total ice melt from previous year', units = 'm')
+      CASE ('SurfaceMelt')
+        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'SurfaceMelt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly surface melt', units = 'm')
 
     ! == Basal mass balance ==
     ! ========================

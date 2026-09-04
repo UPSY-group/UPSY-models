@@ -50,9 +50,6 @@ module SMB_ITM_v2
       type(MPI_WIN) :: wRunoff, wAlbedo, wAlbedo_year, wSMB_monthly
 
       ! Tuning parameters for the ITM_v2 SMB model (different for each region, set from config)
-      real(dp)  :: C_abl_constant
-      real(dp)  :: C_abl_Ts
-      real(dp)  :: C_abl_Q
       real(dp)  :: C_refr
 
       ! Ideally these parameters should not be region-dependent?
@@ -222,27 +219,15 @@ contains
       call crash('unknown self%region_name "' // self%region_name() // '"')
     case ('NAM')
       choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_NAM
-      self%C_abl_constant       = C%SMB_IMAUITM_C_abl_constant_NAM
-      self%C_abl_Ts             = C%SMB_IMAUITM_C_abl_Ts_NAM
-      self%C_abl_Q              = C%SMB_IMAUITM_C_abl_Q_NAM
       self%C_refr               = C%SMB_IMAUITM_C_refr_NAM
     case ('EAS')
       choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_EAS
-      self%C_abl_constant       = C%SMB_IMAUITM_C_abl_constant_EAS
-      self%C_abl_Ts             = C%SMB_IMAUITM_C_abl_Ts_EAS
-      self%C_abl_Q              = C%SMB_IMAUITM_C_abl_Q_EAS
       self%C_refr               = C%SMB_IMAUITM_C_refr_EAS
     case ('GRL')
       choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_GRL
-      self%C_abl_constant       = C%SMB_IMAUITM_C_abl_constant_GRL
-      self%C_abl_Ts             = C%SMB_IMAUITM_C_abl_Ts_GRL
-      self%C_abl_Q              = C%SMB_IMAUITM_C_abl_Q_GRL
       self%C_refr               = C%SMB_IMAUITM_C_refr_GRL
     case ('ANT')
       choice_SMB_IMAUITM_init_firn = C%choice_SMB_IMAUITM_init_firn_ANT
-      self%C_abl_constant       = C%SMB_IMAUITM_C_abl_constant_ANT
-      self%C_abl_Ts             = C%SMB_IMAUITM_C_abl_Ts_ANT
-      self%C_abl_Q              = C%SMB_IMAUITM_C_abl_Q_ANT
       self%C_refr               = C%SMB_IMAUITM_C_refr_ANT
     end select
 
@@ -359,12 +344,6 @@ contains
 
     ! Run all the stuff that is specific to SMB model idealised
 
-    ! Check whether insolation is present
-    if (.not. allocated(climate%Q_TOA)) then
-      call crash(' Need insolation in climate forcing to run ITM_v2')
-    end if
-
-
     do vi = self%mesh%vi1, self%mesh%vi2
 
       if (geom%mask_icefree_ocean( vi)) then
@@ -409,10 +388,9 @@ contains
             ! and albedo/insolation according to Bintanja et al. (2002)
             self%Melt( vi,m) = &
               max(0._dp, &
-                (self%C_abl_Ts * max(0._dp, (climate%T2m( vi,m) - T0)) &
-                + self%C_abl_Q  * (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m) &
-                - self%C_abl_constant)) &
-                  * sec_per_year / (L_fusion * freshwater_density * 12._dp)
+                (C%SMB_ITM_C_melt_temp * max(0._dp, (climate%T2m( vi,m) - T0)) &
+                + C%SMB_ITM_C_melt_temp * (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m))) &
+                / 12._dp
           else
             ! Ice free land
             self%Albedo( vi, m) = self%albedo_soil

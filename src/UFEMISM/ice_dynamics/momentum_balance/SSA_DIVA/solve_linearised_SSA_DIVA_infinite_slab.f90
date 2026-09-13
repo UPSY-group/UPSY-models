@@ -484,7 +484,7 @@ contains
 
     ! Local variables:
     integer                               :: ti,uv,row_ti
-    integer                               :: tj, col_tjuv
+    integer                               :: tj, col_tjuv, i
     integer,  dimension(self%mesh%nC_mem) :: ti_copy
     real(dp), dimension(self%mesh%nC_mem) :: wti_copy
     real(dp)                              :: u_fixed, v_fixed, y, till_yield_stress
@@ -533,23 +533,10 @@ contains
         bb( row_tiuv) = 0._dp
 
       case ('periodic_ISMIP-HOM')
-        ! u(x,y) = u(x+-L/2,y+-L/2)
+        ! Prescribe u on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) cycle
-          u_fixed = u_fixed + wti_copy( n) * self%u_vav_b_prev( tj)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_vav_b_prev( ti))
-        ! Set load vector
-        bb( row_tiuv) = u_fixed
+        call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
+        bb( row_tiuv) = u_BC_ISMIP_HOM()
 
       case ('infinite_SSA_icestream')
         ! Just set values on the domain border to the analytical solution
@@ -600,28 +587,104 @@ contains
         bb( row_tiuv) = 0._dp
 
       case ('periodic_ISMIP-HOM')
-        ! v(x,y) = v(x+-L/2,y+-L/2)
+        ! Just set v=0 on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
-        v_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) cycle
-          v_fixed = v_fixed + wti_copy( n) * self%v_vav_b_prev( tj)
-        end do
-        ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_vav_b_prev( ti))
-        ! Set load vector
-        bb( row_tiuv) = v_fixed
+        call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
+        bb( row_tiuv) = 0._dp
 
       end select
 
     end select
 
   end subroutine calc_SSA_DIVA_stiffness_matrix_row_BC
+
+  function u_BC_ISMIP_HOM() result( u)
+    !< Since periodic BCs are an absolute pain in the rear, instead
+    !< we just prescribe the value shown at [normalized x] = 0.5
+    !< in the figures from Pattyn et al. (2008)
+
+    real(dp) :: u
+
+    u = 0._dp
+
+    select case (C%choice_refgeo_init_idealised)
+    case default
+      call crash('invalid choice_refgeo_init_idealised ' // trim( C%choice_refgeo_init_idealised))
+
+    case ('ISMIP-HOM_A')
+
+      if     (C%refgeo_idealised_ISMIP_HOM_L == 160e3_dp) then
+        u = 20._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 80e3_dp) then
+        u = 22._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 40e3_dp) then
+        u = 27._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 20e3_dp) then
+        u = 25._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 10e3_dp) then
+        u = 22._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 5e3_dp) then
+        u = 14._dp
+      else
+        call crash('invalid value for refgeo_idealised_ISMIP_HOM_L')
+      end if
+
+    case ('ISMIP-HOM_B')
+
+      if     (C%refgeo_idealised_ISMIP_HOM_L == 160e3_dp) then
+        u = 21._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 80e3_dp) then
+        u = 25._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 40e3_dp) then
+        u = 30._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 20e3_dp) then
+        u = 27._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 10e3_dp) then
+        u = 20._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 5e3_dp) then
+        u = 9._dp
+      else
+        call crash('invalid value for refgeo_idealised_ISMIP_HOM_L')
+      end if
+
+    case ('ISMIP-HOM_C')
+
+      if     (C%refgeo_idealised_ISMIP_HOM_L == 160e3_dp) then
+        u = 20._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 80e3_dp) then
+        u = 18._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 40e3_dp) then
+        u = 17._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 20e3_dp) then
+        u = 16.5_dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 10e3_dp) then
+        u = 15.5_dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 5e3_dp) then
+        u = 12._dp
+      else
+        call crash('invalid value for refgeo_idealised_ISMIP_HOM_L')
+      end if
+
+    case ('ISMIP-HOM_D')
+
+      if     (C%refgeo_idealised_ISMIP_HOM_L == 160e3_dp) then
+        u = 20._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 80e3_dp) then
+        u = 20._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 40e3_dp) then
+        u = 20._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 20e3_dp) then
+        u = 18._dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 10e3_dp) then
+        u = 16.5_dp
+      elseif (C%refgeo_idealised_ISMIP_HOM_L == 5e3_dp) then
+        u = 13._dp
+      else
+        call crash('invalid value for refgeo_idealised_ISMIP_HOM_L')
+      end if
+
+    end select
+
+  end function u_BC_ISMIP_HOM
 
 end submodule solve_linearised_SSA_DIVA_infinite_slab

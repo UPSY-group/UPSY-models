@@ -477,17 +477,17 @@ contains
 
     ! In/output variables:
     class(atype_momentum_balance_solver_SSADIVA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
-    integer,                                            intent(in   ) :: row_tiuv
-    character(len=*),                                   intent(in   ) :: choice_BC_u, choice_BC_v
+    type(type_CSR_matrix_dp),                     intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),       intent(inout) :: bb
+    integer,                                      intent(in   ) :: row_tiuv
+    character(len=*),                             intent(in   ) :: choice_BC_u, choice_BC_v
 
     ! Local variables:
     integer                               :: ti,uv,row_ti
     integer                               :: tj, col_tjuv
     integer,  dimension(self%mesh%nC_mem) :: ti_copy
     real(dp), dimension(self%mesh%nC_mem) :: wti_copy
-    real(dp)                              :: u_fixed, v_fixed
+    real(dp)                              :: u_fixed, v_fixed, y, till_yield_stress
     integer                               :: n, n_neighbours
 
     ti = self%mesh%n2tiuv( row_tiuv,1)
@@ -552,22 +552,14 @@ contains
         bb( row_tiuv) = u_fixed
 
       case ('infinite_SSA_icestream')
-        ! du/dx = 0 everywhere
+        ! Just set values on the domain border to the analytical solution
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_SSA_icestream_infinite( self%mesh, ti, ti_copy, wti_copy)
+        y = self%mesh%Trigc( ti,2)
+        call Schoof2006_icestream( C%uniform_Glens_flow_factor, C%Glens_flow_law_exponent, C%refgeo_idealised_SSA_icestream_Hi, &
+          C%refgeo_idealised_SSA_icestream_dhdx, C%refgeo_idealised_SSA_icestream_L, C%refgeo_idealised_SSA_icestream_m, &
+          y, u_fixed, till_yield_stress)
 
-        ! Set value at ti equal to value at ti_copy
         call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) cycle
-          u_fixed = u_fixed + wti_copy( n) * self%u_vav_b_prev( tj)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_vav_b_prev( ti))
-        ! Set load vector
         bb( row_tiuv) = u_fixed
 
       end select

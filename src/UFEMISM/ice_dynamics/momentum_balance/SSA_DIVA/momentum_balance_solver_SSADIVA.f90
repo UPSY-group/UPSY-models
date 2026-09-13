@@ -28,6 +28,7 @@ module momentum_balance_solver_SSADIVA
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_basic, only: par
+  use Schoof_SSA_solution, only: Schoof2006_icestream
 
   implicit none
 

@@ -890,8 +890,12 @@ contains
 
   subroutine calc_Jacobian_contribution_friction( self, ice, geom, J_friction)
     !< The part of the Jacobian's coefficient-derivative term arising from the
-    !< basal friction coefficient beta_b's dependence on the velocity (currently
-    !< Zoet-Iverson only). See SSA_FD_SNES_jacobian_derivation.tex.
+    !< basal friction coefficient beta_b's dependence on the velocity - Zoet-Iverson
+    !< sliding, or the regularised Coulomb-plastic law
+    !< (beta_a = till_yield_stress/uabs) used by the 'idealised' SSA_icestream
+    !< test profile; both are functions of the velocity only through
+    !< uabs = sqrt(delta_v^2 + u^2 + v^2), so only the dbeta_duabs formula differs
+    !< between them - see SSA_FD_SNES_jacobian_derivation.tex.
     !<   S_{u,v} = diag(sb{u,v})*M_map_b_a                          (nV x nTri)
     !<   Beta_deriv_{u,v} = M_map_a_b*S_{u,v} = d beta_b / d{u,v}    (nTri x nTri)
     !<   => blocks = diag(spre_u)*Beta_deriv_{u,v}, diag(spre_v)*Beta_deriv_{u,v}
@@ -917,9 +921,18 @@ contains
     select case (C%choice_sliding_law)
     case default
       call crash('SSA_FD_SNES analytic Jacobian: sliding-law term only implemented for ' // &
-        '"Zoet-Iverson" (got "' // trim( C%choice_sliding_law) // '")')
+        '"Zoet-Iverson" and "idealised" (SSA_icestream) (got "' // trim( C%choice_sliding_law) // '")')
     case ('Zoet-Iverson')
       ! ok
+    case ('idealised')
+      select case (C%choice_idealised_sliding_law)
+      case default
+        call crash('SSA_FD_SNES analytic Jacobian: idealised sliding-law term only implemented ' // &
+          'for "SSA_icestream" (got "' // trim( C%choice_idealised_sliding_law) // '")')
+      case ('SSA_icestream')
+        ! ok - beta_a = till_yield_stress/uabs, velocity-independent till_yield_stress
+        ! (a function of y only, via Schoof2006_icestream)
+      end select
     end select
 
     call mat_CSR2petsc( self%mesh%M_map_a_b, Pab_map)
@@ -940,8 +953,14 @@ contains
     allocate( sbv_o( self%mesh%vi1:self%mesh%vi2))
     do va = self%mesh%vi1, self%mesh%vi2
       uabs = sqrt( dv_zi**2 + u_a_o( va)**2 + v_a_o( va)**2)
-      dbeta_duabs = ice%till_yield_stress( va) * uabs**(q_zi - 2._dp) * (uabs + ut_zi)**(-q_zi - 1._dp) &
-        * ((q_zi - 1._dp) * ut_zi - uabs)
+      select case (C%choice_sliding_law)
+      case ('Zoet-Iverson')
+        dbeta_duabs = ice%till_yield_stress( va) * uabs**(q_zi - 2._dp) * (uabs + ut_zi)**(-q_zi - 1._dp) &
+          * ((q_zi - 1._dp) * ut_zi - uabs)
+      case ('idealised')
+        ! beta_a = till_yield_stress(va) / uabs  =>  d beta_a/d uabs = -till_yield_stress(va) / uabs^2
+        dbeta_duabs = -ice%till_yield_stress( va) / uabs**2
+      end select
       sbu_o( va) = dbeta_duabs * u_a_o( va) / uabs
       sbv_o( va) = dbeta_duabs * v_a_o( va) / uabs
     end do

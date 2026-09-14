@@ -28,6 +28,7 @@ module momentum_balance_solver_SSADIVA
   use fields_dimensions, only: third_dimension
   use mpi_basic, only: par
   use Schoof_SSA_solution, only: Schoof2006_icestream
+  use ISMIP_HOM_boundary_conditions, only: u_BC_ISMIP_HOM
 
   implicit none
 

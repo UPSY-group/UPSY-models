@@ -1,6 +1,18 @@
 module ct_PETSc_SNES_Poisson
 
 #include <petsc/finclude/petscsys.h>
+#include <petscversion.h>
+
+  ! PetscBool's Fortran kind changed in PETSc 3.24, from a 4-byte logical to a
+  ! logical(C_BOOL) (1 byte), so the hand-written interfaces below (for PETSc
+  ! functions whose bundled Fortran bindings are missing/incomplete) need a
+  ! version-dependent kind for their PetscBool dummy arguments.
+#if PETSC_VERSION_LT(3,24,0)
+#define PETSC_BOOL_KIND 4
+#else
+#define PETSC_BOOL_KIND c_bool
+#endif
+
   use precisions, only: dp
   use iso_c_binding, only: c_bool, c_char, c_double, c_funloc, c_funptr, c_int, c_intptr_t, c_loc, c_null_char, &
     c_null_funptr, c_null_ptr, c_ptr, c_f_pointer
@@ -51,7 +63,7 @@ module ct_PETSc_SNES_Poisson
     subroutine DMPlexSetSNESLocalFEM( dm, has_boundary, ctx, ierr)
       import :: c_bool, c_intptr_t, tDM
       type(tDM),              intent(inout) :: dm
-      logical(kind=c_bool),   intent(in)    :: has_boundary
+      logical(kind=PETSC_BOOL_KIND), intent(in) :: has_boundary
       integer(c_intptr_t),    intent(in)    :: ctx
       integer,                intent(out)   :: ierr
     end subroutine DMPlexSetSNESLocalFEM
@@ -110,7 +122,7 @@ module ct_PETSc_SNES_Poisson
       bind(C, name='PetscSectionHasConstraints')
       import :: c_bool, c_int, c_intptr_t
       integer(c_intptr_t),      value       :: section
-      logical(kind=c_bool), intent(out) :: has_constraints
+      logical(kind=PETSC_BOOL_KIND), intent(out) :: has_constraints
     end function petsc_section_has_constraints
 
   end interface

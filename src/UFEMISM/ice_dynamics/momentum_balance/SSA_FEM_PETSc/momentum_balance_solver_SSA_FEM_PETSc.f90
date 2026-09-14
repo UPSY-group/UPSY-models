@@ -1,6 +1,17 @@
 module momentum_balance_solver_SSA_FEM_PETSc
 
 #include <petsc/finclude/petscsys.h>
+#include <petscversion.h>
+
+  ! PetscBool's Fortran kind changed in PETSc 3.24, from a 4-byte logical to a
+  ! logical(C_BOOL) (1 byte), so the hand-written interface below (for a PETSc
+  ! function whose bundled Fortran binding is missing/incomplete) needs a
+  ! version-dependent kind for its PetscBool dummy argument.
+#if PETSC_VERSION_LT(3,24,0)
+#define PETSC_BOOL_KIND 4
+#else
+#define PETSC_BOOL_KIND c_bool
+#endif
 
   ! Routines for calculating ice velocities using the Shallow Shelf Approximation (SSA),
   ! discretised and solved entirely with PETSc: DMPlex + PetscFE for the discretisation
@@ -190,7 +201,7 @@ module momentum_balance_solver_SSA_FEM_PETSc
     subroutine DMPlexSetSNESLocalFEM( dm, has_boundary, ctx, ierr)
       import :: c_bool, c_intptr_t, tDM
       type(tDM),            intent(inout) :: dm
-      logical(kind=c_bool), intent(in)    :: has_boundary
+      logical(kind=PETSC_BOOL_KIND), intent(in) :: has_boundary
       integer(c_intptr_t),  intent(in)    :: ctx
       integer,              intent(out)   :: ierr
     end subroutine DMPlexSetSNESLocalFEM

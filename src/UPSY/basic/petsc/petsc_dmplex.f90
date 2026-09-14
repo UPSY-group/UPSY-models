@@ -1,9 +1,13 @@
 module petsc_dmplex
 
 #include <petsc/finclude/petscsys.h>
+#include <petscversion.h>
 
   use precisions, only: dp
   use CSR_matrix_mod, only: type_CSR_matrix_dp
+#if PETSC_VERSION_LT(3,24,0)
+  use, intrinsic :: iso_c_binding, only: c_int, c_intptr_t, c_funptr, c_null_funptr
+#endif
   use petsc, only: PetscErrorF, PETSC_COMM_WORLD, PETSC_FALSE, PETSC_TRUE, tDM, tDMLabel, tPetscViewer, PetscViewerCreate, &
     PetscViewerSetType, PETSCVIEWERHDF5, PetscViewerFileSetMode, FILE_MODE_WRITE, &
     PetscViewerFileSetName, PetscViewerPushFormat, PETSC_VIEWER_HDF5_PETSC, DMView, &
@@ -13,7 +17,11 @@ module petsc_dmplex
     DMPlexSetConeOrientation, &
     DMGetCoordinateSection, PetscSectionSetChart, PetscSectionSetDof, PetscSectionSetUp, &
     DMGetCoordinateDM, DMCreateLocalVector, VecSetValues, INSERT_VALUES, VecAssemblyBegin, &
-    VecAssemblyEnd, DMSetCoordinatesLocal, DMPlexCreateCoordinateSpace, VecDestroy, &
+    VecAssemblyEnd, DMSetCoordinatesLocal, &
+#if PETSC_VERSION_GE(3,24,0)
+    DMPlexCreateCoordinateSpace, &
+#endif
+    VecDestroy, &
     DMPlexDistribute, PETSC_NULL_SF, DMDestroy, DMCreateLabel, DMGetLabel, DMLabelSetValue
   use assertions_basic, only: assert
   use mpi_basic, only: par
@@ -30,6 +38,25 @@ module petsc_dmplex
   public :: mesh_to_dmplex, mesh_to_dmplex_masked, write_dmplex_to_hdf5, dmplex_upsy_vertex_id_label_name
 
   character(len=*), parameter :: dmplex_upsy_vertex_id_label_name = 'upsy_vertex_id'
+
+#if PETSC_VERSION_LT(3,24,0)
+  ! PETSc's bundled Fortran interface never auto-generated a binding for
+  ! DMPlexCreateCoordinateSpace before 3.24 (its "coordFunc" callback argument,
+  ! removed in the 3.24 signature rewrite, isn't one bfort can auto-wrap), even
+  ! though the underlying C symbol is exported normally. Bind to it directly,
+  ! the same way momentum_balance_solver_SSA_FD_SNES.f90 works around other
+  ! PETSc Fortran bindings that are missing/incomplete.
+  interface
+    integer(c_int) function DMPlexCreateCoordinateSpace_raw( dm, degree, project, coordFunc) &
+      bind(C, name='DMPlexCreateCoordinateSpace')
+      import :: c_int, c_intptr_t, c_funptr
+      integer(c_intptr_t), value :: dm
+      integer(c_int),      value :: degree
+      logical(kind=4),     value :: project    ! PetscBool
+      type(c_funptr),      value :: coordFunc  ! PetscPointFunc, unused (NULL)
+    end function DMPlexCreateCoordinateSpace_raw
+  end interface
+#endif
 
 contains
 
@@ -117,7 +144,17 @@ contains
 
     ! DMPlex FEM operations require a coordinate finite-element field.
     fem_degree = 1
+    ! DMPlexCreateCoordinateSpace's signature changed in PETSc 3.24: it went
+    ! from (dm, degree, project, coordFunc) to (dm, degree, localized, project).
+    ! Before 3.24, PETSc's Fortran module doesn't expose this function at all
+    ! (see the DMPlexCreateCoordinateSpace_raw interface above), so it's called
+    ! directly instead of via PetscCall.
+#if PETSC_VERSION_LT(3,24,0)
+    ierr = DMPlexCreateCoordinateSpace_raw( dm_serial%v, fem_degree, PETSC_TRUE, c_null_funptr)
+    CHKERRQ(ierr)
+#else
     PetscCall( DMPlexCreateCoordinateSpace( dm_serial, fem_degree, PETSC_FALSE, PETSC_TRUE, ierr))
+#endif
 
     ! Distribute the mesh. DMPlexDistribute leaves its output dm entirely unset
     ! (a NULL DM, per its own documentation: "If the mesh was not distributed,
@@ -391,7 +428,17 @@ contains
 
     ! DMPlex FEM operations require a coordinate finite-element field.
     fem_degree = 1
+    ! DMPlexCreateCoordinateSpace's signature changed in PETSc 3.24: it went
+    ! from (dm, degree, project, coordFunc) to (dm, degree, localized, project).
+    ! Before 3.24, PETSc's Fortran module doesn't expose this function at all
+    ! (see the DMPlexCreateCoordinateSpace_raw interface above), so it's called
+    ! directly instead of via PetscCall.
+#if PETSC_VERSION_LT(3,24,0)
+    ierr = DMPlexCreateCoordinateSpace_raw( dm_serial%v, fem_degree, PETSC_TRUE, c_null_funptr)
+    CHKERRQ(ierr)
+#else
     PetscCall( DMPlexCreateCoordinateSpace( dm_serial, fem_degree, PETSC_FALSE, PETSC_TRUE, ierr))
+#endif
 
     ! Distribute the mesh. DMPlexDistribute leaves its output dm entirely unset
     ! (a NULL DM, per its own documentation: "If the mesh was not distributed,

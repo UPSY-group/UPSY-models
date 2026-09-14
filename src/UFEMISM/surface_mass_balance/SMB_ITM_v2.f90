@@ -404,10 +404,9 @@ contains
             ! and albedo/insolation according following Bintanja et al. (2002)
             ! Retuned to RACMO2.4p1 data
             self%Melt( vi,m) = &
-              max(0._dp, &
-                (C%SMB_ITM_C_melt_temp_pos * max(0._dp, (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))**2 &
-                + C%SMB_ITM_C_melt_temp_neg * min(0._dp, (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp)) &
-                + C%SMB_ITM_C_melt_insol * (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m)))
+                C%SMB_ITM_C_melt_temp * max(0._dp, (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))**2 &
+                + C%SMB_ITM_C_melt_insol * max(0._dp, (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m) &
+                  * (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))
           else
             ! Ice free land
             self%Albedo( vi, m) = self%albedo_soil

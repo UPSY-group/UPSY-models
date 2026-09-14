@@ -905,10 +905,9 @@ module model_configuration_type_and_namelist
     real(dp)            :: SMB_IMAUITM_albedo_ice_config                = 0.5_dp
     real(dp)            :: SMB_IMAUITM_albedo_snow_config               = 0.85_dp
 
-    real(dp)            :: SMB_ITM_C_trans_temp_config                  = 270.78_dp                         ! [K] Transition temperature between suppressed and enhanced surface melting
-    real(dp)            :: SMB_ITM_C_melt_temp_pos_config               = 1.25E-2_dp                         ! [mwe K^-2] Quadratic melt sensitivity to max(0,T2m-T0)
-    real(dp)            :: SMB_ITM_C_melt_temp_neg_config               = 4.52E-2_dp                         ! [mwe K^-1] Linear melt sensitivity to min(0,T2m-T0)
-    real(dp)            :: SMB_ITM_C_melt_insol_config                  = 0.75E-3_dp                      ! [mwe (Wm^-2)^-1] Melt sensitivity to insolation
+    real(dp)            :: SMB_ITM_C_trans_temp_config                  = 268.0_dp                         ! [K] Transition temperature between suppressed and enhanced surface melting
+    real(dp)            :: SMB_ITM_C_melt_temp_config                   = 4.23E-3_dp                         ! [mwe K^-2] Quadratic melt sensitivity to max(0,T2m-T0)
+    real(dp)            :: SMB_ITM_C_melt_insol_config                  = 5.0E-5_dp                      ! [mwe (Wm^-2)^-1] Melt sensitivity to insolation
     real(dp)            :: SMB_ITM_initial_firn_air_content_config      = 1._dp                            ! [m] Initial firn air content for ITM when using uniform
     real(dp)            :: SMB_ITM_C_densification_rate_config          = 0.023_dp                          ! [m s^2 kg^-1] Constant determining the rate at which firn air content decreases due to densification. Empirical values between 0.03 and 0.07
     real(dp)            :: SMB_ITM_C_sublimation_config                 = 2.3E-4_dp                        ! [s] Constant scaling the quadratic dependence of sublimation on wind speed above a temp-dependent threshold
@@ -2175,8 +2174,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: SMB_IMAUITM_albedo_ice
     real(dp)            :: SMB_IMAUITM_albedo_snow
     real(dp)            :: SMB_ITM_C_trans_temp
-    real(dp)            :: SMB_ITM_C_melt_temp_pos
-    real(dp)            :: SMB_ITM_C_melt_temp_neg
+    real(dp)            :: SMB_ITM_C_melt_temp
     real(dp)            :: SMB_ITM_C_melt_insol
     real(dp)            :: SMB_ITM_initial_firn_air_content
     real(dp)            :: SMB_ITM_C_densification_rate
@@ -3171,8 +3169,7 @@ contains
       SMB_IMAUITM_albedo_ice_config                               , &
       SMB_IMAUITM_albedo_snow_config                              , &
       SMB_ITM_C_trans_temp_config                                 , &
-      SMB_ITM_C_melt_temp_pos_config                              , &
-      SMB_ITM_C_melt_temp_neg_config                              , &
+      SMB_ITM_C_melt_temp_config                                  , &
       SMB_ITM_C_melt_insol_config                                 , &
       SMB_ITM_initial_firn_air_content_config                     , &
       SMB_ITM_C_densification_rate_config                         , &
@@ -4344,8 +4341,7 @@ contains
     C%SMB_IMAUITM_albedo_ice                                 = SMB_IMAUITM_albedo_ice_config
     C%SMB_IMAUITM_albedo_snow                                = SMB_IMAUITM_albedo_snow_config
     C%SMB_ITM_C_trans_temp                                   = SMB_ITM_C_trans_temp_config
-    C%SMB_ITM_C_melt_temp_pos                                = SMB_ITM_C_melt_temp_pos_config
-    C%SMB_ITM_C_melt_temp_neg                                = SMB_ITM_C_melt_temp_neg_config
+    C%SMB_ITM_C_melt_temp                                    = SMB_ITM_C_melt_temp_config
     C%SMB_ITM_C_melt_insol                                   = SMB_ITM_C_melt_insol_config
     C%SMB_ITM_initial_firn_air_content                       = SMB_ITM_initial_firn_air_content_config
     C%SMB_ITM_C_densification_rate                           = SMB_ITM_C_densification_rate_config

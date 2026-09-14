@@ -1,6 +1,7 @@
 module petsc_dmplex
 
 #include <petsc/finclude/petscsys.h>
+#include <petscversion.h>
 
   use precisions, only: dp
   use CSR_matrix_mod, only: type_CSR_matrix_dp
@@ -14,6 +15,9 @@ module petsc_dmplex
     DMGetCoordinateSection, PetscSectionSetChart, PetscSectionSetDof, PetscSectionSetUp, &
     DMGetCoordinateDM, DMCreateLocalVector, VecSetValues, INSERT_VALUES, VecAssemblyBegin, &
     VecAssemblyEnd, DMSetCoordinatesLocal, DMPlexCreateCoordinateSpace, VecDestroy, &
+#if PETSC_VERSION_LT(3,24,0)
+    PETSC_NULL_FUNCTION, &
+#endif
     DMPlexDistribute, PETSC_NULL_SF, DMDestroy, DMCreateLabel, DMGetLabel, DMLabelSetValue
   use assertions_basic, only: assert
   use mpi_basic, only: par
@@ -117,7 +121,13 @@ contains
 
     ! DMPlex FEM operations require a coordinate finite-element field.
     fem_degree = 1
+    ! DMPlexCreateCoordinateSpace's signature changed in PETSc 3.24: it went
+    ! from (dm, degree, project, coordFunc) to (dm, degree, localized, project).
+#if PETSC_VERSION_LT(3,24,0)
+    PetscCall( DMPlexCreateCoordinateSpace( dm_serial, fem_degree, PETSC_TRUE, PETSC_NULL_FUNCTION, ierr))
+#else
     PetscCall( DMPlexCreateCoordinateSpace( dm_serial, fem_degree, PETSC_FALSE, PETSC_TRUE, ierr))
+#endif
 
     ! Distribute the mesh. DMPlexDistribute leaves its output dm entirely unset
     ! (a NULL DM, per its own documentation: "If the mesh was not distributed,
@@ -391,7 +401,13 @@ contains
 
     ! DMPlex FEM operations require a coordinate finite-element field.
     fem_degree = 1
+    ! DMPlexCreateCoordinateSpace's signature changed in PETSc 3.24: it went
+    ! from (dm, degree, project, coordFunc) to (dm, degree, localized, project).
+#if PETSC_VERSION_LT(3,24,0)
+    PetscCall( DMPlexCreateCoordinateSpace( dm_serial, fem_degree, PETSC_TRUE, PETSC_NULL_FUNCTION, ierr))
+#else
     PetscCall( DMPlexCreateCoordinateSpace( dm_serial, fem_degree, PETSC_FALSE, PETSC_TRUE, ierr))
+#endif
 
     ! Distribute the mesh. DMPlexDistribute leaves its output dm entirely unset
     ! (a NULL DM, per its own documentation: "If the mesh was not distributed,

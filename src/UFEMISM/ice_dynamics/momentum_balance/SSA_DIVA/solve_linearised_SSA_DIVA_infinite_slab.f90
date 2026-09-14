@@ -536,7 +536,7 @@ contains
         ! Prescribe u on the border
 
         call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
-        bb( row_tiuv) = u_BC_ISMIP_HOM()
+        bb( row_tiuv) = u_BC_ISMIP_HOM_surf()
 
       case ('infinite_SSA_icestream')
         ! Just set values on the domain border to the analytical solution

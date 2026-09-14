@@ -8,11 +8,45 @@ module ISMIP_HOM_boundary_conditions
 
   private
 
-  public :: u_BC_ISMIP_HOM
+  public :: u_BC_ISMIP_HOM_surf, u_BC_ISMIP_HOM_3D
 
 contains
 
-  function u_BC_ISMIP_HOM() result( u)
+  function u_BC_ISMIP_HOM_3D( zeta) result( u)
+    !< Since periodic BCs are an absolute pain in the rear, instead
+    !< we just prescribe the value shown at [normalized x] = 0.5
+    !< in the figures from Pattyn et al. (2008)
+
+    ! In/output variables:
+    real(dp) :: zeta
+    real(dp) :: u
+
+    ! Local variables
+    real(dp) :: u_surf
+    logical  :: with_sliding
+
+    u_surf = u_BC_ISMIP_HOM_surf()
+
+    select case (C%choice_refgeo_init_idealised)
+    case default
+      call crash('invalid choice_refgeo_init_idealised ' // trim( C%choice_refgeo_init_idealised))
+    case ('ISMIP-HOM_A','ISMIP-HOM_B')
+      with_sliding = .false.
+    case ('ISMIP-HOM_C','ISMIP-HOM_D')
+      with_sliding = .true.
+    end select
+
+    if (with_sliding) then
+      u = u_surf
+    else
+      ! Use a simple (n+1)-power curve (i.e. SIA solution)
+      u = (1._dp - zeta**(C%Glens_flow_law_exponent+1._dp)) * u_surf
+    end if
+
+
+  end function u_BC_ISMIP_HOM_3D
+
+  function u_BC_ISMIP_HOM_surf() result( u)
     !< Since periodic BCs are an absolute pain in the rear, instead
     !< we just prescribe the value shown at [normalized x] = 0.5
     !< in the figures from Pattyn et al. (2008)
@@ -99,6 +133,6 @@ contains
 
     end select
 
-  end function u_BC_ISMIP_HOM
+  end function u_BC_ISMIP_HOM_surf
 
 end module ISMIP_HOM_boundary_conditions

@@ -918,23 +918,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_u_west == 'periodic_ISMIP-HOM') then
-        ! u(x,y) = u(x+-L/2,y+-L/2)
+        ! Prescribe u on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          u_fixed = u_fixed + wti_copy( n) * self%u_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = u_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = u_BC_ISMIP_HOM_3D( self%mesh%zeta( k))
 
       else
         call crash('unknown BC_u_west "' // trim( C%BC_u_west) // '"!')
@@ -973,23 +960,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_v_west == 'periodic_ISMIP-HOM') then
-        ! v(x,y) = v(x+-L/2,y+-L/2)
+        ! Just set v=0 on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        v_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          v_fixed = v_fixed + wti_copy( n) * self%v_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = v_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = 0._dp
 
       else
         call crash('unknown BC_u_west "' // trim( C%BC_u_west) // '"!')
@@ -1057,23 +1031,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_u_east == 'periodic_ISMIP-HOM') then
-        ! u(x,y) = u(x+-L/2,y+-L/2)
+        ! Prescribe u on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          u_fixed = u_fixed + wti_copy( n) * self%u_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = u_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = u_BC_ISMIP_HOM_3D( self%mesh%zeta( k))
 
       else
         call crash('unknown BC_u_east "' // trim( C%BC_u_east) // '"!')
@@ -1112,23 +1073,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_v_east == 'periodic_ISMIP-HOM') then
-        ! v(x,y) = v(x+-L/2,y+-L/2)
+        ! Just set v=0 on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        v_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          v_fixed = v_fixed + wti_copy( n) * self%v_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = v_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = 0._dp
 
       else
         call crash('unknown BC_u_east "' // trim( C%BC_u_east) // '"!')
@@ -1196,23 +1144,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_u_south == 'periodic_ISMIP-HOM') then
-        ! u(x,y) = u(x+-L/2,y+-L/2)
+        ! Prescribe u on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          u_fixed = u_fixed + wti_copy( n) * self%u_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = u_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = u_BC_ISMIP_HOM_3D( self%mesh%zeta( k))
 
       else
         call crash('unknown BC_u_south "' // trim( C%BC_u_south) // '"!')
@@ -1251,23 +1186,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_v_south == 'periodic_ISMIP-HOM') then
-        ! v(x,y) = v(x+-L/2,y+-L/2)
+        ! Just set v=0 on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        v_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          v_fixed = v_fixed + wti_copy( n) * self%v_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = v_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = 0._dp
 
       else
         call crash('unknown BC_u_south "' // trim( C%BC_u_south) // '"!')
@@ -1335,23 +1257,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_u_north == 'periodic_ISMIP-HOM') then
-        ! u(x,y) = u(x+-L/2,y+-L/2)
+        ! Prescribe u on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          u_fixed = u_fixed + wti_copy( n) * self%u_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = u_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = u_BC_ISMIP_HOM_3D( self%mesh%zeta( k))
 
       else
         call crash('unknown BC_u_north "' // trim( C%BC_u_north) // '"!')
@@ -1390,23 +1299,10 @@ contains
         bb( row_tikuv) = 0._dp
 
       elseif (C%BC_v_north == 'periodic_ISMIP-HOM') then
-        ! v(x,y) = v(x+-L/2,y+-L/2)
+        ! Just set v=0 on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tikuv, row_tikuv,  1._dp)
-        v_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) CYCLE
-          v_fixed = v_fixed + wti_copy( n) * self%v_bk_prev( tj,k)
-        end do
-        ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_bk_prev( ti,k))
-        ! Set load vector
-        bb( row_tikuv) = v_fixed
+        call A_CSR%add_entry( row_tikuv, row_tikuv, 1._dp)
+        bb( row_tikuv) = 0._dp
 
       else
         call crash('unknown BC_u_north "' // trim( C%BC_u_north) // '"!')

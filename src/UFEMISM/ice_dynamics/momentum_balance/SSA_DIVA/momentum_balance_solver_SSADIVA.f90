@@ -17,7 +17,6 @@ module momentum_balance_solver_SSADIVA
   use parameters, only: ice_density, grav
   use checksum_mod, only: checksum
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic, find_ti_copy_SSA_icestream_infinite
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use petsc_basic, only: solve_matrix_equation_CSR_PETSc
@@ -28,6 +27,8 @@ module momentum_balance_solver_SSADIVA
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
   use mpi_basic, only: par
+  use Schoof_SSA_solution, only: Schoof2006_icestream
+  use ISMIP_HOM_boundary_conditions, only: u_BC_ISMIP_HOM_surf
 
   implicit none
 

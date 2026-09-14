@@ -22,7 +22,6 @@ module momentum_balance_solver_BPA
   use mesh_disc_calc_matrix_operators_3D, only: calc_3D_matrix_operators_mesh
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
-  use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
@@ -32,6 +31,7 @@ module momentum_balance_solver_BPA
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
   use bed_roughness_model_types, only: type_bed_roughness_model
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
+  use ISMIP_HOM_boundary_conditions, only: u_BC_ISMIP_HOM_3D
 
   implicit none
 

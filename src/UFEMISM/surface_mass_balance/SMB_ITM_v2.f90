@@ -466,7 +466,7 @@ contains
               self%FirnAirContent( vi, mprev) &
               + (self%Snowfall( vi, m) - self%Melt( vi, m)) * freshwater_density / surface_snow_density &
                 * (ice_density - surface_snow_density)/ice_density &
-              - C%SMB_ITM_C_densification_rate * grav * max(0._dp, self%SMB( vi)/12._dp) &
+              - C%SMB_ITM_C_densification_rate * grav * sum(self%Snowfall( vi, :))/12._dp &
                 * ice_density * temp_exponent * self%FirnAirContent( vi, mprev))
           else
             ! Ice free land

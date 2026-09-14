@@ -62,7 +62,10 @@ set cmake_flags = `echo "$compiler_flags" | sed 's/ /;/g'`
 if (! -d build) mkdir build
 
 # For a "clean" build, remove all build files first
-if ($selection == 'clean') rm -rf build/*
+if ($selection == 'clean') then
+  rm -rf build
+  mkdir build
+endif
 
 # For a "changed" build, remove only the CMake cache file
 if ($selection == 'changed') rm -f build/CMakeCache.txt
@@ -70,39 +73,70 @@ if ($selection == 'changed') rm -f build/CMakeCache.txt
 set compile_exit_code = 0
 set in_build_dir = 0
 
-# Build against the active Conda toolchain, independent of any Homebrew
-# pkg-config metadata.
-if ($?CONDA_PREFIX == 0 || "$CONDA_PREFIX" == "") then
-  echo "Error: Activate the upsy Conda environment before compiling"
-  set compile_exit_code = 1
-  goto cleanup
+# Detect whether a Conda environment is active. `$?CONDA_PREFIX` must be
+# checked on its own: csh expands `$CONDA_PREFIX` while parsing the whole
+# expression, so referencing it in the same `if` as `$?CONDA_PREFIX` fails
+# with "Undefined variable" when it isn't set, even with `||` short-circuiting.
+set use_conda = 0
+if ($?CONDA_PREFIX) then
+  if ("$CONDA_PREFIX" != "") then
+    set use_conda = 1
+  endif
 endif
 
-set petsc_dir = "$CONDA_PREFIX"
-if (! -f "$petsc_dir/lib/pkgconfig/PETSc.pc") then
-  echo "Error: Active Conda environment does not provide PETSc: $petsc_dir"
-  set compile_exit_code = 1
-  goto cleanup
+set cmake_extra_args = ""
+
+if ($use_conda == 1) then
+
+  # Build against the active Conda toolchain, independent of any Homebrew
+  # pkg-config metadata.
+  set petsc_dir = "$CONDA_PREFIX"
+  if (! -f "$petsc_dir/lib/pkgconfig/PETSc.pc") then
+    echo "Error: Active Conda environment does not provide PETSc: $petsc_dir"
+    set compile_exit_code = 1
+    goto cleanup
+  endif
+
+  set mpi_fortran_compiler = "$petsc_dir/bin/mpifort"
+  if (! -x "$mpi_fortran_compiler") then
+    echo "Error: Active Conda environment does not provide an MPI Fortran compiler: $mpi_fortran_compiler"
+    set compile_exit_code = 1
+    goto cleanup
+  endif
+
+  which gfortran >& /dev/null
+  if ($status != 0) then
+    echo "Error: No Fortran compiler found on PATH"
+    set compile_exit_code = 1
+    goto cleanup
+  endif
+
+  setenv OMPI_FC `which gfortran`
+
+  unsetenv PKG_CONFIG_PATH
+  setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
+
+  set cmake_extra_args = "-DPETSC_DIR=$petsc_dir -DMPI_Fortran_COMPILER=$mpi_fortran_compiler"
+
+else
+
+  # No Conda environment active: assume PETSc, NetCDF and OpenMPI are instead
+  # provided as modules from an HPC software stack (e.g. Snellius). CMake's
+  # dependency discovery (cmake/link_to_dependencies.cmake) falls back to
+  # pkg-config / PETSC_DIR / nf-config in that case, so no extra flags are
+  # needed here beyond a sanity check that a module-provided MPI compiler is
+  # actually on PATH.
+  echo "No Conda environment active: assuming PETSc, NetCDF and OpenMPI are"
+  echo "provided as modules from the HPC software stack."
+
+  which mpifort >& /dev/null
+  if ($status != 0) then
+    echo "Error: No MPI Fortran compiler (mpifort) found on PATH. Load the required modules first, e.g. 'module load OpenMPI PETSc netCDF-Fortran'."
+    set compile_exit_code = 1
+    goto cleanup
+  endif
+
 endif
-
-set mpi_fortran_compiler = "$petsc_dir/bin/mpifort"
-if (! -x "$mpi_fortran_compiler") then
-  echo "Error: Active Conda environment does not provide an MPI Fortran compiler: $mpi_fortran_compiler"
-  set compile_exit_code = 1
-  goto cleanup
-endif
-
-which gfortran >& /dev/null
-if ($status != 0) then
-  echo "Error: No Fortran compiler found on PATH"
-  set compile_exit_code = 1
-  goto cleanup
-endif
-
-setenv OMPI_FC `which gfortran`
-
-unsetenv PKG_CONFIG_PATH
-setenv PKG_CONFIG_LIBDIR "$petsc_dir/lib/pkgconfig:$petsc_dir/share/pkgconfig"
 
 # Add git commit hash and package versions to the source code
 csh -f ./src/UPSY/basic/git_commit_hash_and_package_versions/add_git_commit_hash_and_package_versions_to_code.csh "$compiler_flags"
@@ -119,7 +153,7 @@ set in_build_dir = 1
 
 if ($version == 'dev') then
 
-  cmake -G Ninja -DPETSC_DIR="$petsc_dir" -DMPI_Fortran_COMPILER="$mpi_fortran_compiler" \
+  cmake -G Ninja $cmake_extra_args \
     -DBUILD_UFEMISM=ON \
     -DDO_ASSERTIONS=ON \
     -DDO_RESOURCE_TRACKING=ON \
@@ -127,7 +161,7 @@ if ($version == 'dev') then
 
 else if ($version == 'perf') then
 
-  cmake -G Ninja -DPETSC_DIR="$petsc_dir" -DMPI_Fortran_COMPILER="$mpi_fortran_compiler" \
+  cmake -G Ninja $cmake_extra_args \
     -DBUILD_UFEMISM=ON \
     -DDO_ASSERTIONS=OFF \
     -DDO_RESOURCE_TRACKING=OFF \

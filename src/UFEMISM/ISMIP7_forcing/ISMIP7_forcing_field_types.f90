@@ -504,7 +504,7 @@ module ISMIP7_forcing_field_types
       select case (self%name)
       case default
         call crash('invalid field name ' // trim( self%name))
-      case ('tas','tas-anomaly')
+      case ('tas','tas-anomaly','ts','ts-anomaly')
         ! No unit conversion needed for these fields
       case ('pr')
         call unit_conversion_precipitation_monthly( mesh, val)

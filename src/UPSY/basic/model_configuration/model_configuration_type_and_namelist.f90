@@ -270,7 +270,7 @@ module model_configuration_type_and_namelist
   ! ==========================
 
     ! General
-    character(len=1024) :: choice_stress_balance_approximation_config   = 'DIVA'                           ! Choice of stress balance approximation: "none" (= no flow, though geometry can still change due to mass balance), "SIA", "SSA", "SIA/SSA", "DIVA", "BPA"
+    character(len=1024) :: choice_stress_balance_approximation_config   = 'DIVA'                           ! Choice of stress balance approximation: "none" (= no flow, though geometry can still change due to mass balance), "SIA", "SSA", "SIA/SSA", "DIVA", "BPA", "SSA_FD_SNES" (finite-difference SSA solved with PetscSNES), "SSA_FEM_PETSc" (finite-element SSA solved with PetscFE/PetscSNES)
     character(len=1024) :: choice_hybrid_SIASSA_scheme_config           = 'add'                            ! Choice of scheme for combining SIA and SSA velocities in the hybrid approach
     logical             :: do_include_SSADIVA_crossterms_config         = .true.                           ! Whether or not to include the gradients of the effective viscosity (the "cross-terms") in the solution of the SSA/DIVA
 
@@ -312,6 +312,26 @@ module model_configuration_type_and_namelist
     character(len=1024) :: stress_balance_PETSc_PCtype_config           = 'bjacobi'                        ! Which preconditioner PETSc should use
     real(dp)            :: stress_balance_PETSc_rtol_config             = 1E-7_dp                          ! PETSc solver - stop criterion, relative difference (iteration stops if rtol OR abstol is reached)
     real(dp)            :: stress_balance_PETSc_abstol_config           = 1E-5_dp                          ! PETSc solver - stop criterion, absolute difference
+
+    ! SSA_FEM_PETSc solver (SNES + PetscFE) - separate from the KSP-only settings
+    ! above because it solves a non-linear system (SNES wrapping a KSP), and its
+    ! residual is non-dimensionalised (see momentum_balance_solver_SSA_FEM_PETSc.f90),
+    ! so the tolerances below apply to an O(1) dimensionless residual.
+    character(len=1024) :: SSA_FEM_PETSc_pc_type_config          = 'lu'                              ! Preconditioner for the SNES solve: "lu" (direct, MUMPS on >1 rank), "gamg" (algebraic multigrid, uses the rigid-body near-null-space), "bjacobi" (block-Jacobi/ILU)
+    real(dp)            :: SSA_FEM_PETSc_snes_rtol_config         = 1E-8_dp                          ! SNES solver - stop criterion, relative reduction of the (dimensionless) residual
+    real(dp)            :: SSA_FEM_PETSc_snes_abstol_config       = 1E-10_dp                         ! SNES solver - stop criterion, absolute (dimensionless) residual norm
+    integer             :: SSA_FEM_PETSc_snes_maxits_config       = 50                                ! Maximum number of Newton iterations per solve
+
+    ! SSA_FD_SNES solver (PetscSNES + the in-house finite-difference SSA discretisation).
+    ! "Tier 1" defect-correction Newton: PetscSNES wraps a KSP around the same linear
+    ! system the SSA solver assembles per viscosity iteration (see
+    ! SSA_FD_SNES_implementation_plan.md). The inner KSP/PC reuse the
+    ! stress_balance_PETSc_* settings above; the tolerances below apply to the raw
+    ! (dimensional) residual norm, so convergence is driven mainly by the relative rtol.
+    real(dp)            :: SSA_FD_SNES_snes_rtol_config           = 1E-3_dp                          ! SNES solver - stop criterion, relative reduction of the (non-dimensional) residual norm
+    real(dp)            :: SSA_FD_SNES_snes_abstol_config         = 1E-3_dp                          ! SNES solver - stop criterion, absolute (non-dimensional) residual norm
+    integer             :: SSA_FD_SNES_snes_maxits_config         = 50                                ! Maximum number of Newton iterations per solve
+    logical             :: SSA_FD_SNES_use_EW_config              = .true.                           ! Use Eisenstat-Walker inexact-Newton tolerancing on the inner KSP
 
     ! Boundary conditions
     character(len=1024) :: BC_ice_front_config                          = 'infinite_slab'                  ! Boundary conditions to the momentum balance at the ice front: "infinite_slab", "ocean_pressure"
@@ -740,7 +760,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: climate_ISMIP7_choice_refgeo_config           = ''                               ! Which reference geometry to use as the baseline for calculating delta_ts = dts/dz * delta_s: 'init', 'PD'
     character(len=1024) :: climate_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the climate files are located in /path/to/base/folder/acabf/version)
     character(len=1024) :: climate_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the climate files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
-
+    character(len=1024) :: climate_ISMIP7_temperature_name_config        = 'tas'                            ! In some of the forcing files, it's called 'ts'...
 
   ! == Ocean
   ! ========
@@ -1581,6 +1601,14 @@ module model_configuration_type_and_namelist
     character(len=1024) :: stress_balance_PETSc_PCtype
     real(dp)            :: stress_balance_PETSc_rtol
     real(dp)            :: stress_balance_PETSc_abstol
+    character(len=1024) :: SSA_FEM_PETSc_pc_type
+    real(dp)            :: SSA_FEM_PETSc_snes_rtol
+    real(dp)            :: SSA_FEM_PETSc_snes_abstol
+    integer             :: SSA_FEM_PETSc_snes_maxits
+    real(dp)            :: SSA_FD_SNES_snes_rtol
+    real(dp)            :: SSA_FD_SNES_snes_abstol
+    integer             :: SSA_FD_SNES_snes_maxits
+    logical             :: SSA_FD_SNES_use_EW
 
     ! Boundary conditions
     character(len=1024) :: BC_ice_front
@@ -2009,6 +2037,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: climate_ISMIP7_choice_refgeo
     character(len=1024) :: climate_ISMIP7_forcing_foldername
     character(len=1024) :: climate_ISMIP7_forcing_version
+    character(len=1024) :: climate_ISMIP7_temperature_name
 
   ! == Ocean
   ! ========
@@ -2779,6 +2808,14 @@ contains
       stress_balance_PETSc_PCtype_config                          , &
       stress_balance_PETSc_rtol_config                            , &
       stress_balance_PETSc_abstol_config                          , &
+      SSA_FEM_PETSc_pc_type_config                                , &
+      SSA_FEM_PETSc_snes_rtol_config                              , &
+      SSA_FEM_PETSc_snes_abstol_config                            , &
+      SSA_FEM_PETSc_snes_maxits_config                            , &
+      SSA_FD_SNES_snes_rtol_config                                , &
+      SSA_FD_SNES_snes_abstol_config                              , &
+      SSA_FD_SNES_snes_maxits_config                              , &
+      SSA_FD_SNES_use_EW_config                                   , &
       BC_ice_front_config                                         , &
       BC_u_west_config                                            , &
       BC_u_east_config                                            , &
@@ -3060,6 +3097,7 @@ contains
       climate_ISMIP7_choice_refgeo_config                         , &
       climate_ISMIP7_forcing_foldername_config                    , &
       climate_ISMIP7_forcing_version_config                       , &
+      climate_ISMIP7_temperature_name_config                      , &
       do_asynchronous_ocean_config                                , &
       dt_ocean_config                                             , &
       ocean_vertical_grid_max_depth_config                        , &
@@ -3752,6 +3790,14 @@ contains
     C%stress_balance_PETSc_PCtype                            = stress_balance_PETSc_PCtype_config
     C%stress_balance_PETSc_rtol                              = stress_balance_PETSc_rtol_config
     C%stress_balance_PETSc_abstol                            = stress_balance_PETSc_abstol_config
+    C%SSA_FEM_PETSc_pc_type                                  = SSA_FEM_PETSc_pc_type_config
+    C%SSA_FEM_PETSc_snes_rtol                                = SSA_FEM_PETSc_snes_rtol_config
+    C%SSA_FEM_PETSc_snes_abstol                              = SSA_FEM_PETSc_snes_abstol_config
+    C%SSA_FEM_PETSc_snes_maxits                               = SSA_FEM_PETSc_snes_maxits_config
+    C%SSA_FD_SNES_snes_rtol                                  = SSA_FD_SNES_snes_rtol_config
+    C%SSA_FD_SNES_snes_abstol                                = SSA_FD_SNES_snes_abstol_config
+    C%SSA_FD_SNES_snes_maxits                                = SSA_FD_SNES_snes_maxits_config
+    C%SSA_FD_SNES_use_EW                                     = SSA_FD_SNES_use_EW_config
 
     ! Boundary conditions
     C%BC_ice_front                                           = BC_ice_front_config
@@ -4176,6 +4222,7 @@ contains
     C%climate_ISMIP7_choice_refgeo                             = climate_ISMIP7_choice_refgeo_config
     C%climate_ISMIP7_forcing_foldername                        = climate_ISMIP7_forcing_foldername_config
     C%climate_ISMIP7_forcing_version                           = climate_ISMIP7_forcing_version_config
+    C%climate_ISMIP7_temperature_name                          = climate_ISMIP7_temperature_name_config
 
     ! == Ocean
     ! ========

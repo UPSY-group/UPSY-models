@@ -6,21 +6,19 @@ contains
     !< Solve the linearised SSA
 
     ! In/output variables:
-    class(atype_momentum_balance_solver_SSADIVA), intent(inout) :: self
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
-    integer,                                            intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
-    integer,  dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
-    real(dp), dimension(self%mesh%ti1:self%mesh%ti2),   intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    class(atype_momentum_balance_solver_SSADIVA),     intent(inout) :: self
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
+    integer,                                          intent(  out) :: n_Axb_its             ! Number of iterations used in the iterative solver
+    integer,  dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
 
     ! Local variables:
     character(len=*), parameter         :: routine_name = 'solve_SSA_DIVA_linearised'
-    integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
     type(type_CSR_matrix_dp)            :: A_CSR
     real(dp), dimension(:), allocatable :: bb
     real(dp), dimension(:), allocatable :: uv_buv
-    integer                             :: row_tiuv,ti,uv
-    character(len=:), allocatable       :: choice_BC_u, choice_BC_v
+    integer                             :: row_tiuv,ti
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -28,6 +26,56 @@ contains
     ! Store the previous solution
     call gather_dist_shared_to_all( self%mesh%pai_Tri, self%u_vav_b, self%u_vav_b_prev)
     call gather_dist_shared_to_all( self%mesh%pai_Tri, self%v_vav_b, self%v_vav_b_prev)
+
+    ! Assemble the matrix equation
+    call assemble_SSA_DIVA_linearised_matrix_eq( self, u_ii_term, &
+      BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, &
+      A_CSR, bb, uv_buv)
+
+    ! Use PETSc to solve the matrix equation
+    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_buv, self%PETSc_rtol, self%PETSc_abstol, n_Axb_its, &
+      PETSc_KSPtype = C%stress_balance_PETSc_KSPtype, PETSc_PCtype = C%stress_balance_PETSc_PCtype)
+
+    ! Disentangle the u and v components of the velocity solution
+    do ti = self%mesh%ti1, self%mesh%ti2
+
+      ! u
+      row_tiuv = self%mesh%tiuv2n( ti,1)
+      self%u_vav_b( ti) = uv_buv( row_tiuv)
+
+      ! v
+      row_tiuv = self%mesh%tiuv2n( ti,2)
+      self%v_vav_b( ti) = uv_buv( row_tiuv)
+
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine solve_SSA_DIVA_linearised
+
+  subroutine assemble_SSA_DIVA_linearised_matrix_eq( self, u_ii_term, BC_prescr_mask_b, BC_prescr_u_b, BC_prescr_v_b, &
+    A_CSR, bb, uv_buv)
+    !< Assemble the matrix equation representing the linearised SSA/DIVA
+
+    ! In/output variables:
+    class(atype_momentum_balance_solver_SSADIVA),     intent(in   ) :: self
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: u_ii_term             ! Term to add to the diagonal; either the basal friction coefficient in the SSA, or beta_eff in the DIVA
+    integer,  dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: BC_prescr_mask_b      ! Mask of triangles where velocity is prescribed
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: BC_prescr_u_b         ! Prescribed velocities in the x-direction
+    real(dp), dimension(self%mesh%ti1:self%mesh%ti2), intent(in   ) :: BC_prescr_v_b         ! Prescribed velocities in the y-direction
+    type(type_CSR_matrix_dp),                         intent(inout) :: A_CSR
+    real(dp), dimension(:), allocatable,              intent(inout) :: bb
+    real(dp), dimension(:), allocatable,              intent(inout) :: uv_buv
+
+    ! Local variables:
+    character(len=*), parameter         :: routine_name = 'assemble_SSA_DIVA_linearised_matrix_eq'
+    integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
+    integer                             :: row_tiuv,ti,uv
+    character(len=:), allocatable       :: choice_BC_u, choice_BC_v
+
+    ! Add routine to path
+    call init_routine( routine_name)
 
     ! == Initialise the stiffness matrix using the native UFEMISM CSR-matrix format
     ! =============================================================================
@@ -124,30 +172,10 @@ contains
 
     call A_CSR%finalise()
 
-    ! == Solve the matrix equation
-    ! ============================
-
-    ! Use PETSc to solve the matrix equation
-    call solve_matrix_equation_CSR_PETSc( A_CSR, bb, uv_buv, self%PETSc_rtol, self%PETSc_abstol, n_Axb_its, &
-      PETSc_KSPtype = C%stress_balance_PETSc_KSPtype, PETSc_PCtype = C%stress_balance_PETSc_PCtype)
-
-    ! Disentangle the u and v components of the velocity solution
-    do ti = self%mesh%ti1, self%mesh%ti2
-
-      ! u
-      row_tiuv = self%mesh%tiuv2n( ti,1)
-      self%u_vav_b( ti) = uv_buv( row_tiuv)
-
-      ! v
-      row_tiuv = self%mesh%tiuv2n( ti,2)
-      self%v_vav_b( ti) = uv_buv( row_tiuv)
-
-    end do
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
-  end subroutine solve_SSA_DIVA_linearised
+  end subroutine assemble_SSA_DIVA_linearised_matrix_eq
 
   subroutine calc_SSA_DIVA_stiffness_matrix_row_free( self, u_ii_term, A_CSR, bb, row_tiuv)
     !< Add coefficients to this matrix row to represent the linearised SSA
@@ -449,17 +477,17 @@ contains
 
     ! In/output variables:
     class(atype_momentum_balance_solver_SSADIVA), intent(in   ) :: self
-    type(type_CSR_matrix_dp),                           intent(inout) :: A_CSR
-    real(dp), dimension(A_CSR%i1:A_CSR%i2),             intent(inout) :: bb
-    integer,                                            intent(in   ) :: row_tiuv
-    character(len=*),                                   intent(in   ) :: choice_BC_u, choice_BC_v
+    type(type_CSR_matrix_dp),                     intent(inout) :: A_CSR
+    real(dp), dimension(A_CSR%i1:A_CSR%i2),       intent(inout) :: bb
+    integer,                                      intent(in   ) :: row_tiuv
+    character(len=*),                             intent(in   ) :: choice_BC_u, choice_BC_v
 
     ! Local variables:
     integer                               :: ti,uv,row_ti
-    integer                               :: tj, col_tjuv
+    integer                               :: tj, col_tjuv, i
     integer,  dimension(self%mesh%nC_mem) :: ti_copy
     real(dp), dimension(self%mesh%nC_mem) :: wti_copy
-    real(dp)                              :: u_fixed, v_fixed
+    real(dp)                              :: u_fixed, v_fixed, y, till_yield_stress
     integer                               :: n, n_neighbours
 
     ti = self%mesh%n2tiuv( row_tiuv,1)
@@ -505,41 +533,20 @@ contains
         bb( row_tiuv) = 0._dp
 
       case ('periodic_ISMIP-HOM')
-        ! u(x,y) = u(x+-L/2,y+-L/2)
+        ! Prescribe u on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) cycle
-          u_fixed = u_fixed + wti_copy( n) * self%u_vav_b_prev( tj)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_vav_b_prev( ti))
-        ! Set load vector
-        bb( row_tiuv) = u_fixed
+        call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
+        bb( row_tiuv) = u_BC_ISMIP_HOM_surf()
 
       case ('infinite_SSA_icestream')
-        ! du/dx = 0 everywhere
+        ! Just set values on the domain border to the analytical solution
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_SSA_icestream_infinite( self%mesh, ti, ti_copy, wti_copy)
+        y = self%mesh%Trigc( ti,2)
+        call Schoof2006_icestream( C%uniform_Glens_flow_factor, C%Glens_flow_law_exponent, C%refgeo_idealised_SSA_icestream_Hi, &
+          C%refgeo_idealised_SSA_icestream_dhdx, C%refgeo_idealised_SSA_icestream_L, C%refgeo_idealised_SSA_icestream_m, &
+          y, u_fixed, till_yield_stress)
 
-        ! Set value at ti equal to value at ti_copy
         call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
-        u_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) cycle
-          u_fixed = u_fixed + wti_copy( n) * self%u_vav_b_prev( tj)
-        end do
-        ! Relax solution to improve stability
-        u_fixed = (C%visc_it_relax * u_fixed) + ((1._dp - C%visc_it_relax) * self%u_vav_b_prev( ti))
-        ! Set load vector
         bb( row_tiuv) = u_fixed
 
       end select
@@ -580,23 +587,10 @@ contains
         bb( row_tiuv) = 0._dp
 
       case ('periodic_ISMIP-HOM')
-        ! v(x,y) = v(x+-L/2,y+-L/2)
+        ! Just set v=0 on the border
 
-        ! Find the triangle ti_copy that is displaced by [x+-L/2,y+-L/2] relative to ti
-        call find_ti_copy_ISMIP_HOM_periodic( self%mesh, C%refgeo_idealised_ISMIP_HOM_L, ti, ti_copy, wti_copy)
-
-        ! Set value at ti equal to value at ti_copy
-        call A_CSR%add_entry( row_tiuv, row_tiuv,  1._dp)
-        v_fixed = 0._dp
-        do n = 1, self%mesh%nC_mem
-          tj = ti_copy( n)
-          if (tj == 0) cycle
-          v_fixed = v_fixed + wti_copy( n) * self%v_vav_b_prev( tj)
-        end do
-        ! Relax solution to improve stability
-        v_fixed = (C%visc_it_relax * v_fixed) + ((1._dp - C%visc_it_relax) * self%v_vav_b_prev( ti))
-        ! Set load vector
-        bb( row_tiuv) = v_fixed
+        call A_CSR%add_entry( row_tiuv, row_tiuv, 1._dp)
+        bb( row_tiuv) = 0._dp
 
       end select
 

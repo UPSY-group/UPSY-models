@@ -15,7 +15,7 @@ module ISMIP7_climate
   !    path/
   !      to/
   !        base_folder/
-  !          tas/
+  !          tas/        (or 'ts')
   !            version/
   !              tas_somethingsomethingsomething_2015.nc
   !              tas_somethingsomethingsomething_2016.nc
@@ -121,7 +121,7 @@ contains
     case ('yearly')
 
       ! Allocate monthly climate (as ISMIP7 forcing fields)
-      call self%tas%allocate( self, 'tas', 'Monthly mean 2-m air temperature', 'K')
+      call self%tas%allocate( self, trim( C%climate_ISMIP7_temperature_name), 'Monthly mean 2-m air temperature', 'K')
       call self%pr%allocate ( self, 'pr' , 'Monthly total precipitation', 'm.w.e. month^-1')
 
     case ('fixed')
@@ -142,7 +142,7 @@ contains
         remap_method = 'reallocate')
 
       ! Allocate anomalies (as ISMIP7 forcing fields)
-      call self%tas_anomaly%allocate( self, 'tas-anomaly', 'Monthly mean 2-m air temperature anomaly', 'K')
+      call self%tas_anomaly%allocate( self, trim( C%climate_ISMIP7_temperature_name) // '-anomaly', 'Monthly mean 2-m air temperature anomaly', 'K')
 
     end select
 

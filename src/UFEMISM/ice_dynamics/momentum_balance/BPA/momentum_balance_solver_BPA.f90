@@ -22,7 +22,6 @@ module momentum_balance_solver_BPA
   use mesh_disc_calc_matrix_operators_3D, only: calc_3D_matrix_operators_mesh
   use mesh_zeta, only: vertical_average
   use sliding_laws, only: calc_basal_friction_coefficient
-  use mesh_utilities, only: find_ti_copy_ISMIP_HOM_periodic
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use netcdf_io_main
   use mpi_distributed_memory, only: gather_to_all
@@ -32,6 +31,7 @@ module momentum_balance_solver_BPA
   use remapping_main, only: map_from_mesh_to_mesh_with_reallocation_2D, map_from_mesh_to_mesh_with_reallocation_3D
   use bed_roughness_model_types, only: type_bed_roughness_model
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
+  use ISMIP_HOM_boundary_conditions, only: u_BC_ISMIP_HOM_3D
 
   implicit none
 
@@ -94,6 +94,7 @@ module momentum_balance_solver_BPA
       procedure, public :: initialise_BPA_velocities_from_file
 
       procedure, public :: solve_BPA_linearised
+      procedure, public :: assemble_BPA_linearised_matrix_eq
       procedure, public :: calc_BPA_stiffness_matrix_row_free
       procedure, public :: calc_BPA_stiffness_matrix_row_BC_surf
       procedure, public :: calc_BPA_stiffness_matrix_row_BC_base
@@ -124,6 +125,19 @@ module momentum_balance_solver_BPA
       real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), intent(in   ) :: BC_prescr_u_bk         ! Prescribed velocities in the x-direction
       real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), intent(in   ) :: BC_prescr_v_bk         ! Prescribed velocities in the y-direction
     end subroutine solve_BPA_linearised
+
+    module subroutine assemble_BPA_linearised_matrix_eq( self, ice, &
+      BC_prescr_mask_bk, BC_prescr_u_bk, BC_prescr_v_bk, &
+      A_CSR, bb, uv_bkuv)
+      class(type_momentum_balance_solver_BPA),                         intent(in   ) :: self
+      class(atype_ice_model_data),                                     intent(in   ) :: ice
+      integer,  dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), intent(in   ) :: BC_prescr_mask_bk      ! Mask of triangles where velocity is prescribed
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), intent(in   ) :: BC_prescr_u_bk         ! Prescribed velocities in the x-direction
+      real(dp), dimension(self%mesh%ti1:self%mesh%ti2,1:self%mesh%nz), intent(in   ) :: BC_prescr_v_bk         ! Prescribed velocities in the y-direction
+      type(type_CSR_matrix_dp),                                        intent(inout) :: A_CSR
+      real(dp), dimension(:), allocatable,                             intent(inout) :: bb
+      real(dp), dimension(:), allocatable,                             intent(inout) :: uv_bkuv
+    end subroutine assemble_BPA_linearised_matrix_eq
 
     module subroutine calc_BPA_stiffness_matrix_row_free( self, A_CSR, bb, row_tikuv)
       class(type_momentum_balance_solver_BPA), intent(in   ) :: self

@@ -821,11 +821,8 @@ contains
       case ('MeltPreviousYear')
         select type (SMB_model => region%SMB)
         class default
-          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM or ITM_v2')
+          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, SMB_model%MeltPreviousYear, d_grid_vec_partial_2D)
-          call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'MeltPreviousYear', d_grid_vec_partial_2D)
-        class is (type_SMB_model_ITM_v2)
           call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, SMB_model%MeltPreviousYear, d_grid_vec_partial_2D)
           call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'MeltPreviousYear', d_grid_vec_partial_2D)
         end select
@@ -837,7 +834,7 @@ contains
           call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Melt, d_grid_vec_partial_2D_monthly)
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'SurfaceMelt', d_grid_vec_partial_2D_monthly)
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Melt, d_grid_vec_partial_2D_monthly)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%SurfaceMelt, d_grid_vec_partial_2D_monthly)
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'SurfaceMelt', d_grid_vec_partial_2D_monthly)
         end select
       case ('Refreezing')

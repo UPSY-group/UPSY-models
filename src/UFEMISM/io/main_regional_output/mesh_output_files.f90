@@ -655,10 +655,8 @@ contains
       case ('MeltPreviousYear')
         select type (SMB_model => region%SMB)
         class default
-          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM or ITM_v2')
+          call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
-        class is (type_SMB_model_ITM_v2)
           call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
         end select
       case ('SurfaceMelt')
@@ -668,7 +666,7 @@ contains
         class is (type_SMB_model_IMAU_ITM)
           call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%Melt)
         class is (type_SMB_model_ITM_v2)
-          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%Melt)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%SurfaceMelt)
         end select
       case ('Refreezing')
         select type (SMB_model => region%SMB)

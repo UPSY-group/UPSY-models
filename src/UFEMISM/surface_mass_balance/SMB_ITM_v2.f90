@@ -33,22 +33,18 @@ module SMB_ITM_v2
     !< Variables and functions that are specific to the ITM_v2 SMB model
 
       ! Main data fields
-      real(dp), dimension(:  ), contiguous, pointer :: MeltPreviousYear => null() !< [m.w.e.] total melt in the previous year
       real(dp), dimension(:,:), contiguous, pointer :: FirnAirContent   => null() !< [m] firn air content
       real(dp), dimension(:,:), contiguous, pointer :: Rainfall         => null() !< Monthly rainfall (m)
       real(dp), dimension(:,:), contiguous, pointer :: Snowfall         => null() !< Monthly snowfall (m)
-      real(dp), dimension(:,:), contiguous, pointer :: AddedFirn        => null() !< Monthly added firn (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Melt             => null() !< Monthly melt (m)
+      real(dp), dimension(:,:), contiguous, pointer :: SurfaceMelt      => null() !< Monthly melt (m)
       real(dp), dimension(:,:), contiguous, pointer :: Refreezing       => null() !< Monthly refreezing (m)
-      real(dp), dimension(:  ), contiguous, pointer :: Refreezing_year  => null() !< Yearly  refreezing (m)
       real(dp), dimension(:,:), contiguous, pointer :: Runoff           => null() !< Monthly runoff (m)
       real(dp), dimension(:,:), contiguous, pointer :: Albedo           => null() !< Monthly albedo
-      real(dp), dimension(:  ), contiguous, pointer :: Albedo_year      => null() !< Yearly albedo
       real(dp), dimension(:,:), contiguous, pointer :: SMB_monthly      => null() !< [m] Monthly SMB
       real(dp), dimension(:,:), contiguous, pointer :: Sublimation      => null() !< [m.w.e.] Monthly sublimation
-      type(MPI_WIN) :: wMeltPreviousYear, wFirnAirContent, wRainfall
-      type(MPI_WIN) :: wSnowfall, wAddedFirn, wMelt, wRefreezing, wRefreezing_year
-      type(MPI_WIN) :: wRunoff, wAlbedo, wAlbedo_year, wSMB_monthly, wSublimation
+      type(MPI_WIN) :: wFirnAirContent, wRainfall
+      type(MPI_WIN) :: wSnowfall, wSurfaceMelt, wRefreezing
+      type(MPI_WIN) :: wRunoff, wAlbedo, wSMB_monthly, wSublimation
 
       ! Tuning parameters for the ITM_v2 SMB model (different for each region, set from config)
       real(dp)  :: C_refr
@@ -88,12 +84,6 @@ contains
 
     ! Allocate all the stuff that is specific to the ITM_v2 SMB model
 
-    call self%create_field( self%MeltPreviousYear, self%wMeltPreviousYear, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'MeltPreviousYear', &
-      long_name = 'Total melt in the previous year', &
-      units     = 'm.w.e.')
-
     call self%create_field( self%FirnAirContent, self%wFirnAirContent, &
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'FirnAirContent', &
@@ -112,15 +102,9 @@ contains
       long_name = 'Monthly snowfall', &
       units     = 'm')
 
-    call self%create_field( self%AddedFirn, self%wAddedFirn, &
+    call self%create_field( self%SurfaceMelt, self%wSurfaceMelt, &
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'AddedFirn', &
-      long_name = 'Monthly added firn', &
-      units     = 'm')
-
-    call self%create_field( self%Melt, self%wMelt, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Melt', &
+      name      = 'SurfaceMelt', &
       long_name = 'Monthly melt', &
       units     = 'm')
 
@@ -128,12 +112,6 @@ contains
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'Refreezing', &
       long_name = 'Monthly refreezing', &
-      units     = 'm')
-
-    call self%create_field( self%Refreezing_year, self%wRefreezing_year, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'Refreezing_year', &
-      long_name = 'Yearly refreezing', &
       units     = 'm')
 
     call self%create_field( self%Runoff, self%wRunoff, &
@@ -146,12 +124,6 @@ contains
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'Albedo', &
       long_name = 'Monthly albedo', &
-      units     = '-')
-
-    call self%create_field( self%Albedo_year, self%wAlbedo_year, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'Albedo_year', &
-      long_name = 'Yearly albedo', &
       units     = '-')
 
     call self%create_field( self%SMB_monthly, self%wSMB_monthly, &
@@ -184,17 +156,13 @@ contains
 
     ! Deallocate all the stuff that is specific to SMB model ITM_v2
 
-    nullify( self%MeltPreviousYear)
     nullify( self%FirnAirContent)
     nullify( self%Rainfall)
     nullify( self%Snowfall)
-    nullify( self%AddedFirn)
-    nullify( self%Melt)
+    nullify( self%SurfaceMelt)
     nullify( self%Refreezing)
-    nullify( self%Refreezing_year)
     nullify( self%Runoff)
     nullify( self%Albedo)
-    nullify( self%Albedo_year)
     nullify( self%SMB_monthly)
     nullify( self%Sublimation)
 
@@ -253,13 +221,9 @@ contains
       ! Initialise with a uniform firn layer over the ice sheet
 
       do vi = self%mesh%vi1, self%mesh%vi2
-        if (geom%Hi( vi) > 0._dp) then
-          self%FirnAirContent  ( vi,:) = C%SMB_ITM_initial_firn_air_content
-          self%MeltPreviousYear( vi  ) = 0._dp
-        else
-          self%FirnAirContent  ( vi,:) = 0._dp
-          self%MeltPreviousYear( vi  ) = 0._dp
-        end if
+        self%FirnAirContent  ( vi,:) = C%SMB_ITM_initial_firn_air_content
+        self%SurfaceMelt     ( vi,:) = 0._dp
+        self%Snowfall        ( vi,:) = 0._dp
       end do
 
     case ('read_from_file')
@@ -314,11 +278,13 @@ contains
     if (timeframe_restart_firn == 1E9_dp) THEN
       ! Assume the file has no time dimension
       call read_field_from_file_2D_monthly( filename_restart_firn, 'FirnAirContent', mesh, C%output_dir, self%FirnAirContent)
-      call read_field_from_file_2D( filename_restart_firn, 'MeltPreviousYear', mesh, C%output_dir, self%MeltPreviousYear)
+      call read_field_from_file_2D_monthly( filename_restart_firn, 'SurfaceMelt', mesh, C%output_dir, self%SurfaceMelt)
+      call read_field_from_file_2D_monthly( filename_restart_firn, 'Snowfall', mesh, C%output_dir, self%Snowfall)
     else
       ! Assume the file has a time dimension, and read the specified timeframe
       call read_field_from_file_2D_monthly( filename_restart_firn, 'FirnAirContent', mesh, C%output_dir, self%FirnAirContent, time_to_read = timeframe_restart_firn)
-      call read_field_from_file_2D( filename_restart_firn, 'MeltPreviousYear', mesh, C%output_dir, self%MeltPreviousYear, time_to_read = timeframe_restart_firn)
+      call read_field_from_file_2D_monthly( filename_restart_firn, 'SurfaceMelt', mesh, C%output_dir, self%SurfaceMelt, time_to_read = timeframe_restart_firn)
+      call read_field_from_file_2D_monthly( filename_restart_firn, 'Snowfall', mesh, C%output_dir, self%Snowfall, time_to_read = timeframe_restart_firn)
     end if
 
     ! Finalise routine path
@@ -332,7 +298,7 @@ contains
     !       the end result (SMB_monthly and SMB) are in meters of ice equivalent.
 
     ! In/output variables:
-    class(type_SMB_model_ITM_v2),       intent(inout) :: self
+    class(type_SMB_model_ITM_v2),         intent(inout) :: self
     real(dp),                             intent(in   ) :: time
     class(atype_ice_model_data),          intent(in   ) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
@@ -353,6 +319,7 @@ contains
     real(dp)                          :: melt_scale_albedo = .30_dp ! [month m^-1] Linear scaling with melt
     real(dp)                          :: wind_speed     ! [m/s] Absolute wind speed
     real(dp)                          :: wind_sens      ! [?]
+    real(dp)                          :: firn_temp      ! [K] Temperature in firn layer
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -365,14 +332,12 @@ contains
         ! Set everything to zero for ocean. No SMB allowed here.
         ! NOTE for advancing calving fronts, advection or extrapolation
         ! of the FirnAirContent should be added.
-        self%Refreezing_year( vi) = 0._dp
         self%SMB( vi) = 0._dp
         do m = 1, 12
           self%Albedo( vi, m) = self%albedo_water
-          self%Melt( vi, m) = 0._dp
+          self%SurfaceMelt( vi, m) = 0._dp
           self%Snowfall( vi, m) = 0._dp
           self%Rainfall( vi, m) = 0._dp
-          self%AddedFirn( vi, m) = 0._dp
           self%FirnAirContent( vi, m) = 0._dp
           self%Refreezing( vi, m) = 0._dp
           self%Runoff( vi, m) = 0._dp
@@ -398,19 +363,19 @@ contains
               min( self%albedo_snow, &
               max( self%albedo_ice, &
                 self%albedo_snow - (self%albedo_snow - self%albedo_ice) * &
-                  exp(-self%FirnAirContent( vi,mprev)/fac_scale_albedo) - melt_scale_albedo * self%Melt( vi, mprev)))
+                  exp(-self%FirnAirContent( vi,mprev)/fac_scale_albedo) - melt_scale_albedo * self%SurfaceMelt( vi, mprev)))
 
             ! Determine ablation as a function of surface temperature 
             ! and albedo/insolation according following Bintanja et al. (2002)
             ! Retuned to RACMO2.4p1 data
-            self%Melt( vi,m) = &
+            self%SurfaceMelt( vi,m) = &
                 C%SMB_ITM_C_melt_temp * max(0._dp, (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))**2 &
                 + C%SMB_ITM_C_melt_insol * max(0._dp, (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m) &
                   * (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))
           else
             ! Ice free land
             self%Albedo( vi, m) = self%albedo_soil
-            self%Melt( vi, m) = 0._dp
+            self%SurfaceMelt( vi, m) = 0._dp
           end if
 
           ! Determine the snow fraction based on an empirical fit to RACMO2.4p1 data
@@ -427,7 +392,7 @@ contains
 
           if (geom%Hi( vi) > 0._dp) then
             self%Refreezing( vi, m) = min( &
-              self%Rainfall( vi, m) + self%Melt( vi, m), &
+              self%Rainfall( vi, m) + self%SurfaceMelt( vi, m), &
               self%FirnAirContent( vi, m))
           else
             ! Ice free land
@@ -442,9 +407,9 @@ contains
           self%Sublimation( vi, m) = wind_sens * wind_speed**2._dp * geom%Hs_slope( vi)
 
           ! Extract runoff and SMB
-          self%Runoff( vi, m) = self%Melt( vi, m) + self%Rainfall( vi, m) - self%Refreezing( vi, m)
+          self%Runoff( vi, m) = self%SurfaceMelt( vi, m) + self%Rainfall( vi, m) - self%Refreezing( vi, m)
           self%SMB_monthly( vi, m) = &
-            self%Snowfall( vi, m) + self%Refreezing( vi, m) - self%Melt( vi, m) - self%Sublimation( vi, m)
+            self%Snowfall( vi, m) + self%Refreezing( vi, m) - self%SurfaceMelt( vi, m) - self%Sublimation( vi, m)
 
           ! Add this month's snow accumulation to next month's initial snow depth.
           if (geom%Hi( vi) > 0._dp) then
@@ -452,9 +417,12 @@ contains
             ! Approximate surface snow density from Veldhuijzen et al. (2023)
             surface_snow_density = 376._dp + (sum(climate%T2m( vi, :))/12._dp - 235._dp) * 0.77_dp
 
+            ! Determine firn layer temperature to ensure nonzero values during initialisation
+            firn_temp = max(sum(climate%T2m( vi,:))/12._dp, ice%Ti( vi, 1))
+
             ! Compute the temperature-dependent exponent in Arthern et al. (2010),
             ! As used in Veldhuijzen et al. (2023)
-            temp_exponent = exp(-Ec/(R_gas*climate%T2m( vi, m)) + Eg/(R_gas*ice%Ti(vi, 1)))
+            temp_exponent = exp(-Ec/(R_gas*climate%T2m( vi, m)) + Eg/(R_gas*firn_temp))
 
             ! Integrate firn air content over month:
             ! 1) Snowfall - melt adds a layer of firn at surface_snow_density, with all terms in mwe
@@ -465,19 +433,17 @@ contains
 
             self%FirnAirContent( vi, m) = max(0._dp, &
               self%FirnAirContent( vi, mprev) &
-              + (self%Snowfall( vi, m) - self%Melt( vi, m)) * freshwater_density / surface_snow_density &
+              + (self%Snowfall( vi, m) - self%SurfaceMelt( vi, m)) * freshwater_density / surface_snow_density &
                 * (ice_density - surface_snow_density)/ice_density &
               - C%SMB_ITM_C_densification_rate * grav * sum(self%Snowfall( vi, :))/12._dp &
                 * ice_density * temp_exponent * self%FirnAirContent( vi, mprev))
+
           else
             ! Ice free land
             self%FirnAirContent( vi, m) = 0._dp
           end if
 
         end do
-
-        ! Calculate total melt over this year, to be used for determining next year's albedo
-        self%MeltPreviousYear( vi) = sum( self%Melt( vi,:))
 
         ! Integrate SMB over the full year and convert from water to ice equivalent
         self%SMB( vi) = sum(self%SMB_monthly( vi, :)) * freshwater_density / ice_density
@@ -508,17 +474,13 @@ contains
 
     ! Remap all the stuff that is specific to SMB model ITM_v2
 
-    call self%remap_field( mesh_new, 'MeltPreviousYear', self%MeltPreviousYear )
     call self%remap_field( mesh_new, 'FirnAirContent'  , self%FirnAirContent   )
     call self%remap_field( mesh_new, 'Rainfall'        , self%Rainfall         )
     call self%remap_field( mesh_new, 'Snowfall'        , self%Snowfall         )
-    call self%remap_field( mesh_new, 'AddedFirn'       , self%AddedFirn        )
-    call self%remap_field( mesh_new, 'Melt'            , self%Melt             )
+    call self%remap_field( mesh_new, 'SurfaceMelt'     , self%SurfaceMelt             )
     call self%remap_field( mesh_new, 'Refreezing'      , self%Refreezing       )
-    call self%remap_field( mesh_new, 'Refreezing_year' , self%Refreezing_year  )
     call self%remap_field( mesh_new, 'Runoff'          , self%Runoff           )
     call self%remap_field( mesh_new, 'Albedo'          , self%Albedo           )
-    call self%remap_field( mesh_new, 'Albedo_year'     , self%Albedo_year      )
     call self%remap_field( mesh_new, 'SMB_monthly'     , self%SMB_monthly      )
     call self%remap_field( mesh_new, 'Sublimation'     , self%Sublimation      )
 

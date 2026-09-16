@@ -351,8 +351,8 @@ contains
     real(dp)                          :: fac_temp
     real(dp)                          :: fac_scale_albedo = 0.5_dp ! [m] Exponential decay scale of albedo with fac
     real(dp)                          :: melt_scale_albedo = .30_dp ! [month m^-1] Linear scaling with melt
-    real(dp)                          :: wind_threshold ! [m/s] Wind threshold in sublimation formulation
     real(dp)                          :: wind_speed     ! [m/s] Absolute wind speed
+    real(dp)                          :: wind_sens      ! [?]
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -434,11 +434,12 @@ contains
             self%Refreezing( vi, m) = 0._dp
           end if
 
-          ! Compute sublimation based on a quadratic fit to wind speed,
-          ! Exceeding a temperature-dependent threshold, as fitted to RACMO2.4p1
-          wind_threshold = 86.5_dp - 0.331_dp * climate%T2m( vi, m)
+          wind_sens = min( &
+            max(0._dp, 4.0E-4_dp*(climate%T2m( vi, m) - 224._dp)), &
+            -1.0E-2_dp * (climate%T2m( vi, m) - T0))
+
           wind_speed = hypot(climate%Wind_LR( vi, m), climate%Wind_DU( vi, m))
-          self%Sublimation( vi, m) = C%SMB_ITM_C_sublimation * max(0._dp, wind_speed - wind_threshold)**2
+          self%Sublimation( vi, m) = wind_sens * wind_speed**2._dp * geom%Hs_slope( vi)
 
           ! Extract runoff and SMB
           self%Runoff( vi, m) = self%Melt( vi, m) + self%Rainfall( vi, m) - self%Refreezing( vi, m)

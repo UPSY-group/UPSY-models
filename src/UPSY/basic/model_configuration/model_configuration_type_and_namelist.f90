@@ -455,6 +455,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: continental_shelf_min_height_config          = -2000._dp                        ! Maximum depth of the continental shelf
 
     logical             :: do_apply_ISMIP7_fracture_mask_config         = .false.                          ! Whether or not to apply the ISMIP7 mask-based hydrofracturing forcing
+    logical             :: ISMIP7_fracture_only_from_front_config       = .false.                          ! true = allow fracture to occur anywhere; false = allow fracture on from the ice front inwards (iteratively, so it -does- fracture everything that can be broken, not just the outermost row of vertices in each time step)
     character(len=1024) :: filename_ISMIP7_fracture_mask_config         = ''                               ! The full path to the NetCDF file containing the ISMIP7 hydrofracturing mask
 
   ! == Ice dynamics - stabilisation
@@ -1725,6 +1726,7 @@ module model_configuration_type_and_namelist
     real(dp)            :: continental_shelf_min_height
 
     logical             :: do_apply_ISMIP7_fracture_mask
+    logical             :: ISMIP7_fracture_only_from_front
     character(len=1024) :: filename_ISMIP7_fracture_mask
 
   ! == Ice dynamics - stabilisation
@@ -2881,6 +2883,7 @@ contains
       continental_shelf_calving_config                            , &
       continental_shelf_min_height_config                         , &
       do_apply_ISMIP7_fracture_mask_config                        , &
+      ISMIP7_fracture_only_from_front_config                      , &
       filename_ISMIP7_fracture_mask_config                        , &
       choice_mask_noice_config                                    , &
       Hi_min_config                                               , &
@@ -3902,6 +3905,7 @@ contains
     C%continental_shelf_min_height                           = continental_shelf_min_height_config
 
     C%do_apply_ISMIP7_fracture_mask                          = do_apply_ISMIP7_fracture_mask_config
+    C%ISMIP7_fracture_only_from_front                        = ISMIP7_fracture_only_from_front_config
     C%filename_ISMIP7_fracture_mask                          = filename_ISMIP7_fracture_mask_config
 
     ! == Ice dynamics - stabilisation

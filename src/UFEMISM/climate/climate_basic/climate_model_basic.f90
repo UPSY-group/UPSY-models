@@ -62,11 +62,13 @@ module climate_model_basic
       class(atype_climate_model), intent(inout) :: self
     end subroutine climate_model_deallocate_ifc
 
-    subroutine climate_model_initialise_ifc( self, refgeo_PD, refgeo_init)
-      import atype_climate_model, type_reference_geometry
-      class(atype_climate_model),    intent(inout) :: self
-      type(type_reference_geometry), intent(in   ) :: refgeo_PD
-      type(type_reference_geometry), intent(in   ) :: refgeo_init
+    subroutine climate_model_initialise_ifc( self, geom, refgeo_PD, refgeo_init, region_name)
+      import atype_climate_model, atype_ice_geometry_model_data, type_reference_geometry
+      class(atype_climate_model),           intent(inout) :: self
+      class(atype_ice_geometry_model_data), intent(in   ) :: geom
+      type(type_reference_geometry),        intent(in   ) :: refgeo_PD
+      type(type_reference_geometry),        intent(in   ) :: refgeo_init
+      character(len=3),                     intent(in   ) :: region_name
     end subroutine climate_model_initialise_ifc
 
     subroutine climate_model_run_ifc( self, geom, time)
@@ -159,12 +161,14 @@ contains
 
   end subroutine climate_model_deallocate
 
-  subroutine climate_model_initialise( self, refgeo_PD, refgeo_init)
+  subroutine climate_model_initialise( self, geom, refgeo_PD, refgeo_init, region_name)
 
     ! In/output variables:
-    class(atype_climate_model),    intent(inout) :: self
-    type(type_reference_geometry), intent(in   ) :: refgeo_PD
-    type(type_reference_geometry), intent(in   ) :: refgeo_init
+    class(atype_climate_model),           intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
+    character(len=3),                     intent(in   ) :: region_name
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_initialise'
@@ -181,7 +185,7 @@ contains
     self%t_next = C%start_time_of_run
 
     ! Initialise stuff that is specific to each individual climate model implementation
-    call self%initialise_climate_model( refgeo_PD, refgeo_init)
+    call self%initialise_climate_model( geom, refgeo_PD, refgeo_init, region_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

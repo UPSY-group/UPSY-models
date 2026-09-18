@@ -16,6 +16,7 @@ module mesh_output_files
   use mesh_contour, only: calc_mesh_contour
   use parameters, only: NaN
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use SMB_ITM_v2, only: type_SMB_model_ITM_v2
   use mesh_disc_apply_operators, only: map_a_b_2D, ddx_a_a_2D, ddy_a_a_2D
   use parallel_array_info_type, only: type_par_arr_info
 
@@ -750,25 +751,77 @@ contains
       case ('SMB')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'SMB', region%SMB%SMB)
       case ('Albedo')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('Albedo only defined for SMB model IMAU-ITM')
+          call crash('Albedo only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', IMAU_ITM%Albedo)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', SMB_model%Albedo)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Albedo', SMB_model%Albedo)
         end select
-      CASE ('FirnDepth')
-        select type (IMAU_ITM => region%SMB)
+      case ('FirnDepth')
+        select type (SMB_model => region%SMB)
         class default
           call crash('FirnDepth only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', IMAU_ITM%FirnDepth)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnDepth', SMB_model%FirnDepth)
         end select
-      CASE ('MeltPreviousYear')
-        select type (IMAU_ITM => region%SMB)
+      case ('FirnAirContent')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('FirnAirContent only defined for SMB model ITM_v2')
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'FirnAirContent', SMB_model%FirnAirContent)
+        end select
+      case ('MeltPreviousYear')
+        select type (SMB_model => region%SMB)
         class default
           call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', IMAU_ITM%MeltPreviousYear)
+          call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'MeltPreviousYear', SMB_model%MeltPreviousYear)
+        end select
+      case ('SurfaceMelt')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('SurfaceMelt only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%Melt)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'SurfaceMelt', SMB_model%SurfaceMelt)
+        end select
+      case ('Refreezing')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Refreezing only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Refreezing', SMB_model%Refreezing)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Refreezing', SMB_model%Refreezing)
+        end select
+      case ('Runoff')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Runoff only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Runoff', SMB_model%Runoff)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Runoff', SMB_model%Runoff)
+        end select
+      case ('Rainfall')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Rainfall only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Rainfall', SMB_model%Rainfall)
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Rainfall', SMB_model%Rainfall)
+        end select
+      case ('Sublimation')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Sublimation only defined for SMB model ITM_v2')
+        class is (type_SMB_model_ITM_v2)
+          call write_to_field_multopt_mesh_dp_2D_monthly( region%mesh, filename, ncid, 'Sublimation', SMB_model%Sublimation)
         end select
 
     ! == Basal mass balance ==
@@ -1647,12 +1700,24 @@ contains
       ! Main SMB variables
       case ('SMB')
         call add_field_mesh_dp_2D( filename, ncid, 'SMB', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface mass balance', units = 'm yr^-1')
-      CASE ('Albedo')
-        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'Albedo', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface albedo', units = '0-1')
-      CASE ('FirnDepth')
-        CALL add_field_mesh_dp_2D_monthly( filename, ncid, 'FirnDepth', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn layer depth', units = 'm')
-      CASE ('MeltPreviousYear')
-        CALL add_field_mesh_dp_2D( filename, ncid, 'MeltPreviousYear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Total ice melt from previous year', units = 'm')
+      case ('Albedo')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Albedo', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface albedo', units = '0-1')
+      case ('FirnDepth')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'FirnDepth', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn layer depth', units = 'm')
+      case ('FirnAirContent')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'FirnAirContent', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn air content', units = 'm')
+      case ('MeltPreviousYear')
+        call add_field_mesh_dp_2D( filename, ncid, 'MeltPreviousYear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Total ice melt from previous year', units = 'm')
+      case ('SurfaceMelt')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'SurfaceMelt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly surface melt', units = 'm')
+      case ('Refreezing')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Refreezing', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly refreezing', units = 'm')
+      case ('Runoff')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Runoff', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly runoff', units = 'm')
+      case ('Rainfall')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Rainfall', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly rainfall', units = 'm')
+      case ('Sublimation')
+        call add_field_mesh_dp_2D_monthly( filename, ncid, 'Sublimation', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly sublimation', units = 'm.w.e.')
 
     ! == Basal mass balance ==
     ! ========================

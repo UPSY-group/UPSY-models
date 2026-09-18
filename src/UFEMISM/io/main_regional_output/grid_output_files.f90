@@ -14,6 +14,7 @@ module grid_output_files
     map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
   use mpi_distributed_memory, only: gather_to_all
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
+  use SMB_ITM_v2, only: type_SMB_model_ITM_v2
 
   implicit none
 
@@ -956,28 +957,91 @@ contains
         call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%SMB%SMB, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'SMB', d_grid_vec_partial_2D)
       case ('Albedo')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
-          call crash('Albedo only defined for SMB model IMAU-ITM')
+          call crash('Albedo only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, IMAU_ITM%Albedo, d_grid_vec_partial_2D_monthly)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Albedo, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Albedo, d_grid_vec_partial_2D_monthly)
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
         end select
       case ('FirnDepth')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
           call crash('FirnDepth only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, IMAU_ITM%FirnDepth, d_grid_vec_partial_2D_monthly)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%FirnDepth, d_grid_vec_partial_2D_monthly)
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnDepth', d_grid_vec_partial_2D_monthly)
         end select
+      case ('FirnAirContent')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('FirnAirContent only defined for SMB model ITM_v2')
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%FirnAirContent, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnAirContent', d_grid_vec_partial_2D_monthly)
+        end select
       case ('MeltPreviousYear')
-        select type (IMAU_ITM => region%SMB)
+        select type (SMB_model => region%SMB)
         class default
           call crash('MeltPreviousYear only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, IMAU_ITM%MeltPreviousYear, d_grid_vec_partial_2D)
+          call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, grid, C%output_dir, SMB_model%MeltPreviousYear, d_grid_vec_partial_2D)
           call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'MeltPreviousYear', d_grid_vec_partial_2D)
+        end select
+      case ('SurfaceMelt')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('SurfaceMelt only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Melt, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'SurfaceMelt', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%SurfaceMelt, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'SurfaceMelt', d_grid_vec_partial_2D_monthly)
+        end select
+      case ('Refreezing')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Refreezing only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Refreezing, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Refreezing', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Refreezing, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Refreezing', d_grid_vec_partial_2D_monthly)
+        end select
+      case ('Runoff')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Runoff only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Runoff, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Runoff', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Runoff, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Runoff', d_grid_vec_partial_2D_monthly)
+        end select
+      case ('Rainfall')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Rainfall only defined for SMB model IMAU-ITM or ITM_v2')
+        class is (type_SMB_model_IMAU_ITM)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Rainfall, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Rainfall', d_grid_vec_partial_2D_monthly)
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Rainfall, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Rainfall', d_grid_vec_partial_2D_monthly)
+        end select
+      case ('Sublimation')
+        select type (SMB_model => region%SMB)
+        class default
+          call crash('Sublimation only defined for SMB model ITM_v2')
+        class is (type_SMB_model_ITM_v2)
+          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Sublimation, d_grid_vec_partial_2D_monthly)
+          call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Sublimation', d_grid_vec_partial_2D_monthly)
         end select
 
     ! == Basal mass balance ==
@@ -1939,8 +2003,20 @@ contains
         call add_field_grid_dp_2D_monthly( filename, ncid, 'Albedo', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Surface albedo', units = '0-1')
       case ('FirnDepth')
         call add_field_grid_dp_2D_monthly( filename, ncid, 'FirnDepth', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn layer depth', units = 'm')
+      case ('FirnAirContent')
+        call add_field_grid_dp_2D_monthly( filename, ncid, 'FirnAirContent', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly firn air content', units = 'm')
       case ('MeltPreviousYear')
-        call add_field_grid_dp_2D_monthly( filename, ncid, 'MeltPreviousYear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Total ice melt from previous year', units = 'm')
+        call add_field_grid_dp_2D( filename, ncid, 'MeltPreviousYear', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Total ice melt from previous year', units = 'm')
+      case ('SurfaceMelt')
+        call add_field_grid_dp_2D_monthly( filename, ncid, 'SurfaceMelt', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly surface melt', units = 'm')
+      case ('Refreezing')
+        call add_field_grid_dp_2D_monthly( filename, ncid, 'Refreezing', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly refreezing', units = 'm')
+      case ('Runoff')
+        call add_field_grid_dp_2D_monthly( filename, ncid, 'Runoff', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly runoff', units = 'm')
+      case ('Rainfall')
+        call add_field_grid_dp_2D_monthly( filename, ncid, 'Rainfall', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly rainfall', units = 'm')
+      case ('Sublimation')
+        call add_field_grid_dp_2D_monthly( filename, ncid, 'Sublimation', precision = C%output_precision, do_compress = C%do_compress_output, long_name = 'Monthly sublimation', units = 'm')
 
     ! == Basal mass balance ==
     ! ========================

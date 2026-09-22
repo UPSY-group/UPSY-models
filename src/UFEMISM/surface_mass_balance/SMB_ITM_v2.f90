@@ -320,6 +320,8 @@ contains
     real(dp)                          :: wind_speed     ! [m/s] Absolute wind speed
     real(dp)                          :: wind_sens      ! [?]
     real(dp)                          :: firn_temp      ! [K] Temperature in firn layer
+    real(dp)                          :: albedo_ref
+    real(dp)                          :: Qsurf          ! [W m^-2] Surface insolation accounting for cloudiness
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -354,30 +356,6 @@ contains
           mprev = m - 1
           if (mprev==0) mprev = 12
 
-          if (geom%Hi( vi) > 0._dp) then
-
-            ! Determine monthly albedo based on the firn depth of the previous month
-            ! and the melt over the previous year. For ice-covered cells, this albedo 
-            ! is always bounded between albedo_snow and albedo_ice.
-            self%Albedo( vi,m) = &
-              min( self%albedo_snow, &
-              max( self%albedo_ice, &
-                self%albedo_snow - (self%albedo_snow - self%albedo_ice) * &
-                  exp(-self%FirnAirContent( vi,mprev)/fac_scale_albedo) - melt_scale_albedo * self%SurfaceMelt( vi, mprev)))
-
-            ! Determine ablation as a function of surface temperature 
-            ! and albedo/insolation according following Bintanja et al. (2002)
-            ! Retuned to RACMO2.4p1 data
-            self%SurfaceMelt( vi,m) = &
-                C%SMB_ITM_C_melt_temp * max(0._dp, (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))**2 &
-                + C%SMB_ITM_C_melt_insol * max(0._dp, (1.0_dp - self%Albedo( vi,m)) * climate%Q_TOA( vi,m) &
-                  * (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))
-          else
-            ! Ice free land
-            self%Albedo( vi, m) = self%albedo_soil
-            self%SurfaceMelt( vi, m) = 0._dp
-          end if
-
           ! Determine the snow fraction based on an empirical fit to RACMO2.4p1 data
           ! The usage of a tanh-curve ensures convergence to 1 for low temperatures
           ! and 0 for high temperatures
@@ -387,8 +365,30 @@ contains
           self%Snowfall( vi, m) = climate%Precip( vi, m) *          snowfrac
           self%Rainfall( vi, m) = climate%Precip( vi, m) * (1._dp - snowfrac)
 
+          if (geom%Hi( vi) > 0._dp) then
+
+            ! Determine albedo based on melt in the previous month and snowfall this month
+            ! Tuned to RACMO2.4p1 21st century ssp370 (Hofsteenge et al., 2026)
+            albedo_ref = max(self%albedo_ice, self%albedo_snow - .91_dp * self%SurfaceMelt( vi, mprev))
+            self%Albedo( vi,m) = .89_dp - (.89_dp - albedo_ref) * exp(-self%Snowfall( vi, m) / 30.9_dp)
+
+            ! Determine ablation as a function of surface temperature 
+            ! and albedo/insolation according following Bintanja et al. (2002)
+            ! Retuned to RACMO2.4p1 data
+            Qsurf = climate%Q_TOA( vi, m) * (0.72_dp + 3.92E-5_dp * geom%Hs( vi)) 
+
+            self%SurfaceMelt( vi,m) = &
+                C%SMB_ITM_C_melt_temp * max(0._dp, (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))**2 &
+                + C%SMB_ITM_C_melt_insol * max(0._dp, (1.0_dp - self%Albedo( vi,m)) * Qsurf &
+                  * (climate%T2m( vi,m) - C%SMB_ITM_C_trans_temp))
+          else
+            ! Ice free land
+            self%Albedo( vi, m) = self%albedo_soil
+            self%SurfaceMelt( vi, m) = 0._dp
+          end if
+
           ! Compute refreezing as the minimum value of 1) available liquid water
-          ! and 2) available firn air content
+          ! and 2) available firn air content (= tipping bucket method?)
 
           if (geom%Hi( vi) > 0._dp) then
             self%Refreezing( vi, m) = min( &
@@ -399,6 +399,7 @@ contains
             self%Refreezing( vi, m) = 0._dp
           end if
 
+          ! Determine sublimation based on a fit to RACMO 2.4p1
           wind_sens = min( &
             max(0._dp, 4.0E-4_dp*(climate%T2m( vi, m) - 224._dp)), &
             -1.0E-2_dp * (climate%T2m( vi, m) - T0))

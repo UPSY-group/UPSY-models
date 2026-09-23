@@ -847,6 +847,8 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 ocean model
     character(len=1024) :: ocean_ISMIP7_forcing_foldername_config       = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the ocean files are located in /path/to/base/folder/thetao/version)
     character(len=1024) :: ocean_ISMIP7_forcing_version_config          = ''
+    integer             :: ocean_ISMIP7_calendar_refyear_config         = 1850                             ! Reference year for calendar
+    character(len=1024) :: ocean_ISMIP7_forcing_type_config             = 'absolute'                       ! Type of forcing that is provided 'absolute' (ISMIP7) or 'anomaly' (TIPMIP)
 
   ! == Surface mass balance
   ! =======================
@@ -2124,6 +2126,8 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 ocean model
     character(len=1024) :: ocean_ISMIP7_forcing_foldername
     character(len=1024) :: ocean_ISMIP7_forcing_version
+    integer             :: ocean_ISMIP7_calendar_refyear
+    character(len=1024) :: ocean_ISMIP7_forcing_type
 
   ! == Surface mass balance
   ! =======================
@@ -3153,6 +3157,8 @@ contains
       ocean_snp_p_anml_filename_anomalies_config                  , &
       ocean_ISMIP7_forcing_foldername_config                      , &
       ocean_ISMIP7_forcing_version_config                         , &
+      ocean_ISMIP7_calendar_refyear_config                        , &
+      ocean_ISMIP7_forcing_type_config                            , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -4309,6 +4315,8 @@ contains
     ! Settings for the ISMIP7 ocean model
     C%ocean_ISMIP7_forcing_foldername                        = ocean_ISMIP7_forcing_foldername_config
     C%ocean_ISMIP7_forcing_version                           = ocean_ISMIP7_forcing_version_config
+    C%ocean_ISMIP7_calendar_refyear                          = ocean_ISMIP7_calendar_refyear_config
+    C%ocean_ISMIP7_forcing_type                              = ocean_ISMIP7_forcing_type_config
 
     ! == Surface mass balance
     ! =======================

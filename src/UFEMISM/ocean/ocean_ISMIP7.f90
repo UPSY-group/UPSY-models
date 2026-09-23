@@ -84,6 +84,29 @@ contains
     call update_timeframes( mesh, ISMIP7%T, C%start_time_of_run)
     call update_timeframes( mesh, ISMIP7%S, C%start_time_of_run)     
 
+    select case (C%ocean_ISMIP7_forcing_type)
+      case default
+        call crash ('unknown ocean_ISMIP7_forcing_type "' // C%ocean_ISMIP7_forcing_type //'"')
+      case ('absolute')
+        ! Do nothing
+      case ('anomaly')
+        ! Allocate baseline T and S
+        if (allocated( ISMIP7%T%baseline )) deallocate( ISMIP7%T%baseline )
+        if (allocated( ISMIP7%S%baseline )) deallocate( ISMIP7%S%baseline )
+        allocate (ISMIP7%T%baseline( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
+        allocate (ISMIP7%S%baseline( mesh%vi1:mesh%vi2, C%nz_ocean), source = NaN)
+
+        ! Print to terminal
+        if (par%primary)  write(*,"(A)") '     Reading ISMIP7 baseline ocean forcing from "' // &
+          UPSY%stru%colour_string( trim( C%filename_ocean_snapshot_ANT),'light blue') // '"...'
+
+        ! Read in baseline T and S
+        call read_field_from_file_3D_ocean( C%filename_ocean_snapshot_ANT, &
+          field_name_options_T_ocean, mesh, C%output_dir, C%z_ocean, ISMIP7%T%baseline)
+        call read_field_from_file_3D_ocean( C%filename_ocean_snapshot_ANT, &
+          field_name_options_S_ocean, mesh, C%output_dir, C%z_ocean, ISMIP7%S%baseline)
+    end select
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -109,7 +132,7 @@ contains
     ti1_old = field%ti1
 
     ! Convert model time (years) to days_since_1850
-    call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
+    call convert_time_to_days( time, days, calendar='noleap', refyear=C%ocean_ISMIP7_calendar_refyear, allow_residual=.true.)
 
     ! Update the indices of time slices before and after current time
     call update_bracket_indices( field, days)
@@ -183,6 +206,7 @@ contains
     character(len=1024)            :: filename
     integer                        :: fi
     integer                        :: ncid, id_dim_time, nt, id_var_time, ierr
+    character(len=1024)            :: fieldname
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -198,8 +222,17 @@ contains
         UPSY%stru%colour_string( trim( filename), 'light blue')
     end if
 
+    select case (C%ocean_ISMIP7_forcing_type)
+      case default
+        call crash ('unknown ocean_ISMIP7_forcing_type "' // C%ocean_ISMIP7_forcing_type //'"')
+      case ('absolute')
+        fieldname = trim(field%name)
+      case ('anomaly')
+        fieldname = trim(field%name) // '_anomaly'
+    end select
+
     ! Read ocean field from that timeframe
-    call read_field_from_file_3D_ocean( filename, trim(field%name), mesh, C%output_dir, C%z_ocean, val, &
+    call read_field_from_file_3D_ocean( filename, trim(fieldname), mesh, C%output_dir, C%z_ocean, val, &
         time_to_read = field%alltimes( ti))
 
     ! Remove routine from call stack
@@ -224,7 +257,7 @@ contains
     call init_routine( routine_name)
 
     ! Convert model time (years) to days_since_1850
-    call convert_time_to_days( time, days, calendar='noleap', allow_residual=.true.)
+    call convert_time_to_days( time, days, calendar='noleap', refyear=C%ocean_ISMIP7_calendar_refyear, allow_residual=.true.)
 
     ! Get weights
     if (days < field%alltimes( field%ti0)) then
@@ -240,8 +273,17 @@ contains
 
     w1 = 1._dp - w0
 
-    ! Apply interpolation to values (T or S) of both timeframes, and write to main ocean%T or ocean%S
-    val_out( mesh%vi1:mesh%vi2, :) = w0 * field%val0( mesh%vi1:mesh%vi2, :) + w1 * field%val1( mesh%vi1:mesh%vi2, :)
+    select case (C%ocean_ISMIP7_forcing_type)
+      case default
+        call crash ('unknown ocean_ISMIP7_forcing_type "' // C%ocean_ISMIP7_forcing_type //'"')
+      case ('absolute')
+        ! Forcing fields are absolute values, so return interpolated fields directly to ocean%T/S
+        val_out( mesh%vi1:mesh%vi2, :) = w0 * field%val0( mesh%vi1:mesh%vi2, :) + w1 * field%val1( mesh%vi1:mesh%vi2, :)
+      case ('anomaly')
+        ! Forcing fields are anomalies, so add interpolated fields to baseline and return to ocean%T/S
+        val_out( mesh%vi1:mesh%vi2, :) = field%baseline( mesh%vi1:mesh%vi2, :) + &
+          w0 * field%val0( mesh%vi1:mesh%vi2, :) + w1 * field%val1( mesh%vi1:mesh%vi2, :)
+    end select
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -267,8 +309,14 @@ contains
     call init_routine( routine_name)
 
     ! Get full folder name
-    field%foldername = trim(C%ocean_ISMIP7_forcing_foldername) // '/' // trim(field%name) // &
-      '/' // trim(C%ocean_ISMIP7_forcing_version)
+    if (len(trim(C%ocean_ISMIP7_forcing_version)) > 0) then
+      ! Version-folder present
+      field%foldername = trim(C%ocean_ISMIP7_forcing_foldername) // '/' // trim(field%name) // &
+        '/' // trim(C%ocean_ISMIP7_forcing_version)
+    else
+      ! No version folder present
+      field%foldername = trim(C%ocean_ISMIP7_forcing_foldername) // '/' // trim(field%name)
+    end if
 
     ! Get all filenames in this folder, assuming this folder only contains files for this specific field (thetao or so)
     call list_files_in_folder( field%foldername, field%filenames, trim(field%name))

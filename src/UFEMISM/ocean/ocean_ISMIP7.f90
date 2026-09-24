@@ -54,8 +54,9 @@ contains
     type(type_ocean_model_ISMIP7), intent(inout) :: ISMIP7
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'initialise_ocean_model_ISMIP7'
-    character(len=1024)            :: filename
+    character(len=1024), parameter                     :: routine_name = 'initialise_ocean_model_ISMIP7'
+    character(len=1024)                                :: filename
+    real(dp), dimension(mesh%vi1:mesh%vi2, C%nz_ocean) :: T_offset, S_offset
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -105,6 +106,20 @@ contains
           field_name_options_T_ocean, mesh, C%output_dir, C%z_ocean, ISMIP7%T%baseline)
         call read_field_from_file_3D_ocean( C%filename_ocean_snapshot_ANT, &
           field_name_options_S_ocean, mesh, C%output_dir, C%z_ocean, ISMIP7%S%baseline)
+
+        ! Print to terminal
+        if (par%primary)  write(*,"(A)") '     Reading ocean offset from "' // &
+          UPSY%stru%colour_string( trim( C%ocean_ISMIP7_offset_filename),'light blue') // '"...'
+
+        ! Read in offsets
+        call read_field_from_file_3D_ocean( C%ocean_ISMIP7_offset_filename, &
+          trim(ISMIP7%T%name) // '_anomaly', mesh, C%output_dir, C%z_ocean, T_offset)
+        call read_field_from_file_3D_ocean( C%ocean_ISMIP7_offset_filename, &
+          trim(ISMIP7%S%name) // '_anomaly', mesh, C%output_dir, C%z_ocean, S_offset)
+
+        ! Apply offsets to baseline
+        ISMIP7%T%baseline( mesh%vi1:mesh%vi2, :) = ISMIP7%T%baseline( mesh%vi1:mesh%vi2, :) - T_offset( mesh%vi1: mesh%vi2, :)
+        ISMIP7%S%baseline( mesh%vi1:mesh%vi2, :) = ISMIP7%S%baseline( mesh%vi1:mesh%vi2, :) - S_offset( mesh%vi1: mesh%vi2, :)
     end select
 
     ! Remove routine from call stack

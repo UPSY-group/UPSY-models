@@ -849,6 +849,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ocean_ISMIP7_forcing_version_config          = ''
     integer             :: ocean_ISMIP7_calendar_refyear_config         = 1850                             ! Reference year for calendar
     character(len=1024) :: ocean_ISMIP7_forcing_type_config             = 'absolute'                       ! Type of forcing that is provided 'absolute' (ISMIP7) or 'anomaly' (TIPMIP)
+    character(len=1024) :: ocean_ISMIP7_offset_filename_config          = ''                               ! Filename containing offsets which should be subtracted from the baseline climatology in case of 'anomaly' forcing
 
   ! == Surface mass balance
   ! =======================
@@ -2128,6 +2129,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: ocean_ISMIP7_forcing_version
     integer             :: ocean_ISMIP7_calendar_refyear
     character(len=1024) :: ocean_ISMIP7_forcing_type
+    character(len=1024) :: ocean_ISMIP7_offset_filename
 
   ! == Surface mass balance
   ! =======================
@@ -3159,6 +3161,7 @@ contains
       ocean_ISMIP7_forcing_version_config                         , &
       ocean_ISMIP7_calendar_refyear_config                        , &
       ocean_ISMIP7_forcing_type_config                            , &
+      ocean_ISMIP7_offset_filename_config                         , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -4317,6 +4320,7 @@ contains
     C%ocean_ISMIP7_forcing_version                           = ocean_ISMIP7_forcing_version_config
     C%ocean_ISMIP7_calendar_refyear                          = ocean_ISMIP7_calendar_refyear_config
     C%ocean_ISMIP7_forcing_type                              = ocean_ISMIP7_forcing_type_config
+    C%ocean_ISMIP7_offset_filename                           = ocean_ISMIP7_offset_filename_config
 
     ! == Surface mass balance
     ! =======================

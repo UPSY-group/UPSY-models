@@ -337,10 +337,15 @@ contains
     ! Calculate elevation-based SMB correction
     call self%dmrrodz%update_and_interpolate( self%mesh, time)
 
-    do vi = self%mesh%vi1, self%mesh%vi2
-      self%delta_z  ( vi) = geom%Hs( vi) - self%Hs_baseline ( vi)
-      self%delta_SMB( vi) = - self%delta_z( vi) * self%dmrrodz%val_interp( vi)
-    end do
+    if (C%SMB_ISMIP7_apply_SMB_lapse_rate) then
+      do vi = self%mesh%vi1, self%mesh%vi2
+        self%delta_z  ( vi) = geom%Hs( vi) - self%Hs_baseline ( vi)
+        self%delta_SMB( vi) = - self%delta_z( vi) * self%dmrrodz%val_interp( vi)
+      end do
+    else
+      self%delta_z  ( self%mesh%vi1: self%mesh%vi2) = 0._dp
+      self%delta_SMB( self%mesh%vi1: self%mesh%vi2) = 0._dp
+    end if
 
     ! Calculate monthly climate
     select case (C%SMB_ISMIP7_choice_SMB_baseline)

@@ -946,6 +946,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_ISMIP7_choice_refgeo_config               = ''                               ! Which reference geometry to use as the baseline for calculating delta_SMB = dSMB/dz * delta_s: 'init', 'PD'
     character(len=1024) :: SMB_ISMIP7_forcing_foldername_config          = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the SMB files are located in /path/to/base/folder/acabf/version)
     character(len=1024) :: SMB_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the SMB files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
+    logical             :: SMB_ISMIP7_apply_SMB_lapse_rate_config        = .true.                           ! Whether or not to apply the provided dSMB/dz geometry correction
 
   ! == Basal mass balance
   ! =====================
@@ -2224,6 +2225,7 @@ module model_configuration_type_and_namelist
     character(len=1024) :: SMB_ISMIP7_choice_refgeo
     character(len=1024) :: SMB_ISMIP7_forcing_foldername
     character(len=1024) :: SMB_ISMIP7_forcing_version
+    logical             :: SMB_ISMIP7_apply_SMB_lapse_rate
 
   ! == Basal mass balance
   ! =====================
@@ -3221,6 +3223,7 @@ contains
       SMB_ISMIP7_choice_SMB_baseline_config                       , &
       SMB_ISMIP7_forcing_foldername_config                        , &
       SMB_ISMIP7_forcing_version_config                           , &
+      SMB_ISMIP7_apply_SMB_lapse_rate_config                      , &
       SMB_ISMIP7_filename_SMB_baseline_fixed_config               , &
       SMB_ISMIP7_choice_SMB_offset_config                         , &
       SMB_ISMIP7_filename_SMB_offset_config                       , &
@@ -4411,6 +4414,7 @@ contains
     C%SMB_ISMIP7_choice_refgeo                               = SMB_ISMIP7_choice_refgeo_config
     C%SMB_ISMIP7_forcing_foldername                          = SMB_ISMIP7_forcing_foldername_config
     C%SMB_ISMIP7_forcing_version                             = SMB_ISMIP7_forcing_version_config
+    C%SMB_ISMIP7_apply_SMB_lapse_rate                        = SMB_ISMIP7_apply_SMB_lapse_rate_config
 
     ! == Basal mass balance
     ! =====================

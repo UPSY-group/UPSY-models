@@ -13,7 +13,8 @@ module ISMIP7_fracture
   use crash_mod, only: crash
   use models_basic, only: atype_model
   use mesh_types, only: type_mesh
-  use mpi_f08, only: MPI_WIN
+  use mpi_f08, only: MPI_WIN, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_INTEGER, &
+    MPI_MAX, MPI_COMM_WORLD
   use Arakawa_grid_mod, only: Arakawa_grid
   use netcdf_io_main, only: read_time_from_file, open_existing_netcdf_file_for_reading, &
     setup_xy_grid_from_file, close_netcdf_file, inquire_var, read_var_primary
@@ -26,6 +27,8 @@ module ISMIP7_fracture
   use mpi_distributed_memory_grid, only: distribute_gridded_data_from_primary
   use dist_to_hybrid_mod, only: dist_to_hybrid
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  use mpi_distributed_memory, only: gather_to_all, gather_to_primary, distribute_from_primary
+  use netcdf_io_main, only: save_variable_as_netcdf_logical_1D
 
   implicit none
 
@@ -155,14 +158,266 @@ contains
   subroutine ISMIP7_fracture_model_run( self, time, geom, Hi)
 
     ! In/output variables:
-    class(type_ISMIP7_fracture_model),                                  intent(inout) :: self
-    real(dp),                                                           intent(in   ) :: time
-    class(atype_ice_geometry_model_data),                               intent(in   ) :: geom
+    class(type_ISMIP7_fracture_model),                intent(inout) :: self
+    real(dp),                                         intent(in   ) :: time
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
     real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(inout) :: Hi
-    ! real(dp), dimension(self%mesh%pai_V%i1_nih:self%mesh%pai_V%i2_nih), intent(inout) :: Hi
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'ISMIP7_fracture_model_run'
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (C%ISMIP7_fracture_only_from_front) then
+      call ISMIP7_fracture_model_run_front_only( self, time, geom, Hi)
+    else
+      call ISMIP7_fracture_model_run_everywhere( self, time, geom, Hi)
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine ISMIP7_fracture_model_run
+
+  subroutine ISMIP7_fracture_model_run_front_only( self, time, geom, Hi)
+
+    ! In/output variables:
+    class(type_ISMIP7_fracture_model),                intent(inout) :: self
+    real(dp),                                         intent(in   ) :: time
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(inout) :: Hi
+
+    ! Local variables:
+    character(len=*), parameter        :: routine_name = 'ISMIP7_fracture_model_run_front_only'
+    real(dp)                           :: wt0, wt1
+    logical, dimension(:), allocatable :: mask_ice, mask_open_ocean, mask_front
+    integer                            :: nV_calved, nit
+    integer                            :: vi, ci, vj
+    integer                            :: ierr
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (time < self%t0 .or. time > self%t1) then
+      call self%update_timeframes( time)
+    end if
+
+    ! Calculate time interpolation weights
+    wt0 = (self%t1 - time) / (self%t1 - self%t0)
+    wt0 = max( 0._dp, min( 1._dp, wt0 ))
+    wt1 = 1._dp - wt0
+
+    allocate( mask_ice       ( self%mesh%vi1:self%mesh%vi2))
+    allocate( mask_open_ocean( self%mesh%vi1:self%mesh%vi2))
+    allocate( mask_front     ( self%mesh%vi1:self%mesh%vi2))
+
+    nV_calved = 1
+    nit = 0
+    do while (nV_calved > 0)
+
+      ! Safety
+      nit = nit + 1
+      if (nit > self%mesh%nV) call crash('programming error - iterative ISMIP7 ice-front-only fracture forcing broke down')
+
+      ! Calculate ice mask and open ocean mask
+      call calc_mask_ice                 ( self, Hi, mask_ice)
+      call calc_mask_open_ocean_floodfill( self, mask_ice, mask_open_ocean)
+      call calc_mask_ice_front           ( self, mask_ice, mask_open_ocean, mask_front)
+
+      nV_calved = 0
+      do vi = self%mesh%vi1, self%mesh%vi2
+
+        if ((mask_front( vi) .or. mask_open_ocean( vi)) .and. &
+          (.not. geom%mask_grounded_ice( vi))) then
+          ! Hydrofracturing can only occur at floating calving front cells
+
+          ! Interpolate timeframes in time to find the maximum allowed ice fraction
+          ! Note that the provided mask is true (or actually 1) when hydrofracturing
+          ! occurs, so the ice fraction is the inverse of that mask.
+          self%max_ice_fraction( vi) = 1._dp - (wt0 * self%mask_dp_t0( vi) + wt1 * self%mask_dp_t1( vi))
+
+          ! Calculate maximum allowed ice thickness
+          self%Hi_max( vi) = geom%Hi_eff( vi) * self%max_ice_fraction( vi)
+
+          ! Apply maximum allowed ice thickness
+          if (Hi( vi) > self%Hi_max( vi)) then
+            nV_calved = nV_calved + 1
+            self%dHi_calved( vi) = Hi( vi) - self%Hi_max( vi)
+            Hi( vi) = self%Hi_max( vi)
+          else
+            self%dHi_calved( vi) = 0._dp
+          end if
+
+        else
+          self%max_ice_fraction( vi) = 1._dp
+          self%Hi_max          ( vi) = Hi( vi)
+          self%dHi_calved      ( vi) = 0._dp
+        end if
+
+      end do
+
+      ! Check if any processes applied any calving
+      call MPI_ALLREDUCE( MPI_IN_PLACE, nV_calved, 1, MPI_INTEGER, &
+        MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine ISMIP7_fracture_model_run_front_only
+
+  subroutine calc_mask_ice( self, Hi, mask_ice)
+
+    ! In/output variables:
+    class(type_ISMIP7_fracture_model),                intent(in   ) :: self
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: Hi
+    logical,  dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_ice
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'calc_mask_ice'
+    integer                     :: vi
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    do vi = self%mesh%vi1, self%mesh%vi2
+      mask_ice( vi) = Hi( vi) > 0._dp
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine calc_mask_ice
+
+  subroutine calc_mask_open_ocean_floodfill( self, mask_ice, mask_open_ocean)
+
+    ! In/output variables:
+    class(type_ISMIP7_fracture_model),               intent(in   ) :: self
+    logical, dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: mask_ice
+    logical, dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_open_ocean
+
+    ! Local variables:
+    character(len=*), parameter        :: routine_name = 'calc_mask_open_ocean_floodfill'
+    logical, dimension(:), allocatable :: mask_ice_tot, mask_open_ocean_tot
+    integer, dimension(:), allocatable :: map, stack
+    integer                            :: stackN
+    integer                            :: vi, ci, vj
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    if (par%primary) then
+      allocate( mask_ice_tot       ( self%mesh%nV), source = .false.)
+      allocate( mask_open_ocean_tot( self%mesh%nV), source = .false.)
+      call gather_to_primary( mask_ice, mask_ice_tot)
+    else
+      allocate( mask_ice_tot       ( 0))
+      allocate( mask_open_ocean_tot( 0))
+      call gather_to_primary( mask_ice)
+    end if
+
+    ! Let the primary do the work
+    if (par%primary) then
+
+      allocate( map  ( self%mesh%nV), source = 0)
+      allocate( stack( self%mesh%nV), source = 0)
+      stackN = 0
+
+      ! Initialise the stack with all ice-free border vertices
+      do vi = 1, self%mesh%nV
+        if (.not. mask_ice_tot( vi) .and. self%mesh%VBI( vi) > 0) then
+          map( vi) = 1
+          stackN = stackN + 1
+          stack( stackN) = vi
+        end if
+      end do
+
+      ! Expand the open ocean inward to the ice front
+      do while (stackN > 0)
+
+        ! Take the last vertex from the stack
+        vi = stack( stackN)
+        stackN = stackN - 1
+
+        ! Mark it on the map
+        map( vi) = 2
+        mask_open_ocean_tot( vi) = .true.
+
+        ! Add its non-marked neighbours to the stack
+        do ci = 1, self%mesh%nC( vi)
+          vj = self%mesh%C( vi,ci)
+          if (.not. mask_ice_tot( vj) .and. map( vj) == 0) then
+            map( vj) = 1
+            stackN = stackN + 1
+            stack( stackN) = vj
+          end if
+        end do
+
+      end do
+
+    end if
+
+    ! Distribute the result from the primary
+    if (par%primary) then
+      call distribute_from_primary( mask_open_ocean, mask_open_ocean_tot)
+    else
+      call distribute_from_primary( mask_open_ocean)
+    end if
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine calc_mask_open_ocean_floodfill
+
+  subroutine calc_mask_ice_front( self, mask_ice, mask_open_ocean, mask_front)
+
+    ! In/output variables:
+    class(type_ISMIP7_fracture_model),               intent(in   ) :: self
+    logical, dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: mask_ice
+    logical, dimension(self%mesh%vi1:self%mesh%vi2), intent(in   ) :: mask_open_ocean
+    logical, dimension(self%mesh%vi1:self%mesh%vi2), intent(  out) :: mask_front
+
+    ! Local variables:
+    character(len=*), parameter        :: routine_name = 'calc_mask_ice_front'
+    logical, dimension(:), allocatable :: mask_open_ocean_tot
+    integer                            :: vi, ci, vj
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    allocate( mask_open_ocean_tot( self%mesh%nV), source = .false.)
+    call gather_to_all( mask_open_ocean, mask_open_ocean_tot)
+
+    do vi = self%mesh%vi1, self%mesh%vi2
+      mask_front( vi) = .false.
+      if (mask_ice( vi)) then
+        do ci = 1, self%mesh%nC( vi)
+          vj = self%mesh%C( vi,ci)
+          if (mask_open_ocean_tot( vj)) then
+            mask_front( vi) = .true.
+            exit
+          end if
+        end do
+      end if
+    end do
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine calc_mask_ice_front
+
+  subroutine ISMIP7_fracture_model_run_everywhere( self, time, geom, Hi)
+
+    ! In/output variables:
+    class(type_ISMIP7_fracture_model),                intent(inout) :: self
+    real(dp),                                         intent(in   ) :: time
+    class(atype_ice_geometry_model_data),             intent(in   ) :: geom
+    real(dp), dimension(self%mesh%vi1:self%mesh%vi2), intent(inout) :: Hi
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'ISMIP7_fracture_model_run_everywhere'
     real(dp)                    :: wt0, wt1
     integer                     :: vi
 
@@ -210,7 +465,7 @@ contains
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
-  end subroutine ISMIP7_fracture_model_run
+  end subroutine ISMIP7_fracture_model_run_everywhere
 
   subroutine initialise_remapping_object( self)
 

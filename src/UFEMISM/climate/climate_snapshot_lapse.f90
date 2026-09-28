@@ -165,14 +165,13 @@ contains
 
   end subroutine climate_model_snapshot_lapse_deallocate
 
-  subroutine climate_model_snapshot_lapse_initialise( self, geom, refgeo_PD, refgeo_init, region_name)
+  subroutine climate_model_snapshot_lapse_initialise( self, geom, refgeo_PD, refgeo_init)
 
     ! In/output variables:
     class(type_climate_model_snapshot_lapse), intent(inout) :: self
     class(atype_ice_geometry_model_data),     intent(in   ) :: geom
     type(type_reference_geometry),            intent(in   ) :: refgeo_PD
     type(type_reference_geometry),            intent(in   ) :: refgeo_init
-    character(len=3),                         intent(in   ) :: region_name
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'climate_model_snapshot_lapse_initialise'
@@ -186,28 +185,28 @@ contains
     self%has_insolation = .false. ! Initialise
 
     ! Determine which climate model to initialise for this region
-    if     (region_name == 'NAM') then
+    if     (self%region_name() == 'NAM') then
       filename_climate_snapshot      = C%filename_climate_snapshot_NAM
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_NAM
       self%lapse_rate_temp           = C%lapse_rate_temp_NAM
       if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    elseif (region_name == 'EAS') then
+    elseif (self%region_name() == 'EAS') then
       filename_climate_snapshot      = C%filename_climate_snapshot_EAS
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_EAS
       self%lapse_rate_temp           = C%lapse_rate_temp_EAS
       if (C%choice_SMB_model_EAS == 'IMAU-ITM' .or. C%choice_SMB_model_EAS == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    elseif (region_name == 'GRL') then
+    elseif (self%region_name() == 'GRL') then
       filename_climate_snapshot      = C%filename_climate_snapshot_GRL
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_GRL
       self%lapse_rate_temp           = C%lapse_rate_temp_GRL
       if (C%choice_SMB_model_GRL == 'IMAU-ITM' .or. C%choice_SMB_model_GRL == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    elseif (region_name == 'ANT') then
+    elseif (self%region_name() == 'ANT') then
       filename_climate_snapshot      = C%filename_climate_snapshot_ANT
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_ANT
       self%lapse_rate_temp           = C%lapse_rate_temp_ANT
@@ -215,7 +214,7 @@ contains
          self%has_insolation = .true.
       end if
     else
-      call crash('unknown region_name "' // region_name // '"')
+      call crash('unknown region_name "' // self%region_name() // '"')
     end if
 
     if (par%primary) then

@@ -210,12 +210,13 @@ contains
 
   end subroutine climate_model_ISMIP7_deallocate
 
-  subroutine climate_model_ISMIP7_initialise( self, refgeo_PD, refgeo_init)
+  subroutine climate_model_ISMIP7_initialise( self, geom, refgeo_PD, refgeo_init)
 
     ! In/output variables:
-    class(type_climate_model_ISMIP7), intent(inout) :: self
-    type(type_reference_geometry),    intent(in   ) :: refgeo_PD
-    type(type_reference_geometry),    intent(in   ) :: refgeo_init
+    class(type_climate_model_ISMIP7),     intent(inout) :: self
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    type(type_reference_geometry),        intent(in   ) :: refgeo_PD
+    type(type_reference_geometry),        intent(in   ) :: refgeo_init
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'climate_model_ISMIP7_initialise'

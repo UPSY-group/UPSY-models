@@ -52,7 +52,7 @@ contains
     do vi = mesh%vi1, mesh%vi2
       if ((geom%mask_grounded_ice( vi) .and. geom%Hi_eff( vi) < C%calving_threshold_thickness_sheet) .or. &
           (geom%mask_floating_ice( vi) .and. geom%Hi_eff( vi) < C%calving_threshold_thickness_shelf) .or. &
-          geom%mask_icefree_land( vi) .or. geom%mask_icefree_ocean( vi)) then
+          geom%mask_icefree_ocean( vi)) then
         mask_Hi_below_threshold( vi) = .true.
       end if
     end do

@@ -137,15 +137,19 @@ contains
       !   H_n+1 in Robinson et al. (2020), Eq. 31
       region%ice%pc%Hi_np1 = region%ice%Hi_prev + (region%ice%pc%dt_np1 / 2._dp) * &
         (region%ice%pc%dHi_dt_Hi_n_u_n + region%ice%pc%dHi_dt_Hi_star_np1_u_np1)
-      call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_np1)
-      if (C%do_apply_ISMIP7_fracture_mask) then
-        call region%ice%ISMIP7_fracture%run( region%time, region%ice%geom, region%ice%pc%Hi_np1)
-      end if
-      call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
-      call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
-      call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &
-        region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
-      call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')
+      ! Stick to the ice mask resulting from the predictor step
+      do vi = region%mesh%vi1, region%mesh%vi2
+        if (region%ice%pc%Hi_star_np1( vi) == 0._dp) region%ice%pc%Hi_np1( vi) = 0._dp
+      end do
+      ! call apply_noice_mask( region%mesh, region%ice%mask_noice, region%ice%pc%Hi_np1)
+      ! if (C%do_apply_ISMIP7_fracture_mask) then
+      !   call region%ice%ISMIP7_fracture%run( region%time, region%ice%geom, region%ice%pc%Hi_np1)
+      ! end if
+      ! call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
+      ! call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
+      ! call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &
+      !   region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
+      ! call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')
 
       ! == Truncation error ==
       ! ======================

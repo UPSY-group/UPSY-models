@@ -145,8 +145,8 @@ contains
       ! if (C%do_apply_ISMIP7_fracture_mask) then
       !   call region%ice%ISMIP7_fracture%run( region%time, region%ice%geom, region%ice%pc%Hi_np1)
       ! end if
-      ! call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
-      ! call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
+      call forbid_negative_ice_thickness( region%mesh, region%ice%pc%Hi_np1)
+      call remove_unconnected_shelves( region%mesh, region%ice%geom%Hb, region%ice%geom%SL, region%ice%pc%Hi_np1)
       ! call alter_ice_thickness( region%mesh, region%ice, region%ice%geom, region%ice%Hi_prev, &
       !   region%ice%pc%Hi_np1, region%refgeo_PD, region%time)
       ! call checksum( region%mesh%pai_V, region%ice%pc%Hi_np1, 'region%ice%pc%Hi_np1')

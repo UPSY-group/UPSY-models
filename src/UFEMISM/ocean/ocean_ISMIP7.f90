@@ -138,6 +138,7 @@ contains
     character(len=1024), parameter :: routine_name = 'update_timeframes'
     real(dp)                       :: days
     integer                        :: ti0_old, ti1_old
+    real(dp), parameter            :: eps = 1e-8_dp
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -154,7 +155,13 @@ contains
 
     ! Update timeframes if necessary
     if (field%ti0 /= ti0_old) then
-      call update_single_timeframe( mesh, field, field%ti0, field%val0)
+      if (abs(field%ti0 - ti1_old) < eps) then
+        ! Copy data from old timeframe 1
+        field%val0( mesh%vi1:mesh%vi2,:) = field%val1( mesh%vi1:mesh%vi2,:)
+      else
+        ! Read new timeframe from NetCDF
+        call update_single_timeframe( mesh, field, field%ti0, field%val0)
+      end if
     end if
 
     if (field%ti1 /= ti1_old) then

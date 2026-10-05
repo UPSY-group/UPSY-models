@@ -390,7 +390,7 @@ module TIPMIP_forcing_field_types
       call inquire_var( filename, ncid, trim(self%varname), id_var)
 
       do m = 1, 12
-        call convert_month_to_days( int(y), m, time_to_read)
+        call convert_month_to_days( int(y), m, time_to_read, refyear = 0)
         call find_timeframe( filename, ncid, time_to_read, ti)
         call read_var_primary( filename, ncid, id_var, d_grid_with_time, start = (/1, 1, ti /), &
           count = (/ self%grid_raw%nx, self%grid_raw%ny, 1/))
@@ -422,7 +422,9 @@ module TIPMIP_forcing_field_types
 
       ! Calculate interpolation based on center years (hence the +0.5)
       call calc_interpolation_weights( self%y0 + 0.5_dp, self%y1 + 0.5_dp, time, w0, w1)
+
       self%val_interp( mesh%vi1:mesh%vi2, :) = w0 * self%val0( mesh%vi1:mesh%vi2, :) + w1 * self%val1( mesh%vi1:mesh%vi2, :)
+
     end subroutine interpolate_timeframes
 
     subroutine calc_interpolation_weights( timestamp0, timestamp1, time, w0, w1)

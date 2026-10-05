@@ -31,9 +31,11 @@ module calendar
       integer, optional,                 intent(in   ) :: refyear
 
       ! Local variables:
-      character(len=1024), parameter :: routine_name = 'convert_month_to_days'
-      integer                        :: refyear_applied
-      integer, dimension(12), parameter :: days_per_month = (/31,28,31,30,31,30,31,31,30,31,30,31/)
+      character(len=1024), parameter     :: routine_name = 'convert_month_to_days'
+      integer                            :: refyear_applied
+      real(dp), dimension(12), parameter :: days_per_month = &
+         [/31.0_dp, 28.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, &
+          31.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, 31.0_dp/]
 
       ! Add routine to path
       call init_routine( routine_name)
@@ -42,8 +44,6 @@ module calendar
       if (month < 1 .or. month > 12) then
         call crash('Need a month value from 1 to 12')
       end if
-
-      days_per_month = 
 
       ! Determine reference year to use
       if (present(refyear)) then
@@ -57,11 +57,11 @@ module calendar
 
       ! Add full months up to requested month
       do i = 1, month - 1
-        days = days + days_per_month(i) * 1._dp
+        days = days + days_per_month(i)
       end do
 
       ! Add half the requested month
-      days = days + days_per_month(i) / 2._dp
+      days = days + days_per_month(month) / 2._dp
 
       ! Finalise routine path
       call finalise_routine( routine_name)

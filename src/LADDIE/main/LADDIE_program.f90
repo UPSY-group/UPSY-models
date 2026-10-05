@@ -45,6 +45,7 @@ program LADDIE_program
   use laddie_unit_tests, only: run_laddie_unit_tests
   use laddie_hydrology, only: initialise_transects_SGD
   use git_commit_hash_and_package_versions, only: print_git_commit_hash_and_package_versions
+  use mpi_f08, only: MPI_WTIME
 
   implicit none
 
@@ -114,7 +115,7 @@ program LADDIE_program
     ! == Initialise forcing and mesh ==
     ! ==================================
 
-    call initialise_forcing( mesh, forcing)
+    call initialise_forcing( mesh, forcing, 'ANT')
 
     ! == Initialise subglacial discharge ==
     ! =====================================

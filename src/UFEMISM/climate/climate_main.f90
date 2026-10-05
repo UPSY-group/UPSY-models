@@ -127,6 +127,10 @@ CONTAINS
       call climate%snapshot_lapse%run( geom, time)
       climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%T2m   ( mesh%vi1:mesh%vi2,:)
       climate%Precip( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%Precip( mesh%vi1:mesh%vi2,:)
+    case ('TIPMIP')
+      call climate%TIPMIP%run( geom, time)
+      climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%TIPMIP%T2m   ( mesh%vi1:mesh%vi2,:)
+      climate%Precip( mesh%vi1:mesh%vi2,:) = climate%TIPMIP%Precip( mesh%vi1:mesh%vi2,:)
     CASE DEFAULT
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END SELECT
@@ -230,6 +234,9 @@ CONTAINS
       climate%Q_TOA   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%Q_TOA   ( mesh%vi1:mesh%vi2,:)
       climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%Wind_LR ( mesh%vi1:mesh%vi2,:)
       climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%snapshot_lapse%Wind_DU ( mesh%vi1:mesh%vi2,:)
+    case ('TIPMIP')
+      call climate%TIPMIP%allocate( region_name, mesh)
+      call climate%TIPMIP%initialise( geom, refgeo_PD, refgeo_init)
     end select
 
     call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')
@@ -280,7 +287,8 @@ CONTAINS
           'idealised', &
           'SMB_snapshot_plus_anomalies', &
           'ISMIP7', &
-          'snapshot_lapse')
+          'snapshot_lapse', &
+          'TIPMIP')
       ! No need to do anything
     case ('realistic', &
           'snapshot_plus_uniform_deltaT', &
@@ -380,7 +388,8 @@ CONTAINS
           'idealised', &
           'SMB_snapshot_plus_anomalies', &
           'ISMIP7', &
-          'snapshot_lapse')
+          'snapshot_lapse', &
+          'TIPMIP')
       ! No need to do anything
     case ('realistic', &
           'snapshot_plus_uniform_deltaT', &
@@ -517,6 +526,8 @@ CONTAINS
       call climate%ISMIP7%remap( mesh_new)
     elseif (choice_climate_model == 'snapshot_lapse') then
       call climate%snapshot_lapse%remap( mesh_new)
+    elseif (choice_climate_model == 'TIPMIP') then
+      call climate%TIPMIP%remap( mesh_new)
     ELSE
       CALL crash('unknown choice_climate_model "' // TRIM( choice_climate_model) // '"')
     END IF

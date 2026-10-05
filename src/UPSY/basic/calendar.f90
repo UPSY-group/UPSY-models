@@ -33,9 +33,10 @@ module calendar
       ! Local variables:
       character(len=1024), parameter     :: routine_name = 'convert_month_to_days'
       integer                            :: refyear_applied
+      integer                            :: i
       real(dp), dimension(12), parameter :: days_per_month = &
-         [/31.0_dp, 28.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, &
-          31.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, 31.0_dp/]
+         [31.0_dp, 28.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, &
+          31.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, 31.0_dp]
 
       ! Add routine to path
       call init_routine( routine_name)

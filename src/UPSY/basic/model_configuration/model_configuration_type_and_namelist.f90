@@ -763,6 +763,8 @@ module model_configuration_type_and_namelist
     character(len=1024) :: climate_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the climate files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
     character(len=1024) :: climate_ISMIP7_temperature_name_config        = 'tas'                            ! In some of the forcing files, it's called 'ts'...
 
+    character(len=1024) :: climate_TIPMIP_offset_filename_config         = ''                               ! Filename containing offsets in tas_anomaly and pr_ratio to be applied to baseline climate for forcing shift
+
   ! == Ocean
   ! ========
 
@@ -2044,6 +2046,8 @@ module model_configuration_type_and_namelist
     character(len=1024) :: climate_ISMIP7_forcing_version
     character(len=1024) :: climate_ISMIP7_temperature_name
 
+    character(len=1024) :: climate_TIPMIP_offset_filename
+
   ! == Ocean
   ! ========
 
@@ -3107,6 +3111,7 @@ contains
       climate_ISMIP7_forcing_foldername_config                    , &
       climate_ISMIP7_forcing_version_config                       , &
       climate_ISMIP7_temperature_name_config                      , &
+      climate_TIPMIP_offset_filename_config                       , &
       do_asynchronous_ocean_config                                , &
       dt_ocean_config                                             , &
       ocean_vertical_grid_max_depth_config                        , &
@@ -4236,6 +4241,8 @@ contains
     C%climate_ISMIP7_forcing_foldername                        = climate_ISMIP7_forcing_foldername_config
     C%climate_ISMIP7_forcing_version                           = climate_ISMIP7_forcing_version_config
     C%climate_ISMIP7_temperature_name                          = climate_ISMIP7_temperature_name_config
+
+    C%climate_TIPMIP_offset_filename                           = climate_TIPMIP_offset_filename_config
 
     ! == Ocean
     ! ========

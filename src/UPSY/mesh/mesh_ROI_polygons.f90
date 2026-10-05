@@ -38,7 +38,8 @@ module mesh_ROI_polygons
   public :: calc_polygon_Wilkes_basins
   public :: calc_polygon_Antarctic_Peninsula
   public :: calc_polygon_Institute_basin
-
+  public :: calc_polygon_MISMIPplus_Franka
+  
 contains
 
 subroutine calc_polygon_Pine_Island_Glacier( poly)
@@ -1941,5 +1942,29 @@ subroutine calc_polygon_Antarctic_Peninsula( poly)
   call finalise_routine( routine_name)
 
 end subroutine calc_polygon_Antarctic_Peninsula
+
+
+subroutine calc_polygon_MISMIPplus_Franka( poly)
+  ! Return a polygon enveloping region where ice sheet retreats to in meltwater connectivity study
+  ! In/output variables:
+  real(dp), dimension(:,:), allocatable, intent(out) :: poly
+
+  ! Local variables:
+  character(len=1024), parameter :: routine_name = 'calc_polygon_MISMIPplus_Franka'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  allocate( poly( 4,2))
+
+  poly(  1,:) = [300e+03_dp,-40e+3_dp]
+  poly(  2,:) = [300e+03_dp, 40e+3_dp]
+  poly(  3,:) = [640e+03_dp, 40e+3_dp]
+  poly(  4,:) = [640e+03_dp,-40e+3_dp]
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine calc_polygon_MISMIPplus_Franka
 
 end module mesh_ROI_polygons

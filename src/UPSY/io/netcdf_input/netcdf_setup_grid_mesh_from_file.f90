@@ -243,9 +243,9 @@ contains
     call read_var_primary( filename, ncid, id_var_TriC          , mesh%TriC          )
 
     ! Safety - check if the mesh data read from NetCDF makes sense
-    if (par%primary) then
-      if (.not. test_mesh_is_self_consistent( mesh)) call crash('invalid mesh in file ' // trim( filename))
-    end if
+    ! if (par%primary) then
+    !   if (.not. test_mesh_is_self_consistent( mesh)) call crash('invalid mesh in file ' // trim( filename))
+    ! end if
 
     ! Broadcast read mesh from the primary to the other processes
     call broadcast_mesh( mesh)

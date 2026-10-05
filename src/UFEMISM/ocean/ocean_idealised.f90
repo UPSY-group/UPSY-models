@@ -134,6 +134,12 @@ CONTAINS
       CASE ('WARM')
         T1 = 1.0_dp
         S1 = 34.7_dp
+      CASE ('oc2')
+        T1 = 0.0_dp
+        S1 = 34.65_dp
+      CASE ('oc1')
+        T1 = -1.0_dp
+        S1 = 34.6_dp
       CASE ('COLD')
         T1 = -1.9_dp
         S1 = 34.55_dp

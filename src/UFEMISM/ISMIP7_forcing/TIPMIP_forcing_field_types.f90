@@ -373,10 +373,8 @@ module TIPMIP_forcing_field_types
 
       filename = trim(self%foldername) // '/' // trim(self%filenames( idx))
 
-      if (par%primary) then
-        write(0,*) '   Reading TIPMIP forcing from file: ', &
-          UPSY%stru%colour_string( trim( filename), 'light blue')
-      end if
+      if (par%primary)  write(*,"(A)") '   Reading TIPMIP forcing from "' // &
+        UPSY%stru%colour_string( trim( filename),'light blue') // '"...'
 
       ! Read raw gridded data to the primary
       if (par%primary) then

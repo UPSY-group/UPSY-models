@@ -13,9 +13,60 @@ module calendar
 
   private
 
-  public :: convert_time_to_days
+  public :: convert_time_to_days, convert_month_to_days
 
   contains
+
+    subroutine convert_month_to_days( year, month, days, refyear)
+
+      ! Convert a given month to days_since_refyear
+      ! Returns center-value for calendar month
+      ! Used for TIPMIP climate forcing
+      ! Only works for 'noleap' / '365_days' calendars
+
+      ! In/output variables:
+      integer,                           intent(in   ) :: year
+      integer,                           intent(in   ) :: month
+      real(dp),                          intent(  out) :: days
+      integer, optional,                 intent(in   ) :: refyear
+
+      ! Local variables:
+      character(len=1024), parameter :: routine_name = 'convert_month_to_days'
+      integer                        :: refyear_applied
+      integer, dimension(12), parameter :: days_per_month = (/31,28,31,30,31,30,31,31,30,31,30,31/)
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! Make sure input makes sense
+      if (month < 1 .or. month > 12) then
+        call crash('Need a month value from 1 to 12')
+      end if
+
+      days_per_month = 
+
+      ! Determine reference year to use
+      if (present(refyear)) then
+        refyear_applied = refyear
+      else
+        refyear_applied = 1850
+      end if
+
+      ! Convert base year to days (up until 1 Jan)
+      call convert_time_to_days_nobounds( year, 0._dp, 'noleap', refyear_applied, days)
+
+      ! Add full months up to requested month
+      do i = 1, month - 1
+        days = days + days_per_month(i) * 1._dp
+      end do
+
+      ! Add half the requested month
+      days = days + days_per_month(i) / 2._dp
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+    end subroutine convert_month_to_days
 
     subroutine convert_time_to_days( time, days, days_bounds, calendar, refyear, allow_residual)
 

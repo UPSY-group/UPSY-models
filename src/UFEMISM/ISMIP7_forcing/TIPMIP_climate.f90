@@ -147,8 +147,8 @@ contains
       remap_method = 'reallocate')
 
       ! Allocate anomalies (as TIPMIP forcing fields)
-      call self%tas_anomaly%allocate( self, 'tas_anomaly', 'Monthly mean 2-m air temperature anomaly', 'K')
-      call self%pr_ratio%allocate   ( self, 'pr_ratio',    'Monthly precipitation ratio', '')
+      call self%tas_anomaly%allocate( self, 'tas', 'Monthly mean 2-m air temperature anomaly', 'K')
+      call self%pr_ratio%allocate   ( self, 'pr',    'Monthly precipitation ratio', '')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

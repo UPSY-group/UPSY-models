@@ -35,7 +35,7 @@ module TIPMIP_forcing_field_types
     type :: type_TIPMIP_forcing_field
       !< Metadata of TIPMIP forcing fields
 
-      character(len=1024)                            :: name          !           'tas_anomaly', 'pr_ratio'
+      character(len=1024)                            :: name          !           'tas', 'pr'
       character(len=1024)                            :: foldername    !           Foldername that contains all files
       character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
 
@@ -389,7 +389,7 @@ module TIPMIP_forcing_field_types
       ! Read data from file
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call inquire_fill_value( filename, ncid, self%name, fill_value)
-      call inquire_var( filename, ncid, self%name, id_var)
+      call inquire_var( filename, ncid, trim(self%name) // '_anomaly', id_var)
       do m = 1, 12
         call convert_month_to_days( int(y), m, time_to_read)
         call find_timeframe( filename, ncid, time_to_read, ti)

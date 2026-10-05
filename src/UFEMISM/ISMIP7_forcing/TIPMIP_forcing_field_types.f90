@@ -21,7 +21,7 @@ module TIPMIP_forcing_field_types
   use models_basic, only: atype_model
   use Arakawa_grid_mod, only: Arakawa_grid
   use fields_dimensions, only: third_dimension
-  use calendar, only: convert_month_to_days, convert_time_to_days
+  use calendar, only: convert_month_to_days, convert_time_to_days, convert_days_to_time
 
   implicit none
 
@@ -36,6 +36,7 @@ module TIPMIP_forcing_field_types
       !< Metadata of TIPMIP forcing fields
 
       character(len=1024)                            :: name          !           'tas', 'pr'
+      character(len=1024)                            :: varname       !           'tas_anomaly', 'pr_ratio'
       character(len=1024)                            :: foldername    !           Foldername that contains all files
       character(len=1024), dimension(:), allocatable :: filenames     !           Filenames
 
@@ -70,12 +71,12 @@ module TIPMIP_forcing_field_types
 
   contains
 
-    subroutine allocate_TIPMIP_forcing_field( self, model, name, long_name, units)
+    subroutine allocate_TIPMIP_forcing_field( self, model, name, suffix, long_name, units)
 
       ! In/output variables:
       class(type_TIPMIP_forcing_field), intent(inout) :: self
       class(atype_model),              intent(inout) :: model
-      character(len=*),                intent(in   ) :: name, long_name, units
+      character(len=*),                intent(in   ) :: name, suffix, long_name, units
 
       ! Local variables:
       character(len=*), parameter   :: routine_name = 'allocate_TIPMIP_forcing_field'
@@ -84,6 +85,7 @@ module TIPMIP_forcing_field_types
       call init_routine( routine_name)
 
       self%name = name
+      self%varname = trim(self%name) // '_' // suffix
 
       ! Create model fields for all three timeframes
       call model%create_field( self%val0, self%wval0, &
@@ -158,7 +160,7 @@ module TIPMIP_forcing_field_types
       call init_routine( routine_name)
 
       ! Read the grid from the first listed input file
-      filename = trim( self%filenames(1))
+      filename = trim(self%foldername) // '/' // trim(self%filenames(1))
       call open_existing_netcdf_file_for_reading( filename, ncid)
       call setup_xy_grid_from_file( filename, ncid, self%grid_raw)
       call close_netcdf_file( ncid)
@@ -204,7 +206,7 @@ module TIPMIP_forcing_field_types
       ! Initialise counter for timeframes
       cnt = 1
 
-      do i = 1, size(self%filenames)
+      do i = 1, size(self%filenames, 1)
 
         ! Construct the full filename
         filename = trim(self%foldername) // '/' // trim(self%filenames( i))
@@ -222,12 +224,13 @@ module TIPMIP_forcing_field_types
         ! Copy temporary time array to all processes
         call MPI_BCAST( time_tmp(:), nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 
-        ! Get first and last years. By disallowing a residual and converting to integer, these result in full years
-        call convert_time_to_days( time_tmp(1) , y_start, calendar='noleap', refyear=0, allow_residual=.false.)
-        call convert_time_to_days( time_tmp(nt), y_end  , calendar='noleap', refyear=0, allow_residual=.false.)
+        ! Get first and last years, for now including residuals (e.g., year 29.1).
+        call convert_days_to_time( time_tmp(1) , y_start, refyear=0)
+        call convert_days_to_time( time_tmp(nt), y_end  , refyear=0)
 
         deallocate( time_tmp)
 
+        ! Conversion to integers creates full years (e.g. year 29)
         do t = int(y_start), int(y_end)
           ! Add time value to buffer
           time_buff( cnt) = t
@@ -246,8 +249,6 @@ module TIPMIP_forcing_field_types
       ! Copy all valid values from buffer
       self%timestamps  = time_buff( 1:cnt-1)
       self%fileindices = fi_buff  ( 1:cnt-1)
-
-      ! TODO write out to check
 
       ! Finalise routine path
       call finalise_routine( routine_name)
@@ -388,8 +389,8 @@ module TIPMIP_forcing_field_types
 
       ! Read data from file
       call open_existing_netcdf_file_for_reading( filename, ncid)
-      call inquire_fill_value( filename, ncid, self%name, fill_value)
-      call inquire_var( filename, ncid, trim(self%name) // '_anomaly', id_var)
+      call inquire_var( filename, ncid, trim(self%varname), id_var)
+
       do m = 1, 12
         call convert_month_to_days( int(y), m, time_to_read)
         call find_timeframe( filename, ncid, time_to_read, ti)
@@ -405,10 +406,6 @@ module TIPMIP_forcing_field_types
       allocate( d_grid_vec_partial( self%grid_raw%pai%i1: self%grid_raw%pai%i2, 12))
       call distribute_gridded_data_from_primary( self%grid_raw, d_grid_vec_partial, d_grid_tot)
       deallocate( d_grid_tot)
-
-      ! Extrapolate data into fill_value cells
-      sigma = self%grid_raw%dx * 2._dp
-      call extrapolate_fillvalue_Gaussian_grid( self%grid_raw, d_grid_vec_partial, sigma, fill_value)
 
       ! Remap data to mesh
       call apply_map_xy_grid_to_mesh_3D( self%grid_raw, mesh, self%map, d_grid_vec_partial, d_dist)

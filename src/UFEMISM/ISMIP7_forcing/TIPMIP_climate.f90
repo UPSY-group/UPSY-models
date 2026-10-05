@@ -147,8 +147,8 @@ contains
       remap_method = 'reallocate')
 
       ! Allocate anomalies (as TIPMIP forcing fields)
-      call self%tas_anomaly%allocate( self, 'tas', 'Monthly mean 2-m air temperature anomaly', 'K')
-      call self%pr_ratio%allocate   ( self, 'pr',    'Monthly precipitation ratio', '')
+      call self%tas_anomaly%allocate( self, 'tas','anomaly', 'Monthly mean 2-m air temperature anomaly', 'K')
+      call self%pr_ratio%allocate   ( self, 'pr','ratio', 'Monthly precipitation ratio', '')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -257,9 +257,9 @@ contains
       UPSY%stru%colour_string( trim( C%climate_TIPMIP_offset_filename),'light blue') // '"...'
 
     call read_field_from_file_2D_monthly( C%climate_TIPMIP_offset_filename, &
-      trim(self%tas_anomaly%name), self%mesh, C%output_dir, T2m_offset)
+      trim(self%tas_anomaly%varname), self%mesh, C%output_dir, T2m_offset)
     call read_field_from_file_2D_monthly( C%climate_TIPMIP_offset_filename, &
-      trim(self%pr_ratio%name), self%mesh, C%output_dir, Precip_offset)
+      trim(self%pr_ratio%varname), self%mesh, C%output_dir, Precip_offset)
 
     ! Apply offsets to baseline
     self%T2m_baseline( self%mesh%vi1:self%mesh%vi2, :) = &

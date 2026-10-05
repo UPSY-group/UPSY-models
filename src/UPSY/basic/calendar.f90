@@ -13,9 +13,40 @@ module calendar
 
   private
 
-  public :: convert_time_to_days, convert_month_to_days
+  public :: convert_time_to_days, convert_month_to_days, convert_days_to_time
 
   contains
+
+    subroutine convert_days_to_time( days, time, refyear)
+
+      ! Convert days_since_refyear to model time (years)
+      ! Only works for 'noleap' / '365_days' calendars
+
+      ! In/output variables:
+      real(dp),                          intent(in   ) :: days
+      real(dp),                          intent(  out) :: time
+      integer, optional,                 intent(in   ) :: refyear
+
+      ! Local variables:
+      character(len=1024), parameter     :: routine_name = 'convert_days_to_time'
+      integer                            :: refyear_applied
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! Determine reference year to use
+      if (present(refyear)) then
+        refyear_applied = refyear
+      else
+        refyear_applied = 1850
+      end if
+
+      time = days/365._dp + refyear_applied
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+    end subroutine convert_days_to_time
 
     subroutine convert_month_to_days( year, month, days, refyear)
 

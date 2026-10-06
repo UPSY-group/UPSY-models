@@ -39,6 +39,7 @@ module mesh_ROI_polygons
   public :: calc_polygon_Antarctic_Peninsula
   public :: calc_polygon_Institute_basin
   public :: calc_polygon_Denman_glacier
+  public :: calc_polygon_Aurora_GL2300
 
 contains
 
@@ -1970,5 +1971,33 @@ subroutine calc_polygon_Denman_glacier( poly)
   call finalise_routine( routine_name)
 
 end subroutine calc_polygon_Denman_glacier
+
+subroutine calc_polygon_Aurora_GL2300( poly)
+  ! Return a polygon enveloping the Elmer/Ice projected 2300 ice-shelf extent 
+  ! in the Aurora Subglacial Basin.
+
+  ! In/output variables:
+  real(dp), dimension(:,:), allocatable, intent(out) :: poly
+
+  ! Local variables:
+  character(len=1024), parameter :: routine_name = 'calc_polygon_Aurora_GL2300'
+
+  ! Add routine to path
+  call init_routine( routine_name)
+
+  allocate( poly( 7,2))
+
+  poly(  1,:) = [2.000e+06_dp,-1.374e+06_dp]
+  poly(  2,:) = [2.000e+06_dp,-1.200e+06_dp]
+  poly(  3,:) = [2.050e+06_dp,-0.950e+06_dp]
+  poly(  4,:) = [2.200e+06_dp,-0.800e+06_dp]
+  poly(  5,:) = [2.400e+06_dp,-0.650e+06_dp]
+  poly(  6,:) = [2.470e+06_dp,-0.650e+06_dp]
+  poly(  7,:) = [2.470e+06_dp,-1.374e+06_dp]
+
+  ! Finalise routine path
+  call finalise_routine( routine_name)
+
+end subroutine calc_polygon_Aurora_GL2300
 
 end module mesh_ROI_polygons

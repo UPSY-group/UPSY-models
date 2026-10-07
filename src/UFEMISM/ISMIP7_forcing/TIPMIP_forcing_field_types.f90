@@ -316,13 +316,13 @@ module TIPMIP_forcing_field_types
       ! Determine total numer of timeframes available for this field
       n = size(self%timestamps)
 
-      if (time <= self%timestamps(1)) then
-        ! Model time before first available time value, return first two values
+      if (time <= self%timestamps(2)) then
+        ! Model time before second available time value, return first two values
         self%y0 = self%timestamps(1)
         self%y1 = self%timestamps(2)
 
-      elseif (time >= self%timestamps(n)) then
-        ! Model time after last available time value, return last two indices
+      elseif (time >= self%timestamps(n-1)) then
+        ! Model time after second last available time value, return last two indices
         self%y0 = self%timestamps(n-1)
         self%y1 = self%timestamps(n)
 
@@ -370,6 +370,8 @@ module TIPMIP_forcing_field_types
           idx = self%fileindices( i)
         end if
       end do
+
+      if (idx == -1) call crash('Could not find requested year in timestamps')
 
       filename = trim(self%foldername) // '/' // trim(self%filenames( idx))
 

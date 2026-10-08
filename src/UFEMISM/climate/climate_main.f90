@@ -237,6 +237,9 @@ CONTAINS
     case ('TIPMIP')
       call climate%TIPMIP%allocate( region_name, mesh)
       call climate%TIPMIP%initialise( geom, refgeo_PD, refgeo_init)
+      climate%Q_TOA   ( mesh%vi1:mesh%vi2,:) = climate%TIPMIP%Q_TOA   ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%TIPMIP%Wind_LR ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%TIPMIP%Wind_DU ( mesh%vi1:mesh%vi2,:)
     end select
 
     call checksum( mesh%pai_V, climate%T2m   , 'climate%T2m')

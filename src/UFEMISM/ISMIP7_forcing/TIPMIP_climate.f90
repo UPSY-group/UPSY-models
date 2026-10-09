@@ -208,37 +208,38 @@ contains
     self%has_insolation = .false. ! Initialise
 
     ! Determine which climate model to initialise for this region
-    if     (self%region_name() == 'NAM') then
+    select case (self%region_name())
+    case default
+      call crash('unknown region_name "' // self%region_name() // '"')
+    case ('NAM')
       filename_climate_snapshot      = C%filename_climate_snapshot_NAM
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_NAM
       self%lapse_rate_temp           = C%lapse_rate_temp_NAM
       if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    elseif (self%region_name() == 'EAS') then
+    case ('EAS')
       filename_climate_snapshot      = C%filename_climate_snapshot_EAS
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_EAS
       self%lapse_rate_temp           = C%lapse_rate_temp_EAS
       if (C%choice_SMB_model_EAS == 'IMAU-ITM' .or. C%choice_SMB_model_EAS == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    elseif (self%region_name() == 'GRL') then
+    case ('GRL')
       filename_climate_snapshot      = C%filename_climate_snapshot_GRL
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_GRL
       self%lapse_rate_temp           = C%lapse_rate_temp_GRL
       if (C%choice_SMB_model_GRL == 'IMAU-ITM' .or. C%choice_SMB_model_GRL == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    elseif (self%region_name() == 'ANT') then
+    case ('ANT')
       filename_climate_snapshot      = C%filename_climate_snapshot_ANT
       self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_ANT
       self%lapse_rate_temp           = C%lapse_rate_temp_ANT
       if (C%choice_SMB_model_ANT == 'IMAU-ITM' .or. C%choice_SMB_model_ANT == 'ITM_v2') then
          self%has_insolation = .true.
       end if
-    else
-      call crash('unknown region_name "' // self%region_name() // '"')
-    end if
+    end select
 
     if (par%primary) then
       write(0,*) '   Reading climate baseline from file: ', &

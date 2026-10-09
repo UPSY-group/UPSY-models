@@ -13,17 +13,101 @@ module calendar
 
   private
 
-  public :: convert_time_to_days
+  public :: convert_time_to_days, convert_month_to_days, convert_days_to_time
 
   contains
 
-    subroutine convert_time_to_days( time, days, days_bounds, calendar, allow_residual)
+    subroutine convert_days_to_time( days, time, refyear)
+
+      ! Convert days_since_refyear to model time (years)
+      ! Only works for 'noleap' / '365_days' calendars
+
+      ! In/output variables:
+      real(dp),                          intent(in   ) :: days
+      real(dp),                          intent(  out) :: time
+      integer, optional,                 intent(in   ) :: refyear
+
+      ! Local variables:
+      character(len=1024), parameter     :: routine_name = 'convert_days_to_time'
+      integer                            :: refyear_applied
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! Determine reference year to use
+      if (present(refyear)) then
+        refyear_applied = refyear
+      else
+        refyear_applied = 1850
+      end if
+
+      time = days/365._dp + refyear_applied
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+    end subroutine convert_days_to_time
+
+    subroutine convert_month_to_days( year, month, days, refyear)
+
+      ! Convert a given month to days_since_refyear
+      ! Returns center-value for calendar month
+      ! Used for TIPMIP climate forcing
+      ! Only works for 'noleap' / '365_days' calendars
+
+      ! In/output variables:
+      integer,                           intent(in   ) :: year
+      integer,                           intent(in   ) :: month
+      real(dp),                          intent(  out) :: days
+      integer, optional,                 intent(in   ) :: refyear
+
+      ! Local variables:
+      character(len=1024), parameter     :: routine_name = 'convert_month_to_days'
+      integer                            :: refyear_applied
+      integer                            :: i
+      real(dp), dimension(12), parameter :: days_per_month = &
+         [31.0_dp, 28.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, &
+          31.0_dp, 31.0_dp, 30.0_dp, 31.0_dp, 30.0_dp, 31.0_dp]
+
+      ! Add routine to path
+      call init_routine( routine_name)
+
+      ! Make sure input makes sense
+      if (month < 1 .or. month > 12) then
+        call crash('Need a month value from 1 to 12')
+      end if
+
+      ! Determine reference year to use
+      if (present(refyear)) then
+        refyear_applied = refyear
+      else
+        refyear_applied = 1850
+      end if
+
+      ! Convert base year to days (up until 1 Jan)
+      call convert_time_to_days_nobounds( year, 0._dp, 'noleap', refyear_applied, days)
+
+      ! Add full months up to requested month
+      do i = 1, month - 1
+        days = days + days_per_month(i)
+      end do
+
+      ! Add half the requested month
+      days = days + days_per_month(month) / 2._dp
+
+      ! Finalise routine path
+      call finalise_routine( routine_name)
+
+    end subroutine convert_month_to_days
+
+    subroutine convert_time_to_days( time, days, days_bounds, calendar, refyear, allow_residual)
 
       ! In/output variables:
       real(dp),                          intent(in   ) :: time
       real(dp),                          intent(  out) :: days
       real(dp), dimension(2), optional,  intent(  out) :: days_bounds
       character(len=*), optional,        intent(in   ) :: calendar
+      integer, optional,                 intent(in   ) :: refyear
       logical, optional,                 intent(in   ) :: allow_residual
 
       ! Local variables:
@@ -35,6 +119,7 @@ module calendar
       real(dp), parameter            :: eps = 1.e-8
       character(len=1024)            :: calendar_applied
       logical                        :: residual_allowed
+      integer                        :: refyear_applied
 
       ! Add routine to path
       call init_routine( routine_name)
@@ -44,6 +129,13 @@ module calendar
         calendar_applied = calendar
       else
         calendar_applied = 'standard'
+      end if
+
+      ! Determine reference yearr to use
+      if (present(refyear)) then
+        refyear_applied = refyear
+      else
+        refyear_applied = 1850
       end if
 
       ! Determine whether residual days (non-full year) are allowed. Default: not
@@ -72,10 +164,10 @@ module calendar
           call crash('Requested time to convert to days is not a full year')
         end if
 
-        call convert_time_to_days_with_bounds( full_year, days, days_bounds)
+        call convert_time_to_days_with_bounds( full_year, refyear_applied, days, days_bounds)
       else
         ! Determine days at the actual current time at 1 Jan
-        call convert_time_to_days_nobounds( full_year, res, calendar_applied, days)
+        call convert_time_to_days_nobounds( full_year, res, calendar_applied, refyear_applied, days)
       end if
 
       ! Finalise routine path
@@ -83,12 +175,13 @@ module calendar
 
     end subroutine convert_time_to_days
 
-    subroutine convert_time_to_days_nobounds( full_year, res, calendar, days)
+    subroutine convert_time_to_days_nobounds( full_year, res, calendar, refyear, days)
 
       ! In/output variables:
       integer,                 intent(in   ) :: full_year
       real(dp),                intent(in   ) :: res
       character(len=*),        intent(in   ) :: calendar
+      integer,                 intent(in   ) :: refyear
       real(dp),                intent(  out) :: days
 
       ! Local variables:
@@ -108,8 +201,8 @@ module calendar
           ! Initialise
           days = 0._dp
     
-          ! Count days for full years from 1850 up to full year
-          do i = 1850, full_year - 1
+          ! Count days for full years from refyear up to full year
+          do i = refyear, full_year - 1
             if (is_leap_year(i)) then
               days = days + 366._dp
             else
@@ -122,14 +215,14 @@ module calendar
 
         case ('noleap', '365_day')
           ! Determine days according to years of 365 days without leap years
-          days = (full_year-1850) * 365._dp
+          days = (full_year-refyear) * 365._dp
 
           ! Add residual
           days = days + res * 365._dp
 
         case ('360_day')
           ! Determine days according to years of 360 days (each month 30 days)
-          days = (full_year-1850) * 360._dp
+          days = (full_year-refyear) * 360._dp
 
           ! Add residual
           days = days + res * 360._dp
@@ -141,13 +234,14 @@ module calendar
 
     end subroutine convert_time_to_days_nobounds
 
-    subroutine convert_time_to_days_with_bounds( full_year, days, days_bounds)
+    subroutine convert_time_to_days_with_bounds( full_year, refyear, days, days_bounds)
       ! This routine is specific for creating output, which we always want on
       ! the standard calendar, hence no other calendars are implemented
       ! This is tailored specifically to ISMIP7 output
 
       ! In/output variables:
       integer,                 intent(in   ) :: full_year
+      integer,                 intent(in   ) :: refyear
       real(dp),                intent(  out) :: days
       real(dp), dimension(2),  intent(  out) :: days_bounds
 
@@ -162,8 +256,8 @@ module calendar
       ! Initialise
       days_start = 0._dp
 
-      ! Count days for full years from 1850 to start of last year
-      do i = 1850, full_year - 2
+      ! Count days for full years from refyear to start of last year
+      do i = refyear, full_year - 2
         if (is_leap_year(i)) then
           days_start = days_start + 366._dp
         else

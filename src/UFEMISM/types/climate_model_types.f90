@@ -7,6 +7,7 @@ MODULE climate_model_types
 
   USE precisions                                             , ONLY: dp
   use ISMIP7_climate, only: type_climate_model_ISMIP7
+  use TIPMIP_climate, only: type_climate_model_TIPMIP
   use climate_snapshot_lapse, only: type_climate_model_snapshot_lapse
 
   IMPLICIT NONE
@@ -167,6 +168,7 @@ MODULE climate_model_types
     TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
     type(type_climate_model_ISMIP7)                     :: ISMIP7
     type(type_climate_model_snapshot_lapse)             :: snapshot_lapse
+    type(type_climate_model_TIPMIP)                     :: TIPMIP
 
   END TYPE type_climate_model
 

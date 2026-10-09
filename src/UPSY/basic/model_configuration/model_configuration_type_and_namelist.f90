@@ -763,6 +763,8 @@ module model_configuration_type_and_namelist
     character(len=1024) :: climate_ISMIP7_forcing_version_config             = ''                               ! Which version of the forcing files to use (since they often provide more than one), e.g. 'v2' means the climate files are located in /path/to/base/folder/acabf/v2. Leaving this variable empty implies that they are located in /path/to/base/folder/acabf
     character(len=1024) :: climate_ISMIP7_temperature_name_config        = 'tas'                            ! In some of the forcing files, it's called 'ts'...
 
+    character(len=1024) :: climate_TIPMIP_offset_filename_config         = ''                               ! Filename containing offsets in tas_anomaly and pr_ratio to be applied to baseline climate for forcing shift
+
   ! == Ocean
   ! ========
 
@@ -848,6 +850,9 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 ocean model
     character(len=1024) :: ocean_ISMIP7_forcing_foldername_config       = ''                               ! Path to the directory containing the different variables directories (e.g. /path/to/base/folder, so that the ocean files are located in /path/to/base/folder/thetao/version)
     character(len=1024) :: ocean_ISMIP7_forcing_version_config          = ''
+    integer             :: ocean_ISMIP7_calendar_refyear_config         = 1850                             ! Reference year for calendar
+    character(len=1024) :: ocean_ISMIP7_forcing_type_config             = 'absolute'                       ! Type of forcing that is provided 'absolute' (ISMIP7) or 'anomaly' (TIPMIP)
+    character(len=1024) :: ocean_ISMIP7_offset_filename_config          = ''                               ! Filename containing offsets which should be subtracted from the baseline climatology in case of 'anomaly' forcing
 
   ! == Surface mass balance
   ! =======================
@@ -2042,6 +2047,8 @@ module model_configuration_type_and_namelist
     character(len=1024) :: climate_ISMIP7_forcing_version
     character(len=1024) :: climate_ISMIP7_temperature_name
 
+    character(len=1024) :: climate_TIPMIP_offset_filename
+
   ! == Ocean
   ! ========
 
@@ -2127,6 +2134,9 @@ module model_configuration_type_and_namelist
     ! Settings for the ISMIP7 ocean model
     character(len=1024) :: ocean_ISMIP7_forcing_foldername
     character(len=1024) :: ocean_ISMIP7_forcing_version
+    integer             :: ocean_ISMIP7_calendar_refyear
+    character(len=1024) :: ocean_ISMIP7_forcing_type
+    character(len=1024) :: ocean_ISMIP7_offset_filename
 
   ! == Surface mass balance
   ! =======================
@@ -3103,6 +3113,7 @@ contains
       climate_ISMIP7_forcing_foldername_config                    , &
       climate_ISMIP7_forcing_version_config                       , &
       climate_ISMIP7_temperature_name_config                      , &
+      climate_TIPMIP_offset_filename_config                       , &
       do_asynchronous_ocean_config                                , &
       dt_ocean_config                                             , &
       ocean_vertical_grid_max_depth_config                        , &
@@ -3158,6 +3169,9 @@ contains
       ocean_snp_p_anml_filename_anomalies_config                  , &
       ocean_ISMIP7_forcing_foldername_config                      , &
       ocean_ISMIP7_forcing_version_config                         , &
+      ocean_ISMIP7_calendar_refyear_config                        , &
+      ocean_ISMIP7_forcing_type_config                            , &
+      ocean_ISMIP7_offset_filename_config                         , &
       do_asynchronous_SMB_config                                  , &
       dt_SMB_config                                               , &
       choice_SMB_model_NAM_config                                 , &
@@ -4231,6 +4245,8 @@ contains
     C%climate_ISMIP7_forcing_version                           = climate_ISMIP7_forcing_version_config
     C%climate_ISMIP7_temperature_name                          = climate_ISMIP7_temperature_name_config
 
+    C%climate_TIPMIP_offset_filename                           = climate_TIPMIP_offset_filename_config
+
     ! == Ocean
     ! ========
 
@@ -4316,6 +4332,9 @@ contains
     ! Settings for the ISMIP7 ocean model
     C%ocean_ISMIP7_forcing_foldername                        = ocean_ISMIP7_forcing_foldername_config
     C%ocean_ISMIP7_forcing_version                           = ocean_ISMIP7_forcing_version_config
+    C%ocean_ISMIP7_calendar_refyear                          = ocean_ISMIP7_calendar_refyear_config
+    C%ocean_ISMIP7_forcing_type                              = ocean_ISMIP7_forcing_type_config
+    C%ocean_ISMIP7_offset_filename                           = ocean_ISMIP7_offset_filename_config
 
     ! == Surface mass balance
     ! =======================

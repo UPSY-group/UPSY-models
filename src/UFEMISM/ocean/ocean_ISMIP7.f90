@@ -111,13 +111,15 @@ contains
         if (par%primary)  write(*,"(A)") '     Reading ocean offset from "' // &
           UPSY%stru%colour_string( trim( C%ocean_ISMIP7_offset_filename),'light blue') // '"...'
 
-        ! Read in offsets
+        ! Read in offsets. These offsets are defined as present-day minus pre-industrial control
         call read_field_from_file_3D_ocean( C%ocean_ISMIP7_offset_filename, &
           trim(ISMIP7%T%name) // '_anomaly', mesh, C%output_dir, C%z_ocean, T_offset)
         call read_field_from_file_3D_ocean( C%ocean_ISMIP7_offset_filename, &
           trim(ISMIP7%S%name) // '_anomaly', mesh, C%output_dir, C%z_ocean, S_offset)
 
-        ! Apply offsets to baseline
+        ! Apply offsets to baseline to convert the baseline into pre-industrial climatology.
+        ! This way, anomalies (as in TIPMIP) defined with respect to pre-industrial control
+        ! can be added directly to the baseline.
         ISMIP7%T%baseline( mesh%vi1:mesh%vi2, :) = ISMIP7%T%baseline( mesh%vi1:mesh%vi2, :) - T_offset( mesh%vi1: mesh%vi2, :)
         ISMIP7%S%baseline( mesh%vi1:mesh%vi2, :) = ISMIP7%S%baseline( mesh%vi1:mesh%vi2, :) - S_offset( mesh%vi1: mesh%vi2, :)
     end select

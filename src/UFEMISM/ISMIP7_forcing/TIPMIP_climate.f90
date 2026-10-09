@@ -253,7 +253,12 @@ contains
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'uas'   , self%mesh, C%output_dir, self%Wind_LR)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'vas'   , self%mesh, C%output_dir, self%Wind_DU)
 
-    ! Read in offsets
+    ! Read in offsets, which are defined as :
+    ! tas: present-day values minus pre-industrial values
+    ! pr: present-day values divided by pre-industrial values
+    ! These offsets need to be computed during pre-processing.
+    ! For TIPMIP, anomalies/ratios are defined with respect to pre-industrial climate,
+    ! So offsets are simply average values over a period representative of present-day
     if (par%primary)  write(*,"(A)") '     Reading climate offset from "' // &
       UPSY%stru%colour_string( trim( C%climate_TIPMIP_offset_filename),'light blue') // '"...'
 
@@ -262,7 +267,9 @@ contains
     call read_field_from_file_2D_monthly( C%climate_TIPMIP_offset_filename, &
       trim(self%pr_ratio%varname), self%mesh, C%output_dir, Precip_offset)
 
-    ! Apply offsets to baseline
+    ! Apply offsets to baseline to convert the baseline from present-day to pre-industrial control
+    ! Note that no check is performed whether precip_offset is non-zero. In the provided TIPMIP forcing,
+    ! Precip_ratios are defined everywhere, and hence the derived offsets are non-zero everywhere
     self%T2m_baseline( self%mesh%vi1:self%mesh%vi2, :) = &
       self%T2m_baseline( self%mesh%vi1:self%mesh%vi2, :) - T2m_offset( self%mesh%vi1:self%mesh%vi2, :)
     self%Precip_baseline( self%mesh%vi1:self%mesh%vi2, :) = &

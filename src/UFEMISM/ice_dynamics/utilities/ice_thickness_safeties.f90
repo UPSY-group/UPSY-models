@@ -16,6 +16,7 @@ module ice_thickness_safeties
   use mpi_basic, only: par, sync
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_MIN, MPI_SUM, MPI_COMM_WORLD
   use ice_geometry_model_basic, only: type_ice_geometry_model
+  use calving_threshold_thickness_iterative, only: apply_calving_threshold_thickness_iterative
 
   implicit none
 
@@ -46,6 +47,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2)     :: Hi_save
     real(dp)                                   :: floating_area, calving_area, mass_lost
     type(type_ice_geometry_model), allocatable :: geom_new   ! Not the most beautiful solution, but the best that can be done for now...
+    real(dp), dimension(:), pointer            :: Hb_loc, SL_loc
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -92,6 +94,10 @@ contains
           Hi_new( vi) = 0._dp
         end if
       end do
+    elseif (C%choice_calving_law == 'threshold_thickness_front_iterative') then
+      Hb_loc => geom%Hb( mesh%vi1:mesh%vi2)
+      SL_loc => geom%SL( mesh%vi1:mesh%vi2)
+      call apply_calving_threshold_thickness_iterative( mesh, Hb_loc, SL_loc, Hi_new)
     end if
 
     ! DENK DROM

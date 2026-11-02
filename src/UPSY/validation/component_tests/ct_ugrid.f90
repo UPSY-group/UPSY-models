@@ -59,7 +59,7 @@ contains
     type(type_mesh)               :: mesh
     character(len=:), allocatable :: mesh_raw_name
     integer                       :: ncid
-    type(type_ugrid), allocatable :: ugrid_a
+    type(type_ugrid)              :: ugrid_a
     character(len=:), allocatable :: filename
 
     ! Add routine to call stack
@@ -79,7 +79,7 @@ contains
     call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
 
     ! Convert mesh to ugrid and save to NetCDF
-    call ugrid_a%build_from_mesh( mesh, Arakawa_grid%a())
+    call ugrid_a%build_from_grid( mesh, Arakawa_grid%a())
     filename = trim( output_dir) // '/ugrid_' // trim( mesh_raw_name) // '_a.nc'
     call save_ugrid_as_netcdf( filename, ugrid_a)
 

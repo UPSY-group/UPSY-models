@@ -80,7 +80,7 @@ contains
 
     ! Convert mesh to ugrid and save to NetCDF
     call ugrid_a%build_from_grid( mesh, Arakawa_grid%a())
-    filename = trim( output_dir) // '/ugrid_' // trim( mesh_raw_name) // '_a.nc'
+    filename = trim( output_dir) // '/ugrid_' // mesh_raw_name( 1:len_trim( mesh_raw_name)-3) // '_a.nc'
     call save_ugrid_as_netcdf( filename, ugrid_a)
 
     ! Remove routine from call stack

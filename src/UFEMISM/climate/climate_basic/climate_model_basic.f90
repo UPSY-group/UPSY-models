@@ -77,10 +77,14 @@ module climate_model_basic
       real(dp),                            intent(in   ) :: time
     end subroutine climate_model_run_ifc
 
-    subroutine climate_model_remap_ifc( self, mesh_new)
-      import atype_climate_model, type_mesh
-      class(atype_climate_model), intent(inout) :: self
-      type(type_mesh), target,    intent(in   ) :: mesh_new
+    subroutine climate_model_remap_ifc( self, mesh_new, refgeo_init, refgeo_PD, geom)
+      import atype_ice_geometry_model_data,  type_reference_geometry
+      import atype_climate_model,            type_mesh
+      class(atype_climate_model),            intent(inout) :: self
+      type(type_mesh), target,               intent(in   ) :: mesh_new
+      type(type_reference_geometry), target, intent(in   ) :: refgeo_init
+      type(type_reference_geometry), target, intent(in   ) :: refgeo_PD
+      class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     end subroutine climate_model_remap_ifc
 
     function get_climate_model_name_ifc( self) result( climate_model_name)
@@ -242,11 +246,13 @@ contains
 
   end subroutine climate_model_run
 
-  subroutine climate_model_remap( self, mesh_new)
+  subroutine climate_model_remap( self, mesh_new, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
-    class(atype_climate_model), intent(inout) :: self
-    type(type_mesh), target,    intent(in   ) :: mesh_new
+    class(atype_climate_model),            intent(inout) :: self
+    type(type_mesh), target,               intent(in   ) :: mesh_new
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_remap'
@@ -263,7 +269,7 @@ contains
     call self%remap_field( mesh_new, 'Precip', self%Precip)
 
     ! Remap stuff that is specific to each individual climate model implementation
-    call self%remap_climate_model( mesh_new)
+    call self%remap_climate_model( mesh_new, refgeo_init, refgeo_PD, geom)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

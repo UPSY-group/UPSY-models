@@ -12,7 +12,9 @@ module climate_idealised
   use parameters
   use mesh_basic,                        only: type_mesh
   use ice_geometry_model_data,           only: atype_ice_geometry_model_data
-  use climate_model_types,               only: type_climate_model
+!   use climate_model_types,               only: type_climate_model
+  use climate_model_basic,               only: atype_climate_model
+  use reference_geometry_types,          only: type_reference_geometry
 
   implicit none
 
@@ -21,17 +23,19 @@ module climate_idealised
   public :: type_climate_model_idealised
 
 type, extends(atype_climate_model) :: type_climate_model_idealised
+    
+
     contains
 
-    procedure, public :: allocate_climate_model   => climate_model_idealised_allocate
-    procedure, public :: deallocate_climate_model => climate_model_idealised_deallocate
-    procedure, public :: initialise_climate_model => climate_model_idealised_initialise
-    procedure, public :: run_climate_model        => climate_model_idealised_run
-    procedure, public :: remap_climate_model      => climate_model_idealised_remap
+        procedure, public :: allocate_climate_model   => climate_model_idealised_allocate
+        procedure, public :: deallocate_climate_model => climate_model_idealised_deallocate
+        procedure, public :: initialise_climate_model => climate_model_idealised_initialise
+        procedure, public :: run_climate_model        => climate_model_idealised_run
+        procedure, public :: remap_climate_model      => climate_model_idealised_remap
 
-    procedure, public :: get_climate_model_name
+        procedure, public :: get_climate_model_name
 
-    procedure, private :: run_climate_model_idealised_EISMINT1
+        procedure, private :: run_climate_model_idealised_EISMINT1
 
 end type type_climate_model_idealised
 
@@ -77,14 +81,15 @@ contains
 
     end subroutine climate_model_idealised_deallocate
 
-    subroutine climate_model_idealised_initialise(self, mesh, climate)
+    subroutine climate_model_idealised_initialise(self, geom, refgeo_PD, refgeo_init)
         ! Initialise the climate model
         !
         ! Use an idealised climate scheme
         ! In- and output variables
-        class(type_climate_model_idealised),    intent(inout) :: self
-        type(type_mesh),                        intent(in)    :: mesh
-        type(type_climate_model),               intent(inout) :: climate
+        class(type_climate_model_idealised),  intent(inout) :: self
+        class(atype_ice_geometry_model_data), intent(in   ) :: geom
+        type(type_reference_geometry),        intent(in   ) :: refgeo_PD
+        type(type_reference_geometry),        intent(in   ) :: refgeo_init
 
         ! Local variables:
         character(len=256), parameter                         :: routine_name = 'climate_model_idealised_initialise'
@@ -113,16 +118,14 @@ contains
 
     end subroutine climate_model_idealised_initialise
 
-    subroutine climate_model_idealised_run(self, mesh, geom, climate, time)
+    subroutine climate_model_idealised_run(self, geom, time)
         ! Calculate the climate
         !
         ! Use an idealised climate scheme
 
         ! In/output variables:
         class(type_climate_model_idealised),    intent(inout) :: self
-        type(type_mesh),                        intent(in)    :: mesh
         class(atype_ice_geometry_model_data),   intent(in   ) :: geom
-        type(type_climate_model),               intent(inout) :: climate
         real(dp),                               intent(in)    :: time
 
         ! Local variables:
@@ -138,7 +141,7 @@ contains
                 C%choice_climate_model_idealised == 'EISMINT1_D' .OR. &
                 C%choice_climate_model_idealised == 'EISMINT1_E' .OR. &
                 C%choice_climate_model_idealised == 'EISMINT1_F') THEN
-        call run_climate_model_idealised_EISMINT1( mesh, geom, climate, time)
+        call self%run_climate_model_idealised_EISMINT1( geom, time)
         else
         call crash('unknown choice_climate_model_idealised "' // TRIM( C%choice_climate_model_idealised) // '"')
         end if
@@ -151,13 +154,11 @@ contains
     ! == EISMINT1
     ! ===========
 
-    subroutine run_climate_model_idealised_EISMINT1(self, mesh, geom, climate, time)
+    subroutine run_climate_model_idealised_EISMINT1(self, geom, time)
         ! Temperature for the EISMINT1 experiments (Huybrechts et al., 1996)
 
         class(type_climate_model_idealised),  intent(inout) :: self
-        type(type_mesh),                      intent(in)    :: mesh
         class(atype_ice_geometry_model_data), intent(in   ) :: geom
-        type(type_climate_model),             intent(inout) :: climate
         real(dp),                             intent(in)    :: time
 
         ! Local variables:
@@ -171,7 +172,7 @@ contains
         call init_routine( routine_name)
 
         ! Set precipitation to zero - SMB is parameterised anyway...
-        climate%Precip = 0._dp
+        self%Precip = 0._dp
 
         ! Baseline temperature
         if     (C%choice_climate_model_idealised == 'EISMINT1_A' .OR. &
@@ -179,9 +180,9 @@ contains
                 C%choice_climate_model_idealised == 'EISMINT1_C') THEN
         ! Moving margin: Huybrechts et al., Eq. 11
 
-        do vi = mesh%vi1, mesh%vi2
+        do vi = self%mesh%vi1, self%mesh%vi2
             ! Calculate baseline temperature
-            climate%T2m( vi,:) = 270._dp - 0.01_dp * geom%Hs( vi)
+            self%T2m( vi,:) = 270._dp - 0.01_dp * geom%Hs( vi)
         end do
 
         elseif (C%choice_climate_model_idealised == 'EISMINT1_D' .OR. &
@@ -189,15 +190,15 @@ contains
                 C%choice_climate_model_idealised == 'EISMINT1_F') THEN
         ! Fixed margin: Huybrechts et al., Eq. 9
 
-        do vi = mesh%vi1, mesh%vi2
+        do vi = self%mesh%vi1, self%mesh%vi2
 
             ! Calculate distance from ice divide (for fixed margin experiments, use square distance)
-            x = mesh%V( vi,1)
-            y = mesh%V( vi,2)
+            x = self%mesh%V( vi,1)
+            y = self%mesh%V( vi,2)
             d = MAX( ABS( x - x_summit), ABS( y - y_summit)) / 1E3_dp  ! [km]
 
             ! Calculate baseline temperature
-            climate%T2m( vi,:) = 239._dp + (8.0E-08_dp * d**3)
+            self%T2m( vi,:) = 239._dp + (8.0E-08_dp * d**3)
 
         end do
 
@@ -215,7 +216,7 @@ contains
 
         if (time > 0._dp) then
             dT = 10._dp * SIN( 2._dp * pi * time / T)
-            climate%T2m = climate%T2m + dT
+            self%T2m = self%T2m + dT
         end if
 
         elseif (C%choice_climate_model_idealised == 'EISMINT1_C' .OR. &
@@ -226,7 +227,7 @@ contains
 
         if (time > 0._dp) then
             dT = 10._dp * SIN( 2._dp * pi * time / T)
-            climate%T2m = climate%T2m + dT
+            self%T2m = self%T2m + dT
         end if
 
         end if
@@ -237,12 +238,11 @@ contains
 
     end subroutine run_climate_model_idealised_EISMINT1
 
-    subroutine climate_model_idealised_remap( self, mesh_new, time, refgeo_init, refgeo_PD, geom)
+    subroutine climate_model_idealised_remap( self, mesh_new, refgeo_init, refgeo_PD, geom)
 
         ! In/output variables:
         class(type_climate_model_idealised),   intent(inout) :: self
         type(type_mesh), target,               intent(in   ) :: mesh_new
-        real(dp),                              intent(in   ) :: time
         type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
         class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
@@ -254,7 +254,7 @@ contains
 
         ! Remap all the stuff that is specific to climate model idealised
 
-        ! Re-initialise to read and remap the climatew from the input file again
+        ! Re-initialise to read and remap the climate from the input file again
         call self%initialise( geom, refgeo_init, refgeo_PD)
 
         ! Remove routine from call stack
@@ -265,7 +265,7 @@ contains
     function get_climate_model_name( self) result( climate_model_name)
         class(type_climate_model_idealised), intent(in) :: self
         character(len=:), allocatable :: climate_model_name
-        SMB_model_name = 'idealised'
+        climate_model_name = 'idealised'
     end function get_climate_model_name
 
 end module climate_idealised

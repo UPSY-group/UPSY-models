@@ -5,10 +5,11 @@ module climate_model
     use climate_idealised,                  only: type_climate_model_idealised
     use climate_snapshot,                   only: type_climate_model_snapshot
     use climate_snapshot_lapse,             only: type_climate_model_snapshot_lapse
-    use climate_snapshot_plus_anomalies,    only: type_climate_model_snapshot_plus_anomalies
-    use climate_snapshot_plus_transient_dT, only: type_climate_snapshot_plus_transient_dT
-    use climate_snapshot_plus_uniform_dT,   only: type_climate_model_snapshot_plus_uniform_dT
-    use climate_ISMIP7,                     only: type_climate_ISMIP7
+    ! use climate_snapshot_plus_anomalies,    only: type_climate_model_snapshot_plus_anomalies
+    ! use climate_snapshot_plus_transient_dT, only: type_climate_snapshot_plus_transient_dT
+    ! use climate_snapshot_plus_uniform_dT,   only: type_climate_model_snapshot_plus_uniform_dT
+    use ISMIP7_climate,                     only: type_climate_model_ISMIP7
+	use TIPMIP_climate,                     only: type_climate_model_TIPMIP
 
 	implicit none
 
@@ -30,19 +31,23 @@ module climate_model
 	
 	select case (choice_climate_model)
 	    case default
-	      call crash('invalid choice_climate_model "' // trim( choice_SMB_model) // '"')
+	      call crash('invalid choice_climate_model "' // trim( choice_climate_model) // '"')
 	    case ('idealised')
 	      allocate( type_climate_model_idealised :: climate)
 	    case ('snapshot')
 	      allocate( type_climate_model_snapshot :: climate)
 	    case ('snapshot_lapse')
 	      allocate( type_climate_model_snapshot_lapse :: climate)
-	    case ('snapshot_plus_anomalies')
-	      allocate( type_climate_model_snapshot_p_anml :: climate)
-	    case ('snapshot_plus_transient_deltaT')
-	      allocate( type_climate_model_snapshot_trans_dT :: climate)
-	    case ('snapshot_plus_uniform_deltaT')
-	      allocate( type_climate_model_snapshot_unif_dT :: climate)
+		case ('ISMIP7')
+	      allocate( type_climate_model_ISMIP7 :: climate)
+		case ('TIPMIP')
+	      allocate( type_climate_model_TIPMIP :: climate)    
+	    ! case ('snapshot_plus_anomalies')
+	    !   allocate( type_climate_model_snapshot_p_anml :: climate)
+	    ! case ('snapshot_plus_transient_deltaT')
+	    !   allocate( type_climate_model_snapshot_trans_dT :: climate)
+	    ! case ('snapshot_plus_uniform_deltaT')
+	    !   allocate( type_climate_model_snapshot_unif_dT :: climate)
 	    end select
 	
 	    ! Remove routine from call stack

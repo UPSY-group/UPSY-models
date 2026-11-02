@@ -21,11 +21,13 @@ module ugrid_data
 
     integer                                       :: face_node_connectivity_fill_value  !           Fill value for unused slots
     integer,  dimension(:),   contiguous, pointer :: face_node_connectivity_n           ! [nFaces]  Number of nodes spanning each face
-    integer,  dimension(:,:), contiguous, pointer :: face_node_connectivity             ! [nFaces-by-max(face_node_connectivity_n)] Indices of nodes spanning each face
+    integer                                       :: face_node_connectivity_n_max       !           Maximum number of nodes spanning a face
+    integer,  dimension(:,:), contiguous, pointer :: face_node_connectivity             ! [nFaces-by-face_node_connectivity_n_max] Indices of nodes spanning each face
     type(MPI_WIN) :: wface_node_connectivity_n, wface_node_connectivity
 
     integer                                       :: face_face_connectivity_fill_value  !           Fill value for unused slots
     integer,  dimension(:),   contiguous, pointer :: face_face_connectivity_n           ! [nFaces]  Number of faces adjacent to each face
+    integer                                       :: face_face_connectivity_n_max       !           Maximum number of faces adjacent to a face
     integer,  dimension(:,:), contiguous, pointer :: face_face_connectivity             ! [nFaces-by-max(face_face_connectivity)] Indices of faces adjacent to each face
     type(MPI_WIN) :: wface_face_connectivity_n, wface_face_connectivity
 

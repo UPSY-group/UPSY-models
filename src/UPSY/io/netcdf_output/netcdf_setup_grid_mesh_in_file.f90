@@ -9,13 +9,15 @@ module netcdf_setup_grid_mesh_in_file
   use netcdf_add_field_mesh
   use netcdf, only: NF90_DOUBLE, NF90_INT, NF90_DEF_GRP
   use graph_types, only: type_graph, type_graph_pair
+  use ugrid_data, only: atype_ugrid_data
 
   implicit none
 
   private
 
-  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf
-  public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, write_matrix_operators_to_netcdf_file
+  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf, save_ugrid_as_netcdf
+  public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, &
+    setup_ugrid_in_netcdf_file, write_matrix_operators_to_netcdf_file
 
 contains
 
@@ -84,6 +86,28 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine save_graph_as_netcdf
+
+  subroutine save_ugrid_as_netcdf( filename, ugrid)
+
+    ! In/output variables:
+    character(len=*),        intent(in) :: filename
+    class(atype_ugrid_data), intent(in) :: ugrid
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'save_ugrid_as_netcdf'
+    integer                        :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+    call setup_ugrid_in_netcdf_file( filename, ncid, ugrid)
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_ugrid_as_netcdf
 
   subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid, do_include_lonlat)
     !< Set up a regular x/y-grid in an existing NetCDF file
@@ -639,6 +663,58 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine setup_graph_in_netcdf_file
+
+  subroutine setup_ugrid_in_netcdf_file( filename, ncid, ugrid)
+    !< Set up a ugrid in an existing NetCDF file
+
+    ! In/output variables:
+    character(len=*),        intent(in) :: filename
+    integer,                 intent(in) :: ncid
+    class(atype_ugrid_data), intent(in) :: ugrid
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'setup_ugrid_in_netcdf_file'
+
+    integer :: id_dim_ni
+    integer :: id_dim_fi
+    integer :: id_dim_ci
+    integer :: id_dim_two
+    integer :: id_dim_face_node_connectivity_n_max
+    integer :: id_dim_face_face_connectivity_n_max
+
+    integer :: id_var_node_coordinates
+    integer :: id_var_face_coordinates
+
+    integer :: id_var_face_node_connectivity
+    integer :: id_var_face_face_connectivity
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Create dimensions
+    call create_dimension( filename, ncid, 'node_index'                  , ugrid%nNodes                      , id_dim_ni)
+    call create_dimension( filename, ncid, 'face_index'                  , ugrid%nFaces                      , id_dim_fi)
+    call create_dimension( filename, ncid, 'connection'                  , ugrid%nFaces                      , id_dim_ci)
+    call create_dimension( filename, ncid, 'two'                         , 2                                 , id_dim_two)
+    call create_dimension( filename, ncid, 'face_node_connectivity_n_max', ugrid%face_node_connectivity_n_max, id_dim_face_node_connectivity_n_max)
+    call create_dimension( filename, ncid, 'face_face_connectivity_n_max', ugrid%face_face_connectivity_n_max, id_dim_face_face_connectivity_n_max)
+
+    ! Create variables
+    call create_variable( filename, ncid, 'node_coordinates'      , NF90_DOUBLE, (/ id_dim_ni, id_dim_two                          /), id_var_node_coordinates)
+    call create_variable( filename, ncid, 'face_coordinates'      , NF90_DOUBLE, (/ id_dim_fi, id_dim_two                          /), id_var_face_coordinates)
+    call create_variable( filename, ncid, 'face_node_connectivity', NF90_INT   , (/ id_dim_fi, id_dim_face_node_connectivity_n_max /), id_var_face_node_connectivity)
+    call create_variable( filename, ncid, 'face_face_connectivity', NF90_INT   , (/ id_dim_fi, id_dim_face_face_connectivity_n_max /), id_var_face_face_connectivity)
+
+    ! Write to variables
+    call write_var_primary( filename, ncid, id_var_node_coordinates      , ugrid%node_coordinates)
+    call write_var_primary( filename, ncid, id_var_face_coordinates      , ugrid%face_coordinates)
+    call write_var_primary( filename, ncid, id_var_face_node_connectivity, ugrid%face_node_connectivity)
+    call write_var_primary( filename, ncid, id_var_face_face_connectivity, ugrid%face_face_connectivity)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine setup_ugrid_in_netcdf_file
 
   subroutine write_matrix_operators_to_netcdf_file( filename, ncid, mesh)
     !< Write all the matrix operators to the netcdf output file

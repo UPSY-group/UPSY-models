@@ -40,8 +40,6 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'build_from_mesh_vertices'
-    integer                     :: face_node_connectivity_n_max
-    integer                     :: face_face_connectivity_n_max
     integer                     :: vi
 
     ! Add routine to path
@@ -61,12 +59,12 @@ contains
 
     ! Face-node connectivity
     ugrid%face_node_connectivity_fill_value = -999
-    face_node_connectivity_n_max = maxval( mesh%nVVor)
+    ugrid%face_node_connectivity_n_max = maxval( mesh%nVVor)
 
     call allocate_dist_shared( ugrid%face_node_connectivity_n, ugrid%wface_node_connectivity_n, &
       [1, ugrid%nFaces])
     call allocate_dist_shared( ugrid%face_node_connectivity, ugrid%wface_node_connectivity, &
-      [1, ugrid%nFaces], [1, face_node_connectivity_n_max])
+      [1, ugrid%nFaces], [1, ugrid%face_node_connectivity_n_max])
 
     if (par%node_primary) then
       ugrid%face_node_connectivity_n = mesh%nVVor
@@ -78,12 +76,12 @@ contains
 
     ! Face-face connectivity
     ugrid%face_face_connectivity_fill_value = -999
-    face_face_connectivity_n_max = maxval( mesh%nC)
+    ugrid%face_face_connectivity_n_max = maxval( mesh%nC)
 
     call allocate_dist_shared( ugrid%face_face_connectivity_n, ugrid%wface_face_connectivity_n, &
       [1, ugrid%nFaces])
     call allocate_dist_shared( ugrid%face_face_connectivity, ugrid%wface_face_connectivity, &
-      [1, ugrid%nFaces], [1, face_face_connectivity_n_max])
+      [1, ugrid%nFaces], [1, ugrid%face_face_connectivity_n_max])
 
     if (par%node_primary) then
       ugrid%face_face_connectivity_n = mesh%nC

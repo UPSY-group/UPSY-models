@@ -16,6 +16,7 @@ module climate_model_data
 
     real(dp), dimension(:,:), contiguous, pointer :: T2m    => null()
     real(dp), dimension(:,:), contiguous, pointer :: Precip => null()
+    ! TODO: do we put Q_TOA here?
     type(MPI_WIN) :: wT2m, wPrecip
 
   end type atype_climate_model_data

@@ -33,6 +33,7 @@ dependencies:
   - scipy
   - shapely
   - xarray
+  - xugrid
   - pip
   - setuptools >=61
   - tqdm

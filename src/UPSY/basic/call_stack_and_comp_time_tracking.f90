@@ -190,7 +190,7 @@ CONTAINS
             index( routine_path, 'allocate_dist_shared') == 0 .and. &
             index( routine_path, 'UPSY_unit_tests') == 0 .and. &
             index( routine_path, 'UPSY_multinode_unit_tests') == 0 .and. &
-            index( routine_path, 'UPSY_component_tests') == 0 .and. &
+            index( routine_path, 'UPSY_component_test') == 0 .and. &
             index( routine_path, 'run_all_unit_tests') == 0 .and. &
             index( routine_path, 'run_laddie_unit_tests') == 0 .and. &
             index( routine_path, 'run_all_multinode_unit_tests') == 0 .and. &

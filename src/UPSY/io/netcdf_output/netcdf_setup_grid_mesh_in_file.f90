@@ -9,13 +9,15 @@ module netcdf_setup_grid_mesh_in_file
   use netcdf_add_field_mesh
   use netcdf, only: NF90_DOUBLE, NF90_INT, NF90_DEF_GRP
   use graph_types, only: type_graph, type_graph_pair
+  use ugrid_data, only: atype_ugrid_data
 
   implicit none
 
   private
 
-  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf
-  public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, write_matrix_operators_to_netcdf_file
+  public :: save_xy_grid_as_netcdf, save_mesh_as_netcdf, save_graph_as_netcdf, save_ugrid_as_netcdf
+  public :: setup_xy_grid_in_netcdf_file, setup_mesh_in_netcdf_file, setup_graph_in_netcdf_file, &
+    setup_ugrid_in_netcdf_file, write_matrix_operators_to_netcdf_file
 
 contains
 
@@ -84,6 +86,28 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine save_graph_as_netcdf
+
+  subroutine save_ugrid_as_netcdf( filename, ugrid)
+
+    ! In/output variables:
+    character(len=*),        intent(in) :: filename
+    class(atype_ugrid_data), intent(in) :: ugrid
+
+    ! Local variables:
+    character(len=1024), parameter :: routine_name = 'save_ugrid_as_netcdf'
+    integer                        :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+    call setup_ugrid_in_netcdf_file( filename, ncid, ugrid)
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_ugrid_as_netcdf
 
   subroutine setup_xy_grid_in_netcdf_file( filename, ncid, grid, do_include_lonlat)
     !< Set up a regular x/y-grid in an existing NetCDF file
@@ -639,6 +663,101 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine setup_graph_in_netcdf_file
+
+  subroutine setup_ugrid_in_netcdf_file( filename, ncid, ugrid)
+    !< Set up a ugrid in an existing NetCDF file, following the UGRID conventions
+    !< (https://ugrid-conventions.github.io/ugrid-conventions/)
+
+    ! In/output variables:
+    character(len=*),        intent(in) :: filename
+    integer,                 intent(in) :: ncid
+    class(atype_ugrid_data), intent(in) :: ugrid
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'setup_ugrid_in_netcdf_file'
+
+    integer :: id_dim_ni
+    integer :: id_dim_fi
+    integer :: id_dim_face_node_connectivity_n_max
+    integer :: id_dim_face_face_connectivity_n_max
+
+    integer :: id_var_mesh2d
+
+    integer :: id_var_node_x
+    integer :: id_var_node_y
+    integer :: id_var_face_x
+    integer :: id_var_face_y
+
+    integer :: id_var_face_node_connectivity
+    integer :: id_var_face_face_connectivity
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Create dimensions
+    call create_dimension( filename, ncid, 'node_index'                  , ugrid%nNodes                      , id_dim_ni)
+    call create_dimension( filename, ncid, 'face_index'                  , ugrid%nFaces                      , id_dim_fi)
+    call create_dimension( filename, ncid, 'face_node_connectivity_n_max', ugrid%face_node_connectivity_n_max, id_dim_face_node_connectivity_n_max)
+    call create_dimension( filename, ncid, 'face_face_connectivity_n_max', ugrid%face_face_connectivity_n_max, id_dim_face_face_connectivity_n_max)
+
+    ! Mesh topology variable (a dummy scalar that only holds attributes)
+    call create_scalar_variable( filename, ncid, 'mesh2d', NF90_INT, id_var_mesh2d)
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'cf_role'               , 'mesh_topology')
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'long_name'             , 'Topology data of 2D mesh')
+    call add_attribute_int ( filename, ncid, id_var_mesh2d, 'topology_dimension'    , 2)
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'node_coordinates'      , 'node_x node_y')
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'face_coordinates'      , 'face_x face_y')
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'face_node_connectivity', 'face_node_connectivity')
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'face_face_connectivity', 'face_face_connectivity')
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'node_dimension'        , 'node_index')
+    call add_attribute_char( filename, ncid, id_var_mesh2d, 'face_dimension'        , 'face_index')
+
+    ! Node and face coordinates
+    call create_variable( filename, ncid, 'node_x', NF90_DOUBLE, (/ id_dim_ni /), id_var_node_x)
+    call create_variable( filename, ncid, 'node_y', NF90_DOUBLE, (/ id_dim_ni /), id_var_node_y)
+    call create_variable( filename, ncid, 'face_x', NF90_DOUBLE, (/ id_dim_fi /), id_var_face_x)
+    call create_variable( filename, ncid, 'face_y', NF90_DOUBLE, (/ id_dim_fi /), id_var_face_y)
+
+    call add_attribute_char( filename, ncid, id_var_node_x, 'standard_name', 'projection_x_coordinate')
+    call add_attribute_char( filename, ncid, id_var_node_x, 'long_name'    , 'x-coordinate of mesh nodes')
+    call add_attribute_char( filename, ncid, id_var_node_x, 'units'        , 'm')
+    call add_attribute_char( filename, ncid, id_var_node_y, 'standard_name', 'projection_y_coordinate')
+    call add_attribute_char( filename, ncid, id_var_node_y, 'long_name'    , 'y-coordinate of mesh nodes')
+    call add_attribute_char( filename, ncid, id_var_node_y, 'units'        , 'm')
+    call add_attribute_char( filename, ncid, id_var_face_x, 'standard_name', 'projection_x_coordinate')
+    call add_attribute_char( filename, ncid, id_var_face_x, 'long_name'    , 'x-coordinate of mesh faces')
+    call add_attribute_char( filename, ncid, id_var_face_x, 'units'        , 'm')
+    call add_attribute_char( filename, ncid, id_var_face_y, 'standard_name', 'projection_y_coordinate')
+    call add_attribute_char( filename, ncid, id_var_face_y, 'long_name'    , 'y-coordinate of mesh faces')
+    call add_attribute_char( filename, ncid, id_var_face_y, 'units'        , 'm')
+
+    ! Connectivity (1-based, padded with the fill value; _FillValue must be set before writing)
+    call create_variable( filename, ncid, 'face_node_connectivity', NF90_INT, (/ id_dim_fi, id_dim_face_node_connectivity_n_max /), id_var_face_node_connectivity)
+    call create_variable( filename, ncid, 'face_face_connectivity', NF90_INT, (/ id_dim_fi, id_dim_face_face_connectivity_n_max /), id_var_face_face_connectivity)
+
+    call add_attribute_char( filename, ncid, id_var_face_node_connectivity, 'cf_role'    , 'face_node_connectivity')
+    call add_attribute_char( filename, ncid, id_var_face_node_connectivity, 'long_name'  , 'Nodes spanning each face (anticlockwise)')
+    call add_attribute_int ( filename, ncid, id_var_face_node_connectivity, 'start_index', 1)
+    call add_attribute_int ( filename, ncid, id_var_face_node_connectivity, '_FillValue' , ugrid%face_node_connectivity_fill_value)
+    call add_attribute_char( filename, ncid, id_var_face_face_connectivity, 'cf_role'    , 'face_face_connectivity')
+    call add_attribute_char( filename, ncid, id_var_face_face_connectivity, 'long_name'  , 'Faces adjacent to each face')
+    call add_attribute_int ( filename, ncid, id_var_face_face_connectivity, 'start_index', 1)
+    call add_attribute_int ( filename, ncid, id_var_face_face_connectivity, '_FillValue' , ugrid%face_face_connectivity_fill_value)
+
+    ! Write to variables (the value of the topology variable is meaningless, but leaving it
+    ! unwritten makes readers return it as masked/NaN)
+    call write_var_primary( filename, ncid, id_var_mesh2d                , 0)
+    call write_var_primary( filename, ncid, id_var_node_x                , ugrid%node_coordinates( :,1))
+    call write_var_primary( filename, ncid, id_var_node_y                , ugrid%node_coordinates( :,2))
+    call write_var_primary( filename, ncid, id_var_face_x                , ugrid%face_coordinates( :,1))
+    call write_var_primary( filename, ncid, id_var_face_y                , ugrid%face_coordinates( :,2))
+    call write_var_primary( filename, ncid, id_var_face_node_connectivity, ugrid%face_node_connectivity)
+    call write_var_primary( filename, ncid, id_var_face_face_connectivity, ugrid%face_face_connectivity)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine setup_ugrid_in_netcdf_file
 
   subroutine write_matrix_operators_to_netcdf_file( filename, ncid, mesh)
     !< Write all the matrix operators to the netcdf output file

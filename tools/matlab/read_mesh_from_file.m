@@ -37,6 +37,7 @@ function mesh = read_mesh_from_file( filename)
   mesh.vori2ti        = ncread( filename, 'vori2ti');
   mesh.vori2ei        = ncread( filename, 'vori2ei');
   mesh.Vor            = ncread( filename, 'Vor');
+  mesh.nVor           = size( mesh.Vor,1);
   mesh.VornC          = ncread( filename, 'VornC');
   mesh.VorC           = ncread( filename, 'VorC');
   mesh.nVVor          = ncread( filename, 'nVVor');

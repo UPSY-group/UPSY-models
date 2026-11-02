@@ -9,6 +9,8 @@ module ugrid_basic
   use mesh_basic, only: type_mesh
   use xy_grid_basic, only: type_xy_grid
   use lonlat_grid_basic, only: type_lonlat_grid
+  use mpi_distributed_shared_memory, only: allocate_dist_shared
+  use mpi_basic, only: par
 
   implicit none
 

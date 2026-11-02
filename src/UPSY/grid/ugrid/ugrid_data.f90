@@ -12,22 +12,22 @@ module ugrid_data
 
   type, abstract, extends(atype_grid) :: atype_ugrid_data
 
-    integer                                       :: nNodes
-    integer                                       :: nFaces
+    integer                                       :: nNodes                             !           Number of nodes in the ugrid
+    integer                                       :: nFaces                             !           Number of faces in the ugrid
 
-    real(dp), dimension(:,:), contiguous, pointer :: node_coordinates
-    real(dp), dimension(:,:), contiguous, pointer :: face_coordinates
+    real(dp), dimension(:,:), contiguous, pointer :: node_coordinates                   ! [m]       x/y-coordinates of each node
+    real(dp), dimension(:,:), contiguous, pointer :: face_coordinates                   ! [m]       x/y-coordinates of each face center
     type(MPI_WIN) :: wnode_coordinates, wface_coordinates
 
-    integer                                       :: face_node_connectivity_fill_value
-    integer                                       :: face_node_connectivity_n
-    integer,  dimension(:,:), contiguous, pointer :: face_node_connectivity
-    type(MPI_WIN) :: wface_node_connectivity
+    integer                                       :: face_node_connectivity_fill_value  !           Fill value for unused slots
+    integer,  dimension(:),   contiguous, pointer :: face_node_connectivity_n           ! [nFaces]  Number of nodes spanning each face
+    integer,  dimension(:,:), contiguous, pointer :: face_node_connectivity             ! [nFaces-by-max(face_node_connectivity_n)] Indices of nodes spanning each face
+    type(MPI_WIN) :: wface_node_connectivity_n, wface_node_connectivity
 
-    integer                                       :: face_face_connectivity_fill_value
-    integer                                       :: face_face_connectivity_n
-    integer,  dimension(:,:), contiguous, pointer :: face_face_connectivity
-    type(MPI_WIN) :: wface_face_connectivity
+    integer                                       :: face_face_connectivity_fill_value  !           Fill value for unused slots
+    integer,  dimension(:),   contiguous, pointer :: face_face_connectivity_n           ! [nFaces]  Number of faces adjacent to each face
+    integer,  dimension(:,:), contiguous, pointer :: face_face_connectivity             ! [nFaces-by-max(face_face_connectivity)] Indices of faces adjacent to each face
+    type(MPI_WIN) :: wface_face_connectivity_n, wface_face_connectivity
 
   end type atype_ugrid_data
 

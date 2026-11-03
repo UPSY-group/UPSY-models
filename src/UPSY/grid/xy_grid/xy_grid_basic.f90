@@ -351,7 +351,7 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_field_to_vector_form_translation_tables'
-    integer                     :: i,j,n
+    integer                     :: i,j,fi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -366,12 +366,11 @@ contains
     allocate( grid%n2ij( grid%n , 2      ), source = 0)
 
     ! Fill in tables
-    n = 0
     do i = 1, grid%nx
     do j = 1, grid%ny
-      n = n + 1
-      grid%ij2n( i,j) = n
-      grid%n2ij( n,:) = [i,j]
+      fi = grid%ij2fi( i,j)
+      grid%ij2n( i,j) = fi
+      grid%n2ij( fi,:) = [i,j]
     end do
     end do
 

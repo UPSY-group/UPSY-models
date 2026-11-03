@@ -1,6 +1,6 @@
  -= Checksum logfile =-
-  Git commit hash        : 79cf95aadecd24ba8ff25346341fe970625e353c
-  has uncommitted changes:  T
+  Git commit hash        : 77d5819eff3006fc392c7c866f6f2d208b6b88b7
+  has uncommitted changes:  F
   PETSc version          : 3.25.5
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10
@@ -6166,10 +6166,7 @@
  dHi_dt: sum(d^2) = 0.193903E+10, sum(abs) = 0.103479E+06, max(abs) = 0.376888E+05 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_dHi_dt]
  AMB: sum(d^2) = 0.193912E+10, sum(abs) = 0.933260E+05, max(abs) = 0.376909E+05 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_dHi_dt]
  region%ice%pc%dHi_dt_Hi_star_np1_u_np1: sum(d^2) = 0.193903E+10, sum(abs) = 0.103479E+06, max(abs) = 0.376888E+05 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
- Hi_eff: sum(d^2) = 0.222557E+11, sum(abs) = 0.125644E+08, max(abs) = 0.441549E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/alter_ice_thickness/calc_effective_thickness]
- fraction_margin: sum(d^2) = 0.126984E+05, sum(abs) = 0.127912E+05, max(abs) = 0.100000E+01 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/alter_ice_thickness/calc_effective_thickness]
- region%ice%pc%Hi_np1: sum(d^2) = 0.221074E+11, sum(abs) = 0.122812E+08, max(abs) = 0.441549E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
- pc%tau_np1: sum(d^2) = 0.112291E+08, sum(abs) = 0.744629E+04, max(abs) = 0.314102E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_pc_truncation_error]
+ pc%tau_np1: sum(d^2) = 0.103279E+08, sum(abs) = 0.561621E+04, max(abs) = 0.314102E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_pc_truncation_error]
  region%ice%geom%Hs: sum(d^2) = 0.263279E+11, sum(abs) = 0.125328E+08, max(abs) = 0.402083E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%geom%Hib: sum(d^2) = 0.666218E+10, sum(abs) = 0.682434E+07, max(abs) = 0.351594E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%geom%TAF: sum(d^2) = 0.436922E+11, sum(abs) = 0.171197E+08, max(abs) = 0.603862E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
@@ -6178,8 +6175,8 @@
  region%ice%dHb: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%dHs: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%dHib: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
- region%ice%dHs_dt: sum(d^2) = 0.283435E+08, sum(abs) = 0.185876E+05, max(abs) = 0.331292E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
- region%ice%dHib_dt: sum(d^2) = 0.289778E+09, sum(abs) = 0.306004E+05, max(abs) = 0.168252E+05 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
+ region%ice%dHs_dt: sum(d^2) = 0.883043E+08, sum(abs) = 0.233688E+05, max(abs) = 0.834631E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
+ region%ice%dHib_dt: sum(d^2) = 0.286300E+09, sum(abs) = 0.265444E+05, max(abs) = 0.168252E+05 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  mask_icefree_land: sum(d^2) = 20, sum(abs) = 0, max(abs) = 0 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/determine_masks]
  mask_icefree_ocean: sum(d^2) = 3647, sum(abs) = 0, max(abs) = 0 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/determine_masks]
  mask_grounded_ice: sum(d^2) = 9109, sum(abs) = 0, max(abs) = 0 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/determine_masks]
@@ -6204,3 +6201,6 @@
  u_times_dTdxp_upwind: sum(d^2) = 0.380284E+01, sum(abs) = 0.997783E+02, max(abs) = 0.307152E+00 [UFEMISM/run_model(ANT)/run_thermodynamics_model/solve_3D_heat_equation/calc_upwind_heat_flux_derivatives]
  v_times_dTdyp_upwind: sum(d^2) = 0.778414E+01, sum(abs) = 0.136446E+03, max(abs) = 0.491125E+00 [UFEMISM/run_model(ANT)/run_thermodynamics_model/solve_3D_heat_equation/calc_upwind_heat_flux_derivatives]
  ice%internal_heating: sum(d^2) =          NaN, sum(abs) =          NaN, max(abs) = 0.186833E+07 [UFEMISM/run_model(ANT)/run_thermodynamics_model/solve_3D_heat_equation/calc_strain_heating]
+ ice%frictional_heating: sum(d^2) = 0.448317E+14, sum(abs) = 0.516671E+09, max(abs) = 0.392987E+06 [UFEMISM/run_model(ANT)/run_thermodynamics_model/solve_3D_heat_equation/calc_frictional_heating]
+ ice%Ti_pmp: sum(d^2) = 0.152541E+11, sum(abs) = 0.559083E+08, max(abs) = 0.273160E+03 [UFEMISM/run_model(ANT)/run_thermodynamics_model/calc_pressure_melting_point]
+ ice%Ti_hom: sum(d^2) = 0.112294E+07, sum(abs) = 0.865553E+05, max(abs) = 0.365079E+02 [UFEMISM/run_model(ANT)/run_thermodynamics_model/calc_homologous_temperature]

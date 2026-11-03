@@ -32,8 +32,10 @@ module climate_snapshot
 
     type, extends(atype_climate_model) :: type_climate_model_snapshot
 
-        real(dp), dimension(:  ), contiguous, pointer :: Hs          => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
-        type(MPI_WIN) :: wHs
+        real(dp), dimension(:,:), contiguous, pointer :: T2m_baseline    => null()   !< [K]                      Baseline monthly mean 2-m air temperature
+        real(dp), dimension(:,:), contiguous, pointer :: Precip_baseline => null()   !< [m.w.e. month^-1]        Baseline monthly total precipitation
+        real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline     => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
+        type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
         real(dp), dimension(:,:), contiguous, pointer :: Q_TOA       => null()
         real(dp), dimension(:,:), contiguous, pointer :: ins_Q_TOA0  => null()
@@ -91,11 +93,24 @@ subroutine climate_model_snapshot_allocate( self)
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Allocate all the stuff that is specific to the prescribed SMB model
-    call self%create_field( self%Hs, self%wHs, &
+    call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'T2m_baseline', &
+      long_name = 'Baseline monthly mean 2-m air temperature', &
+      units     = 'K', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Precip_baseline, self%wPrecip_baseline, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Precip_baseline', &
+      long_name = 'Baseline monthly total precipitation', &
+      units     = 'm.w.e. month^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Hs, self%wHs_baseline, &
       self%mesh, Arakawa_grid%a(), &
-      name      = 'Hs', &
-      long_name = 'Surface elevation', &
+      name      = 'Hs_baseline', &
+      long_name = 'Baseline Surface elevation', &
       units     = 'm', &
       remap_method = 'reallocate')
 
@@ -138,7 +153,9 @@ end subroutine climate_model_snapshot_allocate
     call init_routine( routine_name)
 
     ! Deallocate all the stuff that is specific to SMB model prescribed
-    nullify( self%Hs)
+    nullify( self%T2m_baseline)
+    nullify( self%Precip_baseline)
+    nullify( self%Hs_baseline)
     nullify( self%Q_TOA)
 
     ! Remove routine from call stack
@@ -210,25 +227,21 @@ end subroutine climate_model_snapshot_allocate
         call crash('unknown region_name "' // self%region_name() // '"')
     end select
 
-    call read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , self%mesh, C%output_dir, self%Hs)
-    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , self%mesh, C%output_dir, self%T2m)
-    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', self%mesh, C%output_dir, self%Precip)
+    call read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , self%mesh, C%output_dir, self%Hs_baseline)
+    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
+    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
 
     call self%apply_geometry_downscaling_corrections(geom)
 
     ! Initialises the insolation (if needed)
     if (self%has_insolation) then
-        if (C%choice_insolation_forcing == 'none') then
-            call crash('Chosen climate or SMB model cannot be used with choice_insolation_forcing = "none"!')
+        call self%initialise_insolation_forcing()
+        if (C%start_time_of_run < 0._dp) then
+            timeframe_init_insolation = C%start_time_of_run
         else
-            call self%initialise_insolation_forcing()
-            if (C%start_time_of_run < 0._dp) then
-                timeframe_init_insolation = C%start_time_of_run
-            else
-                timeframe_init_insolation = 0._dp
-            end if
-            call self%get_insolation_at_time(timeframe_init_insolation)
+            timeframe_init_insolation = 0._dp
         end if
+        call self%get_insolation_at_time(timeframe_init_insolation)
     end if
 
     ! Finalise routine path
@@ -292,18 +305,18 @@ end subroutine climate_model_snapshot_allocate
 
     ! we only apply corrections where it is not open ocean
     if (geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
-        deltaT  = (geom%Hs( vi) - self%Hs( vi)) * (-1._dp * abs(self%lapse_rate_temp))
+        deltaT  = (geom%Hs( vi) - self%Hs_baseline( vi)) * (-1._dp * abs(self%lapse_rate_temp))
         do m = 1, 12
         ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
-        self%T2m( vi, m) = self%T2m( vi, m) + deltaT
+        self%T2m( vi, m) = self%T2m_baseline( vi, m) + deltaT
 
         ! Calculate inversion-layer temperatures
         T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  self%T2m( vi, m)
-        T_inv(     vi, m) = 88.9_dp + 0.67_dp * (self%T2m( vi, m) - self%lapse_rate_temp * (geom%Hs( vi) - self%Hs( vi)))
+        T_inv(     vi, m) = 88.9_dp + 0.67_dp * (self%T2m( vi, m) - self%lapse_rate_temp * (geom%Hs( vi) - self%Hs_baseline( vi)))
         
         ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
         ! Same as implemented in IMAU-ICE
-        self%Precip( vi, m) = self%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))
+        self%Precip( vi, m) = self%Precip_baseline( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))
         end do ! m
     end if
     end do ! vi
@@ -330,10 +343,13 @@ end subroutine climate_model_snapshot_allocate
     call init_routine( routine_name)
 
     ! TODO: what is the proper way to remap these variables?
-    call self%remap_field( mesh_new, 'Hs',         self%Hs)
-    call self%remap_field( mesh_new, 'Q_TOA' ,     self%Q_TOA)
-    call self%remap_field( mesh_new, 'ins_Q_TOA0', self%ins_Q_TOA0)
-    call self%remap_field( mesh_new, 'ins_Q_TOA1', self%ins_Q_TOA1)
+    call self%remap_field( mesh_new, 'T2m_baseline',    self%T2m_baseline)
+    call self%remap_field( mesh_new, 'Precip_baseline', self%Precip_baseline)
+    call self%remap_field( mesh_new, 'Hs_baseline',     self%Hs_baseline)
+
+    call self%remap_field( mesh_new, 'Q_TOA' ,          self%Q_TOA)
+    call self%remap_field( mesh_new, 'ins_Q_TOA0',      self%ins_Q_TOA0)
+    call self%remap_field( mesh_new, 'ins_Q_TOA1',      self%ins_Q_TOA1)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -372,15 +388,13 @@ end subroutine climate_model_snapshot_allocate
       allocate(self%ins_ti1)
       allocate(self%ins_nlat)
       allocate(self%ins_nlon)
-      allocate(self%ins_Q_TOA0         (self%mesh%vi1:self%mesh%vi2,12))
-      allocate(self%ins_Q_TOA1         (self%mesh%vi1:self%mesh%vi2,12))
-      allocate(self%Albedo             (self%mesh%vi1:self%mesh%vi2,12))
-      allocate(self%I_abs              (self%mesh%vi1:self%mesh%vi2))
+      allocate(self%Albedo    (self%mesh%vi1:self%mesh%vi2,12)) ! TODO: do we need to allocate this here?
+      allocate(self%I_abs     (self%mesh%vi1:self%mesh%vi2))    ! TODO: do we need to allocate this here?
+      allocate(self%ins_lat   (self%ins_nlat))
       self%ins_t0     = C%start_time_of_run
       self%ins_t1     = C%start_time_of_run
       self%ins_nlat   = 181
       self%ins_nlon   = 360
-      allocate(self%ins_lat            (   self%ins_nlat))
       self%ins_lat    = 0._dp
       self%ins_Q_TOA0 = 0._dp
       self%ins_Q_TOA1 = 0._dp

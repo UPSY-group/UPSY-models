@@ -59,8 +59,8 @@ contains
     type(type_mesh)               :: mesh
     character(len=:), allocatable :: mesh_raw_name
     integer                       :: ncid
-    type(type_ugrid)              :: ugrid_a
-    character(len=:), allocatable :: filename
+    type(type_ugrid)              :: ugrid_a, ugrid_b
+    character(len=:), allocatable :: filename_a, filename_b
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -80,8 +80,12 @@ contains
 
     ! Convert mesh to ugrid and save to NetCDF
     call ugrid_a%build_from_grid( mesh, Arakawa_grid%a())
-    filename = trim( output_dir) // '/ugrid_' // mesh_raw_name( 1:len_trim( mesh_raw_name)-3) // '_a.nc'
-    call save_ugrid_as_netcdf( filename, ugrid_a)
+    filename_a = trim( output_dir) // '/ugrid_' // mesh_raw_name( 1:len_trim( mesh_raw_name)-3) // '_a.nc'
+    call save_ugrid_as_netcdf( filename_a, ugrid_a)
+
+    call ugrid_b%build_from_grid( mesh, Arakawa_grid%b())
+    filename_b = trim( output_dir) // '/ugrid_' // mesh_raw_name( 1:len_trim( mesh_raw_name)-3) // '_b.nc'
+    call save_ugrid_as_netcdf( filename_b, ugrid_b)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -2,10 +2,10 @@ submodule( ugrid_basic) build_from_xy_grid_mod
 
 contains
 
-  subroutine build_from_xy_grid( self, xy_grid, xy_grid_Arakawa_grid)
+  subroutine build_from_xy_grid( ugrid, xy_grid, xy_grid_Arakawa_grid)
 
     ! In/output variables:
-    class(type_ugrid),       intent(inout) :: self
+    type(type_ugrid),        intent(inout) :: ugrid
     type(type_xy_grid),      intent(in   ) :: xy_grid
     type(type_Arakawa_grid), intent(in   ) :: xy_grid_Arakawa_grid
 

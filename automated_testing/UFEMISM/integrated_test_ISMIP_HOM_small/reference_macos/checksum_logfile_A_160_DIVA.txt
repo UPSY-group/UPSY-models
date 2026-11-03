@@ -1,6 +1,6 @@
  -= Checksum logfile =-
-  Git commit hash        : 90dbba56f82ced489877a8ffd588db1163688efc
-  has uncommitted changes:  T
+  Git commit hash        : 77d5819eff3006fc392c7c866f6f2d208b6b88b7
+  has uncommitted changes:  F
   PETSc version          : 3.25.5
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10
@@ -1430,9 +1430,6 @@
  DIVA%u_vav_b: sum(d^2) = 0.575059E+07, sum(abs) = 0.133784E+06, max(abs) = 0.856208E+02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_DIVA_run]
  DIVA%v_vav_b: sum(d^2) = 0.136092E+03, sum(abs) = 0.573439E+03, max(abs) = 0.429145E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_DIVA_run]
  region%ice%pc%dHi_dt_Hi_star_np1_u_np1: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
- Hi_eff: sum(d^2) = 0.287112E+10, sum(abs) = 0.271071E+07, max(abs) = 0.149993E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/alter_ice_thickness/calc_effective_thickness]
- fraction_margin: sum(d^2) = 0.271300E+04, sum(abs) = 0.271300E+04, max(abs) = 0.100000E+01 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/alter_ice_thickness/calc_effective_thickness]
- region%ice%pc%Hi_np1: sum(d^2) = 0.287112E+10, sum(abs) = 0.271071E+07, max(abs) = 0.149993E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
  pc%tau_np1: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_pc_truncation_error]
  region%ice%geom%Hs: sum(d^2) = 0.126942E+11, sum(abs) = 0.543377E+07, max(abs) = 0.336255E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%geom%Hib: sum(d^2) = 0.472499E+10, sum(abs) = 0.296274E+07, max(abs) = 0.259713E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]

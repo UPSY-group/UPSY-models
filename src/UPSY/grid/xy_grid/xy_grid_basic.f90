@@ -51,6 +51,10 @@ module xy_grid_basic
     integer                                 :: n1,n2,n_loc  ! Matrix rows owned by each process
     type(type_par_arr_info)                 :: pai
 
+  contains
+
+    procedure, public :: ij2fi, iijj2ni
+
   end type type_xy_grid
 
 contains
@@ -427,5 +431,19 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine setup_grid_parallelisation
+
+  pure function iijj2ni( self,ii,jj) result( ni)
+    class(type_xy_grid), intent(in) :: self
+    integer,             intent(in) :: ii,jj
+    integer                         :: ni
+    ni = (ii-1) * (self%ny+1) + jj
+  end function iijj2ni
+
+  pure function ij2fi( self,i,j) result( fi)
+    class(type_xy_grid), intent(in) :: self
+    integer,             intent(in) :: i,j
+    integer                         :: fi
+    fi = (i-1) * (self%ny) + j
+  end function ij2fi
 
 end module xy_grid_basic

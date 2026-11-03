@@ -3,10 +3,11 @@ module ct_ugrid
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mpi_basic, only: par
+  use xy_grid_basic, only: type_xy_grid
   use mesh_basic, only: type_mesh
   use UPSY_main, only: UPSY
-  use netcdf_io_main, only: open_existing_netcdf_file_for_reading,  setup_mesh_from_file, &
-    close_netcdf_file
+  use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, &
+    setup_mesh_from_file, close_netcdf_file
   use assertions_basic, only: assert
   use tests_main, only: test_mesh_is_self_consistent
   use ugrid_basic, only: type_ugrid
@@ -21,15 +22,17 @@ module ct_ugrid
 
 contains
 
-  subroutine run_all_ugrid_component_tests( output_dir, test_mesh_filenames)
+  subroutine run_all_ugrid_component_tests( output_dir, test_grid_filenames, test_mesh_filenames)
 
     ! In/output variables:
     character(len=*),               intent(in) :: output_dir
+    character(len=*), dimension(:), intent(in) :: test_grid_filenames
     character(len=*), dimension(:), intent(in) :: test_mesh_filenames
 
     ! Local variables:
     character(len=*), parameter   :: routine_name = 'run_all_ugrid_component_tests'
     integer                       :: i
+    character(len=:), allocatable :: test_grid_filename
     character(len=:), allocatable :: test_mesh_filename
 
     ! Add routine to call stack
@@ -37,6 +40,11 @@ contains
 
     if (par%primary) write(0,*) '  Running ugrid component tests...'
     if (par%primary) write(0,*) ''
+
+    do i = 1, size( test_grid_filenames)
+      test_grid_filename = trim( test_grid_filenames( i))
+      call run_ugrid_tests_on_xy_grid( output_dir, test_grid_filename)
+    end do
 
     do i = 1, size( test_mesh_filenames)
       test_mesh_filename = trim( test_mesh_filenames( i))
@@ -47,6 +55,43 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine run_all_ugrid_component_tests
+
+  subroutine run_ugrid_tests_on_xy_grid( output_dir, test_grid_filename)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: output_dir
+    character(len=*), intent(in) :: test_grid_filename
+
+    ! Local variables:
+    character(len=*), parameter   :: routine_name = 'run_ugrid_tests_on_xy_grid'
+    type(type_xy_grid)            :: xy_grid
+    character(len=:), allocatable :: xy_grid_raw_name
+    integer                       :: ncid
+    type(type_ugrid)              :: ugrid_a
+    character(len=:), allocatable :: filename_a
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    xy_grid_raw_name = test_grid_filename( index( test_grid_filename,'/', back = .true.)+1: &
+      len_trim( test_grid_filename))
+    if (par%primary) write(0,*) '      Running ugrid tests on x/y-grid ', &
+      UPSY%stru%colour_string( trim( xy_grid_raw_name),'light blue'), '...'
+
+    ! Set up the x/y-grid from the file
+    call open_existing_netcdf_file_for_reading( trim( test_grid_filename), ncid)
+    call setup_xy_grid_from_file( test_grid_filename, ncid, xy_grid)
+    call close_netcdf_file( ncid)
+
+    ! Convert x/y-grid to ugrid and save to NetCDF
+    call ugrid_a%build_from_grid( xy_grid, Arakawa_grid%a())
+    filename_a = trim( output_dir) // '/ugrid_' // xy_grid_raw_name( 1:len_trim( xy_grid_raw_name)-3) // '_a.nc'
+    call save_ugrid_as_netcdf( filename_a, ugrid_a)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine run_ugrid_tests_on_xy_grid
 
   subroutine run_ugrid_tests_on_mesh( output_dir, test_mesh_filename)
 

@@ -58,7 +58,7 @@ program UPSY_component_test_program_ugrid
 
   call list_test_meshes_and_grids_in_folder( foldername_test_meshes_and_grids, test_grid_filenames, test_mesh_filenames)
   call create_component_tests_output_folder( foldername_output)
-  call run_all_ugrid_component_tests( foldername_output, test_mesh_filenames)
+  call run_all_ugrid_component_tests( foldername_output, test_grid_filenames, test_mesh_filenames)
 
   ! Stop the clock
   tstop = MPI_WTIME()

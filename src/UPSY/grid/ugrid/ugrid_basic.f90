@@ -9,7 +9,7 @@ module ugrid_basic
   use mesh_basic, only: type_mesh
   use xy_grid_basic, only: type_xy_grid
   use lonlat_grid_basic, only: type_lonlat_grid
-  use mpi_distributed_shared_memory, only: allocate_dist_shared
+  use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
   use mpi_basic, only: par
 
   implicit none
@@ -22,6 +22,8 @@ module ugrid_basic
     contains
 
       procedure, public  :: build_from_grid
+
+      final :: finalise
 
   end type type_ugrid
 
@@ -79,5 +81,20 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine build_from_grid
+
+  subroutine finalise( ugrid)
+    !< Deallocate hybrid distributed/shared components (as those are
+    !< not captured by automatic finalisation)
+
+    type(type_ugrid) :: ugrid
+
+    if (associated( ugrid%node_coordinates        )) call deallocate_dist_shared( ugrid%node_coordinates        , ugrid%wnode_coordinates        )
+    if (associated( ugrid%face_coordinates        )) call deallocate_dist_shared( ugrid%face_coordinates        , ugrid%wface_coordinates        )
+    if (associated( ugrid%face_node_connectivity_n)) call deallocate_dist_shared( ugrid%face_node_connectivity_n, ugrid%wface_node_connectivity_n)
+    if (associated( ugrid%face_node_connectivity  )) call deallocate_dist_shared( ugrid%face_node_connectivity  , ugrid%wface_node_connectivity  )
+    if (associated( ugrid%face_face_connectivity_n)) call deallocate_dist_shared( ugrid%face_face_connectivity_n, ugrid%wface_face_connectivity_n)
+    if (associated( ugrid%face_face_connectivity  )) call deallocate_dist_shared( ugrid%face_face_connectivity  , ugrid%wface_face_connectivity  )
+
+  end subroutine finalise
 
 end module ugrid_basic

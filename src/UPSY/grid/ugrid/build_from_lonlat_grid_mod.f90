@@ -2,10 +2,10 @@ submodule( ugrid_basic) build_from_lonlat_grid_mod
 
 contains
 
-  subroutine build_from_lonlat_grid( self, lonlat_grid, lonlat_grid_Arakawa_grid)
+  subroutine build_from_lonlat_grid( ugrid, lonlat_grid, lonlat_grid_Arakawa_grid)
 
     ! In/output variables:
-    class(type_ugrid),       intent(inout) :: self
+    type(type_ugrid),        intent(inout) :: ugrid
     type(type_lonlat_grid),  intent(in   ) :: lonlat_grid
     type(type_Arakawa_grid), intent(in   ) :: lonlat_grid_Arakawa_grid
 

@@ -22,29 +22,26 @@ module ugrid_basic
     contains
 
       procedure, public  :: build_from_grid
-      procedure, private :: build_from_mesh
-      procedure, private :: build_from_xy_grid
-      procedure, private :: build_from_lonlat_grid
 
   end type type_ugrid
 
   ! Interfaces for procedures defined in submodules
   interface
 
-    module subroutine build_from_mesh( self, mesh, mesh_Arakawa_grid)
-      class(type_ugrid),       intent(inout) :: self
+    module subroutine build_from_mesh( ugrid, mesh, mesh_Arakawa_grid)
+      type(type_ugrid),        intent(inout) :: ugrid
       type(type_mesh),         intent(in   ) :: mesh
       type(type_Arakawa_grid), intent(in   ) :: mesh_Arakawa_grid
     end subroutine build_from_mesh
 
-    module subroutine build_from_xy_grid( self, xy_grid, xy_grid_Arakawa_grid)
-      class(type_ugrid),       intent(inout) :: self
+    module subroutine build_from_xy_grid( ugrid, xy_grid, xy_grid_Arakawa_grid)
+      type(type_ugrid),        intent(inout) :: ugrid
       type(type_xy_grid),      intent(in   ) :: xy_grid
       type(type_Arakawa_grid), intent(in   ) :: xy_grid_Arakawa_grid
     end subroutine build_from_xy_grid
 
-    module subroutine build_from_lonlat_grid( self, lonlat_grid, lonlat_grid_Arakawa_grid)
-      class(type_ugrid),       intent(inout) :: self
+    module subroutine build_from_lonlat_grid( ugrid, lonlat_grid, lonlat_grid_Arakawa_grid)
+      type(type_ugrid),        intent(inout) :: ugrid
       type(type_lonlat_grid),  intent(in   ) :: lonlat_grid
       type(type_Arakawa_grid), intent(in   ) :: lonlat_grid_Arakawa_grid
     end subroutine build_from_lonlat_grid
@@ -71,11 +68,11 @@ contains
       class default
         call crash('unsupported grid type')
       class is (type_mesh)
-        call self%build_from_mesh( g, grid_Arakawa_grid)
+        call build_from_mesh( self, g, grid_Arakawa_grid)
       class is (type_xy_grid)
-        call self%build_from_xy_grid( g, grid_Arakawa_grid)
+        call build_from_xy_grid( self, g, grid_Arakawa_grid)
       class is (type_lonlat_grid)
-        call self%build_from_lonlat_grid( g, grid_Arakawa_grid)
+        call build_from_lonlat_grid( self, g, grid_Arakawa_grid)
     end select
 
     ! Finalise routine path

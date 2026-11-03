@@ -2,10 +2,10 @@ submodule( ugrid_basic) build_from_mesh_mod
 
 contains
 
-  subroutine build_from_mesh( self, mesh, mesh_Arakawa_grid)
+  subroutine build_from_mesh( ugrid, mesh, mesh_Arakawa_grid)
 
     ! In/output variables:
-    class(type_ugrid),       intent(inout) :: self
+    type(type_ugrid),        intent(inout) :: ugrid
     type(type_mesh),         intent(in   ) :: mesh
     type(type_Arakawa_grid), intent(in   ) :: mesh_Arakawa_grid
 
@@ -17,7 +17,7 @@ contains
 
     ! Build from the mesh a-grid (vertices), b-grid (triangles), or c-grid (edges)
     if     (mesh_Arakawa_grid == Arakawa_grid%a()) then
-      call build_from_mesh_vertices( self, mesh)
+      call build_from_mesh_vertices( ugrid, mesh)
     elseif (mesh_Arakawa_grid == Arakawa_grid%b()) then
       call crash('fixme!')
     elseif (mesh_Arakawa_grid == Arakawa_grid%c()) then

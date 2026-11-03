@@ -82,64 +82,64 @@ contains
 ! ===== Main routines =====
 ! =========================
 
-subroutine climate_model_snapshot_allocate( self)
+  subroutine climate_model_snapshot_allocate( self)
 
-    ! In/output variables:
-    class(type_climate_model_snapshot), intent(inout) :: self
+      ! In/output variables:
+      class(type_climate_model_snapshot), intent(inout) :: self
 
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'climate_model_snapshot_allocate'
+      ! Local variables:
+      character(len=*), parameter :: routine_name = 'climate_model_snapshot_allocate'
 
-    ! Add routine to call stack
-    call init_routine( routine_name)
+      ! Add routine to call stack
+      call init_routine( routine_name)
 
-    call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'T2m_baseline', &
-      long_name = 'Baseline monthly mean 2-m air temperature', &
-      units     = 'K', &
-      remap_method = 'reallocate')
+      call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
+    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+    name      = 'T2m_baseline', &
+    long_name = 'Baseline monthly mean 2-m air temperature', &
+    units     = 'K', &
+    remap_method = 'reallocate')
 
-    call self%create_field( self%Precip_baseline, self%wPrecip_baseline, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Precip_baseline', &
-      long_name = 'Baseline monthly total precipitation', &
-      units     = 'm.w.e. month^-1', &
-      remap_method = 'reallocate')
+      call self%create_field( self%Precip_baseline, self%wPrecip_baseline, &
+    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+    name      = 'Precip_baseline', &
+    long_name = 'Baseline monthly total precipitation', &
+    units     = 'm.w.e. month^-1', &
+    remap_method = 'reallocate')
 
-    call self%create_field( self%Hs, self%wHs_baseline, &
-      self%mesh, Arakawa_grid%a(), &
-      name      = 'Hs_baseline', &
-      long_name = 'Baseline Surface elevation', &
-      units     = 'm', &
-      remap_method = 'reallocate')
+      call self%create_field( self%Hs, self%wHs_baseline, &
+    self%mesh, Arakawa_grid%a(), &
+    name      = 'Hs_baseline', &
+    long_name = 'Baseline Surface elevation', &
+    units     = 'm', &
+    remap_method = 'reallocate')
 
-    call self%create_field( self%Q_TOA, self%wQ_TOA, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Q_TOA', &
-      long_name = 'Monthly insolation', &
-      units     = 'W m^-2', &
-      remap_method = 'reallocate')
+      call self%create_field( self%Q_TOA, self%wQ_TOA, &
+    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+    name      = 'Q_TOA', &
+    long_name = 'Monthly insolation', &
+    units     = 'W m^-2', &
+    remap_method = 'reallocate')
 
-    call self%create_field( self%ins_Q_TOA0, self%wins_Q_TOA0, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'ins_Q_TOA0', &
-      long_name = 'Monthly insolation (prev timeframe)', &
-      units     = 'W m^-2', &
-      remap_method = 'reallocate')
+      call self%create_field( self%ins_Q_TOA0, self%wins_Q_TOA0, &
+    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+    name      = 'ins_Q_TOA0', &
+    long_name = 'Monthly insolation (prev timeframe)', &
+    units     = 'W m^-2', &
+    remap_method = 'reallocate')
 
-    call self%create_field( self%ins_Q_TOA1, self%wins_Q_TOA1, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'ins_Q_TOA1', &
-      long_name = 'Monthly insolation (next timeframe)', &
-      units     = 'W m^-2', &
-      remap_method = 'reallocate')    
+      call self%create_field( self%ins_Q_TOA1, self%wins_Q_TOA1, &
+    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+    name      = 'ins_Q_TOA1', &
+    long_name = 'Monthly insolation (next timeframe)', &
+    units     = 'W m^-2', &
+    remap_method = 'reallocate')    
 
 
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
+      ! Remove routine from call stack
+      call finalise_routine( routine_name)
 
-end subroutine climate_model_snapshot_allocate
+  end subroutine climate_model_snapshot_allocate
 
   subroutine climate_model_snapshot_deallocate( self)
 
@@ -180,7 +180,7 @@ end subroutine climate_model_snapshot_allocate
     real(dp)                                              :: timeframe_init_insolation
 
     ! Add routine to path
-    CALL init_routine( routine_name)
+    call init_routine( routine_name)
 
     ! Print to terminal
     if (par%primary)  write(*,"(a)") '     initialising realistic climate model "' // &
@@ -280,6 +280,33 @@ end subroutine climate_model_snapshot_allocate
     call finalise_routine( routine_name)
 
   end subroutine climate_model_snapshot_run
+  
+  subroutine climate_model_snapshot_remap(self, mesh_new, refgeo_init, refgeo_PD, geom)
+    ! In/out variables
+    class(type_climate_model_snapshot),     intent(inout) :: self
+    type(type_mesh), target,                intent(in   ) :: mesh_new
+    type(type_reference_geometry), target,  intent(in   ) :: refgeo_init, refgeo_PD
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+
+    ! Local variables
+    character(LEN=256), parameter                         :: routine_name = 'climate_model_snapshot_remap'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! TODO: what is the proper way to remap these variables?
+    call self%remap_field( mesh_new, 'T2m_baseline',    self%T2m_baseline)
+    call self%remap_field( mesh_new, 'Precip_baseline', self%Precip_baseline)
+    call self%remap_field( mesh_new, 'Hs_baseline',     self%Hs_baseline)
+
+    call self%remap_field( mesh_new, 'Q_TOA' ,          self%Q_TOA)
+    call self%remap_field( mesh_new, 'ins_Q_TOA0',      self%ins_Q_TOA0)
+    call self%remap_field( mesh_new, 'ins_Q_TOA1',      self%ins_Q_TOA1)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine climate_model_snapshot_remap
 
   subroutine apply_geometry_downscaling_corrections(self, geom)
     ! Applies the lapse rate corrections for temperature and precipitation
@@ -328,33 +355,6 @@ end subroutine climate_model_snapshot_allocate
     call finalise_routine( routine_name)
 
   end subroutine apply_geometry_downscaling_corrections
-  
-  subroutine climate_model_snapshot_remap(self, mesh_new, refgeo_init, refgeo_PD, geom)
-    ! In/out variables
-    class(type_climate_model_snapshot),     intent(inout) :: self
-    type(type_mesh), target,                intent(in   ) :: mesh_new
-    type(type_reference_geometry), target,  intent(in   ) :: refgeo_init, refgeo_PD
-    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
-
-    ! Local variables
-    character(LEN=256), parameter                         :: routine_name = 'climate_model_snapshot_remap'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    ! TODO: what is the proper way to remap these variables?
-    call self%remap_field( mesh_new, 'T2m_baseline',    self%T2m_baseline)
-    call self%remap_field( mesh_new, 'Precip_baseline', self%Precip_baseline)
-    call self%remap_field( mesh_new, 'Hs_baseline',     self%Hs_baseline)
-
-    call self%remap_field( mesh_new, 'Q_TOA' ,          self%Q_TOA)
-    call self%remap_field( mesh_new, 'ins_Q_TOA0',      self%ins_Q_TOA0)
-    call self%remap_field( mesh_new, 'ins_Q_TOA1',      self%ins_Q_TOA1)
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine climate_model_snapshot_remap
 
   subroutine initialise_insolation_forcing(self)
     ! initialise the insolation series in the forcing structure

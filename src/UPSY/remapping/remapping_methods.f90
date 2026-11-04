@@ -10,6 +10,7 @@ module remapping_methods
 
   type type_remapping_method_factory
   contains
+    procedure :: create_from_string        => create_remapping_method_from_string
     procedure :: nearest_neighbour         => remapping_method_factory_nearest_neighbour
     procedure :: linear                    => remapping_method_factory_linear
     procedure :: first_order_conservative  => remapping_method_factory_first_order_conservative
@@ -27,6 +28,24 @@ module remapping_methods
   type(type_remapping_method_factory) :: remapping_method
 
 contains
+
+  function create_remapping_method_from_string( self, str) result( res)
+    class(type_remapping_method_factory), intent(in) :: self
+    character(len=*),                     intent(in) :: str
+    type(type_remapping_method) :: res
+    select case (str)
+    case default
+      call crash("invalid remapping method '" // trim( str) // "'")
+    case ('nearest_neighbour')
+      res = self%nearest_neighbour()
+    case ('linear')
+      res = self%linear()
+    case ('first_order_conservative')
+      res = self%first_order_conservative()
+    case ('second_order_conservative')
+      res = self%second_order_conservative()
+    end select
+  end function create_remapping_method_from_string
 
   function remapping_method_factory_nearest_neighbour( self) result( res)
     class(type_remapping_method_factory), intent(in) :: self

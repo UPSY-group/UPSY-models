@@ -1,15 +1,15 @@
 module climate_model
 
-	use call_stack_and_comp_time_tracking,  only: init_routine, finalise_routine, crash
-    use climate_model_basic,                only: atype_climate_model
-    use climate_idealised,                  only: type_climate_model_idealised
-    use climate_snapshot,                   only: type_climate_model_snapshot
-    use climate_snapshot_lapse,             only: type_climate_model_snapshot_lapse
+	use call_stack_and_comp_time_tracking,    only: init_routine, finalise_routine, crash
+    use climate_model_basic,                  only: atype_climate_model
+    use climate_idealised,                    only: type_climate_model_idealised
+    use climate_snapshot,                     only: type_climate_model_snapshot
+    use climate_snapshot_lapse,               only: type_climate_model_snapshot_lapse
     ! use climate_snapshot_plus_anomalies,    only: type_climate_model_snapshot_plus_anomalies
-    ! use climate_snapshot_plus_transient_dT, only: type_climate_snapshot_plus_transient_dT
-    ! use climate_snapshot_plus_uniform_dT,   only: type_climate_model_snapshot_plus_uniform_dT
-    use ISMIP7_climate,                     only: type_climate_model_ISMIP7
-	use TIPMIP_climate,                     only: type_climate_model_TIPMIP
+    ! use climate_snapshot_plus_transient_deltaT, only: type_climate_snapshot_plus_transient_deltaT
+    use climate_snapshot_plus_uniform_deltaT, only: type_climate_model_snapshot_plus_uniform_deltaT
+    use ISMIP7_climate,                       only: type_climate_model_ISMIP7
+	use TIPMIP_climate,                       only: type_climate_model_TIPMIP
 
 	implicit none
 
@@ -46,8 +46,8 @@ module climate_model
 	    !   allocate( type_climate_model_snapshot_p_anml :: climate)
 	    ! case ('snapshot_plus_transient_deltaT')
 	    !   allocate( type_climate_model_snapshot_trans_dT :: climate)
-	    ! case ('snapshot_plus_uniform_deltaT')
-	    !   allocate( type_climate_model_snapshot_unif_dT :: climate)
+	    case ('snapshot_plus_uniform_deltaT')
+	      allocate( type_climate_model_snapshot_plus_uniform_deltaT :: climate)
 	    end select
 	
 	    ! Remove routine from call stack

@@ -7,7 +7,7 @@ module remapping_basic
   use Arakawa_grid_mod, only: type_Arakawa_grid
   use remapping_context_mod, only: type_remapping_context
   use remapping_calc_CSR_operators, only: calc_CSR_remapping_operator
-  use remapping_methods, only: type_remapping_method, remapping_method
+  use remapping_methods, only: type_remapping_method, remapping_method, type_remapping_method_factory
   use ugrid_basic, only: type_ugrid
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
@@ -37,6 +37,7 @@ module remapping_basic
   end type type_map
 
   type :: type_remapping
+      type(type_remapping_method_factory) :: method
     contains
       generic,   public :: remap => &
         remap_2D, &

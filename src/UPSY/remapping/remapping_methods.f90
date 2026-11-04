@@ -6,7 +6,7 @@ module remapping_methods
 
   private
 
-  public :: remapping_method, type_remapping_method
+  public :: remapping_method, type_remapping_method, type_remapping_method_factory
 
   type type_remapping_method_factory
   contains

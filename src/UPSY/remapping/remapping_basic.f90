@@ -10,6 +10,8 @@ module remapping_basic
   use remapping_methods, only: type_remapping_method, remapping_method
   use ugrid_basic, only: type_ugrid
   use CSR_matrix_mod, only: type_CSR_matrix_dp
+  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
+    multiply_CSR_matrix_with_vector_2D_wrapper
 
   implicit none
 
@@ -199,8 +201,8 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! call multiply_CSR_matrix_with_vector_1D_wrapper( AA, pai_x, xx, pai_y, yy, &
-    !   buffer_xx_nih, buffer_yy_nih)
+    call multiply_CSR_matrix_with_vector_1D_wrapper( self%M, &
+      self%ct%pai_src, d_src, self%ct%pai_dst, d_dst)
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -221,8 +223,8 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    ! call multiply_CSR_matrix_with_vector_1D_wrapper( AA, pai_x, xx, pai_y, yy, &
-    !   buffer_xx_nih, buffer_yy_nih)
+    call multiply_CSR_matrix_with_vector_2D_wrapper( self%M, &
+      self%ct%pai_src, d_src, self%ct%pai_dst, d_dst)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

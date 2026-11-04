@@ -1,19 +1,15 @@
-module remap_ugrids
+module remapping_basic
 
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use crash_mod, only: crash
   use basic_grid_mod, only: atype_grid
-  use Arakawa_grid_mod, only: type_Arakawa_grid, Arakawa_grid
+  use Arakawa_grid_mod, only: type_Arakawa_grid
   use remapping_context_mod, only: type_remapping_context
   use remapping_calc_CSR_operators, only: calc_CSR_remapping_operator
   use remapping_methods, only: type_remapping_method, remapping_method
   use ugrid_basic, only: type_ugrid
   use CSR_matrix_mod, only: type_CSR_matrix_dp
-  use parallel_array_info_type, only: type_par_arr_info
-  use xy_grid_basic, only: type_xy_grid
-  use lonlat_grid_basic, only: type_lonlat_grid
-  use mesh_basic, only: type_mesh
 
   implicit none
 
@@ -24,20 +20,23 @@ module remap_ugrids
   ! Interface bundling the 2-D and 3-D remapping procedures
   interface remap
     procedure :: remap_2D
+    procedure :: remap_3D
   end interface remap
 
   ! Type of a remapping object
   type :: type_map
 
-      type(type_remapping_context) :: ct                ! Remapping context (source+destination grids, remapping method)
-      type(type_CSR_matrix_dp)     :: M                 ! Remapping operator (CSR matrix)
+      type(type_remapping_context) :: ct
+      type(type_CSR_matrix_dp)     :: M
 
     contains
 
       procedure, public :: create => create_map
       generic,   public :: apply => &
-        apply_map_2D
+        apply_map_2D, &
+        apply_map_3D
       procedure, public :: apply_map_2D
+      procedure, public :: apply_map_3D
 
   end type type_map
 
@@ -73,6 +72,34 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine remap_2D
+
+  subroutine remap_3D( grid_src, Arakawa_grid_src, d_src, grid_dst, Arakawa_grid_dst, d_dst, method)
+
+    ! In/output variables:
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    real(dp), dimension(:,:),    intent(in   ) :: d_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    real(dp), dimension(:,:),    intent(  out) :: d_dst
+    type(type_remapping_method), intent(in   ) :: method
+
+    ! Local variables:
+    character(len=*), parameter  :: routine_name = 'remap_3D'
+    type(type_remapping_context) :: ct
+    type(type_map), pointer      :: map
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+    call find_in_or_add_map_to_Atlas( ct, map)
+    call map%apply( d_src, d_dst)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_3D
 
   subroutine find_in_or_add_map_to_Atlas( ct, map)
     ! Return a pointer to an existing or newly created mapping object in the Atlas
@@ -180,4 +207,26 @@ contains
 
   end subroutine apply_map_2D
 
-end module remap_ugrids
+  subroutine apply_map_3D( self, d_src, d_dst)
+    ! Apply a remapping object as a sparse matrix multiplication
+
+    ! In/output variables:
+    class(type_map),          intent(in   ) :: self
+    real(dp), dimension(:,:), intent(in   ) :: d_src
+    real(dp), dimension(:,:), intent(  out) :: d_dst
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'apply_map_3D'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! call multiply_CSR_matrix_with_vector_1D_wrapper( AA, pai_x, xx, pai_y, yy, &
+    !   buffer_xx_nih, buffer_yy_nih)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_map_3D
+
+end module remapping_basic

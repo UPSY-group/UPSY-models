@@ -17,13 +17,7 @@ module remapping_basic
 
   private
 
-  public :: remap
-
-  ! Interface bundling the 2-D and 3-D remapping procedures
-  interface remap
-    procedure :: remap_2D
-    procedure :: remap_3D
-  end interface remap
+  public :: type_remapping
 
   ! Type of a remapping object
   type :: type_map
@@ -41,6 +35,15 @@ module remapping_basic
       procedure, public :: apply_map_3D
 
   end type type_map
+
+  type :: type_remapping
+    contains
+      generic,   public :: remap => &
+        remap_2D, &
+        remap_3D
+      procedure, public, nopass :: remap_2D
+      procedure, public, nopass :: remap_3D
+  end type type_remapping
 
   ! Collection of all the maps that have already been calculated
   type(type_map), dimension(:), allocatable, target :: Atlas

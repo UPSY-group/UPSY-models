@@ -127,7 +127,8 @@ contains
       ! Allocate room for a single map in the Atlas, then create that map
       allocate( Atlas( 1))
       map => Atlas( 1)
-      call map%create( ct)
+      map%ct = ct
+      call map%create()
 
     else
 
@@ -142,13 +143,16 @@ contains
 
       ! If not, extend the Atlas and add a new mapping object to it
       if (.not. found_it) then
+        ! Extend the Atlas by a single element
         allocate( Atlas_old( size( Atlas)), source = Atlas)
         deallocate( Atlas)
         allocate( Atlas( size( Atlas_old)+1))
         Atlas( 1: size( Atlas_old)) = Atlas_old
         deallocate( Atlas_old)
+        ! Add a new mapping object
         map => Atlas( size( Atlas))
-        call map%create( ct)
+        map%ct = ct
+        call map%create()
       end if
 
     end if
@@ -158,12 +162,11 @@ contains
 
   end subroutine find_in_or_add_map_to_Atlas
 
-  subroutine create_map( self, ct)
+  subroutine create_map( self)
     ! Create a new mapping object matching the specified grids and remapping method
 
     ! In/output variables:
-    class(type_map),              intent(inout) :: self
-    type(type_remapping_context), intent(in   ) :: ct
+    class(type_map), intent(inout) :: self
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'create_map'
@@ -172,12 +175,6 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
-
-    self%ct%grid_src         => ct%grid_src
-    self%ct%Arakawa_grid_src =  ct%Arakawa_grid_src
-    self%ct%grid_dst         => ct%grid_dst
-    self%ct%Arakawa_grid_dst =  ct%Arakawa_grid_dst
-    self%ct%method           =  ct%method
 
     ! Create ugrids from source and destination grids
     call ugrid_src%build_from_grid( self%ct%grid_src, self%ct%Arakawa_grid_src)

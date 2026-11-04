@@ -3,13 +3,14 @@ program UPSY_calculate_remapping_weights
   ! A program for calculating remapping weights between two
   ! meshes/grids. Call syntax:
   !
-  ! mpiexec -n [n_cores] UPSY_calculate_remapping_weights [filename_grid_src] [Arakawa_grid_src] [filename_grid_dst] [Arakawa_grid_dst] [filename_output]
+  ! mpiexec -n [n_cores] UPSY_calculate_remapping_weights [filename_grid_src] [Arakawa_grid_src] [filename_grid_dst] [Arakawa_grid_dst] [method] [filename_output]
   !
   ! n_cores          : number of CPU cores you want to run on
   ! filename_grid_src: path/to/source/grid_or_mesh.nc
   ! Arakawa_grid_src : Arakawa grid of source data (a, b, c, cx, cy)
   ! filename_grid_dst: path/to/destination/grid_or_mesh.nc
   ! Arakawa_grid_dst : Arakawa grid of destination data (a, b, c, cx, cy)
+  ! method           : nearest_neighbour, linear, first_order_conservative, second_order_conservative
   ! filename_output  : path/to/output/file/containing/remapping_weights.nc
 
 #include <petsc/finclude/petscsys.h>
@@ -19,30 +20,28 @@ program UPSY_calculate_remapping_weights
   use petsc, only: PetscErrorF, PetscFinalize
   use mpi_basic, only: initialise_parallelisation
   use parameters, only: initialise_constants
-  use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker
+  use call_stack_and_comp_time_tracking, only: initialise_control_and_resource_tracker, init_routine, finalise_routine
   use crash_mod, only: crash
   use UPSY_main, only: UPSY
   use netcdf_io_main, only: inquire_xy_grid, inquire_lonlat_grid, inquire_mesh, &
     open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, setup_lonlat_grid_from_file, &
     setup_mesh_from_file, close_netcdf_file
+  use basic_grid_mod, only: atype_grid
   use xy_grid_basic, only: type_xy_grid
   use lonlat_grid_basic, only: type_lonlat_grid
   use mesh_basic, only: type_mesh
-  use remapping_types, only: type_map
+  use remapping_basic, only: type_map
 
   implicit none
 
-  integer                             :: ierr
-  character(len=1024)                 :: filename_grid_src, Arakawa_grid_src
-  character(len=1024)                 :: filename_grid_dst, Arakawa_grid_dst
-  character(len=1024)                 :: filename_output
-  logical                             :: file_exists
-  logical                             :: has_xy_grid_src, has_lonlat_grid_src, has_mesh_src
-  logical                             :: has_xy_grid_dst, has_lonlat_grid_dst, has_mesh_dst
-  type(type_xy_grid),     allocatable :: xy_grid_src, xy_grid_dst
-  type(type_lonlat_grid), allocatable :: lonlat_grid_src, lonlat_grid_dst
-  type(type_mesh),        allocatable :: mesh_src, mesh_dst
-  type(type_map)                      :: map
+  integer             :: ierr
+  character(len=1024) :: filename_grid_src, Arakawa_grid_src
+  character(len=1024) :: filename_grid_dst, Arakawa_grid_dst
+  character(len=1024) :: remapping_method_str
+  character(len=1024) :: filename_output
+  logical             :: file_exists
+  class(atype_grid), allocatable :: grid_src, grid_dst
+  type(type_map)      :: map
 
   program_name = 'UPSY_calculate_remapping_weights'
 
@@ -56,16 +55,14 @@ program UPSY_calculate_remapping_weights
   call initialise_control_and_resource_tracker
 
   ! Get the input arguments
-  call get_input_arguments( filename_grid_src, Arakawa_grid_src, filename_grid_dst, Arakawa_grid_dst, filename_output)
+  call get_input_arguments( filename_grid_src, Arakawa_grid_src, &
+    filename_grid_dst, Arakawa_grid_dst, remapping_method_str, filename_output)
 
   ! Find out what kind of grids we're remapping between
-  call read_grid_or_mesh( filename_grid_src, has_xy_grid_src, has_lonlat_grid_src, has_mesh_src, xy_grid_src, lonlat_grid_src, mesh_src)
-  call read_grid_or_mesh( filename_grid_dst, has_xy_grid_dst, has_lonlat_grid_dst, has_mesh_dst, xy_grid_dst, lonlat_grid_dst, mesh_dst)
+  call read_grid( filename_grid_src, grid_src)
+  call read_grid( filename_grid_dst, grid_dst)
 
   ! Calculate the remapping operator
-  call calc_remapping_operator( &
-    has_xy_grid_src, has_lonlat_grid_src, has_mesh_src, xy_grid_src, lonlat_grid_src, mesh_src, &
-    has_xy_grid_dst, has_lonlat_grid_dst, has_mesh_dst, xy_grid_dst, lonlat_grid_dst, mesh_dst, map)
 
   ! Write it to a NetCDF file
   call write_map_to_file( map, filename_output)
@@ -75,25 +72,40 @@ program UPSY_calculate_remapping_weights
 
 contains
 
-  subroutine get_input_arguments( filename_grid_src, Arakawa_grid_src, filename_grid_dst, Arakawa_grid_dst, filename_output)
+  subroutine get_input_arguments( filename_grid_src, Arakawa_grid_src, &
+    filename_grid_dst, Arakawa_grid_dst, remapping_method_str, filename_output)
 
-    character(len=*), intent(out) :: filename_grid_src, Arakawa_grid_src, filename_grid_dst, Arakawa_grid_dst, filename_output
+    ! In/output variables:
+    character(len=*), intent(out) :: filename_grid_src
+    character(len=*), intent(out) :: Arakawa_grid_src
+    character(len=*), intent(out) :: filename_grid_dst
+    character(len=*), intent(out) :: Arakawa_grid_dst
+    character(len=*), intent(out) :: remapping_method_str
+    character(len=*), intent(out) :: filename_output
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'get_input_arguments'
+
+    ! Add routine to path
+    call init_routine( routine_name)
 
     call safety_check_input_arguments()
 
-    call getarg( 1, filename_grid_src)
-    call getarg( 2, Arakawa_grid_src )
-    call getarg( 3, filename_grid_dst)
-    call getarg( 4, Arakawa_grid_dst )
-    call getarg( 5, filename_output  )
+    call getarg( 1, filename_grid_src   )
+    call getarg( 2, Arakawa_grid_src    )
+    call getarg( 3, filename_grid_dst   )
+    call getarg( 4, Arakawa_grid_dst    )
+    call getarg( 5, remapping_method_str)
+    call getarg( 6, filename_output     )
 
     if (par%primary) then
       write(0,*) UPSY%stru%colour_string( trim( program_name) // ': calculating remapping weights.', 'green')
-      write(0,*) '  Source      mesh grid   : ', UPSY%stru%colour_string( trim( filename_grid_src), 'light blue')
-      write(0,*) '  Source      Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_src ), 'light blue')
-      write(0,*) '  Destination mesh grid   : ', UPSY%stru%colour_string( trim( filename_grid_dst), 'light blue')
-      write(0,*) '  Destination Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_dst ), 'light blue')
-      write(0,*) '  Output file             : ', UPSY%stru%colour_string( trim( filename_output  ), 'light blue')
+      write(0,*) '  Source      mesh grid   : ', UPSY%stru%colour_string( trim( filename_grid_src   ), 'light blue')
+      write(0,*) '  Source      Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_src    ), 'light blue')
+      write(0,*) '  Destination mesh grid   : ', UPSY%stru%colour_string( trim( filename_grid_dst   ), 'light blue')
+      write(0,*) '  Destination Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_dst    ), 'light blue')
+      write(0,*) '  Method                  : ', UPSY%stru%colour_string( trim( remapping_method_str), 'light blue')
+      write(0,*) '  Output file             : ', UPSY%stru%colour_string( trim( filename_output     ), 'light blue')
     end if
 
     ! Check if the input files actually exist
@@ -104,38 +116,53 @@ contains
     inquire( exist = file_exists, file = trim( filename_output))
     if (      file_exists) call crash('file ' // trim( filename_output) // ' already exists')
 
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
   end subroutine get_input_arguments
 
   subroutine safety_check_input_arguments()
-    if (iargc() /= 5) then
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'safety_check_input_arguments'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if (iargc() /= 6) then
       if (par%primary) then
         write(0,*) UPSY%stru%colour_string( trim( program_name) // 'Error: invalid call syntax for ' // trim( program_name) // '. Should be:', 'yellow')
-        write(0,*) UPSY%stru%colour_string( '  mpiexec -n [n_cores] UPSY_calculate_remapping_weights [filename_grid_src] [Arakawa_grid_src] [filename_grid_dst] [Arakawa_grid_dst] [filename_output]', 'yellow')
+        write(0,*) UPSY%stru%colour_string( '  mpiexec -n [n_cores] UPSY_calculate_remapping_weights [filename_grid_src] [Arakawa_grid_src] [filename_grid_dst] [Arakawa_grid_dst] [method] [filename_output]', 'yellow')
         write(0,*) UPSY%stru%colour_string( '    n_cores          : number of CPU cores you want to run on', 'yellow')
         write(0,*) UPSY%stru%colour_string( '    filename_grid_src: path/to/source/grid_or_mesh.nc', 'yellow')
         write(0,*) UPSY%stru%colour_string( '    Arakawa_grid_src : Arakawa grid of source data (a, b, c, cx, cy)', 'yellow')
         write(0,*) UPSY%stru%colour_string( '    filename_grid_dst: path/to/destination/grid_or_mesh.nc', 'yellow')
         write(0,*) UPSY%stru%colour_string( '    Arakawa_grid_dst : Arakawa grid of destination data (a, b, c, cx, cy)', 'yellow')
+        write(0,*) UPSY%stru%colour_string( '    method           : nearest_neighbour, linear, first_order_conservative, second_order_conservative', 'yellow')
         write(0,*) UPSY%stru%colour_string( '    filename_output  : path/to/output/file/containing/remapping_weights.nc', 'yellow')
       end if
       call sync
       error stop
     end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
   end subroutine safety_check_input_arguments
 
-  subroutine read_grid_or_mesh( filename, has_xy_grid, has_lonlat_grid, has_mesh, xy_grid, lonlat_grid, mesh)
+  subroutine read_grid( filename, grid)
 
     ! In/output variables:
-    character(len=*),                    intent(in   ) :: filename
-    logical,                             intent(  out) :: has_xy_grid
-    logical,                             intent(  out) :: has_lonlat_grid
-    logical,                             intent(  out) :: has_mesh
-    type(type_xy_grid),     allocatable, intent(inout) :: xy_grid
-    type(type_lonlat_grid), allocatable, intent(inout) :: lonlat_grid
-    type(type_mesh),        allocatable, intent(inout) :: mesh
+    character(len=*),               intent(in   ) :: filename
+    class(atype_grid), allocatable, intent(inout) :: grid
 
     ! Local variables:
-    integer :: ncid
+    character(len=*), parameter :: routine_name = 'read_grid'
+    logical                     :: has_xy_grid, has_lonlat_grid, has_mesh
+    integer                     :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
 
     ! Inquire what kind of grid the file is defined on
     call inquire_xy_grid(     filename, has_xy_grid    )
@@ -150,45 +177,32 @@ contains
     ! Read the grid from the file
     call open_existing_netcdf_file_for_reading( filename, ncid)
     if (has_xy_grid) then
-      allocate( xy_grid)
-      call setup_xy_grid_from_file( filename, ncid, xy_grid)
+      allocate( type_xy_grid :: grid)
+      select type(xy_grid => grid)
+      class is (type_xy_grid)
+        call setup_xy_grid_from_file( filename, ncid, xy_grid)
+      end select
     elseif (has_lonlat_grid) then
-      allocate( lonlat_grid)
-      call setup_lonlat_grid_from_file( filename, ncid, lonlat_grid)
+      allocate( type_lonlat_grid :: grid)
+      select type(lonlat_grid => grid)
+      class is (type_lonlat_grid)
+        call setup_lonlat_grid_from_file( filename, ncid, lonlat_grid)
+      end select
     elseif (has_mesh) then
-      allocate( mesh)
-      call setup_mesh_from_file( filename, ncid, mesh)
+      allocate( type_mesh :: grid)
+      select type(mesh => grid)
+      class is (type_mesh)
+        call setup_mesh_from_file( filename, ncid, mesh)
+      end select
     else
       call crash('could not find a valid grid in file ' // trim( filename))
     end if
     call close_netcdf_file( ncid)
 
-  end subroutine read_grid_or_mesh
+    ! Finalise routine path
+    call finalise_routine( routine_name)
 
-  subroutine calc_remapping_operator( &
-    has_xy_grid_src, has_lonlat_grid_src, has_mesh_src, xy_grid_src, lonlat_grid_src, mesh_src, &
-    has_xy_grid_dst, has_lonlat_grid_dst, has_mesh_dst, xy_grid_dst, lonlat_grid_dst, mesh_dst, map)
-
-    ! In/output variables
-    logical,                             intent(in   ) :: has_xy_grid_src
-    logical,                             intent(in   ) :: has_lonlat_grid_src
-    logical,                             intent(in   ) :: has_mesh_src
-    type(type_xy_grid),     allocatable, intent(in   ) :: xy_grid_src
-    type(type_lonlat_grid), allocatable, intent(in   ) :: lonlat_grid_src
-    type(type_mesh),        allocatable, intent(in   ) :: mesh_src
-    logical,                             intent(in   ) :: has_xy_grid_dst
-    logical,                             intent(in   ) :: has_lonlat_grid_dst
-    logical,                             intent(in   ) :: has_mesh_dst
-    type(type_xy_grid),     allocatable, intent(in   ) :: xy_grid_dst
-    type(type_lonlat_grid), allocatable, intent(in   ) :: lonlat_grid_dst
-    type(type_mesh),        allocatable, intent(in   ) :: mesh_dst
-    type(type_map),                      intent(  out) :: map
-
-    ! Local variables
-
-    call crash('fixme!')
-
-  end subroutine calc_remapping_operator
+  end subroutine read_grid
 
   subroutine write_map_to_file( map, filename_output)
 
@@ -197,8 +211,15 @@ contains
     character(len=*), intent(in) :: filename_output
 
     ! Local variables
+    character(len=*), parameter :: routine_name = 'write_map_to_file'
+
+    ! Add routine to path
+    call init_routine( routine_name)
 
     call crash('fixme!')
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
 
   end subroutine write_map_to_file
 

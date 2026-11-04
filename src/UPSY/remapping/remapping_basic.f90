@@ -17,7 +17,7 @@ module remapping_basic
 
   private
 
-  public :: type_remapping
+  public :: type_remapping, type_map
 
   ! Type of a remapping object
   type :: type_map

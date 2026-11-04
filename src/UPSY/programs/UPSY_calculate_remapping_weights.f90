@@ -31,12 +31,13 @@ program UPSY_calculate_remapping_weights
   use lonlat_grid_basic, only: type_lonlat_grid
   use mesh_basic, only: type_mesh
   use remapping_basic, only: type_map
+  use Arakawa_grid_mod, only: Arakawa_grid
 
   implicit none
 
   integer             :: ierr
-  character(len=1024) :: filename_grid_src, Arakawa_grid_src
-  character(len=1024) :: filename_grid_dst, Arakawa_grid_dst
+  character(len=1024) :: filename_grid_src, Arakawa_grid_src_str
+  character(len=1024) :: filename_grid_dst, Arakawa_grid_dst_str
   character(len=1024) :: remapping_method_str
   character(len=1024) :: filename_output
   logical             :: file_exists
@@ -55,14 +56,21 @@ program UPSY_calculate_remapping_weights
   call initialise_control_and_resource_tracker
 
   ! Get the input arguments
-  call get_input_arguments( filename_grid_src, Arakawa_grid_src, &
-    filename_grid_dst, Arakawa_grid_dst, remapping_method_str, filename_output)
+  call get_input_arguments( filename_grid_src, Arakawa_grid_src_str, &
+    filename_grid_dst, Arakawa_grid_dst_str, remapping_method_str, filename_output)
 
   ! Find out what kind of grids we're remapping between
   call read_grid( filename_grid_src, grid_src)
   call read_grid( filename_grid_dst, grid_dst)
 
-  ! Calculate the remapping operator
+  ! Set up the remapping context
+  call map%ct%create( &
+    grid_src, Arakawa_grid%create_from_string( Arakawa_grid_src_str), &
+    grid_dst, Arakawa_grid%create_from_string( Arakawa_grid_dst_str), &
+    UPSY%remapping%method%create_from_string( remapping_method_str))
+
+  ! Create the remapping object
+  call map%create()
 
   ! Write it to a NetCDF file
   call write_map_to_file( map, filename_output)
@@ -72,14 +80,14 @@ program UPSY_calculate_remapping_weights
 
 contains
 
-  subroutine get_input_arguments( filename_grid_src, Arakawa_grid_src, &
-    filename_grid_dst, Arakawa_grid_dst, remapping_method_str, filename_output)
+  subroutine get_input_arguments( filename_grid_src, Arakawa_grid_src_str, &
+    filename_grid_dst, Arakawa_grid_dst_str, remapping_method_str, filename_output)
 
     ! In/output variables:
     character(len=*), intent(out) :: filename_grid_src
-    character(len=*), intent(out) :: Arakawa_grid_src
+    character(len=*), intent(out) :: Arakawa_grid_src_str
     character(len=*), intent(out) :: filename_grid_dst
-    character(len=*), intent(out) :: Arakawa_grid_dst
+    character(len=*), intent(out) :: Arakawa_grid_dst_str
     character(len=*), intent(out) :: remapping_method_str
     character(len=*), intent(out) :: filename_output
 
@@ -92,18 +100,18 @@ contains
     call safety_check_input_arguments()
 
     call getarg( 1, filename_grid_src   )
-    call getarg( 2, Arakawa_grid_src    )
+    call getarg( 2, Arakawa_grid_src_str)
     call getarg( 3, filename_grid_dst   )
-    call getarg( 4, Arakawa_grid_dst    )
+    call getarg( 4, Arakawa_grid_dst_str)
     call getarg( 5, remapping_method_str)
     call getarg( 6, filename_output     )
 
     if (par%primary) then
       write(0,*) UPSY%stru%colour_string( trim( program_name) // ': calculating remapping weights.', 'green')
       write(0,*) '  Source      mesh grid   : ', UPSY%stru%colour_string( trim( filename_grid_src   ), 'light blue')
-      write(0,*) '  Source      Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_src    ), 'light blue')
+      write(0,*) '  Source      Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_src_str), 'light blue')
       write(0,*) '  Destination mesh grid   : ', UPSY%stru%colour_string( trim( filename_grid_dst   ), 'light blue')
-      write(0,*) '  Destination Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_dst    ), 'light blue')
+      write(0,*) '  Destination Arakawa grid: ', UPSY%stru%colour_string( trim( Arakawa_grid_dst_str), 'light blue')
       write(0,*) '  Method                  : ', UPSY%stru%colour_string( trim( remapping_method_str), 'light blue')
       write(0,*) '  Output file             : ', UPSY%stru%colour_string( trim( filename_output     ), 'light blue')
     end if

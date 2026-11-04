@@ -56,7 +56,7 @@ contains
     if (par%node_primary) then
       do ii = 1, xy_grid%nx+1
       do jj = 1, xy_grid%ny+1
-        ni = iijj2ni( ii, jj, xy_grid%ny)
+        ni = xy_grid%iijj2ni( ii, jj)
         if (ii == xy_grid%nx+1) then
           ugrid%node_coordinates( ni,1) = xy_grid%x( xy_grid%nx) + xy_grid%dx / 2._dp
         else
@@ -75,7 +75,7 @@ contains
     if (par%node_primary) then
       do i = 1, xy_grid%nx
       do j = 1, xy_grid%ny
-        fi = ij2fi( i, j, xy_grid%ny)
+        fi = xy_grid%ij2fi( i, j)
         ugrid%face_coordinates( fi,1) = xy_grid%x( i)
         ugrid%face_coordinates( fi,2) = xy_grid%y( j)
       end do
@@ -95,11 +95,11 @@ contains
       ugrid%face_node_connectivity_n = 4
       do i = 1, xy_grid%nx
       do j = 1, xy_grid%ny
-        fi    = ij2fi  ( i  , j  , xy_grid%ny)
-        ni_sw = iijj2ni( i  , j  , xy_grid%ny)
-        ni_se = iijj2ni( i+1, j  , xy_grid%ny)
-        ni_nw = iijj2ni( i  , j+1, xy_grid%ny)
-        ni_ne = iijj2ni( i+1, j+1, xy_grid%ny)
+        fi    = xy_grid%ij2fi  ( i  , j  )
+        ni_sw = xy_grid%iijj2ni( i  , j  )
+        ni_se = xy_grid%iijj2ni( i+1, j  )
+        ni_nw = xy_grid%iijj2ni( i  , j+1)
+        ni_ne = xy_grid%iijj2ni( i+1, j+1)
         ugrid%face_node_connectivity( fi,:) = [ni_sw, ni_se, ni_ne, ni_nw]
       end do
       end do
@@ -117,30 +117,30 @@ contains
     if (par%node_primary) then
       do i = 1, xy_grid%nx
       do j = 1, xy_grid%ny
-        fi = ij2fi( i, j, xy_grid%ny)
+        fi = xy_grid%ij2fi( i, j)
         ugrid%face_face_connectivity_n( fi) = 0
         ugrid%face_face_connectivity( fi,:) = ugrid%face_face_connectivity_fill_value
         ! Eastern neighbouring face
         if (i < xy_grid%nx) then
-          fi_e = ij2fi( i+1, j, xy_grid%ny)
+          fi_e = xy_grid%ij2fi( i+1, j)
           ugrid%face_face_connectivity_n( fi) = ugrid%face_face_connectivity_n( fi) + 1
           ugrid%face_face_connectivity( fi, ugrid%face_face_connectivity_n( fi)) = fi_e
         end if
         ! Northern neighbouring face
         if (j < xy_grid%ny) then
-          fi_n = ij2fi( i, j+1, xy_grid%ny)
+          fi_n = xy_grid%ij2fi( i, j+1)
           ugrid%face_face_connectivity_n( fi) = ugrid%face_face_connectivity_n( fi) + 1
           ugrid%face_face_connectivity( fi, ugrid%face_face_connectivity_n( fi)) = fi_n
         end if
         ! Western neighbouring face
         if (i > 1) then
-          fi_w = ij2fi( i-1, j, xy_grid%ny)
+          fi_w = xy_grid%ij2fi( i-1, j)
           ugrid%face_face_connectivity_n( fi) = ugrid%face_face_connectivity_n( fi) + 1
           ugrid%face_face_connectivity( fi, ugrid%face_face_connectivity_n( fi)) = fi_w
         end if
         ! Southern neighbouring face
         if (j > 1) then
-          fi_s = ij2fi( i, j-1, xy_grid%ny)
+          fi_s = xy_grid%ij2fi( i, j-1)
           ugrid%face_face_connectivity_n( fi) = ugrid%face_face_connectivity_n( fi) + 1
           ugrid%face_face_connectivity( fi, ugrid%face_face_connectivity_n( fi)) = fi_s
         end if
@@ -152,17 +152,5 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine build_from_xy_grid_a
-
-  pure function iijj2ni( ii,jj,ny) result( ni)
-    integer, intent(in) :: ii,jj,ny
-    integer :: ni
-    ni = (ii-1) * (ny+1) + jj
-  end function iijj2ni
-
-  pure function ij2fi( i,j,ny) result( fi)
-    integer, intent(in) :: i,j,ny
-    integer :: fi
-    fi = (i-1) * (ny) + j
-  end function ij2fi
 
 end submodule build_from_xy_grid_mod

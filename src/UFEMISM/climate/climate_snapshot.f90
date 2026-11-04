@@ -107,7 +107,7 @@ contains
     units     = 'm.w.e. month^-1', &
     remap_method = 'reallocate')
 
-      call self%create_field( self%Hs, self%wHs_baseline, &
+      call self%create_field( self%Hs_baseline, self%wHs_baseline, &
     self%mesh, Arakawa_grid%a(), &
     name      = 'Hs_baseline', &
     long_name = 'Baseline Surface elevation', &

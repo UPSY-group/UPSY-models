@@ -46,10 +46,10 @@ module climate_snapshot_lapse
       type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
 
-      ! Wind
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
-      type(MPI_WIN) :: wWind_LR, wWind_DU
+      ! ! Wind
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
+      ! type(MPI_WIN) :: wWind_LR, wWind_DU
 
       ! Region-specific info
       character(len=1024)                           :: filename_climate_snapshot

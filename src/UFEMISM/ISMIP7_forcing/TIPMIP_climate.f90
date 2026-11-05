@@ -55,13 +55,13 @@ module TIPMIP_climate
       type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
       ! Insolation
-      real(dp), dimension(:,:), contiguous, pointer :: Q_TOA           => null()
-      type(MPI_WIN) :: wQ_TOA
+      ! real(dp), dimension(:,:), contiguous, pointer :: Q_TOA           => null()
+      ! type(MPI_WIN) :: wQ_TOA
 
       ! Wind
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
-      type(MPI_WIN) :: wWind_LR, wWind_DU
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
+      ! type(MPI_WIN) :: wWind_LR, wWind_DU
 
       ! TIPMIP-style input forcing fields
       type(type_TIPMIP_forcing_field) :: tas_anomaly         !< [K] ESM-derived monthly mean surface air temperature anomaly

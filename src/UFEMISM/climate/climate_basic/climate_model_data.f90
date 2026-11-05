@@ -19,6 +19,14 @@ module climate_model_data
     real(dp), dimension(:,:), contiguous, pointer :: Q_TOA  => null()
     type(MPI_WIN) :: wT2m, wPrecip, wQ_TOA
 
+    real(dp), dimension(:),   contiguous, pointer :: retreat_mask  => null()
+    type(MPI_WIN) :: wretreat_mask
+
+    ! Wind
+    real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
+    real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
+    type(MPI_WIN) :: wWind_LR, wWind_DU
+
   end type atype_climate_model_data
 
 end module climate_model_data

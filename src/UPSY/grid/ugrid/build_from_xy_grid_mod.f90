@@ -17,16 +17,16 @@ contains
 
     ! Build from the regular (a-grid) or staggered (b/cx/cy-grid) grid cells
     if     (xy_grid_Arakawa_grid == Arakawa_grid%a()) then
-      ugrid%name = 'ugrid_xy_grid_' // trim( mesh%name) // '_a'
+      ugrid%name = 'ugrid_xy_grid_' // trim( xy_grid%name) // '_a'
       call build_from_xy_grid_a( ugrid, xy_grid)
     elseif (xy_grid_Arakawa_grid == Arakawa_grid%b()) then
-      ugrid%name = 'ugrid_xy_grid_' // trim( mesh%name) // '_b'
+      ugrid%name = 'ugrid_xy_grid_' // trim( xy_grid%name) // '_b'
       call crash('fixme!')
     elseif (xy_grid_Arakawa_grid == Arakawa_grid%cx()) then
-      ugrid%name = 'ugrid_xy_grid_' // trim( mesh%name) // '_cx'
+      ugrid%name = 'ugrid_xy_grid_' // trim( xy_grid%name) // '_cx'
       call crash('fixme!')
     elseif (xy_grid_Arakawa_grid == Arakawa_grid%cy()) then
-      ugrid%name = 'ugrid_xy_grid_' // trim( mesh%name) // '_cy'
+      ugrid%name = 'ugrid_xy_grid_' // trim( xy_grid%name) // '_cy'
       call crash('fixme!')
     else
       call crash('unsupported Arakawa grid')

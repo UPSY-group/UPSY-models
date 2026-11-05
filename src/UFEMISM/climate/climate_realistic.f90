@@ -1,0 +1,408 @@
+MODULE climate_realistic
+
+  ! Realistic climate models
+
+! ===== Preamble =====
+! ====================
+
+  USE precisions                                             , ONLY: dp
+  use UPSY_main, only: UPSY
+  USE mpi_basic                                              , ONLY: par, sync
+  USE call_stack_and_comp_time_tracking                  , ONLY: crash, init_routine, finalise_routine, warning
+  USE model_configuration                                    , ONLY: C
+  USE parameters
+  use mesh_basic                                             , ONLY: type_mesh
+  use ice_geometry_model_data, only: atype_ice_geometry_model_data
+  USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
+  USE global_forcing_types                                   , ONLY: type_global_forcing
+  USE global_forcings_main
+  USE netcdf_io_main
+  USE netcdf_basic
+  use climate_model_utilities                                , only: get_insolation_at_time
+  use reallocate_mod                                         , only: reallocate_bounds
+
+  IMPLICIT NONE
+
+  private
+
+  public :: run_climate_model_realistic
+  public :: initialise_climate_model_realistic
+  public :: initialise_insolation_forcing
+  public :: apply_geometry_downscaling_corrections
+  public :: remap_climate_realistic
+  public :: remap_insolation
+
+CONTAINS
+
+! ===== Main routines =====
+! =========================
+
+  SUBROUTINE run_climate_model_realistic( mesh, geom, climate, forcing, time)
+    ! Calculate the climate
+    !
+    ! Use an realistic climate scheme
+
+    IMPLICIT NONE
+
+    ! In/output variables:
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    TYPE(type_climate_model),               INTENT(INOUT) :: climate
+    TYPE(type_global_forcing),              INTENT(IN)    :: forcing
+    REAL(dp),                               INTENT(IN)    :: time
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'run_climate_model_realistic'
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Run the chosen realistic climate model
+
+    ! Update temperature and precipitation fields based on the mismatch between
+    ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
+    CALL apply_geometry_downscaling_corrections( mesh, geom, climate)
+
+    ! if needed for IMAU-ITM or climate matrix, we need to update insolation
+    IF (climate%snapshot%has_insolation) THEN
+      CALL get_insolation_at_time( mesh, time, climate%snapshot)
+      climate%Q_TOA = climate%snapshot%Q_TOA
+
+      IF (C%choice_climate_model_realistic == 'climate_matrix') THEN
+        ! This is probably where we will update insolation, CO2, etc...
+        CALL crash('climate_matrix is no longer a climate model subtype; please set choice_climate_model as matrix!"')
+        !CALL get_climate_at_time( mesh, time, forcing, climate)
+      !ELSE
+      !  CALL crash('unknown choice_climate_model_realistic "' // TRIM( C%choice_climate_model_realistic) // '"')
+      END IF
+    END IF
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE run_climate_model_realistic
+
+  SUBROUTINE initialise_climate_model_realistic( mesh, geom, climate, forcing, region_name)
+    ! Initialise the climate model
+    !
+    ! Use a realistic climate scheme
+
+    IMPLICIT NONE
+
+    ! In- and output variables
+    TYPE(type_mesh),                        INTENT(IN)    :: mesh
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    TYPE(type_climate_model),               INTENT(INOUT) :: climate
+    TYPE(type_global_forcing),              INTENT(IN)    :: forcing
+    CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'initialise_climate_model_realistic'
+    CHARACTER(LEN=256)                                    :: filename_climate_snapshot
+    LOGICAL                                               :: do_lapse_rates
+    REAL(dp)                                              :: timeframe_init_insolation
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    ! Print to terminal
+    IF (par%primary)  WRITE(*,"(A)") '     Initialising realistic climate model "' // &
+      UPSY%stru%colour_string( TRIM( C%choice_climate_model_realistic),'light blue') // '"...'
+
+    ! Run the chosen realistic climate model
+    climate%snapshot%has_insolation = .FALSE.
+    IF (C%choice_climate_model_realistic == 'snapshot') THEN
+      ! Read single-time data from external file
+
+      ! Determine which climate model to initialise for this region
+      IF     (region_name == 'NAM') THEN
+        filename_climate_snapshot = C%filename_climate_snapshot_NAM
+        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_NAM
+        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_NAM
+        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_NAM
+        IF (C%choice_SMB_model_NAM == 'IMAU-ITM') THEN
+           climate%snapshot%has_insolation = .TRUE.
+        END IF
+      ELSEIF (region_name == 'EAS') THEN
+        filename_climate_snapshot = C%filename_climate_snapshot_EAS
+        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_EAS
+        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_EAS
+        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_EAS
+        IF (C%choice_SMB_model_EAS == 'IMAU-ITM') THEN
+           climate%snapshot%has_insolation = .TRUE.
+        END IF
+      ELSEIF (region_name == 'GRL') THEN
+        filename_climate_snapshot = C%filename_climate_snapshot_GRL
+        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_GRL
+        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_GRL
+        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_GRL
+        IF (C%choice_SMB_model_GRL == 'IMAU-ITM') THEN
+           climate%snapshot%has_insolation = .TRUE.
+        END IF
+      ELSEIF (region_name == 'ANT') THEN
+        filename_climate_snapshot = C%filename_climate_snapshot_ANT
+        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_ANT
+        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_ANT
+        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_ANT
+        IF (C%choice_SMB_model_ANT == 'IMAU-ITM') THEN
+           climate%snapshot%has_insolation = .TRUE.
+        END IF
+      ELSE
+        CALL crash('unknown region_name "' // region_name // '"')
+      END IF
+
+      CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , mesh, C%output_dir, climate%snapshot%Hs)
+      CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , mesh, C%output_dir, climate%T2m)
+      CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
+
+
+      call apply_geometry_downscaling_corrections( mesh, geom, climate)
+
+      ! Initialises the insolation (if needed)
+      IF (climate%snapshot%has_insolation) THEN
+        IF (C%choice_insolation_forcing == 'none') THEN
+          CALL crash('Chosen climate or SMB model cannot be used with choice_insolation_forcing = "none"!')
+        ELSE
+          CALL initialise_insolation_forcing( climate%snapshot, mesh)
+          IF (C%start_time_of_run < 0._dp) THEN
+            timeframe_init_insolation = C%start_time_of_run
+          ELSE
+            timeframe_init_insolation = 0._dp
+          END IF
+          CALL get_insolation_at_time( mesh, timeframe_init_insolation, climate%snapshot)
+          climate%Q_TOA = climate%snapshot%Q_TOA
+        END IF
+      END IF
+
+    ELSE
+      CALL crash('unknown choice_climate_model_realistic "' // TRIM( C%choice_climate_model_realistic) // '"')
+    END IF
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE initialise_climate_model_realistic
+
+  SUBROUTINE apply_geometry_downscaling_corrections( mesh, geom, climate)
+    ! Applies the lapse rate corrections for temperature and precipitation
+    ! to correct for the mismatch between T and P at the forcing's ice surface elevation and the model's ice surface elevation
+
+    IMPLICIT NONE
+
+    TYPE(type_mesh),                       INTENT(IN)    :: mesh
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
+    TYPE(type_climate_model),              INTENT(INOUT) :: climate
+
+    ! Local Variables
+    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'apply_geometry_downscaling_corrections'
+    INTEGER                                              :: vi, m
+    REAL(dp)                                             :: deltaH, deltaT, deltaP
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE                :: T_inv, T_inv_ref
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    IF     ((C%choice_climate_model_realistic == 'snapshot') .AND. (climate%snapshot%do_lapse_rates .eqv. .TRUE.)) THEN
+
+      allocate( T_inv     (mesh%vi1:mesh%vi2, 12))
+      allocate( T_inv_ref (mesh%vi1:mesh%vi2, 12))
+
+
+      do vi = mesh%vi1, mesh%vi2
+
+        ! we only apply corrections where it is not open ocean
+        if (geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
+          deltaT  = (geom%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
+          do m = 1, 12
+            ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
+            climate%T2m( vi, m)    = climate%T2m( vi, m)    + deltaT
+
+
+            ! Calculate inversion-layer temperatures
+            T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
+            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot%lapse_rate_temp * (geom%Hs( vi) - climate%snapshot%Hs( vi)))
+            ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
+            ! Same as implemented in IMAU-ICE
+            climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))
+
+          end do ! m
+        end if
+      end do ! vi
+
+      deallocate(T_inv)
+      deallocate(T_inv_ref)
+
+    ELSEIF (C%choice_climate_model_realistic == 'climate_matrix') THEN
+      ! Not yet implemented! Will likely use the lambda field from Berends et al. (2018)
+    END IF
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE apply_geometry_downscaling_corrections
+
+  ! == Insolation
+  SUBROUTINE initialise_insolation_forcing( snapshot, mesh)
+    ! initialise the insolation series in the forcing structure
+
+    IMPLICIT NONE
+
+    ! In/output variables:
+    TYPE(type_climate_model_snapshot),   INTENT(INOUT) :: snapshot
+    TYPE(type_mesh),            INTENT(IN)    :: mesh
+
+    ! Local variables:
+    CHARACTER(LEN=256), PARAMETER                    :: routine_name = 'initialise_insolation_forcing'
+    CHARACTER(LEN=256)                               :: str
+    INTEGER                                          :: ncid
+    REAL(dp)                                         :: closest_t0
+
+    ! Add routine to path
+    CALL init_routine( routine_name)
+
+    IF     (C%choice_insolation_forcing == 'none') THEN
+      ! No insolation included, likely because we're running an idealised-geometry experiment
+    ELSEIF (C%choice_insolation_forcing == 'static' .OR. &
+            C%choice_insolation_forcing == 'realistic') THEN
+
+      ! Initialise insolation
+      ! The times at which we have insolation fields from Laskar, between which we'll interpolate
+      ! to find the insolation at model time (assuming that t0 <= model_time <= t1)
+      IF (par%primary)   WRITE(0,*) ' Initialising insolation data from ', TRIM(C%filename_insolation), '...'
+
+      ! Memory allocation
+      ALLOCATE(snapshot%ins_t0)
+      ALLOCATE(snapshot%ins_t1)
+      ALLOCATE(snapshot%ins_ti0)
+      ALLOCATE(snapshot%ins_ti1)
+      ALLOCATE(snapshot%ins_nlat)
+      ALLOCATE(snapshot%ins_nlon)
+      ALLOCATE(snapshot%ins_Q_TOA0         (mesh%vi1:mesh%vi2,12))
+      ALLOCATE(snapshot%ins_Q_TOA1         (mesh%vi1:mesh%vi2,12))
+      !ALLOCATE(snapshot%lambda             (mesh%vi1:mesh%vi2)) ! initialised in climate matrix routine
+      ALLOCATE(snapshot%Q_TOA              (mesh%vi1:mesh%vi2,12))
+      ALLOCATE(snapshot%Albedo             (mesh%vi1:mesh%vi2,12))
+      ALLOCATE(snapshot%I_abs              (mesh%vi1:mesh%vi2))
+      snapshot%ins_t0     = C%start_time_of_run
+      snapshot%ins_t1     = C%start_time_of_run
+      snapshot%ins_nlat   = 181
+      snapshot%ins_nlon   = 360
+      ALLOCATE(snapshot%ins_lat            (   snapshot%ins_nlat))
+      snapshot%ins_lat    = 0._dp
+      snapshot%ins_Q_TOA0 = 0._dp
+      snapshot%ins_Q_TOA1 = 0._dp
+      snapshot%Q_TOA      = 0._dp
+
+      ! find the closest timeframe to the start of the run
+      call read_field_from_file_0D( C%filename_insolation, field_name_options_time, closest_t0, time_to_read = C%start_time_of_run)
+
+      if (C%start_time_of_run >= closest_t0) then
+        if (par%primary) WRITE(0,*) '     start time is after ins_t0, reading one step further for ins_t1...'
+        snapshot%ins_t0 = closest_t0
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, snapshot%ins_t1, time_to_read = C%start_time_of_run+1000._dp)
+      else
+        ! otherwise we read one record before for t1
+        if (par%primary) WRITE(0,*) '     start time is before closest ins_t0, reading one step earlier for t0, and using that one for t1...'
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, snapshot%ins_t0, time_to_read = C%start_time_of_run-1000._dp)
+        snapshot%ins_t1 = closest_t0
+      end if
+
+      ! Read the fields at ins_t0
+      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, mesh, C%output_dir, snapshot%ins_Q_TOA0, time_to_read = snapshot%ins_t0)
+      ! Read the fields at ins_t1
+      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, mesh, C%output_dir, snapshot%ins_Q_TOA1, time_to_read = snapshot%ins_t1)
+
+    ELSE
+      CALL crash('unknown choice_insolation_forcing "' // TRIM( C%choice_insolation_forcing) // '"!')
+    END IF
+
+    ! Finalise routine path
+    CALL finalise_routine( routine_name)
+
+  END SUBROUTINE initialise_insolation_forcing
+
+  subroutine remap_climate_realistic(mesh_old, mesh_new, climate, region_name)
+    ! In/out variables
+    type(type_mesh),                        intent(in)    :: mesh_old
+    type(type_mesh),                        intent(in)    :: mesh_new
+    type(type_climate_model),               intent(inout) :: climate
+    character(LEN=3),                       intent(in)    :: region_name
+
+    ! Local variables
+    character(LEN=256), parameter                         :: routine_name = 'remap_climate_realistic'
+    character(LEN=256)                                    :: choice_climate_model
+    character(LEN=256)                                    :: filename_climate_snapshot
+    character(LEN=256)                                    :: choice_SMB_model
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Determine which climate model to initialise for this region
+    select case( region_name)
+    case ('NAM')
+      filename_climate_snapshot = C%filename_climate_snapshot_NAM
+      choice_SMB_model = C%choice_SMB_model_NAM
+    case ('EAS')
+      filename_climate_snapshot = C%filename_climate_snapshot_EAS
+      choice_SMB_model = C%choice_SMB_model_EAS
+    case ('GRL')
+      filename_climate_snapshot = C%filename_climate_snapshot_GRL
+      choice_SMB_model = C%choice_SMB_model_GRL
+    case ('ANT')
+      filename_climate_snapshot = C%filename_climate_snapshot_ANT
+      choice_SMB_model = C%choice_SMB_model_ANT
+    case default
+      call crash('unknown region_name "' // region_name // '"')
+    end select
+
+    select case ( C%choice_climate_model_realistic)
+    case default
+      call crash('remap climate for choice_climate_model_realistic = "' // TRIM( C%choice_climate_model_realistic) // '" not implemented yet!')
+    case ('snapshot')
+      ! Reallocate the snapshot Hs field
+      call reallocate_bounds( climate%snapshot%Hs, mesh_new%vi1, mesh_new%vi2)
+
+      ! Read single-time data from external file
+      call read_field_from_file_2D( filename_climate_snapshot, 'Hs', mesh_new, C%output_dir, climate%snapshot%Hs)
+      call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m', mesh_new, C%output_dir, climate%T2m)
+      call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh_new, C%output_dir, climate%Precip)
+
+      select case ( choice_SMB_model)
+      case default
+        call crash('remap climate for choice_climate_model_realistic = "' // TRIM( C%choice_climate_model_realistic) // '" and choice_SMB_model = "' // TRIM( choice_SMB_model) // '" not implemented yet!')
+      case ('IMAU-ITM')
+        ! Reallocate the insolation fields
+        call remap_insolation( climate%snapshot, mesh_new)
+      case( 'prescribed')
+        ! Nothing extra to do
+      end select
+
+    end select
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_climate_realistic
+
+  subroutine remap_insolation( snapshot, mesh_new)
+  ! In/out variables
+    type(type_mesh),                        intent(in)    :: mesh_new
+    type(type_climate_model_snapshot),      intent(inout) :: snapshot
+
+    ! Local variables
+    character(LEN=256), parameter                         :: routine_name = 'remap_insolation'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! reallocate IMAU-ITM variables
+    call reallocate_bounds( snapshot%ins_Q_TOA0, mesh_new%vi1, mesh_new%vi2,12)
+    call reallocate_bounds( snapshot%ins_Q_TOA1, mesh_new%vi1, mesh_new%vi2,12)
+    call reallocate_bounds( snapshot%Q_TOA, mesh_new%vi1, mesh_new%vi2,12)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_insolation
+
+END MODULE climate_realistic

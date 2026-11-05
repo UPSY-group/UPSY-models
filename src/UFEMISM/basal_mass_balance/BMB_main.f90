@@ -899,7 +899,7 @@ CONTAINS
       BMB%mask_retreat_BMB( vi) = .false.
       BMB%dBMB_fl_retreat ( vi) = 0._dp
 
-      if (climate%retreat%mask( vi) > retreat_mask_threshold) then
+      if (climate%retreat_mask( vi) > retreat_mask_threshold) then
         call calc_subgrid_BMB_weights( geom, vi, w_fl, w_gr)
         if (w_fl > 0._dp) then
           BMB%BMB( vi) = w_fl * retreat_mask_BMB_shelf + w_gr * BMB%BMB_sheet( vi)

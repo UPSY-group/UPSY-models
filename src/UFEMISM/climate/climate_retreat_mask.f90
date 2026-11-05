@@ -145,11 +145,11 @@ contains
       ! Static mask: read once per mesh
 
       if (.not. climate%retreat%loaded) then
-        call read_field_from_file_2D( filename, 'mask', mesh, C%output_dir, climate%retreat%mask)
-        call limit_retreat_mask( mesh, climate%retreat%mask)
+        call read_field_from_file_2D( filename, 'mask', mesh, C%output_dir, climate%retreat_mask)
+        call limit_retreat_mask( mesh, climate%retreat_mask)
         if (C%retreat_mask_applied_only_to_open_ocean) then
           do vi = mesh%vi1, mesh%vi2
-            if (.not. climate%retreat%open_ocean( vi)) climate%retreat%mask( vi) = 0._dp
+            if (.not. climate%retreat%open_ocean( vi)) climate%retreat_mask( vi) = 0._dp
           end do
         end if
         climate%retreat%loaded = .true.
@@ -199,11 +199,11 @@ contains
       w1 = 0._dp
       if (climate%retreat%t1 > climate%retreat%t0) &
         w1 = (t - climate%retreat%t0) / (climate%retreat%t1 - climate%retreat%t0)
-      climate%retreat%mask = (1._dp - w1) * climate%retreat%mask0 + w1 * climate%retreat%mask1
+      climate%retreat_mask = (1._dp - w1) * climate%retreat%mask0 + w1 * climate%retreat%mask1
 
     end if
 
-    call checksum( mesh%pai_V, climate%retreat%mask, 'climate%retreat%mask')
+    call checksum( mesh%pai_V, climate%retreat_mask, 'climate%retreat_mask')
 
     ! Finalise routine path
     call finalise_routine( routine_name)
@@ -249,10 +249,10 @@ contains
 
     if (allocated( climate%retreat%mask0)) deallocate( climate%retreat%mask0)
     if (allocated( climate%retreat%mask1)) deallocate( climate%retreat%mask1)
-    if (allocated( climate%retreat%mask )) deallocate( climate%retreat%mask )
+    if (allocated( climate%retreat_mask )) deallocate( climate%retreat_mask )
     allocate( climate%retreat%mask0( mesh%vi1:mesh%vi2), source = 0._dp)
     allocate( climate%retreat%mask1( mesh%vi1:mesh%vi2), source = 0._dp)
-    allocate( climate%retreat%mask ( mesh%vi1:mesh%vi2), source = 0._dp)
+    allocate( climate%retreat_mask ( mesh%vi1:mesh%vi2), source = 0._dp)
 
     if (C%retreat_mask_applied_only_to_open_ocean) then
       if (allocated( climate%retreat%open_ocean)) deallocate( climate%retreat%open_ocean)

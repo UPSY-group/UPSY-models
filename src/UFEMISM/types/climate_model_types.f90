@@ -142,7 +142,7 @@ MODULE climate_model_types
     real(dp), dimension(:), allocatable     :: times                               ! [yr]  Time axis of the mask file
     real(dp), dimension(:), allocatable     :: mask0                               ! [-]   Cached frame 0 on the model mesh
     real(dp), dimension(:), allocatable     :: mask1                               ! [-]   Cached frame 1 on the model mesh
-    real(dp), dimension(:), allocatable     :: mask                                ! [-]   Retreat mask at the current climate time
+    real(dp), dimension(:), allocatable     :: retreat_mask                                ! [-]   Retreat mask at the current climate time
     logical,  dimension(:), allocatable     :: open_ocean                          !       Ice-free ocean in the reference geometry
     character(len=1024)                     :: open_ocean_reference_filename = ''  !       File containing the open-ocean reference
     character(len=3)                        :: region_name = ''                    !       Model region that the reference belongs to
@@ -177,6 +177,7 @@ MODULE climate_model_types
     REAL(dp)                                :: t_next
 
     ! Add different climate model options
+    real(dp), dimension(:), allocatable                 :: retreat_mask                                ! [-]   Retreat mask at the current climate time
     TYPE(type_climate_model_snapshot)                   :: snapshot
     TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT

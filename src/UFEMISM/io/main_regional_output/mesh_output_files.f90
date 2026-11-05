@@ -841,9 +841,9 @@ contains
       case ('BMB_modelled')
         call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'BMB_modelled', region%BMB%BMB_modelled)
       case ('retreat_mask')
-        if (.not. allocated( region%climate%retreat%mask)) &
+        if (.not. allocated( region%climate%retreat_mask)) &
           call crash('retreat_mask only defined when do_use_ISMIP_future_shelf_collapse_forcing = .true.')
-        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'retreat_mask', region%climate%retreat%mask)
+        call write_to_field_multopt_mesh_dp_2D( region%mesh, filename, ncid, 'retreat_mask', region%climate%retreat_mask)
 
     ! == LADDIE ==
     ! ============

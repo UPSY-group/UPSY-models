@@ -143,7 +143,7 @@ contains
     ! or, with the open-ocean restriction, all ice below present-day sea level
     if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'calving') then
       do vi = mesh%vi1, mesh%vi2
-        if (climate%retreat%mask( vi) <= retreat_mask_threshold) cycle
+        if (climate%retreat_mask( vi) <= retreat_mask_threshold) cycle
         if (C%retreat_mask_applied_only_to_open_ocean) then
           if (refgeo%Hb( vi) < 0._dp) Hi_new( vi) = 0._dp
         elseif (is_floating( geom_new%Hi_eff( vi), geom%Hb( vi), geom%SL( vi))) then

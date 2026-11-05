@@ -11,7 +11,8 @@ module ice_thickness_safeties
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
-  use climate_model_types, only: type_climate_model
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
   use climate_retreat_mask, only: retreat_mask_threshold
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
@@ -39,7 +40,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
-    type(type_climate_model),               intent(in   ) :: climate
+    class(atype_climate_model),             intent(in)    :: climate
 
     ! Local variables:
     character(len=1024), parameter             :: routine_name = 'alter_ice_thickness'

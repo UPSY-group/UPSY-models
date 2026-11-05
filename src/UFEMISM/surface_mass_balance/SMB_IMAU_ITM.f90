@@ -19,6 +19,7 @@ module SMB_IMAU_ITM
   use climate_realistic, only: initialise_insolation_forcing
   use reference_geometry_types, only: type_reference_geometry
   use xy_grid_basic, only: type_xy_grid
+  use climate_model, only: atype_climate_model
 
   implicit none
 
@@ -368,7 +369,7 @@ contains
     real(dp),                             intent(in   ) :: time
     class(atype_ice_model_data),          intent(in   ) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_climate_model),             intent(inout) :: climate
+    class(atype_climate_model),           intent(inout) :: climate
     type(type_xy_grid),                   intent(in   ) :: grid_smooth
 
     ! Local variables:
@@ -385,23 +386,23 @@ contains
     ! Run all the stuff that is specific to SMB model idealised
 
     ! Initialise insolation if needed
-    if (.not. allocated(climate%Q_TOA)) then
-      allocate( climate%Q_TOA  ( self%mesh%vi1:self%mesh%vi2, 12),source=0.0_dp)
-      CALL initialise_insolation_forcing( snapshot_dummy, self%mesh)
+    ! if (.not. allocated(climate%Q_TOA)) then
+    !   allocate( climate%Q_TOA  ( self%mesh%vi1:self%mesh%vi2, 12),source=0.0_dp)
+    !   CALL initialise_insolation_forcing( snapshot_dummy, self%mesh)
 
-      IF (C%start_time_of_run < 0._dp) THEN
-        timeframe_init_insolation = C%start_time_of_run
-      ELSE
-        timeframe_init_insolation = 0._dp
-      END IF
-      CALL get_insolation_at_time( self%mesh, timeframe_init_insolation, snapshot_dummy)
-      do vi = self%mesh%vi1, self%mesh%vi2
-        do m=1,12
-          climate%Q_TOA(vi, m) = snapshot_dummy%Q_TOA(vi, m)
-        end do
-      end do
-    else
-    end if
+    !   IF (C%start_time_of_run < 0._dp) THEN
+    !     timeframe_init_insolation = C%start_time_of_run
+    !   ELSE
+    !     timeframe_init_insolation = 0._dp
+    !   END IF
+    !   CALL get_insolation_at_time( self%mesh, timeframe_init_insolation, snapshot_dummy)
+    !   do vi = self%mesh%vi1, self%mesh%vi2
+    !     do m=1,12
+    !       climate%Q_TOA(vi, m) = snapshot_dummy%Q_TOA(vi, m)
+    !     end do
+    !   end do
+    ! else
+    ! end if
 
     do vi = self%mesh%vi1, self%mesh%vi2
 

@@ -10,9 +10,10 @@ MODULE region_types
   use mesh_basic                                             , ONLY: type_mesh
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   use ice_model_main, only: type_ice_model
-  USE climate_model_types                                    , ONLY: type_climate_model
+  ! USE climate_model_types                                    , ONLY: type_climate_model
   USE ocean_model_types                                      , ONLY: type_ocean_model
   use SMB_model, only: atype_SMB_model
+  use climate_model, only: atype_climate_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   USE LMB_model_types                                        , ONLY: type_LMB_model
   USE AMB_model_types                                        , ONLY: type_AMB_model
@@ -54,7 +55,8 @@ MODULE region_types
     class(type_ice_model), allocatable :: ice
 
     ! The climate model
-    TYPE(type_climate_model)                :: climate
+    ! TYPE(type_climate_model)                :: climate
+    class(atype_climate_model), allocatable :: climate
 
     ! The ocean model
     TYPE(type_ocean_model)                  :: ocean

@@ -17,7 +17,8 @@ MODULE BMB_main
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE BMB_model_types                                        , ONLY: type_BMB_model
-  use climate_model_types, only: type_climate_model
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
   use climate_retreat_mask, only: retreat_mask_threshold, retreat_mask_BMB_shelf
   USE laddie_model_types                                     , ONLY: type_laddie_model
   USE laddie_forcing_types                                   , ONLY: type_laddie_forcing
@@ -60,7 +61,7 @@ CONTAINS
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
     logical,                                intent(in)    :: is_initial
-    type(type_climate_model),               intent(in)    :: climate
+    class(atype_climate_model),             intent(in)    :: climate
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'run_BMB_model'
@@ -743,7 +744,8 @@ CONTAINS
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
-    type(type_climate_model),               intent(in   ) :: climate
+    class(atype_climate_model),             intent(in   ) :: climate
+    
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_BMB_model'
@@ -880,7 +882,7 @@ CONTAINS
     ! In- and output variables
     type(type_mesh),                        intent(in   ) :: mesh
     class(atype_ice_geometry_model_data),   intent(in   ) :: geom
-    type(type_climate_model),               intent(in   ) :: climate
+    class(atype_climate_model),             intent(in   ) :: climate
     type(type_BMB_model),                   intent(inout) :: BMB
     logical,                                intent(in   ) :: do_update_modelled
 

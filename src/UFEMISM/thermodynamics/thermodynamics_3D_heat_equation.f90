@@ -16,7 +16,8 @@ MODULE thermodynamics_3D_heat_equation
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
-  USE climate_model_types                                    , ONLY: type_climate_model
+  ! USE climate_model_types                                    , ONLY: type_climate_model
+  use climate_model, only: atype_climate_model
   use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use zeta_gradients, only: calc_zeta_gradients
@@ -50,7 +51,7 @@ CONTAINS
     class(atype_ice_model_data),          INTENT(INOUT) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
     class(atype_ice_velocity_model_data), intent(in   ) :: vel
-    TYPE(type_climate_model),             INTENT(IN)    :: climate
+    class(atype_climate_model),           intent(in)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
     REAL(dp),                             INTENT(IN)    :: dt
 

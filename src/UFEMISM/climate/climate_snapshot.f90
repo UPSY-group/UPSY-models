@@ -92,47 +92,61 @@ contains
       ! Add routine to call stack
       call init_routine( routine_name)
 
-      call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
-    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-    name      = 'T2m_baseline', &
-    long_name = 'Baseline monthly mean 2-m air temperature', &
-    units     = 'K', &
-    remap_method = 'reallocate')
+    call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'T2m_baseline', &
+      long_name = 'Baseline monthly mean 2-m air temperature', &
+      units     = 'K', &
+      remap_method = 'reallocate')
 
-      call self%create_field( self%Precip_baseline, self%wPrecip_baseline, &
-    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-    name      = 'Precip_baseline', &
-    long_name = 'Baseline monthly total precipitation', &
-    units     = 'm.w.e. month^-1', &
-    remap_method = 'reallocate')
+    call self%create_field( self%Precip_baseline, self%wPrecip_baseline, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Precip_baseline', &
+      long_name = 'Baseline monthly total precipitation', &
+      units     = 'm.w.e. month^-1', &
+      remap_method = 'reallocate')
 
-      call self%create_field( self%Hs_baseline, self%wHs_baseline, &
-    self%mesh, Arakawa_grid%a(), &
-    name      = 'Hs_baseline', &
-    long_name = 'Baseline Surface elevation', &
-    units     = 'm', &
-    remap_method = 'reallocate')
+    call self%create_field( self%Hs_baseline, self%wHs_baseline, &
+      self%mesh, Arakawa_grid%a(), &
+      name      = 'Hs_baseline', &
+      long_name = 'Baseline Surface elevation', &
+      units     = 'm', &
+      remap_method = 'reallocate')
 
-      call self%create_field( self%Q_TOA, self%wQ_TOA, &
-    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-    name      = 'Q_TOA', &
-    long_name = 'Monthly insolation', &
-    units     = 'W m^-2', &
-    remap_method = 'reallocate')
+    call self%create_field( self%Q_TOA, self%wQ_TOA, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Q_TOA', &
+      long_name = 'Monthly insolation', &
+      units     = 'W m^-2', &
+      remap_method = 'reallocate')
 
-      call self%create_field( self%ins_Q_TOA0, self%wins_Q_TOA0, &
-    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-    name      = 'ins_Q_TOA0', &
-    long_name = 'Monthly insolation (prev timeframe)', &
-    units     = 'W m^-2', &
-    remap_method = 'reallocate')
+    call self%create_field( self%ins_Q_TOA0, self%wins_Q_TOA0, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'ins_Q_TOA0', &
+      long_name = 'Monthly insolation (prev timeframe)', &
+      units     = 'W m^-2', &
+      remap_method = 'reallocate')
 
-      call self%create_field( self%ins_Q_TOA1, self%wins_Q_TOA1, &
-    self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-    name      = 'ins_Q_TOA1', &
-    long_name = 'Monthly insolation (next timeframe)', &
-    units     = 'W m^-2', &
-    remap_method = 'reallocate')    
+    call self%create_field( self%ins_Q_TOA1, self%wins_Q_TOA1, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'ins_Q_TOA1', &
+      long_name = 'Monthly insolation (next timeframe)', &
+      units     = 'W m^-2', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Wind_LR, self%wWind_LR, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Wind_LR', &
+      long_name = 'Monthly 10m wind velocity in x-direction', &
+      units     = 'm s^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Wind_DU, self%wWind_DU, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Wind_DU', &
+      long_name = 'Monthly 10m wind velocity in y-direction', &
+      units     = 'm s^-1', &
+      remap_method = 'reallocate')
 
 
       ! Remove routine from call stack

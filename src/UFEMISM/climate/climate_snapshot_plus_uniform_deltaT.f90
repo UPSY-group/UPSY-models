@@ -133,7 +133,21 @@ contains
       name      = 'ins_Q_TOA1', &
       long_name = 'Monthly insolation (next timeframe)', &
       units     = 'W m^-2', &
-      remap_method = 'reallocate')    
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Wind_LR, self%wWind_LR, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Wind_LR', &
+      long_name = 'Monthly 10m wind velocity in x-direction', &
+      units     = 'm s^-1', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%Wind_DU, self%wWind_DU, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'Wind_DU', &
+      long_name = 'Monthly 10m wind velocity in y-direction', &
+      units     = 'm s^-1', &
+      remap_method = 'reallocate')  
 
 
     ! Remove routine from call stack
@@ -232,7 +246,7 @@ contains
 
     call read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , self%mesh, C%output_dir, self%Hs_baseline)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
-    call read_field_from_file_2d_monthly( filename_climate_snapshot, 'precip', self%mesh, c%output_dir, self%precip_baseline)
+    call read_field_from_file_2d_monthly( filename_climate_snapshot, 'Precip', self%mesh, c%output_dir, self%Precip_baseline)
     
     
     ! Adding deltaT to the baseline temperature field (uniform in space and time)

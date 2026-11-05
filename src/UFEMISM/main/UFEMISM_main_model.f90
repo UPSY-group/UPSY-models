@@ -26,11 +26,12 @@ MODULE UFEMISM_main_model
   USE thermodynamics_main                                    , ONLY: initialise_thermodynamics_model, run_thermodynamics_model, &
                                                                      create_restart_file_thermo, write_to_restart_file_thermo
   USE global_forcings_main                                   , ONLY: initialise_global_forcings, update_sealevel_in_model, update_sealevel_at_model_time, update_CO2_at_model_time
-  USE climate_main                                           , ONLY: initialise_climate_model, run_climate_model, remap_climate_model, &
-                                                                     create_restart_file_climate_model, write_to_restart_file_climate_model
+  ! USE climate_main                                           , ONLY: initialise_climate_model, run_climate_model, remap_climate_model, &
+  !                                                                    create_restart_file_climate_model, write_to_restart_file_climate_model
   USE ocean_main                                             , ONLY: initialise_ocean_model, run_ocean_model, remap_ocean_model, &
                                                                      create_restart_file_ocean_model, write_to_restart_file_ocean_model
-  use SMB_model, only: create_SMB_model
+  use SMB_model,     only: create_SMB_model
+  use climate_model, only: create_climate_model
   USE BMB_main                                               , ONLY: initialise_BMB_model, run_BMB_model, remap_BMB_model, &
                                                                      create_restart_file_BMB_model, write_to_restart_file_BMB_model
   USE LMB_main                                               , ONLY: initialise_LMB_model, run_LMB_model, remap_LMB_model
@@ -142,8 +143,9 @@ CONTAINS
       CALL run_thermodynamics_model( region)
 
       ! Calculate the climate
-      CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
-        region%climate, regional_forcing, region%name, region%time, region%SMB)
+      call region%climate%run( region%time, region%ice, region%ice%geom, region%climate, region%grid_smooth)
+      ! CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+      !   region%climate, regional_forcing, region%name, region%time, region%SMB)
 
       ! Calculate the ocean
       CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
@@ -326,7 +328,8 @@ CONTAINS
       ! Write to the restart files for all the model components
       CALL write_to_restart_files_ice_model   ( region%mesh, region%ice, region%ice%momentum_balance_solver, region%time)
       CALL write_to_restart_file_thermo       ( region%mesh, region%ice                 , region%time)
-      CALL write_to_restart_file_climate_model( region%mesh, region%climate, region%name, region%time)
+      ! CALL write_to_restart_file_climate_model( region%mesh, region%climate, region%name, region%time)
+      call region%climate%write_to_restart_file( trim( C%output_dir))
       CALL write_to_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name, region%time)
       call region%SMB%write_to_restart_file( trim( C%output_dir))
       CALL write_to_restart_file_BMB_model    ( region%mesh, region%BMB    , region%name, region%time)
@@ -542,8 +545,26 @@ CONTAINS
     ! ===== Climate =====
     ! ===================
 
-    CALL initialise_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
-      region%climate, regional_forcing, region%refgeo_PD, region%refgeo_init, region%name)
+    ! CALL initialise_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+    !   region%climate, regional_forcing, region%refgeo_PD, region%refgeo_init, region%name)
+    select case (region%name)
+    case default
+      call crash('unknown region name "' // region%name // '"')
+    case ('NAM')
+      call create_climate_model( region%climate, C%choice_climate_model_NAM)
+    case ('EAS')
+      call create_climate_model( region%climate, C%choice_climate_model_EAS)
+    case ('GRL')
+      call create_climate_model( region%climate, C%choice_climate_model_GRL)
+    case ('ANT')
+      call create_climate_model( region%climate, C%choice_climate_model_ANT)
+    end select
+
+    call region%climate%allocate( region%name, region%mesh)
+    call region%climate%initialise( region%ice%geom, region%refgeo_init, region%refgeo_PD)
+
+    call checksum( region%mesh%pai_V, region%climate%T2m, 'region%climate%T2m')
+    call checksum( region%mesh%pai_V, region%climate%Precip, 'region%climate%Precip')
 
     ! ===== Ocean =====
     ! =================
@@ -597,8 +618,9 @@ CONTAINS
     ! ============================================================
 
     ! Run the models
-    CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
-      region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
+    ! CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
+    !   region%climate, regional_forcing, region%name, C%start_time_of_run, region%SMB)
+    call region%climate%run( region%ice%geom, C%start_time_of_run)
     CALL run_ocean_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
       region%ocean, region%name, C%start_time_of_run)
     call region%SMB%run( C%start_time_of_run, region%ice, region%ice%geom, region%climate, region%grid_smooth)
@@ -1318,7 +1340,8 @@ CONTAINS
 
     ! Remap all the model data from the old mesh to the new mesh
     CALL remap_ice_dynamics_model(    region%mesh, mesh_new, region%ice, region%bed_roughness, region%refgeo_PD, region%SMB, region%BMB, region%LMB, region%AMB, region%GIA, region%time, region%name, forcing)
-    CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%refgeo_PD, region%refgeo_init, region%grid_smooth, region%ice, region%ice%geom, forcing)
+    ! CALL remap_climate_model(         region%mesh, mesh_new,             region%climate, region%name, region%time, region%refgeo_PD, region%refgeo_init, region%grid_smooth, region%ice, region%ice%geom, forcing)
+    call region%climate%remap( mesh_new, region%refgeo_init, region%refgeo_PD, region%ice%geom)
     CALL remap_ocean_model(           region%mesh, mesh_new, region%ice%geom, region%ocean  , region%name, region%time)
     call region%SMB%remap( mesh_new, region%time, region%refgeo_init, region%refgeo_PD, region%ice%geom)
     CALL remap_BMB_model(             region%mesh, mesh_new, region%ice, region%ice%geom, region%ocean, region%BMB    , region%name, region%time, region%climate)

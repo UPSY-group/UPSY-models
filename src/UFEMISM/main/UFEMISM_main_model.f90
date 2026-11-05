@@ -143,7 +143,7 @@ CONTAINS
       CALL run_thermodynamics_model( region)
 
       ! Calculate the climate
-      call region%climate%run( region%time, region%ice, region%ice%geom, region%climate, region%grid_smooth)
+      call region%climate%run( region%ice%geom, region%time)
       ! CALL run_climate_model( region%mesh, region%grid_smooth, region%ice, region%ice%geom, &
       !   region%climate, regional_forcing, region%name, region%time, region%SMB)
 
@@ -294,7 +294,7 @@ CONTAINS
       ! Create the restart files for all the model components
       CALL create_restart_files_ice_model   ( region%mesh, region%ice, region%ice%momentum_balance_solver)
       CALL create_restart_file_thermo       ( region%mesh, region%ice)
-      CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
+      ! CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
       CALL create_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name)
       CALL create_restart_file_BMB_model    ( region%mesh, region%BMB    , region%name)
       CALL create_restart_file_GIA_model    ( region%mesh, region%GIA    , region%name)
@@ -706,7 +706,7 @@ CONTAINS
     ! Create the restart files for all the model components
     CALL create_restart_files_ice_model   ( region%mesh, region%ice, region%ice%momentum_balance_solver)
     CALL create_restart_file_thermo       ( region%mesh, region%ice)
-    CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
+    ! CALL create_restart_file_climate_model( region%mesh, region%climate, region%name)
     CALL create_restart_file_ocean_model  ( region%mesh, region%ocean  , region%name)
     CALL create_restart_file_BMB_model    ( region%mesh, region%BMB    , region%name)
     CALL create_restart_file_GIA_model    ( region%mesh, region%GIA    , region%name)

@@ -52,7 +52,8 @@ module ISMIP7_SMB
   use parameters, only: sec_per_year, ice_density, NaN, freshwater_density
   use ISMIP7_forcing_field_types, only: type_ISMIP7_forcing_field_monthly, type_ISMIP7_forcing_field_yearly
   use netcdf_io_main, only: read_field_from_file_2d
-  use climate_model_types, only: type_climate_model
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
   use xy_grid_basic, only: type_xy_grid
 
   implicit none
@@ -321,7 +322,7 @@ contains
     real(dp),                             intent(in   ) :: time
     class(atype_ice_model_data),          intent(in   ) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_climate_model),             intent(inout) :: climate
+    class(atype_climate_model),           intent(inout) :: climate
     type(type_xy_grid),                   intent(in   ) :: grid_smooth
 
     ! Local variables:

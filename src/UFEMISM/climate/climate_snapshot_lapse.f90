@@ -45,9 +45,6 @@ module climate_snapshot_lapse
       real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline     => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
       type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
-      ! Insolation
-      real(dp), dimension(:,:), contiguous, pointer :: Q_TOA           => null()
-      type(MPI_WIN) :: wQ_TOA
 
       ! Wind
       real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction

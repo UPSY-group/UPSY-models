@@ -37,10 +37,9 @@ module climate_snapshot_plus_uniform_deltaT
         real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline     => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
         type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
-        real(dp), dimension(:,:), contiguous, pointer :: Q_TOA       => null()
         real(dp), dimension(:,:), contiguous, pointer :: ins_Q_TOA0  => null()
         real(dp), dimension(:,:), contiguous, pointer :: ins_Q_TOA1  => null()
-        type(MPI_WIN) :: wQ_TOA, wins_Q_TOA0, wins_Q_TOA1
+        type(MPI_WIN) :: wins_Q_TOA0, wins_Q_TOA1
         
         ! Region-specific info
         character(len=1024)                           :: filename_climate_snapshot

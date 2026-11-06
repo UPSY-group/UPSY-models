@@ -11,6 +11,9 @@ module ice_thickness_safeties
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
+  use climate_retreat_mask, only: retreat_mask_threshold
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_basic, only: par, sync
@@ -26,7 +29,7 @@ module ice_thickness_safeties
 
 contains
 
-  subroutine alter_ice_thickness( mesh, ice, geom, Hi_old, Hi_new, refgeo, time)
+  subroutine alter_ice_thickness( mesh, ice, geom, Hi_old, Hi_new, refgeo, time, climate)
     !< Modify the predicted ice thickness in some sneaky way
 
     ! In- and output variables:
@@ -37,6 +40,7 @@ contains
     real(dp), dimension(mesh%vi1:mesh%vi2), intent(inout) :: Hi_new
     type(type_reference_geometry),          intent(in   ) :: refgeo
     real(dp),                               intent(in   ) :: time
+    class(atype_climate_model),             intent(in)    :: climate
 
     ! Local variables:
     character(len=1024), parameter             :: routine_name = 'alter_ice_thickness'
@@ -131,6 +135,19 @@ contains
     if (C%continental_shelf_calving) then
       do vi = mesh%vi1, mesh%vi2
         if (refgeo%Hi( vi) == 0._dp .and. refgeo%Hb( vi) < C%continental_shelf_min_height) then
+          Hi_new( vi) = 0._dp
+        end if
+      end do
+    end if
+
+    ! if so specified, remove ice where the prescribed retreat mask is active: floating ice,
+    ! or, with the open-ocean restriction, all ice below present-day sea level
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'calving') then
+      do vi = mesh%vi1, mesh%vi2
+        if (climate%retreat_mask( vi) <= retreat_mask_threshold) cycle
+        if (C%retreat_mask_applied_only_to_open_ocean) then
+          if (refgeo%Hb( vi) < 0._dp) Hi_new( vi) = 0._dp
+        elseif (is_floating( geom_new%Hi_eff( vi), geom%Hb( vi), geom%SL( vi))) then
           Hi_new( vi) = 0._dp
         end if
       end do

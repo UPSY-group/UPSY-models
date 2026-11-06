@@ -230,6 +230,9 @@ contains
     ! Open the NetCDF file
     call open_existing_netcdf_file_for_reading( filename, ncid)
 
+    ! Check if the file contains a valid time dimension and variable
+    call check_time( filename, ncid)
+
     ! inquire size of time dimension
     call inquire_dim_multopt( filename, ncid, field_name_options_time, id_dim_time, dim_length = nt)
 
@@ -239,25 +242,26 @@ contains
     ! allocate memory
     allocate( time( nt))
 
-    ! Read time from file
+    ! Read time from file, convert on the primary, and broadcast as double precision
     select case (var_type)
     case default
       call crash('invalid variable type for time in file "' // trim( filename) // '"')
     case (NF90_DOUBLE, NF90_FLOAT)
       call read_var_primary( filename, ncid, id_var_time, time)
-      call MPI_BCAST( time, nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
     case (NF90_INT)
       allocate( time_int( nt))
       call read_var_primary( filename, ncid, id_var_time, time_int)
-      call MPI_BCAST( time_int, nt, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      time = real( time_int, dp)
+      if (par%primary) time = real( time_int, dp)
     case (NF90_INT64)
       ! Yes, confusing... NetCDF uses bits, i.e. 64-bit, while Fortran uses bytes, i.e. 8-byte
       allocate( time_int8( nt))
       call read_var_primary( filename, ncid, id_var_time, time_int8)
-      call MPI_BCAST( time_int8, nt, MPI_INTEGER, 0, MPI_COMM_WORLD, ierr)
-      time = real( time_int8, dp)
+      if (par%primary) time = real( time_int8, dp)
     end select
+    call MPI_BCAST( time, nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
+
+    ! Close the NetCDF file
+    call close_netcdf_file( ncid)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

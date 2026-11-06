@@ -12,7 +12,8 @@ module SMB_snapshot_plus_anomalies
     inquire_dim_multopt, inquire_var_multopt, read_var_primary, close_netcdf_file, &
     field_name_options_time, read_field_from_file_2D, read_field_from_file_2D_monthly
   use mpi_f08, only: MPI_WIN, MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
-  use climate_model_types, only: type_climate_model
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use reference_geometry_types, only: type_reference_geometry
@@ -227,7 +228,7 @@ contains
     real(dp),                             intent(in   ) :: time
     class(atype_ice_model_data),          intent(in   ) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_climate_model),             intent(inout) :: climate
+    class(atype_climate_model),           intent(inout) :: climate
     type(type_xy_grid),                   intent(in   ) :: grid_smooth
 
     ! Local variables:

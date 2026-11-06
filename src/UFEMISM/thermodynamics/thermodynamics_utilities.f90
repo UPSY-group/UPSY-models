@@ -14,7 +14,8 @@ MODULE thermodynamics_utilities
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   USE BMB_model_types                                        , ONLY: type_BMB_model
-  USE climate_model_types                                    , ONLY: type_climate_model
+  ! USE climate_model_types                                    , ONLY: type_climate_model
+  use climate_model, only: atype_climate_model
   use CSR_matrix_vector_multiplication                       , only: multiply_CSR_matrix_with_vector_local
   use SMB_model, only: atype_SMB_model
   use mesh_disc_apply_operators, only: ddx_a_b_3D, ddy_a_b_3D
@@ -287,7 +288,7 @@ CONTAINS
     TYPE(type_mesh),                                INTENT(IN)    :: mesh
     class(atype_ice_model_data),                    INTENT(INOUT) :: ice
     class(atype_ice_geometry_model_data),           intent(in   ) :: geom
-    TYPE(type_climate_model),                       INTENT(IN)    :: climate
+    class(atype_climate_model),                     intent(in)    :: climate
     class(atype_SMB_model),                         intent(in   ) :: SMB
     REAL(dp), DIMENSION(mesh%vi1:mesh%vi2,mesh%nz), INTENT(INOUT) :: Ti
     INTEGER,                                        INTENT(IN)    :: vi

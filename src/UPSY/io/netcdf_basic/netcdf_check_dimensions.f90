@@ -648,6 +648,7 @@ subroutine check_time( filename, ncid)
   integer                                 :: ndims_of_var
   integer,  dimension( NF90_MAX_VAR_DIMS) :: dims_of_var
   real(dp), dimension(:), allocatable     :: time
+  integer,       dimension(:), allocatable :: time_int
   integer(int8), dimension(:), allocatable :: time_int8
 
   ! Add routine to path
@@ -664,8 +665,8 @@ subroutine check_time( filename, ncid)
   call inquire_var_multopt( filename, ncid, field_name_options_time, id_var, &
     var_name = var_name, var_type = var_type, ndims_of_var = ndims_of_var, dims_of_var = dims_of_var)
   if (id_var == -1) call crash('no valid time variable could be found in file "' // trim( filename) // '"!')
-  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE .or. var_type == NF90_INT64)) &
-    call crash('time variable in file "' // trim( filename) // '" is not of type NF90_FLOAT or NF90_DOUBLE or NF90_INT64!')
+  if (.not. (var_type == NF90_FLOAT .or. var_type == NF90_DOUBLE .or. var_type == NF90_INT .or. var_type == NF90_INT64)) &
+    call crash('time variable in file "' // trim( filename) // '" is not of type NF90_FLOAT, NF90_DOUBLE, NF90_INT, or NF90_INT64!')
   if (ndims_of_var /= 1) call crash('time variable in file "' // trim( filename) // '" has {int_01} dimensions!', int_01 = ndims_of_var)
   if (dims_of_var( 1) /= id_dim) call crash('time variable in file "' // trim( filename) // '" does not have time as a dimension!')
 
@@ -681,10 +682,14 @@ subroutine check_time( filename, ncid)
       call crash('invalid variable type for variable time in file ' // trim( filename))
     case (NF90_FLOAT, NF90_DOUBLE)
       call read_var_primary( filename, ncid, id_var, time)
+    case (NF90_INT)
+      allocate( time_int( n))
+      call read_var_primary( filename, ncid, id_var, time_int)
+      if (par%primary) time = real( time_int, dp)
     case (NF90_INT64)
       allocate( time_int8( n))
       call read_var_primary( filename, ncid, id_var, time_int8)
-      time = real( time_int8, dp)
+      if (par%primary) time = real( time_int8, dp)
     end select
 
     ! Check validity

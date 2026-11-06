@@ -37,6 +37,8 @@ MODULE BMB_model_types
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_inv                     ! [m.i.e./yr] Inverted basal mass balance
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_transition_phase        ! [m.i.e./yr] Basal mass balance transition phase, weighted average between inversion and modelled BMB
     REAL(dp), DIMENSION(:    ), ALLOCATABLE :: BMB_modelled                ! [m.i.e./yr] Basal mass balance modelled (needs to be saved for computation BMB_transition_phase)
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE :: dBMB_fl_retreat             ! [m.i.e./yr] Change of the floating-ice BMB by the prescribed retreat melt, relative to BMB_shelf (for diagnostics)
+    LOGICAL,  DIMENSION(:    ), ALLOCATABLE :: mask_retreat_BMB            !             Vertices where the prescribed retreat melt was applied in the last call
 
     ! Metadata
     CHARACTER(LEN=256)                      :: restart_filename            ! Name for generated restart file

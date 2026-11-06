@@ -133,6 +133,22 @@ MODULE climate_model_types
 
   END TYPE type_climate_model_matrix
 
+  type type_climate_retreat_mask
+    ! Prescribed ice-shelf retreat mask (see climate_retreat_mask.f90)
+
+    logical                                 :: loaded = .false.                    !       Whether the cached frames are valid on the current mesh
+    real(dp)                                :: t0 = 0._dp                          ! [yr]  Time of cached frame 0
+    real(dp)                                :: t1 = 0._dp                          ! [yr]  Time of cached frame 1
+    real(dp), dimension(:), allocatable     :: times                               ! [yr]  Time axis of the mask file
+    real(dp), dimension(:), allocatable     :: mask0                               ! [-]   Cached frame 0 on the model mesh
+    real(dp), dimension(:), allocatable     :: mask1                               ! [-]   Cached frame 1 on the model mesh
+    real(dp), dimension(:), allocatable     :: retreat_mask                                ! [-]   Retreat mask at the current climate time
+    logical,  dimension(:), allocatable     :: open_ocean                          !       Ice-free ocean in the reference geometry
+    character(len=1024)                     :: open_ocean_reference_filename = ''  !       File containing the open-ocean reference
+    character(len=3)                        :: region_name = ''                    !       Model region that the reference belongs to
+
+  end type type_climate_retreat_mask
+
   TYPE type_climate_model
     ! The climate model data structure.
 
@@ -161,6 +177,7 @@ MODULE climate_model_types
     REAL(dp)                                :: t_next
 
     ! Add different climate model options
+    real(dp), dimension(:), allocatable                 :: retreat_mask                                ! [-]   Retreat mask at the current climate time
     TYPE(type_climate_model_snapshot)                   :: snapshot
     TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
@@ -169,6 +186,7 @@ MODULE climate_model_types
     type(type_climate_model_ISMIP7)                     :: ISMIP7
     type(type_climate_model_snapshot_lapse)             :: snapshot_lapse
     type(type_climate_model_TIPMIP)                     :: TIPMIP
+    type(type_climate_retreat_mask)                     :: retreat            ! Prescribed ice-shelf retreat mask
 
   END TYPE type_climate_model
 

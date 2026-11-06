@@ -118,6 +118,10 @@ contains
             BMB_gr( vi) = 0._dp
           end if
       end select
+      ! Prescribed retreat melt, which replaces BMB_shelf in the applied BMB
+      if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'BMB') then
+        BMB_fl( vi) = BMB_fl( vi) + region%BMB%dBMB_fl_retreat( vi)
+      end if
     end do
 
     ! Get delta t since last current time

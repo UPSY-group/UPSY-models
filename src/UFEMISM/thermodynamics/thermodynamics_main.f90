@@ -16,7 +16,8 @@ MODULE thermodynamics_main
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
-  USE climate_model_types                                    , ONLY: type_climate_model
+  ! USE climate_model_types                                    , ONLY: type_climate_model
+  use climate_model, only: atype_climate_model
   use SMB_model, only: atype_SMB_model
   USE BMB_model_types                                        , ONLY: type_BMB_model
   use netcdf_io_main
@@ -206,7 +207,7 @@ CONTAINS
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
     class(atype_ice_model_data),          INTENT(INOUT) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    TYPE(type_climate_model),             INTENT(IN)    :: climate
+    class(atype_climate_model),           intent(in)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
     CHARACTER(LEN=3),                     INTENT(IN)    :: region_name
 
@@ -314,7 +315,7 @@ CONTAINS
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
     class(atype_ice_model_data),          INTENT(INOUT) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    TYPE(type_climate_model),             INTENT(IN)    :: climate
+    class(atype_climate_model),           intent(in)    :: climate
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                       :: routine_name = 'initialise_ice_temperature_linear'
@@ -364,7 +365,7 @@ CONTAINS
     TYPE(type_mesh),                      INTENT(IN)    :: mesh
     class(atype_ice_model_data),          INTENT(INOUT) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    TYPE(type_climate_model),             INTENT(IN)    :: climate
+    class(atype_climate_model),           intent(in)    :: climate
     class(atype_SMB_model),               intent(in   ) :: SMB
 
     ! Local variables:

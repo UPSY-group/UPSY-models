@@ -545,6 +545,7 @@ contains
 
     ! Calculate the basal friction coefficient for the current velocity solution
     ! This is where the sliding law is called!
+
     call map_b_a_2D( self%mesh, self%u_vav_b, u_vav_a)
     call map_b_a_2D( self%mesh, self%v_vav_b, v_vav_a)
     call calc_basal_friction_coefficient( self%mesh, geom, bed_roughness, u_vav_a, v_vav_a, &

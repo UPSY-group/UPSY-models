@@ -260,6 +260,11 @@ contains
             end if
         end select
 
+        ! Prescribed retreat melt, which replaces BMB_shelf in the applied BMB
+        if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'BMB') then
+          scalars%BMB_fl = scalars%BMB_fl + BMB%dBMB_fl_retreat( vi) * mesh%A( vi) * ice_density * 1.0E-12_dp ! [Gt/yr]
+        end if
+
         ! Over grounded ice
         if (geom%mask_grounded_ice( vi)) then
           scalars%SMB_gr = scalars%SMB_gr + SMB%SMB( vi) * mesh%A( vi) * ice_density*1.0E-12_dp ! [Gt/yr]

@@ -17,6 +17,9 @@ MODULE BMB_main
   USE ocean_model_types                                      , ONLY: type_ocean_model
   USE reference_geometry_types                               , ONLY: type_reference_geometry
   USE BMB_model_types                                        , ONLY: type_BMB_model
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
+  use climate_retreat_mask, only: retreat_mask_threshold, retreat_mask_BMB_shelf
   USE laddie_model_types                                     , ONLY: type_laddie_model
   USE laddie_forcing_types                                   , ONLY: type_laddie_forcing
   USE BMB_idealised                                          , ONLY: initialise_BMB_model_idealised, run_BMB_model_idealised
@@ -45,7 +48,7 @@ CONTAINS
 ! ===== Main routines =====
 ! =========================
 
-  SUBROUTINE run_BMB_model( mesh, ice, geom, ocean, refgeo, BMB, region_name, time, is_initial)
+  SUBROUTINE run_BMB_model( mesh, ice, geom, ocean, refgeo, BMB, region_name, time, climate, is_initial)
     ! Calculate the basal mass balance
 
     ! In/output variables:
@@ -58,6 +61,7 @@ CONTAINS
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
     logical,                                intent(in)    :: is_initial
+    class(atype_climate_model),             intent(in)    :: climate
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'run_BMB_model'
@@ -118,6 +122,10 @@ CONTAINS
           CASE DEFAULT
             CALL apply_BMB_subgrid_scheme( mesh, geom, BMB)
         END SELECT
+
+        ! Prescribe shelf melt where the retreat mask is active
+        if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'BMB') &
+          call apply_retreat_mask_BMB( mesh, geom, climate, BMB, C%do_BMB_transition_phase)
 
         CALL finalise_routine( routine_name)
         RETURN
@@ -237,6 +245,10 @@ CONTAINS
         CALL apply_BMB_subgrid_scheme( mesh, geom, BMB)
     END SELECT
 
+    ! Prescribe shelf melt where the retreat mask is active
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'BMB') &
+      call apply_retreat_mask_BMB( mesh, geom, climate, BMB, .false.)
+
     ! save BMB in BMB_modelled if applying transition phase
     IF (C%do_BMB_transition_phase) THEN
       DO vi = mesh%vi1, mesh%vi2
@@ -300,6 +312,14 @@ CONTAINS
         CALL crash('unknown region_name "' // region_name // '"')
     END SELECT
 
+    ! These models set the applied BMB directly instead of recomputing it from BMB_shelf,
+    ! so a prescribed retreat melt could not be withdrawn when the mask becomes inactive
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'BMB') then
+      if (choice_BMB_model == 'inverted' .or. choice_BMB_model == 'prescribed_fixed') &
+        call crash('shelf_collapse_type = "BMB" cannot be combined with choice_BMB_model "' // &
+          trim( choice_BMB_model) // '"')
+    end if
+
     ! Allocate memory for main variables
     ALLOCATE( BMB%BMB( mesh%vi1:mesh%vi2))
     BMB%BMB = 0._dp
@@ -323,6 +343,12 @@ CONTAINS
     ! Allocate modelled BMB
     ALLOCATE( BMB%BMB_modelled( mesh%vi1:mesh%vi2))
     BMB%BMB_modelled = 0._dp
+
+    ! Allocate prescribed retreat melt diagnostics
+    ALLOCATE( BMB%dBMB_fl_retreat( mesh%vi1:mesh%vi2))
+    BMB%dBMB_fl_retreat = 0._dp
+    ALLOCATE( BMB%mask_retreat_BMB( mesh%vi1:mesh%vi2))
+    BMB%mask_retreat_BMB = .false.
 
     ! Set time of next calculation to start time
     BMB%t_next = C%start_time_of_run
@@ -706,7 +732,7 @@ CONTAINS
 
   END SUBROUTINE create_restart_file_BMB_laddie_region
 
-  SUBROUTINE remap_BMB_model( mesh_old, mesh_new, ice, geom, ocean, BMB, region_name, time)
+  SUBROUTINE remap_BMB_model( mesh_old, mesh_new, ice, geom, ocean, BMB, region_name, time, climate)
     ! Remap the BMB model
 
     ! In- and output variables
@@ -718,6 +744,8 @@ CONTAINS
     TYPE(type_BMB_model),                   INTENT(INOUT) :: BMB
     CHARACTER(LEN=3),                       INTENT(IN)    :: region_name
     REAL(dp),                               INTENT(IN)    :: time
+    class(atype_climate_model),             intent(in   ) :: climate
+    
 
     ! Local variables:
     CHARACTER(LEN=256), PARAMETER                         :: routine_name = 'remap_BMB_model'
@@ -751,6 +779,8 @@ CONTAINS
     CALL reallocate_bounds( BMB%BMB_inv, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_transition_phase, mesh_new%vi1, mesh_new%vi2)
     CALL reallocate_bounds( BMB%BMB_modelled, mesh_new%vi1, mesh_new%vi2)
+    CALL reallocate_bounds( BMB%dBMB_fl_retreat, mesh_new%vi1, mesh_new%vi2)
+    CALL reallocate_bounds( BMB%mask_retreat_BMB, mesh_new%vi1, mesh_new%vi2)
 
     ! Compute grounded ice mass balance on the new mesh
     SELECT CASE (C%choice_BMB_grounded)
@@ -794,6 +824,11 @@ CONTAINS
         CALL crash('unknown choice_BMB_model "' // TRIM( choice_BMB_model) // '"')
     END SELECT
 
+    ! Prescribe shelf melt where the (already remapped) retreat mask is active, so that it
+    ! also applies in the first ice-dynamics step on the new mesh
+    if (C%do_use_ISMIP_future_shelf_collapse_forcing .and. C%shelf_collapse_type == 'BMB') &
+      call apply_retreat_mask_BMB( mesh_new, geom, climate, BMB, C%do_BMB_transition_phase)
+
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
@@ -831,6 +866,97 @@ CONTAINS
     CALL finalise_routine( routine_name)
 
   END SUBROUTINE apply_BMB_subgrid_scheme
+
+  subroutine apply_retreat_mask_BMB( mesh, geom, climate, BMB, do_update_modelled)
+    ! Prescribe shelf melt where the retreat mask is active
+    !
+    ! Only vertices where the mask is active and the sub-grid scheme assigns a floating
+    ! weight are changed. There, the applied BMB is recomputed from the prescribed shelf
+    ! melt and the sheet BMB with the selected sub-grid scheme, and limited to the
+    ! configured maximum rates, at every call (also between asynchronous BMB updates).
+    ! BMB_shelf keeps the value of the BMB model, so the modelled melt returns wherever
+    ! the mask becomes inactive again. dBMB_fl_retreat holds the resulting change of the
+    ! floating-ice BMB relative to BMB_shelf, so that the floating-ice diagnostics include
+    ! the prescribed melt; the grounded part stays attributed to BMB_sheet.
+
+    ! In- and output variables
+    type(type_mesh),                        intent(in   ) :: mesh
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
+    class(atype_climate_model),             intent(in   ) :: climate
+    type(type_BMB_model),                   intent(inout) :: BMB
+    logical,                                intent(in   ) :: do_update_modelled
+
+    ! Local variables:
+    character(len=256), parameter                         :: routine_name = 'apply_retreat_mask_BMB'
+    integer                                               :: vi
+    real(dp)                                              :: w_fl, w_gr
+    logical                                               :: was_applied
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    do vi = mesh%vi1, mesh%vi2
+
+      was_applied = BMB%mask_retreat_BMB( vi)
+      BMB%mask_retreat_BMB( vi) = .false.
+      BMB%dBMB_fl_retreat ( vi) = 0._dp
+
+      if (climate%retreat_mask( vi) > retreat_mask_threshold) then
+        call calc_subgrid_BMB_weights( geom, vi, w_fl, w_gr)
+        if (w_fl > 0._dp) then
+          BMB%BMB( vi) = w_fl * retreat_mask_BMB_shelf + w_gr * BMB%BMB_sheet( vi)
+          BMB%BMB( vi) = max( -C%BMB_maximum_allowed_melt_rate, min( C%BMB_maximum_allowed_refreezing_rate, BMB%BMB( vi)))
+          BMB%dBMB_fl_retreat ( vi) = (BMB%BMB( vi) - w_gr * BMB%BMB_sheet( vi)) - w_fl * BMB%BMB_shelf( vi)
+          BMB%mask_retreat_BMB( vi) = .true.
+        end if
+      end if
+
+      ! Keep the transition-phase record consistent where the prescribed melt starts or stops
+      if (do_update_modelled .and. (was_applied .or. BMB%mask_retreat_BMB( vi))) &
+        BMB%BMB_modelled( vi) = BMB%BMB( vi)
+
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_retreat_mask_BMB
+
+  subroutine calc_subgrid_BMB_weights( geom, vi, w_fl, w_gr)
+    ! Weights of BMB_shelf and BMB_sheet in the selected sub-grid scheme
+    ! (consistent with compute_subgrid_BMB and the BMB diagnostics)
+
+    ! In/output variables
+    class(atype_ice_geometry_model_data), intent(in   ) :: geom
+    integer,                              intent(in   ) :: vi
+    real(dp),                             intent(  out) :: w_fl, w_gr
+
+    w_fl = 0._dp
+    w_gr = 0._dp
+
+    select case (C%choice_BMB_subgrid)
+      case default
+        call crash('unknown choice_BMB_subgrid "' // C%choice_BMB_subgrid // '"')
+      case ('FCMP')
+        if (geom%mask_floating_ice( vi) .or. geom%mask_gl_fl( vi)) then
+          w_fl = 1._dp
+        elseif (geom%mask_grounded_ice( vi) .or. geom%mask_gl_gr( vi)) then
+          w_gr = 1._dp
+        end if
+      case ('NMP')
+        if (geom%mask_floating_ice( vi) .and. geom%fraction_gr( vi) == 0._dp) then
+          w_fl = 1._dp
+        elseif (geom%fraction_gr( vi) > 0._dp) then
+          w_gr = 1._dp
+        end if
+      case ('PMP')
+        if (geom%mask_floating_ice( vi) .or. geom%mask_grounded_ice( vi)) then
+          w_fl = 1._dp - geom%fraction_gr( vi)
+          w_gr = geom%fraction_gr( vi)
+        end if
+    end select
+
+  end subroutine calc_subgrid_BMB_weights
 
   SUBROUTINE apply_BMB_subgrid_scheme_ROI( mesh, ice, geom, BMB)
     ! Apply selected scheme for sub-grid shelf melt

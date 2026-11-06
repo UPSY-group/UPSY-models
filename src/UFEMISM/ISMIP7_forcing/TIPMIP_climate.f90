@@ -55,13 +55,13 @@ module TIPMIP_climate
       type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
       ! Insolation
-      real(dp), dimension(:,:), contiguous, pointer :: Q_TOA           => null()
-      type(MPI_WIN) :: wQ_TOA
+      ! real(dp), dimension(:,:), contiguous, pointer :: Q_TOA           => null()
+      ! type(MPI_WIN) :: wQ_TOA
 
       ! Wind
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
-      type(MPI_WIN) :: wWind_LR, wWind_DU
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
+      ! type(MPI_WIN) :: wWind_LR, wWind_DU
 
       ! TIPMIP-style input forcing fields
       type(type_TIPMIP_forcing_field) :: tas_anomaly         !< [K] ESM-derived monthly mean surface air temperature anomaly
@@ -346,11 +346,13 @@ contains
 
   end subroutine climate_model_TIPMIP_run
 
-  subroutine climate_model_TIPMIP_remap( self, mesh_new)
+  subroutine climate_model_TIPMIP_remap( self, mesh_new, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_climate_model_TIPMIP), intent(inout) :: self
     type(type_mesh), target,          intent(in   ) :: mesh_new
+    type(type_reference_geometry), target, intent(in   ) :: refgeo_init, refgeo_PD
+    class(atype_ice_geometry_model_data),  intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_TIPMIP_remap'

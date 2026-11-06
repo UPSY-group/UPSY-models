@@ -14,7 +14,8 @@ module SMB_reconstructed
   use mesh_ROI_polygons, only: calc_polygon_Patagonia
   use plane_geometry, only: is_in_polygon
   use reference_geometry_types, only: type_reference_geometry
-  use climate_model_types, only: type_climate_model
+  ! use climate_model_types, only: type_climate_model
+  use climate_model, only: atype_climate_model
 
   implicit none
 
@@ -103,7 +104,7 @@ contains
     real(dp),                             intent(in   ) :: time
     class(atype_ice_model_data),          intent(in   ) :: ice
     class(atype_ice_geometry_model_data), intent(in   ) :: geom
-    type(type_climate_model),             intent(inout) :: climate
+    class(atype_climate_model),           intent(inout) :: climate
     type(type_xy_grid),                   intent(in   ) :: grid_smooth
 
     ! Local variables:

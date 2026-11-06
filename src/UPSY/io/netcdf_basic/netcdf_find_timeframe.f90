@@ -8,7 +8,7 @@ module netcdf_find_timeframe
   use netcdf_check_dimensions
   use netcdf_read_var_primary
   use netcdf_basic_wrappers
-  use netcdf, only: NF90_FLOAT, NF90_DOUBLE, NF90_INT64
+  use netcdf, only: NF90_FLOAT, NF90_DOUBLE, NF90_INT, NF90_INT64
 
   implicit none
 
@@ -32,6 +32,7 @@ contains
     character(len=1024), parameter      :: routine_name = 'find_timeframe'
     integer                             :: nt, id_dim_time, id_var_time, var_type
     real(dp), dimension(:), allocatable :: time_from_file
+    integer,       dimension(:), allocatable :: time_from_file_int
     integer(int8), dimension(:), allocatable :: time_from_file_int8
     integer                             :: ierr
     integer                             :: tii
@@ -58,10 +59,14 @@ contains
       call crash('invalid variable type for variable time in file ' // trim( filename))
     case (NF90_FLOAT, NF90_DOUBLE)
       call read_var_primary( filename, ncid, id_var_time, time_from_file)
+    case (NF90_INT)
+      allocate( time_from_file_int( nt))
+      call read_var_primary( filename, ncid, id_var_time, time_from_file_int)
+      if (par%primary) time_from_file = real( time_from_file_int, dp)
     case (NF90_INT64)
       allocate( time_from_file_int8( nt))
       call read_var_primary( filename, ncid, id_var_time, time_from_file_int8)
-      time_from_file = real( time_from_file_int8, dp)
+      if (par%primary) time_from_file = real( time_from_file_int8, dp)
     end select
     call MPI_BCAST( time_from_file(:), nt, MPI_DOUBLE_PRECISION, 0, MPI_COMM_WORLD, ierr)
 

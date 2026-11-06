@@ -33,7 +33,6 @@ module climate_snapshot_lapse
   implicit none
 
   private
-
   public :: type_climate_model_snapshot_lapse
 
   type, extends(atype_climate_model) :: type_climate_model_snapshot_lapse
@@ -45,20 +44,33 @@ module climate_snapshot_lapse
       real(dp), dimension(:  ), contiguous, pointer :: Hs_baseline     => null()   !< [m w.r.t. PD sea level]  Baseline surface elevation
       type(MPI_WIN) :: wT2m_baseline, wPrecip_baseline, wHs_baseline
 
-      ! Insolation
-      real(dp), dimension(:,:), contiguous, pointer :: Q_TOA           => null()
-      type(MPI_WIN) :: wQ_TOA
+      ! Insolation frames for interpolation
+      real(dp), dimension(:,:), contiguous, pointer :: ins_Q_TOA0  => null()
+      real(dp), dimension(:,:), contiguous, pointer :: ins_Q_TOA1  => null()
+      type(MPI_WIN) :: wins_Q_TOA0, wins_Q_TOA1
 
-      ! Wind
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
-      type(MPI_WIN) :: wWind_LR, wWind_DU
+      ! ! Wind
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_LR         => null()   ! [m s^-1]     10m wind velocity in x-direction
+      ! real(dp), dimension(:,:), contiguous, pointer :: Wind_DU         => null()   ! [m s^-1]     10m wind velocity in y-direction
+      ! type(MPI_WIN) :: wWind_LR, wWind_DU
 
       ! Region-specific info
       character(len=1024)                           :: filename_climate_snapshot
       logical                                       :: do_lapse_rate_corrections
       real(dp)                                      :: lapse_rate_temp
+      real(dp)                                      :: lapse_rate_precip
       logical                                       :: has_insolation
+
+      integer,                    allocatable       :: ins_nyears
+      integer,                    allocatable       :: ins_nlat,ins_nlon
+      real(dp), dimension(:    ), allocatable       :: ins_time
+      real(dp), dimension(:    ), allocatable       :: ins_lat
+      real(dp),                   allocatable       :: ins_t0, ins_t1
+      integer,                    allocatable       :: ins_ti0,ins_ti1
+
+      ! Reference absorbed insolation (for GCM snapshots), or insolation at model time for the applied climate
+      real(dp), dimension(:,:),   allocatable       :: Albedo  ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
+      real(dp), dimension(:  ),   allocatable       :: I_abs   ! Total yearly absorbed insolation, used in the climate matrix for interpolation
 
     contains
 
@@ -67,11 +79,13 @@ module climate_snapshot_lapse
       procedure, public :: initialise_climate_model => climate_model_snapshot_lapse_initialise
       procedure, public :: run_climate_model        => climate_model_snapshot_lapse_run
       procedure, public :: remap_climate_model      => climate_model_snapshot_lapse_remap
-
       procedure, public :: get_climate_model_name
 
-      procedure, private :: initialise_insolation_forcing
       procedure, private :: apply_geometry_downscaling_corrections
+
+      procedure, private :: initialise_insolation_forcing
+      procedure, private :: get_insolation_at_time
+      procedure, private :: update_insolation_timeframes_from_file
 
   end type type_climate_model_snapshot_lapse
 
@@ -109,7 +123,7 @@ contains
     call self%create_field( self%Hs_baseline, self%wHs_baseline, &
       self%mesh, Arakawa_grid%a(), &
       name      = 'Hs_baseline', &
-      long_name = 'Baseline surface elevation', &
+      long_name = 'Baseline Surface elevation', &
       units     = 'm', &
       remap_method = 'reallocate')
 
@@ -117,6 +131,20 @@ contains
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
       name      = 'Q_TOA', &
       long_name = 'Monthly insolation', &
+      units     = 'W m^-2', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%ins_Q_TOA0, self%wins_Q_TOA0, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'ins_Q_TOA0', &
+      long_name = 'Monthly insolation (prev timeframe)', &
+      units     = 'W m^-2', &
+      remap_method = 'reallocate')
+
+    call self%create_field( self%ins_Q_TOA1, self%wins_Q_TOA1, &
+      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
+      name      = 'ins_Q_TOA1', &
+      long_name = 'Monthly insolation (next timeframe)', &
       units     = 'W m^-2', &
       remap_method = 'reallocate')
 
@@ -159,6 +187,12 @@ contains
 
     ! Insolation
     nullify( self%Q_TOA)
+    nullify( self%ins_Q_TOA0)
+    nullify( self%ins_Q_TOA1)
+
+    ! Winds
+    nullify( self%Wind_LR)
+    nullify( self%Wind_DU)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -176,6 +210,7 @@ contains
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'climate_model_snapshot_lapse_initialise'
     character(len=1024)            :: filename_climate_snapshot
+    real(dp)                       :: timeframe_init_insolation
 
     ! Add routine to call stack
     call init_routine( routine_name)
@@ -233,7 +268,13 @@ contains
 
     ! Initialise insolation
     if (self%has_insolation) then
-      call self%initialise_insolation_forcing()
+        call self%initialise_insolation_forcing()
+        if (C%start_time_of_run < 0._dp) then
+            timeframe_init_insolation = C%start_time_of_run
+        else
+            timeframe_init_insolation = 0._dp
+        end if
+        call self%get_insolation_at_time(timeframe_init_insolation)
     end if
 
     ! Remove routine from call stack
@@ -256,21 +297,26 @@ contains
 
     ! Run all the stuff that is specific to climate model snapshot_lapse
 
-    ! TODO update insolation here in case time-variant
-
     ! Determine and apply downscaling corrections
     call self%apply_geometry_downscaling_corrections( geom)
+
+    ! if needed for an ITM or climate matrix, we need to update insolation
+    if (self%has_insolation) then
+      call self%get_insolation_at_time(time)
+    end if
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
   end subroutine climate_model_snapshot_lapse_run
 
-  subroutine climate_model_snapshot_lapse_remap( self, mesh_new)
+  subroutine climate_model_snapshot_lapse_remap( self, mesh_new, refgeo_init, refgeo_PD, geom)
 
     ! In/output variables:
     class(type_climate_model_snapshot_lapse), intent(inout) :: self
     type(type_mesh), target,          intent(in   ) :: mesh_new
+    type(type_reference_geometry), target,  intent(in   ) :: refgeo_init, refgeo_PD
+    class(atype_ice_geometry_model_data),   intent(in   ) :: geom
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'climate_model_snapshot_lapse_remap'
@@ -285,37 +331,6 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine climate_model_snapshot_lapse_remap
-
-  subroutine initialise_insolation_forcing( self)
-
-    ! In/output variables:
-    class(type_climate_model_snapshot_lapse), intent(inout) :: self
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'initialise_insolation_forcing'
-    real(dp)                    :: t0 = 0._dp
-
-    ! Add routine to call stack
-    call init_routine( routine_name)
-
-    if (par%primary)   write(0,*) ' Initialising insolation data from ', trim(C%filename_insolation), '...'
-
-    select case( C%choice_insolation_forcing)
-    case ('none')
-      call crash('Chosen climate or SMB model cannot be used with choice_insolation_forcing = "none"!')
-    case ('static')
-      call read_field_from_file_0D( C%filename_insolation, field_name_options_time, t0, time_to_read = C%static_insolation_time)
-      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, self%mesh, C%output_dir, self%Q_TOA, time_to_read = t0)
-    case ('realistic')
-      ! TODO to be implemented
-    case default
-      call crash('unknown choice insolation forcing "' // trim(C%choice_insolation_forcing) // '"')
-    end select
-
-    ! Remove routine from call stack
-    call finalise_routine( routine_name)
-
-  end subroutine initialise_insolation_forcing
 
   subroutine apply_geometry_downscaling_corrections( self, geom)
 
@@ -350,6 +365,189 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine apply_geometry_downscaling_corrections
+
+  ! ==================================================
+  ! Insolation
+  ! ==================================================
+  subroutine initialise_insolation_forcing(self)
+    ! initialise the insolation series in the forcing structure
+
+    ! In/output variables:
+    class(type_climate_model_snapshot_lapse),     intent(inout) :: self
+
+    ! Local variables:
+    character(len=256), parameter                    :: routine_name = 'initialise_insolation_forcing'
+    character(len=256)                               :: str
+    integer                                          :: ncid
+    real(dp)                                         :: closest_t0
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if     (C%choice_insolation_forcing == 'none') then
+      ! No insolation included, likely because we're running an idealised-geometry experiment
+    elseif (C%choice_insolation_forcing == 'static' .or. &
+            C%choice_insolation_forcing == 'realistic') then
+
+      ! Initialise insolation
+      ! The times at which we have insolation fields from Laskar, between which we'll interpolate
+      ! to find the insolation at model time (assuming that t0 <= model_time <= t1)
+      if (par%primary)   write(0,*) ' initialising insolation data from ', trim(C%filename_insolation), '...'
+
+      ! Memory allocation
+      allocate(self%ins_t0)
+      allocate(self%ins_t1)
+      allocate(self%ins_ti0)
+      allocate(self%ins_ti1)
+      allocate(self%ins_nlat)
+      allocate(self%ins_nlon)
+      allocate(self%Albedo    (self%mesh%vi1:self%mesh%vi2,12)) ! TODO: do we need to allocate this here?
+      allocate(self%I_abs     (self%mesh%vi1:self%mesh%vi2))    ! TODO: do we need to allocate this here?
+      allocate(self%ins_lat   (self%ins_nlat))
+      self%ins_t0     = C%start_time_of_run
+      self%ins_t1     = C%start_time_of_run
+      self%ins_nlat   = 181
+      self%ins_nlon   = 360
+      self%ins_lat    = 0._dp
+      self%ins_Q_TOA0 = 0._dp
+      self%ins_Q_TOA1 = 0._dp
+      self%Q_TOA      = 0._dp
+
+      ! find the closest timeframe to the start of the run
+      call read_field_from_file_0D( C%filename_insolation, field_name_options_time, closest_t0, time_to_read = C%start_time_of_run)
+
+      if (C%start_time_of_run >= closest_t0) then
+        if (par%primary) WRITE(0,*) '     start time is after ins_t0, reading one step further for ins_t1...'
+        self%ins_t0 = closest_t0
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, self%ins_t1, time_to_read = C%start_time_of_run+1000._dp)
+      else
+        ! otherwise we read one record before for t1
+        if (par%primary) WRITE(0,*) '     start time is before closest ins_t0, reading one step earlier for t0, and using that one for t1...'
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, self%ins_t0, time_to_read = C%start_time_of_run-1000._dp)
+        self%ins_t1 = closest_t0
+      end if
+
+      ! Read the fields at ins_t0
+      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, self%mesh, C%output_dir, self%ins_Q_TOA0, time_to_read = self%ins_t0)
+      ! Read the fields at ins_t1
+      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, self%mesh, C%output_dir, self%ins_Q_TOA1, time_to_read = self%ins_t1)
+
+    else
+      call crash('unknown choice_insolation_forcing "' // TRIM( C%choice_insolation_forcing) // '"!')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine initialise_insolation_forcing
+
+  subroutine get_insolation_at_time(self, time)
+    ! Get monthly insolation at time t on the regional grid
+
+    ! In/output variables:
+    class(type_climate_model_snapshot_lapse),     intent(inout) :: self
+    real(dp),                                               intent(in)    :: time
+
+    ! Local variables:
+    character(len=256), parameter                    :: routine_name = 'get_insolation_at_time'
+    real(dp)                                         :: time_applied
+    integer                                          :: vi,m
+    real(dp)                                         :: wt0, wt1
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    time_applied = 0._dp
+
+    ! Safety
+    if     (C%choice_insolation_forcing == 'none') then
+      call crash('insolation should not be used when choice_insolation_forcing = "none"!')
+    elseif (C%choice_insolation_forcing == 'static') then
+      time_applied = C%static_insolation_time
+    elseif (C%choice_insolation_forcing == 'realistic') then
+      time_applied = time
+    else
+      call crash('unknown choice_insolation_forcing "' // trim( C%choice_insolation_forcing) // '"!')
+    end if
+
+    ! Check if the requested time is enveloped by the two timeframes;
+    ! if not, read the two relevant timeframes from the NetCDF file
+    if (time_applied < self%ins_t0 .or. time_applied > self%ins_t1) then
+      if (par%primary)  write(0,*) '   Model time is out of the current insolation timeframes. Updating timeframes...'
+      call self%update_insolation_timeframes_from_file(time_applied)
+    end if
+
+    ! Calculate timeframe interpolation weights (plus safety checks for when the extend beyond the record)
+    if (self%ins_t1 == self%ins_t0) then
+      wt0 = 0._dp
+      wt1 = 1._dp
+    else
+      if (time_applied > self%ins_t1) then
+        wt0 = 0._dp
+      elseif (time_applied < self%ins_t0) then
+        wt0 = 1._dp
+      else
+        wt0 = (self%ins_t1 - time_applied) / (self%ins_t1 - self%ins_t0)
+      end if
+      wt1 = 1._dp - wt0
+    end if
+
+    ! Interpolate the two timeframes
+    do vi = self%mesh%vi1, self%mesh%vi2
+      do m = 1, 12
+        self%Q_TOA(vi, m) = wt0 * self%ins_Q_TOA0(vi, m) + wt1 * self%ins_Q_TOA1(vi, m)
+      end do
+    end do
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine get_insolation_at_time
+
+  subroutine update_insolation_timeframes_from_file(self,time)
+    ! Read the NetCDF file containing the insolation forcing data. Only read the time frames enveloping the current
+    ! coupling timestep to save on memory usage. Only done by master.
+
+    ! NOTE: assumes time in forcing file is in kyr
+    class(type_climate_model_snapshot_lapse),     intent(inout) :: self
+    real(dp),                                               intent(in)    :: time
+
+    ! Local variables:
+    character(len=256), parameter                      :: routine_name = 'update_insolation_timeframes_from_file'
+    integer                                            :: ti0, ti1, ncid
+    character(len=256)                                 :: str
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    if     (C%choice_insolation_forcing == 'none') then
+      call crash('insolation should not be used when choice_insolation_forcing = "none"!')
+    elseif (C%choice_insolation_forcing == 'static' .or. &
+            C%choice_insolation_forcing == 'realistic') then
+
+      ! Update insolation
+      call read_field_from_file_0D( C%filename_insolation, field_name_options_time, self%ins_t0, time_to_read = time)
+
+      if (time >= self%ins_t0) then
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, self%ins_t1, time_to_read = time+1000._dp)
+      else
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, self%ins_t1, time_to_read = time)
+        call read_field_from_file_0D( C%filename_insolation, field_name_options_time, self%ins_t0, time_to_read = time-1000._dp)
+      end if
+
+      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, self%mesh, C%output_dir, self%ins_Q_TOA0, time_to_read = self%ins_t0)
+      call read_field_from_file_2D_monthly( C%filename_insolation, field_name_options_insolation, self%mesh, C%output_dir, self%ins_Q_TOA1, time_to_read = self%ins_t1)
+
+      !call warning('insolation timeframes at t = {dp_01} are ins_t0={dp_02} and ins_t1={dp_03}', dp_01 =  time, dp_02 = self%ins_t0, dp_03 = self%%ins_t1)
+
+    else
+      call crash('unknown choice_insolation_forcing "' // trim( C%choice_insolation_forcing) // '"!')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine update_insolation_timeframes_from_file
 
   function get_climate_model_name( self) result( climate_model_name)
     class(type_climate_model_snapshot_lapse), intent(in) :: self

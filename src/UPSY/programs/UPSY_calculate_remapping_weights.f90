@@ -63,14 +63,11 @@ program UPSY_calculate_remapping_weights
   call read_grid( filename_grid_src, grid_src)
   call read_grid( filename_grid_dst, grid_dst)
 
-  ! Set up the remapping context
-  call map%ct%create( &
+  ! Create the remapping object
+  call map%create( &
     grid_src, Arakawa_grid%create_from_string( Arakawa_grid_src_str), &
     grid_dst, Arakawa_grid%create_from_string( Arakawa_grid_dst_str), &
     UPSY%remapping%method%create_from_string( remapping_method_str))
-
-  ! Create the remapping object
-  call map%create()
 
   ! Write it to a NetCDF file
   call map%save_as_netcdf( filename_output)

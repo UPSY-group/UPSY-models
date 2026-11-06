@@ -68,14 +68,12 @@ contains
 
     ! Local variables:
     character(len=*), parameter  :: routine_name = 'remap_2D'
-    type(type_remapping_context) :: ct
     type(type_map), pointer      :: map
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
-    call find_in_or_add_map_to_Atlas( ct, map)
+    call find_in_or_add_map_to_Atlas( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, map)
     call map%apply( d_src, d_dst)
 
     ! Finalise routine path
@@ -96,14 +94,12 @@ contains
 
     ! Local variables:
     character(len=*), parameter  :: routine_name = 'remap_3D'
-    type(type_remapping_context) :: ct
     type(type_map), pointer      :: map
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
-    call find_in_or_add_map_to_Atlas( ct, map)
+    call find_in_or_add_map_to_Atlas( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, map)
     call map%apply( d_src, d_dst)
 
     ! Finalise routine path
@@ -111,15 +107,20 @@ contains
 
   end subroutine remap_3D
 
-  subroutine find_in_or_add_map_to_Atlas( ct, map)
+  subroutine find_in_or_add_map_to_Atlas( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, map)
     ! Return a pointer to an existing or newly created mapping object in the Atlas
 
     ! In/output variables:
-    type(type_remapping_context), intent(in   ) :: ct
-    type(type_map), pointer,      intent(  out) :: map
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    type(type_remapping_method), intent(in   ) :: method
+    type(type_map), pointer,     intent(  out) :: map
 
     ! Local variables:
     character(len=*), parameter               :: routine_name = 'find_in_or_add_map_to_Atlas'
+    type(type_remapping_context)              :: ct_desired
     integer                                   :: mi
     logical                                   :: found_it
     type(type_map), dimension(:), allocatable :: Atlas_old
@@ -127,19 +128,21 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Set up the desired remapping contect
+    call ct_desired%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+
     if (.not. allocated( Atlas)) then
       ! Allocate room for a single map in the Atlas, then create that map
       allocate( Atlas( 1))
       map => Atlas( 1)
-      map%ct = ct
-      call map%create()
+      call map%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
 
     else
 
       ! See if the correct map already exists in the Atlas
       found_it = .false.
       do mi = 1, size( Atlas)
-        if (Atlas(mi)%ct == ct) then
+        if (Atlas(mi)%ct == ct_desired) then
           found_it = .true.
           map => Atlas( mi)
         end if
@@ -155,8 +158,7 @@ contains
         deallocate( Atlas_old)
         ! Add a new mapping object
         map => Atlas( size( Atlas))
-        map%ct = ct
-        call map%create()
+        call map%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
       end if
 
     end if
@@ -166,11 +168,16 @@ contains
 
   end subroutine find_in_or_add_map_to_Atlas
 
-  subroutine create_map( self)
+  subroutine create_map( self, grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
     ! Create a new mapping object matching the specified grids and remapping method
 
     ! In/output variables:
-    class(type_map), intent(inout) :: self
+    class(type_map),             intent(inout) :: self
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    type(type_remapping_method), intent(in   ) :: method
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'create_map'
@@ -180,12 +187,15 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Set up the remapping context object
+    call self%ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+
     ! Create ugrids from source and destination grids
-    call ugrid_src%build_from_grid( self%ct%grid_src, self%ct%Arakawa_grid_src)
-    call ugrid_dst%build_from_grid( self%ct%grid_dst, self%ct%Arakawa_grid_dst)
+    call ugrid_src%build_from_grid( grid_src, Arakawa_grid_src)
+    call ugrid_dst%build_from_grid( grid_dst, Arakawa_grid_dst)
 
     ! Calculate remapping operator between the two ugrids
-    call calc_CSR_remapping_operator( ugrid_src, ugrid_dst, self%ct%method, self%M)
+    call calc_CSR_remapping_operator( ugrid_src, ugrid_dst, method, self%M)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

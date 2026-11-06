@@ -55,11 +55,28 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_nearest_neighbour'
+    integer                     :: face_index_src, face_index_dst
+    real(dp), dimension(2)      :: p
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call crash('fixme')
+    call M%allocate( &
+      ugrid_dst%pai%n, &
+      ugrid_src%pai%n, &
+      ugrid_dst%pai%n_loc, &
+      ugrid_src%pai%n_loc, &
+      1, &
+      ugrid_src%pai, &
+      ugrid_dst%pai)
+
+    face_index_src = 1
+    do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
+      p = ugrid_dst%face_coordinates( face_index_dst,:)
+      call ugrid_src%find_nearest_face_center( p, face_index_src)
+      call M%add_entry( face_index_dst, face_index_src, 1._dp)
+    end do
+    call M%finalise()
 
     ! Finalise routine path
     call finalise_routine( routine_name)

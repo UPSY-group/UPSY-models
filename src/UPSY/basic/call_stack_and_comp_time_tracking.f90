@@ -194,7 +194,8 @@ CONTAINS
             index( routine_path, 'run_all_unit_tests') == 0 .and. &
             index( routine_path, 'run_laddie_unit_tests') == 0 .and. &
             index( routine_path, 'run_all_multinode_unit_tests') == 0 .and. &
-            index( routine_path, 'run_all_component_tests') == 0) then
+            index( routine_path, 'run_all_component_tests') == 0 .and. &
+            index( routine_path, 'UPSY_calculate_remapping_weights') == 0) then
 
           call warning('shared memory was allocated but not freed, possibly memory leak ' // &
             '(n_init = {int_01}, n_final = {int_02})', &

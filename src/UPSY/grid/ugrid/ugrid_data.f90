@@ -3,6 +3,7 @@ module ugrid_data
   use precisions, only: dp
   use basic_grid_mod, only: atype_grid
   use mpi_f08, only: MPI_WIN
+  use parallel_array_info_type, only: type_par_arr_info
 
   implicit none
 
@@ -30,6 +31,8 @@ module ugrid_data
     integer                                       :: face_face_connectivity_n_max                  !           Maximum number of faces adjacent to a face
     integer,  dimension(:,:), contiguous, pointer :: face_face_connectivity             => null()  ! [nFaces-by-max(face_face_connectivity)] Indices of faces adjacent to each face
     type(MPI_WIN) :: wface_face_connectivity_n, wface_face_connectivity
+
+    type(type_par_arr_info)                       :: pai                                           ! Parallelisation info
 
   end type atype_ugrid_data
 

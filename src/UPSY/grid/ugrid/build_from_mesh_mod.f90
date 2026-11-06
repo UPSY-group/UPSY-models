@@ -17,10 +17,13 @@ contains
 
     ! Build from the mesh a-grid (vertices), b-grid (triangles), or c-grid (edges)
     if     (mesh_Arakawa_grid == Arakawa_grid%a()) then
+      ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_a'
       call build_from_mesh_vertices( ugrid, mesh)
     elseif (mesh_Arakawa_grid == Arakawa_grid%b()) then
+      ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_b'
       call build_from_mesh_triangles( ugrid, mesh)
     elseif (mesh_Arakawa_grid == Arakawa_grid%c()) then
+      ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_c'
       call crash('fixme!')
     else
       call crash('unsupported Arakawa grid')
@@ -91,6 +94,9 @@ contains
       end do
     end if
 
+    ! Parallelisation info
+    ugrid%pai = mesh%pai_V
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -157,6 +163,9 @@ contains
         end do
       end do
     end if
+
+    ! Parallelisation info
+    ugrid%pai = mesh%pai_Tri
 
     ! Finalise routine path
     call finalise_routine( routine_name)

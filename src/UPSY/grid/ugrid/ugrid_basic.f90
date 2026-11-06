@@ -11,6 +11,7 @@ module ugrid_basic
   use lonlat_grid_basic, only: type_lonlat_grid
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
   use mpi_basic, only: par
+  use plane_geometry, only: is_in_polygon
 
   implicit none
 
@@ -22,6 +23,8 @@ module ugrid_basic
     contains
 
       procedure, public  :: build_from_grid
+      procedure, public  :: is_in_face
+      procedure, public  :: find_containing_face
 
       final :: finalise
 
@@ -47,6 +50,19 @@ module ugrid_basic
       type(type_lonlat_grid),  intent(in   ) :: lonlat_grid
       type(type_Arakawa_grid), intent(in   ) :: lonlat_grid_Arakawa_grid
     end subroutine build_from_lonlat_grid
+
+    module function is_in_face( self, p, face_index) result( isso)
+      class(type_ugrid),      intent(in   ) :: self
+      real(dp), dimension(2), intent(in   ) :: p
+      integer,                intent(inout) :: face_index
+      logical                               :: isso
+    end function is_in_face
+
+    module subroutine find_containing_face( self, p, face_index)
+      class(type_ugrid),      intent(in   ) :: self
+      real(dp), dimension(2), intent(in   ) :: p
+      integer,                intent(inout) :: face_index
+    end subroutine find_containing_face
 
   end interface
 

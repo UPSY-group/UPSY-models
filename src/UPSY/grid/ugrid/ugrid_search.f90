@@ -53,4 +53,28 @@ contains
 
   end subroutine find_nearest_face_center
 
+  subroutine get_face_as_polygon( self, face_index, poly)
+    ! Return the nodes of the polyogn spanning a face of the ugrid
+
+    ! In/output variables:
+    class(type_ugrid),                     intent(in   ) :: self
+    integer,                               intent(in   ) :: face_index
+    real(dp), dimension(:,:), allocatable, intent(inout) :: poly
+
+    ! Local variables:
+    integer :: n, ci, node_index
+
+    if (allocated( poly)) deallocate( poly)
+
+    n = self%face_face_connectivity_n( face_index)
+
+    allocate( poly( n,2))
+
+    do ci = 1, n
+      node_index = self%face_node_connectivity( face_index, ci)
+      poly( ci,:) = self%node_coordinates( node_index,:)
+    end do
+
+  end subroutine get_face_as_polygon
+
 end submodule ugrid_search

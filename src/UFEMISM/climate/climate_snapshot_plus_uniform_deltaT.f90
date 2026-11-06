@@ -215,7 +215,7 @@ contains
       case('NAM')
           filename_climate_snapshot      = C%filename_climate_snapshot_unif_dT_NAM
           self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_NAM
-          self%lapse_rate_precip         = C%lapse_rate_precip_NAM
+          self%lapse_rate_precip         = C%precip_CC_correction_NAM
           self%lapse_rate_temp           = C%lapse_rate_temp_NAM
           self%deltaT                    = C%uniform_deltaT_NAM
           if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
@@ -224,7 +224,7 @@ contains
       case('EAS')
           filename_climate_snapshot      = C%filename_climate_snapshot_unif_dT_EAS
           self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_EAS
-          self%lapse_rate_precip         = C%lapse_rate_precip_EAS
+          self%lapse_rate_precip         = C%precip_CC_correction_EAS
           self%lapse_rate_temp           = C%lapse_rate_temp_EAS
           self%deltaT                    = C%uniform_deltaT_EAS
           if (C%choice_SMB_model_EAS == 'IMAU-ITM' .or. C%choice_SMB_model_EAS == 'ITM_v2') then
@@ -233,7 +233,7 @@ contains
       case('GRL')
           filename_climate_snapshot      = C%filename_climate_snapshot_unif_dT_GRL
           self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_GRL
-          self%lapse_rate_precip         = C%lapse_rate_precip_GRL
+          self%lapse_rate_precip         = C%precip_CC_correction_GRL
           self%lapse_rate_temp           = C%lapse_rate_temp_GRL
           self%deltaT                    = C%uniform_deltaT_GRL
           if (C%choice_SMB_model_GRL == 'IMAU-ITM' .or. C%choice_SMB_model_GRL == 'ITM_v2') then
@@ -242,7 +242,7 @@ contains
       case('ANT')
           filename_climate_snapshot      = C%filename_climate_snapshot_unif_dT_ANT
           self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_ANT
-          self%lapse_rate_precip         = C%lapse_rate_precip_ANT
+          self%lapse_rate_precip         = C%precip_CC_correction_ANT
           self%lapse_rate_temp           = C%lapse_rate_temp_ANT
           self%deltaT                    = C%uniform_deltaT_ANT
           if (C%choice_SMB_model_ANT == 'IMAU-ITM' .or. C%choice_SMB_model_ANT == 'ITM_v2') then
@@ -255,6 +255,8 @@ contains
     call read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , self%mesh, C%output_dir, self%Hs_baseline)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
     call read_field_from_file_2d_monthly( filename_climate_snapshot, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
+    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'uas'   , self%mesh, C%output_dir, self%Wind_LR)
+    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'vas'   , self%mesh, C%output_dir, self%Wind_DU)
 
     ! Adding deltaT to the baseline temperature field (uniform in space and time)
     do vi = self%mesh%vi1, self%mesh%vi2

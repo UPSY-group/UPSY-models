@@ -12,6 +12,9 @@ module remapping_basic
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
     multiply_CSR_matrix_with_vector_2D_wrapper
+  use netcdf_io_main, only: create_new_netcdf_file_for_writing, add_attribute_char, &
+    close_netcdf_file
+  use netcdf, only: NF90_GLOBAL
 
   implicit none
 
@@ -33,6 +36,7 @@ module remapping_basic
         apply_map_3D
       procedure, public :: apply_map_2D
       procedure, public :: apply_map_3D
+      procedure, public :: save_as_netcdf => save_map_as_netcdf
 
   end type type_map
 
@@ -231,5 +235,41 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine apply_map_3D
+
+  subroutine save_map_as_netcdf( self, filename)
+    ! Save a remapping object as a NetCDF file
+
+    ! In/output variables:
+    class(type_map),  intent(in) :: self
+    character(len=*), intent(in) :: filename
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'save_map_as_netcdf'
+    integer                     :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'grid_src', trim( self%ct%grid_src%name))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'Arakawa_grid_src', trim( self%ct%Arakawa_grid_src%str()))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'grid_dst', trim( self%ct%grid_dst%name))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'Arakawa_grid_dst', trim( self%ct%Arakawa_grid_dst%str()))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'method', trim( self%ct%method%str()))
+
+    call self%M%write_to_NetCDF( filename, ncid)
+
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_map_as_netcdf
 
 end module remapping_basic

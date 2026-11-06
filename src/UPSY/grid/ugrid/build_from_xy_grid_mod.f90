@@ -152,6 +152,9 @@ contains
       end do
     end if
 
+    ! Parallelisation info
+    ugrid%pai = xy_grid%pai
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

@@ -94,6 +94,9 @@ contains
       end do
     end if
 
+    ! Parallelisation info
+    ugrid%pai = mesh%pai_V
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -160,6 +163,9 @@ contains
         end do
       end do
     end if
+
+    ! Parallelisation info
+    ugrid%pai = mesh%pai_Tri
 
     ! Finalise routine path
     call finalise_routine( routine_name)

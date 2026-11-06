@@ -23,8 +23,7 @@ module ugrid_basic
     contains
 
       procedure, public  :: build_from_grid
-      procedure, public  :: is_in_face
-      procedure, public  :: find_containing_face
+      procedure, public  :: find_nearest_face_center
 
       final :: finalise
 
@@ -58,11 +57,11 @@ module ugrid_basic
       logical                               :: isso
     end function is_in_face
 
-    module subroutine find_containing_face( self, p, face_index)
+    module subroutine find_nearest_face_center( self, p, face_index)
       class(type_ugrid),      intent(in   ) :: self
       real(dp), dimension(2), intent(in   ) :: p
       integer,                intent(inout) :: face_index
-    end subroutine find_containing_face
+    end subroutine find_nearest_face_center
 
   end interface
 

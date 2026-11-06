@@ -2,8 +2,8 @@ module climate_snapshot
 
   ! "Snapshot of a climate" model
 
-! ===== Preamble =====
-! ====================
+  ! ===== Preamble =====
+  ! ====================
 
   use precisions,                        only: dp
   use upsy_main,                         only: upsy
@@ -15,13 +15,13 @@ module climate_snapshot
   use mesh_basic,                        only: type_mesh
   use ice_geometry_model_data,           only: atype_ice_geometry_model_data
   use reference_geometry_types,          only: type_reference_geometry
-!   use climate_model_types,               only: type_climate_model, type_climate_model_snapshot
+  !   use climate_model_types,               only: type_climate_model, type_climate_model_snapshot
   use Arakawa_grid_mod,                  only: Arakawa_grid
   use fields_dimensions,                 only: third_dimension
   use global_forcings_main
   use netcdf_io_main
   use netcdf_basic
-!   use climate_model_utilities,           only: get_insolation_at_time
+  !   use climate_model_utilities,           only: get_insolation_at_time
   use reallocate_mod,                    only: reallocate_bounds
   use climate_model_basic,               only: atype_climate_model
 
@@ -56,22 +56,23 @@ module climate_snapshot
         integer,                    allocatable       :: ins_ti0,ins_ti1
 
         ! Reference absorbed insolation (for GCM snapshots), or insolation at model time for the applied climate
-        real(dp), dimension(:,:),   allocatable       :: Albedo                        ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
-        real(dp), dimension(:  ),   allocatable       :: I_abs                         ! Total yearly absorbed insolation, used in the climate matrix for interpolation
+        real(dp), dimension(:,:),   allocatable       :: Albedo  ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
+        real(dp), dimension(:  ),   allocatable       :: I_abs   ! Total yearly absorbed insolation, used in the climate matrix for interpolation
         
         contains
 
-            procedure, public :: allocate_climate_model   => climate_model_snapshot_allocate
-            procedure, public :: deallocate_climate_model => climate_model_snapshot_deallocate
-            procedure, public :: initialise_climate_model => climate_model_snapshot_initialise
-            procedure, public :: run_climate_model        => climate_model_snapshot_run
-            procedure, public :: remap_climate_model      => climate_model_snapshot_remap
-            procedure, public :: get_climate_model_name
+          procedure, public :: allocate_climate_model   => climate_model_snapshot_allocate
+          procedure, public :: deallocate_climate_model => climate_model_snapshot_deallocate
+          procedure, public :: initialise_climate_model => climate_model_snapshot_initialise
+          procedure, public :: run_climate_model        => climate_model_snapshot_run
+          procedure, public :: remap_climate_model      => climate_model_snapshot_remap
+          procedure, public :: get_climate_model_name
 
-            procedure, private :: apply_geometry_downscaling_corrections
-            procedure, private :: initialise_insolation_forcing
-            procedure, private :: get_insolation_at_time
-            procedure, private :: update_insolation_timeframes_from_file
+          procedure, private :: apply_geometry_downscaling_corrections
+
+          procedure, private :: initialise_insolation_forcing
+          procedure, private :: get_insolation_at_time
+          procedure, private :: update_insolation_timeframes_from_file
 
     end type type_climate_model_snapshot
   
@@ -83,14 +84,14 @@ contains
 
   subroutine climate_model_snapshot_allocate( self)
 
-      ! In/output variables:
-      class(type_climate_model_snapshot), intent(inout) :: self
+    ! In/output variables:
+    class(type_climate_model_snapshot), intent(inout) :: self
 
-      ! Local variables:
-      character(len=*), parameter :: routine_name = 'climate_model_snapshot_allocate'
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'climate_model_snapshot_allocate'
 
-      ! Add routine to call stack
-      call init_routine( routine_name)
+    ! Add routine to call stack
+    call init_routine( routine_name)
 
     call self%create_field( self%T2m_baseline, self%wT2m_baseline, &
       self%mesh, Arakawa_grid%a(), third_dimension%month(), &
@@ -149,8 +150,8 @@ contains
       remap_method = 'reallocate')
 
 
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
 
   end subroutine climate_model_snapshot_allocate
 
@@ -165,11 +166,19 @@ contains
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Deallocate all the stuff that is specific to SMB model prescribed
+    ! Deallocate all the stuff that is specific to climate model snapshot
     nullify( self%T2m_baseline)
     nullify( self%Precip_baseline)
     nullify( self%Hs_baseline)
+
+    ! Insolation
     nullify( self%Q_TOA)
+    nullify( self%ins_Q_TOA0)
+    nullify( self%ins_Q_TOA1)
+
+    ! Winds
+    nullify( self%Wind_LR)
+    nullify( self%Wind_DU)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -196,13 +205,12 @@ contains
     call init_routine( routine_name)
 
     ! Print to terminal
-    if (par%primary)  write(*,"(a)") '     initialising realistic climate model "' // &
-      UPSY%stru%colour_string( trim( C%choice_climate_model_realistic),'light blue') // '"...'
+    if (par%primary)  write(*,"(a)") '     initialising snapshot climate model...'
 
     ! Run the chosen realistic climate model
     self%has_insolation = .FALSE.
     
-    ! Determine which climate model to initialise for this region
+    ! Determine which region to initialise
     select case (self%region_name())
       case('NAM')
         filename_climate_snapshot      = C%filename_climate_snapshot_NAM
@@ -212,12 +220,12 @@ contains
         if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
            self%has_insolation = .TRUE.
         end if
-      case ('EAS')
+      case('EAS')
         filename_climate_snapshot      = C%filename_climate_snapshot_EAS
         self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_EAS
         self%lapse_rate_precip         = C%lapse_rate_precip_EAS
         self%lapse_rate_temp           = C%lapse_rate_temp_EAS
-        if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
+        if (C%choice_SMB_model_EAS == 'IMAU-ITM' .or. C%choice_SMB_model_EAS == 'ITM_v2') then
            self%has_insolation = .TRUE.
         end if
       case('GRL')
@@ -225,7 +233,7 @@ contains
         self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_GRL
         self%lapse_rate_precip         = C%lapse_rate_precip_GRL
         self%lapse_rate_temp           = C%lapse_rate_temp_GRL
-        if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
+        if (C%choice_SMB_model_GRL == 'IMAU-ITM' .or. C%choice_SMB_model_GRL == 'ITM_v2') then
            self%has_insolation = .TRUE.
         end if
       case('ANT')
@@ -233,7 +241,7 @@ contains
         self%do_lapse_rate_corrections = C%do_lapse_rate_corrections_ANT
         self%lapse_rate_precip         = C%lapse_rate_precip_ANT
         self%lapse_rate_temp           = C%lapse_rate_temp_ANT
-        if (C%choice_SMB_model_NAM == 'IMAU-ITM' .or. C%choice_SMB_model_NAM == 'ITM_v2') then
+        if (C%choice_SMB_model_ANT == 'IMAU-ITM' .or. C%choice_SMB_model_ANT == 'ITM_v2') then
            self%has_insolation = .TRUE.
         end if
       case default
@@ -242,7 +250,7 @@ contains
 
     call read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , self%mesh, C%output_dir, self%Hs_baseline)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
-    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
+    call read_field_from_file_2d_monthly( filename_climate_snapshot, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
 
     call self%apply_geometry_downscaling_corrections(geom)
 
@@ -265,31 +273,31 @@ contains
   subroutine climate_model_snapshot_run(self, geom, time)
     ! Calculate the climate
     !
-    ! Use an realistic climate scheme
+    ! Use a snapshot climate
 
     ! In/output variables:
     class(type_climate_model_snapshot),     intent(inout) :: self
     class(atype_ice_geometry_model_data),   intent(in   ) :: geom
     real(dp),                               intent(in)    :: time
 
-    ! local variables:
+    ! Local variables:
     character(len=256), parameter                         :: routine_name = 'climate_model_realistic_run'
 
-    ! add routine to path
+    ! Add routine to path
     call init_routine( routine_name)
 
     ! run the chosen realistic climate model
 
-    ! update temperature and precipitation fields based on the mismatch between
+    ! Update temperature and precipitation fields based on the mismatch between
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
     call self%apply_geometry_downscaling_corrections(geom)
 
-    ! if needed for imau-itm or climate matrix, we need to update insolation
+    ! if needed for an ITM or climate matrix, we need to update insolation
     if (self%has_insolation) then
       call self%get_insolation_at_time(time)
     end if
 
-    ! finalise routine path
+    ! Finalise routine path
     call finalise_routine( routine_name)
 
   end subroutine climate_model_snapshot_run
@@ -369,6 +377,9 @@ contains
 
   end subroutine apply_geometry_downscaling_corrections
 
+  ! ==================================================
+  ! Insolation
+  ! ==================================================
   subroutine initialise_insolation_forcing(self)
     ! initialise the insolation series in the forcing structure
 
@@ -382,7 +393,7 @@ contains
     real(dp)                                         :: closest_t0
 
     ! Add routine to path
-    CALL init_routine( routine_name)
+    call init_routine( routine_name)
 
     if     (C%choice_insolation_forcing == 'none') then
       ! No insolation included, likely because we're running an idealised-geometry experiment
@@ -441,13 +452,12 @@ contains
 
   end subroutine initialise_insolation_forcing
 
-
   subroutine get_insolation_at_time(self, time)
     ! Get monthly insolation at time t on the regional grid
 
     ! In/output variables:
     class(type_climate_model_snapshot),     intent(inout) :: self
-    real(dp),                               intent(in)    :: time
+    real(dp),                                               intent(in)    :: time
 
     ! Local variables:
     character(len=256), parameter                    :: routine_name = 'get_insolation_at_time'
@@ -511,7 +521,7 @@ contains
 
     ! NOTE: assumes time in forcing file is in kyr
     class(type_climate_model_snapshot),     intent(inout) :: self
-    real(dp),                               intent(in)    :: time
+    real(dp),                                               intent(in)    :: time
 
     ! Local variables:
     character(len=256), parameter                      :: routine_name = 'update_insolation_timeframes_from_file'

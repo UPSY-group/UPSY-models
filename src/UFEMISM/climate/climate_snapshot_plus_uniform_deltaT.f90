@@ -43,7 +43,6 @@ module climate_snapshot_plus_uniform_deltaT
         
         ! Region-specific info
         character(len=1024)                           :: filename_climate_snapshot
-        real(dp)                                      :: deltaT
         logical                                       :: do_lapse_rate_corrections
         real(dp)                                      :: lapse_rate_temp
         real(dp)                                      :: lapse_rate_precip
@@ -55,6 +54,7 @@ module climate_snapshot_plus_uniform_deltaT
         real(dp), dimension(:    ), allocatable       :: ins_lat
         real(dp),                   allocatable       :: ins_t0, ins_t1
         integer,                    allocatable       :: ins_ti0,ins_ti1
+        real(dp)                                      :: deltaT
 
         ! Reference absorbed insolation (for GCM snapshots), or insolation at model time for the applied climate
         real(dp), dimension(:,:),   allocatable       :: Albedo                        ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
@@ -76,7 +76,7 @@ module climate_snapshot_plus_uniform_deltaT
           procedure, private :: get_insolation_at_time
           procedure, private :: update_insolation_timeframes_from_file
 
-      end type type_climate_model_snapshot_plus_uniform_deltaT
+    end type type_climate_model_snapshot_plus_uniform_deltaT
 
 contains
 
@@ -147,7 +147,7 @@ contains
       name      = 'Wind_DU', &
       long_name = 'Monthly 10m wind velocity in y-direction', &
       units     = 'm s^-1', &
-      remap_method = 'reallocate')  
+      remap_method = 'reallocate')
 
 
     ! Remove routine from call stack
@@ -157,23 +157,31 @@ contains
 
   subroutine climate_model_snapshot_plus_uniform_deltaT_deallocate( self)
 
-      ! In/output variables:
-      class(type_climate_model_snapshot_plus_uniform_deltaT), intent(inout) :: self
+    ! In/output variables:
+    class(type_climate_model_snapshot_plus_uniform_deltaT), intent(inout) :: self
 
-      ! Local variables:
-      character(len=*), parameter :: routine_name = 'climate_model_snapshot_plus_uniform_deltaT_deallocate'
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'climate_model_snapshot_plus_uniform_deltaT_deallocate'
 
-      ! Add routine to call stack
-      call init_routine( routine_name)
+    ! Add routine to call stack
+    call init_routine( routine_name)
 
-      ! Deallocate all the stuff that is specific to SMB model prescribed
-      nullify( self%T2m_baseline)
-      nullify( self%Precip_baseline)
-      nullify( self%Hs_baseline)
-      nullify( self%Q_TOA)
+    ! Deallocate all the stuff that is specific to climate model snapshot_plus_uniform_deltaT
+    nullify( self%T2m_baseline)
+    nullify( self%Precip_baseline)
+    nullify( self%Hs_baseline)
 
-      ! Remove routine from call stack
-      call finalise_routine( routine_name)
+    ! Insolation
+    nullify( self%Q_TOA)
+    nullify( self%ins_Q_TOA0)
+    nullify( self%ins_Q_TOA1)
+
+    ! Winds
+    nullify( self%Wind_LR)
+    nullify( self%Wind_DU)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
 
   end subroutine climate_model_snapshot_plus_uniform_deltaT_deallocate
 
@@ -191,18 +199,18 @@ contains
     character(len=256), parameter                         :: routine_name = 'climate_model_snapshot_plus_uniform_deltaT_initialise'
     integer                                               :: vi, m
     character(len=256)                                    :: filename_climate_snapshot
-    logical                                               :: do_lapse_rates
     real(dp)                                              :: timeframe_init_insolation
 
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Print to terminal
+    if (par%primary)  write(*,"(a)") '     initialising snapshot+uniform_dT climate model...'
 
     ! Run the chosen realistic climate model
     self%has_insolation = .FALSE.
 
-    ! Read single-time data from external file
-    ! Determine which climate model to initialise for this region
+    ! Determine which region to initialise
     select case (self%region_name())
       case('NAM')
           filename_climate_snapshot      = C%filename_climate_snapshot_unif_dT_NAM
@@ -246,9 +254,8 @@ contains
 
     call read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , self%mesh, C%output_dir, self%Hs_baseline)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , self%mesh, C%output_dir, self%T2m_baseline)
-    call read_field_from_file_2d_monthly( filename_climate_snapshot, 'Precip', self%mesh, c%output_dir, self%Precip_baseline)
-    
-    
+    call read_field_from_file_2d_monthly( filename_climate_snapshot, 'Precip', self%mesh, C%output_dir, self%Precip_baseline)
+
     ! Adding deltaT to the baseline temperature field (uniform in space and time)
     do vi = self%mesh%vi1, self%mesh%vi2
     do m = 1, 12
@@ -261,7 +268,7 @@ contains
 
     ! apply corrections due to the mismatch between GCM ice surface and ISM ice surface
     call self%apply_geometry_downscaling_corrections(geom)
-    
+
     ! Initialises the insolation (if needed)
     if (self%has_insolation) then
         call self%initialise_insolation_forcing()
@@ -299,7 +306,7 @@ contains
     ! the ice sheet surface elevation in the forcing climate and the model's ice sheet surface elevation
     call self%apply_geometry_downscaling_corrections(geom)
 
-    ! if needed for IMAU-ITM or climate matrix, we need to update insolation
+    ! if needed for an ITM or climate matrix, we need to update insolation
     if (self%has_insolation) then
       call self%get_insolation_at_time(time)
     end if
@@ -602,6 +609,5 @@ contains
     character(len=:), allocatable :: climate_model_name
     climate_model_name = 'snapshot_plus_uniform_deltaT'
   end function get_climate_model_name
-
 
 end module climate_snapshot_plus_uniform_deltaT

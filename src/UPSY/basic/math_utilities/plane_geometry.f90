@@ -16,7 +16,7 @@ module plane_geometry
     line_from_points, perpendicular_bisector_from_line, line_line_intersection, circumcenter, &
     geometric_center, triangle_area, is_in_triangle, longest_triangle_leg, smallest_triangle_angle, &
     largest_triangle_angle, equiangular_skewness, crop_line_to_domain, encroaches_upon, &
-    interpolate_inside_triangle, projection_of_p_on_qr, poly2line
+    interpolate_inside_triangle, projection_of_p_on_qr, poly2line, calc_convex_polygon_intersection
 
   interface interpolate_inside_triangle
     procedure :: interpolate_inside_triangle_dp_2D
@@ -923,5 +923,126 @@ contains
     end do
 
   end subroutine poly2line
+
+  subroutine calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+    ! Calculate the intersection C of convex polygons A and B
+
+    ! In/output variables:
+    real(dp), dimension(:,:),              intent(in   ) :: poly_a, poly_b
+    real(dp), dimension(:,:), allocatable, intent(inout) :: poly_c
+
+    ! Local variables:
+    integer                               :: na, nb, nc
+    real(dp), dimension(:,:), allocatable :: poly_in
+    real(dp), dimension(:,:), allocatable :: poly_c_temp
+    integer                               :: j, k, n_in, i
+    real(dp), dimension(2)                :: r, e, p_prev, p_curr
+    real(dp)                              :: len_e, d_prev, d_curr, t
+    real(dp), parameter                   :: tol = 1e-3_dp
+
+    if (allocated( poly_c)) deallocate( poly_c)
+
+    ! Quick test: if their bounding boxes do not intersect,
+    ! then the polygons also do not
+    if (.not. bounding_boxes_intersect( poly_a, poly_b)) return
+
+    na = size( poly_a,1)
+    nb = size( poly_b,1)
+
+    allocate( poly_in( max( na,nb), 2), source = 0._dp)
+
+    ! Initialise intersection as polygon A
+    nc = na
+    allocate( poly_c_temp( nc,2))
+    poly_c_temp( 1:na,:) = poly_a( 1:na,:)
+
+    do j = 1, nb
+
+      ! If the intersection has been reduced to a line, it is null.
+      if (nc < 3) then
+        nc = 0
+        deallocate( poly_c_temp)
+        return
+      end if
+
+      ! Clipping edge [r, r+e]; inside = left of the edge
+      r     = poly_b( j,:)
+      e     = poly_b( mod( j,nb)+1,:) - r
+      len_e = norm2( e)
+
+      n_in = nc
+      poly_in( 1:n_in,:) = poly_c_temp( 1:n_in,:)
+      nc = 0
+
+      p_prev = poly_in( n_in,:)
+      d_prev = (e(1)*(p_prev(2)-r(2)) - e(2)*(p_prev(1)-r(1))) / len_e
+
+      do k = 1, n_in
+
+        p_curr = poly_in( k,:)
+        d_curr = (e(1)*(p_curr(2)-r(2)) - e(2)*(p_curr(1)-r(1))) / len_e
+
+        if ((d_curr >= -tol) .neqv. (d_prev >= -tol)) then
+          ! Edge crosses the clipping line: add the intersection
+          t  = max( 0._dp, min( 1._dp, d_prev / (d_prev - d_curr)))
+          nc = nc + 1
+          poly_c_temp( nc,:) = p_prev + t * (p_curr - p_prev)
+        end if
+        if (d_curr >= -tol) then
+          nc = nc + 1
+          poly_c_temp( nc,:) = p_curr
+        end if
+
+        p_prev = p_curr
+        d_prev = d_curr
+
+      end do
+
+    end do
+
+    ! Afterwards: remove consecutive near-duplicates (including last-vs-first),
+    ! and discard the result if nc < 3 or its area < tol * perimeter
+    i = 1
+    do while (i < nc)
+      if (norm2( poly_c_temp( i,:) - poly_c_temp( i+1,:)) < tol) then
+        nc = nc - 1
+        poly_c_temp( i : nc-1,:) = poly_c_temp( i+1 : nc,:)
+      else
+        i = i+1
+      end if
+    end do
+    if (norm2( poly_c_temp( nc,:) - poly_c_temp( 1,:)) < tol) then
+      nc = nc - 1
+    end if
+
+    ! Only nodes 1:nc are valid; the rest are leftovers from earlier passes
+    allocate( poly_c( nc,2), source = poly_c_temp( 1:nc,:))
+
+  end subroutine calc_convex_polygon_intersection
+
+  pure function bounding_boxes_intersect( poly_a, poly_b) result( isso)
+    ! Check if the bounding boxes of two polygons intersect
+
+    ! In/output variables:
+    real(dp), dimension(:,:), intent(in) :: poly_a, poly_b
+    logical                              :: isso
+
+    ! Local variables:
+    real(dp) :: xmin_1, xmax_1, ymin_1, ymax_1
+    real(dp) :: xmin_2, xmax_2, ymin_2, ymax_2
+
+    xmin_1 = minval( poly_a( :,1))
+    xmax_1 = maxval( poly_a( :,1))
+    ymin_1 = minval( poly_a( :,2))
+    ymax_1 = maxval( poly_a( :,2))
+
+    xmin_2 = minval( poly_b( :,1))
+    xmax_2 = maxval( poly_b( :,1))
+    ymin_2 = minval( poly_b( :,2))
+    ymax_2 = maxval( poly_b( :,2))
+
+    isso = xmin_1 <= xmax_2 .and. xmin_2 <= xmax_1 .and. ymin_1 <= ymax_2 .and. ymin_2 <= ymax_1
+
+  end function bounding_boxes_intersect
 
 end module plane_geometry

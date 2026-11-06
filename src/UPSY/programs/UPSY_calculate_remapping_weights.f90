@@ -73,7 +73,7 @@ program UPSY_calculate_remapping_weights
   call map%create()
 
   ! Write it to a NetCDF file
-  call write_map_to_file( map, filename_output)
+  call map%save_as_netcdf( filename_output)
 
   ! Finalise PETSc and MPI parallelisation
   PetscCall( PetscFinalize( ierr))
@@ -211,24 +211,5 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine read_grid
-
-  subroutine write_map_to_file( map, filename_output)
-
-    ! In/output variables
-    type(type_map),   intent(in) :: map
-    character(len=*), intent(in) :: filename_output
-
-    ! Local variables
-    character(len=*), parameter :: routine_name = 'write_map_to_file'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call crash('fixme!')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine write_map_to_file
 
 end program UPSY_calculate_remapping_weights

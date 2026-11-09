@@ -949,12 +949,12 @@ contains
     na = size( poly_a,1)
     nb = size( poly_b,1)
 
-    allocate( poly_in( max( na,nb), 2), source = 0._dp)
+    allocate( poly_in( na+nb, 2), source = 0._dp)
 
     ! Initialise intersection as polygon A
+    allocate( poly_c_temp( na+nb,2))
     nc = na
-    allocate( poly_c_temp( nc,2))
-    poly_c_temp( 1:na,:) = poly_a( 1:na,:)
+    poly_c_temp( 1:nc,:) = poly_a( 1:na,:)
 
     do j = 1, nb
 
@@ -1011,12 +1011,16 @@ contains
         i = i+1
       end if
     end do
-    if (norm2( poly_c_temp( nc,:) - poly_c_temp( 1,:)) < tol) then
-      nc = nc - 1
+    if (nc > 1) then
+      if (norm2( poly_c_temp( nc,:) - poly_c_temp( 1,:)) < tol) then
+        nc = nc - 1
+      end if
     end if
 
     ! Only nodes 1:nc are valid; the rest are leftovers from earlier passes
-    allocate( poly_c( nc,2), source = poly_c_temp( 1:nc,:))
+    if (nc > 2) then
+      allocate( poly_c( nc,2), source = poly_c_temp( 1:nc,:))
+    end if
 
   end subroutine calc_convex_polygon_intersection
 

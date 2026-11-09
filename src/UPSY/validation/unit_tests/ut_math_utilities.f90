@@ -8,6 +8,8 @@ module ut_math_utilities
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use tridiagonal_solver, only: solve_tridiagonal_matrix_equation
+  use plane_geometry, only: calc_convex_polygon_intersection
+  use mpi_basic, only: par
 
   implicit none
 
@@ -35,6 +37,7 @@ contains
     test_name = trim( test_name_parent) // '/' // trim( test_name_local)
 
     call test_tridiagonal_solver( test_name)
+    call test_polygon_intersection( test_name)
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -115,5 +118,281 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine test_tridiagonal_solver
+
+  subroutine test_polygon_intersection( test_name_parent)
+
+    ! In/output variables:
+    character(len=*), intent(in) :: test_name_parent
+
+    ! Local variables:
+    character(len=*), parameter           :: routine_name = 'test_polygon_intersection'
+    character(len=*), parameter           :: test_name_local = 'polygon_intersection'
+    character(len=:), allocatable         :: test_name
+    real(dp), dimension(:,:), allocatable :: poly_a, poly_b, poly_c
+    integer                               :: i
+    logical                               :: verified
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    ! Add test name to list
+    test_name = trim( test_name_parent) // '/' // trim( test_name_local)
+
+    ! Simple intersecting squares
+    ! ===========================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0.5_dp, 0.5_dp]
+    poly_b( 2,:) = [1.5_dp, 0.5_dp]
+    poly_b( 3,:) = [1.5_dp, 1.5_dp]
+    poly_b( 4,:) = [0.5_dp, 1.5_dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0.5_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 2,:), [1.0_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 3,:), [1.0_dp, 1.0_dp]) .and. &
+      test_eq( poly_c( 4,:), [0.5_dp, 1.0_dp])
+    call unit_test( verified, trim( test_name) // '_1')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! More simple intersecting squares
+    ! ================================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0.5_dp, 0.5_dp]
+    poly_b( 2,:) = [1.5_dp, 0.5_dp]
+    poly_b( 3,:) = [1.5_dp, 1.5_dp]
+    poly_b( 4,:) = [0.5_dp, 1.5_dp]
+
+    call calc_convex_polygon_intersection( poly_b, poly_a, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0.5_dp, 1.0_dp]) .and. &
+      test_eq( poly_c( 2,:), [0.5_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 3,:), [1.0_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 4,:), [1.0_dp, 1.0_dp])
+    call unit_test( verified, trim( test_name) // '_2')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! Intersecting squares with overlapping edge
+    ! ==========================================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0.25_dp, 0.5_dp]
+    poly_b( 2,:) = [0.75_dp, 0.5_dp]
+    poly_b( 3,:) = [0.75_dp, 1.0_dp]
+    poly_b( 4,:) = [0.25_dp, 1.0_dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0.25_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 2,:), [0.75_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 3,:), [0.75_dp, 1.0_dp]) .and. &
+      test_eq( poly_c( 4,:), [0.25_dp, 1.0_dp])
+    call unit_test( verified, trim( test_name) // '_3')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! More intersecting squares with overlapping edge
+    ! ===============================================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0.25_dp, 0.5_dp]
+    poly_b( 2,:) = [0.75_dp, 0.5_dp]
+    poly_b( 3,:) = [0.75_dp, 1.0_dp]
+    poly_b( 4,:) = [0.25_dp, 1.0_dp]
+
+    call calc_convex_polygon_intersection( poly_b, poly_a, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0.25_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 2,:), [0.75_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 3,:), [0.75_dp, 1.0_dp]) .and. &
+      test_eq( poly_c( 4,:), [0.25_dp, 1.0_dp])
+    call unit_test( verified, trim( test_name) // '_4')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! Intersecting squares with overlapping edges and vertex
+    ! ======================================================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0.5_dp, 0.5_dp]
+    poly_b( 2,:) = [1.0_dp, 0.5_dp]
+    poly_b( 3,:) = [1.0_dp, 1.0_dp]
+    poly_b( 4,:) = [0.5_dp, 1.0_dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0.5_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 2,:), [1.0_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 3,:), [1.0_dp, 1.0_dp]) .and. &
+      test_eq( poly_c( 4,:), [0.5_dp, 1.0_dp])
+    call unit_test( verified, trim( test_name) // '_5')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! More intersecting squares with overlapping edges and vertex
+    ! ===========================================================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0.5_dp, 0.5_dp]
+    poly_b( 2,:) = [1.0_dp, 0.5_dp]
+    poly_b( 3,:) = [1.0_dp, 1.0_dp]
+    poly_b( 4,:) = [0.5_dp, 1.0_dp]
+
+    call calc_convex_polygon_intersection( poly_b, poly_a, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0.5_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 2,:), [1.0_dp, 0.5_dp]) .and. &
+      test_eq( poly_c( 3,:), [1.0_dp, 1.0_dp]) .and. &
+      test_eq( poly_c( 4,:), [0.5_dp, 1.0_dp])
+    call unit_test( verified, trim( test_name) // '_6')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! Fully overlapping squares
+    ! =========================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0._dp, 0._dp]
+    poly_b( 2,:) = [1._dp, 0._dp]
+    poly_b( 3,:) = [1._dp, 1._dp]
+    poly_b( 4,:) = [0._dp, 1._dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0._dp, 0._dp]) .and. &
+      test_eq( poly_c( 2,:), [1._dp, 0._dp]) .and. &
+      test_eq( poly_c( 3,:), [1._dp, 1._dp]) .and. &
+      test_eq( poly_c( 4,:), [0._dp, 1._dp])
+    call unit_test( verified, trim( test_name) // '_7')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! More fully overlapping squares
+    ! ==============================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [0._dp, 1._dp]
+    poly_b( 2,:) = [0._dp, 0._dp]
+    poly_b( 3,:) = [1._dp, 0._dp]
+    poly_b( 4,:) = [1._dp, 1._dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = &
+      test_eq( poly_c( 1,:), [0._dp, 0._dp]) .and. &
+      test_eq( poly_c( 2,:), [1._dp, 0._dp]) .and. &
+      test_eq( poly_c( 3,:), [1._dp, 1._dp]) .and. &
+      test_eq( poly_c( 4,:), [0._dp, 1._dp])
+    call unit_test( verified, trim( test_name) // '_8')
+
+    deallocate( poly_a, poly_b, poly_c)
+
+    ! Non-intersecting squares
+    ! ========================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [1._dp, 1._dp]
+    poly_b( 2,:) = [2._dp, 1._dp]
+    poly_b( 3,:) = [2._dp, 2._dp]
+    poly_b( 4,:) = [1._dp, 2._dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = .not. allocated( poly_c)
+    call unit_test( verified, trim( test_name) // '_9')
+
+    deallocate( poly_a, poly_b)
+
+    ! More non-intersecting squares
+    ! =============================
+
+    allocate( poly_a( 4,2))
+    poly_a( 1,:) = [0._dp, 0._dp]
+    poly_a( 2,:) = [1._dp, 0._dp]
+    poly_a( 3,:) = [1._dp, 1._dp]
+    poly_a( 4,:) = [0._dp, 1._dp]
+
+    allocate( poly_b( 4,2))
+    poly_b( 1,:) = [1._dp, 0._dp]
+    poly_b( 2,:) = [2._dp, 0._dp]
+    poly_b( 3,:) = [2._dp, 1._dp]
+    poly_b( 4,:) = [1._dp, 1._dp]
+
+    call calc_convex_polygon_intersection( poly_a, poly_b, poly_c)
+
+    verified = .not. allocated( poly_c)
+    call unit_test( verified, trim( test_name) // '_10')
+
+    deallocate( poly_a, poly_b)
+
+    ! Remove routine from call stack
+    call finalise_routine( routine_name)
+
+  end subroutine test_polygon_intersection
 
 end module ut_math_utilities

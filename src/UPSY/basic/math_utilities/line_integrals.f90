@@ -110,9 +110,9 @@ contains
 
     n = size( poly,1)
 
-    LI_xdy   = 0;
-    LI_mxydx = 0;
-    LI_xydy  = 0;
+    LI_xdy   = 0
+    LI_mxydx = 0
+    LI_xydy  = 0
 
     do i1 = 1, n
       if (i1 == n) then

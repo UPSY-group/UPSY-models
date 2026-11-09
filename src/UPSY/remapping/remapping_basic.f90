@@ -14,6 +14,8 @@ module remapping_basic
   use netcdf_io_main, only: create_new_netcdf_file_for_writing, add_attribute_char, &
     close_netcdf_file
   use netcdf, only: NF90_GLOBAL
+  use plane_geometry, only: calc_convex_polygon_intersection
+  use line_integrals, only: calc_line_integrals_around_polygon
 
   implicit none
 

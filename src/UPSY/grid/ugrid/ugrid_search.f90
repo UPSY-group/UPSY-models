@@ -66,7 +66,7 @@ contains
 
     if (allocated( poly)) deallocate( poly)
 
-    n = self%face_face_connectivity_n( face_index)
+    n = self%face_node_connectivity_n( face_index)
 
     allocate( poly( n,2))
 

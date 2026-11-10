@@ -187,7 +187,7 @@ CONTAINS
     END IF
 
     ! Allocate memory for main variables
-    ALLOCATE( climate%snapshot%Hs(    mesh%vi1:mesh%vi2))
+    ALLOCATE( climate%snapshot_deprecated%Hs(    mesh%vi1:mesh%vi2))
     ALLOCATE( climate%Hs(    mesh%vi1:mesh%vi2))
     ALLOCATE( climate%T2m(    mesh%vi1:mesh%vi2,12))
     ALLOCATE( climate%Precip( mesh%vi1:mesh%vi2,12))
@@ -195,7 +195,7 @@ CONTAINS
     allocate( climate%Wind_DU( mesh%vi1:mesh%vi2, 12))
     allocate( climate%Q_TOA( mesh%vi1:mesh%vi2, 12))
     climate%Hs     = 0._dp
-    climate%snapshot%Hs     = 0._dp
+    climate%snapshot_deprecated%Hs     = 0._dp
     climate%T2m    = 0._dp
     climate%Precip = 0._dp
     climate%Wind_LR = 0._dp
@@ -395,6 +395,7 @@ CONTAINS
           'idealised', &
           'SMB_snapshot_plus_anomalies', &
           'ISMIP7', &
+          'snapshot', &
           'snapshot_lapse', &
           'TIPMIP')
       ! No need to do anything

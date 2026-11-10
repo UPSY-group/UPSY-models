@@ -90,6 +90,11 @@ jobs:
     name: run
     needs: select_reference
     runs-on: ${{ needs.select_reference.outputs.runner }}
+    env:
+      # Force single-threaded BLAS/OpenMP, so results are reproducible across machines
+      # with different core counts (must match automated_testing/*/update_references.csh)
+      OMP_NUM_THREADS: 1
+      OPENBLAS_NUM_THREADS: 1
     steps:
 
     # Install all required packages and compile the code

@@ -97,26 +97,13 @@ contains
     type(type_CSR_matrix_dp)    :: M_xdy
     type(type_CSR_matrix_dp)    :: M_mxydx
     type(type_CSR_matrix_dp)    :: M_xydy
-    integer                     :: face_index_dst, face_index_src
     integer                     :: row, k1, k2, k
     real(dp)                    :: A_overlap_tot
 
     ! Add routine to path
     call init_routine( routine_name)
 
-    call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_xdy)
-    call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_mxydx)
-    call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_xydy)
-
-    face_index_src = 1
-    do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
-      call calc_line_integrals_around_all_overlaps( &
-        ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy, face_index_src, face_index_dst)
-    end do
-
-    call M_xdy%finalise()
-    call M_mxydx%finalise()
-    call M_xydy%finalise()
+    call calc_line_integral_matrices( ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy)
 
     self%M = M_xdy
 
@@ -189,8 +176,13 @@ contains
 
   end subroutine allocate_remapping_CSR_matrix
 
-  subroutine calc_line_integrals_around_all_overlaps( &
-    ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy, face_index_src, face_index_dst)
+  subroutine calc_line_integral_matrices( ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy)
+    ! Calculate the three line integral matrices M_xdy, M_mxydx, M_xydy, where:
+    !
+    ! M_xdy(i,j) = [the line integral of [x dy] around the intersection of destinatioj
+    !               ugrid face i and source ugrid face j]
+    !
+    ! ... and similarly for M_mxydx and M_xydy
 
     ! In/output variables:
     type(type_ugrid),         intent(in   ) :: ugrid_src
@@ -198,10 +190,11 @@ contains
     type(type_CSR_matrix_dp), intent(inout) :: M_xdy
     type(type_CSR_matrix_dp), intent(inout) :: M_mxydx
     type(type_CSR_matrix_dp), intent(inout) :: M_xydy
-    integer,                  intent(inout) :: face_index_src
-    integer,                  intent(in   ) :: face_index_dst
 
     ! Local variables:
+    character(len=*), parameter           :: routine_name = 'calc_line_integral_matrices'
+    integer                               :: face_index_src
+    integer                               :: face_index_dst
     real(dp), dimension(:,:), allocatable :: poly_src
     real(dp), dimension(:,:), allocatable :: poly_dst
     integer,  dimension(ugrid_src%nFaces) :: map, stack
@@ -212,63 +205,80 @@ contains
     real(dp)                              :: LI_xdy, LI_mxydx, LI_xydy
     real(dp), parameter                   :: tol_dist = 1e-3_dp
     integer                               :: ci, neighbour_face_index_src
-    integer :: i
 
-    ! The polygon describing this destination mesh Voronoi cell
-    call ugrid_dst%get_face_as_polygon( face_index_dst, poly_dst)
+    ! Add routine to path
+    call init_routine( routine_name)
 
-    ! Initialise map and stack with the source ugrid face
-    ! nearest to the destination ugrid face
+    call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_xdy)
+    call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_mxydx)
+    call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_xydy)
 
-    p = ugrid_dst%face_coordinates( face_index_dst,:)
-    call ugrid_src%find_nearest_face_center( p, face_index_src)
+    face_index_src = 1
+    do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
 
-    map = 0
-    map( face_index_src) = 1
-    stackN = 1
-    stack( stackN) = face_index_src
+      ! The polygon describing this destination mesh Voronoi cell
+      call ugrid_dst%get_face_as_polygon( face_index_dst, poly_dst)
 
-    ncycles = 0
-    do while (stackN > 0)
+      ! Initialise map and stack with the source ugrid face
+      ! nearest to the destination ugrid face
+      p = ugrid_dst%face_coordinates( face_index_dst,:)
+      call ugrid_src%find_nearest_face_center( p, face_index_src)
 
-      ! Safety
-      ncycles = ncycles + 1
-      if (ncycles > ugrid_src%nFaces) call crash('calc_line_integrals_around_all_overlaps got stuck')
+      map = 0
+      map( face_index_src) = 1
+      stackN = 1
+      stack( stackN) = face_index_src
 
-      ! Take the last source vertex from the stack
-      face_index_src = stack( stackN)
-      stackN = stackN - 1
-      map( face_index_src) = 2
+      ncycles = 0
+      do while (stackN > 0)
 
-      ! Get this source grid face as a polygon
-      call ugrid_src%get_face_as_polygon( face_index_src, poly_src)
+        ! Safety
+        ncycles = ncycles + 1
+        if (ncycles > ugrid_src%nFaces) call crash('floodfill-style outward search got stuck')
 
-      ! Calculate overlap
-      call calc_convex_polygon_intersection( poly_src, poly_dst, poly_intersect)
+        ! Take the last source vertex from the stack
+        face_index_src = stack( stackN)
+        stackN = stackN - 1
+        map( face_index_src) = 2
 
-      ! If this source grid face doesnt intersect with the destination grid face, move on
-      if (.not. allocated( poly_intersect)) cycle
+        ! Get this source grid face as a polygon
+        call ugrid_src%get_face_as_polygon( face_index_src, poly_src)
 
-      ! Calculate line integrals
-      call calc_line_integrals_around_polygon( poly_intersect, LI_xdy, LI_mxydx, LI_xydy, tol_dist)
+        ! Calculate intersection
+        call calc_convex_polygon_intersection( poly_src, poly_dst, poly_intersect)
 
-      ! Add line integrals to sparse matrices
-      call M_xdy%add_entry  ( face_index_dst, face_index_src, LI_xdy)
-      call M_mxydx%add_entry( face_index_dst, face_index_src, LI_mxydx)
-      call M_xydy%add_entry ( face_index_dst, face_index_src, LI_xydy)
+        ! If the intersection is empty, move on
+        if (.not. allocated( poly_intersect)) cycle
 
-      ! Add non-checked neighbours to the stack
-      do ci = 1, ugrid_src%face_face_connectivity_n( face_index_src)
-        neighbour_face_index_src = ugrid_src%face_face_connectivity( face_index_src, ci)
-        if (map( neighbour_face_index_src) == 0) then
-          map( neighbour_face_index_src) = 1
-          stackN = stackN + 1
-          stack( stackN) = neighbour_face_index_src
-        end if
+        ! Calculate the three line integrals around the perimeter of the intersection
+        call calc_line_integrals_around_polygon( poly_intersect, LI_xdy, LI_mxydx, LI_xydy, tol_dist)
+
+        ! Add line integrals to sparse matrices
+        call M_xdy%add_entry  ( face_index_dst, face_index_src, LI_xdy)
+        call M_mxydx%add_entry( face_index_dst, face_index_src, LI_mxydx)
+        call M_xydy%add_entry ( face_index_dst, face_index_src, LI_xydy)
+
+        ! Add non-checked neighbours to the stack to continue the floodfill-style outward expansion
+        do ci = 1, ugrid_src%face_face_connectivity_n( face_index_src)
+          neighbour_face_index_src = ugrid_src%face_face_connectivity( face_index_src, ci)
+          if (map( neighbour_face_index_src) == 0) then
+            map( neighbour_face_index_src) = 1
+            stackN = stackN + 1
+            stack( stackN) = neighbour_face_index_src
+          end if
+        end do
+
       end do
 
     end do
 
-  end subroutine calc_line_integrals_around_all_overlaps
+    call M_xdy%finalise()
+    call M_mxydx%finalise()
+    call M_xydy%finalise()
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine calc_line_integral_matrices
 
 end submodule remapping_calc_CSR_operators

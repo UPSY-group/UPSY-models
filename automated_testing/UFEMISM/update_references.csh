@@ -16,6 +16,20 @@ else
   exit 1
 endif
 
+# Use a direct solver (MUMPS LU) instead of an iterative Krylov solver, so that small
+# floating-point differences cannot change the number of solver iterations (and thereby
+# the solution). PETSc applies these options in KSPSetFromOptions, overriding the
+# KSP/PC types from the config. Only applies to test runs, not to regular simulations.
+# NOTE: not set for the UPSY tests, since component_test_PETSc_matrix_solving
+#       specifically tests the different Krylov solvers and preconditioners.
+setenv PETSC_OPTIONS "-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps -ksp_initial_guess_nonzero false"
+
+# Force single-threaded BLAS/OpenMP, so that results are reproducible across machines
+# with different core counts (threaded BLAS reductions change the floating-point
+# summation order). Only applies to test runs, not to regular simulations.
+setenv OMP_NUM_THREADS 1
+setenv OPENBLAS_NUM_THREADS 1
+
 set all_tests = ( \
   integrated_test_SSA_icestream_small \
   integrated_test_SSA_notime_MISMIP_mod_full \

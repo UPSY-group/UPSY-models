@@ -14,6 +14,11 @@ dependencies:
   - netcdf-fortran=4.6.2
   - libnetcdf=4.10.0
 
+  # Pin the BLAS implementation and version, so CI and the machine that generated
+  # the reference results use the same floating-point kernels
+  - libblas=*=*openblas
+  - libopenblas=0.3.34=openmp*
+
   - gfortran
   - compilers
   - cmake

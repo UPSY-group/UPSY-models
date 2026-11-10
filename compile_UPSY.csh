@@ -53,7 +53,7 @@ set in_build_dir = 0
 
 # Define compiler flags based on version
 if ($version == 'dev') then
-  set compiler_flags = "-fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -march=native -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33"
+  set compiler_flags = "-fdiagnostics-color=always -Og -Wall -ffree-line-length-none -cpp -Werror=implicit-interface -fimplicit-none -g -ffp-contract=off -fcheck=all -fbacktrace -finit-real=nan -finit-integer=-42 -finit-character=33"
 else if ($version == 'perf') then
   set compiler_flags = "-fdiagnostics-color=always -O3 -Wall -ffree-line-length-none -cpp -fimplicit-none -g -march=native"
 endif

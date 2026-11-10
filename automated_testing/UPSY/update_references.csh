@@ -16,6 +16,12 @@ else
   exit 1
 endif
 
+# Force single-threaded BLAS/OpenMP, so that results are reproducible across machines
+# with different core counts (threaded BLAS reductions change the floating-point
+# summation order). Only applies to test runs, not to regular simulations.
+setenv OMP_NUM_THREADS 1
+setenv OPENBLAS_NUM_THREADS 1
+
 set all_tests = ( \
   component_test_mesh_creation \
   component_test_mesh_discretisation \

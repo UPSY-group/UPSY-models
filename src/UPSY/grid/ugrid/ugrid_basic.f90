@@ -24,6 +24,7 @@ module ugrid_basic
 
       procedure, public  :: build_from_grid
       procedure, public  :: find_nearest_face_center
+      procedure, public  :: get_face_as_polygon
 
       final :: finalise
 
@@ -62,6 +63,12 @@ module ugrid_basic
       real(dp), dimension(2), intent(in   ) :: p
       integer,                intent(inout) :: face_index
     end subroutine find_nearest_face_center
+
+    module subroutine get_face_as_polygon( self, face_index, poly)
+      class(type_ugrid),                     intent(in   ) :: self
+      integer,                               intent(in   ) :: face_index
+      real(dp), dimension(:,:), allocatable, intent(inout) :: poly
+    end subroutine get_face_as_polygon
 
   end interface
 

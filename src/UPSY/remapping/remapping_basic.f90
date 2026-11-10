@@ -1,0 +1,297 @@
+module remapping_basic
+
+  use precisions, only: dp
+  use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
+  use crash_mod, only: crash
+  use basic_grid_mod, only: atype_grid
+  use Arakawa_grid_mod, only: type_Arakawa_grid
+  use remapping_context_mod, only: type_remapping_context
+  use remapping_methods, only: type_remapping_method, remapping_method, type_remapping_method_factory
+  use ugrid_basic, only: type_ugrid
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
+  use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
+    multiply_CSR_matrix_with_vector_2D_wrapper
+  use netcdf_io_main, only: create_new_netcdf_file_for_writing, add_attribute_char, &
+    close_netcdf_file
+  use netcdf, only: NF90_GLOBAL
+
+  implicit none
+
+  private
+
+  public :: type_remapping, type_map
+
+  ! Type of a remapping object
+  type :: type_map
+
+      type(type_remapping_context) :: ct
+      type(type_CSR_matrix_dp)     :: M
+
+    contains
+
+      procedure, public  :: create => create_map
+      procedure, private :: calc_matrix_operator => calc_CSR_remapping_operator
+      generic,   public :: apply => &
+        apply_map_2D, &
+        apply_map_3D
+      procedure, public :: apply_map_2D
+      procedure, public :: apply_map_3D
+      procedure, public :: save_as_netcdf => save_map_as_netcdf
+
+  end type type_map
+
+  type :: type_remapping
+      type(type_remapping_method_factory) :: method
+    contains
+      generic,   public :: remap => &
+        remap_2D, &
+        remap_3D
+      procedure, public, nopass :: remap_2D
+      procedure, public, nopass :: remap_3D
+  end type type_remapping
+
+  ! Collection of all the maps that have already been calculated
+  type(type_map), dimension(:), allocatable, target :: Atlas
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module subroutine calc_CSR_remapping_operator( self, ugrid_src, ugrid_dst, choice_remapping_method)
+      class(type_map),             intent(inout) :: self
+      type(type_ugrid),            intent(in   ) :: ugrid_src
+      type(type_ugrid),            intent(in   ) :: ugrid_dst
+      type(type_remapping_method), intent(in   ) :: choice_remapping_method
+    end subroutine calc_CSR_remapping_operator
+
+  end interface
+
+contains
+
+  subroutine remap_2D( grid_src, Arakawa_grid_src, d_src, grid_dst, Arakawa_grid_dst, d_dst, method)
+
+    ! In/output variables:
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    real(dp), dimension(:),      intent(in   ) :: d_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    real(dp), dimension(:),      intent(  out) :: d_dst
+    type(type_remapping_method), intent(in   ) :: method
+
+    ! Local variables:
+    character(len=*), parameter  :: routine_name = 'remap_2D'
+    type(type_map), pointer      :: map
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call find_in_or_add_map_to_Atlas( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, map)
+    call map%apply( d_src, d_dst)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_2D
+
+  subroutine remap_3D( grid_src, Arakawa_grid_src, d_src, grid_dst, Arakawa_grid_dst, d_dst, method)
+
+    ! In/output variables:
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    real(dp), dimension(:,:),    intent(in   ) :: d_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    real(dp), dimension(:,:),    intent(  out) :: d_dst
+    type(type_remapping_method), intent(in   ) :: method
+
+    ! Local variables:
+    character(len=*), parameter  :: routine_name = 'remap_3D'
+    type(type_map), pointer      :: map
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call find_in_or_add_map_to_Atlas( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, map)
+    call map%apply( d_src, d_dst)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine remap_3D
+
+  subroutine find_in_or_add_map_to_Atlas( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, map)
+    ! Return a pointer to an existing or newly created mapping object in the Atlas
+
+    ! In/output variables:
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    type(type_remapping_method), intent(in   ) :: method
+    type(type_map), pointer,     intent(  out) :: map
+
+    ! Local variables:
+    character(len=*), parameter               :: routine_name = 'find_in_or_add_map_to_Atlas'
+    type(type_remapping_context)              :: ct_desired
+    integer                                   :: mi
+    logical                                   :: found_it
+    type(type_map), dimension(:), allocatable :: Atlas_old
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Set up the desired remapping contect
+    call ct_desired%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+
+    if (.not. allocated( Atlas)) then
+      ! Allocate room for a single map in the Atlas, then create that map
+      allocate( Atlas( 1))
+      map => Atlas( 1)
+      call map%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+
+    else
+
+      ! See if the correct map already exists in the Atlas
+      found_it = .false.
+      do mi = 1, size( Atlas)
+        if (Atlas(mi)%ct == ct_desired) then
+          found_it = .true.
+          map => Atlas( mi)
+        end if
+      end do
+
+      ! If not, extend the Atlas and add a new mapping object to it
+      if (.not. found_it) then
+        ! Extend the Atlas by a single element
+        allocate( Atlas_old( size( Atlas)), source = Atlas)
+        deallocate( Atlas)
+        allocate( Atlas( size( Atlas_old)+1))
+        Atlas( 1: size( Atlas_old)) = Atlas_old
+        deallocate( Atlas_old)
+        ! Add a new mapping object
+        map => Atlas( size( Atlas))
+        call map%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+      end if
+
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine find_in_or_add_map_to_Atlas
+
+  subroutine create_map( self, grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+    ! Create a new mapping object matching the specified grids and remapping method
+
+    ! In/output variables:
+    class(type_map),             intent(inout) :: self
+    class(atype_grid), target,   intent(in   ) :: grid_src
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_src
+    class(atype_grid), target,   intent(in   ) :: grid_dst
+    type(type_Arakawa_grid),     intent(in   ) :: Arakawa_grid_dst
+    type(type_remapping_method), intent(in   ) :: method
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'create_map'
+    type(type_ugrid)            :: ugrid_src
+    type(type_ugrid)            :: ugrid_dst
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Set up the remapping context object
+    call self%ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+
+    ! Create ugrids from source and destination grids
+    call ugrid_src%build_from_grid( grid_src, Arakawa_grid_src)
+    call ugrid_dst%build_from_grid( grid_dst, Arakawa_grid_dst)
+
+    ! Calculate remapping operator between the two ugrids
+    call self%calc_matrix_operator( ugrid_src, ugrid_dst, method)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine create_map
+
+  subroutine apply_map_2D( self, d_src, d_dst)
+    ! Apply a remapping object as a sparse matrix multiplication
+
+    ! In/output variables:
+    class(type_map),        intent(in   ) :: self
+    real(dp), dimension(:), intent(in   ) :: d_src
+    real(dp), dimension(:), intent(  out) :: d_dst
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'apply_map_2D'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call multiply_CSR_matrix_with_vector_1D_wrapper( self%M, &
+      self%ct%pai_src, d_src, self%ct%pai_dst, d_dst)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_map_2D
+
+  subroutine apply_map_3D( self, d_src, d_dst)
+    ! Apply a remapping object as a sparse matrix multiplication
+
+    ! In/output variables:
+    class(type_map),          intent(in   ) :: self
+    real(dp), dimension(:,:), intent(in   ) :: d_src
+    real(dp), dimension(:,:), intent(  out) :: d_dst
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'apply_map_3D'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call multiply_CSR_matrix_with_vector_2D_wrapper( self%M, &
+      self%ct%pai_src, d_src, self%ct%pai_dst, d_dst)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine apply_map_3D
+
+  subroutine save_map_as_netcdf( self, filename)
+    ! Save a remapping object as a NetCDF file
+
+    ! In/output variables:
+    class(type_map),  intent(in) :: self
+    character(len=*), intent(in) :: filename
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'save_map_as_netcdf'
+    integer                     :: ncid
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    call create_new_netcdf_file_for_writing( filename, ncid)
+
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'grid_src', trim( self%ct%grid_src%name))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'Arakawa_grid_src', trim( self%ct%Arakawa_grid_src%str()))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'grid_dst', trim( self%ct%grid_dst%name))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'Arakawa_grid_dst', trim( self%ct%Arakawa_grid_dst%str()))
+    call add_attribute_char( filename, ncid, NF90_GLOBAL, &
+      'method', trim( self%ct%method%str()))
+
+    call self%M%write_to_NetCDF( filename, ncid)
+
+    call close_netcdf_file( ncid)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine save_map_as_netcdf
+
+end module remapping_basic

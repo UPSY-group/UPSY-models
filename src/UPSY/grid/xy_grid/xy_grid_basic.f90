@@ -51,6 +51,10 @@ module xy_grid_basic
     integer                                 :: n1,n2,n_loc  ! Matrix rows owned by each process
     type(type_par_arr_info)                 :: pai
 
+  contains
+
+    procedure, public :: ij2fi, iijj2ni
+
   end type type_xy_grid
 
 contains
@@ -347,7 +351,7 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_field_to_vector_form_translation_tables'
-    integer                     :: i,j,n
+    integer                     :: i,j,fi
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -362,12 +366,11 @@ contains
     allocate( grid%n2ij( grid%n , 2      ), source = 0)
 
     ! Fill in tables
-    n = 0
     do i = 1, grid%nx
     do j = 1, grid%ny
-      n = n + 1
-      grid%ij2n( i,j) = n
-      grid%n2ij( n,:) = [i,j]
+      fi = grid%ij2fi( i,j)
+      grid%ij2n( i,j) = fi
+      grid%n2ij( fi,:) = [i,j]
     end do
     end do
 
@@ -427,5 +430,19 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine setup_grid_parallelisation
+
+  pure function iijj2ni( self,ii,jj) result( ni)
+    class(type_xy_grid), intent(in) :: self
+    integer,             intent(in) :: ii,jj
+    integer                         :: ni
+    ni = (ii-1) * (self%ny+1) + jj
+  end function iijj2ni
+
+  pure function ij2fi( self,i,j) result( fi)
+    class(type_xy_grid), intent(in) :: self
+    integer,             intent(in) :: i,j
+    integer                         :: fi
+    fi = (i-1) * (self%ny) + j
+  end function ij2fi
 
 end module xy_grid_basic

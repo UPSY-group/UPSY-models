@@ -1,0 +1,175 @@
+submodule( ugrid_basic) build_from_mesh_mod
+
+contains
+
+  subroutine build_from_mesh( ugrid, mesh, mesh_Arakawa_grid)
+
+    ! In/output variables:
+    type(type_ugrid),        intent(inout) :: ugrid
+    type(type_mesh),         intent(in   ) :: mesh
+    type(type_Arakawa_grid), intent(in   ) :: mesh_Arakawa_grid
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'build_from_mesh'
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Build from the mesh a-grid (vertices), b-grid (triangles), or c-grid (edges)
+    if     (mesh_Arakawa_grid == Arakawa_grid%a()) then
+      ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_a'
+      call build_from_mesh_vertices( ugrid, mesh)
+    elseif (mesh_Arakawa_grid == Arakawa_grid%b()) then
+      ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_b'
+      call build_from_mesh_triangles( ugrid, mesh)
+    elseif (mesh_Arakawa_grid == Arakawa_grid%c()) then
+      ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_c'
+      call crash('fixme!')
+    else
+      call crash('unsupported Arakawa grid')
+    end if
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine build_from_mesh
+
+  subroutine build_from_mesh_vertices( ugrid, mesh)
+    ! Build a ugrid from the mesh vertices (i.e. the Voronoi mesh)
+
+    ! In/output variables:
+    type(type_ugrid), intent(inout) :: ugrid
+    type(type_mesh),  intent(in   ) :: mesh
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'build_from_mesh_vertices'
+    integer                     :: vi
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Number of nodes and faces in the ugrid
+    ugrid%nNodes = mesh%nVor
+    ugrid%nFaces = mesh%nV
+
+    ! x/y-coordinates of nodes and faces
+    call allocate_dist_shared( ugrid%node_coordinates, ugrid%wnode_coordinates, [1, ugrid%nNodes], [1, 2])
+    call allocate_dist_shared( ugrid%face_coordinates, ugrid%wface_coordinates, [1, ugrid%nFaces], [1, 2])
+    if (par%node_primary) then
+      ugrid%node_coordinates = mesh%Vor
+      ugrid%face_coordinates = mesh%V
+    end if
+
+    ! Face-node connectivity
+    ugrid%face_node_connectivity_fill_value = -999
+    ugrid%face_node_connectivity_n_max = maxval( mesh%nVVor)
+
+    call allocate_dist_shared( ugrid%face_node_connectivity_n, ugrid%wface_node_connectivity_n, &
+      [1, ugrid%nFaces])
+    call allocate_dist_shared( ugrid%face_node_connectivity, ugrid%wface_node_connectivity, &
+      [1, ugrid%nFaces], [1, ugrid%face_node_connectivity_n_max])
+
+    if (par%node_primary) then
+      ugrid%face_node_connectivity_n = mesh%nVVor
+      ugrid%face_node_connectivity = ugrid%face_node_connectivity_fill_value
+      do vi = 1, mesh%nV
+        ugrid%face_node_connectivity( vi, 1: mesh%nVVor( vi)) = mesh%VVor( vi, 1: mesh%nVVor( vi))
+      end do
+    end if
+
+    ! Face-face connectivity
+    ugrid%face_face_connectivity_fill_value = -999
+    ugrid%face_face_connectivity_n_max = maxval( mesh%nC)
+
+    call allocate_dist_shared( ugrid%face_face_connectivity_n, ugrid%wface_face_connectivity_n, &
+      [1, ugrid%nFaces])
+    call allocate_dist_shared( ugrid%face_face_connectivity, ugrid%wface_face_connectivity, &
+      [1, ugrid%nFaces], [1, ugrid%face_face_connectivity_n_max])
+
+    if (par%node_primary) then
+      ugrid%face_face_connectivity_n = mesh%nC
+      ugrid%face_face_connectivity = ugrid%face_face_connectivity_fill_value
+      do vi = 1, mesh%nV
+        ugrid%face_face_connectivity( vi, 1: mesh%nC( vi)) = mesh%C( vi, 1: mesh%nC( vi))
+      end do
+    end if
+
+    ! Parallelisation info
+    ugrid%pai = mesh%pai_V
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine build_from_mesh_vertices
+
+  subroutine build_from_mesh_triangles( ugrid, mesh)
+    ! Build a ugrid from the mesh triangles (i.e. the normal mesh)
+
+    ! In/output variables:
+    type(type_ugrid), intent(inout) :: ugrid
+    type(type_mesh),  intent(in   ) :: mesh
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'build_from_mesh_triangles'
+    integer                     :: ti, n
+
+    ! Add routine to path
+    call init_routine( routine_name)
+
+    ! Number of nodes and faces in the ugrid
+    ugrid%nNodes = mesh%nV
+    ugrid%nFaces = mesh%nTri
+
+    ! x/y-coordinates of nodes and faces
+    call allocate_dist_shared( ugrid%node_coordinates, ugrid%wnode_coordinates, [1, ugrid%nNodes], [1, 2])
+    call allocate_dist_shared( ugrid%face_coordinates, ugrid%wface_coordinates, [1, ugrid%nFaces], [1, 2])
+    if (par%node_primary) then
+      ugrid%node_coordinates = mesh%V
+      ugrid%face_coordinates = mesh%TriGC
+    end if
+
+    ! Face-node connectivity
+    ugrid%face_node_connectivity_fill_value = -999
+    ugrid%face_node_connectivity_n_max = 3
+
+    call allocate_dist_shared( ugrid%face_node_connectivity_n, ugrid%wface_node_connectivity_n, &
+      [1, ugrid%nFaces])
+    call allocate_dist_shared( ugrid%face_node_connectivity, ugrid%wface_node_connectivity, &
+      [1, ugrid%nFaces], [1, ugrid%face_node_connectivity_n_max])
+
+    if (par%node_primary) then
+      ugrid%face_node_connectivity_n = 3
+      ugrid%face_node_connectivity = mesh%Tri
+    end if
+
+    ! Face-face connectivity
+    ugrid%face_face_connectivity_fill_value = -999
+    ugrid%face_face_connectivity_n_max = 3
+
+    call allocate_dist_shared( ugrid%face_face_connectivity_n, ugrid%wface_face_connectivity_n, &
+      [1, ugrid%nFaces])
+    call allocate_dist_shared( ugrid%face_face_connectivity, ugrid%wface_face_connectivity, &
+      [1, ugrid%nFaces], [1, ugrid%face_face_connectivity_n_max])
+
+    if (par%node_primary) then
+      do ti = 1, mesh%nTri
+        ugrid%face_face_connectivity_n( ti) = 0
+        ugrid%face_face_connectivity( ti, :) = ugrid%face_face_connectivity_fill_value
+        do n = 1, 3
+          if (mesh%TriC( ti,n) > 0) then
+            ugrid%face_face_connectivity_n( ti) = ugrid%face_face_connectivity_n( ti) + 1
+            ugrid%face_face_connectivity( ti, ugrid%face_face_connectivity_n( ti)) = mesh%TriC( ti,n)
+          end if
+        end do
+      end do
+    end if
+
+    ! Parallelisation info
+    ugrid%pai = mesh%pai_Tri
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end subroutine build_from_mesh_triangles
+
+end submodule build_from_mesh_mod

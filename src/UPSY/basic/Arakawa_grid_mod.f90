@@ -10,6 +10,7 @@ module Arakawa_grid_mod
 
   type type_Arakawa_grid_factory
   contains
+    procedure :: create_from_string => create_Arakawa_grid_from_string
     procedure :: a  => Arakawa_grid_factory_a
     procedure :: b  => Arakawa_grid_factory_b
     procedure :: c  => Arakawa_grid_factory_c
@@ -28,6 +29,26 @@ module Arakawa_grid_mod
   type(type_Arakawa_grid_factory) :: Arakawa_grid
 
 contains
+
+  function create_Arakawa_grid_from_string( self, str) result( res)
+    class(type_Arakawa_grid_factory), intent(in) :: self
+    character(len=*),                 intent(in) :: str
+    type(type_Arakawa_grid) :: res
+    select case (str)
+    case default
+      call crash("invalid Arakawa grid '" // trim( str) // "'")
+    case ('a')
+      res = self%a()
+    case ('b')
+      res = self%b()
+    case ('c')
+      res = self%c()
+    case ('cx')
+      res = self%cx()
+    case ('cy')
+      res = self%cy()
+    end select
+  end function create_Arakawa_grid_from_string
 
   function Arakawa_grid_factory_a( self) result( res)
     class(type_Arakawa_grid_factory), intent(in) :: self

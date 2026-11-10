@@ -10,7 +10,7 @@ dependencies:
 
   # Stuff to compile models
   - openmpi=5.0.10
-  - petsc=3.25.1
+  - petsc=3.25.5
   - netcdf-fortran=4.6.2
   - libnetcdf=4.10.0
 
@@ -33,6 +33,7 @@ dependencies:
   - scipy
   - shapely
   - xarray
+  - xugrid
   - pip
   - setuptools >=61
   - tqdm

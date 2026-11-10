@@ -54,6 +54,7 @@ automated_testing/test_reports/*.html
 automated_testing/unit_tests/figures/*.png
 automated_testing/component_tests/figures/*.png
 automated_testing/component_tests/figures/*.avi
+automated_testing/UPSY/component_test_ugrid/figures/*.png
 
 # Ignore temporary scoreboard files
 automated_testing/component_tests/temporary_scoreboard_files/*.xml

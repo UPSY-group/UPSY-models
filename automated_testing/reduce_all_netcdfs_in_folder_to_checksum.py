@@ -133,7 +133,9 @@ def reduce_netcdf_to_checksum(filename: str, output_dir: str) -> str:
             if np.ma.isMaskedArray(data):
                 mask = np.ma.getmaskarray(data).reshape(-1)
                 if np.any(mask):
-                    flat = flat.astype(np.float64, copy=False)
+                    # Always copy: a fully masked variable (e.g. a never-written scalar) is
+                    # returned as the read-only np.ma.masked singleton
+                    flat = flat.astype(np.float64, copy=True)
                     flat[mask] = np.nan
 
             finite_flat = flat[np.isfinite(flat)]

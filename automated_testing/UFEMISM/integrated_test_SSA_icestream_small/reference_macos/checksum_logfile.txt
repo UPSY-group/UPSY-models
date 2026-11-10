@@ -1,6 +1,6 @@
  -= Checksum logfile =-
-  Git commit hash        : 90dbba56f82ced489877a8ffd588db1163688efc
-  has uncommitted changes:  T
+  Git commit hash        : 77d5819eff3006fc392c7c866f6f2d208b6b88b7
+  has uncommitted changes:  F
   PETSc version          : 3.25.5
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10
@@ -1349,9 +1349,6 @@
  u_vav_b: sum(d^2) = 0.121424E+11, sum(abs) = 0.655720E+07, max(abs) = 0.227488E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_SSA_run/relax_viscosity_iterations]
  v_vav_b: sum(d^2) = 0.869217E+06, sum(abs) = 0.224139E+05, max(abs) = 0.268405E+03 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_SSA_run/relax_viscosity_iterations]
  region%ice%pc%dHi_dt_Hi_star_np1_u_np1: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
- Hi_eff: sum(d^2) = 0.163880E+11, sum(abs) = 0.819401E+07, max(abs) = 0.200475E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/alter_ice_thickness/calc_effective_thickness]
- fraction_margin: sum(d^2) = 0.409700E+04, sum(abs) = 0.409700E+04, max(abs) = 0.100000E+01 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/alter_ice_thickness/calc_effective_thickness]
- region%ice%pc%Hi_np1: sum(d^2) = 0.163880E+11, sum(abs) = 0.819401E+07, max(abs) = 0.200475E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
  pc%tau_np1: sum(d^2) = 0.000000E+00, sum(abs) = 0.000000E+00, max(abs) = 0.000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_pc_truncation_error]
  region%ice%geom%Hs: sum(d^2) = 0.164037E+11, sum(abs) = 0.819282E+07, max(abs) = 0.211758E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
  region%ice%geom%Hib: sum(d^2) = 0.205886E+08, sum(abs) = 0.252118E+06, max(abs) = 0.120000E+03 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]

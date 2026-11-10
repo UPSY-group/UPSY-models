@@ -12,7 +12,7 @@ module SMB_IMAU_ITM
   use mpi_f08, only: MPI_WIN
   use ice_model_data, only: atype_ice_model_data
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use climate_model_types, only: type_climate_model, type_climate_model_snapshot
+  use climate_model_types, only: type_climate_model, type_climate_model_snapshot_deprecated
   use netcdf_io_main, only: read_field_from_file_2D, read_field_from_file_2D_monthly
   use parameters, only: ice_density, T0, L_fusion, sec_per_year
   use climate_model_utilities, only: get_insolation_at_time
@@ -377,12 +377,11 @@ contains
     integer                           :: m, mprev
     real(dp)                          :: snowfrac, liquid_water, sup_imp_wat
     real(dp)                          :: timeframe_init_insolation
-    type(type_climate_model_snapshot) :: snapshot_dummy
+    type(type_climate_model_snapshot_deprecated) :: snapshot_dummy
 
     ! Add routine to call stack
     call init_routine( routine_name)
 
-    ! Run all the stuff that is specific to SMB model idealised
 
     ! Initialise insolation if needed
     if (.not. allocated(climate%Q_TOA)) then

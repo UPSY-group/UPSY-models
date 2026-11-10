@@ -77,9 +77,9 @@ CONTAINS
     call apply_geometry_downscaling_corrections(mesh, geom, climate, climate%snapshot_trans_dT%snapshot, climate%snapshot_trans_dT%deltaT)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
-    IF (climate%snapshot%has_insolation) THEN
+    IF (climate%snapshot_deprecated%has_insolation) THEN
       CALL get_insolation_at_time( mesh, time, climate%snapshot_trans_dT%snapshot)
-      climate%Q_TOA = climate%snapshot%Q_TOA
+      climate%Q_TOA = climate%snapshot_deprecated%Q_TOA
     END IF
 
     ! Finalise routine path
@@ -181,7 +181,7 @@ CONTAINS
         END IF
         CALL get_insolation_at_time( mesh, timeframe_init_insolation, climate%snapshot_trans_dT%snapshot)
         climate%Q_TOA          = climate%snapshot_trans_dT%snapshot%Q_TOA
-        climate%snapshot%Q_TOA = climate%snapshot_trans_dT%snapshot%Q_TOA
+        climate%snapshot_deprecated%Q_TOA = climate%snapshot_trans_dT%snapshot%Q_TOA
     END IF
     END IF
 
@@ -235,10 +235,10 @@ CONTAINS
       call crash('unknown region_name "' // region_name // '"')
     end select
 
-    call reallocate_bounds( climate%snapshot%Hs, mesh_new%vi1, mesh_new%vi2)
+    call reallocate_bounds( climate%snapshot_deprecated%Hs, mesh_new%vi1, mesh_new%vi2)
 
     IF (climate%snapshot_trans_dT%snapshot%has_insolation .eqv. .TRUE.) THEN
-      call remap_insolation( climate%snapshot, mesh_new)
+      call remap_insolation( climate%snapshot_deprecated, mesh_new)
     END IF
 
     ! Read single-time data from external file

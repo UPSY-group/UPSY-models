@@ -9,12 +9,13 @@ MODULE climate_model_types
   use ISMIP7_climate, only: type_climate_model_ISMIP7
   use TIPMIP_climate, only: type_climate_model_TIPMIP
   use climate_snapshot_lapse, only: type_climate_model_snapshot_lapse
+  use climate_snapshot, only: type_climate_model_snapshot
 
   IMPLICIT NONE
 
 ! ===== Types =====
 ! =================
-  TYPE type_climate_model_snapshot
+  TYPE type_climate_model_snapshot_deprecated
     ! A single climate snapshot
 
     CHARACTER(LEN=256)                      :: name                          ! 'ERA40', 'HadCM3_PI', etc.
@@ -63,11 +64,11 @@ MODULE climate_model_types
     REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Albedo                        ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
     REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: I_abs                         ! Total yearly absorbed insolation, used in the climate matrix for interpolation
 
-  END TYPE type_climate_model_snapshot
+  END TYPE type_climate_model_snapshot_deprecated
 
   TYPE type_climate_model_snapshot_plus_unif_dT
 
-    TYPE(type_climate_model_snapshot)         :: snapshot
+    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot
 
     ! deltaT
     REAL(dp)                                  :: deltaT
@@ -77,7 +78,7 @@ MODULE climate_model_types
 
   TYPE type_climate_model_snapshot_plus_transient_dT
 
-    TYPE(type_climate_model_snapshot)         :: snapshot
+    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot
 
     ! deltaT
     REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series_time
@@ -89,7 +90,7 @@ MODULE climate_model_types
 
   TYPE type_climate_model_snapshot_plus_anomalies
 
-    TYPE(type_climate_model_snapshot)         :: snapshot_baseline
+    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot_baseline
     character(len=1024)                       :: filename_climate_anomalies
 
     REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: T2m                             ! Monthly mean 2m air temperature anomaly (K)
@@ -113,12 +114,12 @@ MODULE climate_model_types
     ! The "matrix" climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
 
     ! The three GCM snapshots
-    TYPE(type_climate_model_snapshot)             :: GCM_PI
-    TYPE(type_climate_model_snapshot)             :: GCM_warm
-    TYPE(type_climate_model_snapshot)             :: GCM_cold
+    TYPE(type_climate_model_snapshot_deprecated)             :: GCM_PI
+    TYPE(type_climate_model_snapshot_deprecated)             :: GCM_warm
+    TYPE(type_climate_model_snapshot_deprecated)             :: GCM_cold
 
     ! The present-day climate
-    TYPE(type_climate_model_snapshot)             :: PD_obs
+    TYPE(type_climate_model_snapshot_deprecated)             :: PD_obs
 
     ! GCM bias
     REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: GCM_bias_T2m
@@ -161,6 +162,7 @@ MODULE climate_model_types
     REAL(dp)                                :: t_next
 
     ! Add different climate model options
+    TYPE(type_climate_model_snapshot_deprecated)        :: snapshot_deprecated
     TYPE(type_climate_model_snapshot)                   :: snapshot
     TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT

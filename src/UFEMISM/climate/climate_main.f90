@@ -218,6 +218,12 @@ CONTAINS
       call initialise_climate_model_idealised( mesh, climate)
     case ('realistic')
       call initialise_climate_model_realistic( mesh, geom, climate, forcing, region_name)
+    case ('snapshot')
+      call climate%snapshot%allocate( region_name, mesh)
+      call climate%snapshot%initialise( geom, refgeo_PD, refgeo_init)
+      climate%Q_TOA   ( mesh%vi1:mesh%vi2,:) = climate%snapshot%Q_TOA   ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%snapshot%Wind_LR ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%snapshot%Wind_DU ( mesh%vi1:mesh%vi2,:)  
     case ('snapshot_plus_uniform_deltaT')
       call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, geom, climate, region_name)
     case ('snapshot_plus_transient_deltaT')
@@ -292,6 +298,7 @@ CONTAINS
       call crash('unknown choice_climate_model "' // trim( choice_climate_model) // '"')
     case ('none', &
           'idealised', &
+          'snapshot', &
           'SMB_snapshot_plus_anomalies', &
           'ISMIP7', &
           'snapshot_lapse', &

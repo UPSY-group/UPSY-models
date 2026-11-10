@@ -8,7 +8,7 @@ module climate_model_utilities
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, MPI_INTEGER, MPI_BCAST
   use mesh_basic                                             , only: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
+  use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot_deprecated
   use global_forcing_types                                   , only: type_global_forcing
   use netcdf_io_main
   use mesh_disc_apply_operators, only: ddx_a_a_2D, ddy_a_a_2D
@@ -39,7 +39,7 @@ module climate_model_utilities
 
     ! In/output variables:
     type(type_mesh),                     intent(in)    :: mesh
-    type(type_climate_model_snapshot),   intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),   intent(inout) :: snapshot
     character(len=*),                    intent(in)    :: name
 
     ! Local variables:
@@ -63,13 +63,14 @@ module climate_model_utilities
     call finalise_routine( routine_name)
 
   end subroutine allocate_climate_snapshot
+  
   subroutine read_climate_snapshot( filename, mesh, snapshot)
     ! Read a climate snapshot from a NetCDF file. Works both for global lon/lat files and regional x/y files
 
     ! In/output variables:
     character(len=256),                 intent(in)    :: filename
     type(type_mesh),                    intent(in)    :: mesh
-    type(type_climate_model_snapshot),  intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),  intent(inout) :: snapshot
 
     ! Local variables:
     character(len=256), parameter                     :: routine_name = 'read_climate_snapshot'
@@ -89,13 +90,13 @@ module climate_model_utilities
 
     call rotate_wind_to_model_mesh( mesh, snapshot%Wind_WE, snapshot%Wind_SN, snapshot%Wind_LR, snapshot%Wind_DU)
 
-   ! Check if the snapshot have negative values in the Precip after mapping to mesh
+    ! Check if the snapshot have negative values in the Precip after mapping to mesh
 #if (DO_ASSERTIONS)
-    do m = 1, 12
-    do vi = mesh%vi1, mesh%vi2
-      call assert( snapshot%Precip(vi, m) >= 0, 'snapshot%Precip with negative values')
-    end do
-    end do
+      do m = 1, 12
+      do vi = mesh%vi1, mesh%vi2
+        call assert( snapshot%Precip(vi, m) >= 0, 'snapshot%Precip with negative values')
+      end do
+      end do
 #endif
 
     ! Finalise routine path
@@ -174,6 +175,7 @@ module climate_model_utilities
     call finalise_routine( routine_name)
 
   end subroutine adapt_precip_CC
+  
   subroutine adapt_precip_Roe( mesh, Hs1, T2m1, Wind_LR1, Wind_DU1, Precip1, &
                                       Hs2, T2m2, Wind_LR2, Wind_DU2, Precip2)
     ! Adapt precipitation from reference state 1 to model state 2, using the Roe&Lindzen precipitation model
@@ -335,7 +337,7 @@ module climate_model_utilities
 
     ! In/output variables:
     type(type_mesh),                        intent(in)    :: mesh
-    type(type_climate_model_snapshot),      intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),      intent(inout) :: snapshot
     real(dp),                               intent(in)    :: time
 
     ! Local variables:
@@ -389,8 +391,8 @@ module climate_model_utilities
       end do
     end do
 
-  ! Finalise routine path
-  call finalise_routine( routine_name)
+    ! Finalise routine path
+    call finalise_routine( routine_name)
 
   end subroutine get_insolation_at_time
 
@@ -401,7 +403,7 @@ module climate_model_utilities
     ! NOTE: assumes time in forcing file is in kyr
 
     type(type_mesh),                   intent(in)     :: mesh
-    type(type_climate_model_snapshot), intent(inout)  :: snapshot
+    type(type_climate_model_snapshot_deprecated), intent(inout)  :: snapshot
     real(dp),                          intent(in)     :: time
 
     ! Local variables:
@@ -442,7 +444,7 @@ module climate_model_utilities
   end subroutine update_insolation_timeframes_from_file
 
   SUBROUTINE apply_precipitation_CC_correction(mesh, climate, precip_CC_correction, deltaT)
-  ! Applies a simple Clausius-Clapeyron correction to temperature based on the prescribed deltaT
+    ! Applies a simple Clausius-Clapeyron correction to temperature based on the prescribed deltaT
 
     IMPLICIT NONE
 
@@ -478,7 +480,7 @@ module climate_model_utilities
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
     class(atype_ice_geometry_model_data),  intent(in   ) :: geom
     TYPE(type_climate_model),              INTENT(INOUT) :: climate
-    TYPE(type_climate_model_snapshot),     INTENT(IN)    :: snapshot
+    TYPE(type_climate_model_snapshot_deprecated),     INTENT(IN)    :: snapshot
     REAL(dp),                              INTENT(IN)    :: deltaT_snapshot
 
     ! Local Variables
@@ -529,7 +531,7 @@ module climate_model_utilities
   END SUBROUTINE apply_geometry_downscaling_corrections
 
   subroutine fill_in_transient_dT_snapshot_fields(filename_climate_snapshot, mesh, climate, time)
-  ! Read in snapshot variables
+    ! Read in snapshot variables
 
     CHARACTER(LEN=*),                      INTENT(IN)    :: filename_climate_snapshot
     TYPE(type_mesh),                       INTENT(IN)    :: mesh
@@ -542,7 +544,7 @@ module climate_model_utilities
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    call read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot%Hs)
+    call read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_deprecated%Hs)
     CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_trans_dT%snapshot%Hs)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m',    mesh, C%output_dir, climate%T2m)
     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)

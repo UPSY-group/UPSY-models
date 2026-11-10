@@ -13,7 +13,7 @@ MODULE climate_realistic
   USE parameters
   use mesh_basic                                             , ONLY: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
+  USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot_deprecated
   USE global_forcing_types                                   , ONLY: type_global_forcing
   USE global_forcings_main
   USE netcdf_io_main
@@ -64,9 +64,9 @@ CONTAINS
     CALL apply_geometry_downscaling_corrections( mesh, geom, climate)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
-    IF (climate%snapshot%has_insolation) THEN
-      CALL get_insolation_at_time( mesh, time, climate%snapshot)
-      climate%Q_TOA = climate%snapshot%Q_TOA
+    IF (climate%snapshot_deprecated%has_insolation) THEN
+      CALL get_insolation_at_time( mesh, time, climate%snapshot_deprecated)
+      climate%Q_TOA = climate%snapshot_deprecated%Q_TOA
 
       IF (C%choice_climate_model_realistic == 'climate_matrix') THEN
         ! This is probably where we will update insolation, CO2, etc...
@@ -110,48 +110,48 @@ CONTAINS
       UPSY%stru%colour_string( TRIM( C%choice_climate_model_realistic),'light blue') // '"...'
 
     ! Run the chosen realistic climate model
-    climate%snapshot%has_insolation = .FALSE.
+    climate%snapshot_deprecated%has_insolation = .FALSE.
     IF (C%choice_climate_model_realistic == 'snapshot') THEN
       ! Read single-time data from external file
 
       ! Determine which climate model to initialise for this region
       IF     (region_name == 'NAM') THEN
         filename_climate_snapshot = C%filename_climate_snapshot_NAM
-        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_NAM
-        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_NAM
-        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_NAM
+        climate%snapshot_deprecated%do_lapse_rates    = C%do_lapse_rate_corrections_NAM
+        climate%snapshot_deprecated%lapse_rate_precip = C%lapse_rate_precip_NAM
+        climate%snapshot_deprecated%lapse_rate_temp   = C%lapse_rate_temp_NAM
         IF (C%choice_SMB_model_NAM == 'IMAU-ITM') THEN
-           climate%snapshot%has_insolation = .TRUE.
+           climate%snapshot_deprecated%has_insolation = .TRUE.
         END IF
       ELSEIF (region_name == 'EAS') THEN
         filename_climate_snapshot = C%filename_climate_snapshot_EAS
-        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_EAS
-        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_EAS
-        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_EAS
+        climate%snapshot_deprecated%do_lapse_rates    = C%do_lapse_rate_corrections_EAS
+        climate%snapshot_deprecated%lapse_rate_precip = C%lapse_rate_precip_EAS
+        climate%snapshot_deprecated%lapse_rate_temp   = C%lapse_rate_temp_EAS
         IF (C%choice_SMB_model_EAS == 'IMAU-ITM') THEN
-           climate%snapshot%has_insolation = .TRUE.
+           climate%snapshot_deprecated%has_insolation = .TRUE.
         END IF
       ELSEIF (region_name == 'GRL') THEN
         filename_climate_snapshot = C%filename_climate_snapshot_GRL
-        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_GRL
-        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_GRL
-        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_GRL
+        climate%snapshot_deprecated%do_lapse_rates    = C%do_lapse_rate_corrections_GRL
+        climate%snapshot_deprecated%lapse_rate_precip = C%lapse_rate_precip_GRL
+        climate%snapshot_deprecated%lapse_rate_temp   = C%lapse_rate_temp_GRL
         IF (C%choice_SMB_model_GRL == 'IMAU-ITM') THEN
-           climate%snapshot%has_insolation = .TRUE.
+           climate%snapshot_deprecated%has_insolation = .TRUE.
         END IF
       ELSEIF (region_name == 'ANT') THEN
         filename_climate_snapshot = C%filename_climate_snapshot_ANT
-        climate%snapshot%do_lapse_rates    = C%do_lapse_rate_corrections_ANT
-        climate%snapshot%lapse_rate_precip = C%lapse_rate_precip_ANT
-        climate%snapshot%lapse_rate_temp   = C%lapse_rate_temp_ANT
+        climate%snapshot_deprecated%do_lapse_rates    = C%do_lapse_rate_corrections_ANT
+        climate%snapshot_deprecated%lapse_rate_precip = C%lapse_rate_precip_ANT
+        climate%snapshot_deprecated%lapse_rate_temp   = C%lapse_rate_temp_ANT
         IF (C%choice_SMB_model_ANT == 'IMAU-ITM') THEN
-           climate%snapshot%has_insolation = .TRUE.
+           climate%snapshot_deprecated%has_insolation = .TRUE.
         END IF
       ELSE
         CALL crash('unknown region_name "' // region_name // '"')
       END IF
 
-      CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , mesh, C%output_dir, climate%snapshot%Hs)
+      CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs'    , mesh, C%output_dir, climate%snapshot_deprecated%Hs)
       CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m'   , mesh, C%output_dir, climate%T2m)
       CALL read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
 
@@ -159,18 +159,18 @@ CONTAINS
       call apply_geometry_downscaling_corrections( mesh, geom, climate)
 
       ! Initialises the insolation (if needed)
-      IF (climate%snapshot%has_insolation) THEN
+      IF (climate%snapshot_deprecated%has_insolation) THEN
         IF (C%choice_insolation_forcing == 'none') THEN
           CALL crash('Chosen climate or SMB model cannot be used with choice_insolation_forcing = "none"!')
         ELSE
-          CALL initialise_insolation_forcing( climate%snapshot, mesh)
+          CALL initialise_insolation_forcing( climate%snapshot_deprecated, mesh)
           IF (C%start_time_of_run < 0._dp) THEN
             timeframe_init_insolation = C%start_time_of_run
           ELSE
             timeframe_init_insolation = 0._dp
           END IF
-          CALL get_insolation_at_time( mesh, timeframe_init_insolation, climate%snapshot)
-          climate%Q_TOA = climate%snapshot%Q_TOA
+          CALL get_insolation_at_time( mesh, timeframe_init_insolation, climate%snapshot_deprecated)
+          climate%Q_TOA = climate%snapshot_deprecated%Q_TOA
         END IF
       END IF
 
@@ -202,7 +202,7 @@ CONTAINS
     ! Add routine to path
     CALL init_routine( routine_name)
 
-    IF     ((C%choice_climate_model_realistic == 'snapshot') .AND. (climate%snapshot%do_lapse_rates .eqv. .TRUE.)) THEN
+    IF     ((C%choice_climate_model_realistic == 'snapshot') .AND. (climate%snapshot_deprecated%do_lapse_rates .eqv. .TRUE.)) THEN
 
       allocate( T_inv     (mesh%vi1:mesh%vi2, 12))
       allocate( T_inv_ref (mesh%vi1:mesh%vi2, 12))
@@ -212,7 +212,7 @@ CONTAINS
 
         ! we only apply corrections where it is not open ocean
         if (geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
-          deltaT  = (geom%Hs( vi) - climate%snapshot%Hs( vi)) * (-1._dp * abs(climate%snapshot%lapse_rate_temp))
+          deltaT  = (geom%Hs( vi) - climate%snapshot_deprecated%Hs( vi)) * (-1._dp * abs(climate%snapshot_deprecated%lapse_rate_temp))
           do m = 1, 12
             ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
             climate%T2m( vi, m)    = climate%T2m( vi, m)    + deltaT
@@ -220,7 +220,7 @@ CONTAINS
 
             ! Calculate inversion-layer temperatures
             T_inv_ref( vi, m) = 88.9_dp + 0.67_dp *  climate%T2m( vi, m)
-            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot%lapse_rate_temp * (geom%Hs( vi) - climate%snapshot%Hs( vi)))
+            T_inv(     vi, m) = 88.9_dp + 0.67_dp * (climate%T2m( vi, m) - climate%snapshot_deprecated%lapse_rate_temp * (geom%Hs( vi) - climate%snapshot_deprecated%Hs( vi)))
             ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
             ! Same as implemented in IMAU-ICE
             climate%Precip( vi, m) = climate%Precip( vi, m) * (T_inv_ref( vi, m) / T_inv( vi, m))**2 * EXP(22.47_dp * (T0 / T_inv_ref( vi, m) - T0 / T_inv( vi, m)))
@@ -248,7 +248,7 @@ CONTAINS
     IMPLICIT NONE
 
     ! In/output variables:
-    TYPE(type_climate_model_snapshot),   INTENT(INOUT) :: snapshot
+    TYPE(type_climate_model_snapshot_deprecated),   INTENT(INOUT) :: snapshot
     TYPE(type_mesh),            INTENT(IN)    :: mesh
 
     ! Local variables:
@@ -360,10 +360,10 @@ CONTAINS
       call crash('remap climate for choice_climate_model_realistic = "' // TRIM( C%choice_climate_model_realistic) // '" not implemented yet!')
     case ('snapshot')
       ! Reallocate the snapshot Hs field
-      call reallocate_bounds( climate%snapshot%Hs, mesh_new%vi1, mesh_new%vi2)
+      call reallocate_bounds( climate%snapshot_deprecated%Hs, mesh_new%vi1, mesh_new%vi2)
 
       ! Read single-time data from external file
-      call read_field_from_file_2D( filename_climate_snapshot, 'Hs', mesh_new, C%output_dir, climate%snapshot%Hs)
+      call read_field_from_file_2D( filename_climate_snapshot, 'Hs', mesh_new, C%output_dir, climate%snapshot_deprecated%Hs)
       call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m', mesh_new, C%output_dir, climate%T2m)
       call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh_new, C%output_dir, climate%Precip)
 
@@ -372,7 +372,7 @@ CONTAINS
         call crash('remap climate for choice_climate_model_realistic = "' // TRIM( C%choice_climate_model_realistic) // '" and choice_SMB_model = "' // TRIM( choice_SMB_model) // '" not implemented yet!')
       case ('IMAU-ITM')
         ! Reallocate the insolation fields
-        call remap_insolation( climate%snapshot, mesh_new)
+        call remap_insolation( climate%snapshot_deprecated, mesh_new)
       case( 'prescribed')
         ! Nothing extra to do
       end select
@@ -385,9 +385,9 @@ CONTAINS
   end subroutine remap_climate_realistic
 
   subroutine remap_insolation( snapshot, mesh_new)
-  ! In/out variables
+   ! In/out variables
     type(type_mesh),                        intent(in)    :: mesh_new
-    type(type_climate_model_snapshot),      intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),      intent(inout) :: snapshot
 
     ! Local variables
     character(LEN=256), parameter                         :: routine_name = 'remap_insolation'

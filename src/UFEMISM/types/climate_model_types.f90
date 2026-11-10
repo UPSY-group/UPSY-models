@@ -15,60 +15,60 @@ MODULE climate_model_types
 
 ! ===== Types =====
 ! =================
-  ! TYPE type_climate_model_snapshot
-  !   ! A single climate snapshot
+  TYPE type_climate_model_snapshot_deprecated
+    ! A single climate snapshot
 
-  !   CHARACTER(LEN=256)                      :: name                          ! 'ERA40', 'HadCM3_PI', etc.
+    CHARACTER(LEN=256)                      :: name                          ! 'ERA40', 'HadCM3_PI', etc.
 
-  !   ! Metadata
-  !   REAL(dp),                   ALLOCATABLE     :: CO2
-  !   REAL(dp),                   ALLOCATABLE     :: orbit_time                    ! The time (in ky ago) for the orbital forcing (Q_TOA can then be read from Laskar data)
-  !   REAL(dp),                   ALLOCATABLE     :: orbit_ecc                     ! Orbital parameters
-  !   REAL(dp),                   ALLOCATABLE     :: orbit_obl
-  !   REAL(dp),                   ALLOCATABLE     :: orbit_pre
-  !   REAL(dp),                   ALLOCATABLE     :: sealevel
-  !   !INTEGER :: wCO2, worbit_time, worbit_ecc, worbit_obl, worbit_pre, wsealevel
+    ! Metadata
+    REAL(dp),                   ALLOCATABLE     :: CO2
+    REAL(dp),                   ALLOCATABLE     :: orbit_time                    ! The time (in ky ago) for the orbital forcing (Q_TOA can then be read from Laskar data)
+    REAL(dp),                   ALLOCATABLE     :: orbit_ecc                     ! Orbital parameters
+    REAL(dp),                   ALLOCATABLE     :: orbit_obl
+    REAL(dp),                   ALLOCATABLE     :: orbit_pre
+    REAL(dp),                   ALLOCATABLE     :: sealevel
+    !INTEGER :: wCO2, worbit_time, worbit_ecc, worbit_obl, worbit_pre, wsealevel
 
-  !   ! Climate data
-  !   REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: Hs                            ! Orography (m w.r.t. PD sea level)
-  !   INTEGER, DIMENSION(:   ), ALLOCATABLE     :: mask_ice                      ! Climate snapshot ice (1) no_ice (1) mask
-  !   INTEGER, DIMENSION(:   ), ALLOCATABLE     :: mask_ocean                    ! Climate snapshot ocean (1) land (0) mask
-  !   INTEGER, DIMENSION(:   ), ALLOCATABLE     :: mask_shelf                    ! Climate snapshot shelf (1) no shelf (0) mask
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m                           ! Monthly mean 2m air temperature (K)
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip                        ! Monthly mean precipitation (m)
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_WE                       ! Monthly mean west-east   wind speed (m/s)
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_SN                       ! Monthly mean south-north wind speed (m/s)
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_LR                       ! Monthly mean wind speed in the x-direction (m/s)
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_DU                       ! Monthly mean wind speed in the y-direction (m/s)
-  !   !INTEGER :: wHs, wmask_ice, wmask_ocean, wmask_shelf, wT2m, wPrecip, wHs_ref, wWind_WE, wWind_SN, wWind_LR, wWind_DU
+    ! Climate data
+    REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: Hs                            ! Orography (m w.r.t. PD sea level)
+    INTEGER, DIMENSION(:   ), ALLOCATABLE     :: mask_ice                      ! Climate snapshot ice (1) no_ice (1) mask
+    INTEGER, DIMENSION(:   ), ALLOCATABLE     :: mask_ocean                    ! Climate snapshot ocean (1) land (0) mask
+    INTEGER, DIMENSION(:   ), ALLOCATABLE     :: mask_shelf                    ! Climate snapshot shelf (1) no shelf (0) mask
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m                           ! Monthly mean 2m air temperature (K)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip                        ! Monthly mean precipitation (m)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_WE                       ! Monthly mean west-east   wind speed (m/s)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_SN                       ! Monthly mean south-north wind speed (m/s)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_LR                       ! Monthly mean wind speed in the x-direction (m/s)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Wind_DU                       ! Monthly mean wind speed in the y-direction (m/s)
+    !INTEGER :: wHs, wmask_ice, wmask_ocean, wmask_shelf, wT2m, wPrecip, wHs_ref, wWind_WE, wWind_SN, wWind_LR, wWind_DU
 
-  !   ! lapse-rate correction variables for GCM snapshots
-  !   REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: lambda ! Spatially variable (see Berends et al., 2018)
-  !   LOGICAL                                   :: do_lapse_rates     ! whether or not to apply the lapse rates below
-  !   REAL(dp)                                  :: lapse_rate_precip  ! single-value per region (precipitation)
-  !   REAL(dp)                                  :: lapse_rate_temp    ! single-value per region (precipitation)
-  !   REAL(dp)                                  :: precip_CC_correction
+    ! lapse-rate correction variables for GCM snapshots
+    REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: lambda ! Spatially variable (see Berends et al., 2018)
+    LOGICAL                                   :: do_lapse_rates     ! whether or not to apply the lapse rates below
+    REAL(dp)                                  :: lapse_rate_precip  ! single-value per region (precipitation)
+    REAL(dp)                                  :: lapse_rate_temp    ! single-value per region (precipitation)
+    REAL(dp)                                  :: precip_CC_correction
 
-  !   ! Insolation variables
-  !   LOGICAL                                     :: has_insolation          ! whether or not this instance of the climate model needs insolation data
-  !   INTEGER,                    ALLOCATABLE     :: ins_nyears
-  !   INTEGER,                    ALLOCATABLE     :: ins_nlat,ins_nlon
-  !   REAL(dp), DIMENSION(:    ), ALLOCATABLE     :: ins_time
-  !   REAL(dp), DIMENSION(:    ), ALLOCATABLE     :: ins_lat
-  !   REAL(dp),                   ALLOCATABLE     :: ins_t0, ins_t1
-  !   INTEGER,                    ALLOCATABLE     :: ins_ti0,ins_ti1
-  !   REAL(dp), DIMENSION(:,:  ), ALLOCATABLE     :: ins_Q_TOA0, ins_Q_TOA1
+    ! Insolation variables
+    LOGICAL                                     :: has_insolation          ! whether or not this instance of the climate model needs insolation data
+    INTEGER,                    ALLOCATABLE     :: ins_nyears
+    INTEGER,                    ALLOCATABLE     :: ins_nlat,ins_nlon
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE     :: ins_time
+    REAL(dp), DIMENSION(:    ), ALLOCATABLE     :: ins_lat
+    REAL(dp),                   ALLOCATABLE     :: ins_t0, ins_t1
+    INTEGER,                    ALLOCATABLE     :: ins_ti0,ins_ti1
+    REAL(dp), DIMENSION(:,:  ), ALLOCATABLE     :: ins_Q_TOA0, ins_Q_TOA1
 
-  !   ! Reference absorbed insolation (for GCM snapshots), or insolation at model time for the applied climate
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Q_TOA                         ! Monthly mean insolation at the top of the atmosphere (W/m2) (taken from the prescribed insolation solution at orbit_time)
-  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Albedo                        ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
-  !   REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: I_abs                         ! Total yearly absorbed insolation, used in the climate matrix for interpolation
+    ! Reference absorbed insolation (for GCM snapshots), or insolation at model time for the applied climate
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Q_TOA                         ! Monthly mean insolation at the top of the atmosphere (W/m2) (taken from the prescribed insolation solution at orbit_time)
+    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Albedo                        ! Monthly mean surface albedo (calculated using our own SMB scheme for consistency)
+    REAL(dp), DIMENSION(:  ), ALLOCATABLE     :: I_abs                         ! Total yearly absorbed insolation, used in the climate matrix for interpolation
 
-  ! END TYPE type_climate_model_snapshot
+  END TYPE type_climate_model_snapshot_deprecated
 
   TYPE type_climate_model_snapshot_plus_unif_dT
 
-    TYPE(type_climate_model_snapshot)         :: snapshot
+    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot
 
     ! deltaT
     REAL(dp)                                  :: deltaT
@@ -78,7 +78,7 @@ MODULE climate_model_types
 
   TYPE type_climate_model_snapshot_plus_transient_dT
 
-    TYPE(type_climate_model_snapshot)         :: snapshot
+    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot
 
     ! deltaT
     REAL(dp), DIMENSION(:    ), ALLOCATABLE   :: dT_series_time
@@ -90,7 +90,7 @@ MODULE climate_model_types
 
   TYPE type_climate_model_snapshot_plus_anomalies
 
-    TYPE(type_climate_model_snapshot)         :: snapshot_baseline
+    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot_baseline
     character(len=1024)                       :: filename_climate_anomalies
 
     REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: T2m                             ! Monthly mean 2m air temperature anomaly (K)
@@ -114,12 +114,12 @@ MODULE climate_model_types
     ! The "matrix" climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
 
     ! The three GCM snapshots
-    TYPE(type_climate_model_snapshot)             :: GCM_PI
-    TYPE(type_climate_model_snapshot)             :: GCM_warm
-    TYPE(type_climate_model_snapshot)             :: GCM_cold
+    TYPE(type_climate_model_snapshot_deprecated)             :: GCM_PI
+    TYPE(type_climate_model_snapshot_deprecated)             :: GCM_warm
+    TYPE(type_climate_model_snapshot_deprecated)             :: GCM_cold
 
     ! The present-day climate
-    TYPE(type_climate_model_snapshot)             :: PD_obs
+    TYPE(type_climate_model_snapshot_deprecated)             :: PD_obs
 
     ! GCM bias
     REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: GCM_bias_T2m
@@ -162,6 +162,7 @@ MODULE climate_model_types
     REAL(dp)                                :: t_next
 
     ! Add different climate model options
+    TYPE(type_climate_model_snapshot_deprecated)        :: snapshot_deprecated
     TYPE(type_climate_model_snapshot)                   :: snapshot
     TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
     TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT

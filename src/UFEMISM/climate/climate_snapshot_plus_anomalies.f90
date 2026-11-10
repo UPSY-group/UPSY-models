@@ -13,7 +13,7 @@ MODULE climate_snapshot_plus_anomalies
   USE parameters
   use mesh_basic                                             , ONLY: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
-  USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot
+  USE climate_model_types                                    , ONLY: type_climate_model, type_climate_model_snapshot_deprecated
   USE global_forcing_types                                   , ONLY: type_global_forcing
   use climate_realistic                                      , only: initialise_climate_model_realistic, initialise_insolation_forcing, remap_insolation
   USE global_forcings_main
@@ -72,10 +72,10 @@ CONTAINS
     call apply_geometry_downscaling_corrections(mesh, geom, climate, climate%snapshot_p_anml%snapshot_baseline, 0.0_dp)
 
     ! if needed for IMAU-ITM or climate matrix, we need to update insolation
-    IF (climate%snapshot%has_insolation) THEN
+    IF (climate%snapshot_deprecated%has_insolation) THEN
       CALL get_insolation_at_time( mesh, time, climate%snapshot_p_anml%snapshot_baseline)
       climate%Q_TOA          = climate%snapshot_p_anml%snapshot_baseline%Q_TOA
-      climate%snapshot%Q_TOA = climate%snapshot_p_anml%snapshot_baseline%Q_TOA
+      climate%snapshot_deprecated%Q_TOA = climate%snapshot_p_anml%snapshot_baseline%Q_TOA
     END IF
 
     ! Finalise routine path
@@ -197,7 +197,7 @@ CONTAINS
         END IF
         CALL get_insolation_at_time( mesh, timeframe_init_insolation, climate%snapshot_p_anml%snapshot_baseline)
         climate%Q_TOA          = climate%snapshot_p_anml%snapshot_baseline%Q_TOA
-        climate%snapshot%Q_TOA = climate%snapshot_p_anml%snapshot_baseline%Q_TOA
+        climate%snapshot_deprecated%Q_TOA = climate%snapshot_p_anml%snapshot_baseline%Q_TOA
     END IF
     END IF
 

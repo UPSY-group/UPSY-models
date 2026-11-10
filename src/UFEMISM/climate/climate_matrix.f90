@@ -14,7 +14,7 @@ module climate_matrix
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ice_model_main, only: type_ice_model
   use xy_grid_basic, only: type_xy_grid
-  use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot
+  use climate_model_types                                    , only: type_climate_model, type_climate_model_matrix, type_climate_model_snapshot_deprecated
   use global_forcing_types                                   , only: type_global_forcing
   use SMB_model, only: atype_SMB_model
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
@@ -64,8 +64,8 @@ contains
     !IF (par%primary)  WRITE(*,"(A)") '      Running climate matrix model...'
 
     ! Update insolation forcing at model time
-    call get_insolation_at_time( mesh, time, climate%snapshot)
-    climate%Q_TOA = climate%snapshot%Q_TOA
+    call get_insolation_at_time( mesh, time, climate%snapshot_deprecated)
+    climate%Q_TOA = climate%snapshot_deprecated%Q_TOA
 
     ! moved to global_forcings_main
     !CALL update_CO2_at_model_time( time, forcing)
@@ -504,7 +504,7 @@ contains
     call initialise_matrix_calc_absorbed_insolation( mesh, climate%matrix%GCM_cold, region_name, forcing, ice, geom)
 
     ! initialise the insolation forcing
-    call initialise_insolation_forcing( climate%snapshot, mesh) ! this will initialise climate%snapshot%Q_TOA
+    call initialise_insolation_forcing( climate%snapshot_deprecated, mesh) ! this will initialise climate%snapshot_deprecated%Q_TOA
 
     ! Initialise applied climate with present-day observations
     do vi = mesh%vi1, mesh%vi2
@@ -529,7 +529,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                            intent(in)    :: mesh
-    type(type_climate_model_snapshot),          intent(in)    :: GCM_PI, PD_obs
+    type(type_climate_model_snapshot_deprecated),          intent(in)    :: GCM_PI, PD_obs
     real(dp), dimension(mesh%vi1:mesh%vi2, 12), intent(out)   :: GCM_bias_T2m
     real(dp), dimension(mesh%vi1:mesh%vi2, 12), intent(out)   :: GCM_bias_Precip
 
@@ -565,7 +565,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                            intent(in)    :: mesh
-    type(type_climate_model_snapshot),          intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),          intent(inout) :: snapshot
     real(dp), dimension(mesh%vi1:mesh%vi2, 12), intent(in)    :: bias_T2m
     real(dp), dimension(mesh%vi1:mesh%vi2, 12), intent(in)    :: bias_Precip
 
@@ -597,8 +597,8 @@ contains
     ! In/output variables:
     type(type_mesh),                      intent(in)    :: mesh
     type(type_xy_grid),                   intent(in)    :: grid_smooth
-    type(type_climate_model_snapshot),    intent(in)    :: snapshot_PI
-    type(type_climate_model_snapshot),    intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),    intent(in)    :: snapshot_PI
+    type(type_climate_model_snapshot_deprecated),    intent(inout) :: snapshot
 
     ! Local variables:
     character(LEN=256), parameter                       :: routine_name = 'initialise_matrix_calc_spatially_variable_lapserate'
@@ -653,8 +653,8 @@ contains
   subroutine calc_regional_avrg_temperature_outside_icesheet(mesh, snapshot, snapshot_PI, mask_calc_lambda, dT_mean_nonice)
     ! In/output variables:
     type(type_mesh),                       intent(in)    :: mesh
-    type(type_climate_model_snapshot),     intent(in)    :: snapshot_PI
-    type(type_climate_model_snapshot),     intent(in)    :: snapshot
+    type(type_climate_model_snapshot_deprecated),     intent(in)    :: snapshot_PI
+    type(type_climate_model_snapshot_deprecated),     intent(in)    :: snapshot
     integer, dimension(mesh%vi1:mesh%vi2), intent(in)    :: mask_calc_lambda
     real(dp),                              intent(out)   :: dT_mean_nonice
 
@@ -691,8 +691,8 @@ contains
   subroutine calc_lapse_rate_over_ice(mesh, snapshot, snapshot_PI, dT_mean_nonice, mask_calc_lambda, lambda_mean_ice)
     ! In/output variables:
     type(type_mesh),                       intent(in)    :: mesh
-    type(type_climate_model_snapshot),     intent(in)    :: snapshot_PI
-    type(type_climate_model_snapshot),     intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),     intent(in)    :: snapshot_PI
+    type(type_climate_model_snapshot_deprecated),     intent(inout) :: snapshot
     real(dp),                              intent(in)    :: dT_mean_nonice
     integer, dimension(mesh%vi1:mesh%vi2), intent(in)    :: mask_calc_lambda
     real(dp),                              intent(out)   :: lambda_mean_ice
@@ -745,7 +745,7 @@ contains
 
     ! In/output variables:
     type(type_mesh),                      intent(in)    :: mesh
-    type(type_climate_model_snapshot),    intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),    intent(inout) :: snapshot
     character(LEN=3),                     intent(in)    :: region_name
     type(type_global_forcing),            intent(in)    :: forcing
     class(atype_ice_model_data),          intent(in)    :: ice
@@ -781,14 +781,14 @@ contains
     allocate( climate_dummy%T2m(    mesh%vi1:mesh%vi2, 12))
     allocate( climate_dummy%Precip( mesh%vi1:mesh%vi2, 12))
     allocate( climate_dummy%Q_TOA(  mesh%vi1:mesh%vi2, 12))
-    allocate( climate_dummy%snapshot%Q_TOA(  mesh%vi1:mesh%vi2, 12))
+    allocate( climate_dummy%snapshot_deprecated%Q_TOA(  mesh%vi1:mesh%vi2, 12))
 
     ! Copy climate fields
     climate_dummy%T2m(    mesh%vi1:mesh%vi2,:) = snapshot%T2m(    mesh%vi1:mesh%vi2,:)
     climate_dummy%Precip( mesh%vi1:mesh%vi2,:) = snapshot%Precip( mesh%vi1:mesh%vi2,:)
-    ! is needed to allocate it as climate%snapshot because is used in that way later on SMB-ITM
+    ! is needed to allocate it as climate%snapshot_deprecated because is used in that way later on SMB-ITM
     climate_dummy%Q_TOA(  mesh%vi1:mesh%vi2,:) = snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:)
-    climate_dummy%snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:) = snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:)
+    climate_dummy%snapshot_deprecated%Q_TOA(  mesh%vi1:mesh%vi2,:) = snapshot%Q_TOA(  mesh%vi1:mesh%vi2,:)
 
     ! Ice
     ! ===
@@ -895,8 +895,8 @@ contains
     call remap_climate_matrix_snapshot( mesh_new, climate%matrix%GCM_warm)
     call remap_climate_matrix_snapshot( mesh_new, climate%matrix%GCM_cold)
 
-    ! reallocate main variables of climate%snapshot
-    call remap_insolation( climate%snapshot, mesh_new)
+    ! reallocate main variables of climate%snapshot_deprecated
+    call remap_insolation( climate%snapshot_deprecated, mesh_new)
     call reallocate_bounds( climate%Q_TOA, mesh_new%vi1, mesh_new%vi2,12)
 
     call reallocate_bounds(climate%matrix%I_abs, mesh_new%vi1, mesh_new%vi2)
@@ -968,7 +968,7 @@ contains
   subroutine remap_climate_matrix_snapshot (mesh_new, snapshot)
 
     type(type_mesh),                        intent(in)    :: mesh_new
-    type(type_climate_model_snapshot),      intent(inout) :: snapshot
+    type(type_climate_model_snapshot_deprecated),      intent(inout) :: snapshot
 
     ! local variables
     character(LEN=256), parameter                         :: routine_name = 'remap_climate_matrix_snapshot'

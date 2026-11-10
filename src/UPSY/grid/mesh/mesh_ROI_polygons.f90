@@ -1985,15 +1985,16 @@ subroutine calc_polygon_Aurora_GL2300( poly)
   ! Add routine to path
   call init_routine( routine_name)
 
-  allocate( poly( 7,2))
+  allocate( poly( 8,2))
 
-  poly(  1,:) = [2.000e+06_dp,-1.374e+06_dp]
-  poly(  2,:) = [2.000e+06_dp,-1.200e+06_dp]
-  poly(  3,:) = [2.050e+06_dp,-0.950e+06_dp]
-  poly(  4,:) = [2.200e+06_dp,-0.800e+06_dp]
-  poly(  5,:) = [2.400e+06_dp,-0.650e+06_dp]
-  poly(  6,:) = [2.470e+06_dp,-0.650e+06_dp]
-  poly(  7,:) = [2.470e+06_dp,-1.374e+06_dp]
+  poly(  1,:) = [2.050e+06_dp,-1.374e+06_dp]
+  poly(  2,:) = [2.050e+06_dp,-1.200e+06_dp]
+  poly(  3,:) = [2.060e+06_dp,-1.050e+06_dp]
+  poly(  4,:) = [2.120e+06_dp,-0.950e+06_dp]
+  poly(  5,:) = [2.200e+06_dp,-0.900e+06_dp]
+  poly(  6,:) = [2.400e+06_dp,-0.730e+06_dp]
+  poly(  7,:) = [2.470e+06_dp,-0.670e+06_dp]
+  poly(  8,:) = [2.470e+06_dp,-1.374e+06_dp]
 
   ! Finalise routine path
   call finalise_routine( routine_name)

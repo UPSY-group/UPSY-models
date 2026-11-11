@@ -113,8 +113,6 @@ contains
     character(len=:), allocatable :: str_new
 
     integer                       :: ci
-    integer                       :: nc
-    character(len=4)              :: fmt
     character(:), allocatable     :: val_str
     integer                       :: len_str, len_marker
 
@@ -125,33 +123,8 @@ contains
     if (ci == 0) error stop 'insert_val_into_string_int: couldnt find marker "' &
       // trim( marker) // '" in string "' // trim( str) // '"!'
 
-    ! Write val to a string
-    if     (abs( val) < 10) then
-      nc = 1
-    elseif (abs( val) < 100) then
-      nc = 2
-    elseif (abs( val) < 1000) then
-      nc = 3
-    elseif (abs( val) < 10000) then
-      nc = 4
-    elseif (abs( val) < 100000) then
-      nc = 5
-    elseif (abs( val) < 1000000) then
-      nc = 6
-    elseif (abs( val) < 10000000) then
-      nc = 7
-    elseif (abs( val) < 100000000) then
-      nc = 8
-    else
-      error stop 'insert_val_into_string_int: only accepts integers up to 99999999'
-    end if
-
-    ! Add room for a minus sign if needed
-    if (val < 0) nc = nc + 1
-
-    write( fmt,'(A,I1,A)') '(I', nc, ')'
-    allocate( character( nc) :: val_str)
-    write( val_str, fmt) val
+    ! Write the integer to a string
+    val_str = int2str( val)
 
     ! Find total string length right now
     len_str    = len( str)
@@ -248,6 +221,14 @@ contains
     integer                         :: int
     read( str, *, iostat = stat) int
   end function str2int
+
+  pure function int2str( int) result( str)
+    integer, intent(in) :: int
+    character(len=:), allocatable :: str
+    character(len=32) :: buffer
+    write(buffer, '(I0)') int
+    str = trim( buffer)
+  end function int2str
 
   function int2str_with_leading_zeros( int, n) result( str)
     !< Convert integer to a character string (with leading zeros)

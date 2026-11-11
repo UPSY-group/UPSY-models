@@ -22,7 +22,7 @@ MODULE climate_main
   USE global_forcing_types                                   , ONLY: type_global_forcing
   USE climate_idealised                                      , ONLY: initialise_climate_model_idealised, run_climate_model_idealised
   USE climate_realistic                                      , ONLY: initialise_climate_model_realistic, run_climate_model_realistic, remap_climate_realistic
-  USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
+  ! USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
   USE climate_snapshot_plus_transient_deltaT                 , ONLY: initialise_climate_model_snapshot_plus_transient_deltaT, run_climate_model_snapshot_plus_transient_deltaT, remap_climate_snapshot_plus_transient_deltaT
   USE climate_snapshot_plus_anomalies                        , ONLY: initialise_climate_model_snp_p_anml, run_climate_model_snp_p_anml, remap_climate_snp_p_anml
   USE reallocate_mod                                         , ONLY: reallocate_bounds
@@ -109,7 +109,9 @@ CONTAINS
       climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%snapshot%T2m   ( mesh%vi1:mesh%vi2,:)
       climate%Precip( mesh%vi1:mesh%vi2,:) = climate%snapshot%Precip( mesh%vi1:mesh%vi2,:)
     CASE ('snapshot_plus_uniform_deltaT')
-      CALL run_climate_model_snapshot_plus_uniform_deltaT( mesh, geom, climate, time)
+      call climate%snapshot_unif_dT%run( geom, time)
+      climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_unif_dT%T2m   ( mesh%vi1:mesh%vi2,:)
+      climate%Precip( mesh%vi1:mesh%vi2,:) = climate%snapshot_unif_dT%Precip( mesh%vi1:mesh%vi2,:)
     CASE ('snapshot_plus_transient_deltaT')
       CALL run_climate_model_snapshot_plus_transient_deltaT( mesh, geom, climate, time)
     CASE ('snapshot_plus_anomalies')
@@ -225,7 +227,11 @@ CONTAINS
       climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%snapshot%Wind_LR ( mesh%vi1:mesh%vi2,:)
       climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%snapshot%Wind_DU ( mesh%vi1:mesh%vi2,:)  
     case ('snapshot_plus_uniform_deltaT')
-      call initialise_climate_model_snapshot_plus_uniform_deltaT( mesh, geom, climate, region_name)
+      call climate%snapshot_unif_dT%allocate( region_name, mesh)
+      call climate%snapshot_unif_dT%initialise( geom, refgeo_PD, refgeo_init)
+      climate%Q_TOA   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_unif_dT%Q_TOA   ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%snapshot_unif_dT%Wind_LR ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%snapshot_unif_dT%Wind_DU ( mesh%vi1:mesh%vi2,:)  
     case ('snapshot_plus_transient_deltaT')
       call initialise_climate_model_snapshot_plus_transient_deltaT( mesh, geom, climate, region_name, C%start_time_of_run)
     CASE ('snapshot_plus_anomalies')
@@ -302,10 +308,10 @@ CONTAINS
           'SMB_snapshot_plus_anomalies', &
           'ISMIP7', &
           'snapshot_lapse', &
+          'snapshot_plus_uniform_deltaT', &
           'TIPMIP')
       ! No need to do anything
     case ('realistic', &
-          'snapshot_plus_uniform_deltaT', &
           'snapshot_plus_transient_deltaT', &
           'snapshot_plus_anomalies', &
           'matrix')
@@ -404,10 +410,10 @@ CONTAINS
           'ISMIP7', &
           'snapshot', &
           'snapshot_lapse', &
+          'snapshot_plus_uniform_deltaT', &
           'TIPMIP')
       ! No need to do anything
     case ('realistic', &
-          'snapshot_plus_uniform_deltaT', &
           'snapshot_plus_transient_deltaT', &
           'snapshot_plus_anomalies', &
           'matrix')
@@ -529,8 +535,10 @@ CONTAINS
       ! No need to remap anything here
     ELSEIF (choice_climate_model == 'realistic') THEN
       call remap_climate_realistic(mesh_old, mesh_new, climate, region_name)
+    elseif (choice_climate_model == 'snapshot') then
+      call climate%snapshot%remap( mesh_new)  
     ELSEIF (choice_climate_model == 'snapshot_plus_uniform_deltaT')  THEN
-      call remap_climate_snapshot_plus_uniform_deltaT(mesh_old, mesh_new, geom, climate, region_name)
+      call climate%snapshot_unif_dT%remap( mesh_new)  
     ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
       call remap_climate_snapshot_plus_transient_deltaT(mesh_old, mesh_new, geom, climate, region_name, time)
     ELSEIF (choice_climate_model == 'snapshot_plus_anomalies')  THEN

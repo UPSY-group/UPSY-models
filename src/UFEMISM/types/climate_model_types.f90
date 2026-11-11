@@ -10,6 +10,7 @@ MODULE climate_model_types
   use TIPMIP_climate, only: type_climate_model_TIPMIP
   use climate_snapshot_lapse, only: type_climate_model_snapshot_lapse
   use climate_snapshot, only: type_climate_model_snapshot
+  use climate_snapshot_plus_uniform_deltaT, only: type_climate_model_snapshot_plus_uniform_deltaT
 
   IMPLICIT NONE
 
@@ -66,15 +67,15 @@ MODULE climate_model_types
 
   END TYPE type_climate_model_snapshot_deprecated
 
-  TYPE type_climate_model_snapshot_plus_unif_dT
+  ! TYPE type_climate_model_snapshot_plus_unif_dT
 
-    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot
+  !   TYPE(type_climate_model_snapshot_deprecated)         :: snapshot
 
-    ! deltaT
-    REAL(dp)                                  :: deltaT
+  !   ! deltaT
+  !   REAL(dp)                                  :: deltaT
 
 
-  END TYPE type_climate_model_snapshot_plus_unif_dT
+  ! END TYPE type_climate_model_snapshot_plus_unif_dT
 
   TYPE type_climate_model_snapshot_plus_transient_dT
 
@@ -162,15 +163,15 @@ MODULE climate_model_types
     REAL(dp)                                :: t_next
 
     ! Add different climate model options
-    TYPE(type_climate_model_snapshot_deprecated)        :: snapshot_deprecated
-    TYPE(type_climate_model_snapshot)                   :: snapshot
-    TYPE(type_climate_model_snapshot_plus_unif_dT)      :: snapshot_unif_dT
-    TYPE(type_climate_model_snapshot_plus_transient_dT) :: snapshot_trans_dT
-    TYPE(type_climate_model_snapshot_plus_anomalies)    :: snapshot_p_anml
-    TYPE(type_climate_model_matrix)                     :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
-    type(type_climate_model_ISMIP7)                     :: ISMIP7
-    type(type_climate_model_snapshot_lapse)             :: snapshot_lapse
-    type(type_climate_model_TIPMIP)                     :: TIPMIP
+    TYPE(type_climate_model_snapshot_deprecated)          :: snapshot_deprecated
+    TYPE(type_climate_model_snapshot)                     :: snapshot
+    TYPE(type_climate_model_snapshot_plus_uniform_deltaT) :: snapshot_unif_dT
+    TYPE(type_climate_model_snapshot_plus_transient_dT)   :: snapshot_trans_dT
+    TYPE(type_climate_model_snapshot_plus_anomalies)      :: snapshot_p_anml
+    TYPE(type_climate_model_matrix)                       :: matrix             ! The "matrix"          climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction
+    type(type_climate_model_ISMIP7)                       :: ISMIP7
+    type(type_climate_model_snapshot_lapse)               :: snapshot_lapse
+    type(type_climate_model_TIPMIP)                       :: TIPMIP
 
   END TYPE type_climate_model
 

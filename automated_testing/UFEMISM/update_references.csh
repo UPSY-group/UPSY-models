@@ -22,7 +22,7 @@ endif
 # KSP/PC types from the config. Only applies to test runs, not to regular simulations.
 # NOTE: not set for the UPSY tests, since component_test_PETSc_matrix_solving
 #       specifically tests the different Krylov solvers and preconditioners.
-setenv PETSC_OPTIONS "-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type mumps -ksp_initial_guess_nonzero false"
+setenv PETSC_OPTIONS "-ksp_type preonly -pc_type lu -pc_factor_mat_solver_type superlu_dist -ksp_initial_guess_nonzero false"
 
 # Force single-threaded BLAS/OpenMP, so that results are reproducible across machines
 # with different core counts (threaded BLAS reductions change the floating-point

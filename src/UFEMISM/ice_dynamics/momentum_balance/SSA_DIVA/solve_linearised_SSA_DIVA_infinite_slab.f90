@@ -49,6 +49,9 @@ contains
 
     end do
 
+    call checksum( self%mesh%pai_Tri, self%u_vav_b, 'DIVA%u_vav_b')
+    call checksum( self%mesh%pai_Tri, self%v_vav_b, 'DIVA%v_vav_b')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 

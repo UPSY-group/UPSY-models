@@ -19,7 +19,7 @@ dependencies:
   - libblas=*=*openblas
   - libopenblas=0.3.34=openmp*
 
-  - gfortran
+  - gfortran=15.3.0=*_7
   - compilers
   - cmake
   - ninja

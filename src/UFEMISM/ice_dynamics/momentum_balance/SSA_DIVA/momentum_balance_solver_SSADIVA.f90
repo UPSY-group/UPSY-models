@@ -29,6 +29,7 @@ module momentum_balance_solver_SSADIVA
   use mpi_basic, only: par
   use Schoof_SSA_solution, only: Schoof2006_icestream
   use ISMIP_HOM_boundary_conditions, only: u_BC_ISMIP_HOM_surf
+  use parallel_array_info_type, only: type_par_arr_info
 
   implicit none
 

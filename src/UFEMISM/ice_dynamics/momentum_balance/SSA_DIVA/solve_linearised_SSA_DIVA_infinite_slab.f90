@@ -69,10 +69,11 @@ contains
     real(dp), dimension(:), allocatable,              intent(inout) :: uv_buv
 
     ! Local variables:
-    character(len=*), parameter         :: routine_name = 'assemble_SSA_DIVA_linearised_matrix_eq'
-    integer                             :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
-    integer                             :: row_tiuv,ti,uv
-    character(len=:), allocatable       :: choice_BC_u, choice_BC_v
+    character(len=*), parameter   :: routine_name = 'assemble_SSA_DIVA_linearised_matrix_eq'
+    integer                       :: ncols, ncols_loc, nrows, nrows_loc, nnz_est_proc
+    integer                       :: row_tiuv,ti,uv
+    character(len=:), allocatable :: choice_BC_u, choice_BC_v
+    type(type_par_arr_info)       :: pai_buv
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -171,6 +172,15 @@ contains
     end do
 
     call A_CSR%finalise()
+
+    ! Checksums
+    pai_buv%n      = self%mesh%pai_Tri%n      * 2
+    pai_buv%n_loc  = self%mesh%pai_Tri%n_loc  * 2
+    pai_buv%i1     = self%mesh%pai_Tri%i1     * 2-1
+    pai_buv%i2     = self%mesh%pai_Tri%i2     * 2
+    call checksum(          A_CSR , 'A_CSR')
+    call checksum( pai_buv, bb    , 'bb')
+    call checksum( pai_buv, uv_buv, 'uv_buv')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

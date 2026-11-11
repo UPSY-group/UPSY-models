@@ -32,6 +32,8 @@ module momentum_balance_solver_BPA
   use bed_roughness_model_types, only: type_bed_roughness_model
   use momentum_balance_solver_basic, only: atype_momentum_balance_solver
   use ISMIP_HOM_boundary_conditions, only: u_BC_ISMIP_HOM_3D
+  use parallel_array_info_type, only: type_par_arr_info
+  use checksum_mod, only: checksum
 
   implicit none
 

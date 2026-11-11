@@ -11,6 +11,7 @@ module checksum_mod
   use crash_mod, only: crash
   use git_commit_hash_and_package_versions, only: git_commit_hash, has_uncommitted_changes, &
     petsc_version, netcdf_version, openmpi_version, compiler_version, compiler_flags
+  use CSR_matrix_mod, only: type_CSR_matrix_dp
 
   implicit none
 
@@ -27,6 +28,7 @@ module checksum_mod
     procedure :: checksum_dp_0D
     procedure :: checksum_dp_1D
     procedure :: checksum_dp_2D
+    procedure :: checksum_CSR_matrix
   end interface checksum
 
   logical             :: checksum_logfile_exists
@@ -426,6 +428,64 @@ contains
     call log_checksum_dp( sum_d_sq, sum_abs_d, max_abs_d, var_name)
 
   end subroutine checksum_dp_2D_hybrid
+
+  subroutine checksum_CSR_matrix( A, name)
+
+    ! In/output variables:
+    type(type_CSR_matrix_dp), intent(in) :: A
+    character(len=*),         intent(in) :: name
+
+    ! Local variables:
+    integer  :: ierr
+    integer  :: sum_d_sq_int, sum_abs_d_int, max_abs_d_int
+    integer  :: k1,k2
+    real(dp) :: sum_d_sq_dp, sum_abs_d_dp, max_abs_d_dp
+
+    if (.not. C%do_write_checksum_log) return
+
+    k1 = A%ptr( A%i1)
+    k2 = A%ptr( A%i2)-1
+
+    ! ptr
+    ! ===
+
+    sum_d_sq_int  = sum        ( A%ptr( A%i1:A%i2)**2)
+    sum_abs_d_int = sum(    abs( A%ptr( A%i1:A%i2)))
+    max_abs_d_int = maxval( abs( A%ptr( A%i1:A%i2)))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d_sq_int , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d_int, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_abs_d_int, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d_sq_int, sum_abs_d_int, max_abs_d_int, trim( name) // '_ptr')
+
+    ! ind
+    ! ===
+
+    sum_d_sq_int  = sum        ( A%ind( k1:k2)**2)
+    sum_abs_d_int = sum(    abs( A%ind( k1:k2)))
+    max_abs_d_int = maxval( abs( A%ind( k1:k2)))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d_sq_int , 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d_int, 1, MPI_INTEGER, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_abs_d_int, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_int( sum_d_sq_int, sum_abs_d_int, max_abs_d_int, trim( name) // '_ind')
+
+    ! val
+    ! ===
+
+    sum_d_sq_dp  = sum        ( A%val( k1:k2)**2)
+    sum_abs_d_dp = sum(    abs( A%val( k1:k2)))
+    max_abs_d_dp = maxval( abs( A%val( k1:k2)))
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_d_sq_dp , 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, sum_abs_d_dp, 1, MPI_DOUBLE_PRECISION, MPI_SUM, MPI_COMM_WORLD, ierr)
+    call MPI_ALLREDUCE( MPI_IN_PLACE, max_abs_d_dp, 1, MPI_DOUBLE_PRECISION, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    call log_checksum_dp( sum_d_sq_dp, sum_abs_d_dp, max_abs_d_dp, trim( name) // '_ind')
+
+  end subroutine checksum_CSR_matrix
 
   subroutine log_checksum_int( sum_d_sq, sum_abs_d, max_abs_d, var_name)
 

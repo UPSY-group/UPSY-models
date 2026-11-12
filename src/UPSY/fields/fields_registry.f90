@@ -86,6 +86,7 @@ module fields_registry
       procedure, public  :: find => find_field_by_name
       procedure, public  :: print_info
       procedure, public  :: destroy
+      procedure, public  :: checksum => checksum_fields_registry
 
   end type type_fields_registry
 
@@ -331,6 +332,10 @@ module fields_registry
     module subroutine destroy( self)
       class(type_fields_registry), intent(inout) :: self
     end subroutine destroy
+
+    module subroutine checksum_fields_registry( self)
+      class(type_fields_registry), intent(in) :: self
+    end subroutine checksum_fields_registry
 
   end interface
 

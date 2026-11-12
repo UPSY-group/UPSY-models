@@ -18,6 +18,14 @@ contains
       call checksum_field_logical_2D( f)
     class is (type_field_logical_3D)
       call checksum_field_logical_3D( f)
+    class is (type_field_int_2D)
+      call checksum_field_int_2D( f)
+    class is (type_field_int_3D)
+      call checksum_field_int_3D( f)
+    class is (type_field_dp_2D)
+      call checksum_field_dp_2D( f)
+    class is (type_field_dp_3D)
+      call checksum_field_dp_3D( f)
     end select
 
   end subroutine checksum_field

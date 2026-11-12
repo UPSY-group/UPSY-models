@@ -1,6 +1,6 @@
  -= Checksum logfile =-
-  Git commit hash        : 8dfff79a7f7198976d5c9730c0ac2c5dbd07ccc2
-  has uncommitted changes:  F
+  Git commit hash        : 4a054902ea0304cbeb2fdc230f741d501229905a
+  has uncommitted changes:  T
   PETSc version          : 3.25.5
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10
@@ -43,6 +43,12 @@
  fraction_gr: sum(d^2) = 0.27130000000000000000000000000000E+04, sum(abs) = 0.27130000000000000000000000000000E+04, max(abs) = 0.10000000000000000000000000000000E+01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_grounded_fractions]
  fraction_gr_b: sum(d^2) = 0.52110000000000000000000000000000E+04, sum(abs) = 0.52110000000000000000000000000000E+04, max(abs) = 0.10000000000000000000000000000000E+01 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/calc_grounded_fractions]
  ice%geothermal_heat_flux: sum(d^2) = 0.80261392000000000000000000000000E+16, sum(abs) = 0.46663600000000000000000000000000E+10, max(abs) = 0.17200000000000000000000000000000E+07 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/initialise_geothermal_heat_flux]
+ u_vav_b: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/momentum_balance_solver_initialise]
+ v_vav_b: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/momentum_balance_solver_initialise]
+ du_dx_a: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/momentum_balance_solver_initialise]
+ du_dy_a: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/momentum_balance_solver_initialise]
+ dv_dx_a: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/momentum_balance_solver_initialise]
+ dv_dy_a: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ice_dynamics_model/momentum_balance_solver_initialise]
  bed_roughness%till_friction_angle: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_bed_roughness_model]
  bed_roughness%alpha_sq: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_bed_roughness_model]
  bed_roughness%beta_sq: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_bed_roughness_model]
@@ -50,6 +56,7 @@
  climate%Precip: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_climate_model]
  ocean%T: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ocean_model]
  ocean%S: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_ocean_model]
+ SMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/SMB_model_initialise]
  region%SMB%SMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region]
  BMB%BMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
  BMB%BMB_shelf: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/initialise_BMB_model]
@@ -64,6 +71,7 @@
  ocean%T_freezing_point: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/run_ocean_model/calc_ocean_freezing_point_at_shelf_base]
  ocean%T: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/run_ocean_model]
  ocean%S: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/run_ocean_model]
+ SMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/SMB_model_run]
  BMB%BMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
  BMB%BMB_shelf: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
  BMB%BMB_inv: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/initialise_model_region/run_BMB_model]
@@ -1772,6 +1780,12 @@
  DIVA%v_3D_b: sum(d^2) = 0.17743982392638240526139270514250E+04, sum(abs) = 0.66570422221465396432904526591301E+04, max(abs) = 0.54085460163082077489349330789992E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_DIVA_run/calc_3D_velocities]
  DIVA%u_vav_b: sum(d^2) = 0.57505959134680759161710739135742E+07, sum(abs) = 0.13378386493555054767057299613953E+06, max(abs) = 0.85620852735197729543870082125068E+02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_DIVA_run]
  DIVA%v_vav_b: sum(d^2) = 0.13610327466956465514158480800688E+03, sum(abs) = 0.57346480764454292966547654941678E+03, max(abs) = 0.42914664496104903967932386876782E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run/momentum_balance_solver_DIVA_run]
+ u_vav_b: sum(d^2) = 0.57505959134680759161710739135742E+07, sum(abs) = 0.13378386493555054767057299613953E+06, max(abs) = 0.85620852735197729543870082125068E+02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run]
+ v_vav_b: sum(d^2) = 0.13610327466956465514158480800688E+03, sum(abs) = 0.57346480764454292966547654941678E+03, max(abs) = 0.42914664496104903967932386876782E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run]
+ du_dx_a: sum(d^2) = 0.20624944205473770900138852368855E-02, sum(abs) = 0.16339192541601681440965876390692E+01, max(abs) = 0.25452563180159387505596679801556E-02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run]
+ du_dy_a: sum(d^2) = 0.20798861506750440306112714949904E-02, sum(abs) = 0.16581633504980937132700091751758E+01, max(abs) = 0.27128217639846119273172586616738E-02 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run]
+ dv_dx_a: sum(d^2) = 0.40733716605439320987885670408146E-06, sum(abs) = 0.19769507797861594899924142509917E-01, max(abs) = 0.72566014115526059069516406907496E-04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run]
+ dv_dy_a: sum(d^2) = 0.35562523103978966449828210197315E-06, sum(abs) = 0.19729330154100742367173637603628E-01, max(abs) = 0.57461448226257566974234380907660E-04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/momentum_balance_solver_run]
  region%ice%pc%dHi_dt_Hi_star_np1_u_np1: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc]
  pc%tau_np1: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_ice_dynamics_model/run_ice_dynamics_model_pc/calc_pc_truncation_error]
  region%ice%geom%Hs: sum(d^2) = 0.12694206024034141540527343750000E+11, sum(abs) = 0.54337675019122147932648658752441E+07, max(abs) = 0.33625467382483193432562984526157E+04 [UFEMISM/run_model(ANT)/run_ice_dynamics_model]
@@ -1811,6 +1825,7 @@
  ocean%T_freezing_point: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_ocean_model/calc_ocean_freezing_point_at_shelf_base]
  ocean%T: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_ocean_model]
  ocean%S: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_ocean_model]
+ SMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/SMB_model_run]
  BMB%BMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
  BMB%BMB_shelf: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
  BMB%BMB_inv: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_BMB_model]
@@ -1821,3 +1836,4 @@
  region%GIA%dHb_prev: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
  region%GIA%dHb_next: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
  region%ice%dHb: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/run_GIA_model]
+ SMB: sum(d^2) = 0.00000000000000000000000000000000E+00, sum(abs) = 0.00000000000000000000000000000000E+00, max(abs) = 0.00000000000000000000000000000000E+00 [UFEMISM/run_model(ANT)/write_to_regional_output_files/write_to_restart_file/write_to_netcdf/write_to_netcdf]

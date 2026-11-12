@@ -1,6 +1,6 @@
  -= Checksum logfile =-
-  Git commit hash        : 8dfff79a7f7198976d5c9730c0ac2c5dbd07ccc2
-  has uncommitted changes:  F
+  Git commit hash        : 4a054902ea0304cbeb2fdc230f741d501229905a
+  has uncommitted changes:  T
   PETSc version          : 3.25.5
   NetCDF version         : 4.10.0
   OpenMPI version        : 5.0.10

@@ -101,50 +101,50 @@ SUBROUTINE update_timeframes_from_record(time_axis, record, time_at_t0, time_at_
     ! Finalise routine path
     CALL finalise_routine( routine_name)
 
-  END SUBROUTINE update_timeframes_from_record
+END SUBROUTINE update_timeframes_from_record
 
-  SUBROUTINE interpolate_value_from_forcing_record(time_at_t0, time_at_t1, val_at_t0, val_at_t1, time, interpolated_value)
+SUBROUTINE interpolate_value_from_forcing_record(time_at_t0, time_at_t1, val_at_t0, val_at_t1, time, interpolated_value)
   ! Interpolate between time frames
 
-    IMPLICIT NONE
+  IMPLICIT NONE
 
-    REAL(dp),                          INTENT(IN   )   :: val_at_t0
-    REAL(dp),                          INTENT(IN   )   :: val_at_t1
-    REAL(dp),                          INTENT(IN   )   :: time_at_t0
-    REAL(dp),                          INTENT(IN   )   :: time_at_t1
-    REAL(dp),                          INTENT(IN   )   :: time
-    REAL(dp),                          INTENT(  OUT)   :: interpolated_value
-
-
-    ! Local variables:
-    CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'interpolate_value_from_forcing_record'
-    REAL(dp)                                           :: wt0,wt1
-
-    ! Add routine to path
-    CALL init_routine( routine_name)
+  REAL(dp),                          INTENT(IN   )   :: val_at_t0
+  REAL(dp),                          INTENT(IN   )   :: val_at_t1
+  REAL(dp),                          INTENT(IN   )   :: time_at_t0
+  REAL(dp),                          INTENT(IN   )   :: time_at_t1
+  REAL(dp),                          INTENT(IN   )   :: time
+  REAL(dp),                          INTENT(  OUT)   :: interpolated_value
 
 
-    if (time_at_t1 == time_at_t0) then
+  ! Local variables:
+  CHARACTER(LEN=256), PARAMETER                      :: routine_name = 'interpolate_value_from_forcing_record'
+  REAL(dp)                                           :: wt0,wt1
+
+  ! Add routine to path
+  CALL init_routine( routine_name)
+
+
+  if (time_at_t1 == time_at_t0) then
+    wt0 = 0._dp
+    wt1 = 1._dp
+  else
+    if (time > time_at_t1) then
       wt0 = 0._dp
-      wt1 = 1._dp
+    elseif (time < time_at_t0) then
+      wt0 = 1._dp
     else
-      if (time > time_at_t1) then
-        wt0 = 0._dp
-      elseif (time < time_at_t0) then
-        wt0 = 1._dp
-      else
-        wt0 = (time_at_t1 - time) / (time_at_t1 - time_at_t0)
-      end if
-      wt1 = 1._dp - wt0
+      wt0 = (time_at_t1 - time) / (time_at_t1 - time_at_t0)
     end if
+    wt1 = 1._dp - wt0
+  end if
 
-    ! Interpolate the two timeframes - constant sea level over the entire region
-    interpolated_value = wt0 * val_at_t0 + wt1 * val_at_t1
+  ! Interpolate the two timeframes - constant sea level over the entire region
+  interpolated_value = wt0 * val_at_t0 + wt1 * val_at_t1
 
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
+  ! Finalise routine path
+  CALL finalise_routine( routine_name)
 
-  END SUBROUTINE interpolate_value_from_forcing_record
+END SUBROUTINE interpolate_value_from_forcing_record
 
 
 

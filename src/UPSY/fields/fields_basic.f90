@@ -19,6 +19,7 @@ module fields_basic
   use model_configuration, only: C
   use mpi_distributed_shared_memory, only: hybrid_to_dist, dist_to_hybrid
   use reallocate_dist_shared_mod, only: reallocate_dist_shared
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -118,6 +119,10 @@ module fields_basic
 
       procedure, public :: write_to_netcdf
       procedure, public :: read_from_netcdf
+
+      ! ===== debugging
+
+      procedure, public :: checksum => checksum_field
 
   end type atype_field
 
@@ -386,6 +391,12 @@ module fields_basic
       character(len=*),   intent(in   ) :: filename
       integer,            intent(in   ) :: ncid
     end subroutine read_from_netcdf
+
+    ! ===== debugging
+
+    module subroutine checksum_field( self)
+      class(atype_field), intent(in) :: self
+    end subroutine checksum_field
 
   end interface
 

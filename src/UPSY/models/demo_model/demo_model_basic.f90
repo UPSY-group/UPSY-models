@@ -233,6 +233,8 @@ contains
     ! Initialise stuff that is specific to each individual demo model implementation
     call self%initialise_demo_model( H0, till_friction_angle_uniform, beta_sq_uniform)
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -258,6 +260,8 @@ contains
 
     ! Run stuff that is specific to each individual demo model implementation
     call self%run_demo_model( H_new, dH)
+
+    call self%checksum()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -288,6 +292,8 @@ contains
 
     ! Remap stuff that is specific to each individual demo model implementation
     call self%remap_demo_model( mesh_new)
+
+    call self%checksum()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

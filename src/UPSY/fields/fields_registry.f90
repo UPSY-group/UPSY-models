@@ -32,60 +32,61 @@ module fields_registry
 
   type :: type_fields_registry
 
-    integer,                           public :: n     = 0
-    integer,                           public :: n_max = 0
-    type(type_field_box), allocatable, public :: items(:)
+      integer,                           public :: n     = 0
+      integer,                           public :: n_max = 0
+      type(type_field_box), allocatable, public :: items(:)
 
     contains
 
-    generic,   public  :: create_field => &
-      create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
-      create_field_logical_3D, create_field_int_3D, create_field_dp_3D
-    procedure, private :: create_field_logical_2D
-    procedure, private :: create_field_int_2D
-    procedure, private :: create_field_dp_2D
-    procedure, private :: create_field_logical_3D
-    procedure, private :: create_field_int_3D
-    procedure, private :: create_field_dp_3D
+      generic,   public  :: create_field => &
+        create_field_logical_2D, create_field_int_2D, create_field_dp_2D, &
+        create_field_logical_3D, create_field_int_3D, create_field_dp_3D
+      procedure, private :: create_field_logical_2D
+      procedure, private :: create_field_int_2D
+      procedure, private :: create_field_dp_2D
+      procedure, private :: create_field_logical_3D
+      procedure, private :: create_field_int_3D
+      procedure, private :: create_field_dp_3D
 
-    generic,   public  :: reallocate_field => &
-      reallocate_field_logical_2D, &
-      reallocate_field_logical_3D, &
-      reallocate_field_int_2D, &
-      reallocate_field_int_3D, &
-      reallocate_field_dp_2D, &
-      reallocate_field_dp_3D
-    procedure, private :: reallocate_field_logical_2D
-    procedure, private :: reallocate_field_logical_3D
-    procedure, private :: reallocate_field_int_2D
-    procedure, private :: reallocate_field_int_3D
-    procedure, private :: reallocate_field_dp_2D
-    procedure, private :: reallocate_field_dp_3D
+      generic,   public  :: reallocate_field => &
+        reallocate_field_logical_2D, &
+        reallocate_field_logical_3D, &
+        reallocate_field_int_2D, &
+        reallocate_field_int_3D, &
+        reallocate_field_dp_2D, &
+        reallocate_field_dp_3D
+      procedure, private :: reallocate_field_logical_2D
+      procedure, private :: reallocate_field_logical_3D
+      procedure, private :: reallocate_field_int_2D
+      procedure, private :: reallocate_field_int_3D
+      procedure, private :: reallocate_field_dp_2D
+      procedure, private :: reallocate_field_dp_3D
 
-    generic,   public  :: remap_field => &
-      remap_field_logical_2D, &
-      remap_field_logical_3D, &
-      remap_field_int_2D, &
-      remap_field_int_3D, &
-      remap_field_dp_2D, &
-      remap_field_dp_3D
-    procedure, private :: remap_field_logical_2D
-    procedure, private :: remap_field_logical_3D
-    procedure, private :: remap_field_int_2D
-    procedure, private :: remap_field_int_3D
-    procedure, private :: remap_field_dp_2D
-    procedure, private :: remap_field_dp_3D
+      generic,   public  :: remap_field => &
+        remap_field_logical_2D, &
+        remap_field_logical_3D, &
+        remap_field_int_2D, &
+        remap_field_int_3D, &
+        remap_field_dp_2D, &
+        remap_field_dp_3D
+      procedure, private :: remap_field_logical_2D
+      procedure, private :: remap_field_logical_3D
+      procedure, private :: remap_field_int_2D
+      procedure, private :: remap_field_int_3D
+      procedure, private :: remap_field_dp_2D
+      procedure, private :: remap_field_dp_3D
 
-    procedure, public  :: write_to_netcdf
-    procedure, public  :: read_from_netcdf
+      procedure, public  :: write_to_netcdf
+      procedure, public  :: read_from_netcdf
 
-    generic,   public  :: operator(==) => eq
-    procedure, private :: eq => test_fields_registry_equality
-    procedure, private :: add => add_field_to_registry
-    procedure, private :: extend => extend_field_registry
-    procedure, public  :: find => find_field_by_name
-    procedure, public  :: print_info
-    procedure, public  :: destroy
+      generic,   public  :: operator(==) => eq
+      procedure, private :: eq => test_fields_registry_equality
+      procedure, private :: add => add_field_to_registry
+      procedure, private :: extend => extend_field_registry
+      procedure, public  :: find => find_field_by_name
+      procedure, public  :: print_info
+      procedure, public  :: destroy
+      procedure, public  :: checksum => checksum_fields_registry
 
   end type type_fields_registry
 
@@ -331,6 +332,10 @@ module fields_registry
     module subroutine destroy( self)
       class(type_fields_registry), intent(inout) :: self
     end subroutine destroy
+
+    module subroutine checksum_fields_registry( self)
+      class(type_fields_registry), intent(in) :: self
+    end subroutine checksum_fields_registry
 
   end interface
 

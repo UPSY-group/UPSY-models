@@ -98,6 +98,9 @@ module models_basic
 
       procedure(get_model_name_ifc), deferred :: get_model_name
 
+      ! Debugging
+      procedure, public :: checksum => checksum_model
+
   end type atype_model
 
   ! create_field
@@ -468,5 +471,11 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine remap_model
+
+  subroutine checksum_model( self)
+    ! Checksum all the fields in the fields registry
+    class(atype_model), intent(in) :: self
+    call self%flds_reg%checksum()
+  end subroutine checksum_model
 
 end module models_basic

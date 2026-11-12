@@ -44,6 +44,8 @@ contains
 
       end select
 
+      call self%checksum()
+
       ! Remove routine from call stack
       call finalise_routine( routine_name)
 
@@ -170,6 +172,8 @@ contains
         end select
 
       end select
+
+      call self%checksum()
 
       ! Remove routine from call stack
       call finalise_routine( routine_name)

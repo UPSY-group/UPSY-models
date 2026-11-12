@@ -194,6 +194,8 @@ contains
     ! Initialise stuff that is specific to each individual ocean model implementation
     call self%initialise_ocean_model()
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -217,6 +219,8 @@ contains
 
     ! Run stuff that is specific to each individual ocean model implementation
     call self%run_ocean_model()
+
+    call self%checksum()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -247,6 +251,8 @@ contains
 
     ! Remap stuff that is specific to each individual ocean model implementation
     call self%remap_ocean_model( mesh_new)
+
+    call self%checksum()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

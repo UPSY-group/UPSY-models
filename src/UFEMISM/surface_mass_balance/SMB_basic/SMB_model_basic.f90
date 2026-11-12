@@ -187,6 +187,8 @@ contains
     ! Initialise stuff that is specific to each individual SMB model implementation
     call self%initialise_SMB_model( geom, refgeo_init, refgeo_PD)
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -242,6 +244,8 @@ contains
 
     end if
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -271,6 +275,8 @@ contains
 
     ! Remap stuff that is specific to each individual SMB model implementation
     call self%remap_SMB_model( mesh_new, time, refgeo_init, refgeo_PD, geom)
+
+    call self%checksum()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

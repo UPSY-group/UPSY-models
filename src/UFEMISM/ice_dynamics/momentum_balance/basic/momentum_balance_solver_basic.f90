@@ -198,6 +198,8 @@ contains
     ! Initialise stuff that is specific to each individual basic momentum balance solver
     call self%initialise_momentum_balance_solver()
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -239,6 +241,8 @@ contains
     call self%set_velocities_to_solver_results( ice, vel)
     call vel%calc_secondary_velocities( ice, geom, BMB)
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -273,6 +277,8 @@ contains
     ! Update the velocity model
     call self%set_velocities_to_solver_results( ice, vel)
     call vel%calc_secondary_velocities( ice, geom, BMB)
+
+    call self%checksum()
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

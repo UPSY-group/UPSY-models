@@ -517,9 +517,9 @@ contains
 
     str = trim( var_name) // ': sum(d^2) = {dp_01}, sum(abs) = {dp_02}, max(abs) = {dp_03} [' &
       // trim( routine_path) // ']'
-    str = insert_val_into_string_dp( str, '{dp_01}', sum_d_sq , n_digits = 6)
-    str = insert_val_into_string_dp( str, '{dp_02}', sum_abs_d, n_digits = 6)
-    str = insert_val_into_string_dp( str, '{dp_03}', max_abs_d, n_digits = 6)
+    str = insert_val_into_string_dp( str, '{dp_01}', sum_d_sq , n_digits = 32)
+    str = insert_val_into_string_dp( str, '{dp_02}', sum_abs_d, n_digits = 32)
+    str = insert_val_into_string_dp( str, '{dp_03}', max_abs_d, n_digits = 32)
 
     call log_checksum( str)
 

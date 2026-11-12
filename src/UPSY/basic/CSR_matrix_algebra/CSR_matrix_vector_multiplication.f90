@@ -3,7 +3,7 @@ module CSR_matrix_vector_multiplication
   use assertions_basic, only: assert
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use precisions, only: dp
-  use mpi_basic, only: par, sync
+  use mpi_basic, only: par, sync, sync_node
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, warning
   use mpi_f08, only: MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LOR, MPI_COMM_WORLD, MPI_WIN
   use parallel_array_info_type, only: type_par_arr_info
@@ -42,6 +42,10 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Make sure all processes on this node are done writing to the (shared) input
+    ! before anyone starts reading it
+    call sync_node
 
     if (pai_x%is_hybrid( xx)) then
       xx_nih => xx
@@ -89,6 +93,10 @@ contains
       end if
     end if
 
+    ! Make sure all processes on this node are done reading the shared buffers
+    ! before anyone leaves (and possibly overwrites them in the next call)
+    call sync_node
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -115,6 +123,10 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Make sure all processes on this node are done writing to the (shared) input
+    ! before anyone starts reading it
+    call sync_node
 
     if (pai_x%is_hybrid( xx)) then
       xx_nih => xx
@@ -161,6 +173,10 @@ contains
         nullify( yy_nih)
       end if
     end if
+
+    ! Make sure all processes on this node are done reading the shared buffers
+    ! before anyone leaves (and possibly overwrites them in the next call)
+    call sync_node
 
     ! Finalise routine path
     call finalise_routine( routine_name)

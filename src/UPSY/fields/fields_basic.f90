@@ -34,90 +34,90 @@ module fields_basic
 
   type, abstract :: atype_field
 
-    ! Metadata
-    character(len=1024), private :: name_val
-    character(len=1024), private :: long_name_val
-    character(len=1024), private :: units_val
-    character(len=1024), private :: remap_method_val
+      ! Metadata
+      character(len=1024), private :: name_val
+      character(len=1024), private :: long_name_val
+      character(len=1024), private :: units_val
+      character(len=1024), private :: remap_method_val
 
-    ! Grid
-    class(*), pointer,       private :: grid_val
-    type(type_Arakawa_grid), private :: Arakawa_grid_val
-    type(type_par_arr_info), private :: pai_val
+      ! Grid
+      class(*), pointer,       private :: grid_val
+      type(type_Arakawa_grid), private :: Arakawa_grid_val
+      type(type_par_arr_info), private :: pai_val
 
-    ! Pointer to array containing the actual field data
-    ! class(*), dimension(:), pointer, public :: d
-    type(MPI_WIN), pointer, public :: w
+      ! Pointer to array containing the actual field data
+      ! class(*), dimension(:), pointer, public :: d
+      type(MPI_WIN), pointer, public :: w
 
     contains
 
-    generic,   public  :: operator(==) => eq
-    procedure, private :: eq => test_field_equality
+      generic,   public  :: operator(==) => eq
+      procedure, private :: eq => test_field_equality
 
-    generic,   public  :: reallocate => &
-      reallocate_logical_2D, &
-      reallocate_logical_3D, &
-      reallocate_int_2D, &
-      reallocate_int_3D, &
-      reallocate_dp_2D, &
-      reallocate_dp_3D
-    procedure, private :: reallocate_logical_2D
-    procedure, private :: reallocate_logical_3D
-    procedure, private :: reallocate_int_2D
-    procedure, private :: reallocate_int_3D
-    procedure, private :: reallocate_dp_2D
-    procedure, private :: reallocate_dp_3D
+      generic,   public  :: reallocate => &
+        reallocate_logical_2D, &
+        reallocate_logical_3D, &
+        reallocate_int_2D, &
+        reallocate_int_3D, &
+        reallocate_dp_2D, &
+        reallocate_dp_3D
+      procedure, private :: reallocate_logical_2D
+      procedure, private :: reallocate_logical_3D
+      procedure, private :: reallocate_int_2D
+      procedure, private :: reallocate_int_3D
+      procedure, private :: reallocate_dp_2D
+      procedure, private :: reallocate_dp_3D
 
-    generic,   public  :: remap => &
-      reallocate_logical_2D, &
-      reallocate_logical_3D, &
-      reallocate_int_2D, &
-      reallocate_int_3D, &
-      remap_dp_2D, &
-      remap_dp_3D
-    procedure, private :: remap_dp_2D
-    procedure, private :: remap_dp_3D
+      generic,   public  :: remap => &
+        reallocate_logical_2D, &
+        reallocate_logical_3D, &
+        reallocate_int_2D, &
+        reallocate_int_3D, &
+        remap_dp_2D, &
+        remap_dp_3D
+      procedure, private :: remap_dp_2D
+      procedure, private :: remap_dp_3D
 
-    procedure, public :: lbound => field_lbound
-    procedure, public :: ubound => field_ubound
-    procedure, public :: print_info
+      procedure, public :: lbound => field_lbound
+      procedure, public :: ubound => field_ubound
+      procedure, public :: print_info
 
-    ! ===== Set/get functions
+      ! ===== Set/get functions
 
-    ! Metadata
-    procedure, public :: set_name
-    procedure, public :: set_long_name
-    procedure, public :: set_units
-    procedure, public :: set_remap_method
+      ! Metadata
+      procedure, public :: set_name
+      procedure, public :: set_long_name
+      procedure, public :: set_units
+      procedure, public :: set_remap_method
 
-    procedure, public :: name         => get_name
-    procedure, public :: long_name    => get_long_name
-    procedure, public :: units        => get_units
-    procedure, public :: remap_method => get_remap_method
+      procedure, public :: name         => get_name
+      procedure, public :: long_name    => get_long_name
+      procedure, public :: units        => get_units
+      procedure, public :: remap_method => get_remap_method
 
-    procedure, public :: is_name
-    procedure, public :: is_long_name
-    procedure, public :: is_units
-    procedure, public :: is_remap_method
+      procedure, public :: is_name
+      procedure, public :: is_long_name
+      procedure, public :: is_units
+      procedure, public :: is_remap_method
 
-    ! Grid
-    procedure, public :: set_grid
-    procedure, public :: set_Arakawa_grid
-    procedure, public :: set_pai
+      ! Grid
+      procedure, public :: set_grid
+      procedure, public :: set_Arakawa_grid
+      procedure, public :: set_pai
 
-    procedure, public :: grid         => get_grid
-    procedure, public :: Arakawa_grid => get_Arakawa_grid
-    procedure, public :: pai          => get_pai
+      procedure, public :: grid         => get_grid
+      procedure, public :: Arakawa_grid => get_Arakawa_grid
+      procedure, public :: pai          => get_pai
 
-    procedure, public :: is_grid
-    procedure, public :: is_Arakawa_grid
-    procedure, public :: is_third_dimension
-    procedure, public :: is_pai
+      procedure, public :: is_grid
+      procedure, public :: is_Arakawa_grid
+      procedure, public :: is_third_dimension
+      procedure, public :: is_pai
 
-    ! ===== i/o
+      ! ===== i/o
 
-    procedure, public :: write_to_netcdf
-    procedure, public :: read_from_netcdf
+      procedure, public :: write_to_netcdf
+      procedure, public :: read_from_netcdf
 
   end type atype_field
 

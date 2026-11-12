@@ -47,6 +47,8 @@ contains
       call write_to_netcdf_mesh( self, g, filename, ncid, id_var)
     end select
 
+    call self%checksum()
+
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 

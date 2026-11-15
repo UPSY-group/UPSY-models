@@ -24,7 +24,7 @@ MODULE climate_main
   USE climate_realistic                                      , ONLY: initialise_climate_model_realistic, run_climate_model_realistic, remap_climate_realistic
   ! USE climate_snapshot_plus_uniform_deltaT                   , ONLY: initialise_climate_model_snapshot_plus_uniform_deltaT, run_climate_model_snapshot_plus_uniform_deltaT, remap_climate_snapshot_plus_uniform_deltaT
   ! USE climate_snapshot_plus_transient_deltaT                 , ONLY: initialise_climate_model_snapshot_plus_transient_deltaT, run_climate_model_snapshot_plus_transient_deltaT, remap_climate_snapshot_plus_transient_deltaT
-  USE climate_snapshot_plus_anomalies                        , ONLY: initialise_climate_model_snp_p_anml, run_climate_model_snp_p_anml, remap_climate_snp_p_anml
+  ! USE climate_snapshot_plus_anomalies                        , ONLY: initialise_climate_model_snp_p_anml, run_climate_model_snp_p_anml, remap_climate_snp_p_anml
   USE reallocate_mod                                         , ONLY: reallocate_bounds
   use netcdf_io_main
   use climate_matrix                                         , only: run_climate_model_matrix, initialise_climate_matrix, remap_climate_matrix_model
@@ -117,7 +117,9 @@ CONTAINS
       climate%T2m   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_trans_dT%T2m   ( mesh%vi1:mesh%vi2,:)
       climate%Precip( mesh%vi1:mesh%vi2,:) = climate%snapshot_trans_dT%Precip( mesh%vi1:mesh%vi2,:)
     CASE ('snapshot_plus_anomalies')
-      CALL run_climate_model_snp_p_anml( mesh, geom, climate, time)
+      call climate%snapshot_p_anml%run( geom, time)
+      climate%T2m   ( mesh%vi1:mesh%vi2,:)  = climate%snapshot_p_anml%T2m    ( mesh%vi1:mesh%vi2,:)
+      climate%Precip( mesh%vi1:mesh%vi2,:)  = climate%snapshot_p_anml%Precip ( mesh%vi1:mesh%vi2,:)
     CASE ('matrix')
       call run_climate_model_matrix( mesh, grid, geom, SMB, climate, region_name, time, forcing)
     case ('SMB_snapshot_plus_anomalies')
@@ -241,7 +243,11 @@ CONTAINS
       climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%snapshot_trans_dT%Wind_LR ( mesh%vi1:mesh%vi2,:)
       climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%snapshot_trans_dT%Wind_DU ( mesh%vi1:mesh%vi2,:)
     CASE ('snapshot_plus_anomalies')
-      CALL initialise_climate_model_snp_p_anml( mesh, geom, climate, region_name)
+      call climate%snapshot_p_anml%allocate( region_name, mesh)
+      call climate%snapshot_p_anml%initialise( geom, refgeo_PD, refgeo_init)
+      climate%Q_TOA   ( mesh%vi1:mesh%vi2,:) = climate%snapshot_p_anml%Q_TOA   ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_LR ( mesh%vi1:mesh%vi2,:) = climate%snapshot_p_anml%Wind_LR ( mesh%vi1:mesh%vi2,:)
+      climate%Wind_DU ( mesh%vi1:mesh%vi2,:) = climate%snapshot_p_anml%Wind_DU ( mesh%vi1:mesh%vi2,:)
     case ('matrix')
       if (par%primary)  write(*,"(A)") '   Initialising climate matrix model...'
       call initialise_climate_matrix( mesh, grid, ice, geom, climate, region_name, forcing)
@@ -316,10 +322,10 @@ CONTAINS
           'snapshot_lapse', &
           'snapshot_plus_uniform_deltaT', &
           'snapshot_plus_transient_deltaT', &
+          'snapshot_plus_anomalies', &
           'TIPMIP')
       ! No need to do anything
     case ('realistic', &
-          'snapshot_plus_anomalies', &
           'matrix')
       call write_to_restart_file_climate_model_region( mesh, climate, region_name, time)
     end select
@@ -418,10 +424,10 @@ CONTAINS
           'snapshot_lapse', &
           'snapshot_plus_uniform_deltaT', &
           'snapshot_plus_transient_deltaT', &
+          'snapshot_plus_anomalies', &
           'TIPMIP')
       ! No need to do anything
     case ('realistic', &
-          'snapshot_plus_anomalies', &
           'matrix')
       call create_restart_file_climate_model_region( mesh, climate, region_name)
     end select
@@ -548,7 +554,7 @@ CONTAINS
     ELSEIF (choice_climate_model == 'snapshot_plus_transient_deltaT')  THEN
       call climate%snapshot_trans_dT%remap( mesh_new)  
     ELSEIF (choice_climate_model == 'snapshot_plus_anomalies')  THEN
-      call remap_climate_snp_p_anml(mesh_old, mesh_new, geom, climate, region_name, time)
+      call climate%snapshot_p_anml%remap( mesh_new)
     ELSEIF (choice_climate_model == 'matrix') THEN
       call remap_climate_matrix_model( mesh_new, climate, region_name, grid, ice, geom, forcing)
     elseif (choice_climate_model == 'ISMIP7') then

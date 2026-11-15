@@ -12,7 +12,7 @@ MODULE climate_model_types
   use climate_snapshot, only: type_climate_model_snapshot
   use climate_snapshot_plus_uniform_deltaT, only: type_climate_model_snapshot_plus_uniform_deltaT
   use climate_snapshot_plus_transient_deltaT, only: type_climate_model_snapshot_plus_transient_deltaT
-
+  use climate_snapshot_plus_anomalies,        only: type_climate_model_snapshot_plus_anomalies
   IMPLICIT NONE
 
 ! ===== Types =====
@@ -90,27 +90,27 @@ MODULE climate_model_types
 
   ! END TYPE type_climate_model_snapshot_plus_transient_dT
 
-  TYPE type_climate_model_snapshot_plus_anomalies
+  ! TYPE type_climate_model_snapshot_plus_anomalies
 
-    TYPE(type_climate_model_snapshot_deprecated)         :: snapshot_baseline
-    character(len=1024)                       :: filename_climate_anomalies
+  !   TYPE(type_climate_model_snapshot_deprecated)         :: snapshot_baseline
+  !   character(len=1024)                       :: filename_climate_anomalies
 
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: T2m                             ! Monthly mean 2m air temperature anomaly (K)
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: Precip                          ! Monthly mean precipitation anomaly (m)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: T2m                             ! Monthly mean 2m air temperature anomaly (K)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE   :: Precip                          ! Monthly mean precipitation anomaly (m)
 
-    ! anomalies
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly                   ! Monthly mean 2m air temperature anomaly (K)
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly                ! Monthly mean precipitation anomaly (m)
+  !   ! anomalies
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly                   ! Monthly mean 2m air temperature anomaly (K)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly                ! Monthly mean precipitation anomaly (m)
 
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly_0                 ! Prev. timeframe of monthly mean 2m air temperature anomaly (K)
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly_0              ! Prev. timeframe of monthly mean precipitation anomaly (m)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly_0                 ! Prev. timeframe of monthly mean 2m air temperature anomaly (K)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly_0              ! Prev. timeframe of monthly mean precipitation anomaly (m)
 
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly_1                 ! Next timeframe of monthly mean 2m air temperature anomaly (K)
-    REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly_1              ! Next timeframe of monthly mean precipitation anomaly (m)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: T2m_anomaly_1                 ! Next timeframe of monthly mean 2m air temperature anomaly (K)
+  !   REAL(dp), DIMENSION(:,:), ALLOCATABLE     :: Precip_anomaly_1              ! Next timeframe of monthly mean precipitation anomaly (m)
 
-    REAL(dp)                                  :: anomaly_t0, anomaly_t1        ! times of each timeframe
+  !   REAL(dp)                                  :: anomaly_t0, anomaly_t1        ! times of each timeframe
 
-  END TYPE type_climate_model_snapshot_plus_anomalies
+  ! END TYPE type_climate_model_snapshot_plus_anomalies
 
   TYPE type_climate_model_matrix
     ! The "matrix" climate model option: three GCM snapshots (warm, cold, and PI), and a PD reanalysis snapshot to use for bias correction

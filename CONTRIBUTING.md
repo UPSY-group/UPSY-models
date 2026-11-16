@@ -7,7 +7,7 @@ You can! There are no rules for who can contribute - but there are rules for *ho
 ## Before you start
 
 - Have a look at the [UPSY Wiki](https://github.com/UPSY-group/UPSY-models/wiki)
-- Get your development environment [set up](https://github.com/UPSY-group/UPSY-models/wiki/Getting-started)
+- Set up your [development environment](https://github.com/UPSY-group/UPSY-models/wiki/Getting-started)
 
 ## Starting
 
@@ -46,11 +46,11 @@ The amount of time it costs, and the amount of frustration it causes, to trace a
 
 ### Use existing debugging tools
 
-While unfortunately, Fortran support in actual debuggers is flaky at best, UPSY offers a number of extremely useful tools to help you diagnose what's going on/going wrong in your code. Take a look at [WIKI PAGE ABOUT UPSY DEBUGGING TOOLS] to see how these tools can make your life easier!
+While unfortunately, Fortran support in actual debuggers is flaky at best, UPSY offers a number of extremely useful tools to help you diagnose what's going on/going wrong in your code. Take a look at *LINK TO TO-BE-WRITTEN WIKI PAGE ABOUT UPSY DEBUGGING TOOLS* to see how these tools can make your life easier!
 
 ### Code in style
 
-*LINK TO STYLE GUIDE*
+*LINK TO TO-BE-WRITTEN STYLE GUIDE*
 
 ## Merging
 
@@ -66,16 +66,16 @@ Only when the answer to all these questions is "yes" should you create a PR.
 
 ### Create a draft pull request
 
-*(TEMPLATE?)
-Describe what you did and why
-Small PR: single change (one single new feature, refactor of one module)
-New feature: off by default, includes test
-In case of changing output: clearly explain why, update references*
+*LINK TO TO-BE-WRITTEN PR TEMPLATE*
+*Describe what you did and why*
+*Small PR: single change (one single new feature, refactor of one module)*
+*New feature: off by default, includes test*
+*In case of changing output: clearly explain why, update references*
 
 ### Check the test suite
 
-*If all tests pass: great! Un-draft your PR and ask for reviews.
-If not: oh dear! REFER TO WIKI PAGE ABOUT TEST SUITE AND HOW TO INTERPRET IT*
+*If all tests pass: great! Un-draft your PR and ask for reviews.*
+*If not: oh dear! REFER TO WIKI PAGE ABOUT TEST SUITE AND HOW TO INTERPRET IT*
 
 ### Ask for reviews
 

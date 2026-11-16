@@ -368,9 +368,17 @@ contains
 
     ! Perform the mapping operation as a matrix multiplication
     call mat_petsc2CSR( map%M, M_CSR)
-    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
-      mesh%pai_V, d_mesh_partial, grid%pai, d_grid_vec_partial, &
-      buffer_xx_nih = mesh%buffer1_d_ak_nih)
+    ! NOTE: the shared buffer is sized for the ice model's vertical grid (mesh%nz);
+    !       for fields with a different third dimension (e.g. ocean layers), let the
+    !       wrapper allocate a buffer of the right size instead
+    if (size( d_mesh_partial,2) == size( mesh%buffer1_d_ak_nih,2)) then
+      call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+        mesh%pai_V, d_mesh_partial, grid%pai, d_grid_vec_partial, &
+        buffer_xx_nih = mesh%buffer1_d_ak_nih)
+    else
+      call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+        mesh%pai_V, d_mesh_partial, grid%pai, d_grid_vec_partial)
+    end if
 
     ! == Because the remapping operators are sometimes inaccurate at the
     !     domain boundary, set values in the outermost row of grid cells
@@ -540,9 +548,17 @@ contains
 
     ! Perform the mapping operation as a matrix multiplication
     call mat_petsc2CSR( map%M, M_CSR)
-    call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
-      mesh%pai_Tri, d_mesh_partial, grid%pai, d_grid_vec_partial, &
-      buffer_xx_nih = mesh%buffer1_d_bk_nih)
+    ! NOTE: the shared buffer is sized for the ice model's vertical grid (mesh%nz);
+    !       for fields with a different third dimension (e.g. ocean layers), let the
+    !       wrapper allocate a buffer of the right size instead
+    if (size( d_mesh_partial,2) == size( mesh%buffer1_d_bk_nih,2)) then
+      call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+        mesh%pai_Tri, d_mesh_partial, grid%pai, d_grid_vec_partial, &
+        buffer_xx_nih = mesh%buffer1_d_bk_nih)
+    else
+      call multiply_CSR_matrix_with_vector_2D_wrapper( M_CSR, &
+        mesh%pai_Tri, d_mesh_partial, grid%pai, d_grid_vec_partial)
+    end if
 
     ! == Because the remapping operators are sometimes inaccurate at the
     !     domain boundary, set values in the outermost row of grid cells

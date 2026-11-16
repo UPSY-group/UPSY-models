@@ -64,39 +64,37 @@ The basic checklist to go over before creating a pull request is:
 
 Only when the answer to all these questions is "yes" should you create a PR.
 
-### Create a pull request
+### Create a draft pull request
 
-(TEMPLATE?)
+*(TEMPLATE?)
 Describe what you did and why
 Small PR: single change (one single new feature, refactor of one module)
 New feature: off by default, includes test
-In case of changing output: clearly explain why, update references
+In case of changing output: clearly explain why, update references*
 
 ### Check the test suite
 
-If all tests pass: great! Ask for reviews.
-If not: oh dear! REFER TO WIKI PAGE ABOUT TEST SUITE AND HOW TO INTERPRET IT
+*If all tests pass: great! Un-draft your PR and ask for reviews.
+If not: oh dear! REFER TO WIKI PAGE ABOUT TEST SUITE AND HOW TO INTERPRET IT*
 
 ### Ask for reviews
 
-Oh dear, reviewer #2 has posted a new comment!
-
-Don't worry, code reviews are not like peer reviews on scientific literature. Yes, it's partly to check whether what you did makes sense - after all, the fact that your code compiles and runs doesn't mean it's good code. But it's also a great way for the rest of us to stay up to date on what's being added to the codebase.
+Oh dear, reviewer #2 has posted a new comment! Don't worry, code reviews are not like peer reviews on scientific literature. Yes, it's partly to check whether what you did makes sense - after all, the fact that your code compiles and runs doesn't mean it's good code. But it's also a great way for the rest of us to stay up to date on what's being added to the codebase.
 
 ## From errors to bug reports
 
-(TEMPLATE?)
+### Ask for help!
 
-Even automated testing and code reviews are no guaranteed protection against plain old human error, and bugs *do* sneak into our codebase. If you run into one and don't feel up to the task of fixng it yourself, you can submit a bug report for one of our core developers to look into.
+Running into errors you don't understand is a big part of the life of a programmer. And while spending hours to solve a problem yourself is fine for the actual scientific problems you're paid to study, the simple programming problems that cause 99% of error messages have almost always already been solved by someone else at some point. So: ask! The [GitHub Discussions](https://github.com/UPSY-group/UPSY-models/discussions) are the place to go. Start with a quick search to see if someone else has already run into the problem. If not, create a new Discussion describing your problem. Chances are, you'll be sorted within a day.
 
-The key thing here is *reproducability*. This includes the commit hash of your source code, the versions of the external packages (all of which are printed to the terminal at the start of every simulation), and whatever input parameters you used (the config file and probably some NetCDF input files).
+### Submitting a bug report
 
-If possible, try to reduce this to the smallest possible set-up. If your simulation read 10 Gigabytes of input and then crashed after an hour of running, reproducing the error is not really feasible for us. Ideally, we want something that takes less than a minute to crash.
+Not all errors are used-caused. Even automated testing and code reviews do not offer 100% protection, and bugs *do* sneak into our codebase. If you run into one and don't feel up to the task of fixing it yourself, you can submit a bug report for one of our core developers to look into.
 
-## Getting help
+The key thing here is *reproducability*. This includes the commit hash of your source code, the versions of the external packages (all of which are printed to the terminal at the start of every simulation), and the config file. If you used input files that are not in the `UPSY-group/data` repo, check if the error persists when using those data files. If you really need external files, provide them along with your bug report using WeTransfer or a similar file-sharing service.
 
-LINK TO GITHUB DISCUSSIONS
+If possible, try to reduce the error using the smallest possible set-up. If your simulation read 10 Gigabytes of input and then crashes after an hour of running, reproducing the error is not really feasible for us. Ideally, we want something that takes less than a minute to crash, and uses only input files from the data repo. If you provide external files, make them as small as possible.
 
 ## Credit
 
-Rules for acknowledgements/coauthorship
+*Rules for acknowledgements/coauthorship*

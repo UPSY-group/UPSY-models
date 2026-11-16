@@ -50,7 +50,7 @@ While unfortunately, Fortran support in actual debuggers is flaky at best, UPSY 
 
 ### Code in style
 
-LINK TO STYLE GUIDE
+*LINK TO STYLE GUIDE*
 
 ## Merging
 
@@ -87,9 +87,9 @@ Oh dear, reviewer #2 has posted a new comment! Don't worry, code reviews are not
 
 Running into errors you don't understand is a big part of the life of a programmer. And while spending hours to solve a problem yourself is fine for the actual scientific problems you're paid to study, the simple programming problems that cause 99% of error messages have almost always already been solved by someone else at some point. So: ask! The [GitHub Discussions](https://github.com/UPSY-group/UPSY-models/discussions) are the place to go. Start with a quick search to see if someone else has already run into the problem. If not, create a new Discussion describing your problem. Chances are, you'll be sorted within a day.
 
-### Submitting a bug report
+### Create an issue
 
-Not all errors are used-caused. Even automated testing and code reviews do not offer 100% protection, and bugs *do* sneak into our codebase. If you run into one and don't feel up to the task of fixing it yourself, you can submit a bug report for one of our core developers to look into.
+Not all errors are used-caused. Even automated testing and code reviews do not offer 100% protection, and bugs *do* sneak into our codebase. If you run into one and don't feel up to the task of fixing it yourself, you can [create an issue](https://github.com/UPSY-group/UPSY-models/issues) for one of our core developers to look into.
 
 The key thing here is *reproducability*. This includes the commit hash of your source code, the versions of the external packages (all of which are printed to the terminal at the start of every simulation), and the config file. If you used input files that are not in the `UPSY-group/data` repo, check if the error persists when using those data files. If you really need external files, provide them along with your bug report using WeTransfer or a similar file-sharing service.
 

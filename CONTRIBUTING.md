@@ -19,17 +19,18 @@ You can! There are no rules for who can contribute - but there are rules for *ho
 
 `Branches` should be short-lived, ideally about a week or so. Most of the time, this is nowhere near anough to finish your work; that's not the point. This way, you're never away from main for very long, and the risk of merge conflicts between your work and that of other contributors is minimised. Also, it encourages you to chop up your big project into small, manageable chunks, which are much easier to test and review.
 
+This inevitably means that, most of the time, you'll be merging unfinished work - which is fine, *as long as it doesn't break existing stuff*. Start with empty subroutines that are not yet called anywhere; as long as they compile, you're good. Then, start adding your new functionality. Want to see how it behaves when it's called from the actual model? Make sure it's **off by default** (best done by using config parameters). Feel like it's good to go? Add a test. Each of these steps is fine as a separate pull request.
+
 We encourage you to use imperative branch naming. E.g., if you're planning to add a new climate model option, your branch will be called something like `add_new_climate_model_option`.
 
+### Fetch/pull/merge every day
 
-### Start your day by fetching and pulling
-(SHOULD THIS BE IN HERE? OR JUST REFER TO CI/CD BEST PRACTICES?)
+After the even more basic stuff that makes up the start of your day (I'd say getting out of bed, putting on clothes, and eating breakfast, but many programmers seem to view these steps as optional), your daily work routine should begin with:
+- `fetch` the repo from the GitHub origin
+- `pull`ing the changes to main (see https://stackoverflow.com/questions/292357/what-is-the-difference-between-git-pull-and-git-fetch to learn the difference),
+- `merge` main into your branch
 
-You'll often find yourself switching back to `main` to look at the code, re-run test cases, run production simulations, etc. Since main is continuously developed, stay up-to-date by fetching from origin and pulling the resulting changes into your local main.
-
-Create a test (forces you to define what your new code should do)
-
-Compile as often as possible (fail early)
+This means that you're never more than a day behind whatever work the other contributors have added to the codebase, which minimises the risk of merge conflicts.
 
 ## Merging
 

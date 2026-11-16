@@ -51,6 +51,8 @@ contains
       xx_nih => xx
     else
       if (present( buffer_xx_nih)) then
+        ! Safety: writing into a buffer of the wrong size silently corrupts shared memory
+        if (size( buffer_xx_nih,1) /= pai_x%n_nih) call crash('buffer_xx_nih has the wrong size')
         xx_nih => buffer_xx_nih
       else
         call allocate_dist_shared( xx_nih, wxx_nih, [1, pai_x%n_nih])
@@ -63,6 +65,8 @@ contains
       yy_nih => yy
     else
       if (present( buffer_yy_nih)) then
+        ! Safety: writing into a buffer of the wrong size silently corrupts shared memory
+        if (size( buffer_yy_nih,1) /= pai_y%n_nih) call crash('buffer_yy_nih has the wrong size')
         yy_nih => buffer_yy_nih
       else
         call allocate_dist_shared( yy_nih, wyy_nih, [1, pai_y%n_nih])
@@ -132,6 +136,9 @@ contains
       xx_nih => xx
     else
       if (present( buffer_xx_nih)) then
+        ! Safety: writing into a buffer of the wrong shape silently corrupts shared memory
+        if (size( buffer_xx_nih,1) /= pai_x%n_nih .or. size( buffer_xx_nih,2) /= size( xx,2)) &
+          call crash('buffer_xx_nih has the wrong shape')
         xx_nih => buffer_xx_nih
       else
         call allocate_dist_shared( xx_nih, wxx_nih, [1, pai_x%n_nih], [1, size( xx,2)])
@@ -144,6 +151,9 @@ contains
       yy_nih => yy
     else
       if (present( buffer_yy_nih)) then
+        ! Safety: writing into a buffer of the wrong shape silently corrupts shared memory
+        if (size( buffer_yy_nih,1) /= pai_y%n_nih .or. size( buffer_yy_nih,2) /= size( xx,2)) &
+          call crash('buffer_yy_nih has the wrong shape')
         yy_nih => buffer_yy_nih
       else
         call allocate_dist_shared( yy_nih, wyy_nih, [1, pai_y%n_nih], [1, size( xx,2)])

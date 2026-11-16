@@ -6,38 +6,63 @@ You can! There are no rules for who can contribute - but there are rules for *ho
 
 ## Before you start
 
-- Have a look at the Wiki (HOW TO LINK TO THE ACTUAL WIKI?)
-- Get your development environment set up (LINK TO RELEVANT WIKI PAGE)
-- Verify that you can check out, compile, and run the code (NEED TO CREATE A SMALL DEMO SIMULATION)
-- Ask if anyone is already working on the thing you're planning to work on (LINK TO GITHUB DISCUSSIONS)
+- Have a look at the [UPSY Wiki](https://github.com/UPSY-group/UPSY-models/wiki)
+- Get your development environment [set up](https://github.com/UPSY-group/UPSY-models/wiki/Getting-started)
 
 ## Starting
 
-### Create a branch from `main` for your new work.
+### Inform the team what you're working on
+
+We like to keep each other informed about what we're working on. We use the [GitHub Discussions](https://github.com/UPSY-group/UPSY-models/discussions) for this; if you're planning to add a new feature to the model code, start by creating a Discussion describing what you're going to build, and what you'll be using it for.
+
+Note that you don't need to do this for every new branch/PR; just for the feature as a whole.
+
+### Create a branch from main for your new work.
 
 *Not sure how to do this? Take a look here: https://docs.github.com/en/desktop/overview/getting-started-with-github-desktop*
 
-`Branches` should be short-lived, ideally about a week or so. Most of the time, this is nowhere near anough to finish your work; that's not the point. This way, you're never away from main for very long, and the risk of merge conflicts between your work and that of other contributors is minimised. Also, it encourages you to chop up your big project into small, manageable chunks, which are much easier to test and review.
+Branches should be short-lived, ideally a week at most. Of course, this is nowhere near enough to finish your project; that's not the point. This way, you're never away from main for very long, and the risk of merge conflicts between your work and that of other contributors is minimised. Also, it encourages you to chop up your big project into small, manageable chunks, which are much easier to test and review.
 
 This inevitably means that, most of the time, you'll be merging unfinished work - which is fine, *as long as it doesn't break existing stuff*. Start with empty subroutines that are not yet called anywhere; as long as they compile, you're good. Then, start adding your new functionality. Want to see how it behaves when it's called from the actual model? Make sure it's **off by default** (best done by using config parameters). Feel like it's good to go? Add a test. Each of these steps is fine as a separate pull request.
 
 We encourage you to use imperative branch naming. E.g., if you're planning to add a new climate model option, your branch will be called something like `add_new_climate_model_option`.
 
+Lastly, and this really should go without saying: **don't touch someone else's branch!** ...at least, not without asking.
+
+## Working
+
 ### Fetch/pull/merge every day
 
 After the even more basic stuff that makes up the start of your day (I'd say getting out of bed, putting on clothes, and eating breakfast, but many programmers seem to view these steps as optional), your daily work routine should begin with:
 - `fetch` the repo from the GitHub origin
-- `pull`ing the changes to main (see https://stackoverflow.com/questions/292357/what-is-the-difference-between-git-pull-and-git-fetch to learn the difference),
+- `pull` the changes to main (see https://stackoverflow.com/questions/292357/what-is-the-difference-between-git-pull-and-git-fetch to learn the difference),
 - `merge` main into your branch
 
 This means that you're never more than a day behind whatever work the other contributors have added to the codebase, which minimises the risk of merge conflicts.
 
-## Merging
+### Compile often
 
+The amount of time it costs, and the amount of frustration it causes, to trace an error in new code scales exponentially with the amount of code. The more often you compile, the smaller the amount of new code between checks, and the faster you find out if you messed up.
+
+### Use existing debugging tools
+
+While unfortunately, Fortran support in actual debuggers is flaky at best, UPSY offers a number of extremely useful tools to help you diagnose what's going on/going wrong in your code. Take a look at [WIKI PAGE ABOUT UPSY DEBUGGING TOOLS] to see how these tools can make your life easier!
+
+### Code in style
+
+LINK TO STYLE GUIDE
+
+## Merging
 
 ### Check that you're happy
 
-Does it compile? Does it pass whatever new tests you created?
+The basic checklist to go over before creating a pull request is:
+- does my code compile?
+- does it pass whatever new tests I created?
+- does it do what I intended when I created the branch?
+- does it *not* do anything else?
+
+Only when the answer to all these questions is "yes" should you create a PR.
 
 ### Create a pull request
 

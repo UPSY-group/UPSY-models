@@ -50,7 +50,7 @@ While unfortunately, Fortran support in actual debuggers is flaky at best, UPSY 
 
 ### Code in style
 
-*LINK TO TO-BE-WRITTEN STYLE GUIDE*
+Have a look at the [style guide](STYLE_GUIDE.md) to see how code in UPSY-models is written, and try to make your code look like it belongs.
 
 ## Merging
 

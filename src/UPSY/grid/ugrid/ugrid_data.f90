@@ -13,6 +13,8 @@ module ugrid_data
 
   type, abstract, extends(atype_grid) :: atype_ugrid_data
 
+    real(dp)                                      :: xmin, xmax, ymin, ymax                        ! [m]       Bounding box
+
     integer                                       :: nNodes                                        !           Number of nodes in the ugrid
     integer                                       :: nFaces                                        !           Number of faces in the ugrid
 

@@ -11,7 +11,7 @@ module ugrid_basic
   use lonlat_grid_basic, only: type_lonlat_grid
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
   use mpi_basic, only: par
-  use plane_geometry, only: is_in_polygon
+  use plane_geometry, only: is_in_convex_polygon
 
   implicit none
 
@@ -23,8 +23,11 @@ module ugrid_basic
     contains
 
       procedure, public  :: build_from_grid
+      procedure, public  :: find_containing_face
+      procedure, public  :: is_in_face
       procedure, public  :: find_nearest_face_center
       procedure, public  :: get_face_as_polygon
+      procedure, public  :: add_nonchecked_neighbours_to_map_and_stack
 
       final :: finalise
 
@@ -51,10 +54,16 @@ module ugrid_basic
       type(type_Arakawa_grid), intent(in   ) :: lonlat_grid_Arakawa_grid
     end subroutine build_from_lonlat_grid
 
-    module function is_in_face( self, p, face_index) result( isso)
+    module subroutine find_containing_face( self, p, face_index)
       class(type_ugrid),      intent(in   ) :: self
       real(dp), dimension(2), intent(in   ) :: p
       integer,                intent(inout) :: face_index
+    end subroutine find_containing_face
+
+    module function is_in_face( self, face_index, p) result( isso)
+      class(type_ugrid),      intent(in   ) :: self
+      integer,                intent(in   ) :: face_index
+      real(dp), dimension(2), intent(in   ) :: p
       logical                               :: isso
     end function is_in_face
 
@@ -69,6 +78,13 @@ module ugrid_basic
       integer,                               intent(in   ) :: face_index
       real(dp), dimension(:,:), allocatable, intent(inout) :: poly
     end subroutine get_face_as_polygon
+
+    module subroutine add_nonchecked_neighbours_to_map_and_stack( self, map, stack, stackN, face_index)
+      class(type_ugrid),                intent(in   ) :: self
+      integer,  dimension(self%nFaces), intent(inout) :: map, stack
+      integer,                          intent(inout) :: stackN
+      integer,                          intent(in   ) :: face_index
+    end subroutine add_nonchecked_neighbours_to_map_and_stack
 
   end interface
 

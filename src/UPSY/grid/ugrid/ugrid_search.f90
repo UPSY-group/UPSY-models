@@ -17,6 +17,11 @@ contains
     integer  :: face_index_prev, vcmin, ci, neighbouring_face_index
     real(dp) :: d, dc, dcmin
 
+    ! Safety
+    if (p(1) < self%xmin .or. p(1) > self%xmax .or. p(2) < self%ymin .or. p(2) > self%ymax) then
+      call crash('point outside of ugrid bounding box')
+    end if
+
     ncycle = 0
     face_index_prev = face_index
     do while (ncycle < self%nFaces)

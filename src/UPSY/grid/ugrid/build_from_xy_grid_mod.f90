@@ -21,6 +21,9 @@ contains
     ugrid%ymin = xy_grid%ymin - xy_grid%dx / 2._dp
     ugrid%ymax = xy_grid%ymax + xy_grid%dx / 2._dp
 
+    ! Distance tolerance
+    ugrid%tol_dist = xy_grid%tol_dist
+
     ! Build from the regular (a-grid) or staggered (b/cx/cy-grid) grid cells
     if     (xy_grid_Arakawa_grid == Arakawa_grid%a()) then
       ugrid%name = 'ugrid_xy_grid_' // trim( xy_grid%name) // '_a'

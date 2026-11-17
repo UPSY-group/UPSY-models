@@ -21,6 +21,9 @@ contains
     ugrid%ymin = mesh%ymin
     ugrid%ymax = mesh%ymax
 
+    ! Distance tolerance
+    ugrid%tol_dist = mesh%tol_dist
+
     ! Build from the mesh a-grid (vertices), b-grid (triangles), or c-grid (edges)
     if     (mesh_Arakawa_grid == Arakawa_grid%a()) then
       ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_a'

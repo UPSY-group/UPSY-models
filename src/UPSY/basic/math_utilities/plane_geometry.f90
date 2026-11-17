@@ -202,13 +202,14 @@ contains
 
   end function is_in_polygon
 
-  pure function is_in_convex_polygon( poly, p) result( isso)
+  pure function is_in_convex_polygon( poly, p, tol_dist) result( isso)
     ! For convex polygons, a simpler check is seeing if p
     ! lies to the left of all line segments spanning the polygon
 
     ! Input variables:
     real(dp), dimension(:,:) , intent(in) :: poly
     real(dp), dimension(2)   , intent(in) :: p
+    real(dp),                  intent(in) :: tol_dist
 
     ! Output variables:
     logical :: isso
@@ -240,6 +241,16 @@ contains
       q = poly( i  ,:)
       r = poly( ip1,:)
       isso = isso .and. lies_to_left_of_line_segment( q, r, p)
+    end do
+    if (isso) return
+
+    ! Also count p inside when it lies on one of the edges
+    do i = 1, n
+      ip1 = i+1
+      if (ip1 == n+1) ip1 = 1
+      q = poly( i  ,:)
+      r = poly( ip1,:)
+      isso = isso .or. lies_on_line_segment( q, r, p, tol_dist)
     end do
 
   end function is_in_convex_polygon

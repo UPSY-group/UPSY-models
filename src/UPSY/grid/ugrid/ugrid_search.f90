@@ -66,7 +66,7 @@ contains
     real(dp), dimension(:,:), allocatable :: poly
 
     call self%get_face_as_polygon( face_index, poly)
-    isso = is_in_convex_polygon( poly, p)
+    isso = is_in_convex_polygon( poly, p, self%tol_dist)
 
   end function is_in_face
 

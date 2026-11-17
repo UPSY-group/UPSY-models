@@ -70,8 +70,9 @@ Use the PR templates for [**refactoring**](PULL_REQUEST_TEMPLATE/PR_refactor.md)
 
 ### Check the test suite
 
-*If all tests pass: great! Un-draft your PR and ask for reviews.*
-*If not: oh dear! REFER TO WIKI PAGE ABOUT TEST SUITE AND HOW TO INTERPRET IT*
+If all tests pass: great! Un-draft your PR and ask for reviews.
+
+If not: oh dear! Here's how you can [**analyse the results of the test suite**](https://github.com/UPSY-group/UPSY-models/wiki/GitHub-workflows) to help you figure out what's going wrong.
 
 ### Ask for reviews
 

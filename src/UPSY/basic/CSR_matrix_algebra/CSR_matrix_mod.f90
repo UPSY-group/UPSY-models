@@ -448,11 +448,15 @@ contains
       do row = A%i1, A%i2
         k1 = A%ptr( row)
         k2 = A%ptr( row+1) - 1
-        do k = k1, k2
-          col = A%ind( k)
-          val = A%val( k)
-          call add_entry_CSR_dist( A_tot, row, col, val)
-        end do
+        if (k2 == k1-1) then
+          call A_tot%add_empty_row( row)
+        else
+          do k = k1, k2
+            col = A%ind( k)
+            val = A%val( k)
+            call add_entry_CSR_dist( A_tot, row, col, val)
+          end do
+        end if
       end do
     end if
 
@@ -506,11 +510,15 @@ contains
         do row = A_proc%i1, A_proc%i2
           k1 = A_proc%ptr( row)
           k2 = A_proc%ptr( row+1) - 1
-          do k = k1, k2
-            col = A_proc%ind( k)
-            val = A_proc%val( k)
-            call add_entry_CSR_dist( A_tot, row, col, val)
-          end do
+          if (k2 == k1-1) then
+            call A_tot%add_empty_row( row)
+          else
+            do k = k1, k2
+              col = A_proc%ind( k)
+              val = A_proc%val( k)
+              call add_entry_CSR_dist( A_tot, row, col, val)
+            end do
+          end if
         end do
 
         ! Clean up after yourself

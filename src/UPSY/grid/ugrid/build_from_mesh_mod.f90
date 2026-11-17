@@ -15,6 +15,12 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Bounding box
+    ugrid%xmin = mesh%xmin
+    ugrid%xmax = mesh%xmax
+    ugrid%ymin = mesh%ymin
+    ugrid%ymax = mesh%ymax
+
     ! Build from the mesh a-grid (vertices), b-grid (triangles), or c-grid (edges)
     if     (mesh_Arakawa_grid == Arakawa_grid%a()) then
       ugrid%name = 'ugrid_mesh_' // trim( mesh%name) // '_a'

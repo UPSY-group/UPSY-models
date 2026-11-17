@@ -15,6 +15,12 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
+    ! Bounding box
+    ugrid%xmin = xy_grid%xmin
+    ugrid%xmax = xy_grid%xmax
+    ugrid%ymin = xy_grid%ymin
+    ugrid%ymax = xy_grid%ymax
+
     ! Build from the regular (a-grid) or staggered (b/cx/cy-grid) grid cells
     if     (xy_grid_Arakawa_grid == Arakawa_grid%a()) then
       ugrid%name = 'ugrid_xy_grid_' // trim( xy_grid%name) // '_a'

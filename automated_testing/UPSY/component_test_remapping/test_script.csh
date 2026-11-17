@@ -7,11 +7,13 @@ set test_dir = automated_testing/UPSY/component_test_remapping
 rm -rf ${test_dir}/results ${test_dir}/results_checksum ${test_dir}/weights ${test_dir}/figures
 
 # Figures are only for visual inspection when running the test locally, so skip them on CI
+# (note: csh resets $status at endif, so it must be checked inside the branches)
 if ($?CI) then
   python3 ${test_dir}/remapping_test.py  automated_testing/test_meshes_and_grids  ${test_dir}/results  ${test_dir}/weights
+  if ($status != 0) exit 1
 else
   python3 ${test_dir}/remapping_test.py  automated_testing/test_meshes_and_grids  ${test_dir}/results  ${test_dir}/weights  --figures ${test_dir}/figures
+  if ($status != 0) exit 1
 endif
-if ($status != 0) exit 1
 
 python3 automated_testing/reduce_all_netcdfs_in_folder_to_checksum.py ${test_dir}

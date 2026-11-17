@@ -216,6 +216,16 @@ contains
     face_index_src = 1
     do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
 
+      p = ugrid_dst%face_coordinates( face_index_dst,:)
+
+      ! Assign NaN to destination ugrid faces lying outside of the source ugrid bounding box
+      if (p(1) < ugrid_src%xmin .or. p(1) > ugrid_src%xmax .or. p(2) < ugrid_src%ymin .or. p(2) > ugrid_src%ymax) then
+        call M_xdy%add_empty_row  ( face_index_dst)
+        call M_mxydx%add_empty_row( face_index_dst)
+        call M_xydy%add_empty_row ( face_index_dst)
+        cycle
+      end if
+
       ! The polygon describing this destination mesh Voronoi cell
       call ugrid_dst%get_face_as_polygon( face_index_dst, poly_dst)
 

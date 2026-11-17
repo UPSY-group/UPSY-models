@@ -141,13 +141,14 @@ def _read_grid_info_cached(filename, mtime_ns, size):
 class Map:
     """A remapping operator between two grids/meshes: d_dst = M @ d_src."""
 
-    def __init__(self, M, grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method):
+    def __init__(self, M, grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, attrs=None):
         self.M                = M
         self.grid_src         = grid_src
         self.Arakawa_grid_src = Arakawa_grid_src
         self.grid_dst         = grid_dst
         self.Arakawa_grid_dst = Arakawa_grid_dst
         self.method           = method
+        self.attrs            = attrs or {}  # Global attributes of the weights file (program info etc.)
 
     def __repr__(self):
         return (f'Map({self.grid_src.kind} ({self.Arakawa_grid_src}) -> '
@@ -200,15 +201,18 @@ class Remapper:
                  then the PATH, then build/src/UPSY/ in this repository)
     n_procs:     number of MPI processes to calculate new weights with
     mpiexec:     MPI launcher command
+    timeout:     maximum time (in seconds) for calculating a single set of weights (default: no limit)
     """
 
-    def __init__(self, weights_dir=None, executable=None, n_procs=1, mpiexec='mpiexec', verbose=False):
+    def __init__(self, weights_dir=None, executable=None, n_procs=1, mpiexec='mpiexec', verbose=False,
+                 timeout=None):
         self.weights_dir = Path(weights_dir or os.environ.get('UPSY_REMAPPING_WEIGHTS_DIR') or DEFAULT_WEIGHTS_DIR)
         self.weights_dir.mkdir(parents=True, exist_ok=True)
         self.executable  = executable
         self.n_procs     = n_procs
         self.mpiexec     = mpiexec
         self.verbose     = verbose
+        self.timeout     = timeout
         self.atlas       = {}
 
     def remap(self, d_src, filename_grid_src, filename_grid_dst, method,
@@ -244,7 +248,7 @@ class Remapper:
         M = None
         if not recalculate and filename_weights.exists():
             try:
-                M = read_weights_file(filename_weights, Arakawa_grid_src, Arakawa_grid_dst, method, n_src, n_dst)
+                M, attrs = read_weights_file(filename_weights, Arakawa_grid_src, Arakawa_grid_dst, method, n_src, n_dst)
                 if self.verbose:
                     print(f'Read remapping weights from {filename_weights}')
             except (OSError, KeyError, ValueError) as e:
@@ -253,9 +257,9 @@ class Remapper:
         if M is None:
             self._calculate_weights(filename_grid_src, Arakawa_grid_src,
                                     filename_grid_dst, Arakawa_grid_dst, method, filename_weights)
-            M = read_weights_file(filename_weights, Arakawa_grid_src, Arakawa_grid_dst, method, n_src, n_dst)
+            M, attrs = read_weights_file(filename_weights, Arakawa_grid_src, Arakawa_grid_dst, method, n_src, n_dst)
 
-        self.atlas[key] = Map(M, grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
+        self.atlas[key] = Map(M, grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method, attrs)
         return self.atlas[key]
 
     def _calculate_weights(self, filename_grid_src, Arakawa_grid_src,
@@ -273,7 +277,11 @@ class Remapper:
             print('Calculating remapping weights: ' + ' '.join(cmd))
 
         try:
-            result = subprocess.run(cmd, capture_output=True, text=True)
+            try:
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=self.timeout)
+            except subprocess.TimeoutExpired as e:
+                raise RuntimeError(f'{EXECUTABLE_NAME} did not finish within {self.timeout} s: '
+                                   + ' '.join(cmd)) from e
             if result.returncode != 0 or not filename_tmp.exists():
                 log = _strip_ansi(result.stdout + result.stderr).strip().splitlines()
                 raise RuntimeError(f'{EXECUTABLE_NAME} failed (exit code {result.returncode}):\n'
@@ -298,7 +306,7 @@ class Remapper:
 
 def read_weights_file(filename, Arakawa_grid_src, Arakawa_grid_dst, method, n_src, n_dst):
     """Read a weights file written by UPSY_calculate_remapping_weights as a scipy CSR matrix,
-    checking that it matches what was asked for."""
+    checking that it matches what was asked for. Also returns the file's global attributes."""
 
     with netCDF4.Dataset(filename) as ds:
         ds.set_auto_mask(False)
@@ -317,11 +325,12 @@ def read_weights_file(filename, Arakawa_grid_src, Arakawa_grid_dst, method, n_sr
         ptr = ds.variables['ptr'][:].astype(np.int64) - 1
         ind = ds.variables['ind'][:].astype(np.int64) - 1
         val = ds.variables['val'][:]
+        attrs = {name: ds.getncattr(name) for name in ds.ncattrs()}
 
     if len(ptr) != m + 1 or ptr[0] != 0 or ptr[-1] != len(ind):
         raise ValueError('inconsistent CSR row pointers')
 
-    return sp.csr_matrix((val, ind, ptr), shape=(m, n))
+    return sp.csr_matrix((val, ind, ptr), shape=(m, n)), attrs
 
 
 def _strip_ansi(s):

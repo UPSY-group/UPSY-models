@@ -7,6 +7,8 @@ on:
     paths:
       - 'src/UPSY/**'
       - '.github/workflows/UPSY_test_suite**'
+      - 'tools/python/upsy/remap.py'
+      - 'automated_testing/UPSY/component_test_remapping/**'
   workflow_dispatch:
 
 jobs:
@@ -70,4 +72,10 @@ jobs:
     uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh
+      compile_script: compile_UPSY.csh
+
+  remapping:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping
       compile_script: compile_UPSY.csh

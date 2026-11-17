@@ -55,6 +55,7 @@ automated_testing/unit_tests/figures/*.png
 automated_testing/component_tests/figures/*.png
 automated_testing/component_tests/figures/*.avi
 automated_testing/UPSY/component_test_ugrid/figures/*.png
+automated_testing/UPSY/component_test_remapping/figures/
 
 # Ignore temporary scoreboard files
 automated_testing/component_tests/temporary_scoreboard_files/*.xml
@@ -93,3 +94,4 @@ site/*
 
 # Ignore pre-calculated remapping weights (tools/python/upsy/remap.py)
 UPSY_remapping_weights/
+automated_testing/UPSY/component_test_remapping/weights/

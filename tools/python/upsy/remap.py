@@ -21,6 +21,10 @@ Data on x/y- and lon/lat-grids is passed with the grid in the last two axes,
 ordered (y, x) or (lat, lon) as it is read from a NetCDF file by netCDF4 or
 xarray. Data on a mesh is passed with the vertices/triangles/edges in the
 last axis. Any leading axes (time, depth, ...) are remapped in one go.
+
+Destination cells for which the weights contain no entries (i.e. for which
+UPSY_calculate_remapping_weights found no overlapping source cells) are set
+to NaN.
 """
 
 import hashlib
@@ -149,6 +153,7 @@ class Map:
         self.Arakawa_grid_dst = Arakawa_grid_dst
         self.method           = method
         self.attrs            = attrs or {}  # Global attributes of the weights file (program info etc.)
+        self.empty_rows       = np.diff(M.indptr) == 0  # Destination cells without any source contributions
 
     def __repr__(self):
         return (f'Map({self.grid_src.kind} ({self.Arakawa_grid_src}) -> '
@@ -157,7 +162,8 @@ class Map:
 
     def apply(self, d_src):
         """Apply the map to an array (or xarray.DataArray) of source data.
-        Returns a numpy array with the same leading axes as d_src."""
+        Returns a numpy array with the same leading axes as d_src. Destination
+        cells without any source contributions are set to NaN."""
 
         d = _to_numpy_with_grid_dims_last(d_src, self.grid_src)
 
@@ -176,6 +182,9 @@ class Map:
             d_vec = np.swapaxes(d, -1, -2).reshape(-1, self.M.shape[1])
 
         d_dst_vec = (self.M @ d_vec.T).T
+        if self.empty_rows.any():
+            d_dst_vec = d_dst_vec.astype(np.result_type(d_dst_vec, np.float64), copy=False)
+            d_dst_vec[:, self.empty_rows] = np.nan
 
         if self.grid_dst.kind == 'mesh':
             return d_dst_vec.reshape(*lead, self.M.shape[0])
@@ -284,8 +293,9 @@ class Remapper:
                                    + ' '.join(cmd)) from e
             if result.returncode != 0 or not filename_tmp.exists():
                 log = _strip_ansi(result.stdout + result.stderr).strip().splitlines()
-                raise RuntimeError(f'{EXECUTABLE_NAME} failed (exit code {result.returncode}):\n'
-                                   + '\n'.join(log[-20:]))
+                errors = [line.strip() for line in log if 'ERROR' in line and 'ERROR STOP' not in line]
+                raise RuntimeError(f'{EXECUTABLE_NAME} failed (exit code {result.returncode}): '
+                                   + ' '.join(cmd) + '\n' + '\n'.join(errors or log[-20:]))
             os.replace(filename_tmp, filename_weights)
         finally:
             filename_tmp.unlink(missing_ok=True)

@@ -97,7 +97,7 @@ contains
     type(type_CSR_matrix_dp)    :: M_xdy
     type(type_CSR_matrix_dp)    :: M_mxydx
     type(type_CSR_matrix_dp)    :: M_xydy
-    integer                     :: row, k1, k2, k
+    integer                     :: face_index_dst, k1, k2, k
     real(dp)                    :: A_overlap_tot
 
     ! Add routine to path
@@ -107,12 +107,12 @@ contains
 
     self%M = M_xdy
 
-    do row = self%ct%pai_dst%i1, self%ct%pai_dst%i2
+    do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
 
       ! Calculate total area of overlap for this dst face
       A_overlap_tot = 0._dp
-      k1 = M_xdy%ptr( row)
-      k2 = M_xdy%ptr( row+1) - 1
+      k1 = M_xdy%ptr( face_index_dst)
+      k2 = M_xdy%ptr( face_index_dst+1) - 1
       do k = k1, k2
         A_overlap_tot = A_overlap_tot + M_xdy%val( k)
       end do
@@ -204,7 +204,7 @@ contains
     real(dp), dimension(:,:), allocatable :: poly_intersect
     real(dp)                              :: LI_xdy, LI_mxydx, LI_xydy
     real(dp), parameter                   :: tol_dist = 1e-3_dp
-    integer                               :: ci, neighbour_face_index_src
+    logical                               :: found_any_intersection
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -231,7 +231,6 @@ contains
 
       ! Initialise map and stack with the source ugrid face
       ! nearest to the destination ugrid face
-      p = ugrid_dst%face_coordinates( face_index_dst,:)
       call ugrid_src%find_nearest_face_center( p, face_index_src)
 
       map = 0
@@ -240,6 +239,7 @@ contains
       stack( stackN) = face_index_src
 
       ncycles = 0
+      found_any_intersection = .false.
       do while (stackN > 0)
 
         ! Safety
@@ -257,8 +257,16 @@ contains
         ! Calculate intersection
         call calc_convex_polygon_intersection( poly_src, poly_dst, poly_intersect)
 
-        ! If the intersection is empty, move on
-        if (.not. allocated( poly_intersect)) cycle
+        if (.not. allocated( poly_intersect)) then
+          if (ncycles == 1) then
+            ! If the first source ugrid face we try doesn't intersect
+            ! the destination ugrid face, we must still try its neighbours
+            call add_nonchecked_neighbours_to_map_and_stack( ugrid_src, map, stack, stackN, face_index_src)
+          end if
+          cycle
+        else
+          found_any_intersection = .true.
+        end if
 
         ! Calculate the three line integrals around the perimeter of the intersection
         call calc_line_integrals_around_polygon( poly_intersect, LI_xdy, LI_mxydx, LI_xydy, tol_dist)
@@ -269,16 +277,12 @@ contains
         call M_xydy%add_entry ( face_index_dst, face_index_src, LI_xydy)
 
         ! Add non-checked neighbours to the stack to continue the floodfill-style outward expansion
-        do ci = 1, ugrid_src%face_face_connectivity_n( face_index_src)
-          neighbour_face_index_src = ugrid_src%face_face_connectivity( face_index_src, ci)
-          if (map( neighbour_face_index_src) == 0) then
-            map( neighbour_face_index_src) = 1
-            stackN = stackN + 1
-            stack( stackN) = neighbour_face_index_src
-          end if
-        end do
+        call add_nonchecked_neighbours_to_map_and_stack( ugrid_src, map, stack, stackN, face_index_src)
 
       end do
+
+      ! Safety
+      if (.not. found_any_intersection) call crash('could not find any intersecting source ugrid faces')
 
     end do
 
@@ -290,5 +294,27 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine calc_line_integral_matrices
+
+  pure subroutine add_nonchecked_neighbours_to_map_and_stack( ugrid, map, stack, stackN, face_index)
+
+    ! In/output variables:
+    type(type_ugrid),                  intent(in   ) :: ugrid
+    integer,  dimension(ugrid%nFaces), intent(inout) :: map, stack
+    integer,                           intent(inout) :: stackN
+    integer,                           intent(in   ) :: face_index
+
+    ! Local variables:
+    integer :: ci, neighbour_face_index
+
+    do ci = 1, ugrid%face_face_connectivity_n( face_index)
+      neighbour_face_index = ugrid%face_face_connectivity( face_index, ci)
+      if (map( neighbour_face_index) == 0) then
+        map( neighbour_face_index) = 1
+        stackN = stackN + 1
+        stack( stackN) = neighbour_face_index
+      end if
+    end do
+
+  end subroutine add_nonchecked_neighbours_to_map_and_stack
 
 end submodule remapping_calc_CSR_operators

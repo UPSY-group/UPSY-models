@@ -16,10 +16,10 @@ contains
     call init_routine( routine_name)
 
     ! Bounding box
-    ugrid%xmin = xy_grid%xmin
-    ugrid%xmax = xy_grid%xmax
-    ugrid%ymin = xy_grid%ymin
-    ugrid%ymax = xy_grid%ymax
+    ugrid%xmin = xy_grid%xmin - xy_grid%dx / 2._dp
+    ugrid%xmax = xy_grid%xmax + xy_grid%dx / 2._dp
+    ugrid%ymin = xy_grid%ymin - xy_grid%dx / 2._dp
+    ugrid%ymax = xy_grid%ymax + xy_grid%dx / 2._dp
 
     ! Build from the regular (a-grid) or staggered (b/cx/cy-grid) grid cells
     if     (xy_grid_Arakawa_grid == Arakawa_grid%a()) then

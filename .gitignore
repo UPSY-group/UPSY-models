@@ -90,3 +90,6 @@ site/*
 /Testing_basal_old
 /Testing_Martin
 /Testing_Martin_old
+
+# Ignore pre-calculated remapping weights (tools/python/upsy/remap.py)
+UPSY_remapping_weights/

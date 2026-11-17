@@ -117,7 +117,7 @@ for fi = 1: length( fields)
 
     d_dst = zeros( nx_dst, ny_dst, nz_dst, length (years));
     for ti = 1: length( time)
-      d_dst( :,:,:,ti) = interp3( xg_src, yg_src, zg_src, d_src( :,:,:,ti), xg_dst, yg_dst, zg_dst);
+      d_dst( :,:,:,ti) = interp3( xg_src, yg_src, zg_src, d_src( :,:,:,ti), xg_dst, yg_dst, zg_dst) + 1;
     end
 
     ncwrite( filename_dst, field, d_dst);

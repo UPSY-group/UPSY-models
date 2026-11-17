@@ -6,14 +6,14 @@ You can! There are no rules for who can contribute - but there are rules for *ho
 
 ## Before you start
 
-- Have a look at the [UPSY Wiki](https://github.com/UPSY-group/UPSY-models/wiki)
-- Set up your [development environment](https://github.com/UPSY-group/UPSY-models/wiki/Getting-started)
+- Have a look at the [**UPSY Wiki**](https://github.com/UPSY-group/UPSY-models/wiki)
+- Set up your [**development environment**](https://github.com/UPSY-group/UPSY-models/wiki/Getting-started)
 
 ## Starting
 
 ### Inform the team what you're working on
 
-We like to keep each other informed about what we're working on. We use the [GitHub Discussions](https://github.com/UPSY-group/UPSY-models/discussions) for this; if you're planning to add a new feature to the model code, start by creating a Discussion describing what you're going to build, and what you'll be using it for.
+We like to keep each other informed about what we're working on. We use the [**GitHub Discussions**](https://github.com/UPSY-group/UPSY-models/discussions) for this; if you're planning to add a new feature to the model code, start by creating a Discussion describing what you're going to build, and what you'll be using it for.
 
 Note that you don't need to do this for every new branch/PR; just for the feature as a whole.
 
@@ -50,7 +50,7 @@ While unfortunately, Fortran support in actual debuggers is flaky at best, UPSY 
 
 ### Code in style
 
-Have a look at the [style guide](STYLE_GUIDE.md) to see how code in UPSY-models is written, and try to make your code look like it belongs.
+Have a look at the [**style guide**](STYLE_GUIDE.md) to see how code in UPSY-models is written, and try to make your code look like it belongs.
 
 ## Merging
 
@@ -66,11 +66,7 @@ Only when the answer to all these questions is "yes" should you create a PR.
 
 ### Create a draft pull request
 
-*LINK TO TO-BE-WRITTEN PR TEMPLATE*
-*Describe what you did and why*
-*Small PR: single change (one single new feature, refactor of one module)*
-*New feature: off by default, includes test*
-*In case of changing output: clearly explain why, update references*
+Use the PR templates for [**refactoring**](PULL_REQUEST_TEMPLATE/PR_refactor.md), [**unfinished work**](PULL_REQUEST_TEMPLATE/PR_unfinished_work.md), or [**project finals**](PULL_REQUEST_TEMPLATE/PR_project_final.md) to create a draft PR.
 
 ### Check the test suite
 
@@ -85,11 +81,11 @@ Oh dear, reviewer #2 has posted a new comment! Don't worry, code reviews are not
 
 ### Ask for help!
 
-Running into errors you don't understand is a big part of the life of a programmer. And while spending hours to solve a problem yourself is fine for the actual scientific problems you're paid to study, the simple programming problems that cause 99% of error messages have almost always already been solved by someone else at some point. So: ask! The [GitHub Discussions](https://github.com/UPSY-group/UPSY-models/discussions) are the place to go. Start with a quick search to see if someone else has already run into the problem. If not, create a new Discussion describing your problem. Chances are, you'll be sorted within a day.
+Running into errors you don't understand is a big part of the life of a programmer. And while spending hours to solve a problem yourself is fine for the actual scientific problems you're paid to study, the simple programming problems that cause 99% of error messages have almost always already been solved by someone else at some point. So: ask! The [**GitHub Discussions**](https://github.com/UPSY-group/UPSY-models/discussions) are the place to go. Start with a quick search to see if someone else has already run into the problem. If not, create a new Discussion describing your problem. Chances are, you'll be sorted within a day.
 
 ### Create an issue
 
-Not all errors are used-caused. Even automated testing and code reviews do not offer 100% protection, and bugs *do* sneak into our codebase. If you run into one and don't feel up to the task of fixing it yourself, you can [create an issue](https://github.com/UPSY-group/UPSY-models/issues) for one of our core developers to look into.
+Not all errors are used-caused. Even automated testing and code reviews do not offer 100% protection, and bugs *do* sneak into our codebase. If you run into one and don't feel up to the task of fixing it yourself, you can [**create an issue**](https://github.com/UPSY-group/UPSY-models/issues) for one of our core developers to look into.
 
 The key thing here is *reproducability*. This includes the commit hash of your source code, the versions of the external packages (all of which are printed to the terminal at the start of every simulation), and the config file. If you used input files that are not in the `UPSY-group/data` repo, check if the error persists when using those data files. If you really need external files, provide them along with your bug report using WeTransfer or a similar file-sharing service.
 

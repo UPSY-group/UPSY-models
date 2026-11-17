@@ -16,7 +16,8 @@ module plane_geometry
     line_from_points, perpendicular_bisector_from_line, line_line_intersection, circumcenter, &
     geometric_center, triangle_area, is_in_triangle, longest_triangle_leg, smallest_triangle_angle, &
     largest_triangle_angle, equiangular_skewness, crop_line_to_domain, encroaches_upon, &
-    interpolate_inside_triangle, projection_of_p_on_qr, poly2line, calc_convex_polygon_intersection
+    interpolate_inside_triangle, projection_of_p_on_qr, poly2line, calc_convex_polygon_intersection, &
+    lies_to_left_of_line_segment, is_in_convex_polygon
 
   interface interpolate_inside_triangle
     procedure :: interpolate_inside_triangle_dp_2D
@@ -34,6 +35,15 @@ contains
     z = (a( 1) * b( 2)) - (a( 2) * b( 1))
 
   end function cross2
+
+  pure function lies_to_left_of_line_segment( p, q, r) result( isso)
+    real(dp), dimension(2), intent(in) :: p, q, r
+    logical                            :: isso
+    real(dp), dimension(2) :: pq, pr
+    pq = q - p
+    pr = r - p
+    isso = cross2( pq, pr) > 0._dp
+  end
 
   pure subroutine segment_intersection( p, q, r, s, llis, do_cross, tol_dist)
     !< Check if the line segments [pq] and [rs] intersect. If so, return
@@ -191,6 +201,48 @@ contains
     end if
 
   end function is_in_polygon
+
+  pure function is_in_convex_polygon( poly, p) result( isso)
+    ! For convex polygons, a simpler check is seeing if p
+    ! lies to the left of all line segments spanning the polygon
+
+    ! Input variables:
+    real(dp), dimension(:,:) , intent(in) :: poly
+    real(dp), dimension(2)   , intent(in) :: p
+
+    ! Output variables:
+    logical :: isso
+
+    ! Local variables:
+    real(dp)               :: xmin,xmax,ymin,ymax
+    integer                :: n,i,ip1
+    real(dp), dimension(2) :: q,r
+
+    isso = .false.
+
+    ! Quick bounding-box check
+    xmin = minval( poly(:,1))
+    xmax = maxval( poly(:,1))
+    ymin = minval( poly(:,2))
+    ymax = maxval( poly(:,2))
+
+    if (p(1) < xmin .or. p(1) > xmax .or. &
+        p(2) < ymin .or. p(2) > ymax) then
+      isso = .false.
+      return
+    end if
+
+    n = size( poly,1)
+    isso = .true.
+    do i = 1, n
+      ip1 = i+1
+      if (ip1 == n+1) ip1 = 1
+      q = poly( i  ,:)
+      r = poly( ip1,:)
+      isso = isso .and. lies_to_left_of_line_segment( q, r, p)
+    end do
+
+  end function is_in_convex_polygon
 
   pure function lies_on_line_segment( pa, pb, pc, tol_dist) result(isso)
     !< Check if the point pc lies within tol_dist of the line [pa,pb]

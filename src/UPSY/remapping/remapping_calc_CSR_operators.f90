@@ -54,10 +54,23 @@ contains
 
     face_index_src = 1
     do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
+
       p = ugrid_dst%face_coordinates( face_index_dst,:)
+
+      ! Assign NaN to destination ugrid faces lying outside of the source ugrid bounding box
+      if (p(1) < ugrid_src%xmin + ugrid_src%tol_dist .or. &
+          p(1) > ugrid_src%xmax - ugrid_src%tol_dist .or. &
+          p(2) < ugrid_src%ymin + ugrid_src%tol_dist .or. &
+          p(2) > ugrid_src%ymax - ugrid_src%tol_dist) then
+        call self%M%add_empty_row( face_index_dst)
+        cycle
+      end if
+
       call ugrid_src%find_nearest_face_center( p, face_index_src)
       call self%M%add_entry( face_index_dst, face_index_src, 1._dp)
+
     end do
+
     call self%M%finalise()
 
     ! Finalise routine path
@@ -203,7 +216,6 @@ contains
     integer                               :: ncycles
     real(dp), dimension(:,:), allocatable :: poly_intersect
     real(dp)                              :: LI_xdy, LI_mxydx, LI_xydy
-    real(dp), parameter                   :: tol_dist = 1e-3_dp
     logical                               :: found_any_intersection
 
     ! Add routine to path
@@ -219,10 +231,10 @@ contains
       p = ugrid_dst%face_coordinates( face_index_dst,:)
 
       ! Assign NaN to destination ugrid faces lying outside of the source ugrid bounding box
-      if (p(1) < ugrid_src%xmin + tol_dist .or. &
-          p(1) > ugrid_src%xmax - tol_dist .or. &
-          p(2) < ugrid_src%ymin + tol_dist .or. &
-          p(2) > ugrid_src%ymax - tol_dist) then
+      if (p(1) < ugrid_src%xmin + ugrid_src%tol_dist .or. &
+          p(1) > ugrid_src%xmax - ugrid_src%tol_dist .or. &
+          p(2) < ugrid_src%ymin + ugrid_src%tol_dist .or. &
+          p(2) > ugrid_src%ymax - ugrid_src%tol_dist) then
         call M_xdy%add_empty_row  ( face_index_dst)
         call M_mxydx%add_empty_row( face_index_dst)
         call M_xydy%add_empty_row ( face_index_dst)
@@ -272,7 +284,8 @@ contains
         end if
 
         ! Calculate the three line integrals around the perimeter of the intersection
-        call calc_line_integrals_around_polygon( poly_intersect, LI_xdy, LI_mxydx, LI_xydy, tol_dist)
+        call calc_line_integrals_around_polygon( poly_intersect, &
+          LI_xdy, LI_mxydx, LI_xydy, ugrid_src%tol_dist)
 
         ! Add line integrals to sparse matrices
         call M_xdy%add_entry  ( face_index_dst, face_index_src, LI_xdy)

@@ -9,8 +9,7 @@ Usage:
     python3 remapping_test.py [test_meshes_and_grids_dir] [results_dir] [weights_dir] [--figures FIGURES_DIR]
 
 If --figures is given, a figure comparing the source and destination fields is
-saved for every grid/mesh/Arakawa grid/method combination (for visual inspection
-only; the figures are not checked).
+saved for every gcombination (for visual inspection only; the figures are not checked).
 """
 
 import argparse
@@ -80,7 +79,7 @@ def write_result(filename, d, dims, attrs):
 
 
 def plot_comparison(filename, title, x, y, xm, ym, polygons, d_mesh, d_grid):
-    """1x2 figure: source (mesh) -> destination (grid)."""
+    """1x2 figure: source -> destination."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
@@ -101,8 +100,8 @@ def plot_comparison(filename, title, x, y, xm, ym, polygons, d_mesh, d_grid):
     pc = plot_mesh(axs[0], d_mesh)
     plot_grid(axs[1], d_grid)
 
-    axs[0].set_title('source: mesh')
-    axs[1].set_title('destination: x/y-grid')
+    axs[0].set_title('source')
+    axs[1].set_title('destination')
 
     dx, dy = x[1] - x[0], y[1] - y[0]
     xlim = (min(x[0] - dx / 2, xm.min()), max(x[-1] + dx / 2, xm.max()))

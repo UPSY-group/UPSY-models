@@ -54,10 +54,23 @@ contains
 
     face_index_src = 1
     do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
+
       p = ugrid_dst%face_coordinates( face_index_dst,:)
+
+      ! Assign NaN to destination ugrid faces lying outside of the source ugrid bounding box
+      if (p(1) < ugrid_src%xmin + ugrid_src%tol_dist .or. &
+          p(1) > ugrid_src%xmax - ugrid_src%tol_dist .or. &
+          p(2) < ugrid_src%ymin + ugrid_src%tol_dist .or. &
+          p(2) > ugrid_src%ymax - ugrid_src%tol_dist) then
+        call self%M%add_empty_row( face_index_dst)
+        cycle
+      end if
+
       call ugrid_src%find_nearest_face_center( p, face_index_src)
       call self%M%add_entry( face_index_dst, face_index_src, 1._dp)
+
     end do
+
     call self%M%finalise()
 
     ! Finalise routine path
@@ -179,7 +192,7 @@ contains
   subroutine calc_line_integral_matrices( ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy)
     ! Calculate the three line integral matrices M_xdy, M_mxydx, M_xydy, where:
     !
-    ! M_xdy(i,j) = [the line integral of [x dy] around the intersection of destinatioj
+    ! M_xdy(i,j) = [the line integral of [x dy] around the intersection of destination
     !               ugrid face i and source ugrid face j]
     !
     ! ... and similarly for M_mxydx and M_xydy
@@ -203,7 +216,6 @@ contains
     integer                               :: ncycles
     real(dp), dimension(:,:), allocatable :: poly_intersect
     real(dp)                              :: LI_xdy, LI_mxydx, LI_xydy
-    real(dp), parameter                   :: tol_dist = 1e-3_dp
     logical                               :: found_any_intersection
 
     ! Add routine to path
@@ -219,7 +231,10 @@ contains
       p = ugrid_dst%face_coordinates( face_index_dst,:)
 
       ! Assign NaN to destination ugrid faces lying outside of the source ugrid bounding box
-      if (p(1) < ugrid_src%xmin .or. p(1) > ugrid_src%xmax .or. p(2) < ugrid_src%ymin .or. p(2) > ugrid_src%ymax) then
+      if (p(1) < ugrid_src%xmin + ugrid_src%tol_dist .or. &
+          p(1) > ugrid_src%xmax - ugrid_src%tol_dist .or. &
+          p(2) < ugrid_src%ymin + ugrid_src%tol_dist .or. &
+          p(2) > ugrid_src%ymax - ugrid_src%tol_dist) then
         call M_xdy%add_empty_row  ( face_index_dst)
         call M_mxydx%add_empty_row( face_index_dst)
         call M_xydy%add_empty_row ( face_index_dst)
@@ -229,9 +244,9 @@ contains
       ! The polygon describing this destination mesh Voronoi cell
       call ugrid_dst%get_face_as_polygon( face_index_dst, poly_dst)
 
-      ! Initialise map and stack with the source ugrid face
-      ! nearest to the destination ugrid face
-      call ugrid_src%find_nearest_face_center( p, face_index_src)
+      ! Initialise map and stack with the source face
+      ! containing the centroid of the destination face
+      call ugrid_src%find_containing_face( p, face_index_src)
 
       map = 0
       map( face_index_src) = 1
@@ -261,7 +276,7 @@ contains
           if (ncycles == 1) then
             ! If the first source ugrid face we try doesn't intersect
             ! the destination ugrid face, we must still try its neighbours
-            call add_nonchecked_neighbours_to_map_and_stack( ugrid_src, map, stack, stackN, face_index_src)
+            call ugrid_src%add_nonchecked_neighbours_to_map_and_stack( map, stack, stackN, face_index_src)
           end if
           cycle
         else
@@ -269,7 +284,8 @@ contains
         end if
 
         ! Calculate the three line integrals around the perimeter of the intersection
-        call calc_line_integrals_around_polygon( poly_intersect, LI_xdy, LI_mxydx, LI_xydy, tol_dist)
+        call calc_line_integrals_around_polygon( poly_intersect, &
+          LI_xdy, LI_mxydx, LI_xydy, ugrid_src%tol_dist)
 
         ! Add line integrals to sparse matrices
         call M_xdy%add_entry  ( face_index_dst, face_index_src, LI_xdy)
@@ -277,12 +293,13 @@ contains
         call M_xydy%add_entry ( face_index_dst, face_index_src, LI_xydy)
 
         ! Add non-checked neighbours to the stack to continue the floodfill-style outward expansion
-        call add_nonchecked_neighbours_to_map_and_stack( ugrid_src, map, stack, stackN, face_index_src)
+        call ugrid_src%add_nonchecked_neighbours_to_map_and_stack( map, stack, stackN, face_index_src)
 
       end do
 
       ! Safety
-      if (.not. found_any_intersection) call crash('could not find any intersecting source ugrid faces')
+      if (.not. found_any_intersection) call crash('could not find any intersecting source ugrid faces ' // &
+        'for destination ugrid face {int_01}', int_01 = face_index_dst)
 
     end do
 
@@ -294,27 +311,5 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine calc_line_integral_matrices
-
-  pure subroutine add_nonchecked_neighbours_to_map_and_stack( ugrid, map, stack, stackN, face_index)
-
-    ! In/output variables:
-    type(type_ugrid),                  intent(in   ) :: ugrid
-    integer,  dimension(ugrid%nFaces), intent(inout) :: map, stack
-    integer,                           intent(inout) :: stackN
-    integer,                           intent(in   ) :: face_index
-
-    ! Local variables:
-    integer :: ci, neighbour_face_index
-
-    do ci = 1, ugrid%face_face_connectivity_n( face_index)
-      neighbour_face_index = ugrid%face_face_connectivity( face_index, ci)
-      if (map( neighbour_face_index) == 0) then
-        map( neighbour_face_index) = 1
-        stackN = stackN + 1
-        stack( stackN) = neighbour_face_index
-      end if
-    end do
-
-  end subroutine add_nonchecked_neighbours_to_map_and_stack
 
 end submodule remapping_calc_CSR_operators

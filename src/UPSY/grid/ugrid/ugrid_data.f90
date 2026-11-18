@@ -14,6 +14,7 @@ module ugrid_data
   type, abstract, extends(atype_grid) :: atype_ugrid_data
 
     real(dp)                                      :: xmin, xmax, ymin, ymax                        ! [m]       Bounding box
+    real(dp)                                      :: tol_dist                                      ! [m]       Horizontal distance tolerance; points closer together than this are assumed to be identical (typically set to a billionth of linear domain size)
 
     integer                                       :: nNodes                                        !           Number of nodes in the ugrid
     integer                                       :: nFaces                                        !           Number of faces in the ugrid

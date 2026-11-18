@@ -157,7 +157,7 @@ def main():
                           end='', flush=True)
                     t0 = time.time()
 
-                    map_g2m = remapper.get_map(grid, mesh, method, Arakawa_grid, 'a')
+                    map_g2m = remapper.get_map(grid, mesh, method, 'a', Arakawa_grid)
                     d_mesh = map_g2m.apply(d_grid)
                     write_result(
                         Path(args.results_dir) / f'res_{grid.stem}_TO_{mesh.stem}_{mesh_location}_{method}.nc',

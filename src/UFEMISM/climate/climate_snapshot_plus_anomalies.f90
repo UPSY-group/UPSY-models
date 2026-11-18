@@ -522,7 +522,18 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    w0 = (self%anomaly_t1 - time) / (self%anomaly_t1 - self%anomaly_t0)
+    ! We need to make sure that the weight interpolation does not produce absurd anomaly values
+    ! capping when the simulation time happens before/after all time frames
+    if (time < self%anomaly_t0 .and. time < self%anomaly_t1) then
+      call warning('Simulation time is before any available anomaly timeframe. Using first timeframe...')
+      w0 = 1._dp
+    elseif (time > self%anomaly_t0 .and. time > self%anomaly_t1) then
+      call warning('Simulation time is after any available anomaly timeframe. Using last timeframe...')
+      w0 = 0._dp
+    else
+      w0 = (self%anomaly_t1 - time) / (self%anomaly_t1 - self%anomaly_t0)
+    end if
+
     w1 = 1._dp - w0
 
     do m = 1,12

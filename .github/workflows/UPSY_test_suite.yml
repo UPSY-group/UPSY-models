@@ -74,8 +74,44 @@ jobs:
       test_path: automated_testing/UPSY/component_test_mesh_remapping_mesh_mesh
       compile_script: compile_UPSY.csh
 
-  remapping:
+  remapping_xy_grid_to_xy_grid:
     uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
     with:
-      test_path: automated_testing/UPSY/component_test_remapping
+      test_path: automated_testing/UPSY/component_test_remapping_xy_grid_to_xy_grid
+      compile_script: compile_UPSY.csh
+
+  remapping_xy_grid_to_mesh:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping_xy_grid_to_mesh
+      compile_script: compile_UPSY.csh
+
+  remapping_mesh_to_xy_grid:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping_mesh_to_xy_grid
+      compile_script: compile_UPSY.csh
+
+  remapping_mesh_vertices_to_mesh_vertices:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping_mesh_vertices_to_mesh_vertices
+      compile_script: compile_UPSY.csh
+
+  remapping_mesh_vertices_to_mesh_triangles:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping_mesh_vertices_to_mesh_triangles
+      compile_script: compile_UPSY.csh
+
+  remapping_mesh_triangles_to_mesh_vertices:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping_mesh_triangles_to_mesh_vertices
+      compile_script: compile_UPSY.csh
+
+  remapping_mesh_triangles_to_mesh_triangles:
+    uses: ./.github/workflows/UPSY_test_suite_run_and_check_test.yml
+    with:
+      test_path: automated_testing/UPSY/component_test_remapping_mesh_triangles_to_mesh_triangles
       compile_script: compile_UPSY.csh

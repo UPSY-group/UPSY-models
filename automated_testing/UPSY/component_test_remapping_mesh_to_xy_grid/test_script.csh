@@ -1,6 +1,6 @@
 #! /bin/csh -f
 
-set test_dir = automated_testing/UPSY/component_test_remapping
+set test_dir = automated_testing/UPSY/component_test_remapping_mesh_to_xy_grid
 
 # Start from scratch: the weights are always recalculated (rather than read from
 # UPSY_remapping_weights/), so that the test covers UPSY_calculate_remapping_weights

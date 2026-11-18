@@ -1,11 +1,9 @@
 """Component test for the Python remapping wrapper (tools/python/upsy/remap.py) and
 the Fortran program UPSY_calculate_remapping_weights behind it.
 
-Remaps an analytical test field between every x/y-grid and every mesh in the
-test_meshes_and_grids directory, in both directions, for every supported
-Arakawa grid on the mesh and every supported remapping method. The remapped
-fields are written to NetCDF files in the results directory, which are then
-reduced to checksums and compared to the reference by the test suite.
+Remaps an analytical test field from every mesh to every x/y-grid in the
+test_meshes_and_grids directory, for every supported Arakawa grid on
+the mesh and every supported remapping method.
 
 Usage:
     python3 remapping_test.py [test_meshes_and_grids_dir] [results_dir] [weights_dir] [--figures FIGURES_DIR]
@@ -81,34 +79,30 @@ def write_result(filename, d, dims, attrs):
         ds.createVariable('d', 'f8', dims)[:] = d
 
 
-def plot_comparison(filename, title, x, y, xm, ym, polygons,
-                    d_grid, d_grid_on_mesh, d_mesh, d_mesh_on_grid):
-    """2x2 figure: grid -> mesh (top row), mesh -> grid (bottom row)."""
+def plot_comparison(filename, title, x, y, xm, ym, polygons, d_mesh, d_grid):
+    """1x2 figure: source (mesh) -> destination (grid)."""
     import matplotlib
     matplotlib.use('Agg')
     import matplotlib.pyplot as plt
     from matplotlib.collections import PolyCollection
 
     cmap = plt.get_cmap('viridis')
-    norm = plt.Normalize(min(d_grid.min(), d_mesh.min()), max(d_grid.max(), d_mesh.max()))
+    # nanmin/nanmax: destination cells without any overlapping source cells are NaN
+    norm = plt.Normalize(min(np.nanmin(d_grid), np.nanmin(d_mesh)), max(np.nanmax(d_grid), np.nanmax(d_mesh)))
 
     def plot_grid(ax, d):
         return ax.pcolormesh(x, y, d, shading='nearest', cmap=cmap, norm=norm)
 
     def plot_mesh(ax, d):
-        ax.add_collection(PolyCollection(polygons, array=d, cmap=cmap, norm=norm,
-                                         edgecolors='face', linewidths=0.2))
+        return ax.add_collection(PolyCollection(polygons, array=d, cmap=cmap, norm=norm,
+                                                edgecolors='face', linewidths=0.2))
 
-    fig, axs = plt.subplots(2, 2, figsize=(11, 10), constrained_layout=True)
-    plot_grid(axs[0, 0], d_grid)
-    plot_mesh(axs[0, 1], d_grid_on_mesh)
-    plot_mesh(axs[1, 0], d_mesh)
-    pc = plot_grid(axs[1, 1], d_mesh_on_grid)
+    fig, axs = plt.subplots(1, 2, figsize=(12, 6), constrained_layout=True)
+    pc = plot_mesh(axs[0], d_mesh)
+    plot_grid(axs[1], d_grid)
 
-    axs[0, 0].set_title('source: grid')
-    axs[0, 1].set_title('destination: mesh')
-    axs[1, 0].set_title('source: mesh')
-    axs[1, 1].set_title('destination: grid')
+    axs[0].set_title('source: mesh')
+    axs[1].set_title('destination: x/y-grid')
 
     dx, dy = x[1] - x[0], y[1] - y[0]
     xlim = (min(x[0] - dx / 2, xm.min()), max(x[-1] + dx / 2, xm.max()))
@@ -146,41 +140,34 @@ def main():
 
     n_total = len(grids) * len(meshes) * len(MESH_ARAKAWA_GRIDS) * len(METHODS)
     i = 0
-    for grid in grids:
 
-        x, y = read_grid(grid)
-        d_grid = test_field(x[None, :], y[:, None])
+    for mesh in meshes:
+        for Arakawa_grid, mesh_location in MESH_ARAKAWA_GRIDS.items():
 
-        for mesh in meshes:
-            for Arakawa_grid, mesh_location in MESH_ARAKAWA_GRIDS.items():
+            xm, ym, polygons = read_mesh(mesh, Arakawa_grid)
+            d_mesh = test_field(xm, ym)
 
-                xm, ym, polygons = read_mesh(mesh, Arakawa_grid)
-                d_mesh = test_field(xm, ym)
-                mesh_dim = 'vi' if Arakawa_grid == 'a' else 'ti'
+            for grid in grids:
+
+                x, y = read_grid(grid)
 
                 for method in METHODS:
                     i += 1
-                    print(f'[{i:3d}/{n_total}] {grid.stem} <-> {mesh.stem} ({mesh_location}), {method}',
+                    print(f'[{i:3d}/{n_total}] {mesh.stem} ({mesh_location}) -> {grid.stem}, {method}',
                           end='', flush=True)
                     t0 = time.time()
 
-                    map_g2m = remapper.get_map(grid, mesh, method, 'a', Arakawa_grid)
-                    d_grid_on_mesh = map_g2m.apply(d_grid)
-                    write_result(
-                        Path(args.results_dir) / f'res_{grid.stem}_TO_{mesh.stem}_{mesh_location}_{method}.nc',
-                        d_grid_on_mesh, (mesh_dim,), map_g2m.attrs)
-
                     map_m2g = remapper.get_map(mesh, grid, method, Arakawa_grid, 'a')
-                    d_mesh_on_grid = map_m2g.apply(d_mesh)
+                    d_grid = map_m2g.apply(d_mesh)
                     write_result(
                         Path(args.results_dir) / f'res_{mesh.stem}_{mesh_location}_TO_{grid.stem}_{method}.nc',
-                        d_mesh_on_grid, ('y', 'x'), map_m2g.attrs)
+                        d_grid, ('y', 'x'), map_m2g.attrs)
 
                     if args.figures:
                         plot_comparison(
-                            Path(args.figures) / f'{grid.stem}__{mesh.stem}_{mesh_location}_{method}.png',
-                            f'{method}\n{grid.name}\n{mesh.name} ({mesh_location})',
-                            x, y, xm, ym, polygons, d_grid, d_grid_on_mesh, d_mesh, d_mesh_on_grid)
+                            Path(args.figures) / f'{mesh.stem}_{mesh_location}_TO_{grid.stem}_{method}.png',
+                            f'{mesh.name} ({mesh_location})\n{grid.name}\n{method}',
+                            x, y, xm, ym, polygons, d_mesh, d_grid)
 
                     print(f': {time.time() - t0:.1f} s', flush=True)
 

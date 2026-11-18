@@ -1064,12 +1064,12 @@ contains
     end do
 
     ! Afterwards: remove consecutive near-duplicates (including last-vs-first),
-    ! and discard the result if nc < 3 or its area < tol * perimeter
+    ! and discard the result if nc < 3 (implying the polygon is reduced to a line, a point, or null)
     i = 1
     do while (i < nc)
       if (norm2( poly_c_temp( i,:) - poly_c_temp( i+1,:)) < tol) then
-        nc = nc - 1
         poly_c_temp( i : nc-1,:) = poly_c_temp( i+1 : nc,:)
+        nc = nc - 1
       else
         i = i+1
       end if

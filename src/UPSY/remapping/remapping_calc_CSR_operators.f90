@@ -192,7 +192,7 @@ contains
   subroutine calc_line_integral_matrices( ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy)
     ! Calculate the three line integral matrices M_xdy, M_mxydx, M_xydy, where:
     !
-    ! M_xdy(i,j) = [the line integral of [x dy] around the intersection of destinatioj
+    ! M_xdy(i,j) = [the line integral of [x dy] around the intersection of destination
     !               ugrid face i and source ugrid face j]
     !
     ! ... and similarly for M_mxydx and M_xydy

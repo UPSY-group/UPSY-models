@@ -67,23 +67,17 @@ module climate_snapshot_plus_anomalies
       integer,                    allocatable       :: ins_ti0,ins_ti1
       
       ! anomalies
-      real(dp), dimension(:,:), contiguous, pointer :: T2m_anomaly                   ! Monthly mean 2m air temperature anomaly (K)
-      real(dp), dimension(:,:), contiguous, pointer :: Precip_anomaly                ! Monthly mean precipitation anomaly (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR_anomaly
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU_anomaly
-      type(MPI_WIN) :: wT2m_anomaly, wPrecip_anomaly, wWind_LR_anomaly, wWind_DU_anomaly
+      real(dp), dimension(:,:), contiguous, pointer :: T2m_anomaly       => null()  ! Monthly mean 2m air temperature anomaly (K)
+      real(dp), dimension(:,:), contiguous, pointer :: Precip_anomaly    => null()  ! Monthly mean precipitation anomaly (m)
+      type(MPI_WIN) :: wT2m_anomaly, wPrecip_anomaly
 
       real(dp), dimension(:,:), contiguous, pointer :: T2m_anomaly_0     => null()  ! Prev. timeframe of monthly mean 2m air temperature anomaly (K)
       real(dp), dimension(:,:), contiguous, pointer :: Precip_anomaly_0  => null()  ! Prev. timeframe of monthly mean precipitation anomaly (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR_anomaly_0 => null()
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU_anomaly_0 => null()
-      type(MPI_WIN) :: wT2m_anomaly_0, wPrecip_anomaly_0, wWind_LR_anomaly_0, wWind_DU_anomaly_0
+      type(MPI_WIN) :: wT2m_anomaly_0, wPrecip_anomaly_0
 
       real(dp), dimension(:,:), contiguous, pointer :: T2m_anomaly_1     => null()   ! Next timeframe of monthly mean 2m air temperature anomaly (K)
       real(dp), dimension(:,:), contiguous, pointer :: Precip_anomaly_1  => null()   ! Next timeframe of monthly mean precipitation anomaly (m)
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_LR_anomaly_1 => null()
-      real(dp), dimension(:,:), contiguous, pointer :: Wind_DU_anomaly_1 => null()
-      type(MPI_WIN) :: wT2m_anomaly_1, wPrecip_anomaly_1, wWind_LR_anomaly_1, wWind_DU_anomaly_1
+      type(MPI_WIN) :: wT2m_anomaly_1, wPrecip_anomaly_1
       REAL(dp)                                      :: anomaly_t0, anomaly_t1        ! times of each timeframe
 
       ! Reference absorbed insolation (for GCM snapshots), or insolation at model time for the applied climate
@@ -226,49 +220,6 @@ contains
       units     = '-', &
       remap_method = 'reallocate')
 
-    call self%create_field( self%Wind_LR_anomaly, self%wWind_LR_anomaly, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Wind_LR_anomaly', &
-      long_name = 'Monthly anomaly of 10m wind velocity in x-direction', &
-      units     = 'm s^-1', &
-      remap_method = 'reallocate')
-
-    call self%create_field( self%Wind_DU_anomaly, self%wWind_DU_anomaly, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Wind_DU_anomaly', &
-      long_name = 'Monthly anomaly of 10m wind velocity in y-direction', &
-      units     = 'm s^-1', &
-      remap_method = 'reallocate')
-
-    call self%create_field( self%Wind_LR_anomaly_0, self%wWind_LR_anomaly_0, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Wind_LR_anomaly_0', &
-      long_name = 'Monthly anomaly of 10m wind velocity in x-direction (prev frame)', &
-      units     = 'm s^-1', &
-      remap_method = 'reallocate')
-
-    call self%create_field( self%Wind_DU_anomaly_0, self%wWind_DU_anomaly_0, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Wind_DU_anomaly_0', &
-      long_name = 'Monthly anomaly of 10m wind velocity in y-direction (prev frame)', &
-      units     = 'm s^-1', &
-      remap_method = 'reallocate')
-
-    call self%create_field( self%Wind_LR_anomaly_1, self%wWind_LR_anomaly_1, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Wind_LR_anomaly_1', &
-      long_name = 'Monthly anomaly of 10m wind velocity in x-direction (next frame)', &
-      units     = 'm s^-1', &
-      remap_method = 'reallocate')
-
-    call self%create_field( self%Wind_DU_anomaly_1, self%wWind_DU_anomaly_1, &
-      self%mesh, Arakawa_grid%a(), third_dimension%month(), &
-      name      = 'Wind_DU_anomaly_1', &
-      long_name = 'Monthly anomaly of 10m wind velocity in y-direction (next frame)', &
-      units     = 'm s^-1', &
-      remap_method = 'reallocate')
-
-
     ! Remove routine from call stack
     call finalise_routine( routine_name)
 
@@ -306,14 +257,6 @@ contains
     nullify( self%Precip_anomaly_0)
     nullify( self%T2m_anomaly_1)
     nullify( self%Precip_anomaly_1)
-
-    nullify( self%Wind_LR_anomaly)
-    nullify( self%Wind_DU_anomaly)
-    nullify( self%Wind_LR_anomaly_0)
-    nullify( self%Wind_DU_anomaly_0)
-    nullify( self%Wind_LR_anomaly_1)
-    nullify( self%Wind_DU_anomaly_1)
-
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -491,13 +434,6 @@ contains
     call self%remap_field( mesh_new, 'T2m_anomaly_1',    self%T2m_anomaly_1)
     call self%remap_field( mesh_new, 'Precip_anomaly_1', self%Precip_anomaly_1)
 
-    call self%remap_field( mesh_new, 'Wind_LR_anomaly',      self%Wind_LR_anomaly)
-    call self%remap_field( mesh_new, 'Wind_DU_anomaly',      self%Wind_DU_anomaly)
-    call self%remap_field( mesh_new, 'Wind_LR_anomaly_0',      self%Wind_LR_anomaly_0)
-    call self%remap_field( mesh_new, 'Wind_DU_anomaly_0',      self%Wind_DU_anomaly_0)
-    call self%remap_field( mesh_new, 'Wind_LR_anomaly_1',      self%Wind_LR_anomaly_1)
-    call self%remap_field( mesh_new, 'Wind_DU_anomaly_1',      self%Wind_DU_anomaly_1)
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -564,20 +500,6 @@ contains
       self%mesh, C%output_dir, self%Precip_anomaly_1, &
       time_to_read = self%anomaly_t1)
 
-    call read_field_from_file_2D_monthly( self%filename_climate_anomalies, 'uas_anomaly', &
-      self%mesh, C%output_dir, self%Wind_LR_anomaly_0, &
-      time_to_read = self%anomaly_t0)
-    call read_field_from_file_2D_monthly( self%filename_climate_anomalies, 'uas_anomaly', &
-      self%mesh, C%output_dir, self%Wind_LR_anomaly_1, &
-      time_to_read = self%anomaly_t1)
-
-    call read_field_from_file_2D_monthly( self%filename_climate_anomalies, 'vas_anomaly', &
-      self%mesh, C%output_dir, self%Wind_DU_anomaly_0, &
-      time_to_read = self%anomaly_t0)
-    call read_field_from_file_2D_monthly( self%filename_climate_anomalies, 'vas_anomaly', &
-      self%mesh, C%output_dir, self%Wind_DU_anomaly_1, &
-      time_to_read = self%anomaly_t1)
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -610,16 +532,10 @@ contains
       self%T2m_anomaly( vi,m)    = w0 * self%T2m_anomaly_0( vi,m)    + w1 * self%T2m_anomaly_1( vi,m)
       self%Precip_anomaly( vi,m) = w0 * self%Precip_anomaly_0( vi,m) + w1 * self%Precip_anomaly_1( vi,m)
 
-      self%Wind_LR_anomaly( vi,m) = w0 * self%Wind_LR_anomaly_0( vi,m) + w1 * self%Wind_LR_anomaly_1( vi,m)
-      self%Wind_DU_anomaly( vi,m) = w0 * self%Wind_DU_anomaly_0( vi,m) + w1 * self%Wind_DU_anomaly_1( vi,m)
-
       ! Add/multiply anomaly to T2m/Precip snapshots 
       ! to find the applied temperature and precipitation
       self%T2m( vi,m)     = self%T2m_baseline( vi,m)     + self%T2m_anomaly( vi,m)
       self%Precip( vi,m)  = self%Precip_baseline( vi,m)  * self%Precip_anomaly( vi,m)
-      self%Wind_LR( vi,m) = self%Wind_LR_baseline( vi,m) + self%Wind_LR_anomaly( vi,m)
-      self%Wind_LR( vi,m) = self%Wind_DU_baseline( vi,m) + self%Wind_DU_anomaly( vi,m)
-
     end do
     end do
 

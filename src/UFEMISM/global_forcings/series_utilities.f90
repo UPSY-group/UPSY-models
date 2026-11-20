@@ -124,7 +124,7 @@ SUBROUTINE interpolate_value_from_forcing_record(time_at_t0, time_at_t1, val_at_
   CALL init_routine( routine_name)
 
 
-  if (time_at_t1 == time_at_t0) then
+  if (abs(time_at_t1 - time_at_t0) < 1.0e-9_dp) then
     wt0 = 0._dp
     wt1 = 1._dp
   else

@@ -1,9 +1,17 @@
 module climate_snapshot_plus_anomalies
+  ! This climate model takes a snapshot as in the other "snapshot-type" climate models, 
+  ! and modified it via time-and-space-varying temperature and precipitation "anomalies" over it. 
+  ! Anomalies are read from a file, and are a difference for temperatures and ratio for precipitation 
+  ! (therefore avoiding negative values).
+  ! In short, the climate field is computed as follows:
+  ! Temperature   = snapshot(x,y,m) + dT(x,y,m,time)
+  ! Precipitation = snapshot(x,y,m) * rP(x,y,m,time)
+  !
+  ! As in the other snapshot models, values are downscaled to account for the difference in elevation between the
+  ! GCM ice surface from which climate variables come, and the modelled ice surface
 
-  ! Snapshot(x,y,m,time) + dT,pR(x,y,m,time) climate model
-
-! ===== Preamble =====
-! ====================
+  ! ===== Preamble =====
+  ! ====================
 
   use precisions,                        only: dp
   use upsy_main,                         only: upsy

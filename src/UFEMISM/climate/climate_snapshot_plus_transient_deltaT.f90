@@ -1,6 +1,16 @@
 module climate_snapshot_plus_transient_deltaT
 
   ! Snapshot + dT(time) climate model
+  ! This climate model takes a snapshot and modifies it by applying a time-varying "deltaT"
+  ! which is the same over the entire domain, but varies in time. This is read from a time-series 1D file.
+  ! Precipitation is scaled accordingly following a  Clausius-Clapeyron relationship
+  ! In short, the climate field is computed as follows:
+  ! Temperature   = snapshot(x,y,m) + dT(time)
+  ! Precipitation = snapshot(x,y,m) * precip_lapse_rate^dT(time)
+  !
+  ! As in the other snapshot models, Temperature and precipitation values are downscaled 
+  ! to account for the difference in elevation between the
+  ! GCM ice surface from which climate variables come, and the modelled ice surface
 
 ! ===== Preamble =====
 ! ====================
@@ -389,25 +399,25 @@ CONTAINS
     ! we only apply corrections where it is not open ocean
     if (geom%mask_icefree_ocean( vi) .eqv. .FALSE.) then
         deltaT  = (geom%Hs( vi) - self%Hs_baseline( vi)) * (-1._dp * abs(self%lapse_rate_temp))
-        do m = 1, 12
+          do m = 1, 12
 
-          ! Computing T2m and Precip based on the applied deltaT still at the GCM surface level
-          T2m_GCM_surf = self%T2m_baseline(vi, m) + self%deltaT
-          Precip_CC_GCM_surf = self%Precip_baseline( vi, m) * self%lapse_rate_precip**self%deltaT ! Scaling due to the applied time-varying deltaT
-          
-          ! Downscaling bit: correcting for mismatches in GCM and ISM surfaces
-          ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
-          self%T2m(vi, m) = T2m_GCM_surf + deltaT
+            ! Computing T2m and Precip based on the applied deltaT still at the GCM surface level
+            T2m_GCM_surf = self%T2m_baseline(vi, m) + self%deltaT
+            Precip_CC_GCM_surf = self%Precip_baseline( vi, m) * self%lapse_rate_precip**self%deltaT ! Scaling due to the applied time-varying deltaT
 
-          ! Calculate inversion-layer temperatures
-          T_inv_ref = 88.9_dp + 0.67_dp *  self%T2m(vi, m)
-          T_inv     = 88.9_dp + 0.67_dp * (self%T2m(vi, m) - self%lapse_rate_temp * (geom%Hs( vi) - self%Hs_baseline( vi)))
-          
-          ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
-          ! Same as implemented in IMAU-ICE
-          ! we use self%Precip because it has already been CC corrected with the time-varying dT
-          self%Precip( vi, m) = Precip_CC_GCM_surf * (T_inv_ref / T_inv)**2 * EXP(22.47_dp * (T0 / T_inv_ref - T0 / T_inv))
-        end do ! m
+            ! Downscaling bit: correcting for mismatches in GCM and ISM surfaces
+            ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
+            self%T2m(vi, m) = T2m_GCM_surf + deltaT
+
+            ! Calculate inversion-layer temperatures
+            T_inv_ref = 88.9_dp + 0.67_dp *  self%T2m(vi, m)
+            T_inv     = 88.9_dp + 0.67_dp * (self%T2m(vi, m) - self%lapse_rate_temp * (geom%Hs( vi) - self%Hs_baseline( vi)))
+
+            ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
+            ! Same as implemented in IMAU-ICE
+            ! we use self%Precip because it has already been CC corrected with the time-varying dT
+            self%Precip( vi, m) = Precip_CC_GCM_surf * (T_inv_ref / T_inv)**2 * EXP(22.47_dp * (T0 / T_inv_ref - T0 / T_inv))
+          end do ! m
     end if
     end do ! vi
 

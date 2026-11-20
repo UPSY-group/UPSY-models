@@ -1,9 +1,17 @@
 module climate_snapshot_plus_uniform_deltaT
 
-  ! Snapshot + dT climate model
+  ! This climate model takes a snapshot and modifies it by applying a single "deltaT"
+  ! which is the same over the entire domain and does not vary in time
+  ! Precipitation is scaled accordingly following a  Clausius-Clapeyron relationship
+  ! In short, the climate field is computed as follows:
+  ! Temperature   = snapshot(x,y,m) + dT
+  ! Precipitation = snapshot(x,y,m) * precip_lapse_rate^dT
+  !
+  ! Temperature and precipitation values are downscaled to account for the difference in elevation between the
+  ! GCM ice surface from which climate variables come, and the modelled ice surface
 
-! ===== Preamble =====
-! ====================
+  ! ===== Preamble =====
+  ! ====================
 
   use precisions,                        only: dp
   use upsy_main,                         only: upsy

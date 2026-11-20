@@ -546,7 +546,7 @@ contains
         self%T2m_anomaly( vi,m)    = w0 * self%T2m_anomaly_0( vi,m)    + w1 * self%T2m_anomaly_1( vi,m)
         self%Precip_anomaly( vi,m) = w0 * self%Precip_anomaly_0( vi,m) + w1 * self%Precip_anomaly_1( vi,m)
 
-        ! Add/multiply anomaly to T2m/Precip snapshots 
+        ! Add/multiply anomaly to T2m/Precip snapshots
         ! to find the applied temperature and precipitation
         self%T2m( vi,m)     = self%T2m_baseline( vi,m)     + self%T2m_anomaly( vi,m)
         self%Precip( vi,m)  = self%Precip_baseline( vi,m)  * self%Precip_anomaly( vi,m)

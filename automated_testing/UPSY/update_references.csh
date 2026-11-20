@@ -29,7 +29,13 @@ set all_tests = ( \
   component_test_mesh_remapping_grid_grid \
   component_test_mesh_remapping_mesh_grid \
   component_test_mesh_remapping_mesh_mesh \
-  component_test_remapping)
+  component_test_remapping_xy_grid_to_xy_grid \
+  component_test_remapping_xy_grid_to_mesh \
+  component_test_remapping_mesh_to_xy_grid \
+  component_test_remapping_mesh_vertices_to_mesh_vertices \
+  component_test_remapping_mesh_vertices_to_mesh_triangles \
+  component_test_remapping_mesh_triangles_to_mesh_vertices \
+  component_test_remapping_mesh_triangles_to_mesh_triangles)
 
 foreach test_name ($all_tests)
 

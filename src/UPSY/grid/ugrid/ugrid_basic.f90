@@ -12,6 +12,7 @@ module ugrid_basic
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
   use mpi_basic, only: par
   use plane_geometry, only: is_in_convex_polygon
+  use floodfill_basics, only: type_floodfill
 
   implicit none
 
@@ -20,6 +21,9 @@ module ugrid_basic
   public :: type_ugrid
 
   type, extends(atype_ugrid_data) :: type_ugrid
+
+      type(type_floodfill), private :: find_containing_face_floodfill
+
     contains
 
       procedure, public  :: build_from_grid
@@ -55,7 +59,7 @@ module ugrid_basic
     end subroutine build_from_lonlat_grid
 
     module subroutine find_containing_face( self, p, face_index)
-      class(type_ugrid),      intent(in   ) :: self
+      class(type_ugrid),      intent(inout) :: self
       real(dp), dimension(2), intent(in   ) :: p
       integer,                intent(inout) :: face_index
     end subroutine find_containing_face
@@ -114,6 +118,9 @@ contains
       class is (type_lonlat_grid)
         call build_from_lonlat_grid( self, g, grid_Arakawa_grid)
     end select
+
+    call self%find_containing_face_floodfill%create( &
+      self%nFaces, self%face_face_connectivity_n, self%face_face_connectivity)
 
     ! Finalise routine path
     call finalise_routine( routine_name)

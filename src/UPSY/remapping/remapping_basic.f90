@@ -60,8 +60,8 @@ module remapping_basic
 
     module subroutine calc_CSR_remapping_operator( self, ugrid_src, ugrid_dst, choice_remapping_method)
       class(type_map),             intent(inout) :: self
-      type(type_ugrid),            intent(in   ) :: ugrid_src
-      type(type_ugrid),            intent(in   ) :: ugrid_dst
+      type(type_ugrid),            intent(inout) :: ugrid_src
+      type(type_ugrid),            intent(inout) :: ugrid_dst
       type(type_remapping_method), intent(in   ) :: choice_remapping_method
     end subroutine calc_CSR_remapping_operator
 

@@ -5,14 +5,12 @@ contains
   subroutine find_containing_face( self, p, face_index)
 
     ! In/output variables:
-    class(type_ugrid),      intent(in   ) :: self
+    class(type_ugrid),      intent(inout) :: self
     real(dp), dimension(2), intent(in   ) :: p
     integer,                intent(inout) :: face_index
 
     ! Local variables:
-    integer                          :: ncycles
-    integer,  dimension(self%nFaces) :: map, stack
-    integer                          :: stackN
+    integer :: ncycles
 
     ! Safety
     if (p(1) < self%xmin .or. p(1) > self%xmax .or. p(2) < self%ymin .or. p(2) > self%ymax) then
@@ -23,28 +21,23 @@ contains
     call self%find_nearest_face_center( p, face_index)
 
     ! Search outward from there, floodfill-style
-    map = 0
-    stackN = 1
-    stack( stackN) = face_index
-    map( face_index) = 1
+    call self%find_containing_face_floodfill%initialise_floodfill_at_single_node( face_index)
 
     ncycles = 0
-    do while (stackN > 0)
+    do while (self%find_containing_face_floodfill%stack_front_n > 0)
 
       ! Safety
       ncycles = ncycles + 1
       if (ncycles > self%nFaces) call crash('type_ugrid%find_containing_face - floodfill-style outward search got stuck')
 
       ! Take the last face from the stack
-      face_index = stack( stackN)
-      stackN = stackN - 1
-      map( face_index) = 2
+      call self%find_containing_face_floodfill%take_last_element_from_front_stack( face_index)
 
       ! See if p lies inside of it
       if (self%is_in_face( face_index, p)) return
 
       ! If not, mark it as checked and search outward
-      call self%add_nonchecked_neighbours_to_map_and_stack( map, stack, stackN, face_index)
+      call self%find_containing_face_floodfill%add_unchecked_neighbours_to_front_stack( face_index)
 
     end do
 

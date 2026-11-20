@@ -540,17 +540,17 @@ contains
     w1 = 1._dp - w0
 
     do m = 1,12
-    do vi = self%mesh%vi1, self%mesh%vi2
+      do vi = self%mesh%vi1, self%mesh%vi2
 
-      ! Note that the baseline and the applied temperature and precip are monthly, but the anomaly is annual
-      self%T2m_anomaly( vi,m)    = w0 * self%T2m_anomaly_0( vi,m)    + w1 * self%T2m_anomaly_1( vi,m)
-      self%Precip_anomaly( vi,m) = w0 * self%Precip_anomaly_0( vi,m) + w1 * self%Precip_anomaly_1( vi,m)
+        ! Note that the baseline and the applied temperature and precip are monthly, but the anomaly is annual
+        self%T2m_anomaly( vi,m)    = w0 * self%T2m_anomaly_0( vi,m)    + w1 * self%T2m_anomaly_1( vi,m)
+        self%Precip_anomaly( vi,m) = w0 * self%Precip_anomaly_0( vi,m) + w1 * self%Precip_anomaly_1( vi,m)
 
-      ! Add/multiply anomaly to T2m/Precip snapshots 
-      ! to find the applied temperature and precipitation
-      self%T2m( vi,m)     = self%T2m_baseline( vi,m)     + self%T2m_anomaly( vi,m)
-      self%Precip( vi,m)  = self%Precip_baseline( vi,m)  * self%Precip_anomaly( vi,m)
-    end do
+        ! Add/multiply anomaly to T2m/Precip snapshots 
+        ! to find the applied temperature and precipitation
+        self%T2m( vi,m)     = self%T2m_baseline( vi,m)     + self%T2m_anomaly( vi,m)
+        self%Precip( vi,m)  = self%Precip_baseline( vi,m)  * self%Precip_anomaly( vi,m)
+      end do
     end do
 
     ! Finalise routine path

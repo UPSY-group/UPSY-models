@@ -29,7 +29,7 @@ module climate_model_utilities
   public :: update_insolation_timeframes_from_file
   public :: apply_precipitation_CC_correction
   public :: apply_geometry_downscaling_corrections
-  public :: fill_in_transient_dT_snapshot_fields
+  ! public :: fill_in_transient_dT_snapshot_fields
 
   contains
 
@@ -530,34 +530,34 @@ module climate_model_utilities
 
   END SUBROUTINE apply_geometry_downscaling_corrections
 
-  subroutine fill_in_transient_dT_snapshot_fields(filename_climate_snapshot, mesh, climate, time)
-    ! Read in snapshot variables
+!   subroutine fill_in_transient_dT_snapshot_fields(filename_climate_snapshot, mesh, climate, time)
+!     ! Read in snapshot variables
 
-    CHARACTER(LEN=*),                      INTENT(IN)    :: filename_climate_snapshot
-    TYPE(type_mesh),                       INTENT(IN)    :: mesh
-    TYPE(type_climate_model),              INTENT(INOUT) :: climate
-    REAL(dp),                              INTENT(IN)    :: time
+!     CHARACTER(LEN=*),                      INTENT(IN)    :: filename_climate_snapshot
+!     TYPE(type_mesh),                       INTENT(IN)    :: mesh
+!     TYPE(type_climate_model),              INTENT(INOUT) :: climate
+!     REAL(dp),                              INTENT(IN)    :: time
 
-    ! Local Variables
-    CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'fill_in_transient_dT_snapshot_fields'
+!     ! Local Variables
+!     CHARACTER(LEN=256), PARAMETER                        :: routine_name = 'fill_in_transient_dT_snapshot_fields'
 
-    ! Add routine to path
-    CALL init_routine( routine_name)
+!     ! Add routine to path
+!     CALL init_routine( routine_name)
 
-    call read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_deprecated%Hs)
-    CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_trans_dT%snapshot%Hs)
-    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m',    mesh, C%output_dir, climate%T2m)
-    call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
+!     call read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_deprecated%Hs)
+!     CALL read_field_from_file_2D(         filename_climate_snapshot, 'Hs',     mesh, C%output_dir, climate%snapshot_trans_dT%snapshot%Hs)
+!     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'T2m',    mesh, C%output_dir, climate%T2m)
+!     call read_field_from_file_2D_monthly( filename_climate_snapshot, 'Precip', mesh, C%output_dir, climate%Precip)
 
-    call update_timeframes_from_record(climate%snapshot_trans_dT%dT_series_time, climate%snapshot_trans_dT%dT_series, climate%snapshot_trans_dT%dT_t0, climate%snapshot_trans_dT%dT_t1, &
-                                       climate%snapshot_trans_dT%dT_at_t0, climate%snapshot_trans_dT%dT_at_t1, time)
+!     call update_timeframes_from_record(climate%snapshot_trans_dT%dT_series_time, climate%snapshot_trans_dT%dT_series, climate%snapshot_trans_dT%dT_t0, climate%snapshot_trans_dT%dT_t1, &
+!                                        climate%snapshot_trans_dT%dT_at_t0, climate%snapshot_trans_dT%dT_at_t1, time)
 
-    call interpolate_value_from_forcing_record(climate%snapshot_trans_dT%dT_t0, climate%snapshot_trans_dT%dT_t1, climate%snapshot_trans_dT%dT_at_t0, climate%snapshot_trans_dT%dT_at_t1, time, climate%snapshot_trans_dT%deltaT)
+!     call interpolate_value_from_forcing_record(climate%snapshot_trans_dT%dT_t0, climate%snapshot_trans_dT%dT_t1, climate%snapshot_trans_dT%dT_at_t0, climate%snapshot_trans_dT%dT_at_t1, time, climate%snapshot_trans_dT%deltaT)
 
-    ! Finalise routine path
-    CALL finalise_routine( routine_name)
+!     ! Finalise routine path
+!     CALL finalise_routine( routine_name)
 
-end subroutine fill_in_transient_dT_snapshot_fields
+! end subroutine fill_in_transient_dT_snapshot_fields
 
 
 end module climate_model_utilities

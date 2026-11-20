@@ -34,10 +34,7 @@ contains
       call self%find_containing_face_floodfill%take_last_element_from_front_stack( face_index)
 
       ! See if p lies inside of it
-      if (self%is_in_face( face_index, p)) then
-        call self%find_containing_face_floodfill%cleanup_map_and_stacks()
-        return
-      end if
+      if (self%is_in_face( face_index, p)) return
 
       ! If not, mark it as checked and search outward
       call self%find_containing_face_floodfill%add_unchecked_neighbours_to_front_stack( face_index)

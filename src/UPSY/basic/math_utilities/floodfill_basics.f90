@@ -90,6 +90,8 @@ contains
     ! Safety
     if (i < 1 .or. i > self%n) call crash('invalid node index')
 
+    call self%cleanup_map_and_stacks()
+
     self%stack_front_n = 1
     self%stack_front( self%stack_front_n) = i
     self%map( i) = map_front

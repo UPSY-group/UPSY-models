@@ -8,8 +8,8 @@ contains
 
     ! In/output variables:
     class(type_map),             intent(inout) :: self
-    type(type_ugrid),            intent(in   ) :: ugrid_src
-    type(type_ugrid),            intent(in   ) :: ugrid_dst
+    type(type_ugrid),            intent(inout) :: ugrid_src
+    type(type_ugrid),            intent(inout) :: ugrid_dst
     type(type_remapping_method), intent(in   ) :: choice_remapping_method
 
     ! Local variables:
@@ -39,8 +39,8 @@ contains
 
     ! In/output variables:
     class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(in   ) :: ugrid_src
-    type(type_ugrid), intent(in   ) :: ugrid_dst
+    type(type_ugrid), intent(inout) :: ugrid_src
+    type(type_ugrid), intent(inout) :: ugrid_dst
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_nearest_neighbour'
@@ -82,8 +82,8 @@ contains
 
     ! In/output variables:
     class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(in   ) :: ugrid_src
-    type(type_ugrid), intent(in   ) :: ugrid_dst
+    type(type_ugrid), intent(inout) :: ugrid_src
+    type(type_ugrid), intent(inout) :: ugrid_dst
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_linear'
@@ -102,8 +102,8 @@ contains
 
     ! In/output variables:
     class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(in   ) :: ugrid_src
-    type(type_ugrid), intent(in   ) :: ugrid_dst
+    type(type_ugrid), intent(inout) :: ugrid_src
+    type(type_ugrid), intent(inout) :: ugrid_dst
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_first_order_conservative'
@@ -146,8 +146,8 @@ contains
 
     ! In/output variables:
     class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(in   ) :: ugrid_src
-    type(type_ugrid), intent(in   ) :: ugrid_dst
+    type(type_ugrid), intent(inout) :: ugrid_src
+    type(type_ugrid), intent(inout) :: ugrid_dst
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_second_order_conservative'
@@ -198,8 +198,8 @@ contains
     ! ... and similarly for M_mxydx and M_xydy
 
     ! In/output variables:
-    type(type_ugrid),         intent(in   ) :: ugrid_src
-    type(type_ugrid),         intent(in   ) :: ugrid_dst
+    type(type_ugrid),         intent(inout) :: ugrid_src
+    type(type_ugrid),         intent(inout) :: ugrid_dst
     type(type_CSR_matrix_dp), intent(inout) :: M_xdy
     type(type_CSR_matrix_dp), intent(inout) :: M_mxydx
     type(type_CSR_matrix_dp), intent(inout) :: M_xydy

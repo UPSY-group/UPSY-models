@@ -1,6 +1,7 @@
 submodule( remapping_basic) remapping_calc_CSR_operators
 
 use mpi_basic, only: par
+use floodfill_basics, only: type_floodfill
 
 contains
 
@@ -210,8 +211,7 @@ contains
     integer                               :: face_index_dst
     real(dp), dimension(:,:), allocatable :: poly_src
     real(dp), dimension(:,:), allocatable :: poly_dst
-    integer,  dimension(ugrid_src%nFaces) :: map, stack
-    integer                               :: stackN
+    type(type_floodfill)                  :: floodfill_src
     real(dp), dimension(2)                :: p
     integer                               :: ncycles
     real(dp), dimension(:,:), allocatable :: poly_intersect
@@ -224,6 +224,9 @@ contains
     call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_xdy)
     call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_mxydx)
     call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, M_xydy)
+
+    call floodfill_src%create( &
+      ugrid_src%nFaces, ugrid_src%face_face_connectivity_n, ugrid_src%face_face_connectivity)
 
     face_index_src = 1
     do face_index_dst = ugrid_dst%pai%i1, ugrid_dst%pai%i2
@@ -248,23 +251,18 @@ contains
       ! containing the centroid of the destination face
       call ugrid_src%find_containing_face( p, face_index_src)
 
-      map = 0
-      map( face_index_src) = 1
-      stackN = 1
-      stack( stackN) = face_index_src
+      call floodfill_src%initialise_floodfill_at_single_node( face_index_src)
 
       ncycles = 0
       found_any_intersection = .false.
-      do while (stackN > 0)
+      do while (floodfill_src%stack_front_n > 0)
 
         ! Safety
         ncycles = ncycles + 1
         if (ncycles > ugrid_src%nFaces) call crash('floodfill-style outward search got stuck')
 
         ! Take the last source vertex from the stack
-        face_index_src = stack( stackN)
-        stackN = stackN - 1
-        map( face_index_src) = 2
+        call floodfill_src%take_last_element_from_front_stack( face_index_src)
 
         ! Get this source grid face as a polygon
         call ugrid_src%get_face_as_polygon( face_index_src, poly_src)
@@ -276,7 +274,7 @@ contains
           if (ncycles == 1) then
             ! If the first source ugrid face we try doesn't intersect
             ! the destination ugrid face, we must still try its neighbours
-            call ugrid_src%add_nonchecked_neighbours_to_map_and_stack( map, stack, stackN, face_index_src)
+            call floodfill_src%add_unchecked_neighbours_to_front_stack( face_index_src)
           end if
           cycle
         else
@@ -293,7 +291,7 @@ contains
         call M_xydy%add_entry ( face_index_dst, face_index_src, LI_xydy)
 
         ! Add non-checked neighbours to the stack to continue the floodfill-style outward expansion
-        call ugrid_src%add_nonchecked_neighbours_to_map_and_stack( map, stack, stackN, face_index_src)
+        call floodfill_src%add_unchecked_neighbours_to_front_stack( face_index_src)
 
       end do
 

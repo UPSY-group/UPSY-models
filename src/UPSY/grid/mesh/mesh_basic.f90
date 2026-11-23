@@ -15,8 +15,6 @@ module mesh_basic
 
   public :: type_mesh
 
-  public :: test_tol_mesh
-
   type, extends(atype_grid) :: type_mesh
     ! The unstructured triangular mesh.
 
@@ -307,12 +305,6 @@ module mesh_basic
 
   ! Interfaces for procedures defined in submodules
   interface
-
-    module pure function test_tol_mesh( mesh1, mesh2, tol_dist) result( res)
-      type(type_mesh),  intent(in) :: mesh1, mesh2
-      real(dp),         intent(in) :: tol_dist
-      logical :: res
-    end function test_tol_mesh
 
     module pure function test_mesh_vertices_are_neighbours( self, vi, vj) result( res)
       class(type_mesh), intent(in) :: self

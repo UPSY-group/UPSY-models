@@ -4,60 +4,6 @@ submodule( mesh_basic) topology_checks_mod
 
 contains
 
-  !> Test if two meshes are identical to within tolerance
-  pure function test_tol_mesh( mesh1, mesh2, tol_dist) result( res)
-
-    ! In/output variables:
-    type(type_mesh),  intent(in) :: mesh1, mesh2
-    real(dp),         intent(in) :: tol_dist
-    logical :: res
-
-    ! Local variables:
-    real(dp), dimension(:), allocatable :: dist
-
-    res = .true.
-
-    res = res .and. mesh1%nV          == mesh2%nV
-    res = res .and. mesh1%nTri        == mesh2%nTri
-    res = res .and. (mesh1%lambda_M    - mesh2%lambda_M   ) <= tol_dist
-    res = res .and. (mesh1%phi_M       - mesh2%phi_M      ) <= tol_dist
-    res = res .and. (mesh1%beta_stereo - mesh2%beta_stereo) <= tol_dist
-    res = res .and. (mesh1%xmin        - mesh2%xmin       ) <= tol_dist
-    res = res .and. (mesh1%xmax        - mesh2%xmax       ) <= tol_dist
-    res = res .and. (mesh1%ymin        - mesh2%ymin       ) <= tol_dist
-    res = res .and. (mesh1%ymax        - mesh2%ymax       ) <= tol_dist
-
-    ! Vertex data
-    if (mesh1%nV == mesh2%nV) then
-
-      dist = hypot( mesh1%V(1:mesh1%nV,1) - mesh2%V(1:mesh2%nV,1), &
-                    mesh1%V(1:mesh1%nV,2) - mesh2%V(1:mesh2%nV,2))
-      res = res .and. all(dist <= tol_dist)
-      res = res .and. all( mesh1%nC   ( 1:mesh1%nV  ) == mesh2%nC   ( 1:mesh2%nV  ))
-      res = res .and. all( mesh1%C    ( 1:mesh1%nV,:) == mesh2%C    ( 1:mesh2%nV,:))
-      res = res .and. all( mesh1%niTri( 1:mesh1%nV  ) == mesh2%niTri( 1:mesh2%nV  ))
-      res = res .and. all( mesh1%iTri ( 1:mesh1%nV,:) == mesh2%iTri ( 1:mesh2%nV,:))
-      res = res .and. all( mesh1%VBI  ( 1:mesh1%nV  ) == mesh2%VBI  ( 1:mesh2%nV  ))
-
-    else
-      res = .false.
-    end if
-
-    ! Triangle data
-    if (mesh1%nTri == mesh2%nTri) then
-
-      dist = hypot( mesh1%Tricc(1:mesh1%nTri,1) - mesh2%Tricc(1:mesh2%nTri,1), &
-                    mesh1%Tricc(1:mesh1%nTri,2) - mesh2%Tricc(1:mesh2%nTri,2))
-      res = res .and. all(dist <= tol_dist)
-      res = res .and. all( mesh1%Tri ( 1:mesh1%nTri,:) == mesh2%Tri ( 1:mesh2%nTri,:))
-      res = res .and. all( mesh1%TriC( 1:mesh1%nTri,:) == mesh2%TriC( 1:mesh2%nTri,:))
-
-    else
-      res = .false.
-    end if
-
-  end function test_tol_mesh
-
   !> Test if  vertices vi, vj are neighbours
   pure function test_mesh_vertices_are_neighbours( self, vi, vj) result( res)
 

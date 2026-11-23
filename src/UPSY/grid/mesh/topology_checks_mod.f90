@@ -57,10 +57,10 @@ contains
   end function test_tol_mesh
 
   !> Test if  vertices vi, vj are neighbours
-  pure function test_mesh_vertices_are_neighbours( mesh, vi, vj) result( res)
+  pure function test_mesh_vertices_are_neighbours( self, vi, vj) result( res)
 
     ! In/output variables
-    type(type_mesh),  intent(in) :: mesh
+    class(type_mesh), intent(in) :: self
     integer,          intent(in) :: vi, vj
     logical :: res
 
@@ -69,12 +69,12 @@ contains
     integer :: ci, cj
 
     are_connected_ij = .false.
-    do ci = 1, mesh%nC( vi)
-      if (mesh%C( vi,ci) == vj) are_connected_ij = .true.
+    do ci = 1, self%nC( vi)
+      if (self%C( vi,ci) == vj) are_connected_ij = .true.
     end do
     are_connected_ji = .false.
-    do cj = 1, mesh%nC( vj)
-      if (mesh%C( vj,cj) == vi) are_connected_ji = .true.
+    do cj = 1, self%nC( vj)
+      if (self%C( vj,cj) == vi) are_connected_ji = .true.
     end do
 
     res = are_connected_ij .and. are_connected_ij

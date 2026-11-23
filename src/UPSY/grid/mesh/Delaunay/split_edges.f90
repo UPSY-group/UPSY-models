@@ -86,7 +86,7 @@ contains
     call assert( test_ge_le( vj, 1, mesh%nV), 'invalid value for vj')
 
     ! Safety - assert that vi and vj are connected both ways
-    call assert( test_mesh_vertices_are_neighbours( mesh, vi, vj), 'vi and vj are not connected')
+    call assert( mesh%vertices_are_neighbours( vi, vj), 'vi and vj are not connected')
 
     ! Safety - assert that p_new lies on the line [vi,vj]
     pa = mesh%V( vi,:)

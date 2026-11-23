@@ -15,7 +15,7 @@ module mesh_basic
 
   public :: type_mesh
 
-  public :: test_tol_mesh, test_mesh_is_self_consistent, test_mesh_vertices_are_neighbours
+  public :: test_tol_mesh, test_mesh_is_self_consistent
   public :: test_mesh_triangles_are_neighbours, test_mesh_triangle_doesnt_have_duplicates
 
   type, extends(atype_grid) :: type_mesh
@@ -297,6 +297,8 @@ module mesh_basic
 
   contains
 
+    procedure, public :: vertices_are_neighbours => test_mesh_vertices_are_neighbours
+
     final :: finalise
 
   end type type_mesh
@@ -310,8 +312,8 @@ module mesh_basic
       logical :: res
     end function test_tol_mesh
 
-    module pure function test_mesh_vertices_are_neighbours( mesh, vi, vj) result( res)
-      type(type_mesh),  intent(in) :: mesh
+    module pure function test_mesh_vertices_are_neighbours( self, vi, vj) result( res)
+      class(type_mesh), intent(in) :: self
       integer,          intent(in) :: vi, vj
       logical :: res
     end function test_mesh_vertices_are_neighbours

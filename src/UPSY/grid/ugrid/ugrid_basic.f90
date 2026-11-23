@@ -10,7 +10,7 @@ module ugrid_basic
   use xy_grid_basic, only: type_xy_grid
   use lonlat_grid_basic, only: type_lonlat_grid
   use mpi_distributed_shared_memory, only: allocate_dist_shared, deallocate_dist_shared
-  use mpi_basic, only: par
+  use mpi_basic, only: par, sync_node
   use plane_geometry, only: is_in_convex_polygon
   use floodfill_basics, only: type_floodfill
 

@@ -83,6 +83,7 @@ contains
       end do
       end do
     end if
+    call sync_node
 
     call allocate_dist_shared( ugrid%face_coordinates, ugrid%wface_coordinates, [1, ugrid%nFaces], [1, 2])
     if (par%node_primary) then
@@ -94,6 +95,7 @@ contains
       end do
       end do
     end if
+    call sync_node
 
     ! Face-node connectivity
     ugrid%face_node_connectivity_fill_value = -999
@@ -117,6 +119,7 @@ contains
       end do
       end do
     end if
+    call sync_node
 
     ! Face-face connectivity
     ugrid%face_face_connectivity_fill_value = -999
@@ -160,6 +163,7 @@ contains
       end do
       end do
     end if
+    call sync_node
 
     ! Parallelisation info
     ugrid%pai = xy_grid%pai

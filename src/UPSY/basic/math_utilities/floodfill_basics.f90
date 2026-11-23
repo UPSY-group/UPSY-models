@@ -112,7 +112,7 @@ contains
 
     ! Mark it as checked
     self%stack_checked_n = self%stack_checked_n + 1
-    self%stack_checked( self%stack_checked_n) = map_checked
+    self%stack_checked( self%stack_checked_n) = i
     self%map( i) = map_checked
 
   end subroutine take_last_element_from_front_stack

@@ -128,7 +128,7 @@ contains
 
     do ci = 1, self%nC( i)
       j = self%C( i, ci)
-      if (self%map( j) == 0) then
+      if (self%map( j) == map_unchecked) then
         self%map( j) = map_front
         self%stack_front_n = self%stack_front_n + 1
         self%stack_front( self%stack_front_n) = j

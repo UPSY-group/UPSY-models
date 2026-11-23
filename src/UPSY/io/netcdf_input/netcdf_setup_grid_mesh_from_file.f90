@@ -244,13 +244,11 @@ contains
     call read_var_primary( filename, ncid, id_var_Tricc         , mesh%Tricc         )
     call read_var_primary( filename, ncid, id_var_TriC          , mesh%TriC          )
 
-    ! Safety - check if the mesh data read from NetCDF makes sense
-    if (par%primary) then
-      if (.not. test_mesh_is_self_consistent( mesh)) call crash('invalid mesh in file ' // trim( filename))
-    end if
-
     ! Broadcast read mesh from the primary to the other processes
     call broadcast_mesh( mesh)
+
+    ! Safety - check if the mesh data read from NetCDF makes sense
+    if (.not. test_mesh_is_self_consistent( mesh)) call crash('invalid mesh in file ' // trim( filename))
 
     ! Calculate secondary mesh data
     call calc_all_secondary_mesh_data( mesh, mesh%lambda_M, mesh%phi_M, mesh%beta_stereo)

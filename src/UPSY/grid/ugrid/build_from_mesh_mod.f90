@@ -68,6 +68,7 @@ contains
       ugrid%node_coordinates = mesh%Vor
       ugrid%face_coordinates = mesh%V
     end if
+    call sync_node
 
     ! Face-node connectivity
     ugrid%face_node_connectivity_fill_value = -999
@@ -85,6 +86,7 @@ contains
         ugrid%face_node_connectivity( vi, 1: mesh%nVVor( vi)) = mesh%VVor( vi, 1: mesh%nVVor( vi))
       end do
     end if
+    call sync_node
 
     ! Face-face connectivity
     ugrid%face_face_connectivity_fill_value = -999
@@ -102,6 +104,7 @@ contains
         ugrid%face_face_connectivity( vi, 1: mesh%nC( vi)) = mesh%C( vi, 1: mesh%nC( vi))
       end do
     end if
+    call sync_node
 
     ! Parallelisation info
     ugrid%pai = mesh%pai_V
@@ -136,6 +139,7 @@ contains
       ugrid%node_coordinates = mesh%V
       ugrid%face_coordinates = mesh%TriGC
     end if
+    call sync_node
 
     ! Face-node connectivity
     ugrid%face_node_connectivity_fill_value = -999
@@ -150,6 +154,7 @@ contains
       ugrid%face_node_connectivity_n = 3
       ugrid%face_node_connectivity = mesh%Tri
     end if
+    call sync_node
 
     ! Face-face connectivity
     ugrid%face_face_connectivity_fill_value = -999
@@ -172,6 +177,7 @@ contains
         end do
       end do
     end if
+    call sync_node
 
     ! Parallelisation info
     ugrid%pai = mesh%pai_Tri

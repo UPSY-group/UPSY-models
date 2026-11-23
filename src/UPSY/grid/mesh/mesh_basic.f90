@@ -15,6 +15,9 @@ module mesh_basic
 
   public :: type_mesh
 
+  public :: test_tol_mesh, test_mesh_is_self_consistent, test_mesh_vertices_are_neighbours
+  public :: test_mesh_triangles_are_neighbours, test_mesh_triangle_doesnt_have_duplicates
+
   type, extends(atype_grid) :: type_mesh
     ! The unstructured triangular mesh.
 
@@ -297,6 +300,40 @@ module mesh_basic
     final :: finalise
 
   end type type_mesh
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module pure function test_tol_mesh( mesh1, mesh2, tol_dist) result( res)
+      type(type_mesh),  intent(in) :: mesh1, mesh2
+      real(dp),         intent(in) :: tol_dist
+      logical :: res
+    end function test_tol_mesh
+
+    module pure function test_mesh_vertices_are_neighbours( mesh, vi, vj) result( res)
+      type(type_mesh),  intent(in) :: mesh
+      integer,          intent(in) :: vi, vj
+      logical :: res
+    end function test_mesh_vertices_are_neighbours
+
+    module pure function test_mesh_triangles_are_neighbours( mesh, ti, tj) result( res)
+      type(type_mesh),  intent(in) :: mesh
+      integer,          intent(in) :: ti, tj
+      logical :: res
+    end function test_mesh_triangles_are_neighbours
+
+    module pure function test_mesh_triangle_doesnt_have_duplicates( mesh, ti) result( res)
+      type(type_mesh),  intent(in) :: mesh
+      integer,          intent(in) :: ti
+      logical :: res
+    end function test_mesh_triangle_doesnt_have_duplicates
+
+    module pure function test_mesh_is_self_consistent( mesh) result( res)
+      type(type_mesh),  intent(in   ) :: mesh
+      logical :: res
+    end function test_mesh_is_self_consistent
+
+  end interface
 
 contains
 

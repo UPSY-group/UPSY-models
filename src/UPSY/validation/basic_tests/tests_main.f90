@@ -6,7 +6,8 @@ module tests_main
   use tests_CSR
   use tests_grid
   use tests_grid_lonlat
-  use topology_checks_mod
+  use mesh_basic, only: test_tol_mesh, test_mesh_is_self_consistent, test_mesh_vertices_are_neighbours, &
+    test_mesh_triangles_are_neighbours, test_mesh_triangle_doesnt_have_duplicates
   use tests_graph
 
   implicit none

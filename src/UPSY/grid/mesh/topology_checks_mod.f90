@@ -1,18 +1,6 @@
-module topology_checks_mod
+submodule( mesh_basic) topology_checks_mod
 
-  ! Basic tests for meshes.
-
-  use precisions, only: dp
-  use mesh_basic, only: type_mesh
-  use call_stack_and_comp_time_tracking, only: warning
   use tests_dp, only: test_tol => test_tol_dp_0D
-
-  implicit none
-
-  private
-
-  public :: test_tol_mesh, test_mesh_is_self_consistent, test_mesh_vertices_are_neighbours
-  public :: test_mesh_triangles_are_neighbours, test_mesh_triangle_doesnt_have_duplicates
 
 contains
 
@@ -718,4 +706,4 @@ contains
 
   end function is_self_consistent_Tricc
 
-end module topology_checks_mod
+end submodule topology_checks_mod

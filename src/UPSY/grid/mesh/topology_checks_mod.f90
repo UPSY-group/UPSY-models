@@ -6,10 +6,12 @@ contains
 
   !> Test if two meshes are identical to within tolerance
   pure function test_tol_mesh( mesh1, mesh2, tol_dist) result( res)
+
     ! In/output variables:
     type(type_mesh),  intent(in) :: mesh1, mesh2
     real(dp),         intent(in) :: tol_dist
     logical :: res
+
     ! Local variables:
     real(dp), dimension(:), allocatable :: dist
 
@@ -133,28 +135,29 @@ contains
   end function test_mesh_triangle_doesnt_have_duplicates
 
   !> Test if a mesh is self-consistent
-  pure function test_mesh_is_self_consistent( mesh) result( res)
+  pure function test_mesh_is_self_consistent( self) result( res)
+
     ! In/output variables:
-    type(type_mesh),  intent(in   ) :: mesh
+    class(type_mesh), intent(in) :: self
     logical :: res
 
     res = .true.
 
-    res = res .and. is_self_consistent_vertex_locations( mesh)
-    res = res .and. is_self_consistent_vertex_duplicates( mesh)
-    res = res .and. is_self_consistent_nC( mesh)
-    res = res .and. is_self_consistent_C( mesh)
-    res = res .and. is_self_consistent_niTri( mesh)
-    res = res .and. is_self_consistent_iTri( mesh)
-    res = res .and. is_self_consistent_shared_triangles( mesh)
-    res = res .and. is_self_consistent_border_VBI( mesh)
-    res = res .and. is_self_consistent_border_V( mesh)
-    res = res .and. is_self_consistent_Tri_iTri( mesh)
-    res = res .and. is_self_consistent_Tri_C( mesh)
-    res = res .and. is_self_consistent_triangle_duplicates( mesh)
-    res = res .and. is_self_consistent_TriC( mesh)
-    res = res .and. is_self_consistent_VorC( mesh)
-    res = res .and. is_self_consistent_Tricc( mesh)
+    res = res .and. is_self_consistent_vertex_locations( self)
+    res = res .and. is_self_consistent_vertex_duplicates( self)
+    res = res .and. is_self_consistent_nC( self)
+    res = res .and. is_self_consistent_C( self)
+    res = res .and. is_self_consistent_niTri( self)
+    res = res .and. is_self_consistent_iTri( self)
+    res = res .and. is_self_consistent_shared_triangles( self)
+    res = res .and. is_self_consistent_border_VBI( self)
+    res = res .and. is_self_consistent_border_V( self)
+    res = res .and. is_self_consistent_Tri_iTri( self)
+    res = res .and. is_self_consistent_Tri_C( self)
+    res = res .and. is_self_consistent_triangle_duplicates( self)
+    res = res .and. is_self_consistent_TriC( self)
+    res = res .and. is_self_consistent_VorC( self)
+    res = res .and. is_self_consistent_Tricc( self)
 
   end function test_mesh_is_self_consistent
 

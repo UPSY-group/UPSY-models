@@ -15,7 +15,7 @@ module mesh_basic
 
   public :: type_mesh
 
-  public :: test_tol_mesh, test_mesh_is_self_consistent
+  public :: test_tol_mesh
 
   type, extends(atype_grid) :: type_mesh
     ! The unstructured triangular mesh.
@@ -299,6 +299,7 @@ module mesh_basic
     procedure, public :: vertices_are_neighbours => test_mesh_vertices_are_neighbours
     procedure, public :: triangles_are_neighbours => test_mesh_triangles_are_neighbours
     procedure, public :: triangle_doesnt_have_duplicates => test_mesh_triangle_doesnt_have_duplicates
+    procedure, public :: is_self_consistent => test_mesh_is_self_consistent
 
     final :: finalise
 
@@ -331,8 +332,8 @@ module mesh_basic
       logical :: res
     end function test_mesh_triangle_doesnt_have_duplicates
 
-    module pure function test_mesh_is_self_consistent( mesh) result( res)
-      type(type_mesh),  intent(in   ) :: mesh
+    module pure function test_mesh_is_self_consistent( self) result( res)
+      class(type_mesh), intent(in) :: self
       logical :: res
     end function test_mesh_is_self_consistent
 

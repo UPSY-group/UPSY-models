@@ -248,7 +248,7 @@ contains
     call broadcast_mesh( mesh)
 
     ! Safety - check if the mesh data read from NetCDF makes sense
-    if (.not. test_mesh_is_self_consistent( mesh)) call crash('invalid mesh in file ' // trim( filename))
+    if (.not. mesh%is_self_consistent()) call crash('invalid mesh in file ' // trim( filename))
 
     ! Calculate secondary mesh data
     call calc_all_secondary_mesh_data( mesh, mesh%lambda_M, mesh%phi_M, mesh%beta_stereo)

@@ -133,8 +133,13 @@ contains
 
     res = .true.
     do vi = 1, mesh%nV-1
-      do vj = vi+1, mesh%nV
-        res = res .and. .not. hypot( mesh%V(vi,1) - mesh%V(vj,1), mesh%V(vi,2) - mesh%V(vj,2)) <= mesh%tol_dist
+      ! If mesh%C is consistent, then two (nearly) coinciding vertices must be
+      ! connected, so instead of inspecting all other vertices vj, we can limit
+      ! the search to just the direct neighbours of vi
+      do ci = 1, mesh%nC( vi)
+        vj = mesh%C( vi,ci)
+        res = res .and. .not. &
+          hypot( mesh%V( vi,1) - mesh%V( vj,1), mesh%V( vi,2) - mesh%V( vj,2)) <= mesh%tol_dist
       end do
     end do
 

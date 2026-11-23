@@ -131,7 +131,7 @@ contains
     call assert( test_ge_le( ti, 1, mesh%nTri), 'invalid value for ti')
     call assert( test_ge_le( tj, 1, mesh%nTri), 'invalid value for tj')
     ! Safety - assert that ti and tj are neighbours
-    call assert( test_mesh_triangles_are_neighbours( mesh, ti, tj), 'ti and tj are not meighbours')
+    call assert( mesh%triangles_are_neighbours( ti, tj), 'ti and tj are not meighbours')
 #endif
 
     call remove_triangle_pairs_around_ti_from_Delaunay_check_stack( mesh, ti)

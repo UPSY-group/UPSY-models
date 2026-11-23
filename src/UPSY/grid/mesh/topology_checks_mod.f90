@@ -82,10 +82,10 @@ contains
   end function test_mesh_vertices_are_neighbours
 
   !> Test if triangles ti, tj are neighbours
-  pure function test_mesh_triangles_are_neighbours( mesh, ti, tj) result( res)
+  pure function test_mesh_triangles_are_neighbours( self, ti, tj) result( res)
 
     ! In/output variables
-    type(type_mesh),  intent(in) :: mesh
+    class(type_mesh), intent(in) :: self
     integer,          intent(in) :: ti, tj
     logical :: res
 
@@ -96,8 +96,8 @@ contains
     are_connected_ij = .false.
     are_connected_ji = .false.
     do n = 1, 3
-      if (mesh%TriC( ti,n) == tj) are_connected_ij = .true.
-      if (mesh%TriC( tj,n) == ti) are_connected_ji = .true.
+      if (self%TriC( ti,n) == tj) are_connected_ij = .true.
+      if (self%TriC( tj,n) == ti) are_connected_ji = .true.
     end do
 
     res = are_connected_ij .and. are_connected_ij

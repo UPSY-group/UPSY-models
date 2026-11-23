@@ -1,4 +1,4 @@
-module tests_mesh
+module topology_checks_mod
 
   ! Basic tests for meshes.
 
@@ -718,4 +718,4 @@ contains
 
   end function is_self_consistent_Tricc
 
-end module tests_mesh
+end module topology_checks_mod

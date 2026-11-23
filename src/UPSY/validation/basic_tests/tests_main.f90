@@ -6,7 +6,7 @@ module tests_main
   use tests_CSR
   use tests_grid
   use tests_grid_lonlat
-  use tests_mesh
+  use topology_checks_mod
   use tests_graph
 
   implicit none

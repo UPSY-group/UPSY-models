@@ -11,16 +11,6 @@ Text between these arrows won't show up in the PR; feel free to leave it in.
 <!-- Which module(s)/routine(s), and what was wrong with the old structure?
      E.g. "Split remapping_basic into submodules, because the file was 5000 lines long." -->
 
-## Does this change model output?
-
-<!-- A refactor should normally NOT change any results. Tick one: -->
-
-- [ ] No: all checksums and test references are unchanged.
-- [ ] Yes: I've explained why below, and I've updated the references.
-
-<!-- If yes: explain which output changed, by how much, and why that's expected
-     (e.g. a different but equivalent order of summation causing round-off differences). -->
-
 ## Checklist
 
 - [ ] This PR refactors one thing (e.g. a single module), and doesn't add any new functionality.

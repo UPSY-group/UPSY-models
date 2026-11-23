@@ -8,6 +8,7 @@ You can! There are no rules for who can contribute - but there are rules for *ho
 
 - Have a look at the [**UPSY Wiki**](https://github.com/UPSY-group/UPSY-models/wiki)
 - Set up your [**development environment**](https://github.com/UPSY-group/UPSY-models/wiki/Getting-started)
+- Check out the UPSY-models repo. There's no need to create your own fork - the main branch is protected, so you cannot accidentally break things.
 
 ## Starting
 
@@ -20,6 +21,7 @@ Note that you don't need to do this for every new branch/PR; just for the featur
 ### Create a branch from main for your new work.
 
 *Not sure how to do this? Take a look here: https://docs.github.com/en/desktop/overview/getting-started-with-github-desktop*
+*Note for Linux users: there is a user-made fork of GitHub Desktop Client for Linux at https://flathub.org/en/apps/io.github.shiftey.Desktop  Otherwise, VS Code also supports almost all Git functionality.*
 
 Branches should be short-lived, ideally a week at most. Of course, this is nowhere near enough to finish your project; that's not the point. This way, you're never away from main for very long, and the risk of merge conflicts between your work and that of other contributors is minimised. Also, it encourages you to chop up your big project into small, manageable chunks, which are much easier to test and review.
 

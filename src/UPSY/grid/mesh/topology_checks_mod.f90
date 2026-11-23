@@ -105,27 +105,27 @@ contains
   end function test_mesh_triangles_are_neighbours
 
   !> Test if a triangle doesn't have any duplicates
-  pure function test_mesh_triangle_doesnt_have_duplicates( mesh, ti) result( res)
+  pure function test_mesh_triangle_doesnt_have_duplicates( self, ti) result( res)
 
     ! In/output variables:
-    type(type_mesh),  intent(in) :: mesh
+    class(type_mesh), intent(in) :: self
     integer,          intent(in) :: ti
     logical :: res
 
     ! Local variables:
     integer :: via, vib, vic, tj
 
-    via = mesh%Tri( ti,1)
-    vib = mesh%Tri( ti,2)
-    vic = mesh%Tri( ti,3)
+    via = self%Tri( ti,1)
+    vib = self%Tri( ti,2)
+    vic = self%Tri( ti,3)
 
     res = .true.
 
-    do tj = 1, mesh%nTri
+    do tj = 1, self%nTri
       if (tj == ti) cycle
-      if (any( via == mesh%Tri( tj,:)) .and. &
-          any( vib == mesh%Tri( tj,:)) .and. &
-          any( vic == mesh%Tri( tj,:))) then
+      if (any( via == self%Tri( tj,:)) .and. &
+          any( vib == self%Tri( tj,:)) .and. &
+          any( vic == self%Tri( tj,:))) then
         res = .false.
       end if
     end do

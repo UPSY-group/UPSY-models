@@ -207,10 +207,10 @@ contains
 
 #if (DO_ASSERTIONS)
     ! Safety - check if everything went alright and we didnt create any duplicate triangles
-    call assert( test_mesh_triangle_doesnt_have_duplicates( mesh, t1), 'a triangle with the vertices of t1 already exists')
-    call assert( test_mesh_triangle_doesnt_have_duplicates( mesh, t2), 'a triangle with the vertices of t2 already exists')
-    call assert( test_mesh_triangle_doesnt_have_duplicates( mesh, t3), 'a triangle with the vertices of t3 already exists')
-    call assert( test_mesh_triangle_doesnt_have_duplicates( mesh, t4), 'a triangle with the vertices of t4 already exists')
+    call assert( mesh%triangle_doesnt_have_duplicates( t1), 'a triangle with the vertices of t1 already exists')
+    call assert( mesh%triangle_doesnt_have_duplicates( t2), 'a triangle with the vertices of t2 already exists')
+    call assert( mesh%triangle_doesnt_have_duplicates( t3), 'a triangle with the vertices of t3 already exists')
+    call assert( mesh%triangle_doesnt_have_duplicates( t4), 'a triangle with the vertices of t4 already exists')
 #endif
 
     ! == nC, C

@@ -11,7 +11,6 @@ module ct_mass_conservation
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_mesh_from_file, &
     close_netcdf_file, create_new_netcdf_file_for_writing, setup_mesh_in_netcdf_file, &
     add_field_mesh_dp_2D_notime, write_to_field_multopt_mesh_dp_2D_notime
-  use tests_main, only: test_mesh_is_self_consistent
   use assertions_basic, only: assert
   use Halfar_SIA_solution, only: Halfar
   use conservation_of_mass_main, only: calc_dHi_dt
@@ -119,7 +118,7 @@ contains
     call close_netcdf_file( ncid)
 
     ! Check mesh self-consistency
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent')
 
     ! Run all the mapping tests with different test ice sheets
     call allocate_ice_model( mesh, ice, 'ANT')

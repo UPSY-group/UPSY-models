@@ -44,7 +44,7 @@ module mpi_distributed_memory
 
 contains
 
-  subroutine partition_list( ntot, i, n, i1, i2)
+  pure subroutine partition_list( ntot, i, n, i1, i2)
     !< Partition a list into parallel ranges (e.g. vertex domains)
 
     ! In/output variables:

@@ -92,7 +92,7 @@ contains
     call close_netcdf_file( ncid)
 
     ! Check mesh self-consistency
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent')
 
     ! ==   Solve d2f/dx2 + d2f/dy2 = c, f( r >=r0 ) = f_ex   ==
     !       Solution: f = -c/4 r0^2 + c/4 (x^2 + y^2)

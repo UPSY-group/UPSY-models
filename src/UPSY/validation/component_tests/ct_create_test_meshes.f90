@@ -209,12 +209,12 @@ contains
 
     ! Refine the mesh
     call refine_mesh_uniform( mesh, res_max, alpha_min)
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after refine_mesh_uniform')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after refine_mesh_uniform')
 
     ! Smooth the mesh
     do it_Lloyds_algorithm = 1, nit_Lloyds_algorithm
       call Lloyds_algorithm_single_iteration( mesh, alpha_min)
-      call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after Lloyds_algorithm_single_iteration')
+      call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after Lloyds_algorithm_single_iteration')
     end do
 
     ! Calculate secondary geometry data (needed in order to be able to write to NetCDF)
@@ -311,14 +311,14 @@ contains
 
       ! Refine mesh over polygon
       call refine_mesh_polygon( mesh, poly, resolution, alpha_min)
-      call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after refine_mesh_polygon')
+      call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after refine_mesh_polygon')
 
     end do
 
     ! Smooth the mesh
     do it_Lloyds_algorithm = 1, nit_Lloyds_algorithm
       call Lloyds_algorithm_single_iteration( mesh, alpha_min)
-      call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after Lloyds_algorithm_single_iteration')
+      call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after Lloyds_algorithm_single_iteration')
     end do
 
     ! Calculate secondary geometry data (needed in order to be able to write to NetCDF)
@@ -380,16 +380,16 @@ contains
 
     ! Refine the mesh around the smileyface
     call mesh_add_smileyface( mesh, res_max, res_max)
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after mesh_add_smileyface')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after mesh_add_smileyface')
 
     ! Refine the mesh around the UFEMISM letters
     call mesh_add_UFEMISM_letters( mesh, res_max, res_max)
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after mesh_add_UFEMISM_letters')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after mesh_add_UFEMISM_letters')
 
     ! Smooth the mesh
     do it_Lloyds_algorithm = 1, nit_Lloyds_algorithm
       call Lloyds_algorithm_single_iteration( mesh, alpha_min)
-      call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent after Lloyds_algorithm_single_iteration')
+      call assert( mesh%is_self_consistent(), 'mesh is not self-consistent after Lloyds_algorithm_single_iteration')
     end do
 
     ! Calculate secondary geometry data (needed in order to be able to write to NetCDF)

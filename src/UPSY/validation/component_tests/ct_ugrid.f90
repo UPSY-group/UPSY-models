@@ -9,7 +9,6 @@ module ct_ugrid
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, &
     setup_mesh_from_file, close_netcdf_file
   use assertions_basic, only: assert
-  use tests_main, only: test_mesh_is_self_consistent
   use ugrid_basic, only: type_ugrid
   use Arakawa_grid_mod, only: Arakawa_grid
   use netcdf_io_main, only: save_ugrid_as_netcdf
@@ -121,7 +120,7 @@ contains
     call close_netcdf_file( ncid)
 
     ! Check mesh self-consistency
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent')
 
     ! Convert mesh to ugrid and save to NetCDF
     call ugrid_a%build_from_grid( mesh, Arakawa_grid%a())

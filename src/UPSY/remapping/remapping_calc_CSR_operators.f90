@@ -119,12 +119,10 @@ contains
 
   end subroutine calc_CSR_remapping_operator_first_order_conservative
 
-  subroutine calc_CSR_remapping_operator_second_order_conservative( self, ugrid_src, ugrid_dst)
+  subroutine calc_CSR_remapping_operator_second_order_conservative( self)
 
     ! In/output variables:
     class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(inout) :: ugrid_src
-    type(type_ugrid), intent(inout) :: ugrid_dst
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_second_order_conservative'

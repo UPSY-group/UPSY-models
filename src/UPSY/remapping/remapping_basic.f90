@@ -32,13 +32,17 @@ module remapping_basic
     contains
 
       procedure, public  :: create => create_map
+
       procedure, private :: calc_CSR_remapping_operator_nearest_neighbour
       procedure, private :: calc_CSR_remapping_operator_first_order_conservative
+      procedure, private :: calc_CSR_remapping_operator_second_order_conservative
+
       generic,   public :: apply => &
         apply_map_2D, &
         apply_map_3D
       procedure, public :: apply_map_2D
       procedure, public :: apply_map_3D
+
       procedure, public :: save_as_netcdf => save_map_as_netcdf
 
   end type type_map
@@ -66,6 +70,10 @@ module remapping_basic
     module subroutine calc_CSR_remapping_operator_first_order_conservative( self)
       class(type_map),  intent(inout) :: self
     end subroutine calc_CSR_remapping_operator_first_order_conservative
+
+    module subroutine calc_CSR_remapping_operator_second_order_conservative( self)
+      class(type_map),  intent(inout) :: self
+    end subroutine calc_CSR_remapping_operator_second_order_conservative
 
   end interface
 
@@ -210,7 +218,7 @@ contains
     elseif (method == remapping_method%first_order_conservative()) then
       call self%calc_CSR_remapping_operator_first_order_conservative()
     elseif (method == remapping_method%second_order_conservative()) then
-      call crash('whoopsiedaisy')
+      call self%calc_CSR_remapping_operator_second_order_conservative()
     else
       call crash("unsupported remapping method '" // method%str() // "'")
     end if

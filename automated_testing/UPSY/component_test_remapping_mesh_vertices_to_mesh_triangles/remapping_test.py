@@ -26,8 +26,8 @@ from upsy.remap import Remapper
 # Mesh Arakawa grids to test (c-grid is not yet supported)
 MESH_ARAKAWA_GRIDS = {'a': 'vertices', 'b': 'triangles'}
 
-# Remapping methods to test (linear and second-order conservative are not yet implemented)
-METHODS = ['nearest_neighbour', 'first_order_conservative']
+# Remapping methods to test
+METHODS = ['nearest_neighbour', 'first_order_conservative', 'second_order_conservative']
 
 # Number of processes to calculate weights with, and maximum time per set of weights
 N_PROCS = 2

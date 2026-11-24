@@ -23,8 +23,8 @@ import numpy as np
 sys.path.insert(0, str(Path(__file__).resolve().parents[3] / 'tools' / 'python'))
 from upsy.remap import Remapper
 
-# Remapping methods to test (linear and second-order conservative are not yet implemented)
-METHODS = ['nearest_neighbour', 'first_order_conservative']
+# Remapping methods to test
+METHODS = ['nearest_neighbour', 'first_order_conservative', 'second_order_conservative']
 
 # Number of processes to calculate weights with, and maximum time per set of weights
 N_PROCS = 2

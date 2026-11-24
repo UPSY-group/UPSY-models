@@ -25,7 +25,7 @@ contains
       if (self%C( vj,cj) == vi) are_connected_ji = .true.
     end do
 
-    res = are_connected_ij .and. are_connected_ij
+    res = are_connected_ij .and. are_connected_ji
 
   end function test_mesh_vertices_are_neighbours
 
@@ -134,7 +134,7 @@ contains
         mesh%V( vi,1) >= mesh%xmin .and. &
         mesh%V( vi,1) <= mesh%xmax .and. &
         mesh%V( vi,2) >= mesh%ymin .and. &
-        mesh%V( vi,2) <= mesh%xmax
+        mesh%V( vi,2) <= mesh%ymax
     end do
 
   end function is_self_consistent_vertex_locations

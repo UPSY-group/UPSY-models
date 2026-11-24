@@ -12,7 +12,6 @@ module remapping_methods
   contains
     procedure :: create_from_string        => create_remapping_method_from_string
     procedure :: nearest_neighbour         => remapping_method_factory_nearest_neighbour
-    procedure :: linear                    => remapping_method_factory_linear
     procedure :: first_order_conservative  => remapping_method_factory_first_order_conservative
     procedure :: second_order_conservative => remapping_method_factory_second_order_conservative
   end type type_remapping_method_factory
@@ -38,8 +37,6 @@ contains
       call crash("invalid remapping method '" // trim( str) // "'")
     case ('nearest_neighbour')
       res = self%nearest_neighbour()
-    case ('linear')
-      res = self%linear()
     case ('first_order_conservative')
       res = self%first_order_conservative()
     case ('second_order_conservative')
@@ -53,22 +50,16 @@ contains
     res%g = 1
   end function remapping_method_factory_nearest_neighbour
 
-  function remapping_method_factory_linear( self) result( res)
-    class(type_remapping_method_factory), intent(in) :: self
-    type(type_remapping_method) :: res
-    res%g = 2
-  end function remapping_method_factory_linear
-
   function remapping_method_factory_first_order_conservative( self) result( res)
     class(type_remapping_method_factory), intent(in) :: self
     type(type_remapping_method) :: res
-    res%g = 3
+    res%g = 2
   end function remapping_method_factory_first_order_conservative
 
   function remapping_method_factory_second_order_conservative( self) result( res)
     class(type_remapping_method_factory), intent(in) :: self
     type(type_remapping_method) :: res
-    res%g = 4
+    res%g = 3
   end function remapping_method_factory_second_order_conservative
 
   pure function test_remapping_method_equality( self, other) result( res)
@@ -83,8 +74,6 @@ contains
     character(len=:), allocatable :: str
     if     (self == remapping_method%nearest_neighbour()) then
       str = 'nearest_neighbour'
-    elseif (self == remapping_method%linear()) then
-      str = 'linear'
     elseif (self == remapping_method%first_order_conservative()) then
       str = 'first_order_conservative'
     elseif (self == remapping_method%second_order_conservative()) then

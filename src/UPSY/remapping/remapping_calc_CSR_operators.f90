@@ -67,26 +67,6 @@ contains
 
   end subroutine calc_CSR_remapping_operator_nearest_neighbour
 
-  subroutine calc_CSR_remapping_operator_linear( self, ugrid_src, ugrid_dst)
-
-    ! In/output variables:
-    class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(inout) :: ugrid_src
-    type(type_ugrid), intent(inout) :: ugrid_dst
-
-    ! Local variables:
-    character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_linear'
-
-    ! Add routine to path
-    call init_routine( routine_name)
-
-    call crash('fixme')
-
-    ! Finalise routine path
-    call finalise_routine( routine_name)
-
-  end subroutine calc_CSR_remapping_operator_linear
-
   subroutine calc_CSR_remapping_operator_first_order_conservative( self, ugrid_src, ugrid_dst)
 
     ! In/output variables:

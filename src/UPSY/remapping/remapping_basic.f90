@@ -33,7 +33,6 @@ module remapping_basic
 
       procedure, public  :: create => create_map
       procedure, private :: calc_CSR_remapping_operator_nearest_neighbour
-      procedure, private :: calc_CSR_remapping_operator_linear
       procedure, private :: calc_CSR_remapping_operator_first_order_conservative
       generic,   public :: apply => &
         apply_map_2D, &
@@ -65,12 +64,6 @@ module remapping_basic
       type(type_ugrid), intent(inout) :: ugrid_src
       type(type_ugrid), intent(inout) :: ugrid_dst
     end subroutine calc_CSR_remapping_operator_nearest_neighbour
-
-    module subroutine calc_CSR_remapping_operator_linear( self, ugrid_src, ugrid_dst)
-      class(type_map),  intent(inout) :: self
-      type(type_ugrid), intent(inout) :: ugrid_src
-      type(type_ugrid), intent(inout) :: ugrid_dst
-    end subroutine calc_CSR_remapping_operator_linear
 
     module subroutine calc_CSR_remapping_operator_first_order_conservative( self, ugrid_src, ugrid_dst)
       class(type_map),  intent(inout) :: self
@@ -224,8 +217,6 @@ contains
     ! Calculate remapping operator between the two ugrids
     if     (method == remapping_method%nearest_neighbour()) then
       call self%calc_CSR_remapping_operator_nearest_neighbour( ugrid_src, ugrid_dst)
-    elseif (method == remapping_method%linear()) then
-      call self%calc_CSR_remapping_operator_linear( ugrid_src, ugrid_dst)
     elseif (method == remapping_method%first_order_conservative()) then
       call self%calc_CSR_remapping_operator_first_order_conservative( ugrid_src, ugrid_dst)
     elseif (method == remapping_method%second_order_conservative()) then

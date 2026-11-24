@@ -39,7 +39,7 @@ contains
         cycle
       end if
 
-      call ugrid_src%find_nearest_face_center( p, face_index_src)
+      call ugrid_src%find_containing_face( p, face_index_src)
       call self%M%add_entry( face_index_dst, face_index_src, 1._dp)
 
     end do

@@ -69,6 +69,7 @@ module CSR_matrix_mod
       procedure, public  :: write_to_dist_NetCDFs  => write_CSR_matrix_to_dist_NetCDFs
       procedure, public  :: read_from_dist_NetCDFs => read_CSR_matrix_from_dist_NetCDFs
       procedure, public  :: identity               => create_identity_matrix
+      procedure, public  :: nnz_per_row_max
 
       procedure, private :: extend                 => extend_matrix_CSR_dist
       procedure, private :: crop                   => crop_matrix_CSR_dist
@@ -939,6 +940,35 @@ contains
     call finalise_routine( routine_name)
 
   end subroutine create_identity_matrix
+
+  function nnz_per_row_max( self) result( nnz_max)
+    ! Find the maximum number of non-zeroes per row
+
+    ! In- and output variables:
+    class(type_CSR_matrix_dp), intent(in) :: self
+    integer :: nnz_max
+
+    ! Local variables:
+    character(len=*), parameter :: routine_name = 'nnz_per_row_max'
+    integer                     :: i, k1, k2, nnz, ierr
+
+    ! Add routine to call stack
+    call init_routine( routine_name)
+
+    nnz_max = 0
+    do i = self%i1, self%i2
+      k1 = self%ptr( i)
+      k2 = self%ptr( i+1) - 1
+      nnz = k2 + 1 - k1
+      nnz_max = max( nnz_max, nnz)
+    end do
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, nnz_max, 1, MPI_INTEGER, MPI_MAX, MPI_COMM_WORLD, ierr)
+
+    ! Finalise routine path
+    call finalise_routine( routine_name)
+
+  end function nnz_per_row_max
 
   function test_CSR_matrix_equality( A, B) result( res)
 

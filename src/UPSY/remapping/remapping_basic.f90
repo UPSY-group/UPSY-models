@@ -59,16 +59,12 @@ module remapping_basic
   ! Interfaces for procedures defined in submodules
   interface
 
-    module subroutine calc_CSR_remapping_operator_nearest_neighbour( self, ugrid_src, ugrid_dst)
+    module subroutine calc_CSR_remapping_operator_nearest_neighbour( self)
       class(type_map),  intent(inout) :: self
-      type(type_ugrid), intent(inout) :: ugrid_src
-      type(type_ugrid), intent(inout) :: ugrid_dst
     end subroutine calc_CSR_remapping_operator_nearest_neighbour
 
-    module subroutine calc_CSR_remapping_operator_first_order_conservative( self, ugrid_src, ugrid_dst)
+    module subroutine calc_CSR_remapping_operator_first_order_conservative( self)
       class(type_map),  intent(inout) :: self
-      type(type_ugrid), intent(inout) :: ugrid_src
-      type(type_ugrid), intent(inout) :: ugrid_dst
     end subroutine calc_CSR_remapping_operator_first_order_conservative
 
   end interface
@@ -201,8 +197,6 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'create_map'
-    type(type_ugrid)            :: ugrid_src
-    type(type_ugrid)            :: ugrid_dst
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -210,15 +204,11 @@ contains
     ! Set up the remapping context object
     call self%ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
 
-    ! Create ugrids from source and destination grids
-    call ugrid_src%build_from_grid( grid_src, Arakawa_grid_src)
-    call ugrid_dst%build_from_grid( grid_dst, Arakawa_grid_dst)
-
     ! Calculate remapping operator between the two ugrids
     if     (method == remapping_method%nearest_neighbour()) then
-      call self%calc_CSR_remapping_operator_nearest_neighbour( ugrid_src, ugrid_dst)
+      call self%calc_CSR_remapping_operator_nearest_neighbour()
     elseif (method == remapping_method%first_order_conservative()) then
-      call self%calc_CSR_remapping_operator_first_order_conservative( ugrid_src, ugrid_dst)
+      call self%calc_CSR_remapping_operator_first_order_conservative()
     elseif (method == remapping_method%second_order_conservative()) then
       call crash('whoopsiedaisy')
     else

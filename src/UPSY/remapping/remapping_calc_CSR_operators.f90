@@ -24,20 +24,24 @@ contains
 
   end subroutine calc_CSR_remapping_operator
 
-  subroutine calc_CSR_remapping_operator_nearest_neighbour( self, ugrid_src, ugrid_dst)
+  subroutine calc_CSR_remapping_operator_nearest_neighbour( self)
 
     ! In/output variables:
-    class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(inout) :: ugrid_src
-    type(type_ugrid), intent(inout) :: ugrid_dst
+    class(type_map), intent(inout) :: self
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_nearest_neighbour'
+    type(type_ugrid)            :: ugrid_src
+    type(type_ugrid)            :: ugrid_dst
     integer                     :: face_index_src, face_index_dst
     real(dp), dimension(2)      :: p
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Create ugrids from source and destination grids
+    call ugrid_src%build_from_grid( self%ct%grid_src, self%ct%Arakawa_grid_src)
+    call ugrid_dst%build_from_grid( self%ct%grid_dst, self%ct%Arakawa_grid_dst)
 
     call allocate_remapping_CSR_matrix( ugrid_src, ugrid_dst, self%M)
 
@@ -67,15 +71,15 @@ contains
 
   end subroutine calc_CSR_remapping_operator_nearest_neighbour
 
-  subroutine calc_CSR_remapping_operator_first_order_conservative( self, ugrid_src, ugrid_dst)
+  subroutine calc_CSR_remapping_operator_first_order_conservative( self)
 
     ! In/output variables:
-    class(type_map),  intent(inout) :: self
-    type(type_ugrid), intent(inout) :: ugrid_src
-    type(type_ugrid), intent(inout) :: ugrid_dst
+    class(type_map), intent(inout) :: self
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'calc_CSR_remapping_operator_first_order_conservative'
+    type(type_ugrid)            :: ugrid_src
+    type(type_ugrid)            :: ugrid_dst
     type(type_CSR_matrix_dp)    :: M_xdy
     type(type_CSR_matrix_dp)    :: M_mxydx
     type(type_CSR_matrix_dp)    :: M_xydy
@@ -84,6 +88,10 @@ contains
 
     ! Add routine to path
     call init_routine( routine_name)
+
+    ! Create ugrids from source and destination grids
+    call ugrid_src%build_from_grid( self%ct%grid_src, self%ct%Arakawa_grid_src)
+    call ugrid_dst%build_from_grid( self%ct%grid_dst, self%ct%Arakawa_grid_dst)
 
     call calc_line_integral_matrices( ugrid_src, ugrid_dst, M_xdy, M_mxydx, M_xydy)
 

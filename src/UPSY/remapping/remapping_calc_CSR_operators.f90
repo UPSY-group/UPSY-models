@@ -298,6 +298,10 @@ contains
     PetscCall( MatDestroy( M_mxydx, ierr))
     PetscCall( MatDestroy( M_xydy , ierr))
 
+    call checksum( w0 , 'w0' )
+    call checksum( w1x, 'w1x')
+    call checksum( w1y, 'w1y')
+
     ! Finalise routine path
     call finalise_routine( routine_name)
 
@@ -344,6 +348,8 @@ contains
     PetscCall( MatDestroy( M_cons_1st_order, ierr))
     PetscCall( MatDestroy( M1, ierr))
     PetscCall( MatDestroy( M2, ierr))
+
+    call checksum( M, 'M')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

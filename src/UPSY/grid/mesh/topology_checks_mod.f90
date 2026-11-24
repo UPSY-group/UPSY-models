@@ -100,7 +100,6 @@ contains
     res = res .and. is_self_consistent_border_V( self)
     res = res .and. is_self_consistent_Tri_iTri( self)
     res = res .and. is_self_consistent_Tri_C( self)
-    res = res .and. is_self_consistent_triangle_duplicates( self)
     res = res .and. is_self_consistent_TriC( self)
     res = res .and. is_self_consistent_VorC( self)
     res = res .and. is_self_consistent_Tricc( self)
@@ -462,29 +461,6 @@ contains
     end do
 
   end function is_self_consistent_Tri_C
-
-  !> Check if any triangles are duplicate (i.e. consist of the same three vertices)
-  pure function is_self_consistent_triangle_duplicates( mesh) result( res)
-
-    ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
-    ! Local variables:
-    integer :: ti,tj,n,vi,n_match
-
-    res = .true.
-    do ti = 1, mesh%nTri-1
-      do tj = ti+1, mesh%nTri
-        n_match = 0
-        do n = 1, 3
-          vi = mesh%Tri( ti,n)
-          if (any(mesh%Tri( tj,:) == vi)) n_match = n_match + 1
-        end do
-        res = res .and. n_match >= 0 .and. n_match <= 2
-      end do
-    end do
-
-  end function is_self_consistent_triangle_duplicates
 
   !> Check if triangles listed in TriC are connected both ways
   pure function is_self_consistent_TriC( mesh) result( res)

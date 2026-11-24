@@ -5,9 +5,11 @@ module mesh_basic
   use precisions, only: dp
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use parallel_array_info_type, only: type_par_arr_info
-  use mpi_f08, only: MPI_WIN
+  use mpi_f08, only: MPI_WIN, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD
   use deallocate_dist_shared_mod, only: deallocate_dist_shared
   use basic_grid_mod, only: atype_grid
+  use mpi_basic, only: par
+  use mpi_distributed_memory, only: partition_list
 
   implicit none
 
@@ -324,7 +326,7 @@ module mesh_basic
       logical :: res
     end function test_mesh_triangle_doesnt_have_duplicates
 
-    module pure function test_mesh_is_self_consistent( self) result( res)
+    module function test_mesh_is_self_consistent( self) result( res)
       class(type_mesh), intent(in) :: self
       logical :: res
     end function test_mesh_is_self_consistent

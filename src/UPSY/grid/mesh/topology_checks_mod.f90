@@ -81,57 +81,77 @@ contains
   end function test_mesh_triangle_doesnt_have_duplicates
 
   !> Test if a mesh is self-consistent
-  pure function test_mesh_is_self_consistent( self) result( res)
+  function test_mesh_is_self_consistent( self) result( res)
 
     ! In/output variables:
     class(type_mesh), intent(in) :: self
     logical :: res
 
+    ! Local variables:
+    integer :: vi1, vi2, ti1, ti2, ierr
+
+    ! In many cases, mesh%is_self_consistent() is called
+    ! before calling calc_secondary_mesh_data, so that mesh%vi1,
+    ! mesh%vi2, etc. are not defined yet.
+    call partition_list( self%nV  , par%i, par%n, vi1, vi2)
+    call partition_list( self%nTri, par%i, par%n, ti1, ti2)
+
     res = .true.
 
-    res = res .and. is_self_consistent_vertex_locations( self)
-    res = res .and. is_self_consistent_vertex_duplicates( self)
-    res = res .and. is_self_consistent_nC( self)
-    res = res .and. is_self_consistent_C( self)
-    res = res .and. is_self_consistent_niTri( self)
-    res = res .and. is_self_consistent_iTri( self)
-    res = res .and. is_self_consistent_shared_triangles( self)
-    res = res .and. is_self_consistent_border_VBI( self)
-    res = res .and. is_self_consistent_border_V( self)
-    res = res .and. is_self_consistent_Tri_iTri( self)
-    res = res .and. is_self_consistent_Tri_C( self)
-    res = res .and. is_self_consistent_TriC( self)
+    res = res .and. is_self_consistent_vertex_locations( self, vi1, vi2)
+    res = res .and. is_self_consistent_vertex_duplicates( self, vi1, vi2)
+    res = res .and. is_self_consistent_nC( self, vi1, vi2)
+    res = res .and. is_self_consistent_C( self, vi1, vi2)
+    res = res .and. is_self_consistent_niTri( self, vi1, vi2)
+    res = res .and. is_self_consistent_iTri( self, vi1, vi2)
+    res = res .and. is_self_consistent_shared_triangles( self, vi1, vi2)
+    res = res .and. is_self_consistent_border_VBI( self, vi1, vi2)
+    res = res .and. is_self_consistent_border_V( self, vi1, vi2)
+    res = res .and. is_self_consistent_Tri_iTri( self, ti1, ti2)
+    res = res .and. is_self_consistent_Tri_C( self, ti1, ti2)
+    res = res .and. is_self_consistent_TriC( self, ti1, ti2)
     res = res .and. is_self_consistent_VorC( self)
-    res = res .and. is_self_consistent_Tricc( self)
+    res = res .and. is_self_consistent_Tricc( self, ti1, ti2)
+
+    call MPI_ALLREDUCE( MPI_IN_PLACE, res, 1, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD, ierr)
 
   end function test_mesh_is_self_consistent
 
   !> Check if all vertices lie inside the mesh domain [xmin,xmax],[ymin,ymax]
-  pure function is_self_consistent_vertex_locations( mesh) result( res)
+  pure function is_self_consistent_vertex_locations( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
 
-    res = &
-      all( mesh%V(:,1) >= mesh%xmin) .and. &
-      all( mesh%V(:,1) <= mesh%xmax) .and. &
-      all( mesh%V(:,2) >= mesh%ymin) .and. &
-      all( mesh%V(:,2) <= mesh%xmax)
+    ! Local variables:
+    integer :: vi
+
+    res = .true.
+    do vi = vi1, vi2
+      res = res .and. &
+        mesh%V( vi,1) >= mesh%xmin .and. &
+        mesh%V( vi,1) <= mesh%xmax .and. &
+        mesh%V( vi,2) >= mesh%ymin .and. &
+        mesh%V( vi,2) <= mesh%xmax
+    end do
 
   end function is_self_consistent_vertex_locations
 
   !> Check if any vertices are duplicate (i.e. coincide within the tolerance distance)
-  pure function is_self_consistent_vertex_duplicates( mesh) result( res)
+  pure function is_self_consistent_vertex_duplicates( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
-    integer :: vi,vj
+    integer :: vi, ci, vj
 
     res = .true.
-    do vi = 1, mesh%nV-1
+    do vi = vi1, vi2
       ! If mesh%C is consistent, then two (nearly) coinciding vertices must be
       ! connected, so instead of inspecting all other vertices vj, we can limit
       ! the search to just the direct neighbours of vi
@@ -145,16 +165,18 @@ contains
   end function is_self_consistent_vertex_duplicates
 
   !> Check if nC matches the number of entries in C
-  pure function is_self_consistent_nC( mesh) result( res)
+  pure function is_self_consistent_nC( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi,ci
 
     res = .true.
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
       do ci = 1, mesh%nC( vi)
         res = res .and. mesh%C( vi,ci) > 0
       end do
@@ -166,17 +188,19 @@ contains
   end function is_self_consistent_nC
 
   !> Check if vertices listed in C are connected both ways
-  pure function is_self_consistent_C( mesh) result( res)
+  pure function is_self_consistent_C( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi,ci,vj,cj,vk
     logical :: found_return_connection
 
     res = .true.
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
       do ci = 1, mesh%nC( vi)
         vj = mesh%C( vi,ci)
         found_return_connection = .false.
@@ -194,16 +218,18 @@ contains
   end function is_self_consistent_C
 
   !> Check if niTri matches the number of entries in iTri
-  pure function is_self_consistent_niTri( mesh) result( res)
+  pure function is_self_consistent_niTri( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi,iti
 
     res = .true.
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
       do iti = 1, mesh%niTri( vi)
         res = res .and. mesh%iTri( vi,iti) > 0
       end do
@@ -215,17 +241,19 @@ contains
   end function is_self_consistent_niTri
 
   !> Check if all iTriangles have a corresponding entry in the triangle-vertex connectivity list Tri
-  pure function is_self_consistent_iTri( mesh) result( res)
+  pure function is_self_consistent_iTri( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi,iti,ti,n,vj
     logical :: found_it
 
     res = .true.
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
       do iti = 1, mesh%niTri( vi)
         ti = mesh%iTri( vi,iti)
         found_it = .false.
@@ -243,16 +271,18 @@ contains
   end function is_self_consistent_iTri
 
   !> Check if connected vertices share the expected number of triangles
-  pure function is_self_consistent_shared_triangles( mesh) result( res)
+  pure function is_self_consistent_shared_triangles( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi,ci,vj,iti,itj,ti,tj,n_shared
 
     res = .true.
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
       do ci = 1, mesh%nC( vi)
         vj = mesh%C( vi, ci)
         ! Loop over the iTriangles of both vi and vj and count the number of shared triangles
@@ -280,11 +310,13 @@ contains
   end function is_self_consistent_shared_triangles
 
   !> Check border indices of connected border vertices
-  pure function is_self_consistent_border_VBI( mesh) result( res)
+  pure function is_self_consistent_border_VBI( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi, VBI, VBI_prev, VBI_prevprev, VBI_next, VBI_nextnext, vj_first, VBI_first, vj_last, VBI_last
 
@@ -292,7 +324,7 @@ contains
 
     ! Check if the first and last neighbours of border vertices
     ! are border vertices themselves too (and the correct ones at that)
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
 
       VBI = mesh%VBI( vi)
 
@@ -331,18 +363,20 @@ contains
   end function is_self_consistent_border_VBI
 
   !> Check locations of border vertices
-  pure function is_self_consistent_border_V( mesh) result( res)
+  pure function is_self_consistent_border_V( mesh, vi1, vi2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: vi1, vi2
+    logical                     :: res
+
     ! Local variables:
     integer :: vi
 
     res = .true.
 
     ! Check if border vertices really lie on the border
-    do vi = 1, mesh%nV
+    do vi = vi1, vi2
       select case (mesh%VBI( vi))
       case default
         ! Unrecognised border index
@@ -404,17 +438,19 @@ contains
   end function is_self_consistent_border_V
 
   !> Check if vertices listed in Tri list those triangles in iTri
-  pure function is_self_consistent_Tri_iTri( mesh) result( res)
+  pure function is_self_consistent_Tri_iTri( mesh, ti1, ti2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: ti1, ti2
+    logical                     :: res
+
     ! Local variables:
     integer :: ti,n,vi,iti,tj
     logical :: found_it
 
     res = .true.
-    do ti = 1, mesh%nTri
+    do ti = ti1, ti2
       do n = 1, 3
         vi = mesh%Tri( ti,n)
         found_it = .false.
@@ -432,17 +468,19 @@ contains
   end function is_self_consistent_Tri_iTri
 
   !> Check if vertices listed in Tri are connected
-  pure function is_self_consistent_Tri_C( mesh) result( res)
+  pure function is_self_consistent_Tri_C( mesh, ti1, ti2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: ti1, ti2
+    logical                     :: res
+
     ! Local variables:
     integer :: ti,n1,n2,vi,vj,ci,vk
     logical :: are_connected
 
     res = .true.
-    do ti = 1, mesh%nTri
+    do ti = ti1, ti2
       do n1 = 1, 3
         n2 = n1 + 1
         if (n2 == 4) n2 = 1
@@ -463,17 +501,19 @@ contains
   end function is_self_consistent_Tri_C
 
   !> Check if triangles listed in TriC are connected both ways
-  pure function is_self_consistent_TriC( mesh) result( res)
+  pure function is_self_consistent_TriC( mesh, ti1, ti2) result( res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: ti1, ti2
+    logical                     :: res
+
     ! Local variables:
     integer :: ti,n,tj,n2,tk
     logical :: found_it
 
     res = .true.
-    do ti = 1, mesh%nTri
+    do ti = ti1, ti2
       do n = 1, 3
         tj = mesh%TriC( ti,n)
         if (tj == 0) cycle
@@ -568,15 +608,18 @@ contains
     ! In/output variables:
     type(type_mesh), intent( in) :: mesh
     logical                      :: res
+
     ! Local variables:
-    integer :: vori, ci, vorj, cj, vork
+    integer :: vori1, vori2, vori, ci, vorj, cj, vork
     logical :: lists_vori
 
     res = .true.
 
     if (.not. associated( mesh%VornC)) return
 
-    do vori = 1, mesh%nVor
+    call partition_list( mesh%nVor, par%i, par%n, vori1, vori2)
+
+    do vori = vori1, vori2
 
       ! Check consistency between VornC and VorC
       do ci = 1, mesh%VornC( vori)
@@ -609,18 +652,20 @@ contains
   end function is_self_consistent_VorC
 
   !> Check if Tricc is self-consistent
-  pure function is_self_consistent_Tricc( mesh) result(res)
+  pure function is_self_consistent_Tricc( mesh, ti1, ti2) result(res)
 
     ! In/output variables:
-    type(type_mesh), intent( in) :: mesh
-    logical                      :: res
+    type(type_mesh), intent(in) :: mesh
+    integer,         intent(in) :: ti1, ti2
+    logical                     :: res
+
     ! Local variables:
     integer  :: ti, via, vib, vic
     real(dp) :: da, db, dc
 
     res = .true.
 
-    do ti = 1, mesh%nTri
+    do ti = ti1, ti2
 
       via = mesh%Tri( ti,1)
       vib = mesh%Tri( ti,2)

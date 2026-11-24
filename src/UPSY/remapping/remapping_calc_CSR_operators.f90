@@ -19,18 +19,6 @@ contains
     ! Add routine to path
     call init_routine( routine_name)
 
-    if     (choice_remapping_method == remapping_method%nearest_neighbour()) then
-      call calc_CSR_remapping_operator_nearest_neighbour( self, ugrid_src, ugrid_dst)
-    elseif (choice_remapping_method == remapping_method%linear()) then
-      call calc_CSR_remapping_operator_linear( self, ugrid_src, ugrid_dst)
-    elseif (choice_remapping_method == remapping_method%first_order_conservative()) then
-      call calc_CSR_remapping_operator_first_order_conservative( self, ugrid_src, ugrid_dst)
-    elseif (choice_remapping_method == remapping_method%second_order_conservative()) then
-      call calc_CSR_remapping_operator_second_order_conservative( self, ugrid_src, ugrid_dst)
-    else
-      call crash("unsupported remapping method '" // choice_remapping_method%str() // "'")
-    end if
-
     ! Finalise routine path
     call finalise_routine( routine_name)
 

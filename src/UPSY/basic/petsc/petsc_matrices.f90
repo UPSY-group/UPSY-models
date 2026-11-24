@@ -54,9 +54,13 @@ contains
     ! Copy data from the PETSc matrix to the CSR arrays
     do row_glob = istart+1, iend ! +1 because PETSc indexes from 0
       PetscCall( MatGetRow( A, row_glob-1, ncols, cols_, vals_, ierr))
-      do k = 1, ncols
-        call AA%add_entry( row_glob, cols_( k)+1, vals_( k))
-      end do
+      if (ncols > 0) then
+        do k = 1, ncols
+          call AA%add_entry( row_glob, cols_( k)+1, vals_( k))
+        end do
+      else
+        call AA%add_empty_row( row_glob)
+      end if
       PetscCall( MatRestoreRow( A, row_glob-1, ncols, cols_, vals_, ierr))
     end do
 

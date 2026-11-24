@@ -476,7 +476,7 @@ contains
 
         ! Calculate the three line integrals around the perimeter of the intersection
         call calc_line_integrals_around_polygon( poly_intersect, &
-          LI_xdy, LI_mxydx, LI_xydy, ugrid_src%tol_dist)
+          LI_xdy, LI_mxydx, LI_xydy)
 
         ! Add line integrals to sparse matrices
         call M_xdy%add_entry  ( face_index_dst, face_index_src, LI_xdy)

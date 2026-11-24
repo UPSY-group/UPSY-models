@@ -233,8 +233,8 @@ CONTAINS
         p = Vor( vori     ,:)
         q = Vor( vori_next,:)
 
-        LI_mxydx_seg = line_integral_mxydx( p, q, mesh%tol_dist)
-        LI_xydy_seg  = line_integral_xydy(  p, q, mesh%tol_dist)
+        LI_mxydx_seg = line_integral_mxydx( p, q)
+        LI_xydy_seg  = line_integral_xydy(  p, q)
 
         LI_mxydx = LI_mxydx + LI_mxydx_seg
         LI_xydy  = LI_xydy  + LI_xydy_seg

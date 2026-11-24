@@ -80,9 +80,9 @@ contains
       end select
 
       ! Calculate the three line integrals
-      LI_xdy   = line_integral_xdy(   pp, p_next, mesh%tol_dist)
-      LI_mxydx = line_integral_mxydx( pp, p_next, mesh%tol_dist)
-      LI_xydy  = line_integral_xydy(  pp, p_next, mesh%tol_dist)
+      LI_xdy   = line_integral_xdy(   pp, p_next)
+      LI_mxydx = line_integral_mxydx( pp, p_next)
+      LI_xydy  = line_integral_xydy(  pp, p_next)
 
       ! Add them to the results structure
       if (norm2( p_next - pp) > mesh%tol_dist) then

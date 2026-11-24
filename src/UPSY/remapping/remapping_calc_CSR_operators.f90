@@ -448,14 +448,14 @@ contains
 
       ncycles = 0
       found_any_intersection = .false.
-      do while (floodfill_src%stack_front_n > 0)
+      do while (floodfill_src%stack_front_ii2 >= floodfill_src%stack_front_ii1)
 
         ! Safety
         ncycles = ncycles + 1
         if (ncycles > ugrid_src%nFaces) call crash('floodfill-style outward search got stuck')
 
-        ! Take the last source vertex from the stack
-        call floodfill_src%take_last_element_from_front_stack( face_index_src)
+        ! Take the first source vertex from the stack
+        call floodfill_src%take_first_element_from_front_stack( face_index_src)
 
         ! Get this source grid face as a polygon
         call ugrid_src%get_face_as_polygon( face_index_src, poly_src)

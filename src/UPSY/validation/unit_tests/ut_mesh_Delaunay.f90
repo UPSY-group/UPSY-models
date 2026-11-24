@@ -88,7 +88,7 @@ contains
     call unit_test( test_eq ( mesh%nTri, 5), trim(test_name)//'/new_triangle')
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -132,7 +132,7 @@ contains
     call unit_test( test_eq ( mesh%nTri, 6), trim(test_name)//'/new_triangles')
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -176,7 +176,7 @@ contains
     call unit_test( test_eq ( mesh%nTri, 5), trim(test_name)//'/new_triangle')
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)
@@ -216,7 +216,7 @@ contains
     call unit_test( test_tol( mesh%V(5,:), p_new, 1E-10_dp), trim(test_name)//'/new_vertex_location')
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

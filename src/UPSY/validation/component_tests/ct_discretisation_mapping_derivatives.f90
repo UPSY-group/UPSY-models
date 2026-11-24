@@ -88,7 +88,7 @@ contains
     call close_netcdf_file( ncid)
 
     ! Check mesh self-consistency
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent')
 
     ! Run all the mapping tests with different test functions
 

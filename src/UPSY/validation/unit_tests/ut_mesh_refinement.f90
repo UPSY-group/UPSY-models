@@ -100,7 +100,7 @@ contains
     call refine_mesh_uniform( mesh, res_max, alpha_min)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -167,7 +167,7 @@ contains
     call refine_mesh_point( mesh, POI, res_Max, alpha_min)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -234,7 +234,7 @@ contains
     call refine_mesh_line( mesh, p_line, res_max, width, alpha_min)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -311,7 +311,7 @@ contains
     call refine_mesh_polygon( mesh, poly, res_max, alpha_min)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -408,7 +408,7 @@ contains
     call refine_mesh_line_ROI( mesh, p_line, res_max, width, alpha_min, poly_ROI)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -500,7 +500,7 @@ contains
     call refine_mesh_polygon_ROI( mesh, poly, res_max, alpha_min, poly_ROI)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -579,7 +579,7 @@ contains
     call refine_mesh_point( mesh, POI, res_max, alpha_min)
 
     ! Check if the refined mesh is self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency_before')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency_before')
 
     ! Check if the smallest internal angle is indeed larger than alpha_min
     call calc_smallest_internal_angle_mesh( mesh, smallest_internal_angle)
@@ -595,7 +595,7 @@ contains
 
       call Lloyds_algorithm_single_iteration( mesh, alpha_min)
 
-      call unit_test( test_mesh_is_self_consistent( mesh), &
+      call unit_test( mesh%is_self_consistent(), &
         trim(test_name)//'/mesh_self_consistency_it_'//trim(adjustl(it_Lloyds_algorithm_str)))
 
       mean_skewness_prev = mean_skewness
@@ -652,7 +652,7 @@ contains
     call calc_triangle_geometric_centres( mesh)
 
     ! Check if the mesh is still self-consistent
-    call unit_test( test_mesh_is_self_consistent( mesh), trim(test_name)//'/mesh_self_consistency')
+    call unit_test( mesh%is_self_consistent(), trim(test_name)//'/mesh_self_consistency')
 
     ! Check if the vertices and triangles really have been reordered properly
     vertices_are_sorted = .true.

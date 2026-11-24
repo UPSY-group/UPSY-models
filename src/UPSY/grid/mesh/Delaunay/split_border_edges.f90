@@ -70,7 +70,7 @@ contains
     call assert( test_ge_le( vj, 1, mesh%nV), 'invalid value for vj')
 
     ! Safety - assert that vi and vj are connected both ways
-    call assert( test_mesh_vertices_are_neighbours( mesh, vi, vj), 'vi and vj are not connected')
+    call assert( mesh%vertices_are_neighbours( vi, vj), 'vi and vj are not connected')
 
     ! Safety - assert that p_new lies on the line [vi,vj]
     pa = mesh%V( vi,:)
@@ -160,8 +160,8 @@ contains
 
 #if (DO_ASSERTIONS)
     ! Safety - check if everything went alright and we didnt create any duplicate triangles
-    call assert( test_mesh_triangle_doesnt_have_duplicates( mesh, t1), 'a triangle with the vertices of t1 already exists')
-    call assert( test_mesh_triangle_doesnt_have_duplicates( mesh, t2), 'a triangle with the vertices of t2 already exists')
+    call assert( mesh%triangle_doesnt_have_duplicates( t1), 'a triangle with the vertices of t1 already exists')
+    call assert( mesh%triangle_doesnt_have_duplicates( t2), 'a triangle with the vertices of t2 already exists')
 #endif
 
     ! == nC, C

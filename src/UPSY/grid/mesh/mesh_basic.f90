@@ -5,9 +5,11 @@ module mesh_basic
   use precisions, only: dp
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use parallel_array_info_type, only: type_par_arr_info
-  use mpi_f08, only: MPI_WIN
+  use mpi_f08, only: MPI_WIN, MPI_ALLREDUCE, MPI_IN_PLACE, MPI_LOGICAL, MPI_LAND, MPI_COMM_WORLD
   use deallocate_dist_shared_mod, only: deallocate_dist_shared
   use basic_grid_mod, only: atype_grid
+  use mpi_basic, only: par
+  use mpi_distributed_memory, only: partition_list
 
   implicit none
 
@@ -294,9 +296,42 @@ module mesh_basic
 
   contains
 
+    procedure, public :: vertices_are_neighbours => test_mesh_vertices_are_neighbours
+    procedure, public :: triangles_are_neighbours => test_mesh_triangles_are_neighbours
+    procedure, public :: triangle_doesnt_have_duplicates => test_mesh_triangle_doesnt_have_duplicates
+    procedure, public :: is_self_consistent => test_mesh_is_self_consistent
+
     final :: finalise
 
   end type type_mesh
+
+  ! Interfaces for procedures defined in submodules
+  interface
+
+    module pure function test_mesh_vertices_are_neighbours( self, vi, vj) result( res)
+      class(type_mesh), intent(in) :: self
+      integer,          intent(in) :: vi, vj
+      logical :: res
+    end function test_mesh_vertices_are_neighbours
+
+    module pure function test_mesh_triangles_are_neighbours( self, ti, tj) result( res)
+      class(type_mesh), intent(in) :: self
+      integer,          intent(in) :: ti, tj
+      logical :: res
+    end function test_mesh_triangles_are_neighbours
+
+    module pure function test_mesh_triangle_doesnt_have_duplicates( self, ti) result( res)
+      class(type_mesh), intent(in) :: self
+      integer,          intent(in) :: ti
+      logical :: res
+    end function test_mesh_triangle_doesnt_have_duplicates
+
+    module function test_mesh_is_self_consistent( self) result( res)
+      class(type_mesh), intent(in) :: self
+      logical :: res
+    end function test_mesh_is_self_consistent
+
+  end interface
 
 contains
 

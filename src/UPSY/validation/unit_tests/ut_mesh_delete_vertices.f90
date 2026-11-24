@@ -131,7 +131,7 @@ contains
       end if
     end do
 
-    call unit_test( test_mesh_is_self_consistent( mesh2), trim( test_name) // '/mesh_self_consistency')
+    call unit_test( mesh2%is_self_consistent(), trim( test_name) // '/mesh_self_consistency')
     call unit_test( mesh2%nV   == mesh%nV   - 1, trim( test_name) // '/nV')
     call unit_test( mesh2%nTri == mesh%nTri - 2, trim( test_name) // '/nTri')
     call unit_test( verified_vi_new2vi_old, trim( test_name) // '/vi_new2vi_old')
@@ -217,7 +217,7 @@ contains
       end if
     end do
 
-    call unit_test( test_mesh_is_self_consistent( mesh2), trim( test_name) // '/mesh_self_consistency')
+    call unit_test( mesh2%is_self_consistent(), trim( test_name) // '/mesh_self_consistency')
     call unit_test( mesh2%nV < mesh%nV, trim( test_name) // '/nV')
     call unit_test( verified_vi_new2vi_old, trim( test_name) // '/vi_new2vi_old')
     call unit_test( verified_vi_old2vi_new, trim( test_name) // '/vi_old2vi_new')
@@ -319,7 +319,7 @@ contains
         norm2( mesh_focused%V( vi,:) - ll%p( i,:)) < mesh%tol_dist
     end do
 
-    call unit_test( test_mesh_is_self_consistent( mesh_focused), trim( test_name) // '/mesh_self_consistency')
+    call unit_test( mesh_focused%is_self_consistent(), trim( test_name) // '/mesh_self_consistency')
     call unit_test( verified_vi_new2vi_old, trim( test_name) // '/vi_new2vi_old')
     call unit_test( verified_vi_old2vi_new, trim( test_name) // '/vi_old2vi_new')
     call unit_test( verified_vi2vi_ll, trim( test_name) // '/vi2vi_ll')

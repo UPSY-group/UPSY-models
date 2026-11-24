@@ -9,7 +9,6 @@ module ct_mesh_focussing
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use mesh_basic, only: type_mesh
   use assertions_basic, only: assert
-  use tests_main, only: test_mesh_is_self_consistent
   use netcdf_io_main
   use polyline_types, only: type_polyline
   use parameters, only: pi
@@ -90,7 +89,7 @@ contains
     call close_netcdf_file( ncid)
 
     ! Check mesh self-consistency
-    call assert( test_mesh_is_self_consistent( mesh), 'mesh is not self-consistent')
+    call assert( mesh%is_self_consistent(), 'mesh is not self-consistent')
 
     ! Focus this mesh on a bunch of different polylines
     pprev = 0
@@ -125,7 +124,7 @@ contains
       call focus_mesh_on_polyline( mesh, ll, mesh_focused, &
         vi_new2vi_old, vi_old2vi_new, vi_ll2vi, vi2vi_ll)
 
-      call assert( test_mesh_is_self_consistent( mesh_focused), 'focused mesh is not self-consistent')
+      call assert( mesh_focused%is_self_consistent(), 'focused mesh is not self-consistent')
 
       ! Clean up after yourself
       deallocate( ll%p, vi_new2vi_old, vi_old2vi_new, vi_ll2vi, vi2vi_ll)

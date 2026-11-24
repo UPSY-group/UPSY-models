@@ -1,10 +1,12 @@
 module remapping_basic
 
+#include <petsc/finclude/petscsys.h>
+
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use crash_mod, only: crash
   use basic_grid_mod, only: atype_grid
-  use Arakawa_grid_mod, only: type_Arakawa_grid
+  use Arakawa_grid_mod, only: type_Arakawa_grid, Arakawa_grid
   use remapping_context_mod, only: type_remapping_context
   use remapping_methods, only: type_remapping_method, remapping_method, type_remapping_method_factory
   use ugrid_basic, only: type_ugrid
@@ -16,6 +18,17 @@ module remapping_basic
   use netcdf, only: NF90_GLOBAL
   use plane_geometry, only: calc_convex_polygon_intersection
   use line_integrals, only: calc_line_integrals_around_polygon
+  use mesh_basic, only: type_mesh
+  use xy_grid_basic, only: type_xy_grid, calc_xy_grid_matrix_operators
+  use lonlat_grid_basic, only: type_lonlat_grid
+  use mpi_basic, only: par
+  use floodfill_basics, only: type_floodfill
+  use petsc, only: PetscErrorF, tMat, MatDestroy, MatConvert, MATAIJ, MAT_INITIAL_MATRIX, &
+    MatGetOwnershipRange, MatGetRow, MatRestoreRow, MatSetValues, INSERT_VALUES, &
+    MatAssemblyBegin, MatAssemblyEnd, MAT_FINAL_ASSEMBLY, MatMatMult, PETSC_DEFAULT_REAL, &
+    MatAXPY, DIFFERENT_NONZERO_PATTERN
+  use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -222,6 +235,8 @@ contains
     else
       call crash("unsupported remapping method '" // method%str() // "'")
     end if
+
+    call checksum( self%M, 'self%M')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

@@ -403,7 +403,7 @@ CONTAINS
 
             ! Computing T2m and Precip based on the applied deltaT still at the GCM surface level
             T2m_GCM_surf = self%T2m_baseline(vi, m) + self%deltaT
-            Precip_CC_GCM_surf = self%Precip_baseline( vi, m) * self%lapse_rate_precip**self%deltaT ! Scaling due to the applied time-varying deltaT
+            Precip_CC_GCM_surf = self%Precip_baseline(vi, m) * self%lapse_rate_precip**self%deltaT ! Scaling due to the applied time-varying deltaT
 
             ! Downscaling bit: correcting for mismatches in GCM and ISM surfaces
             ! Do corrections - based on Eq. 11 of Albrecht et al. (2020; TC) for PISM
@@ -416,8 +416,12 @@ CONTAINS
             ! Correct precipitation based on a simple Clausius-Clapeyron method (Jouzel & Merlivat, 1984; Huybrechts, 2002)
             ! Same as implemented in IMAU-ICE
             ! we use self%Precip because it has already been CC corrected with the time-varying dT
-            self%Precip( vi, m) = Precip_CC_GCM_surf * (T_inv_ref / T_inv)**2 * EXP(22.47_dp * (T0 / T_inv_ref - T0 / T_inv))
+            self%Precip(vi, m) = Precip_CC_GCM_surf * (T_inv_ref / T_inv)**2 * EXP(22.47_dp * (T0 / T_inv_ref - T0 / T_inv))
           end do ! m
+      else
+        ! No precipitation and baseline temperature over open ocean
+        self%T2m(vi, :)    = self%T2m_baseline(vi, :)
+        self%Precip(vi, :) = 0.0_dp
     end if
     end do ! vi
 

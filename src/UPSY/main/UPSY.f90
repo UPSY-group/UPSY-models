@@ -3,6 +3,7 @@ module UPSY_main
 
 use models_basic, only: atype_model
 use string_module, only: type_string_utilities
+use Arakawa_grid_mod, only: type_Arakawa_grid_factory
 use remapping_basic, only: type_remapping
 
 implicit none
@@ -15,8 +16,9 @@ public :: atype_model
 type type_UPSY
     !< The complete UPSY toolkit
     private
-    type(type_string_utilities), public :: stru
-    type(type_remapping),        public :: remapping
+    type(type_string_utilities),     public :: stru
+    type(type_Arakawa_grid_factory), public :: Arakawa_grid
+    type(type_remapping),            public :: remapping
   contains
 end type type_UPSY
 

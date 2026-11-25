@@ -13,7 +13,7 @@ module remapping_basic
   use CSR_matrix_mod, only: type_CSR_matrix_dp
   use CSR_matrix_vector_multiplication, only: multiply_CSR_matrix_with_vector_1D_wrapper, &
     multiply_CSR_matrix_with_vector_2D_wrapper
-  use netcdf_io_main, only: create_new_netcdf_file_for_writing, add_attribute_char, &
+  use netcdf_basic_wrappers, only: create_new_netcdf_file_for_writing, add_attribute_char, &
     close_netcdf_file
   use netcdf, only: NF90_GLOBAL
   use plane_geometry, only: calc_convex_polygon_intersection

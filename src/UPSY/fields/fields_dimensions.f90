@@ -6,7 +6,10 @@ module fields_dimensions
   use mesh_zeta, only: initialise_scaled_vertical_coordinate_regular, &
     initialise_scaled_vertical_coordinate_irregular_log, &
     initialise_scaled_vertical_coordinate_old_15_layer
-  use netcdf_io_main
+  use netcdf_basic_wrappers, only: inquire_dim, inquire_var, &
+    create_dimension, create_variable
+  use netcdf_read_var_primary, only: read_var_primary
+  use netcdf_write_var_primary, only: write_var_primary
   use netcdf, only: NF90_DOUBLE
   use mpi_f08, only: MPI_BCAST, MPI_DOUBLE_PRECISION, MPI_COMM_WORLD
 

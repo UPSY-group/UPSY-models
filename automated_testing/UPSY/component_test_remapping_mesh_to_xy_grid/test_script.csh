@@ -12,6 +12,10 @@ if ($?CI) then
   python3 ${test_dir}/remapping_test.py  automated_testing/test_meshes_and_grids  ${test_dir}/results  ${test_dir}/weights
   if ($status != 0) exit 1
 else
+
+  # Skip OpenMPI's ofi plug-in, which adds ~1 s to every launch
+  setenv OMPI_MCA_btl ^ofi
+
   python3 ${test_dir}/remapping_test.py  automated_testing/test_meshes_and_grids  ${test_dir}/results  ${test_dir}/weights  --figures ${test_dir}/figures
   if ($status != 0) exit 1
 endif

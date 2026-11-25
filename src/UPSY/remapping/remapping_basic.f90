@@ -1,10 +1,12 @@
 module remapping_basic
 
+#include <petsc/finclude/petscsys.h>
+
   use precisions, only: dp
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine
   use crash_mod, only: crash
   use basic_grid_mod, only: atype_grid
-  use Arakawa_grid_mod, only: type_Arakawa_grid
+  use Arakawa_grid_mod, only: type_Arakawa_grid, Arakawa_grid
   use remapping_context_mod, only: type_remapping_context
   use remapping_methods, only: type_remapping_method, remapping_method, type_remapping_method_factory
   use ugrid_basic, only: type_ugrid
@@ -16,6 +18,17 @@ module remapping_basic
   use netcdf, only: NF90_GLOBAL
   use plane_geometry, only: calc_convex_polygon_intersection
   use line_integrals, only: calc_line_integrals_around_polygon
+  use mesh_basic, only: type_mesh
+  use xy_grid_basic, only: type_xy_grid, calc_xy_grid_matrix_operators
+  use lonlat_grid_basic, only: type_lonlat_grid
+  use mpi_basic, only: par
+  use floodfill_basics, only: type_floodfill
+  use petsc, only: PetscErrorF, tMat, MatDestroy, MatConvert, MATAIJ, MAT_INITIAL_MATRIX, &
+    MatGetOwnershipRange, MatGetRow, MatRestoreRow, MatSetValues, INSERT_VALUES, &
+    MatAssemblyBegin, MatAssemblyEnd, MAT_FINAL_ASSEMBLY, MatMatMult, PETSC_DEFAULT_REAL, &
+    MatAXPY, DIFFERENT_NONZERO_PATTERN
+  use petsc_basic, only: mat_CSR2petsc, mat_petsc2CSR
+  use checksum_mod, only: checksum
 
   implicit none
 
@@ -32,12 +45,17 @@ module remapping_basic
     contains
 
       procedure, public  :: create => create_map
-      procedure, private :: calc_matrix_operator => calc_CSR_remapping_operator
+
+      procedure, private :: calc_CSR_remapping_operator_nearest_neighbour
+      procedure, private :: calc_CSR_remapping_operator_first_order_conservative
+      procedure, private :: calc_CSR_remapping_operator_second_order_conservative
+
       generic,   public :: apply => &
         apply_map_2D, &
         apply_map_3D
       procedure, public :: apply_map_2D
       procedure, public :: apply_map_3D
+
       procedure, public :: save_as_netcdf => save_map_as_netcdf
 
   end type type_map
@@ -58,12 +76,17 @@ module remapping_basic
   ! Interfaces for procedures defined in submodules
   interface
 
-    module subroutine calc_CSR_remapping_operator( self, ugrid_src, ugrid_dst, choice_remapping_method)
-      class(type_map),             intent(inout) :: self
-      type(type_ugrid),            intent(inout) :: ugrid_src
-      type(type_ugrid),            intent(inout) :: ugrid_dst
-      type(type_remapping_method), intent(in   ) :: choice_remapping_method
-    end subroutine calc_CSR_remapping_operator
+    module subroutine calc_CSR_remapping_operator_nearest_neighbour( self)
+      class(type_map),  intent(inout) :: self
+    end subroutine calc_CSR_remapping_operator_nearest_neighbour
+
+    module subroutine calc_CSR_remapping_operator_first_order_conservative( self)
+      class(type_map),  intent(inout) :: self
+    end subroutine calc_CSR_remapping_operator_first_order_conservative
+
+    module subroutine calc_CSR_remapping_operator_second_order_conservative( self)
+      class(type_map),  intent(inout) :: self
+    end subroutine calc_CSR_remapping_operator_second_order_conservative
 
   end interface
 
@@ -195,8 +218,6 @@ contains
 
     ! Local variables:
     character(len=*), parameter :: routine_name = 'create_map'
-    type(type_ugrid)            :: ugrid_src
-    type(type_ugrid)            :: ugrid_dst
 
     ! Add routine to path
     call init_routine( routine_name)
@@ -204,12 +225,18 @@ contains
     ! Set up the remapping context object
     call self%ct%create( grid_src, Arakawa_grid_src, grid_dst, Arakawa_grid_dst, method)
 
-    ! Create ugrids from source and destination grids
-    call ugrid_src%build_from_grid( grid_src, Arakawa_grid_src)
-    call ugrid_dst%build_from_grid( grid_dst, Arakawa_grid_dst)
-
     ! Calculate remapping operator between the two ugrids
-    call self%calc_matrix_operator( ugrid_src, ugrid_dst, method)
+    if     (method == remapping_method%nearest_neighbour()) then
+      call self%calc_CSR_remapping_operator_nearest_neighbour()
+    elseif (method == remapping_method%first_order_conservative()) then
+      call self%calc_CSR_remapping_operator_first_order_conservative()
+    elseif (method == remapping_method%second_order_conservative()) then
+      call self%calc_CSR_remapping_operator_second_order_conservative()
+    else
+      call crash("unsupported remapping method '" // method%str() // "'")
+    end if
+
+    call checksum( self%M, 'self%M')
 
     ! Finalise routine path
     call finalise_routine( routine_name)

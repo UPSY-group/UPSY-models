@@ -17,7 +17,8 @@ module floodfill_basics
       integer, dimension(:,:), allocatable :: C               ! [n-by-nCmax] Indices of connected nodes
       integer, dimension(:  ), allocatable :: map             ! [n-by-1]     Flood-fill map
       integer, dimension(:  ), allocatable :: stack_front     ! [n-by-1]     Stack of elements at the front
-      integer                              :: stack_front_n   !              Number of elements in that stack
+      integer                              :: stack_front_ii1 !              Index of the first in-use element in that stack
+      integer                              :: stack_front_ii2 !              Index of the last  in-use element in that stack
       integer, dimension(:  ), allocatable :: stack_checked   ! [n-by-1]     Stack of elements that have been checked
       integer                              :: stack_checked_n !              Number of elements in that stack
 
@@ -26,6 +27,7 @@ module floodfill_basics
       procedure, public :: create   => create_floodfill
       procedure, public :: initialise_floodfill_at_single_node
       procedure, public :: take_last_element_from_front_stack
+      procedure, public :: take_first_element_from_front_stack
       procedure, public :: add_unchecked_neighbours_to_front_stack
       procedure, public :: cleanup_map_and_stacks
 
@@ -66,7 +68,8 @@ contains
 
     allocate( self%map( n), source = map_unchecked)
     allocate( self%stack_front( n))
-    self%stack_front_n = 0
+    self%stack_front_ii1 = 1
+    self%stack_front_ii2 = 0
     allocate( self%stack_checked( n))
     self%stack_checked_n = 0
 
@@ -92,8 +95,9 @@ contains
 
     call self%cleanup_map_and_stacks()
 
-    self%stack_front_n = 1
-    self%stack_front( self%stack_front_n) = i
+    self%stack_front_ii1 = 1
+    self%stack_front_ii2 = 1
+    self%stack_front( 1) = i
     self%map( i) = map_front
 
     ! Finalise routine path
@@ -107,8 +111,8 @@ contains
     class(type_floodfill),   intent(inout) :: self
     integer,                 intent(  out) :: i
 
-    i = self%stack_front( self%stack_front_n)
-    self%stack_front_n = self%stack_front_n - 1
+    i = self%stack_front( self%stack_front_ii2)
+    self%stack_front_ii2 = self%stack_front_ii2 - 1
 
     ! Mark it as checked
     self%stack_checked_n = self%stack_checked_n + 1
@@ -116,6 +120,22 @@ contains
     self%map( i) = map_checked
 
   end subroutine take_last_element_from_front_stack
+
+  subroutine take_first_element_from_front_stack( self, i)
+
+    ! In/output variables:
+    class(type_floodfill),   intent(inout) :: self
+    integer,                 intent(  out) :: i
+
+    i = self%stack_front( self%stack_front_ii1)
+    self%stack_front_ii1 = self%stack_front_ii1 + 1
+
+    ! Mark it as checked
+    self%stack_checked_n = self%stack_checked_n + 1
+    self%stack_checked( self%stack_checked_n) = i
+    self%map( i) = map_checked
+
+  end subroutine take_first_element_from_front_stack
 
   subroutine add_unchecked_neighbours_to_front_stack( self, i)
 
@@ -130,8 +150,8 @@ contains
       j = self%C( i, ci)
       if (self%map( j) == map_unchecked) then
         self%map( j) = map_front
-        self%stack_front_n = self%stack_front_n + 1
-        self%stack_front( self%stack_front_n) = j
+        self%stack_front_ii2 = self%stack_front_ii2 + 1
+        self%stack_front( self%stack_front_ii2) = j
       end if
     end do
 
@@ -146,11 +166,12 @@ contains
     integer :: ii, i
 
     ! Front stack
-    do ii = 1, self%stack_front_n
+    do ii = self%stack_front_ii1, self%stack_front_ii2
       i = self%stack_front( ii)
       self%map( i) = map_unchecked
     end do
-    self%stack_front_n = 0
+    self%stack_front_ii1 = 1
+    self%stack_front_ii2 = 0
 
     ! Checked stack
     do ii = 1, self%stack_checked_n
@@ -168,7 +189,8 @@ contains
 
     self%n = 0
     self%nC_max = 0
-    self%stack_front_n = 0
+    self%stack_front_ii1 = 1
+    self%stack_front_ii2 = 0
     self%stack_checked_n = 0
 
     if (allocated( self%nC)) deallocate( self%nC)

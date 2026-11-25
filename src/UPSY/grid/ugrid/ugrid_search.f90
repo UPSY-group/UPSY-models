@@ -24,14 +24,15 @@ contains
     call self%find_containing_face_floodfill%initialise_floodfill_at_single_node( face_index)
 
     ncycles = 0
-    do while (self%find_containing_face_floodfill%stack_front_n > 0)
+    do while (self%find_containing_face_floodfill%stack_front_ii2 >= &
+        self%find_containing_face_floodfill%stack_front_ii1)
 
       ! Safety
       ncycles = ncycles + 1
       if (ncycles > self%nFaces) call crash('type_ugrid%find_containing_face - floodfill-style outward search got stuck')
 
-      ! Take the last face from the stack
-      call self%find_containing_face_floodfill%take_last_element_from_front_stack( face_index)
+      ! Take the first face from the stack
+      call self%find_containing_face_floodfill%take_first_element_from_front_stack( face_index)
 
       ! See if p lies inside of it
       if (self%is_in_face( face_index, p)) return

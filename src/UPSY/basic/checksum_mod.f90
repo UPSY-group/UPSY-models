@@ -1,5 +1,7 @@
 module checksum_mod
 
+#include <petsc/finclude/petscsys.h>
+
   use precisions, only: dp
   use model_configuration, only: C
   use call_stack_and_comp_time_tracking, only: routine_path, crash, &
@@ -12,6 +14,8 @@ module checksum_mod
   use git_commit_hash_and_package_versions, only: git_commit_hash, has_uncommitted_changes, &
     petsc_version, netcdf_version, openmpi_version, compiler_version, compiler_flags
   use CSR_matrix_mod, only: type_CSR_matrix_dp
+  use petsc, only: tMat
+  use petsc_basic, only: mat_petsc2CSR
 
   implicit none
 
@@ -29,6 +33,7 @@ module checksum_mod
     procedure :: checksum_dp_1D
     procedure :: checksum_dp_2D
     procedure :: checksum_CSR_matrix
+    procedure :: checksum_PETSc_matrix
   end interface checksum
 
   logical             :: checksum_logfile_exists
@@ -486,6 +491,22 @@ contains
     call log_checksum_dp( sum_d_sq_dp, sum_abs_d_dp, max_abs_d_dp, trim( name) // '_ind')
 
   end subroutine checksum_CSR_matrix
+
+  subroutine checksum_PETSc_matrix( A, name)
+
+    ! In/output variables:
+    type(tMat),       intent(in) :: A
+    character(len=*), intent(in) :: name
+
+    ! Local variables:
+    type(type_CSR_matrix_dp) :: A_CSR
+
+    if (.not. C%do_write_checksum_log) return
+
+    call mat_petsc2CSR( A, A_CSR)
+    call checksum_CSR_matrix( A_CSR, name)
+
+  end subroutine checksum_PETSc_matrix
 
   subroutine log_checksum_int( sum_d_sq, sum_abs_d, max_abs_d, var_name)
 

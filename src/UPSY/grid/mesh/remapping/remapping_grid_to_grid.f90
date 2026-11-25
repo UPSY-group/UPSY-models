@@ -204,15 +204,15 @@ contains
 
         w0  = Asd / Ad
 
-        w1x = 1._dp / Ad * (line_integral_mxydx( sw, se, 1E-9_dp) + &
-                            line_integral_mxydx( se, ne, 1E-9_dp) + &
-                            line_integral_mxydx( ne, nw, 1E-9_dp) + &
-                            line_integral_mxydx( nw, sw, 1E-9_dp)) - w0 * grid_src%x( i_src)
+        w1x = 1._dp / Ad * (line_integral_mxydx( sw, se) + &
+                            line_integral_mxydx( se, ne) + &
+                            line_integral_mxydx( ne, nw) + &
+                            line_integral_mxydx( nw, sw)) - w0 * grid_src%x( i_src)
 
-        w1y = 1._dp / Ad * (line_integral_xydy(  sw, se, 1E-9_dp) + &
-                            line_integral_xydy(  se, ne, 1E-9_dp) + &
-                            line_integral_xydy(  ne, nw, 1E-9_dp) + &
-                            line_integral_xydy(  nw, sw, 1E-9_dp)) - w0 * grid_src%y( j_src)
+        w1y = 1._dp / Ad * (line_integral_xydy(  sw, se) + &
+                            line_integral_xydy(  se, ne) + &
+                            line_integral_xydy(  ne, nw) + &
+                            line_integral_xydy(  nw, sw)) - w0 * grid_src%y( j_src)
 
         d_grid_dst( i,j) = d_grid_dst( i,j) + &
           w0  * d_grid_src  ( i_src, j_src) + &

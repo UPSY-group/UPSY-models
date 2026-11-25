@@ -37,9 +37,9 @@ contains
       call crash("invalid remapping method '" // trim( str) // "'")
     case ('nearest_neighbour')
       res = self%nearest_neighbour()
-    case ('first_order_conservative')
+    case ('1st_order_conservative','first_order_conservative')
       res = self%first_order_conservative()
-    case ('second_order_conservative')
+    case ('2nd_order_conservative','second_order_conservative')
       res = self%second_order_conservative()
     end select
   end function create_remapping_method_from_string

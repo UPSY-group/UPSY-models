@@ -19,6 +19,9 @@ dependencies:
   - cmake
   - ninja
 
+  # Viewing NetCDF output
+  - ncview
+
   # Goodies for plotting
   - cartopy
   - cmasher

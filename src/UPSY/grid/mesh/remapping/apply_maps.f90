@@ -48,7 +48,7 @@ contains
     type(type_mesh), intent(in)    :: mesh
 
     ! Local variables:
-    character(len=1024), parameter :: routine_name = 'map_from_xy_grid_to_mesh_2D'
+    character(len=1024), parameter :: routine_name = 'clear_all_maps_involving_this_mesh'
     integer                        :: mi, perr
 
     ! Add routine to path

@@ -12,7 +12,7 @@ module ocean_snapshot_nudge2D
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ocean_model_types, only: type_ocean_model, type_ocean_model_snapshot_nudge2D
   use netcdf_io_main
-  use remapping_main
+  use remapping_main, only: map_from_vertical_to_vertical_2d_ocean, map_from_mesh_vertices_to_xy_grid_2d
   use reference_geometry_types, only: type_reference_geometry
   use reference_geometries_main, only: reallocate_reference_geometry_on_mesh
   use ice_geometry_basics, only: is_floating
@@ -387,8 +387,14 @@ contains
     allocate( S_ref_partial_raw_layers( mesh%vi1:mesh%vi2, snapshot_nudge2D%ndepth_ref))
 
     ! Remap data horizontally
-    call map_from_xy_grid_to_mesh_3D( snapshot_nudge2D%grid_ref, mesh, trim( C%output_dir), snapshot_nudge2D%T_ref_grid, T_ref_partial_raw_layers)
-    call map_from_xy_grid_to_mesh_3D( snapshot_nudge2D%grid_ref, mesh, trim( C%output_dir), snapshot_nudge2D%S_ref_grid, S_ref_partial_raw_layers)
+    call UPSY%remapping%remap( &
+      snapshot_nudge2D%grid_ref, UPSY%Arakawa_grid%a(), snapshot_nudge2D%T_ref_grid, &
+      mesh, UPSY%Arakawa_grid%a(), T_ref_partial_raw_layers, &
+      UPSY%remapping%method%second_order_conservative())
+    call UPSY%remapping%remap( &
+      snapshot_nudge2D%grid_ref, UPSY%Arakawa_grid%a(), snapshot_nudge2D%S_ref_grid, &
+      mesh, UPSY%Arakawa_grid%a(), S_ref_partial_raw_layers, &
+      UPSY%remapping%method%second_order_conservative())
 
     ! Remap data vertically
     call map_from_vertical_to_vertical_2D_ocean( mesh, snapshot_nudge2D%depth_ref, C%z_ocean, T_ref_partial_raw_layers, snapshot_nudge2D%T_ref)

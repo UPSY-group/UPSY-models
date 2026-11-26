@@ -427,7 +427,8 @@ contains
         time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
-      call map_from_xy_grid_to_mesh_triangles_2D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
+      call UPSY%remapping%remap( grid_from_file, UPSY%Arakawa_grid%a(), d_grid_vec_partial_from_file, &
+        mesh, UPSY%Arakawa_grid%b(), d_partial, UPSY%remapping%method%second_order_conservative())
 
       ! Clean up after yourself
       call deallocate_xy_grid( grid_from_file)

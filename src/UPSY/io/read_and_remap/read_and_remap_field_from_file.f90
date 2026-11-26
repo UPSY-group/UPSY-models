@@ -7,6 +7,7 @@ module read_and_remap_field_from_file
 
   use mpi_f08, only: MPI_COMM_WORLD, MPI_BCAST, MPI_DOUBLE_PRECISION
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash, insert_val_into_string_int, warning
   use mesh_basic, only: type_mesh
@@ -307,7 +308,8 @@ contains
         time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
-      call map_from_xy_grid_to_mesh_2D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
+      call UPSY%remapping%remap( grid_from_file, UPSY%Arakawa_grid%a(), d_grid_vec_partial_from_file, &
+        mesh, UPSY%Arakawa_grid%a(), d_partial, UPSY%remapping%method%second_order_conservative())
 
       ! Clean up after yourself
       call deallocate_xy_grid( grid_from_file)
@@ -425,7 +427,8 @@ contains
         time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
-      call map_from_xy_grid_to_mesh_triangles_2D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
+      call UPSY%remapping%remap( grid_from_file, UPSY%Arakawa_grid%a(), d_grid_vec_partial_from_file, &
+        mesh, UPSY%Arakawa_grid%b(), d_partial, UPSY%remapping%method%second_order_conservative())
 
       ! Clean up after yourself
       call deallocate_xy_grid( grid_from_file)
@@ -531,7 +534,8 @@ contains
         time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
-      call map_from_xy_grid_to_mesh_3D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
+      call UPSY%remapping%remap( grid_from_file, UPSY%Arakawa_grid%a(), d_grid_vec_partial_from_file, &
+        mesh, UPSY%Arakawa_grid%a(), d_partial, UPSY%remapping%method%second_order_conservative())
 
       ! Clean up after yourself
       call deallocate_xy_grid( grid_from_file)
@@ -680,7 +684,8 @@ contains
         time_to_read = time_to_read, extrapolate_fillvalues = extrapolate_fillvalues)
 
       ! Remap data
-      call map_from_xy_grid_to_mesh_3D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial)
+      call UPSY%remapping%remap( grid_from_file, UPSY%Arakawa_grid%a(), d_grid_vec_partial_from_file, &
+        mesh, UPSY%Arakawa_grid%a(), d_partial, UPSY%remapping%method%second_order_conservative())
 
       ! Clean up after yourself
       call deallocate_xy_grid( grid_from_file)
@@ -821,8 +826,9 @@ contains
       ! allocate memory for meshed data using all data layers
       allocate( d_partial_raw_layers( mesh%vi1:mesh%vi2, ndepth_loc))
 
-      ! Remap data horizontally
-      call map_from_xy_grid_to_mesh_3D( grid_from_file, mesh, output_dir, d_grid_vec_partial_from_file, d_partial_raw_layers)
+      ! Remap data
+      call UPSY%remapping%remap( grid_from_file, UPSY%Arakawa_grid%a(), d_grid_vec_partial_from_file, &
+        mesh, UPSY%Arakawa_grid%a(), d_partial_raw_layers, UPSY%remapping%method%second_order_conservative())
 
       ! Remap data vertically
       call map_from_vertical_to_vertical_2D_ocean( mesh, depth_loc, z_ocean, d_partial_raw_layers, d_partial)

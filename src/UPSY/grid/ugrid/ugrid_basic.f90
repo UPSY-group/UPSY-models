@@ -123,7 +123,7 @@ contains
       self%nFaces, self%face_face_connectivity_n, self%face_face_connectivity)
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 6)
 
   end subroutine build_from_grid
 

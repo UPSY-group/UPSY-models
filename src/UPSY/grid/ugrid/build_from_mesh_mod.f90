@@ -39,7 +39,7 @@ contains
     end if
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 6)
 
   end subroutine build_from_mesh
 
@@ -110,7 +110,7 @@ contains
     ugrid%pai = mesh%pai_V
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 6)
 
   end subroutine build_from_mesh_vertices
 
@@ -183,7 +183,7 @@ contains
     ugrid%pai = mesh%pai_Tri
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 6)
 
   end subroutine build_from_mesh_triangles
 

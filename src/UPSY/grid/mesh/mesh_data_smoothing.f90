@@ -6,12 +6,12 @@ module mesh_data_smoothing
   !> operations is not a problem since we're smoothing the data anyway.
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
   use mesh_basic, only: type_mesh
   use xy_grid_basic, only: type_xy_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, map_from_mesh_vertices_to_xy_grid_3D, &
-    map_from_xy_grid_to_mesh_2D, map_from_xy_grid_to_mesh_3D
+  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, map_from_mesh_vertices_to_xy_grid_3D
   use smooth_gridded_data, only: smooth_Gaussian_grid
 
   implicit none
@@ -53,7 +53,8 @@ contains
     call smooth_Gaussian_grid( grid, d_grid_vec_partial, r)
 
     ! Map data back to the mesh
-    call map_from_xy_grid_to_mesh_2D( grid, mesh, output_dir, d_grid_vec_partial, d_mesh_partial)
+    call UPSY%remapping%remap( grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial, &
+      mesh, UPSY%Arakawa_grid%a(), d_mesh_partial, UPSY%remapping%method%second_order_conservative())
 
     ! Clean up after yourself
     deallocate( d_grid_vec_partial)
@@ -89,7 +90,8 @@ contains
     call smooth_Gaussian_grid( grid, d_grid_vec_partial, r)
 
     ! Map data back to the mesh
-    call map_from_xy_grid_to_mesh_3D( grid, mesh, output_dir, d_grid_vec_partial, d_mesh_partial)
+    call UPSY%remapping%remap( grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial, &
+      mesh, UPSY%Arakawa_grid%a(), d_mesh_partial, UPSY%remapping%method%second_order_conservative())
 
     ! Clean up after yourself
     deallocate( d_grid_vec_partial)

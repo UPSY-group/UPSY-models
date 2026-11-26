@@ -1,6 +1,7 @@
 module GIA_ELRA
 
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use mpi_basic, only: par, sync
   use call_stack_and_comp_time_tracking, only: crash, init_routine, finalise_routine
   use model_configuration, only: C
@@ -17,7 +18,7 @@ module GIA_ELRA
   use xy_grid_basic, only: type_xy_grid
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, map_from_xy_grid_to_mesh_2D
+  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D
   use kelvin_function, only: kelvin
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, &
     close_netcdf_file, read_field_from_xy_file_dp_2D
@@ -150,7 +151,8 @@ contains
     call distribute_gridded_data_from_primary( grid, ELRA%dHb_dt_grid_partial, ELRA%dHb_dt_grid)
 
     ! remap from partial grid vec data to mesh model
-    call map_from_xy_grid_to_mesh_2D( grid, mesh, C%output_dir, ELRA%dHb_dt_grid_partial, ELRA%dHb_dt_mesh)
+    call UPSY%remapping%remap( grid, UPSY%Arakawa_grid%a(), ELRA%dHb_dt_grid_partial, &
+      mesh, UPSY%Arakawa_grid%a(), ELRA%dHb_dt_mesh, UPSY%remapping%method%second_order_conservative())
 
     ! multiply the GIA time-step to calculate the bedrock deformation
     GIA%dHb_next = GIA%dHb_prev + ELRA%dHb_dt_mesh * C%dt_GIA

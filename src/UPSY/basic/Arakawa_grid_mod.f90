@@ -6,7 +6,7 @@ module Arakawa_grid_mod
 
   private
 
-  public :: Arakawa_grid, type_Arakawa_grid
+  public :: Arakawa_grid, type_Arakawa_grid, type_Arakawa_grid_factory
 
   type type_Arakawa_grid_factory
   contains

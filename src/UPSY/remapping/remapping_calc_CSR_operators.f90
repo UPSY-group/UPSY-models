@@ -130,7 +130,7 @@ contains
     PetscCall( MatDestroy( M, ierr))
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 12)
 
   end subroutine calc_CSR_remapping_operator_second_order_conservative
 
@@ -191,7 +191,7 @@ contains
     call checksum( M_ddy_CSR, 'M_ddy_CSR')
 
     ! Finalise routine path
-    call finalise_routine( routine_name)
+    call finalise_routine( routine_name, n_extra_MPI_windows_expected = 12)
 
   end subroutine calc_2nd_ord_cons_ugrids_and_map_gradient_matrices
 

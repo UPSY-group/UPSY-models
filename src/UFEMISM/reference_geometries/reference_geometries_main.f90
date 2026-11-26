@@ -17,7 +17,7 @@ module reference_geometries_main
   use mpi_distributed_memory_grid, only: distribute_gridded_data_from_primary
   use ice_geometry_basics, only: ice_surface_elevation
   use netcdf_io_main
-  use remapping_main, only: map_from_xy_grid_to_mesh_2D, map_from_mesh_to_mesh_2D
+  use remapping_main, only: map_from_mesh_to_mesh_2D
   use preprocess_geometry, only: smooth_model_geometry, remove_Lake_Vostok, remove_Ellesmere, remove_tiny_islands
   use idealised_geometries, only: calc_idealised_geometry
   use checksum_mod, only: checksum
@@ -171,7 +171,7 @@ contains
 
     ! Local variables:
     character(len=1024), parameter :: routine_name = 'remap_reference_geometry_to_mesh'
-    character(len=1024)            :: method
+    character(len=:), allocatable  :: method
     integer                        :: vi
 
     ! Add routine to path
@@ -187,10 +187,12 @@ contains
       if (allocated( refgeo%mesh_raw%V)) call crash('found both grid and mesh in refgeo!')
 
       ! Remap data to the model mesh
-      method = C%choice_refgeo_remapping_method
-      call map_from_xy_grid_to_mesh_2D( refgeo%grid_raw, mesh, C%output_dir, refgeo%Hi_grid_raw, refgeo%Hi, method)
-      call map_from_xy_grid_to_mesh_2D( refgeo%grid_raw, mesh, C%output_dir, refgeo%Hb_grid_raw, refgeo%Hb, method)
-      call map_from_xy_grid_to_mesh_2D( refgeo%grid_raw, mesh, C%output_dir, refgeo%SL_grid_raw, refgeo%SL, method)
+      call UPSY%remapping%remap( refgeo%grid_raw, UPSY%Arakawa_grid%a(), refgeo%Hi_grid_raw, &
+        mesh, UPSY%Arakawa_grid%a(), refgeo%Hi, UPSY%remapping%method%create_from_string( C%choice_refgeo_remapping_method))
+      call UPSY%remapping%remap( refgeo%grid_raw, UPSY%Arakawa_grid%a(), refgeo%Hb_grid_raw, &
+        mesh, UPSY%Arakawa_grid%a(), refgeo%Hb, UPSY%remapping%method%create_from_string( C%choice_refgeo_remapping_method))
+      call UPSY%remapping%remap( refgeo%grid_raw, UPSY%Arakawa_grid%a(), refgeo%SL_grid_raw, &
+        mesh, UPSY%Arakawa_grid%a(), refgeo%SL, UPSY%remapping%method%create_from_string( C%choice_refgeo_remapping_method))
 
     elseif (allocated( refgeo%mesh_raw%V)) then
       ! Meshed

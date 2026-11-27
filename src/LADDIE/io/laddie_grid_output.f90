@@ -11,8 +11,7 @@ module laddie_grid_output
   use xy_grid_basic, only: type_xy_grid
   use netcdf_io_main
   use remapping_main, only: &
-    map_from_mesh_vertices_to_xy_grid_2D_minval, &
-    map_from_mesh_triangles_to_xy_grid_3D
+    map_from_mesh_vertices_to_xy_grid_2D_minval
 
   implicit none
 

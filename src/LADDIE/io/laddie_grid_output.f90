@@ -12,7 +12,7 @@ module laddie_grid_output
   use netcdf_io_main
   use remapping_main, only: &
     map_from_mesh_vertices_to_xy_grid_2D_minval, &
-    map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
+    map_from_mesh_triangles_to_xy_grid_3D
 
   implicit none
 
@@ -237,7 +237,8 @@ contains
         call write_to_field_multopt_grid_dp_3D_ocean( grid, laddie%output_grid_filename, ncid, 'S_ocean', d_grid_vec_partial_3D_ocean)
 
       case ('f_coriolis')
-        call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%f_coriolis, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%b(), forcing%f_coriolis, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'f_coriolis', d_grid_vec_partial_2D)
     ! ===== Masks =====
     ! =================
@@ -275,10 +276,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'H_lad', d_grid_vec_partial_2D)
       case ('U_lad')
-        call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%U, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%b(), laddie%now%U, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'U_lad', d_grid_vec_partial_2D)
       case ('V_lad')
-        call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%V, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%b(), laddie%now%V, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'V_lad', d_grid_vec_partial_2D)
       case ('T_lad')
         call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%now%T, &

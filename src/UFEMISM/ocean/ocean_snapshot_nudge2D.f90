@@ -12,7 +12,7 @@ module ocean_snapshot_nudge2D
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
   use ocean_model_types, only: type_ocean_model, type_ocean_model_snapshot_nudge2D
   use netcdf_io_main
-  use remapping_main, only: map_from_vertical_to_vertical_2d_ocean, map_from_mesh_vertices_to_xy_grid_2d
+  use remapping_main, only: map_from_vertical_to_vertical_2d_ocean
   use reference_geometry_types, only: type_reference_geometry
   use reference_geometries_main, only: reallocate_reference_geometry_on_mesh
   use ice_geometry_basics, only: is_floating
@@ -238,8 +238,9 @@ contains
     call init_routine( routine_name)
 
     ! Map deltaT to reference grid
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, snapshot_nudge2D%grid_ref, trim( C%output_dir), &
-      snapshot_nudge2D%deltaT_nudge, snapshot_nudge2D%deltaT_nudge_grid, '2nd_order_conservative')
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), snapshot_nudge2D%deltaT_nudge, &
+      snapshot_nudge2D%grid_ref, UPSY%Arakawa_grid%a(), snapshot_nudge2D%deltaT_nudge_grid, &
+      UPSY%remapping%method%second_order_conservative())
 
     ! Remove routine from call stack
     call finalise_routine( routine_name)

@@ -15,8 +15,7 @@ module ismip_output_files
   use ice_velocity_model_data, only: atype_ice_velocity_model_data
   use netcdf_io_main
   use ice_mass_and_fluxes, only: calc_ISMIP_fluxes
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, &
-    map_from_mesh_triangles_to_xy_grid_2D
+  use remapping_main, only: map_from_mesh_triangles_to_xy_grid_2D
   use mpi_distributed_memory, only: gather_to_all
   use ismip_output_types, only: type_ismip_output, type_ismip_gridded_field, type_ismip_scalar
   use mesh_zeta, only: vertical_average
@@ -404,7 +403,8 @@ contains
     field%accum( region%mesh%vi1: region%mesh%vi2) = 0._dp
 
     ! Map from mesh to grid
-    call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+    call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), d_mesh_vec_partial_2D, &
+      region%output_grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
 
     ! Enforce bounds
     if (present( vmin)) then
@@ -512,7 +512,8 @@ contains
       end do
 
       ! Map from mesh vertices to grid
-      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, d_mesh_vec_partial_2D, d_grid_vec_partial_2D)
+      call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), d_mesh_vec_partial_2D, &
+        region%output_grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
     else
       call crash('write_to_file_grid_ST requires either inputfield_a or inputfield_b')
     end if
@@ -528,7 +529,8 @@ contains
     ! For velocity fields, mask regions with ice fraction < 0.5
     if (present(inputfield_b)) then
       allocate( mask_grid( region%output_grid%n_loc ))
-      call map_from_mesh_vertices_to_xy_grid_2D( region%mesh, region%output_grid, C%output_dir, region%ice%geom%fraction_margin, mask_grid)
+      call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%geom%fraction_margin, &
+        region%output_grid, UPSY%Arakawa_grid%a(), mask_grid, UPSY%remapping%method%second_order_conservative())
       where (mask_grid < 0.5_dp)
         d_grid_vec_partial_2D = NF90_FILL_DOUBLE
       end where

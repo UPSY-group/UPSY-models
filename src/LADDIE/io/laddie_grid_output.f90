@@ -10,8 +10,8 @@ module laddie_grid_output
   use mesh_basic, only: type_mesh
   use xy_grid_basic, only: type_xy_grid
   use netcdf_io_main
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, &
-    map_from_mesh_vertices_to_xy_grid_3D, map_from_mesh_vertices_to_xy_grid_2D_minval, &
+  use remapping_main, only: &
+    map_from_mesh_vertices_to_xy_grid_2D_minval, &
     map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
 
   implicit none
@@ -181,19 +181,24 @@ contains
 
       ! Ice geometry
       case ('Hi')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hi, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%Hi, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hi', d_grid_vec_partial_2D)
       case ('Hs')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hs, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%Hs, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hs', d_grid_vec_partial_2D)
       case ('Hb')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hb, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%Hb, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hb', d_grid_vec_partial_2D)
       case ('Hib')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%Hib, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%Hi, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'Hib', d_grid_vec_partial_2D)
       case ('TAF')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, forcing%TAF, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%TAF, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_notime( grid, laddie%output_grid_filename, ncid, 'TAF', d_grid_vec_partial_2D)
 
       case ('Hs_b')
@@ -217,15 +222,18 @@ contains
 
       ! Ice temperature
       case ('Ti')
-        call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%Ti, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%Ti, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_notime( grid, laddie%output_grid_filename, ncid, 'Ti', d_grid_vec_partial_3D)
 
       ! Main ocean variables
       case ('T_ocean')
-        call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%T_ocean, d_grid_vec_partial_3D_ocean)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%T_ocean, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_ocean( grid, laddie%output_grid_filename, ncid, 'T_ocean', d_grid_vec_partial_3D_ocean)
       case ('S_ocean')
-        call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%S_ocean, d_grid_vec_partial_3D_ocean)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%S_ocean, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_ocean( grid, laddie%output_grid_filename, ncid, 'S_ocean', d_grid_vec_partial_3D_ocean)
 
       case ('f_coriolis')
@@ -263,7 +271,8 @@ contains
 
       ! Main laddie variables
       case ('H_lad')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%H, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%now%H, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'H_lad', d_grid_vec_partial_2D)
       case ('U_lad')
         call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%U, d_grid_vec_partial_2D)
@@ -272,10 +281,12 @@ contains
         call map_from_mesh_triangles_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%V, d_grid_vec_partial_2D)
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'V_lad', d_grid_vec_partial_2D)
       case ('T_lad')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%T, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%now%T, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'T_lad', d_grid_vec_partial_2D)
       case ('S_lad')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%now%S, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%now%S, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'S_lad', d_grid_vec_partial_2D)
 
       case ('H_lad_b')
@@ -283,58 +294,76 @@ contains
 
       ! Useful laddie fields
       case ('drho_amb')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%drho_amb, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%drho_amb, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'drho_amb', d_grid_vec_partial_2D)
       case ('drho_base')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%drho_base, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%drho_base, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'drho_base', d_grid_vec_partial_2D)
       case ('entr')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%entr, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%entr, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'entr', d_grid_vec_partial_2D)
       case ('entr_dmin')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%entr_dmin, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%entr_dmin, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'entr_dmin', d_grid_vec_partial_2D)
       case ('SGD')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%SGD, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%SGD, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'SGD', d_grid_vec_partial_2D)
       case ('melt')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%melt, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%melt, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'melt', d_grid_vec_partial_2D)
       case ('divQH')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%divQH, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%divQH, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'divQH', d_grid_vec_partial_2D)
       case ('divQT')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%divQT, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%divQT, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'divQT', d_grid_vec_partial_2D)
       case ('divQS')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%divQS, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%divQS, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'divQS', d_grid_vec_partial_2D)
       case ('diffT')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%diffT, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%diffT, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'diffT', d_grid_vec_partial_2D)
       case ('diffS')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%diffS, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%diffS, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'diffS', d_grid_vec_partial_2D)
       case ('T_base')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%T_base, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%T_base, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'T_base', d_grid_vec_partial_2D)
       case ('S_base')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%S_base, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%S_base, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'S_base', d_grid_vec_partial_2D)
       case ('T_amb')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%T_amb, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%T_amb, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'T_amb', d_grid_vec_partial_2D)
       case ('S_amb')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%S_amb, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%S_amb, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'S_amb', d_grid_vec_partial_2D)
       case ('T_freeze')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%T_freeze, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%T_freeze, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'T_freeze', d_grid_vec_partial_2D)
       case ('u_star')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%u_star, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%u_star, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'u_star', d_grid_vec_partial_2D)
       case ('gamma_T')
-        call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, laddie%gamma_T, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), laddie%gamma_T, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, laddie%output_grid_filename, ncid, 'gamma_T', d_grid_vec_partial_2D)
 
     end select

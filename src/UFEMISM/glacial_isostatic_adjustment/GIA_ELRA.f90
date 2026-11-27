@@ -18,7 +18,6 @@ module GIA_ELRA
   use xy_grid_basic, only: type_xy_grid
   use reference_geometry_types, only: type_reference_geometry
   use ice_geometry_basics, only: is_floating
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D
   use kelvin_function, only: kelvin
   use netcdf_io_main, only: open_existing_netcdf_file_for_reading, setup_xy_grid_from_file, &
     close_netcdf_file, read_field_from_xy_file_dp_2D
@@ -103,7 +102,8 @@ contains
     end do
 
     ! Map relative surface load to the GIA grid
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, GIA%relative_surface_load_mesh, GIA%relative_surface_load_grid)
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), GIA%relative_surface_load_mesh, &
+      grid, UPSY%Arakawa_grid%a(), GIA%relative_surface_load_grid, UPSY%remapping%method%second_order_conservative())
 
     !! Gather data to primary
     call gather_gridded_data_to_primary( grid, GIA%relative_surface_load_grid, ELRA%relative_surface_load_grid_tot)
@@ -130,7 +130,8 @@ contains
     end if
 
     ! Map the actual bedrock deformation from the mesh to the grid
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, C%output_dir, ice%dHb, ELRA%dHb_grid_partial)
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), ice%dHb, &
+      grid, UPSY%Arakawa_grid%a(), ELRA%dHb_grid_partial, UPSY%remapping%method%second_order_conservative())
 
     ! gather data from all processors to primary, from partial grid vec to total 2D grid
     call gather_gridded_data_to_primary( grid, ELRA%dHb_grid_partial, ELRA%dHb_grid_tot)

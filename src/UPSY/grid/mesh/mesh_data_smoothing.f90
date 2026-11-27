@@ -11,7 +11,6 @@ module mesh_data_smoothing
   use mesh_basic, only: type_mesh
   use xy_grid_basic, only: type_xy_grid
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, crash
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D, map_from_mesh_vertices_to_xy_grid_3D
   use smooth_gridded_data, only: smooth_Gaussian_grid
 
   implicit none
@@ -47,7 +46,8 @@ contains
     allocate( d_grid_vec_partial( grid%n_loc))
 
     ! Map data to the grid
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, grid, output_dir, d_mesh_partial, d_grid_vec_partial)
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), d_mesh_partial, &
+      grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial, UPSY%remapping%method%second_order_conservative())
 
     ! Apply smoothing on the gridded data
     call smooth_Gaussian_grid( grid, d_grid_vec_partial, r)
@@ -84,7 +84,8 @@ contains
     allocate( d_grid_vec_partial( grid%n_loc, size( d_mesh_partial,2)))
 
     ! Map data to the grid
-    call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, output_dir, d_mesh_partial, d_grid_vec_partial)
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), d_mesh_partial, &
+      grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial, UPSY%remapping%method%second_order_conservative())
 
     ! Apply smoothing on the gridded data
     call smooth_Gaussian_grid( grid, d_grid_vec_partial, r)

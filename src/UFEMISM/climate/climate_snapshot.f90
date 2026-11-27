@@ -268,12 +268,7 @@ contains
     ! Initialises the insolation (if needed)
     if (self%has_insolation) then
         call self%initialise_insolation_forcing()
-        if (C%start_time_of_run < 0._dp) then
-            timeframe_init_insolation = C%start_time_of_run
-        else
-            timeframe_init_insolation = 0._dp
-        end if
-        call self%get_insolation_at_time(timeframe_init_insolation)
+        call self%get_insolation_at_time(C%start_time_of_run)
     end if
 
     ! Finalise routine path

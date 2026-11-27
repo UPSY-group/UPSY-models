@@ -11,7 +11,7 @@ module laddie_grid_output
   use xy_grid_basic, only: type_xy_grid
   use netcdf_io_main
   use remapping_main, only: &
-    map_from_mesh_vertices_to_xy_grid_3D, map_from_mesh_vertices_to_xy_grid_2D_minval, &
+    map_from_mesh_vertices_to_xy_grid_2D_minval, &
     map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
 
   implicit none
@@ -222,15 +222,18 @@ contains
 
       ! Ice temperature
       case ('Ti')
-        call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%Ti, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%Ti, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_notime( grid, laddie%output_grid_filename, ncid, 'Ti', d_grid_vec_partial_3D)
 
       ! Main ocean variables
       case ('T_ocean')
-        call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%T_ocean, d_grid_vec_partial_3D_ocean)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%T_ocean, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_ocean( grid, laddie%output_grid_filename, ncid, 'T_ocean', d_grid_vec_partial_3D_ocean)
       case ('S_ocean')
-        call map_from_mesh_vertices_to_xy_grid_3D( mesh, grid, C%output_dir, forcing%S_ocean, d_grid_vec_partial_3D_ocean)
+        call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), forcing%S_ocean, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_ocean( grid, laddie%output_grid_filename, ncid, 'S_ocean', d_grid_vec_partial_3D_ocean)
 
       case ('f_coriolis')

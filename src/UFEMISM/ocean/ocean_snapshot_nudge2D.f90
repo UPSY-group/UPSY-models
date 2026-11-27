@@ -239,7 +239,7 @@ contains
 
     ! Map deltaT to reference grid
     call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), snapshot_nudge2D%deltaT_nudge, &
-      snapshot_nudge2D%grid_ref, UPSY%Arakawa_grid%a(), d_dst, napshot_nudge2D%deltaT_nudge_grid, &
+      snapshot_nudge2D%grid_ref, UPSY%Arakawa_grid%a(), snapshot_nudge2D%deltaT_nudge_grid, &
       UPSY%remapping%method%second_order_conservative())
 
     ! Remove routine from call stack

@@ -2,6 +2,7 @@ module tracer_tracking_model_particles_main
 
   use mpi_basic, only: par, sync
   use precisions, only: dp
+  use UPSY_main, only: UPSY
   use call_stack_and_comp_time_tracking, only: init_routine, finalise_routine, warning, crash
   use mesh_basic, only: type_mesh
   use ice_geometry_model_data, only: atype_ice_geometry_model_data
@@ -11,7 +12,6 @@ module tracer_tracking_model_particles_main
   use tracer_tracking_model_particles_basic, only: update_particle_velocity, create_particle_at_ice_surface
   use SMB_model, only: atype_SMB_model
   use xy_grid_basic, only: setup_xy_grid
-  use remapping_main, only: map_from_mesh_vertices_to_xy_grid_2D
   use mpi_distributed_memory, only: gather_to_all
   use mpi_distributed_shared_memory, only: gather_dist_shared_to_all
   use mpi_distributed_memory_grid, only: gather_gridded_data_to_all
@@ -180,10 +180,12 @@ contains
     allocate( SMB_grid_vec_partial( particles%grid_new_particles%n1: particles%grid_new_particles%n2))
 
     ! Map ice thickness and SMB to the particle creation grid
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
-      geom%Hi , Hi_grid_vec_partial)
-    call map_from_mesh_vertices_to_xy_grid_2D( mesh, particles%grid_new_particles, C%output_dir, &
-      SMB%SMB, SMB_grid_vec_partial)
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), geom%Hi, &
+      particles%grid_new_particles,  UPSY%Arakawa_grid%a(), Hi_grid_vec_partial, &
+      UPSY%remapping%method%second_order_conservative())
+    call UPSY%remapping%remap( mesh, UPSY%Arakawa_grid%a(), SMB%SMB, &
+      particles%grid_new_particles,  UPSY%Arakawa_grid%a(), SMB_grid_vec_partial, &
+      UPSY%remapping%method%second_order_conservative())
 
     ! Gather data to all processes, so they can be interpolated to the particle positions
     ! (necessary, as a particle owned by process n will generally not be located in the

@@ -11,7 +11,7 @@ module grid_output_files
   use netcdf_io_main
   use remapping_main, only: &
     map_from_mesh_vertices_to_xy_grid_2D_minval, &
-    map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
+    map_from_mesh_triangles_to_xy_grid_3D
   use mpi_distributed_memory, only: gather_to_all
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
   use SMB_ITM_v2, only: type_SMB_model_ITM_v2
@@ -592,7 +592,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%u_vav_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%u_vav_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%u_vav, &
@@ -605,7 +606,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%v_vav_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%v_vav_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%v_vav, &
@@ -621,10 +623,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'v_vav_a', d_grid_vec_partial_2D)
       case ('u_vav_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%u_vav_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%u_vav_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'u_vav_b', d_grid_vec_partial_2D)
       case ('v_vav_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%v_vav_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%v_vav_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'v_vav_b', d_grid_vec_partial_2D)
       case ('uabs_vav')
         select case (C%choice_stress_balance_approximation)
@@ -632,7 +636,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%uabs_vav_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%uabs_vav_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%uabs_vav, &
@@ -644,7 +649,8 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'uabs_vav_a', d_grid_vec_partial_2D)
       case ('uabs_vav_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%uabs_vav_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%uabs_vav_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'uabs_vav_b', d_grid_vec_partial_2D)
 
       ! Surface
@@ -654,7 +660,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%u_surf_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%u_surf_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%u_surf, &
@@ -667,7 +674,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%v_surf_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%v_surf_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%v_surf, &
@@ -683,10 +691,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'v_surf_a', d_grid_vec_partial_2D)
       case ('u_surf_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%u_surf_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%u_surf_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'u_surf_b', d_grid_vec_partial_2D)
       case ('v_surf_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%v_surf_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%v_surf_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'v_surf_b', d_grid_vec_partial_2D)
       case ('uabs_surf')
         select case (C%choice_stress_balance_approximation)
@@ -694,7 +704,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%uabs_surf_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%uabs_surf_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%uabs_surf, &
@@ -706,7 +717,8 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'uabs_surf_a', d_grid_vec_partial_2D)
       case ('uabs_surf_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%uabs_surf_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%uabs_surf_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'uabs_surf_b', d_grid_vec_partial_2D)
       case ('w_surf')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%w_surf, &
@@ -720,7 +732,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%u_base_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%u_base_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%u_base, &
@@ -733,7 +746,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%v_base_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%v_base_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%v_base, &
@@ -749,10 +763,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'v_base_a', d_grid_vec_partial_2D)
       case ('u_base_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%u_base_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%u_base_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'u_base_b', d_grid_vec_partial_2D)
       case ('v_base_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%v_base_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%v_base_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'v_base_b', d_grid_vec_partial_2D)
       case ('uabs_base')
         select case (C%choice_stress_balance_approximation)
@@ -760,7 +776,8 @@ contains
           call crash('invalid choice_stress_balance_approximation ' // trim( C%choice_stress_balance_approximation))
         case ('none','SIA','SSA','SSA_FD_SNES','SIA/SSA','DIVA','BPA','hybrid DIVA/BPA')
           ! These solvers define velocities on the b-grid (triangles)
-          call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%uabs_base_b, d_grid_vec_partial_2D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%uabs_base_b, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
           call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%uabs_base, &
@@ -772,7 +789,8 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'uabs_base_a', d_grid_vec_partial_2D)
       case ('uabs_base_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%vel%uabs_base_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%vel%uabs_base_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'uabs_base_b', d_grid_vec_partial_2D)
       case ('w_base')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%w_base, &
@@ -889,30 +907,36 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_v", d_grid_vec_partial_2D)
       case("basal_hydro_ub")
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%u_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%hydro_Salle2025%u_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_ub", d_grid_vec_partial_2D)
       case("basal_hydro_vb")
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%v_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%hydro_Salle2025%v_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_vb", d_grid_vec_partial_2D)
       case("basal_hydro_R")
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%hydro_Salle2025%R, &
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_R", d_grid_vec_partial_2D)
       case("basal_hydro_D")
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%D_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%hydro_Salle2025%D_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_D", d_grid_vec_partial_2D)
       case("basal_hydro_K")
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%K_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%hydro_Salle2025%K_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_K", d_grid_vec_partial_2D)
       case("basal_hydro_P")
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%hydro_Salle2025%P, &
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_P", d_grid_vec_partial_2D)
       case("basal_hydro_dr_dx_b")
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%dr_dx_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%hydro_Salle2025%dr_dx_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_dr_dx_b", d_grid_vec_partial_2D)
       case("basal_hydro_dr_dy_b")
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%hydro_Salle2025%dr_dy_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%hydro_Salle2025%dr_dy_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, "basal_hydro_dr_dy_b", d_grid_vec_partial_2D)
       case("basal_hydro_O")
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%hydro_Salle2025%O, &
@@ -958,7 +982,8 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'basal_friction_coefficient', d_grid_vec_partial_2D)
       case ('basal_shear_stress')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%ice%basal_shear_stress, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%ice%basal_shear_stress, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'basal_shear_stress', d_grid_vec_partial_2D)
 
       ! Bed roughness nudging - H, dH/dt, flowline
@@ -1021,7 +1046,8 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'bed_roughness_nudge_H_u_flowline_dC_dt', d_grid_vec_partial_2D)
       case ('bed_roughness_nudge_H_u_target_velocity')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%bed_roughness%nudging_H_u_flowline%uabs_surf_target_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%bed_roughness%nudging_H_u_flowline%uabs_surf_target_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'bed_roughness_nudge_H_u_target_velocity', d_grid_vec_partial_2D)
 
     ! == Geothermal heat ==
@@ -1218,10 +1244,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'H_lad', d_grid_vec_partial_2D)
       case ('U_lad')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%now%U, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%now%U, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'U_lad', d_grid_vec_partial_2D)
       case ('V_lad')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%now%V, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%now%V, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'V_lad', d_grid_vec_partial_2D)
       case ('T_lad')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%BMB%laddie%now%T, &
@@ -1278,10 +1306,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'diffS', d_grid_vec_partial_2D)
       case ('viscU')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%viscU, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%viscU, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'viscU', d_grid_vec_partial_2D)
       case ('viscV')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%viscV, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%viscV, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'viscV', d_grid_vec_partial_2D)
       case ('T_base')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%BMB%laddie%T_base, &
@@ -1300,10 +1330,12 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'gamma_T', d_grid_vec_partial_2D)
       case ('divQU')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%divQU, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%divQU, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'divQU', d_grid_vec_partial_2D)
       case ('divQV')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%divQV, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%divQV, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'divQV', d_grid_vec_partial_2D)
       case ('HU_lad')
         ! Not implemented
@@ -1318,7 +1350,8 @@ contains
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'domain_a', d_grid_vec_partial_2D)
       case ('domain_b')
-        call map_from_mesh_triangles_to_xy_grid_2D( region%mesh, grid, C%output_dir, region%BMB%laddie%domain_b, d_grid_vec_partial_2D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%b(), region%BMB%laddie%domain_b, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'domain_b', d_grid_vec_partial_2D)
 
     ! == Lateral mass balance ==

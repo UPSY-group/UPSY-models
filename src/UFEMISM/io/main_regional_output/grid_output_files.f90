@@ -10,7 +10,7 @@ module grid_output_files
   use xy_grid_basic, only: type_xy_grid
   use netcdf_io_main
   use remapping_main, only: &
-    map_from_mesh_vertices_to_xy_grid_3D, map_from_mesh_vertices_to_xy_grid_2D_minval, &
+    map_from_mesh_vertices_to_xy_grid_2D_minval, &
     map_from_mesh_triangles_to_xy_grid_2D, map_from_mesh_triangles_to_xy_grid_3D
   use mpi_distributed_memory, only: gather_to_all
   use SMB_IMAU_ITM, only: type_SMB_model_IMAU_ITM
@@ -504,30 +504,36 @@ contains
     ! ===================================
 
       case ('Ti')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%Ti, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%Ti, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'Ti', d_grid_vec_partial_3D)
       case ('Ti_pmp')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%Ti_pmp, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%Ti_pmp, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'Ti_pmp', d_grid_vec_partial_3D)
       case ('Ti_hom')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%Ti_hom, &
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'Ti_hom', d_grid_vec_partial_2D)
       case ('Cpi')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%Cpi, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%Cpi, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'Cpi', d_grid_vec_partial_3D)
       case ('Ki')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%Ki, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%Ki, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'Ki', d_grid_vec_partial_3D)
       case ('internal_heating')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%internal_heating, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%internal_heating, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'internal_heating', d_grid_vec_partial_3D)
       case ('frictional_heating')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%frictional_heating, &
           grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D( grid, filename, ncid, 'frictional_heating', d_grid_vec_partial_2D)
       case ('A_flow')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%A_flow, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%A_flow, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'A_flow', d_grid_vec_partial_3D)
 
     ! === Ice velocities ===
@@ -543,7 +549,8 @@ contains
           call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%u_3D_b, d_grid_vec_partial_3D)
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%u_3D, d_grid_vec_partial_3D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%u_3D, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         end select
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'u_3D', d_grid_vec_partial_3D)
       case ('v_3D')
@@ -555,14 +562,17 @@ contains
           call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%v_3D_b, d_grid_vec_partial_3D)
         case ('SSA_FEM_PETSc')
           ! These solvers define velocities on the a-grid (vertices)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%v_3D, d_grid_vec_partial_3D)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%v_3D, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         end select
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'v_3D', d_grid_vec_partial_3D)
       case ('u_3D_a')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%u_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%u_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'u_3D_a', d_grid_vec_partial_3D)
       case ('v_3D_a')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%v_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%v_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'v_3D_a', d_grid_vec_partial_3D)
       case ('u_3D_b')
         call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%u_3D_b, d_grid_vec_partial_3D)
@@ -571,7 +581,8 @@ contains
         call map_from_mesh_triangles_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%v_3D_b, d_grid_vec_partial_3D)
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'v_3D_b', d_grid_vec_partial_3D)
       case ('w_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%w_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%w_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'w_3D', d_grid_vec_partial_3D)
 
       ! Vertically averaged
@@ -772,31 +783,40 @@ contains
     ! ====================
 
       case ('du_dx_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%du_dx_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%du_dx_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'du_dx_3D', d_grid_vec_partial_3D)
       case ('du_dy_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%du_dy_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%du_dy_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'du_dy_3D', d_grid_vec_partial_3D)
       case ('du_dz_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%du_dz_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%du_dz_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'du_dz_3D', d_grid_vec_partial_3D)
       case ('dv_dx_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%dv_dx_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%dv_dx_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'dv_dx_3D', d_grid_vec_partial_3D)
       case ('dv_dy_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%dv_dy_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%dv_dy_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'dv_dy_3D', d_grid_vec_partial_3D)
       case ('dv_dz_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%dv_dz_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%dv_dz_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'dv_dz_3D', d_grid_vec_partial_3D)
       case ('dw_dx_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%dw_dx_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%dw_dx_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'dw_dx_3D', d_grid_vec_partial_3D)
       case ('dw_dy_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%dw_dy_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%dw_dy_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'dw_dy_3D', d_grid_vec_partial_3D)
       case ('dw_dz_3D')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ice%vel%dw_dz_3D, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ice%vel%dw_dz_3D, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'dw_dz_3D', d_grid_vec_partial_3D)
 
     ! == Ice flow regime ==
@@ -1017,13 +1037,16 @@ contains
 
       ! Main climate variables
       case ('T2m')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%climate%T2m, d_grid_vec_partial_2D_monthly)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%climate%T2m, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'T2m', d_grid_vec_partial_2D_monthly)
       case ('Precip')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%climate%Precip, d_grid_vec_partial_2D_monthly)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%climate%Precip, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Precip', d_grid_vec_partial_2D_monthly)
-      CASE ('Q_TOA')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%climate%Q_TOA, d_grid_vec_partial_2D_monthly)
+      case ('Q_TOA')
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%climate%Q_TOA, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Q_TOA', d_grid_vec_partial_2D_monthly)
 
     ! == Ocean ==
@@ -1031,10 +1054,12 @@ contains
 
       ! Main ocean variables
       case ('T_ocean')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ocean%T, d_grid_vec_partial_3D_ocean)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ocean%T, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D_ocean, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_ocean( grid, filename, ncid, 'T_ocean', d_grid_vec_partial_3D_ocean)
       case ('S_ocean')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%ocean%S, d_grid_vec_partial_3D_ocean)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ocean%S, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D_ocean, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D_ocean( grid, filename, ncid, 'S_ocean', d_grid_vec_partial_3D_ocean)
       case ('T_draft')
         call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%ocean%T_draft, &
@@ -1058,10 +1083,12 @@ contains
         class default
           call crash('Albedo only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Albedo, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Albedo, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Albedo, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Albedo, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Albedo', d_grid_vec_partial_2D_monthly)
         end select
       case ('FirnDepth')
@@ -1069,7 +1096,8 @@ contains
         class default
           call crash('FirnDepth only defined for SMB model IMAU-ITM')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%FirnDepth, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%FirnDepth, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnDepth', d_grid_vec_partial_2D_monthly)
         end select
       case ('FirnAirContent')
@@ -1077,7 +1105,8 @@ contains
         class default
           call crash('FirnAirContent only defined for SMB model ITM_v2')
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%FirnAirContent, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%FirnAirContent, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'FirnAirContent', d_grid_vec_partial_2D_monthly)
         end select
       case ('MeltPreviousYear')
@@ -1094,10 +1123,12 @@ contains
         class default
           call crash('SurfaceMelt only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Melt, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Melt, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'SurfaceMelt', d_grid_vec_partial_2D_monthly)
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%SurfaceMelt, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%SurfaceMelt, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'SurfaceMelt', d_grid_vec_partial_2D_monthly)
         end select
       case ('Refreezing')
@@ -1105,10 +1136,12 @@ contains
         class default
           call crash('Refreezing only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Refreezing, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Refreezing, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Refreezing', d_grid_vec_partial_2D_monthly)
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Refreezing, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Refreezing, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Refreezing', d_grid_vec_partial_2D_monthly)
         end select
       case ('Runoff')
@@ -1116,10 +1149,12 @@ contains
         class default
           call crash('Runoff only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Runoff, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Runoff, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Runoff', d_grid_vec_partial_2D_monthly)
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Runoff, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Runoff, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Runoff', d_grid_vec_partial_2D_monthly)
         end select
       case ('Rainfall')
@@ -1127,10 +1162,12 @@ contains
         class default
           call crash('Rainfall only defined for SMB model IMAU-ITM or ITM_v2')
         class is (type_SMB_model_IMAU_ITM)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Rainfall, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Rainfall, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Rainfall', d_grid_vec_partial_2D_monthly)
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Rainfall, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Rainfall, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Rainfall', d_grid_vec_partial_2D_monthly)
         end select
       case ('Sublimation')
@@ -1138,7 +1175,8 @@ contains
         class default
           call crash('Sublimation only defined for SMB model ITM_v2')
         class is (type_SMB_model_ITM_v2)
-          call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, SMB_model%Sublimation, d_grid_vec_partial_2D_monthly)
+          call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), SMB_model%Sublimation, &
+            grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_2D_monthly, UPSY%remapping%method%second_order_conservative())
           call write_to_field_multopt_grid_dp_2D_monthly( grid, filename, ncid, 'Sublimation', d_grid_vec_partial_2D_monthly)
         end select
 
@@ -1314,7 +1352,8 @@ contains
     ! =====================
 
       case ('age')
-        call map_from_mesh_vertices_to_xy_grid_3D( region%mesh, grid, C%output_dir, region%tracer_tracking%age, d_grid_vec_partial_3D)
+        call UPSY%remapping%remap( region%mesh, UPSY%Arakawa_grid%a(), region%tracer_tracking%age, &
+          grid, UPSY%Arakawa_grid%a(), d_grid_vec_partial_3D, UPSY%remapping%method%second_order_conservative())
         call write_to_field_multopt_grid_dp_3D( grid, filename, ncid, 'age', d_grid_vec_partial_3D)
 
     end select
